@@ -23,7 +23,12 @@ import freenet.clients.http.PageMaker;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n.LANGUAGE;
-import freenet.pluginmanager.FredPluginToadlet;
+import freenet.pluginmanager.FredPlugin;
+import freenet.pluginmanager.FredPluginHTTP;
+import freenet.pluginmanager.FredPluginL10n;
+import freenet.pluginmanager.FredPluginThemed;
+import freenet.pluginmanager.FredPluginThreadless;
+import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.NotFoundPluginHTTPException;
 import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginRespirator;
@@ -35,7 +40,7 @@ import freenet.support.api.HTTPRequest;
  * @author saces
  *
  */
-public class FMSPlugin implements FredPluginToadlet {
+public class FMSPlugin implements FredPlugin, FredPluginThreadless, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginVersioned {
 
 	public static String SELF_URI = "/plugins/plugins.FMSPlugin.FMSPlugin";
 	public static String SELF_TITLE = "FMS clone";
