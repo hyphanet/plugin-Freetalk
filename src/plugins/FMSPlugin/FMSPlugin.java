@@ -24,6 +24,7 @@ import freenet.clients.http.PageMaker.THEME;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n.LANGUAGE;
 import freenet.pluginmanager.FredPlugin;
+import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.FredPluginHTTP;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.pluginmanager.FredPluginThemed;
@@ -31,16 +32,19 @@ import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.NotFoundPluginHTTPException;
 import freenet.pluginmanager.PluginHTTPException;
+import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.pluginmanager.RedirectPluginHTTPException;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 
 /**
  * @author saces
  *
  */
-public class FMSPlugin implements FredPlugin, FredPluginThreadless, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginVersioned {
+public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginThreadless, FredPluginVersioned {
 
 	public static String SELF_URI = "/plugins/plugins.FMSPlugin.FMSPlugin";
 	public static String SELF_TITLE = "FMS clone";
@@ -53,6 +57,7 @@ public class FMSPlugin implements FredPlugin, FredPluginThreadless, FredPluginHT
 	private PageMaker pm;
 
 	private LANGUAGE language;
+	private THEME theme;
 
 	private HighLevelSimpleClient client;
 
@@ -70,11 +75,12 @@ public class FMSPlugin implements FredPlugin, FredPluginThreadless, FredPluginHT
 		pr = pr2;
 
 		pm = pr.getPageMaker();
-		pm.addNavigationLink("/", "Fproxy", "Back to Fpoxy", false, null);
-		pm.addNavigationLink(SELF_URI + "/status", "Dealer status", "Show what happens in background", false, null);
+		pm.addNavigationLink(SELF_URI + "/", "Home", "FMS plugin home", false, null);
 		pm.addNavigationLink(SELF_URI + "/ownidentities", "Own Identities", "Manage your own identities", false, null);
 		pm.addNavigationLink(SELF_URI + "/knownidentities", "Known Identities", "Manage others identities", false, null);
 		pm.addNavigationLink(SELF_URI + "/messages", "Messages", "View Messages", false, null);
+		pm.addNavigationLink(SELF_URI + "/status", "Dealer status", "Show what happens in background", false, null);
+		pm.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);
 
 		client = pr.getHLSimpleClient();
 
@@ -138,6 +144,12 @@ public class FMSPlugin implements FredPlugin, FredPluginThreadless, FredPluginHT
 
 	public String handleHTTPPut(HTTPRequest request) throws PluginHTTPException {
 		throw new RedirectPluginHTTPException("", SELF_URI);
+	}
+	
+	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
+		sfs.putOverwrite("Hello", "Nice try ;)");
+		sfs.putOverwrite("Sorry", "Not implemeted yet :(");
 	}
 
 	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
@@ -285,7 +297,6 @@ public class FMSPlugin implements FredPlugin, FredPluginThreadless, FredPluginHT
 	}
 
 	public String getString(String key) {
-		// language.;
 		// Logger.error(this, "Request translation for "+key);
 		return key;
 	}
@@ -295,8 +306,7 @@ public class FMSPlugin implements FredPlugin, FredPluginThreadless, FredPluginHT
 		language = newLanguage;
 	}
 
-	public void setTheme(THEME theme) {
-		// TODO Auto-generated method stub
-		
+	public void setTheme(THEME newTheme) {
+		theme= newTheme;
 	}
 }
