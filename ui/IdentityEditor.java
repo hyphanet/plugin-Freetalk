@@ -100,20 +100,29 @@ public class IdentityEditor {
 
 		HTMLNode addForm = fms.pr.addFormChild(addContent, FMSPlugin.SELF_URI + "/createownidentity", "addForm");
 
-		addForm.addChild("#", "Nick : ");
-		addForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "nick", "70", nick });
-		addForm.addChild("br");
-		addForm.addChild("#", "Request URI : ");
-		addForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "requestURI", "70", requestUri });
-		addForm.addChild("br");
-		addForm.addChild("#", "Insert URI : ");
-		addForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "insertURI", "70", insertUri });
-		addForm.addChild("br");
-		addForm.addChild("#", "Publish trust list ");
+		HTMLNode table = addForm.addChild("table", "class", "column");
+		HTMLNode tr1 = table.addChild("tr");
+		tr1.addChild("td", "width", "10%", "Nick:\u00a0");
+		HTMLNode cell12 = tr1.addChild("td", "width", "90%");
+		cell12.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "nick", "70", nick });
+
+		HTMLNode tr2 = table.addChild("tr");
+		tr2.addChild("td", "Request\u00a0URI:\u00a0");
+		HTMLNode cell22= tr2.addChild("td");
+		cell22.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "requestURI", "70", requestUri });
+
+		HTMLNode tr3 = table.addChild("tr");
+		tr3.addChild("td", "Insert\u00a0URI:\u00a0");
+		HTMLNode cell32= tr3.addChild("td");
+		cell32.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "insertURI", "70", insertUri });
+		
+		HTMLNode tr4 = table.addChild("tr");
+		tr4.addChild("td", "Publish\u00a0trust\u00a0list:\u00a0");
+		HTMLNode cell42= tr4.addChild("td");
 		if (publish)
-			addForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "publishTrustList", "true", "checked" });
+			cell42.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "publishTrustList", "true", "checked" });
 		else
-			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "publishTrustList", "false" });
+			cell42.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "publishTrustList", "false" });
 		addForm.addChild("br");
 		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "create", "Create a new identity !" });
 		return addBox;
