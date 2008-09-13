@@ -4,6 +4,7 @@
 package plugins.FMSPlugin;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +12,9 @@ import plugins.FMSPlugin.ui.Backup;
 import plugins.FMSPlugin.ui.Errors;
 import plugins.FMSPlugin.ui.IdentityEditor;
 import plugins.FMSPlugin.ui.Messages;
+import plugins.FMSPlugin.ui.Service;
 import plugins.FMSPlugin.ui.Status;
+import plugins.FMSPlugin.ui.Welcome;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
@@ -23,6 +26,7 @@ import freenet.clients.http.PageMaker;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n.LANGUAGE;
+import freenet.pluginmanager.DownloadPluginHTTPException;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.FredPluginHTTP;
@@ -39,6 +43,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
+import freenet.support.api.HTTPUploadedFile;
 
 /**
  * @author saces
@@ -104,7 +109,6 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 		dealer = new FMSDealer(pr.getNode().executor);
 
 		fms = new FMS(pr.getNode().clientCore.tempBucketFactory, pm, pr, db_config, db_cache);
-		
 	}
 
 	public void terminate() {
@@ -124,10 +128,14 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 
 		String page = request.getPath().substring(SELF_URI.length());
 		if ((page.length() < 1) || ("/".equals(page)))
-			return Status.makeStartStopPage(fms);
+			return Welcome.makeWelcomePage(fms);
 
 		if ("/status".equals(page)) {
 			return Status.makeStatusPage(fms);
+		}
+		
+		if ("/service".equals(page)) {
+			return Service.makeServicePage(fms);
 		}
 
 		if ("/ownidentities".equals(page))
@@ -162,34 +170,32 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 
 		if (page.length() < 1)
 			throw new NotFoundPluginHTTPException("Resource not found", page);
-		// return makeStartStopPage();
 
-		if (page.equals("/impexport")) {
-			if (!request.isPartSet("filename")) {
-				return Errors.makeErrorPage(fms, "Invalid Request on »impexport«: missing filename");
+		if (page.equals("/exportDB")) {
+			StringWriter sw = new StringWriter();
+			try {
+				Backup.exportConfigDb(db_config, sw);
+			} catch (IOException e) {
+				Logger.error(this, "Error While exporting database!", e);
+				return Errors.makeErrorPage(fms, "Server BuhBuh! " + e.getMessage());
 			}
-			String fileName = request.getPartAsString("filename", 1024);
-			if (request.isPartSet("importall")) {
-				try {
-					Backup.importConfigDb(db_config, fileName);
-				} catch (Exception e) {
-					Logger.error(this, "Error While importing from: " + fileName, e);
-					return Errors.makeErrorPage(fms, "Server BuhBuh! " + e.getMessage());
-				}
-				throw new RedirectPluginHTTPException("", SELF_URI);
-			}
-			if (request.isPartSet("exportall")) {
-				try {
-					Backup.exportConfigDb(db_config, fileName);
-				} catch (IOException e) {
-					Logger.error(this, "Error While exporting to: " + fileName, e);
-					return Errors.makeErrorPage(fms, "Server BuhBuh! " + e.getMessage());
-				}
-				Logger.error(this, "Succesful export to: " + fileName);
-				throw new RedirectPluginHTTPException("", SELF_URI);
-			}
-			return Errors.makeErrorPage(fms, "Invalid Request on »ownIdentities«");
+			throw new DownloadPluginHTTPException(sw.toString().getBytes(), "fms-kidding.xml", "fms-clone/db-backup");
 		}
+		
+		if (page.equals("/importDB")) {
+			HTTPUploadedFile file = request.getUploadedFile("filename");
+			if (file == null || file.getFilename().trim().length() == 0) {
+				return Errors.makeErrorPage(fms, "No file to import selected!");
+			}
+			try {
+				Backup.importConfigDb(db_config, file.getData().getInputStream());
+			} catch (Exception e) {
+				Logger.error(this, "Error While importing db from: " + file.getFilename(), e);
+				return Errors.makeErrorPage(fms, "Error While importing db from: " + file.getFilename() + e.getMessage());
+			}
+			throw new RedirectPluginHTTPException("", SELF_URI);
+		}
+
 		if (page.equals("/createownidentity")) {
 			List<String> err = new ArrayList<String>();
 			String nick = request.getPartAsString("nick", 1024).trim();
@@ -302,11 +308,12 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 	}
 
 	public void setLanguage(LANGUAGE newLanguage) {
-		Logger.error(this, "Set LANGUAGE to: " + newLanguage.isoCode);
 		language = newLanguage;
+		Logger.error(this, "Set LANGUAGE to: " + language.isoCode);
 	}
 
 	public void setTheme(THEME newTheme) {
 		theme= newTheme;
+		Logger.error(this, "Set THEME to: " + theme.code);
 	}
 }

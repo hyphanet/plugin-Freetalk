@@ -7,7 +7,6 @@ import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
@@ -35,10 +34,9 @@ public class Backup {
 
 	private static SAXParser saxParser;
 
-	public final static void exportConfigDb(ObjectContainer config_db, String filename) throws IOException {
+	public final static void exportConfigDb(ObjectContainer config_db, Writer ow) throws IOException {
 
-		File test = new File(filename).getAbsoluteFile();
-		Writer w = new BufferedWriter(new FileWriter(test));
+		Writer w = new BufferedWriter(ow);
 
 		w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 		w.write("<fms-kidding>\n");
@@ -88,12 +86,10 @@ public class Backup {
 		w.close();
 	}
 
-	public final static void importConfigDb(ObjectContainer config_db, String filename) throws IOException, ParserConfigurationException, SAXException {
-
-		File test = new File(filename).getAbsoluteFile();
-		InputStream is = new BufferedInputStream(new FileInputStream(test));
+	public final static void importConfigDb(ObjectContainer config_db, InputStream is) throws IOException, ParserConfigurationException, SAXException {
+		InputStream i = new BufferedInputStream(is);
 		SAXParser parser = getSaxParser();
-		parser.parse(is, new ImportHandler(config_db));
+		parser.parse(i, new ImportHandler(config_db));
 	}
 
 	private static SAXParser getSaxParser() throws ParserConfigurationException, SAXException {
@@ -144,7 +140,6 @@ public class Backup {
 			}
 
 			shouldRecord = false;
-			//System.out.println("Parse: " + uri + " - " + localName + " - " + name);
 		}
 
 		/*
@@ -191,7 +186,6 @@ public class Backup {
 			}
 
 			if ("OwnIdentity".equals(name)) {
-				//System.out.println("OID: " + nick+" - "+requestUri+" - "+insertUri+" - "+publishTL);
 				FMSOwnIdentity oid = new FMSOwnIdentity(nick, requestUri, insertUri, publishTL);
 				config_db.store(oid);
 				config_db.commit();
@@ -199,14 +193,11 @@ public class Backup {
 			}
 			
 			if ("Identity".equals(name)) {
-				//System.out.println("ID: " + nick+" - "+requestUri);
 				FMSIdentity id = new FMSIdentity(nick, requestUri);
 				config_db.store(id);
 				config_db.commit();
 				return;
 			}
-			
-			//System.out.println("Parse-end: " + name + " Content: " + currentItem.toString());
 			shouldRecord = false;
 			currentItem.delete(0, currentItem.length());
 		}
