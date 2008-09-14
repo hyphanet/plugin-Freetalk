@@ -138,8 +138,8 @@ public class IdentityEditor {
 	}
 	
 	private static final HTMLNode deleteOwnIdentityBox(FMS fms, String nick, String requestUri, String insertUri, boolean publish, List<String> errors) {
-		HTMLNode addBox = fms.pm.getInfobox("Delete Identity");
-		HTMLNode addContent = fms.pm.getContentNode(addBox);
+		HTMLNode deleteBox = fms.pm.getInfobox("Delete Identity");
+		HTMLNode deleteContent = fms.pm.getContentNode(deleteBox);
 
 		if (errors != null) {
 			HTMLNode errorBox = fms.pm.getInfobox("infobox-alert", "Typo");
@@ -148,28 +148,20 @@ public class IdentityEditor {
 				errorContent.addChild("#", s);
 				errorContent.addChild("br");
 			}
-			addContent.addChild(errorBox);
+			deleteContent.addChild(errorBox);
 		}
 
-		HTMLNode addForm = fms.pr.addFormChild(addContent, FMSPlugin.SELF_URI + "/deleteOwnIdentity", "deleteForm");
-		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "confirmed", "true"});
-		addForm.addChild("#", "Nick : ");
-		addForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "nick", "70", nick });
-		addForm.addChild("br");
-		addForm.addChild("#", "Request URI : ");
-		addForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "identity", "70", requestUri });
-		addForm.addChild("br");
-		addForm.addChild("#", "Insert URI : ");
-		addForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "insertURI", "70", insertUri });
-		addForm.addChild("br");
-		addForm.addChild("#", "Publish trust list ");
-		if (publish)
-			addForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "publishTrustList", "true", "checked" });
-		else
-			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "publishTrustList", "false" });
-		addForm.addChild("br");
-		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete identity" });
-		return addBox;
+		HTMLNode deleteForm = fms.pr.addFormChild(deleteContent, FMSPlugin.SELF_URI + "/deleteOwnIdentity", "deleteForm");
+		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "confirmed", "true"});
+		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", requestUri});
+		deleteForm.addChild("#", "Nick:\u00a0"+nick);
+		deleteForm.addChild("br");
+		deleteForm.addChild("#", "Request URI:\u00a0"+requestUri);
+		deleteForm.addChild("br");
+		deleteForm.addChild("#", "Insert URI:\u00a0"+insertUri);
+		deleteForm.addChild("br");
+		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete identity" });
+		return deleteBox;
 	}
 	
 	/* === others  identities ================ */
@@ -253,8 +245,8 @@ public class IdentityEditor {
 	}
 	
 	private static final HTMLNode deleteKnownIdentityBox(FMS fms, String nick, String requestUri, String insertUri, boolean publish, List<String> errors) {
-		HTMLNode addBox = fms.pm.getInfobox("Delete Identity");
-		HTMLNode addContent = fms.pm.getContentNode(addBox);
+		HTMLNode deleteBox = fms.pm.getInfobox("Delete Identity");
+		HTMLNode deleteContent = fms.pm.getContentNode(deleteBox);
 
 		if (errors != null) {
 			HTMLNode errorBox = fms.pm.getInfobox("infobox-alert", "Typo");
@@ -263,28 +255,18 @@ public class IdentityEditor {
 				errorContent.addChild("#", s);
 				errorContent.addChild("br");
 			}
-			addContent.addChild(errorBox);
+			deleteContent.addChild(errorBox);
 		}
 
-		HTMLNode addForm = fms.pr.addFormChild(addContent, FMSPlugin.SELF_URI + "/deleteIdentity", "deleteForm");
-		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "confirmed", "true"});
-		addForm.addChild("#", "Nick : ");
-		addForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "nick", "70", nick });
-		addForm.addChild("br");
-		addForm.addChild("#", "Request URI : ");
-		addForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "identity", "70", requestUri });
-		addForm.addChild("br");
-		addForm.addChild("#", "Insert URI : ");
-		addForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "insertURI", "70", insertUri });
-		addForm.addChild("br");
-		addForm.addChild("#", "Publish trust list ");
-		if (publish)
-			addForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "publishTrustList", "true", "checked" });
-		else
-			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "publishTrustList", "false" });
-		addForm.addChild("br");
-		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete identity" });
-		return addBox;
+		HTMLNode deleteForm = fms.pr.addFormChild(deleteContent, FMSPlugin.SELF_URI + "/deleteIdentity", "deleteForm");
+		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "confirmed", "true"});
+		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", requestUri});
+		deleteForm.addChild("#", "Nick:\u00a0"+nick);
+		deleteForm.addChild("br");
+		deleteForm.addChild("#", "Request URI:\u00a0"+requestUri);
+		deleteForm.addChild("br");
+		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete identity" });
+		return deleteBox;
 	}
 
 	
