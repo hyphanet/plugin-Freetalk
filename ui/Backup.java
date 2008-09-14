@@ -179,7 +179,6 @@ public class Backup {
 			}
 			if ("PublishTrustList".equals(name)) {
 				String val = currentItem.toString();
-				System.out.println("PTL: "+val);
 				publishTL = "true".equals(val);
 				resetRecord();
 				return;
