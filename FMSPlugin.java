@@ -293,7 +293,7 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 	}
 
 	public String getVersion() {
-		return "tp r" + Version.svnRevision;
+		return "α r" + Version.svnRevision;
 	}
 
 	public String getString(String key) {
