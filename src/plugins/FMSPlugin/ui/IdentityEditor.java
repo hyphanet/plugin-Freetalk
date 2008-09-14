@@ -168,7 +168,7 @@ public class IdentityEditor {
 		else
 			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "publishTrustList", "false" });
 		addForm.addChild("br");
-		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "create", "Create a new identity !" });
+		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete identity" });
 		return addBox;
 	}
 	
@@ -223,7 +223,7 @@ public class IdentityEditor {
 	}
 
 	private static final HTMLNode createNewKnownIdentityBox(FMS fms, String requestUri, List<String> errors) {
-		HTMLNode addBox = fms.pm.getInfobox("New Identity");
+		HTMLNode addBox = fms.pm.getInfobox("Add Identity");
 		HTMLNode addContent = fms.pm.getContentNode(addBox);
 
 		if (errors != null) {
@@ -283,7 +283,7 @@ public class IdentityEditor {
 		else
 			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "publishTrustList", "false" });
 		addForm.addChild("br");
-		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "create", "Create a new identity !" });
+		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete identity" });
 		return addBox;
 	}
 
@@ -338,7 +338,6 @@ public class IdentityEditor {
 		FMSIdentity templateId = new FMSIdentity(null, requestUri);
 		
 		ObjectSet<FMSIdentity> toDelete = fms.db_config.queryByExample(templateId);
-		System.out.println("To delete: "+toDelete.size());
 		if (toDelete.size() > 0) {
 			for (FMSIdentity id:toDelete) {
 				fms.db_config.delete(id);
@@ -348,6 +347,4 @@ public class IdentityEditor {
 			err.add("Identity »"+requestUri+"« not found, nothing deleted");
 		}
 	}
-	//<table class="column">
-
 }
