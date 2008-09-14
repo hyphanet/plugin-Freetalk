@@ -4,8 +4,10 @@
 package plugins.FMSPlugin;
 
 import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
 
 import freenet.clients.http.PageMaker;
+import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.io.TempBucketFactory;
@@ -32,5 +34,19 @@ public class FMS {
 	
 	final public HTMLNode getPageNode() {
 		return pm.getPageNode(FMSPlugin.SELF_TITLE, null);
+	}
+
+	/* ----- utils ----- */
+	public boolean isWoTpresent() {
+		FredPluginFCP plug = pr.getNode().pluginManager.getFCPPlugin(FMSPlugin.WOT_NAME);
+		return (plug != null);
+	}
+
+	public long countIdentities() {
+		return db_config.queryByExample(FMSIdentity.class).size() - countOwnIdentities();
+	}
+
+	public long countOwnIdentities() {
+		return db_config.queryByExample(FMSOwnIdentity.class).size();
 	}
 }
