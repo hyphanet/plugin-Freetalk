@@ -8,7 +8,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import plugins.FMSPlugin.ui.Backup;
 import plugins.FMSPlugin.ui.Errors;
 import plugins.FMSPlugin.ui.IdentityEditor;
 import plugins.FMSPlugin.ui.Messages;
