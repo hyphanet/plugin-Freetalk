@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package plugins.FMSPlugin.ui;
+package plugins.FMSPlugin;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
@@ -19,9 +19,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import plugins.FMSPlugin.FMSIdentity;
-import plugins.FMSPlugin.FMSOwnIdentity;
-import plugins.FMSPlugin.XMLUtils;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
