@@ -11,7 +11,6 @@ import java.util.List;
 import plugins.FMSPlugin.ui.Errors;
 import plugins.FMSPlugin.ui.IdentityEditor;
 import plugins.FMSPlugin.ui.Messages;
-import plugins.FMSPlugin.ui.Service;
 import plugins.FMSPlugin.ui.Status;
 import plugins.FMSPlugin.ui.Welcome;
 
@@ -52,7 +51,7 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 
 	public static String SELF_URI = "/plugins/plugins.FMSPlugin.FMSPlugin";
 	public static String SELF_TITLE = "FMS clone";
-	//private static String WOT_NAME = "plugins.WoT.WoTplugin";
+	public static String WOT_NAME = "plugins.WoT.WoT";
 
 	public final String MESSAGEBASE = "fms";
 
@@ -133,10 +132,6 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 			return Status.makeStatusPage(fms);
 		}
 		
-		if ("/service".equals(page)) {
-			return Service.makeServicePage(fms);
-		}
-
 		if ("/ownidentities".equals(page))
 			return IdentityEditor.makeOwnIdentitiesPage(fms, request);
 
