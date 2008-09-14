@@ -32,7 +32,7 @@ public class Welcome {
 		HTMLNode list = overviewContent.addChild("ul");
 		list.addChild(new HTMLNode("li", "Own Identities: " + fms.countOwnIdentities()));
 		list.addChild(new HTMLNode("li", "Known Identities: " + fms.countIdentities()));
-		list.addChild(new HTMLNode("li", "WoT plugin: " + fms.isWoTpresent()));
+		list.addChild(new HTMLNode("li", "WoT plugin: " + (fms.isWoTpresent()?"":"not ") + "found"));
 		return overviewBox;
 	}
 
