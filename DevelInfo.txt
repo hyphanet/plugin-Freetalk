@@ -1,0 +1,66 @@
+=== Update this file ===
+Typo fixing: don't ask, droit!  
+Comments:
+| mark your comments with a leading char (suggestion)
+  > choose an other char or indentions
+  > to comment comments. <dont forget to mention your name ;)>
+| be creative on marking comments as long its lucid & neat. 
+| Thanks for your help. saces
+
+=== Database ===
+
+The FMSPLugin uses *two* databases, one for config, one as "cache"
+
+	The backup/restores function deals only with the config db!
+	The cache db can easy be restored from freenet, while development it is
+	wiped at startup (see FMSPlugin.java:98)	
+
+ - config db: User Identities (keys), unsent messages, some status things are
+   stored here
+ - cache db: acts like the node store. The object is present, can be fetched
+   from network or simply does not exist ;)
+ 
+ The effect: You should anyways store a backup of your config (its exported as
+ 			 xml), you can restore it at *any* node with FMSPlugin, wait a 
+ 			 while for reload chache and your "desktop" is back now, you can
+ 			 continue your flaming like nothings happens.
+ 			 
+=== Structure ===
+
+ Updaters: runs as loop in background, stopped if FMSDealer.killMe() is called
+   		   results are stored in cache, may the status in config is updated.
+ 
+ Senders: sending goes ad hoc from client view. But in real its only stored in
+ 		  config and waits for pickup from the corresponding updater for real
+ 		  network insertion
+ 		  
+ Getters: simply read unsent messages from config and all other stuff from cache.
+ 		  what's all.
+
+=== Trust ===
+
+ == None ==
+    Only explicit given outboxes are watched
+    
+ == FoF ( Friend of a Friend) ==
+ 	I watch only the the outboxes of my friends, and the out boxes of her friends
+    and so on...
+    two parameters: the deep (how many friend hops) and a value for "what is a
+    friend", minimum trustlevel 80%, for example (reqires trustlist propagated)
+    
+ == WoT ==
+ 	uses the WoT plugin for trust
+ 	One of the updaters does the identity syncing on connect to wot, then start
+ 	"normal" operation: ask wot who is trustworthy...
+ 	     		  
+=== FCP API ===
+
+FCPPlugin have the FredPluginFCP interface implemented, so a fcp app can talk 
+with the plugin.
+
+May someone want write a frost like gui for fms? Or hack frost to use the plugin...
+
+Tell what you need!
+
+
+ 	
