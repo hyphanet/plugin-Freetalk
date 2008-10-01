@@ -143,10 +143,6 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 
 		throw new NotFoundPluginHTTPException("Resource not found in FMSPlugin", page);
 	}
-
-	public String handleHTTPPut(HTTPRequest request) throws PluginHTTPException {
-		throw new RedirectPluginHTTPException("", SELF_URI);
-	}
 	
 	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
