@@ -3,44 +3,37 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.FMSPlugin;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.util.Date;
+import freenet.keys.FreenetURI;
 
 /**
- * @author saces
+ * @author saces, xor
  *
  */
-public class FMSOwnIdentity extends FMSIdentity {
+public abstract class FMSOwnIdentity extends FMSIdentity {
 	
-	private final String insertUri;
-	private final boolean publishTrustList;
+	private final FreenetURI mInsertURI;
+	private final boolean mPublishTrustList;
 
-	public FMSOwnIdentity(String nickname, String requesturi, String inserturi, boolean publishtrustlist) {
-		super(nickname, requesturi);
-		insertUri = inserturi;
-		publishTrustList = publishtrustlist;
+	public FMSOwnIdentity(String newNickname, FreenetURI newRequestURI, FreenetURI newInsertURI, boolean bPublishTrustList) {
+		super(newNickname, newRequestURI);
+		mInsertURI = newInsertURI;
+		mPublishTrustList = bPublishTrustList;
 	}
 
-	public String getLastChange() {
-		return "LastChange";
-	}
-
-	public Date getLastInsert() {
-		return new Date(0);
-	}
-
-	public String getInsertURI() {
-		return insertUri;
+	public FreenetURI getInsertURI() {
+		return mInsertURI;
 	}
 	
 	public boolean doesPublishTrustList() {
-		return publishTrustList;
+		return mPublishTrustList;
 	}
 	
+	public abstract Date getLastChange();
+
+	public abstract Date getLastInsert();
+	
+	/*
 	public final void exportXML(OutputStream out) throws IOException {
 		Writer w = new BufferedWriter(new OutputStreamWriter(out));
 		w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -57,4 +50,5 @@ public class FMSOwnIdentity extends FMSIdentity {
 		w.flush();
 		w.close();
 	}
+	*/
 }
