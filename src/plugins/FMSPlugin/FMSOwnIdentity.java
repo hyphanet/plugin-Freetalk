@@ -10,28 +10,11 @@ import freenet.keys.FreenetURI;
  * @author saces, xor
  *
  */
-public abstract class FMSOwnIdentity extends FMSIdentity {
+public interface FMSOwnIdentity extends FMSIdentity {
 	
-	private final FreenetURI mInsertURI;
-	private final boolean mPublishTrustList;
+	public FreenetURI getInsertURI();
 
-	public FMSOwnIdentity(String newNickname, FreenetURI newRequestURI, FreenetURI newInsertURI, boolean bPublishTrustList) {
-		super(newNickname, newRequestURI);
-		mInsertURI = newInsertURI;
-		mPublishTrustList = bPublishTrustList;
-	}
-
-	public FreenetURI getInsertURI() {
-		return mInsertURI;
-	}
-	
-	public boolean doesPublishTrustList() {
-		return mPublishTrustList;
-	}
-	
-	public abstract Date getLastChange();
-
-	public abstract Date getLastInsert();
+	public Date getLastInsert();
 	
 	/*
 	public final void exportXML(OutputStream out) throws IOException {
