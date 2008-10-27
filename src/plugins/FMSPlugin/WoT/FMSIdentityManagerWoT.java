@@ -10,6 +10,10 @@ import freenet.support.Executor;
 import plugins.FMSPlugin.FMSIdentity;
 import plugins.FMSPlugin.FMSIdentityManager;
 
+import plugins.WoT.WoT;
+import plugins.WoT.Identity;
+import plugins.WoT.OwnIdentity;
+
 /**
  * An identity manager which uses the identities from the WoT plugin.
  * 
@@ -17,117 +21,23 @@ import plugins.FMSPlugin.FMSIdentityManager;
  *
  */
 public class FMSIdentityManagerWoT extends FMSIdentityManager {
+	
+	private WoT mWoT;
 
 	/**
 	 * @param executor
 	 */
-	public FMSIdentityManagerWoT(Executor executor) {
+	public FMSIdentityManagerWoT(Executor executor, WoT newWoT) {
 		super(executor);
-		// TODO Auto-generated constructor stub
+		mWoT = newWoT;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.util.Set#add(java.lang.Object)
-	 */
-	public boolean add(FMSIdentity e) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.util.Set#addAll(java.util.Collection)
-	 */
-	public boolean addAll(Collection<? extends FMSIdentity> c) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.util.Set#clear()
-	 */
-	public void clear() {
-		// TODO Auto-generated method stub
-
-	}
-
-	/* (non-Javadoc)
-	 * @see java.util.Set#contains(java.lang.Object)
-	 */
-	public boolean contains(Object o) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.util.Set#containsAll(java.util.Collection)
-	 */
-	public boolean containsAll(Collection<?> c) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.util.Set#isEmpty()
-	 */
-	public boolean isEmpty() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.util.Set#iterator()
-	 */
-	public Iterator<FMSIdentity> iterator() {
-		// TODO Auto-generated method stub
+	public Iterator<FMSOwnIdentityWoT> ownIdentityIterator() {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.util.Set#remove(java.lang.Object)
-	 */
-	public boolean remove(Object o) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.util.Set#removeAll(java.util.Collection)
-	 */
-	public boolean removeAll(Collection<?> c) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.util.Set#retainAll(java.util.Collection)
-	 */
-	public boolean retainAll(Collection<?> c) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.util.Set#size()
-	 */
-	public int size() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.util.Set#toArray()
-	 */
-	public Object[] toArray() {
+	public Iterator<FMSIdentityWoT> iterator() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	/* (non-Javadoc)
-	 * @see java.util.Set#toArray(T[])
-	 */
-	public <T> T[] toArray(T[] a) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 }

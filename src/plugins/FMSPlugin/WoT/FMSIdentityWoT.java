@@ -3,22 +3,39 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.FMSPlugin.WoT;
 
+import java.util.Date;
+
 import freenet.keys.FreenetURI;
 import plugins.FMSPlugin.FMSIdentity;
+
+import plugins.WoT.Identity;
 
 /**
  * @author xor
  *
  */
-public class FMSIdentityWoT extends FMSIdentity {
+public class FMSIdentityWoT implements FMSIdentity {
+	
+	protected final Identity mIdentity;
 
-	/**
-	 * @param newNickname
-	 * @param newRequestURI
-	 */
-	public FMSIdentityWoT(String newNickname, FreenetURI newRequestURI) {
-		super(newNickname, newRequestURI);
-		// TODO Auto-generated constructor stub
+	public FMSIdentityWoT(Identity newIndentity) {
+		mIdentity = newIndentity;
+	}
+
+	public boolean doesPublishTrustList() {
+		return mIdentity.doesPublishTrustList();
+	}
+
+	public Date getLastChange() {
+		return mIdentity.getLastChange();
+	}
+
+	public String getNickName() {
+		return mIdentity.getNickName();
+	}
+
+	public FreenetURI getRequestURI() {
+		return mIdentity.getRequestURI();
 	}
 
 }
