@@ -11,12 +11,12 @@ import freenet.support.Executor;
  * @author saces, xor
  *
  */
-public abstract class FMSIdentityManager implements Set<FMSIdentity> {
+public abstract class FMSIdentityManager {
 
-	private final Executor _executor;
+	private final Executor mExecutor;
 
-	public FMSIdentityManager(Executor executor) {
-		_executor = executor;
+	public FMSIdentityManager(Executor newExecutor) {
+		mExecutor = newExecutor;
 
 	}
 
