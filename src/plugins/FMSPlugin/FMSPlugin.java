@@ -207,8 +207,12 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 			IdentityEditor.checkRequestURI(err, requestUri);
 
 			if (err.size() == 0) {
+				// FIXME: use identity manager to implement this
+				throw new UnsupportedOperationException();
+				/*
 				FMSOwnIdentity oi = new FMSOwnIdentity(nick, requestUri, insertUri, publish);
 				IdentityEditor.addNewOwnIdentity(db_config, oi, err);
+				*/
 			}
 
 			if (err.size() == 0) {
@@ -231,8 +235,12 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 			IdentityEditor.checkRequestURI(err, requestUri);
 
 			if (err.size() == 0) {
+				// FIXME: use identity manager to implement this
+				throw new UnsupportedOperationException();
+				/*
 				FMSIdentity i = new FMSIdentity("", requestUri);
 				IdentityEditor.addNewKnownIdentity(db_config, i, err);
+				*/
 			}
 
 			if (err.size() == 0) {
