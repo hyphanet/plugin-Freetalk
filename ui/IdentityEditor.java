@@ -48,8 +48,8 @@ public class IdentityEditor {
 				FMSOwnIdentity id = ownIdentities.next();
 				row = identitiesTable.addChild("tr");
 				row.addChild("td", id.getNickName());
-				row.addChild("td", new String[]{"title"}, new String[]{id.getRequestURI()}, id.getRequestURI().substring(0, 35)+"...");
-				row.addChild("td", new String[]{"title"}, new String[]{id.getInsertURI()}, id.getInsertURI().substring(0, 15)+"...");
+				row.addChild("td", new String[]{"title"}, new String[]{id.getRequestURI().toACIIString()}, id.getRequestURI().toACIIString().substring(0, 35)+"...");
+				row.addChild("td", new String[]{"title"}, new String[]{id.getInsertURI().toACIIString()}, id.getInsertURI().toACIIString().substring(0, 15)+"...");
 				row.addChild("td", id.doesPublishTrustList()?"yes":"no");
 				HTMLNode lastUpdateCell = row.addChild("td");
 				if (id.getLastInsert() == null) {
@@ -61,7 +61,7 @@ public class IdentityEditor {
 				}
 				HTMLNode deleteCell = row.addChild("td");
 				HTMLNode deleteForm = fms.pr.addFormChild(deleteCell, FMSPlugin.SELF_URI + "/deleteOwnIdentity", "deleteForm");
-				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI()});
+				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI().toACIIString()});
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
 			}
 		}
@@ -188,10 +188,10 @@ public class IdentityEditor {
 				continue;
 			row = identitiesTable.addChild("tr");
 			row.addChild("td", id.getNickName());
-			row.addChild("td",  id.getRequestURI());
+			row.addChild("td",  id.getRequestURI().toACIIString());
 			HTMLNode deleteCell = row.addChild("td");
 			HTMLNode deleteForm = fms.pr.addFormChild(deleteCell, FMSPlugin.SELF_URI + "/deleteIdentity", "deleteForm");
-			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI()});
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI().toACIIString()});
 			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
 		}
 
@@ -317,6 +317,7 @@ public class IdentityEditor {
 	}
 	
 	public static void deleteIdentity(FMS fms, String requestUri, List<String> err) {
+		/*
 		FMSIdentity templateId = new FMSIdentity(null, requestUri);
 		
 		ObjectSet<FMSIdentity> toDelete = fms.db_config.queryByExample(templateId);
@@ -327,6 +328,8 @@ public class IdentityEditor {
 			fms.db_config.commit();
 		} else {
 			err.add("Identity »"+requestUri+"« not found, nothing deleted");
-		}
+		}*/
+		
+		// FIXME: Implement by using the identity manager.
 	}
 }

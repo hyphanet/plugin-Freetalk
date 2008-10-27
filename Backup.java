@@ -47,10 +47,10 @@ public class Backup {
 			XMLUtils.writeEsc(w, id.getNickName());
 			w.write("</Nick>\n");
 			w.write("\t\t\t<RequestURI>");
-			w.write(id.getRequestURI());
+			w.write(id.getRequestURI().toACIIString());
 			w.write("</RequestURI>\n");
 			w.write("\t\t\t<InsertURI>");
-			w.write(id.getInsertURI());
+			w.write(id.getInsertURI().toACIIString());
 			w.write("</InsertURI>\n");
 			w.write("\t\t\t<PublishTrustList>");
 			w.write(id.doesPublishTrustList() ? "true" : "false");
@@ -72,7 +72,7 @@ public class Backup {
 			XMLUtils.writeEsc(w, id.getNickName());
 			w.write("</Nick>\n");
 			w.write("\t\t\t<RequestURI>");
-			w.write(id.getRequestURI());
+			w.write(id.getRequestURI().toACIIString());
 			w.write("</RequestURI>\n");
 			w.write("\t\t</Identity>\n");
 		}
@@ -182,16 +182,22 @@ public class Backup {
 			}
 
 			if ("OwnIdentity".equals(name)) {
+				// FIXME: repair this.
+				/*
 				FMSOwnIdentity oid = new FMSOwnIdentity(nick, requestUri, insertUri, publishTL);
 				config_db.store(oid);
 				config_db.commit();
+				*/
 				return;
 			}
 			
 			if ("Identity".equals(name)) {
+				// FIXME: repair this.
+				/*
 				FMSIdentity id = new FMSIdentity(nick, requestUri);
 				config_db.store(id);
 				config_db.commit();
+				 */
 				return;
 			}
 			shouldRecord = false;
