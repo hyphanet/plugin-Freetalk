@@ -7,40 +7,28 @@ import java.util.Date;
 
 import freenet.keys.FreenetURI;
 import plugins.FMSPlugin.FMSOwnIdentity;
+import plugins.WoT.Identity;
+import plugins.WoT.OwnIdentity;
 
 /**
  * @author xor
  *
  */
-public class FMSOwnIdentityWoT extends FMSOwnIdentity {
+public class FMSOwnIdentityWoT extends FMSIdentityWoT implements FMSOwnIdentity {
 
-	/**
-	 * @param newNickname
-	 * @param newRequestURI
-	 * @param newInsertURI
-	 * @param publishTrustList
-	 */
-	public FMSOwnIdentityWoT(String newNickname, FreenetURI newRequestURI, FreenetURI newInsertURI, boolean publishTrustList) {
-		super(newNickname, newRequestURI, newInsertURI, publishTrustList);
-		// TODO Auto-generated constructor stub
+	public FMSOwnIdentityWoT(OwnIdentity newIndentity) {
+		super(newIndentity);
+	}
+	
+	protected OwnIdentity getOwnIdentity() {
+		return (OwnIdentity)mIdentity;
 	}
 
-	/* (non-Javadoc)
-	 * @see plugins.FMSPlugin.FMSOwnIdentity#getLastChange()
-	 */
-	@Override
-	public Date getLastChange() {
-		// TODO Auto-generated method stub
-		return null;
+	public FreenetURI getInsertURI() {
+		return getOwnIdentity().getInsertURI();
 	}
 
-	/* (non-Javadoc)
-	 * @see plugins.FMSPlugin.FMSOwnIdentity#getLastInsert()
-	 */
-	@Override
 	public Date getLastInsert() {
-		// TODO Auto-generated method stub
-		return null;
+		return getOwnIdentity().getLastInsert();
 	}
-
 }
