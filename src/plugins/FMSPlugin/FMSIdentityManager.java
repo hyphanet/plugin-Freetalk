@@ -3,24 +3,21 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.FMSPlugin;
 
+import java.util.Set;
+
 import freenet.support.Executor;
 
 /**
- * @author saces
+ * @author saces, xor
  *
  */
-public class FMSIdentityManager {
+public abstract class FMSIdentityManager implements Set<FMSIdentity> {
 
 	private final Executor _executor;
 
 	public FMSIdentityManager(Executor executor) {
 		_executor = executor;
 
-	}
-
-	void killMe() {
-		// TODO Auto-generated method stub
-		
 	}
 
 }

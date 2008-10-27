@@ -3,21 +3,23 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.FMSPlugin;
 
-public class FMSIdentity {
+import freenet.keys.FreenetURI;
+
+public abstract class FMSIdentity {
 	
-	private final String nickName;
-	private final String requestUri;
+	private final String mNickname;
+	private final FreenetURI mRequestURI;
 	
-	public FMSIdentity(String nickname, String requesturi) {
-		nickName = nickname;
-		requestUri = requesturi;
+	public FMSIdentity(String newNickname, FreenetURI newRequestURI) {
+		mNickname = newNickname;
+		mRequestURI = newRequestURI;
 	}
 	
 	public String getNickName() {
-		return nickName;
+		return mNickname;
 	}
 
-	public String getRequestURI() {
-		return requestUri;
+	public FreenetURI getRequestURI() {
+		return mRequestURI;
 	}
 }
