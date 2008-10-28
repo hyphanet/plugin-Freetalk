@@ -9,7 +9,7 @@ import java.util.Iterator;
  * @author xor
  *
  */
-public class FMSBoard implements Iterable<FMSMessage> {
+public class FMSBoard {
 
 	private final String mName;
 	private String mDescription;
@@ -40,7 +40,7 @@ public class FMSBoard implements Iterable<FMSMessage> {
 		return mName;
 	}
 
-	public Iterator<FMSMessage> iterator() {
+	public Iterator<FMSMessage> iterator(FMSOwnIdentity identity) {
 		// TODO Auto-generated method stub
 		return null;
 	}
