@@ -4,8 +4,6 @@
 package plugins.FMSPlugin;
 
 import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-
 import freenet.clients.http.PageMaker;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginRespirator;
