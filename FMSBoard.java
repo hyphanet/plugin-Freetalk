@@ -11,12 +11,19 @@ import java.util.Iterator;
  */
 public class FMSBoard {
 
+	private final FMSMessageManager mMessageManager;
 	private final String mName;
 	private String mDescription;
 	
-	public FMSBoard(String newName, String newDescription) {
+	public FMSBoard(FMSMessageManager newMessageManager, String newName, String newDescription) {
+		if(newName==null || newName.isEmpty())
+			throw new IllegalArgumentException("Empty board name.");
+		
+		assert(newMessageManager != null);
+		mMessageManager = newMessageManager;
+		// FIXME: Remove anything dangerous from name and description.
 		mName = newName;
-		mDescription = newDescription;
+		setDescription(newDescription);
 	}
 
 	/**
@@ -25,12 +32,13 @@ public class FMSBoard {
 	public String getDescription() {
 		return mDescription;
 	}
-
+	
 	/**
 	 * @param description The description to set.
 	 */
 	public void setDescription(String newDescription) {
-		mDescription = newDescription;
+		//FIXME: Remove anything dangerous from description.
+		mDescription = newDescription!=null ? newDescription : "";
 	}
 
 	/**
@@ -40,9 +48,13 @@ public class FMSBoard {
 		return mName;
 	}
 
-	public Iterator<FMSMessage> iterator(FMSOwnIdentity identity) {
-		// TODO Auto-generated method stub
-		return null;
+	/**
+	 * Get all messages in the board. The view is specified to the FMSOwnIdentity displaying it, therefore you have to pass one as parameter.
+	 * @param identity The identity viewing the board.
+	 * @return An iterator of the message which the identity will see (based on its trust levels).
+	 */
+	public Iterator<FMSMessage> messageIterator(FMSOwnIdentity identity) {
+		return mMessageManager.messageIterator(identity);
 	}
 	
 }
