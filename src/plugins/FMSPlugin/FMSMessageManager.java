@@ -19,5 +19,7 @@ public abstract class FMSMessageManager {
 	
 	public abstract FMSBoard getBoardByName(String name);  
 	
-	public abstract Iterator<FMSBoard> iterator(FMSOwnIdentity identity);
+	public abstract Iterator<FMSBoard> boardIterator(FMSOwnIdentity identity);
+	
+	public abstract Iterator<FMSMessage> messageIterator(FMSOwnIdentity identity);
 }
