@@ -3,11 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.FMSPlugin;
 
+import java.util.Iterator;
+
 /**
  * @author xor
  *
  */
-public abstract class FMSMessageManager implements Iterable<FMSBoard> {
+public abstract class FMSMessageManager {
 
 	private FMSIdentityManager mIdentityManager;
 	
@@ -16,4 +18,6 @@ public abstract class FMSMessageManager implements Iterable<FMSBoard> {
 	}
 	
 	public abstract FMSBoard getBoardByName(String name);  
+	
+	public abstract Iterator<FMSBoard> iterator(FMSOwnIdentity identity);
 }
