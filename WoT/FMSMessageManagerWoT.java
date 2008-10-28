@@ -6,10 +6,16 @@ package plugins.FMSPlugin.WoT;
 import java.util.Iterator;
 
 import plugins.FMSPlugin.FMSBoard;
+import plugins.FMSPlugin.FMSIdentityManager;
 import plugins.FMSPlugin.FMSMessageManager;
 import plugins.FMSPlugin.FMSOwnIdentity;
 
 public class FMSMessageManagerWoT extends FMSMessageManager {
+
+	public FMSMessageManagerWoT(FMSIdentityManager newIdentityManager) {
+		super(newIdentityManager);
+		// TODO Auto-generated constructor stub
+	}
 
 	@Override
 	public FMSBoard getBoardByName(String name) {
