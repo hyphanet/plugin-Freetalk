@@ -101,12 +101,22 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 		return mURI;
 	}
 	
-	public FreenetURI getThreadURI() {
+	/**
+	 * Get the FreenetURI of the thread this message belongs to.
+	 */
+	public FreenetURI getParentThreadURI() {
 		return mThreadURI;
 	}
 	
+	/**
+	 * Get the FreenetURI to which this message is a reply. Null if the message is a thread.
+	 */
 	public FreenetURI getParentURI() {
 		return mParentURI;
+	}
+	
+	public boolean isThread() {
+		return getParentURI() == null;
 	}
 	
 	/**
