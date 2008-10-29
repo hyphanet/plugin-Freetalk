@@ -11,6 +11,8 @@ import java.util.LinkedList;
 
 import freenet.keys.FreenetURI;
 import freenet.support.UpdatableSortedLinkedList;
+import freenet.support.UpdatableSortedLinkedListKilledException;
+import freenet.support.UpdatableSortedLinkedListWithForeignIndex;
 
 import plugins.FMSPlugin.FMSBoard;
 import plugins.FMSPlugin.FMSIdentityManager;
@@ -25,15 +27,8 @@ public class FMSMessageManagerWoT implements FMSMessageManager {
 	 * the board. Adding a newly downloaded message therefore is done by searching its board and calling 
 	 * <code>addMessage()</code> on that board. Further, the message is also added to mMessages, see below.
 	 */
-	private Hashtable<String, FMSBoard> mBoards = new Hashtable<String, FMSBoard>();
-	
-	/**
-	 * Contains an alphabetically sorted list of all boards for retrieval by boardIterator() for example.
-	 */
-	// FIXME: Toad, please make the UpdatableSortedLinkedList use generics.
-	// FIXME: Then we should create a Comparator for FMSBoard
-	private UpdatableSortedLinkedList<FMSBoard> mBoardsSorted = new UpdateableSortedLinkedList<FMSBoard>();
-	
+	private UpdatableSortedLinkedListWithForeignIndex mBoards = new UpdatableSortedLinkedListWithForeignIndex();
+
 	/**
 	 * Contains all messages, even though they are also stored in their FMSBoard. Used for checking whether
 	 * a message was already downloaded or not.
@@ -43,26 +38,25 @@ public class FMSMessageManagerWoT implements FMSMessageManager {
 	private ArrayList<FMSOwnIdentityWoT> mOwnIdentites = new ArrayList<FMSOwnIdentityWoT>();
 
 	public synchronized FMSBoard getBoardByName(String name) {
-		return mBoards.get(name);
+		return (FMSBoard)mBoards.get(name);
 	}
 	
 	public synchronized Iterator<FMSBoard> boardIterator(FMSOwnIdentity identity) {
-		
+		return (Iterator<FMSBoard>)mBoards.iterator();
 	}
 	
-	private boolean shouldDownloadMessage(FreenetURI uri) {
+	private synchronized boolean shouldDownloadMessage(FreenetURI uri) {
 		return (mMessages.containsKey(uri));
 	}
 	
-	private void onMessageReceived(String blah) { 
-		FMSMessageWoT newMessage = new FMSMessageWoT(null, null, null, null, null);
+	private synchronized void onMessageReceived(String newMessageData) throws UpdatableSortedLinkedListKilledException { 
+		FMSMessageWoT newMessage = new FMSMessageWoT(null, null, null, null, null, null, null);
 		String boardName = "";
 		String boardDescription = "";
-		FMSBoard board = mBoards.get(boardName);
+		FMSBoard board = getBoardByName(boardName);
 		if(board == null) {
 			board = new FMSBoard(this, boardName, boardDescription);
-			mBoards.put(board.getName(), board);
-			mBoardsSorted.put(board);
+			mBoards.add(board);
 		}
 		
 		mMessages.put(newMessage.getURI(), newMessage);
