@@ -3,38 +3,50 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.FMSPlugin;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.SortedSet;
+import java.util.Set;
 
 import freenet.keys.FreenetURI;
+import freenet.support.IndexableUpdatableSortedLinkedListItem;
+import freenet.support.UpdatableSortedLinkedListItemImpl;
 
 /**
  * @author saces, xor
  *
  */
-public abstract class FMSMessage {
+public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl implements IndexableUpdatableSortedLinkedListItem {
 	
-	public final FreenetURI mURI;
+	private final FreenetURI mURI;
 	
-	public final SortedSet<FMSBoard> mBoards; 
+	private final ArrayList<FMSBoard> mBoards; 
 	
-	public final FMSIdentity mAuthor;
+	private final FMSIdentity mAuthor;
 
-	public final String mTitle;
+	private final String mTitle;
 	
 	/**
 	 * The date when the message was written in UTC time.
 	 */
-	public final Date mDate;
+	private final Date mDate;
 	
-	public FMSMessage(FreenetURI newURI, SortedSet<FMSBoard> newBoards, FMSIdentity newAuthor, String newTitle, Date newDate) {
+	private final String mText;
+	
+	private final ArrayList<FreenetURI> mAttachments;
+	
+	public FMSMessage(FreenetURI newURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
 		mURI = newURI;
-		mBoards = newBoards;
+		mBoards = new ArrayList<FMSBoard>(newBoards);
+		Collections.sort(mBoards);
 		mAuthor = newAuthor;
 		mTitle = newTitle;
 		mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
+		mText = newText;
+		mAttachments = new ArrayList<FreenetURI>(newAttachments);
 	}
 	
 	/**
@@ -77,11 +89,28 @@ public abstract class FMSMessage {
 	 * Get the text of the message.
 	 * @return The text of the message.
 	 */
-	public abstract String getText();
+	public String getText() {
+		return mText;
+	}
 	
 	/**
 	 * Get the attachments of the message.
 	 * @return The attachments of the message.
 	 */
-	public abstract List<FreenetURI> getAttachments();
+	public ArrayList<FreenetURI> getAttachments() {
+		return mAttachments;
+	}
+
+	/**
+	 * Compare by Date to the other FMSMessage.
+	 * @param o An object of type FMSMessage 
+	 */
+	public int compareTo(Object o) {
+		FMSMessage m = (FMSMessage)o;
+		return mDate.compareTo(m.getDate());
+	}
+	
+	public Object indexValue() {
+		return mURI;
+	}
 }
