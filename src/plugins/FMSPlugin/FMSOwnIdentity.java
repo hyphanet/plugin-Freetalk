@@ -4,6 +4,8 @@
 package plugins.FMSPlugin;
 
 import java.util.Date;
+import java.util.Iterator;
+
 import freenet.keys.FreenetURI;
 
 /**
@@ -16,22 +18,13 @@ public interface FMSOwnIdentity extends FMSIdentity {
 
 	public Date getLastInsert();
 	
-	/*
-	public final void exportXML(OutputStream out) throws IOException {
-		Writer w = new BufferedWriter(new OutputStreamWriter(out));
-		w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-		w.write("<Identity\n");
-		w.write("\t<Name><![CDATA[");
-		XMLUtils.writeEsc(w, getNickName());
-		w.write("]]></Name>\n");
-		
-		w.write("\t<SingleUse>false</SingleUse>\n");
-		w.write("\t<PublishTrustList>false</PublishTrustList>\n");
-		w.write("\t<PublishBoardList>false</PublishBoardList>\n");
-
-		w.write("<Identity\n");
-		w.flush();
-		w.close();
-	}
-	*/
+	public boolean wantsMessagesFrom(FMSIdentity identity);
+	
+	public void postMessage(FMSMessage message);
+	
+	public void subscribeToBoard(FMSBoard board);
+	
+	public void unsubscribeFromBoard(FMSBoard board);
+	
+	public Iterator<FMSBoard> subscribedBoardsIterator();
 }

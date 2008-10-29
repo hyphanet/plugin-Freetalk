@@ -4,6 +4,7 @@
 package plugins.FMSPlugin;
 
 import java.util.Date;
+import java.util.Iterator;
 
 import freenet.keys.FreenetURI;
 

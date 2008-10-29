@@ -4,7 +4,9 @@
 package plugins.FMSPlugin;
 
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import java.util.SortedSet;
 
 import freenet.keys.FreenetURI;
 
@@ -16,6 +18,8 @@ public abstract class FMSMessage {
 	
 	public final FreenetURI mURI;
 	
+	public final SortedSet<FMSBoard> mBoards; 
+	
 	public final FMSIdentity mAuthor;
 
 	public final String mTitle;
@@ -25,8 +29,9 @@ public abstract class FMSMessage {
 	 */
 	public final Date mDate;
 	
-	public FMSMessage(FreenetURI newURI, FMSIdentity newAuthor, String newTitle, Date newDate) {
+	public FMSMessage(FreenetURI newURI, SortedSet<FMSBoard> newBoards, FMSIdentity newAuthor, String newTitle, Date newDate) {
 		mURI = newURI;
+		mBoards = newBoards;
 		mAuthor = newAuthor;
 		mTitle = newTitle;
 		mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
@@ -38,6 +43,10 @@ public abstract class FMSMessage {
 	 */
 	public FreenetURI getURI() {
 		return mURI;
+	}
+	
+	public Iterator<FMSBoard> getBoardIterator() {
+		return mBoards.iterator();
 	}
 
 	/**

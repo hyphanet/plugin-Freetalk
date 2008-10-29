@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
 import freenet.keys.FreenetURI;
@@ -22,7 +23,8 @@ public class FMSBoard {
 	 * FIXME: We need a datastructure which is a HashTable and a LinkedList which is sorted by Date of the messages.
 	 * java.util.LinkedHashSet is the right thing but it does not provide sorting. 
 	 */
-	private final Hashtable<FreenetURI, FMSMessage> mMessages = new HashTable<FreenetURI, FMSMessage>();
+	private final Hashtable<FreenetURI, FMSMessage> mMessages = new Hashtable<FreenetURI, FMSMessage>();
+	/* FIXME: Use UpdatableSortedLinkedList<FMSMessage> as soon as it is implemented */
 	private final LinkedList<FMSMessage> mMessagesSorted = new LinkedList<FMSMessage>();
 	private final FMSMessageManager mMessageManager;
 	private final String mName;
@@ -61,6 +63,18 @@ public class FMSBoard {
 	public String getName() {
 		return mName;
 	}
+	
+	public void addMessage(FMSMessage newMessage) {
+		if(mMessages.put(newMessage.getURI(), newMessage) != null) {
+			/* The message was already stored */
+			assert(false); /* TODO: Add logging. I don't know whether this should happen. */
+			return;
+		}
+		
+		/* FIXME: As soon as mMessagesSorted is implemented uncomment this
+		mMessagesSorted.put(newMessage);
+		*/ 
+	}
 
 	/**
 	 * Get all messages in the board. The view is specified to the FMSOwnIdentity displaying it, therefore you have to pass one as parameter.
@@ -92,7 +106,7 @@ public class FMSBoard {
 				throw new UnsupportedOperationException();
 			}
 			
-		}
+		};
 	}
 	
 }
