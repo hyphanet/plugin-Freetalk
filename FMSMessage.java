@@ -13,7 +13,9 @@ import java.util.Set;
 
 import freenet.keys.FreenetURI;
 import freenet.support.IndexableUpdatableSortedLinkedListItem;
+import freenet.support.UpdatableSortedLinkedList;
 import freenet.support.UpdatableSortedLinkedListItemImpl;
+import freenet.support.UpdatableSortedLinkedListKilledException;
 
 /**
  * @author saces, xor
@@ -52,6 +54,11 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 	 */
 	private final ArrayList<FreenetURI> mAttachments;
 	
+	/**
+	 * The replies to this messages.
+	 */
+	private UpdatableSortedLinkedList mChildren = new UpdatableSortedLinkedList();
+	
 	public FMSMessage(FreenetURI newURI, FreenetURI newParentURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
 		if (newURI == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
@@ -81,6 +88,10 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 	 */
 	public FreenetURI getURI() {
 		return mURI;
+	}
+	
+	public FreenetURI getParentURI() {
+		return mParentURI;
 	}
 	
 	/**
@@ -124,6 +135,19 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 	 */
 	public ArrayList<FreenetURI> getAttachments() {
 		return mAttachments;
+	}
+	
+	public synchronized void addChild(FMSMessage newChild) throws UpdatableSortedLinkedListKilledException {
+		if(mChildren.contains(newChild)) {
+			assert(false); // TODO: check whether this should be allowed to happen.
+			return;
+		}
+		
+		mChildren.add(newChild);
+	}
+	
+	public synchronized Iterator<FMSMessage> childrenIterator() {
+		return mChildren.iterator();
 	}
 
 	/**

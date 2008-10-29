@@ -21,9 +21,11 @@ import plugins.FMSPlugin.FMSMessage;
  */
 public class FMSMessageWoT extends FMSMessage {
 
-	public FMSMessageWoT(FreenetURI newURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor, String newTitle, Date newDate, String newText,
-			List<FreenetURI> newAttachments) {
-		super(newURI, newBoards, newAuthor, newTitle, newDate, newText, newAttachments);
+	public FMSMessageWoT(FreenetURI newURI, FreenetURI newParentURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor, String newTitle,
+			Date newDate, String newText, List<FreenetURI> newAttachments) {
+		super(newURI, newParentURI, newBoards, newAuthor, newTitle, newDate, newText, newAttachments);
 		// TODO Auto-generated constructor stub
 	}
+
+
 }

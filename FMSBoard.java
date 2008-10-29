@@ -79,8 +79,27 @@ public class FMSBoard extends UpdatableSortedLinkedListItemImpl implements Index
 			return;
 		}
 		
-		mMessages.add(newMessage);
+		if(newMessage.getParentURI() == null) {
+			mMessages.add(newMessage);
+			// FIXME: link children to the thread
+		}
+		else
+		{
+			FreenetURI parentURI = newMessage.getParentURI();
+			FMSMessage parentMessage = mMessageManager.get(parentURI);
+			if(parentMessage == null) {
+				mMessages.add(newMessage);
+				/* FIXME: The MessageManager should try to download the parent message if it's poster has enough trust.
+				 * If it is programmed to do that, it will check its Hashtable whether the parent message already exists.
+				 * We also do that here, therefore, when implementing parent message downloading, please do the Hashtable checking only once. 
+				 */
+				return;
+			} else {
+				parentMessage.addChild(newMessage);
+			}
+		}
 	}
+	
 
 	/**
 	 * Get all messages in the board. The view is specified to the FMSOwnIdentity displaying it, therefore you have to pass one as parameter.
