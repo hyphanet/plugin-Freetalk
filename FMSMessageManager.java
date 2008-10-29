@@ -9,17 +9,14 @@ import java.util.Iterator;
  * @author xor
  *
  */
-public abstract class FMSMessageManager {
-
-	private FMSIdentityManager mIdentityManager;
+public interface FMSMessageManager {
 	
-	public FMSMessageManager(FMSIdentityManager newIdentityManager) {
-		mIdentityManager = newIdentityManager;
-	}
+	public FMSBoard getBoardByName(String name);
 	
-	public abstract FMSBoard getBoardByName(String name);  
-	
-	public abstract Iterator<FMSBoard> boardIterator(FMSOwnIdentity identity);
-	
-	public abstract Iterator<FMSMessage> messageIterator(FMSOwnIdentity identity);
+	/**
+	 * Get an iterator of boards which the identity could subscribe to.
+	 * @param identity
+	 * @return
+	 */
+	public Iterator<FMSBoard> boardIterator(FMSOwnIdentity identity);
 }
