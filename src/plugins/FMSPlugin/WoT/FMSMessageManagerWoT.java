@@ -36,6 +36,10 @@ public class FMSMessageManagerWoT implements FMSMessageManager {
 	private Hashtable<FreenetURI, FMSMessageWoT> mMessages = new Hashtable<FreenetURI, FMSMessageWoT>(); 
 
 	private ArrayList<FMSOwnIdentityWoT> mOwnIdentites = new ArrayList<FMSOwnIdentityWoT>();
+	
+	public FMSMessage get(FreenetURI uri) {
+		return mMessages.get(uri);
+	}
 
 	public synchronized FMSBoard getBoardByName(String name) {
 		return (FMSBoard)mBoards.get(name);
@@ -50,7 +54,7 @@ public class FMSMessageManagerWoT implements FMSMessageManager {
 	}
 	
 	private synchronized void onMessageReceived(String newMessageData) throws UpdatableSortedLinkedListKilledException { 
-		FMSMessageWoT newMessage = new FMSMessageWoT(null, null, null, null, null, null, null);
+		FMSMessageWoT newMessage = new FMSMessageWoT(null, null, null, null, null, null, null, null);
 		String boardName = "";
 		String boardDescription = "";
 		FMSBoard board = getBoardByName(boardName);
