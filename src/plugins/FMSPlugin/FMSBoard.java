@@ -40,7 +40,7 @@ public class FMSBoard extends UpdatableSortedLinkedListItemImpl implements Index
 	private String mDescription;
 	
 	public FMSBoard(FMSMessageManager newMessageManager, String newName, String newDescription) {
-		if(newName==null || newName.isEmpty())
+		if(newName==null || newName.length() == 0)
 			throw new IllegalArgumentException("Empty board name.");
 		
 		assert(newMessageManager != null);
