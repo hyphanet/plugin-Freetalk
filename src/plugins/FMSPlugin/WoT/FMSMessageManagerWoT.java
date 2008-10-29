@@ -54,7 +54,7 @@ public class FMSMessageManagerWoT implements FMSMessageManager {
 	}
 	
 	private synchronized void onMessageReceived(String newMessageData) throws UpdatableSortedLinkedListKilledException { 
-		FMSMessageWoT newMessage = new FMSMessageWoT(null, null, null, null, null, null, null, null);
+		FMSMessageWoT newMessage = new FMSMessageWoT(null, null, null, null, null, null, null, null, null);
 		String boardName = "";
 		String boardDescription = "";
 		FMSBoard board = getBoardByName(boardName);
