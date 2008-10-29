@@ -5,11 +5,15 @@ package plugins.FMSPlugin;
 
 import java.util.Iterator;
 
+import freenet.keys.FreenetURI;
+
 /**
  * @author xor
  *
  */
 public interface FMSMessageManager {
+	
+	public FMSMessage get(FreenetURI uri);
 	
 	public FMSBoard getBoardByName(String name);
 	
