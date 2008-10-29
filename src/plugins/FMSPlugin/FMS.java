@@ -15,7 +15,6 @@ import freenet.support.io.TempBucketFactory;
  *
  */
 public class FMS {
-	
 	public final PageMaker pm;
 	public final PluginRespirator pr;
 	public final ObjectContainer db_config;
