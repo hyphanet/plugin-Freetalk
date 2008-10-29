@@ -29,7 +29,17 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 	private final FreenetURI mURI;	
 	
 	/**
-	 * The URI to which this message is a reply. Null if it is a thread.
+	 * The URI of the thread this message belongs to.
+	 * We do not need it to construct the thread-tree from messages, but it boosts performance of thread-tree-construction:
+	 * Thread-size (amount of replies) is usually infinitesimal compared to the size of a FMSBoard (amount of threads).
+	 * We receive messages in random order, therefore we will usually have orphan messages of which we need to find the parents.
+	 * If we receive the parent messages of those messages, we will be able to find their orphan children faster if we only need to search in
+	 * the thread they belong to and not in the whole FMSBoard - which may contain many thousands of messages.
+	 */
+	private final FreenetURI mThreadURI;
+	
+	/**
+	 * The URI of the message to which this message is a reply. Null if it is a thread.
 	 */
 	private final FreenetURI mParentURI;
 	
@@ -59,7 +69,7 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 	 */
 	private UpdatableSortedLinkedList mChildren = new UpdatableSortedLinkedList();
 	
-	public FMSMessage(FreenetURI newURI, FreenetURI newParentURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
+	public FMSMessage(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
 		if (newURI == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
@@ -73,6 +83,7 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 			throw new IllegalArgumentException("Invalid message text in message " + newURI);
 		
 		mURI = newURI;
+		mThreadURI = newThreadURI;
 		mParentURI = newParentURI;
 		mBoards = new ArrayList<FMSBoard>(newBoards);
 		Collections.sort(mBoards);
@@ -88,6 +99,10 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 	 */
 	public FreenetURI getURI() {
 		return mURI;
+	}
+	
+	public FreenetURI getThreadURI() {
+		return mThreadURI;
 	}
 	
 	public FreenetURI getParentURI() {
