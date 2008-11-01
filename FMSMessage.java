@@ -3,9 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.FMSPlugin;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -46,7 +44,7 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 	/**
 	 * The boards to which this message was posted, in alphabetical order.
 	 */
-	private final ArrayList<FMSBoard> mBoards; 
+	private final FMSBoard[] mBoards; 
 	
 	private final FMSIdentity mAuthor;
 
@@ -62,12 +60,19 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 	/**
 	 * The attachments of this message, in the order in which they were received in the original message.
 	 */
-	private final ArrayList<FreenetURI> mAttachments;
+	private final FreenetURI[] mAttachments;
 	
 	/**
 	 * The replies to this messages.
 	 */
 	private UpdatableSortedLinkedList mChildren = new UpdatableSortedLinkedList();
+	
+	/**
+	 * Get a list of fields which the database should create an index on.
+	 */
+	public static String[] getIndexedFields() {
+		return new String[] { "mURI" };
+	}
 	
 	public FMSMessage(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
 		if (newURI == null || newBoards == null || newAuthor == null)
@@ -85,13 +90,13 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 		mURI = newURI;
 		mThreadURI = newThreadURI;
 		mParentURI = newParentURI;
-		mBoards = new ArrayList<FMSBoard>(newBoards);
-		Collections.sort(mBoards);
+		mBoards = (FMSBoard[])newBoards.toArray();
+		Arrays.sort(mBoards);
 		mAuthor = newAuthor;
 		mTitle = newTitle;
 		mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
 		mText = newText;
-		mAttachments = newAttachments!=null ? new ArrayList<FreenetURI>(newAttachments) : new ArrayList<FreenetURI>();
+		mAttachments = newAttachments!=null ? (FreenetURI[])newAttachments.toArray() : new FreenetURI[0];
 	}
 	
 	/**
@@ -120,11 +125,11 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 	}
 	
 	/**
-	 * Get an iterator of the boards to which this message was posted.
+	 * Get the boards to which this message was posted.
 	 * The boards are returned in alphabetical order.
 	 */
-	public Iterator<FMSBoard> getBoardIterator() {
-		return mBoards.iterator();
+	public FMSBoard[] getBoards() {
+		return mBoards;
 	}
 
 	/**
@@ -158,7 +163,7 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 	/**
 	 * Get the attachments of the message, in the order in which they were received.
 	 */
-	public ArrayList<FreenetURI> getAttachments() {
+	public FreenetURI[] getAttachments() {
 		return mAttachments;
 	}
 	
