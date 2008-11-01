@@ -9,6 +9,10 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 
+import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+import com.db4o.query.Query;
+
 import freenet.keys.FreenetURI;
 import freenet.support.UpdatableSortedLinkedList;
 import freenet.support.UpdatableSortedLinkedListKilledException;
@@ -19,8 +23,13 @@ import plugins.FMSPlugin.FMSIdentityManager;
 import plugins.FMSPlugin.FMSMessage;
 import plugins.FMSPlugin.FMSMessageManager;
 import plugins.FMSPlugin.FMSOwnIdentity;
+import plugins.WoT.Identity;
+import plugins.WoT.exceptions.DuplicateIdentityException;
+import plugins.WoT.exceptions.UnknownIdentityException;
 
 public class FMSMessageManagerWoT implements FMSMessageManager {
+	
+	private ObjectContainer db;
 	
 	/**
 	 * Contains all boards which where found in a message. References to all messages of a board are stored in
@@ -29,16 +38,15 @@ public class FMSMessageManagerWoT implements FMSMessageManager {
 	 */
 	private UpdatableSortedLinkedListWithForeignIndex mBoards = new UpdatableSortedLinkedListWithForeignIndex();
 
-	/**
-	 * Contains all messages, even though they are also stored in their FMSBoard. Used for checking whether
-	 * a message was already downloaded or not.
-	 */
-	private Hashtable<FreenetURI, FMSMessageWoT> mMessages = new Hashtable<FreenetURI, FMSMessageWoT>(); 
-
 	private ArrayList<FMSOwnIdentityWoT> mOwnIdentites = new ArrayList<FMSOwnIdentityWoT>();
 	
-	public FMSMessage get(FreenetURI uri) {
-		return mMessages.get(uri);
+	public synchronized FMSMessage get(FreenetURI uri) {
+		Query query = db.query();
+		query.constrain(FMSMessage.class);
+		query.descend("mURI").constrain(uri);
+		ObjectSet<FMSMessage> result = query.execute();
+		
+		return (result.size() == 0) ? null : result.next();
 	}
 
 	public synchronized FMSBoard getBoardByName(String name) {
@@ -50,7 +58,14 @@ public class FMSMessageManagerWoT implements FMSMessageManager {
 	}
 	
 	private synchronized boolean shouldDownloadMessage(FreenetURI uri) {
-		return (mMessages.containsKey(uri));
+		Query query = db.query();
+		query.constrain(FMSMessage.class);
+		query.descend("mURI").constrain(uri);
+		ObjectSet<FMSMessage> result = query.execute();
+		
+		assert (result.size() <= 1); /* Duplicate messages */
+		
+		return (result.size() == 0);
 	}
 	
 	private synchronized void onMessageReceived(String newMessageData) throws UpdatableSortedLinkedListKilledException { 
@@ -63,7 +78,11 @@ public class FMSMessageManagerWoT implements FMSMessageManager {
 			mBoards.add(board);
 		}
 		
-		mMessages.put(newMessage.getURI(), newMessage);
+		db.store(newMessage);
+		db.commit();
 		board.addMessage(newMessage);
+		
+		db.store(board);
+		db.commit();
 	}
 }
