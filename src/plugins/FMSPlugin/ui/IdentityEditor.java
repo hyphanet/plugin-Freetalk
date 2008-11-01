@@ -9,7 +9,7 @@ import java.util.List;
 import plugins.FMSPlugin.FMS;
 import plugins.FMSPlugin.FMSIdentity;
 import plugins.FMSPlugin.FMSOwnIdentity;
-import plugins.FMSPlugin.FMSPlugin;
+import plugins.FMSPlugin.FMS;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -60,7 +60,7 @@ public class IdentityEditor {
 					lastUpdateCell.addChild(new HTMLNode("a", "href", "/" + id.getRequestURI().toString(), id.getLastInsert().toString()));
 				}
 				HTMLNode deleteCell = row.addChild("td");
-				HTMLNode deleteForm = fms.pr.addFormChild(deleteCell, FMSPlugin.SELF_URI + "/deleteOwnIdentity", "deleteForm");
+				HTMLNode deleteForm = fms.pr.addFormChild(deleteCell, FMS.SELF_URI + "/deleteOwnIdentity", "deleteForm");
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI().toACIIString()});
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
 			}
@@ -98,7 +98,7 @@ public class IdentityEditor {
 			addContent.addChild(errorBox);
 		}
 
-		HTMLNode addForm = fms.pr.addFormChild(addContent, FMSPlugin.SELF_URI + "/createownidentity", "addForm");
+		HTMLNode addForm = fms.pr.addFormChild(addContent, FMS.SELF_URI + "/createownidentity", "addForm");
 
 		HTMLNode table = addForm.addChild("table", "class", "column");
 		HTMLNode tr1 = table.addChild("tr");
@@ -151,7 +151,7 @@ public class IdentityEditor {
 			deleteContent.addChild(errorBox);
 		}
 
-		HTMLNode deleteForm = fms.pr.addFormChild(deleteContent, FMSPlugin.SELF_URI + "/deleteOwnIdentity", "deleteForm");
+		HTMLNode deleteForm = fms.pr.addFormChild(deleteContent, FMS.SELF_URI + "/deleteOwnIdentity", "deleteForm");
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "confirmed", "true"});
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", requestUri});
 		deleteForm.addChild("#", "Nick:\u00a0"+nick);
@@ -190,7 +190,7 @@ public class IdentityEditor {
 			row.addChild("td", id.getNickName());
 			row.addChild("td",  id.getRequestURI().toACIIString());
 			HTMLNode deleteCell = row.addChild("td");
-			HTMLNode deleteForm = fms.pr.addFormChild(deleteCell, FMSPlugin.SELF_URI + "/deleteIdentity", "deleteForm");
+			HTMLNode deleteForm = fms.pr.addFormChild(deleteCell, FMS.SELF_URI + "/deleteIdentity", "deleteForm");
 			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI().toACIIString()});
 			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
 		}
@@ -228,7 +228,7 @@ public class IdentityEditor {
 			addContent.addChild(errorBox);
 		}
 
-		HTMLNode addForm = fms.pr.addFormChild(addContent, FMSPlugin.SELF_URI + "/addknownidentity", "addForm");
+		HTMLNode addForm = fms.pr.addFormChild(addContent, FMS.SELF_URI + "/addknownidentity", "addForm");
 
 		addForm.addChild("#", "Request URI : ");
 		addForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "requestURI", "70", requestUri });
@@ -258,7 +258,7 @@ public class IdentityEditor {
 			deleteContent.addChild(errorBox);
 		}
 
-		HTMLNode deleteForm = fms.pr.addFormChild(deleteContent, FMSPlugin.SELF_URI + "/deleteIdentity", "deleteForm");
+		HTMLNode deleteForm = fms.pr.addFormChild(deleteContent, FMS.SELF_URI + "/deleteIdentity", "deleteForm");
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "confirmed", "true"});
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", requestUri});
 		deleteForm.addChild("#", "Nick:\u00a0"+nick);

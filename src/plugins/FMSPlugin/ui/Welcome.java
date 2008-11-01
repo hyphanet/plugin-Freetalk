@@ -4,7 +4,7 @@
 package plugins.FMSPlugin.ui;
 
 import plugins.FMSPlugin.FMS;
-import plugins.FMSPlugin.FMSPlugin;
+import plugins.FMSPlugin.FMS;
 import freenet.support.HTMLNode;
 
 public class Welcome {
@@ -49,7 +49,7 @@ public class Welcome {
 	private static HTMLNode createExportBox(FMS fms) {
 		HTMLNode exportBox = fms.pm.getInfobox("Export");
 		HTMLNode exportContent = fms.pm.getContentNode(exportBox);
-		HTMLNode exportForm = fms.pr.addFormChild(exportContent, FMSPlugin.SELF_URI + "/exportDB", "exportForm");
+		HTMLNode exportForm = fms.pr.addFormChild(exportContent, FMS.SELF_URI + "/exportDB", "exportForm");
 		exportForm.addChild("#", "Export the database (Identities etc pp) to xml file. \u00a0 ");
 		exportForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "export", "Export" });
 		exportForm.addChild("br");
@@ -60,7 +60,7 @@ public class Welcome {
 	private static HTMLNode createImportBox(FMS fms) {
 		HTMLNode importBox = fms.pm.getInfobox("Import");
 		HTMLNode importContent = fms.pm.getContentNode(importBox);
-		HTMLNode importForm = fms.pr.addFormChild(importContent, FMSPlugin.SELF_URI + "/importDB", "importForm");
+		HTMLNode importForm = fms.pr.addFormChild(importContent, FMS.SELF_URI + "/importDB", "importForm");
 		importForm.addChild("#", "Choose xml file to import.\u00a0");
 		importForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "file", "filename", "" });
 		importForm.addChild("#", "\u00a0");
