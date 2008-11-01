@@ -37,27 +37,29 @@ import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.pluginmanager.RedirectPluginHTTPException;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.HTTPUploadedFile;
+import freenet.support.io.TempBucketFactory;
 
 /**
  * @author saces
  *
  */
-public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginThreadless, FredPluginVersioned {
+public class FMS implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginThreadless, FredPluginVersioned {
 
 	public static String SELF_URI = "/plugins/plugins.FMSPlugin.FMSPlugin";
-	public static String SELF_TITLE = "FMS clone";
+	public static String SELF_TITLE = "Freenet Message System";
 	public static String WOT_NAME = "plugins.WoT.WoT";
 
 	public final String MESSAGEBASE = "fms";
 
-	private PluginRespirator pr;
+	public PluginRespirator pr;
 
-	private PageMaker pm;
+	public PageMaker pm;
 
 	private LANGUAGE language;
 	private THEME theme;
@@ -66,11 +68,11 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 
 	private FMSDealer dealer;
 
-	private ObjectContainer db_config;
-	private ObjectContainer db_cache;
-
-	private FMS fms;
-
+	public ObjectContainer db_config;
+	public ObjectContainer db_cache;
+	
+	public TempBucketFactory tbf;
+	
 	public void runPlugin(PluginRespirator pr2) {
 
 		Logger.error(this, "Start");
@@ -88,11 +90,17 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 		client = pr.getHLSimpleClient();
 
 		Configuration config_config = Db4o.newConfiguration();
+		/*	We re-use all information from the WoT-plugin's database.
 		config_config.objectClass(FMSOwnIdentity.class).objectField("requestUri").indexed(true);
 		config_config.objectClass(FMSIdentity.class).objectField("requestUri").indexed(true);
+		*/
 		db_config = Db4o.openFile(config_config, "fms_conf.db4o");
 
 		Configuration cache_config = Db4o.newConfiguration();
+		for(String f : FMSMessage.getIndexedFields())
+			cache_config.objectClass(FMSMessage.class).objectField(f).indexed(true);
+		for(String f : FMSBoard.getIndexedFields())
+			cache_config.objectClass(FMSBoard.class).objectField(f).indexed(true);
 		db_cache = Db4o.openFile(cache_config, "fms_cache.db4o");
 
 		// while develop wipe cache on startup
@@ -106,7 +114,7 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 
 		dealer = new FMSDealer(pr.getNode().executor);
 
-		fms = new FMS(pr.getNode().clientCore.tempBucketFactory, pm, pr, db_config, db_cache);
+		tbf = pr.getNode().clientCore.tempBucketFactory;
 	}
 
 	public void terminate() {
@@ -120,26 +128,26 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 		if (request.isParameterSet("formPassword")) {
 			String pass = request.getParam("formPassword");
 			if ((pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword)) {
-				return Errors.makeErrorPage(fms, "Buh! Invalid form password");
+				return Errors.makeErrorPage(this, "Buh! Invalid form password");
 			}
 		}
 
 		String page = request.getPath().substring(SELF_URI.length());
 		if ((page.length() < 1) || ("/".equals(page)))
-			return Welcome.makeWelcomePage(fms);
+			return Welcome.makeWelcomePage(this);
 
 		if ("/status".equals(page)) {
-			return Status.makeStatusPage(fms);
+			return Status.makeStatusPage(this);
 		}
 		
 		if ("/ownidentities".equals(page))
-			return IdentityEditor.makeOwnIdentitiesPage(fms, request);
+			return IdentityEditor.makeOwnIdentitiesPage(this, request);
 
 		if ("/knownidentities".equals(page))
-			return IdentityEditor.makeKnownIdentitiesPage(fms, request);
+			return IdentityEditor.makeKnownIdentitiesPage(this, request);
 
 		if ("/messages".equals(page))
-			return Messages.makeMessagesPage(fms, request);
+			return Messages.makeMessagesPage(this, request);
 
 		throw new NotFoundPluginHTTPException("Resource not found in FMSPlugin", page);
 	}
@@ -153,7 +161,7 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
 		String pass = request.getPartAsString("formPassword", 32);
 		if ((pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword)) {
-			return Errors.makeErrorPage(fms, "Buh! Invalid form password");
+			return Errors.makeErrorPage(this, "Buh! Invalid form password");
 		}
 
 		String page = request.getPath().substring(SELF_URI.length());
@@ -167,7 +175,7 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 				Backup.exportConfigDb(db_config, sw);
 			} catch (IOException e) {
 				Logger.error(this, "Error While exporting database!", e);
-				return Errors.makeErrorPage(fms, "Server BuhBuh! " + e.getMessage());
+				return Errors.makeErrorPage(this, "Server BuhBuh! " + e.getMessage());
 			}
 			throw new DownloadPluginHTTPException(sw.toString().getBytes(), "fms-kidding.xml", "fms-clone/db-backup");
 		}
@@ -175,13 +183,13 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 		if (page.equals("/importDB")) {
 			HTTPUploadedFile file = request.getUploadedFile("filename");
 			if (file == null || file.getFilename().trim().length() == 0) {
-				return Errors.makeErrorPage(fms, "No file to import selected!");
+				return Errors.makeErrorPage(this, "No file to import selected!");
 			}
 			try {
 				Backup.importConfigDb(db_config, file.getData().getInputStream());
 			} catch (Exception e) {
 				Logger.error(this, "Error While importing db from: " + file.getFilename(), e);
-				return Errors.makeErrorPage(fms, "Error While importing db from: " + file.getFilename() + e.getMessage());
+				return Errors.makeErrorPage(this, "Error While importing db from: " + file.getFilename() + e.getMessage());
 			}
 			throw new RedirectPluginHTTPException("", SELF_URI);
 		}
@@ -200,7 +208,7 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 				insertUri = kp[0].toString();
 				requestUri = kp[1].toString();
 				err.add("URI was empty, I generated one for you.");
-				return IdentityEditor.makeNewOwnIdentityPage(fms, nick, requestUri, insertUri, publish, err);
+				return IdentityEditor.makeNewOwnIdentityPage(this, nick, requestUri, insertUri, publish, err);
 			}
 
 			IdentityEditor.checkInsertURI(err, insertUri);
@@ -219,7 +227,7 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 				throw new RedirectPluginHTTPException("", SELF_URI + "/ownidentities");
 			}
 
-			return IdentityEditor.makeNewOwnIdentityPage(fms, nick, requestUri, insertUri, publish, err);
+			return IdentityEditor.makeNewOwnIdentityPage(this, nick, requestUri, insertUri, publish, err);
 		}
 
 		if (page.equals("/addknownidentity")) {
@@ -229,7 +237,7 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 
 			if (requestUri.length() == 0) {
 				err.add("Are you jokingly? URI was empty.");
-				return IdentityEditor.makeNewKnownIdentityPage(fms, requestUri, err);
+				return IdentityEditor.makeNewKnownIdentityPage(this, requestUri, err);
 			}
 
 			IdentityEditor.checkRequestURI(err, requestUri);
@@ -247,7 +255,7 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 				throw new RedirectPluginHTTPException("", SELF_URI + "/knownidentities");
 			}
 
-			return IdentityEditor.makeNewKnownIdentityPage(fms, requestUri, err);
+			return IdentityEditor.makeNewKnownIdentityPage(this, requestUri, err);
 		}
 
 		if (page.equals("/deleteOwnIdentity")) {
@@ -256,17 +264,17 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 			String requestUri = request.getPartAsString("identity", 1024);
 			if (requestUri.length() == 0) {
 				err.add("Are you jokingly? URI was empty.");
-				return IdentityEditor.makeDeleteOwnIdentityPage(fms, requestUri, err);
+				return IdentityEditor.makeDeleteOwnIdentityPage(this, requestUri, err);
 			}
 
 			if (request.isPartSet("confirmed")) {
-				IdentityEditor.deleteIdentity(fms, requestUri, err);
+				IdentityEditor.deleteIdentity(this, requestUri, err);
 			} else {
 				err.add("Please confirm.");
 			}
 
 			if (err.size() > 0) {
-				return IdentityEditor.makeDeleteOwnIdentityPage(fms, requestUri, err);
+				return IdentityEditor.makeDeleteOwnIdentityPage(this, requestUri, err);
 			}
 			throw new RedirectPluginHTTPException("", SELF_URI + "/ownidentities");
 			// return IdentityEditor.makeDeleteOwnIdentityPage(fms, requestUri,
@@ -279,17 +287,17 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 			String requestUri = request.getPartAsString("identity", 1024);
 			if (requestUri.length() == 0) {
 				err.add("Are you jokingly? URI was empty.");
-				return IdentityEditor.makeDeleteKnownIdentityPage(fms, requestUri, err);
+				return IdentityEditor.makeDeleteKnownIdentityPage(this, requestUri, err);
 			}
 
 			if (request.isPartSet("confirmed")) {
-				IdentityEditor.deleteIdentity(fms, requestUri, err);
+				IdentityEditor.deleteIdentity(this, requestUri, err);
 			} else {
 				err.add("Please confirm.");
 			}
 
 			if (err.size() > 0) {
-				return IdentityEditor.makeDeleteKnownIdentityPage(fms, requestUri, err);
+				return IdentityEditor.makeDeleteKnownIdentityPage(this, requestUri, err);
 			}
 			throw new RedirectPluginHTTPException("", SELF_URI + "/knownidentities");
 		}
@@ -314,4 +322,23 @@ public class FMSPlugin implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fre
 		theme= newTheme;
 		Logger.error(this, "Set THEME to: " + theme.code);
 	}
+	
+	public boolean isWoTpresent() {
+		FredPluginFCP plug = pr.getNode().pluginManager.getFCPPlugin(FMS.WOT_NAME);
+		return (plug != null);
+	}
+
+	public long countIdentities() {
+		return db_config.queryByExample(FMSIdentity.class).size() - countOwnIdentities();
+	}
+
+	public long countOwnIdentities() {
+		return db_config.queryByExample(FMSOwnIdentity.class).size();
+	}
+	
+
+	final public HTMLNode getPageNode() {
+		return pm.getPageNode(FMS.SELF_TITLE, null);
+	}
+
 }
