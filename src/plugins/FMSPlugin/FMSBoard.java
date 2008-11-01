@@ -53,6 +53,13 @@ public class FMSBoard extends UpdatableSortedLinkedListItemImpl implements Index
 	
 	private String mDescription;
 	
+	/**
+	 * Get a list of fields which the database should create an index on.
+	 */
+	public static String[] getIndexedFields() {
+		return new String[] {"mName"};
+	}
+	
 	public FMSBoard(FMSMessageManager newMessageManager, String newName, String newDescription) {
 		if(newName==null || newName.length() == 0)
 			throw new IllegalArgumentException("Empty board name.");
