@@ -28,37 +28,9 @@ import plugins.WoT.Identity;
 import plugins.WoT.exceptions.DuplicateIdentityException;
 import plugins.WoT.exceptions.UnknownIdentityException;
 
-public class FMSMessageManagerWoT implements FMSMessageManager {
+public class FMSMessageManagerWoT extends FMSMessageManager {
 	
-	private ObjectContainer db;
-	
-	/**
-	 * Contains all boards which where found in a message. References to all messages of a board are stored in
-	 * the board. Adding a newly downloaded message therefore is done by searching its board and calling 
-	 * <code>addMessage()</code> on that board. Further, the message is also added to mMessages, see below.
-	 */
-	private UpdatableSortedLinkedListWithForeignIndex mBoards = new UpdatableSortedLinkedListWithForeignIndex();
-
-	private ArrayList<FMSOwnIdentityWoT> mOwnIdentites = new ArrayList<FMSOwnIdentityWoT>();
-	
-	public synchronized FMSMessage get(FreenetURI uri) {
-		Query query = db.query();
-		query.constrain(FMSMessage.class);
-		query.descend("mURI").constrain(uri);
-		ObjectSet<FMSMessage> result = query.execute();
-		
-		return (result.size() == 0) ? null : result.next();
-	}
-
-	public synchronized FMSBoard getBoardByName(String name) {
-		return (FMSBoard)mBoards.get(name);
-	}
-	
-	public synchronized Iterator<FMSBoard> boardIterator(FMSOwnIdentity identity) {
-		return (Iterator<FMSBoard>)mBoards.iterator();
-	}
-	
-	private synchronized boolean shouldDownloadMessage(FreenetURI uri) {
+	protected synchronized boolean shouldDownloadMessage(FreenetURI uri) {
 		Query query = db.query();
 		query.constrain(FMSMessage.class);
 		query.descend("mURI").constrain(uri);
@@ -74,7 +46,7 @@ public class FMSMessageManagerWoT implements FMSMessageManager {
 		return (result.size() == 0);
 	}
 	
-	private synchronized void deleteMessage(FreenetURI uri) throws NoSuchElementException {
+	protected synchronized void deleteMessage(FreenetURI uri) throws NoSuchElementException {
 		/* FIXME: implement */
 	}
 	
