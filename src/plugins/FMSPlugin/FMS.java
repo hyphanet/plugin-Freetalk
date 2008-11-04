@@ -99,8 +99,11 @@ public class FMS implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPlugi
 		Configuration cache_config = Db4o.newConfiguration();
 		for(String f : FMSMessage.getIndexedFields())
 			cache_config.objectClass(FMSMessage.class).objectField(f).indexed(true);
+		cache_config.objectClass(FMSMessage.class).cascadeOnUpdate(true);
+		// TODO: decide about cascade on delete. 
 		for(String f : FMSBoard.getIndexedFields())
 			cache_config.objectClass(FMSBoard.class).objectField(f).indexed(true);
+		
 		db_cache = Db4o.openFile(cache_config, "fms_cache.db4o");
 
 		// while develop wipe cache on startup

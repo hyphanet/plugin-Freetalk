@@ -30,41 +30,36 @@ import plugins.WoT.exceptions.UnknownIdentityException;
 
 public class FMSMessageManagerWoT extends FMSMessageManager {
 	
-	protected synchronized boolean shouldDownloadMessage(FreenetURI uri) {
-		Query query = db.query();
-		query.constrain(FMSMessage.class);
-		query.descend("mURI").constrain(uri);
-		ObjectSet<FMSMessage> result = query.execute();
-		
-		if(result.size() > 1) { /* Duplicate messages */
-			assert(false);
-			/* FIXME: Add logging!*/
-			deleteMessage(uri);
-			return true;
-		}
-		
-		return (result.size() == 0);
+	protected FMSIdentityManagerWoT mIdentityManager;
+
+	public FMSMessageManagerWoT(ObjectContainer myDB, FMSIdentityManagerWoT myIdentityManager) {
+		super(myDB, myIdentityManager);
+		mIdentityManager = myIdentityManager;
 	}
-	
+
 	protected synchronized void deleteMessage(FreenetURI uri) throws NoSuchElementException {
 		/* FIXME: implement */
 	}
-	
+
 	private synchronized void onMessageReceived(String newMessageData) throws UpdatableSortedLinkedListKilledException { 
-		FMSMessageWoT newMessage = new FMSMessageWoT(null, null, null, null, null, null, null, null, null);
+		FMSMessageWoT newMessage = new FMSMessageWoT(db, null, null, null, null, null, null, null, null, null);
 		String boardName = "";
-		String boardDescription = "";
-		FMSBoard board = getBoardByName(boardName);
-		if(board == null) {
-			board = new FMSBoard(this, boardName, boardDescription);
-			mBoards.add(board);
+		/* FIXME: Store the description in FMSOwnIdentity. We cannot store in FMSBoard because we want to allow per-identity customization */
+
+		String[] boardNames = new String[0];
+		FMSBoard[] boards = new FMSBoard[boardNames.length];
+		                                    
+		for(int idx = 0; idx < boards.length; ++idx) {
+			FMSBoard board = getBoardByName(boardNames[idx]);
+			
+			if(board == null)
+				board = new FMSBoard(db, this, boardName);
+			
+			boards[idx] = board;
 		}
 		
-		db.store(newMessage);
-		db.commit();
-		
-		board.addMessage(newMessage);
-		db.store(board);
-		db.commit();
+		for(FMSBoard b : boards) {
+			b.addMessage(newMessage);
+		}
 	}
 }

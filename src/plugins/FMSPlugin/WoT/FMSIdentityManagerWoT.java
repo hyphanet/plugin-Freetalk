@@ -6,9 +6,13 @@ package plugins.FMSPlugin.WoT;
 import java.util.Collection;
 import java.util.Iterator;
 
+import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+
 import freenet.support.Executor;
 import plugins.FMSPlugin.FMSIdentity;
 import plugins.FMSPlugin.FMSIdentityManager;
+import plugins.FMSPlugin.FMSOwnIdentity;
 
 import plugins.WoT.WoT;
 import plugins.WoT.Identity;
@@ -27,17 +31,8 @@ public class FMSIdentityManagerWoT extends FMSIdentityManager {
 	/**
 	 * @param executor
 	 */
-	public FMSIdentityManagerWoT(Executor executor, WoT newWoT) {
-		super(executor);
+	public FMSIdentityManagerWoT(ObjectContainer myDB, Executor executor, WoT newWoT) {
+		super(myDB, executor);
 		mWoT = newWoT;
-	}
-
-	public Iterator<FMSOwnIdentityWoT> ownIdentityIterator() {
-		return null;
-	}
-
-	public Iterator<FMSIdentityWoT> iterator() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 }
