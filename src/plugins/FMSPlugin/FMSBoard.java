@@ -66,34 +66,34 @@ public class FMSBoard {
 		db.commit();
 		
 		synchronized(newMessage) {
-		if(!newMessage.isThread())
-		{
-			FreenetURI parentURI = newMessage.getParentURI();
-			FMSMessage parentMessage = mMessageManager.get(parentURI); /* TODO: This allows crossposting. Figure out whether we need to handle it specially */
-			FMSMessage parentThread = findParentThread(newMessage);
-
-			if(parentThread != null)
-				newMessage.setThread(parentThread);
-
-			if(parentMessage != null) {
-				newMessage.setParent(parentMessage);
-			} else { /* The message is an orphan */
-				if(parentThread != null) {
-					newMessage.setParent(parentThread);	/* We found its parent thread so just stick it in there for now */
-				}
-				else {
-					 /* The message is an absolute orphan */
-
-					/* 
-					 * FIXME: The MessageManager should try to download the parent message if it's poster has enough trust.
-					 * If it is programmed to do that, it will check its Hashtable whether the parent message already exists.
-					 * We also do that here, therefore, when implementing parent message downloading, please do the Hashtable checking only once. 
-					 */
-				}
-			} 
-		}
-
-		linkOrphansToNewParent(newMessage);
+			if(!newMessage.isThread())
+			{
+				FreenetURI parentURI = newMessage.getParentURI();
+				FMSMessage parentMessage = mMessageManager.get(parentURI); /* TODO: This allows crossposting. Figure out whether we need to handle it specially */
+				FMSMessage parentThread = findParentThread(newMessage);
+	
+				if(parentThread != null)
+					newMessage.setThread(parentThread);
+	
+				if(parentMessage != null) {
+					newMessage.setParent(parentMessage);
+				} else { /* The message is an orphan */
+					if(parentThread != null) {
+						newMessage.setParent(parentThread);	/* We found its parent thread so just stick it in there for now */
+					}
+					else {
+						 /* The message is an absolute orphan */
+	
+						/* 
+						 * FIXME: The MessageManager should try to download the parent message if it's poster has enough trust.
+						 * If it is programmed to do that, it will check its Hashtable whether the parent message already exists.
+						 * We also do that here, therefore, when implementing parent message downloading, please do the Hashtable checking only once. 
+						 */
+					}
+				} 
+			}
+	
+			linkOrphansToNewParent(newMessage);
 		}
 	}
 
