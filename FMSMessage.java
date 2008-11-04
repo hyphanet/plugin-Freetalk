@@ -5,9 +5,13 @@ package plugins.FMSPlugin;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
+import com.db4o.ObjectContainer;
+import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.support.IndexableUpdatableSortedLinkedListItem;
@@ -19,7 +23,9 @@ import freenet.support.UpdatableSortedLinkedListKilledException;
  * @author saces, xor
  *
  */
-public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl implements IndexableUpdatableSortedLinkedListItem {
+public abstract class FMSMessage {
+	
+	protected ObjectContainer db;
 	
 	/**
 	 * The URI of this message.
@@ -63,18 +69,23 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 	private final FreenetURI[] mAttachments;
 	
 	/**
-	 * The replies to this messages.
+	 * The thread to which this message is a reply.
 	 */
-	private UpdatableSortedLinkedList mChildren = new UpdatableSortedLinkedList();
+	private FMSMessage mThread = null;
+	
+	/**
+	 * The message to which this message is a reply.
+	 */
+	private FMSMessage mParent = null;
 	
 	/**
 	 * Get a list of fields which the database should create an index on.
 	 */
 	public static String[] getIndexedFields() {
-		return new String[] { "mURI", "mBoards" };
+		return new String[] { "mURI", "mThreadURI", "mBoards"};
 	}
 	
-	public FMSMessage(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
+	public FMSMessage(ObjectContainer db, FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
 		if (newURI == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
@@ -167,40 +178,64 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 		return mAttachments;
 	}
 	
-	public synchronized void addChild(FMSMessage newChild) throws UpdatableSortedLinkedListKilledException {
-		if(mChildren.contains(newChild)) {
-			assert(false); // TODO: check whether this should be allowed to happen.
-			return;
-		}
-		
-		mChildren.add(newChild);
+	public synchronized FMSMessage getThread() {
+		return mThread;
 	}
 	
-	public synchronized Iterator<FMSMessage> childrenIterator() {
-		return mChildren.iterator();
+	public synchronized void setThread(FMSMessage newParentThread) {
+		assert(mThread == null);
+		assert(mThreadURI == null);
+		mThread = newParentThread;
+		db.store(this);
+		db.commit();
 	}
 
-	/**
-	 * Compare by Date to the other FMSMessage.
-	 * @param o An object of type FMSMessage 
-	 */
-	public int compareTo(Object o) {
-		FMSMessage m = (FMSMessage)o;
-		return mDate.compareTo(m.getDate());
+	public synchronized FMSMessage getParent() {
+		return mParent;
+	}
+
+	public synchronized void setParent(FMSMessage newParent) throws UpdatableSortedLinkedListKilledException {
+		/* TODO: assert(newParent contains at least one board which mBoards contains) */
+		mParent = newParent;
+		db.store(this);
+		db.commit();
 	}
 	
-	/**
-	 * Get the index value for IndexableUpdatableSortedLinkedListItem.
-	 */
-	public Object indexValue() {
-		return mURI;
+	public synchronized Iterator<FMSMessage> childrenIterator(final FMSBoard board) {
+		return new Iterator<FMSMessage>() {
+			private Iterator<FMSMessage> iter;
+			
+			{
+				/* TODO: Accelerate this query: configure db4o to keep a per-message date-sorted index of children.
+				 * - Not very important for now since threads are usually small. */
+				Query q = db.query();
+				q.constrain(FMSMessage.class);
+				q.descend("mBoard").constrain(board.getName());
+				q.descend("mParent").constrain(this);
+				q.descend("mDate").orderDescending();
+				
+				iter = q.execute().iterator();
+			}
+
+			public boolean hasNext() {
+				return iter.hasNext();
+			}
+
+			public FMSMessage next() {
+				return iter.next();
+			}
+
+			public void remove() {
+				throw new UnsupportedOperationException("Use child.setParent(null) instead.");
+			}
+		};
 	}
 	
 	/**
 	 * Checks whether the title of the message is valid. Validity conditions:
 	 * - ...
 	 */
-	static boolean isTitleValid(String title) {
+	static public boolean isTitleValid(String title) {
 		// FIXME: Implement.
 		return true;
 	}
@@ -209,7 +244,7 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 	 * Checks whether the text of the message is valid. Validity conditions:
 	 * - ...
 	 */
-	static boolean isTextValid(String text) {
+	static public boolean isTextValid(String text) {
 		// FIXME: Implement.
 		return true;
 	}
@@ -218,7 +253,7 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 	 * Makes the passed title valid in means of <code>isTitleValid()</code>
 	 * @see isTitleValid
 	 */
-	static String makeTitleValid(String title) {
+	static public String makeTitleValid(String title) {
 		// FIXME: Implement.
 		return title;
 	}
@@ -227,7 +262,7 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 	 * Makes the passed text valid in means of <code>isTextValid()</code>
 	 * @see isTextValid
 	 */
-	static String makeTextValid(String text) {
+	static public String makeTextValid(String text) {
 		// FIXME: Implement.
 		return text;
 	}
