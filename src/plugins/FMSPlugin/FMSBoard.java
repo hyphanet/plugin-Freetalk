@@ -64,7 +64,8 @@ public class FMSBoard {
 	public synchronized void addMessage(FMSMessage newMessage) throws UpdatableSortedLinkedListKilledException {	
 		db.store(newMessage);
 		db.commit();
-
+		
+		synchronized(newMessage) {
 		if(!newMessage.isThread())
 		{
 			FreenetURI parentURI = newMessage.getParentURI();
@@ -93,6 +94,7 @@ public class FMSBoard {
 		}
 
 		linkOrphansToNewParent(newMessage);
+		}
 	}
 
 	private synchronized void linkOrphansToNewParent(FMSMessage newMessage) throws UpdatableSortedLinkedListKilledException {
