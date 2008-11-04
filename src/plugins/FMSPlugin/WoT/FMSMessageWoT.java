@@ -3,19 +3,17 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.FMSPlugin.WoT;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.SortedSet;
+
+import plugins.FMSPlugin.FMSBoard;
+import plugins.FMSPlugin.FMSIdentity;
+import plugins.FMSPlugin.FMSMessage;
 
 import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
-import freenet.support.DoublyLinkedList;
-import plugins.FMSPlugin.FMSBoard;
-import plugins.FMSPlugin.FMSIdentity;
-import plugins.FMSPlugin.FMSMessage;
 
 /**
  * @author xor

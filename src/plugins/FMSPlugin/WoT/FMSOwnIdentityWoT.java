@@ -7,13 +7,12 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import freenet.keys.FreenetURI;
 import plugins.FMSPlugin.FMSBoard;
 import plugins.FMSPlugin.FMSIdentity;
 import plugins.FMSPlugin.FMSMessage;
 import plugins.FMSPlugin.FMSOwnIdentity;
-import plugins.WoT.Identity;
 import plugins.WoT.OwnIdentity;
+import freenet.keys.FreenetURI;
 
 /**
  * @author xor

@@ -3,20 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.FMSPlugin.WoT;
 
-import java.util.Collection;
-import java.util.Iterator;
+import plugins.FMSPlugin.FMSIdentityManager;
+import plugins.WoT.WoT;
 
 import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
 
 import freenet.support.Executor;
-import plugins.FMSPlugin.FMSIdentity;
-import plugins.FMSPlugin.FMSIdentityManager;
-import plugins.FMSPlugin.FMSOwnIdentity;
-
-import plugins.WoT.WoT;
-import plugins.WoT.Identity;
-import plugins.WoT.OwnIdentity;
 
 /**
  * An identity manager which uses the identities from the WoT plugin.

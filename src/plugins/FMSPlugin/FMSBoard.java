@@ -4,17 +4,13 @@
 package plugins.FMSPlugin;
 
 import java.util.Iterator;
-import java.util.LinkedList;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
-import freenet.support.IndexableUpdatableSortedLinkedListItem;
-import freenet.support.UpdatableSortedLinkedListItemImpl;
 import freenet.support.UpdatableSortedLinkedListKilledException;
-import freenet.support.UpdatableSortedLinkedListWithForeignIndex;
 
 /**
  * @author xor
