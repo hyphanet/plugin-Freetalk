@@ -61,11 +61,11 @@ public class FMSBoard {
 	 * The job for this function is to find the right place in the thread-tree for the new message and to move around older messages
 	 * if a parent message of them is received.
 	 */
-	public synchronized void addMessage(FMSMessage newMessage) throws UpdatableSortedLinkedListKilledException {	
-		db.store(newMessage);
-		db.commit();
-		
-		synchronized(newMessage) {
+	public synchronized void addMessage(FMSMessage newMessage) throws UpdatableSortedLinkedListKilledException {
+		synchronized(mMessageManager) {
+			db.store(newMessage);
+			db.commit();
+
 			if(!newMessage.isThread())
 			{
 				FreenetURI parentURI = newMessage.getParentURI();
