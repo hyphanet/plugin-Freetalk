@@ -71,7 +71,7 @@ public abstract class FMSMessage extends UpdatableSortedLinkedListItemImpl imple
 	 * Get a list of fields which the database should create an index on.
 	 */
 	public static String[] getIndexedFields() {
-		return new String[] { "mURI" };
+		return new String[] { "mURI", "mBoards" };
 	}
 	
 	public FMSMessage(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
