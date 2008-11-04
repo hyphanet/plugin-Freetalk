@@ -3,30 +3,15 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.FMSPlugin.WoT;
 
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.NoSuchElementException;
 
+import plugins.FMSPlugin.FMSBoard;
+import plugins.FMSPlugin.FMSMessageManager;
+
 import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
-import freenet.support.UpdatableSortedLinkedList;
 import freenet.support.UpdatableSortedLinkedListKilledException;
-import freenet.support.UpdatableSortedLinkedListWithForeignIndex;
-
-import plugins.FMSPlugin.FMSBoard;
-import plugins.FMSPlugin.FMSIdentityManager;
-import plugins.FMSPlugin.FMSMessage;
-import plugins.FMSPlugin.FMSMessageManager;
-import plugins.FMSPlugin.FMSOwnIdentity;
-import plugins.WoT.Identity;
-import plugins.WoT.exceptions.DuplicateIdentityException;
-import plugins.WoT.exceptions.UnknownIdentityException;
 
 public class FMSMessageManagerWoT extends FMSMessageManager {
 	

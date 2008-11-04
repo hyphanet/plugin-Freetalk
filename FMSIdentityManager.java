@@ -4,13 +4,9 @@
 package plugins.FMSPlugin;
 
 import java.util.Iterator;
-import java.util.Set;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
-
-import plugins.FMSPlugin.WoT.FMSIdentityWoT;
-import plugins.FMSPlugin.WoT.FMSOwnIdentityWoT;
 
 import freenet.support.Executor;
 

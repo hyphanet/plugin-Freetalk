@@ -5,7 +5,6 @@ package plugins.FMSPlugin;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -14,9 +13,6 @@ import com.db4o.ObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
-import freenet.support.IndexableUpdatableSortedLinkedListItem;
-import freenet.support.UpdatableSortedLinkedList;
-import freenet.support.UpdatableSortedLinkedListItemImpl;
 import freenet.support.UpdatableSortedLinkedListKilledException;
 
 /**
