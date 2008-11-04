@@ -8,6 +8,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -63,9 +64,18 @@ public class FMSMessageManagerWoT implements FMSMessageManager {
 		query.descend("mURI").constrain(uri);
 		ObjectSet<FMSMessage> result = query.execute();
 		
-		assert (result.size() <= 1); /* Duplicate messages */
+		if(result.size() > 1) { /* Duplicate messages */
+			assert(false);
+			/* FIXME: Add logging!*/
+			deleteMessage(uri);
+			return true;
+		}
 		
 		return (result.size() == 0);
+	}
+	
+	private synchronized void deleteMessage(FreenetURI uri) throws NoSuchElementException {
+		/* FIXME: implement */
 	}
 	
 	private synchronized void onMessageReceived(String newMessageData) throws UpdatableSortedLinkedListKilledException { 
@@ -80,8 +90,8 @@ public class FMSMessageManagerWoT implements FMSMessageManager {
 		
 		db.store(newMessage);
 		db.commit();
-		board.addMessage(newMessage);
 		
+		board.addMessage(newMessage);
 		db.store(board);
 		db.commit();
 	}

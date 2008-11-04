@@ -11,6 +11,10 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
+import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+import com.db4o.query.Query;
+
 import freenet.keys.FreenetURI;
 import freenet.support.DoublyLinkedList;
 import freenet.support.IndexableUpdatableSortedLinkedListItem;
@@ -25,13 +29,8 @@ import freenet.support.DoublyLinkedList.Item;
  */
 public class FMSBoard extends UpdatableSortedLinkedListItemImpl implements IndexableUpdatableSortedLinkedListItem {
 	
+	private ObjectContainer db;
 
-	/**
-	 * Contains all messages in this board.
-	 * TODO: Figure out whether we really need this or should just use the global message hashtable of the FMSMessageManager.
-	 */
-	private Hashtable<FreenetURI, FMSMessage> mAllMessages = new Hashtable<FreenetURI, FMSMessage>();
-	
 	/**
 	 * Contains all threads in this board, both as a Hashmap and as a linked list which is sorted by date.
 	 * The hashmap is useful for checking whether a message was already stored.
@@ -98,14 +97,7 @@ public class FMSBoard extends UpdatableSortedLinkedListItemImpl implements Index
 	 * The job for this function is to find the right place in the thread-tree for the new message and to move around older messages
 	 * if a parent message of them is received.
 	 */
-	public void addMessage(FMSMessage newMessage) throws UpdatableSortedLinkedListKilledException {
-		if(mAllMessages.containsKey(newMessage)) {
-			/* The message was already stored */
-			assert(false); /* TODO: Add logging. I don't know whether this should happen. */
-			return;
-		}
-		mAllMessages.put(newMessage.getURI(), newMessage);
-		
+	public void addMessage(FMSMessage newMessage) throws UpdatableSortedLinkedListKilledException {	
 		if(newMessage.isThread()) {	/* The message is a thread */
 			mThreads.add(newMessage);
 		}
@@ -115,10 +107,12 @@ public class FMSBoard extends UpdatableSortedLinkedListItemImpl implements Index
 			FMSMessage parentMessage = mMessageManager.get(parentURI); /* TODO: This allows crossposting. Figure out whether we need to handle it specially */
 			if(parentMessage != null) {
 				parentMessage.addChild(newMessage);
+				db.store(parentMessage);
 			} else { /* The message is an orphan */
 				FMSMessage parentThread = mMessageManager.get(newMessage.getParentThreadURI());
 				if(parentThread != null) {
 					parentThread.addChild(newMessage);	/* We found its parent thread so just stick it in there for now */
+					db.store(parentThread);
 				}
 				else { /* The message is an absolute orphan */
 					mThreads.add(newMessage); /* TODO: Instead of hiding the message completely, we make it look like a thread. Reconsider this. */
@@ -133,6 +127,8 @@ public class FMSBoard extends UpdatableSortedLinkedListItemImpl implements Index
 			} 
 		}
 		
+		db.commit();
+		
 		linkOrphansToNewParent(newMessage);
 	}
 	
@@ -142,6 +138,7 @@ public class FMSBoard extends UpdatableSortedLinkedListItemImpl implements Index
 				if(o.getParentThreadURI().equals(newMessage.getURI())) {
 					newMessage.addChild(o);
 					mAbsoluteOrphans.remove(o);
+					mThreads.remove(o);
 				}
 			}
 		}
@@ -157,6 +154,7 @@ public class FMSBoard extends UpdatableSortedLinkedListItemImpl implements Index
 						newMessage.addChild(parentThreadChild);
 					}
 				}
+				db.store(parentThread);
 			} else { /* The new message is an absolute orphan, find its children amongst the other absolute orphans */
 				for(FMSMessage o : mAbsoluteOrphans) {
 					if(o.getParentURI().equals(newMessage.getURI())) {
@@ -167,6 +165,8 @@ public class FMSBoard extends UpdatableSortedLinkedListItemImpl implements Index
 			}
 		}
 		
+		db.store(newMessage);
+		db.commit();
 	}
 	
 
@@ -178,8 +178,20 @@ public class FMSBoard extends UpdatableSortedLinkedListItemImpl implements Index
 	public synchronized Iterator<FMSMessage> threadIterator(final FMSOwnIdentity identity) {
 		return new Iterator<FMSMessage>() {
 			private final FMSOwnIdentity mIdentity = identity;
-			private Iterator<FMSMessage> iter = self.mThreads.iterator();
-			private FMSMessage next = iter.hasNext() ? iter.next() : null;
+			private final ObjectSet<FMSMessage> mMessages;
+			private final Iterator<FMSMessage> iter;
+			private FMSMessage next;
+			 
+			{
+				Query q = db.query();
+				q.constrain(FMSMessage.class);
+				q.descend("mBoards").constrain(mName); /* FIXME: mBoards is an array. Does constrain() check whether it contains the element mName? */
+				q.descend("mParentURI").constrain(null);
+				q.orderDescending();
+				mMessages = q.execute();
+				iter = mMessages.iterator();
+				next = iter.hasNext() ? iter.next() : null;
+			}
 
 			public boolean hasNext() {
 				for(; next != null; next = iter.hasNext() ? iter.next() : null)
