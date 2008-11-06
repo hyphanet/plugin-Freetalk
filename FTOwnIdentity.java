@@ -12,19 +12,19 @@ import freenet.keys.FreenetURI;
  * @author saces, xor
  *
  */
-public interface FTOwnIdentity extends FMSIdentity {
+public interface FTOwnIdentity extends FTIdentity {
 	
 	public FreenetURI getInsertURI();
 
 	public Date getLastInsert();
 	
-	public boolean wantsMessagesFrom(FMSIdentity identity);
+	public boolean wantsMessagesFrom(FTIdentity identity);
 	
-	public void postMessage(FMSMessage message);
+	public void postMessage(FTMessage message);
 	
-	public void subscribeToBoard(FMSBoard board);
+	public void subscribeToBoard(FTBoard board);
 	
-	public void unsubscribeFromBoard(FMSBoard board);
+	public void unsubscribeFromBoard(FTBoard board);
 	
-	public Iterator<FMSBoard> subscribedBoardsIterator();
+	public Iterator<FTBoard> subscribedBoardsIterator();
 }

@@ -36,10 +36,10 @@ public class Backup {
 		w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 		w.write("<fms-kidding>\n");
 		w.write("\t<OwnIdentities>\n");
-		ObjectSet<FMSOwnIdentity> ownIdentities = config_db.queryByExample(FMSOwnIdentity.class);
+		ObjectSet<FTOwnIdentity> ownIdentities = config_db.queryByExample(FTOwnIdentity.class);
 
 		while (ownIdentities.hasNext()) {
-			FMSOwnIdentity id = ownIdentities.next();
+			FTOwnIdentity id = ownIdentities.next();
 			w.write("\t\t<OwnIdentity>\n");
 			w.write("\t\t\t<Nick>");
 			XMLUtils.writeEsc(w, id.getNickName());
@@ -59,11 +59,11 @@ public class Backup {
 		w.write("\t</OwnIdentities>\n");
 		w.write("\t<Identities>\n");
 
-		ObjectSet<FMSIdentity> identities = config_db.queryByExample(FMSIdentity.class);
+		ObjectSet<FTIdentity> identities = config_db.queryByExample(FTIdentity.class);
 
 		while (identities.hasNext()) {
-			FMSIdentity id = identities.next();
-			if (id instanceof FMSOwnIdentity)
+			FTIdentity id = identities.next();
+			if (id instanceof FTOwnIdentity)
 				continue;
 			w.write("\t\t<Identity>\n");
 			w.write("\t\t\t<Nick>");
@@ -182,7 +182,7 @@ public class Backup {
 			if ("OwnIdentity".equals(name)) {
 				// FIXME: repair this.
 				/*
-				FMSOwnIdentity oid = new FMSOwnIdentity(nick, requestUri, insertUri, publishTL);
+				FTOwnIdentity oid = new FTOwnIdentity(nick, requestUri, insertUri, publishTL);
 				config_db.store(oid);
 				config_db.commit();
 				*/
@@ -192,7 +192,7 @@ public class Backup {
 			if ("Identity".equals(name)) {
 				// FIXME: repair this.
 				/*
-				FMSIdentity id = new FMSIdentity(nick, requestUri);
+				FTIdentity id = new FTIdentity(nick, requestUri);
 				config_db.store(id);
 				config_db.commit();
 				 */

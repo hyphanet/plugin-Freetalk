@@ -7,10 +7,10 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import plugins.FMSPlugin.FMSBoard;
-import plugins.FMSPlugin.FMSIdentity;
-import plugins.FMSPlugin.FMSMessage;
-import plugins.FMSPlugin.FMSOwnIdentity;
+import plugins.Freetalk.FTBoard;
+import plugins.Freetalk.FTIdentity;
+import plugins.Freetalk.FTMessage;
+import plugins.Freetalk.FTOwnIdentity;
 import plugins.WoT.OwnIdentity;
 import freenet.keys.FreenetURI;
 
@@ -18,9 +18,9 @@ import freenet.keys.FreenetURI;
  * @author xor
  *
  */
-public class FTOwnIdentityWoT extends FMSIdentityWoT implements FMSOwnIdentity {
+public class FTOwnIdentityWoT extends FTIdentityWoT implements FTOwnIdentity {
 	
-	private final LinkedList<FMSBoard> mSubscribedBoards = new LinkedList<FMSBoard>();
+	private final LinkedList<FTBoard> mSubscribedBoards = new LinkedList<FTBoard>();
 
 	public FTOwnIdentityWoT(OwnIdentity newIndentity) {
 		super(newIndentity);
@@ -38,12 +38,12 @@ public class FTOwnIdentityWoT extends FMSIdentityWoT implements FMSOwnIdentity {
 		return getOwnIdentity().getLastInsert();
 	}
 
-	public synchronized void postMessage(FMSMessage message) {
+	public synchronized void postMessage(FTMessage message) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public synchronized void subscribeToBoard(FMSBoard board) {
+	public synchronized void subscribeToBoard(FTBoard board) {
 		if(mSubscribedBoards.contains(board)) {
 			assert(false); /* TODO: Add logging / check whether this should be allowed to happen */
 			return;
@@ -51,15 +51,15 @@ public class FTOwnIdentityWoT extends FMSIdentityWoT implements FMSOwnIdentity {
 		mSubscribedBoards.add(board);
 	}
 
-	public synchronized void unsubscribeFromBoard(FMSBoard board) {
+	public synchronized void unsubscribeFromBoard(FTBoard board) {
 		mSubscribedBoards.remove(board);
 	}
 	
-	public synchronized Iterator<FMSBoard> subscribedBoardsIterator() {
+	public synchronized Iterator<FTBoard> subscribedBoardsIterator() {
 		return mSubscribedBoards.iterator();
 	}
 
-	public synchronized boolean wantsMessagesFrom(FMSIdentity identity) {
+	public synchronized boolean wantsMessagesFrom(FTIdentity identity) {
 		// TODO Auto-generated method stub
 		return false;
 	}

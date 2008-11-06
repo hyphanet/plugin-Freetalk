@@ -11,7 +11,7 @@ public class FTDealer {
 	private final Executor _executor;
 	
 	// services
-	private FMSIdentityManager identManager;
+	private FTIdentityManager identManager;
 	
 	FTDealer(Executor executor) {
 		this._executor = executor;
