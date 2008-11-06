@@ -1,4 +1,4 @@
-package plugins.FMSPlugin;
+package plugins.Freetalk;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;

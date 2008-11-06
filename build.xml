@@ -10,7 +10,7 @@
 	<property name="build-test" location="build-test/"/>
 	<property name="dist" location="dist/"/>
 	<property name="junit.location" value="/usr/share/java/junit.jar"/>
-	<available file="src/plugins/FMSPlugin/Version.java" property="version.present"/>
+	<available file="src/plugins/Freetalk/Version.java" property="version.present"/>
 	<available file="${junit.location}" property="junit.present"/>
 
 	<target name="mkdir">
@@ -23,7 +23,7 @@
 	
 	<target name="setver" if="version.present">
 		<!-- Update the Version file -->
-		<replace file="src/plugins/FMSPlugin/Version.java">
+		<replace file="src/plugins/Freetalk/Version.java">
 			<replacefilter token="@custom@" value="${svn.revision}"/>
 		</replace>
 	</target>
@@ -85,9 +85,9 @@
 	<!-- ================================================== -->
 	<target name="dist" depends="clean,compile,junit"
 		description="generate the distribution" >
-		<jar jarfile="${dist}/FMSPlugin.jar" duplicate="fail">
+		<jar jarfile="${dist}/Freetalk.jar" duplicate="fail">
 			<manifest>
-				<attribute name="Plugin-Main-Class" value="plugins.FMSPlugin.FMSPlugin"/>
+				<attribute name="Plugin-Main-Class" value="plugins.Freetalk.Freetalk"/>
 			</manifest>
 			<fileset dir="src/" casesensitive="no">
 				<include name="*.txt"/>
