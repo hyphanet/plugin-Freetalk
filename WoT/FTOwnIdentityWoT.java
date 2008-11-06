@@ -7,6 +7,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import com.db4o.ObjectContainer;
+
 import plugins.Freetalk.FTBoard;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTMessage;
@@ -19,11 +21,11 @@ import freenet.keys.FreenetURI;
  *
  */
 public class FTOwnIdentityWoT extends FTIdentityWoT implements FTOwnIdentity {
-	
+
 	private final LinkedList<FTBoard> mSubscribedBoards = new LinkedList<FTBoard>();
 
-	public FTOwnIdentityWoT(OwnIdentity newIndentity) {
-		super(newIndentity);
+	public FTOwnIdentityWoT(ObjectContainer myDB, OwnIdentity newIndentity) {
+		super(myDB, newIndentity);
 	}
 	
 	protected OwnIdentity getOwnIdentity() {
@@ -49,10 +51,13 @@ public class FTOwnIdentityWoT extends FTIdentityWoT implements FTOwnIdentity {
 			return;
 		}
 		mSubscribedBoards.add(board);
+		
+		store();
 	}
 
 	public synchronized void unsubscribeFromBoard(FTBoard board) {
 		mSubscribedBoards.remove(board);
+		store();
 	}
 	
 	public synchronized Iterator<FTBoard> subscribedBoardsIterator() {
@@ -63,7 +68,7 @@ public class FTOwnIdentityWoT extends FTIdentityWoT implements FTOwnIdentity {
 		// TODO Auto-generated method stub
 		return false;
 	}
-	
+
 	/*
 	public final void exportXML(OutputStream out) throws IOException {
 		Writer w = new BufferedWriter(new OutputStreamWriter(out));
