@@ -13,11 +13,11 @@ import com.db4o.ObjectContainer;
 import freenet.keys.FreenetURI;
 import freenet.support.UpdatableSortedLinkedListKilledException;
 
-public class FMSMessageManagerWoT extends FMSMessageManager {
+public class FTMessageManagerWoT extends FMSMessageManager {
 	
 	protected FMSIdentityManagerWoT mIdentityManager;
 
-	public FMSMessageManagerWoT(ObjectContainer myDB, FMSIdentityManagerWoT myIdentityManager) {
+	public FTMessageManagerWoT(ObjectContainer myDB, FMSIdentityManagerWoT myIdentityManager) {
 		super(myDB, myIdentityManager);
 		mIdentityManager = myIdentityManager;
 	}

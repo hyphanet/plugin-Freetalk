@@ -15,13 +15,13 @@ import freenet.keys.FreenetURI;
  * @author xor
  *
  */
-public abstract class FMSMessageManager {
+public abstract class FTMessageManager {
 
 	protected ObjectContainer db;
 
 	protected FMSIdentityManager mIdentityManager;
 
-	public FMSMessageManager(ObjectContainer myDB, FMSIdentityManager myIdentityManager) {
+	public FTMessageManager(ObjectContainer myDB, FMSIdentityManager myIdentityManager) {
 		assert(myDB != null);
 		assert(myIdentityManager != null);
 

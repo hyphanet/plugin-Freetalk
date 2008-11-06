@@ -8,7 +8,7 @@ import java.util.Iterator;
 
 import freenet.keys.FreenetURI;
 
-public interface FMSIdentity {
+public interface FTIdentity {
 
 	/**
 	 * @return The requestURI ({@link FreenetURI}) to fetch this Identity 

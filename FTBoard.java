@@ -16,7 +16,7 @@ import freenet.support.UpdatableSortedLinkedListKilledException;
  * @author xor
  *
  */
-public class FMSBoard {
+public class FTBoard {
 
 	private transient final ObjectContainer db;
 
@@ -33,7 +33,7 @@ public class FMSBoard {
 		return new String[] {"mName"};
 	}
 	
-	public FMSBoard(ObjectContainer myDB, FMSMessageManager newMessageManager, String newName) {
+	public FTBoard(ObjectContainer myDB, FMSMessageManager newMessageManager, String newName) {
 		if(newName==null || newName.length() == 0)
 			throw new IllegalArgumentException("Empty board name.");
 

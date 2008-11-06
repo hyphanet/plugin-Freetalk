@@ -14,13 +14,13 @@ import freenet.support.Executor;
  * @author saces, xor
  * 
  */
-public abstract class FMSIdentityManager implements Iterable<FMSIdentity> {
+public abstract class FTIdentityManager implements Iterable<FMSIdentity> {
 
 	protected final ObjectContainer db;
 
 	protected final Executor mExecutor;
 
-	public FMSIdentityManager(ObjectContainer myDB, Executor newExecutor) {
+	public FTIdentityManager(ObjectContainer myDB, Executor newExecutor) {
 		db = myDB;
 		mExecutor = newExecutor;
 	}

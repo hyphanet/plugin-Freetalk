@@ -12,7 +12,7 @@ import freenet.keys.FreenetURI;
  * @author saces, xor
  *
  */
-public interface FMSOwnIdentity extends FMSIdentity {
+public interface FTOwnIdentity extends FMSIdentity {
 	
 	public FreenetURI getInsertURI();
 

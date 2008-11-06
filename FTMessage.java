@@ -19,7 +19,7 @@ import freenet.support.UpdatableSortedLinkedListKilledException;
  * @author saces, xor
  *
  */
-public abstract class FMSMessage {
+public abstract class FTMessage {
 	
 	protected ObjectContainer db;
 	
@@ -81,7 +81,7 @@ public abstract class FMSMessage {
 		return new String[] { "mURI", "mThreadURI", "mBoards"};
 	}
 	
-	public FMSMessage(ObjectContainer db, FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
+	public FTMessage(ObjectContainer db, FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
 		if (newURI == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		

@@ -19,9 +19,9 @@ import freenet.keys.FreenetURI;
  * @author xor
  *
  */
-public class FMSMessageWoT extends FMSMessage {
+public class FTMessageWoT extends FMSMessage {
 
-	public FMSMessageWoT(ObjectContainer myDB, FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor,
+	public FTMessageWoT(ObjectContainer myDB, FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor,
 			String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
 		super(myDB, newURI, newThreadURI, newParentURI, newBoards, newAuthor, newTitle, newDate, newText, newAttachments);
 		// TODO Auto-generated constructor stub

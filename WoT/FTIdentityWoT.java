@@ -14,11 +14,11 @@ import plugins.WoT.Identity;
  * @author xor
  *
  */
-public class FMSIdentityWoT implements FMSIdentity {
+public class FTIdentityWoT implements FMSIdentity {
 	
 	protected final Identity mIdentity;
 
-	public FMSIdentityWoT(Identity newIndentity) {
+	public FTIdentityWoT(Identity newIndentity) {
 		mIdentity = newIndentity;
 	}
 
