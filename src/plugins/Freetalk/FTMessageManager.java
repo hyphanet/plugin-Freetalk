@@ -19,9 +19,9 @@ public abstract class FTMessageManager {
 
 	protected ObjectContainer db;
 
-	protected FMSIdentityManager mIdentityManager;
+	protected FTIdentityManager mIdentityManager;
 
-	public FTMessageManager(ObjectContainer myDB, FMSIdentityManager myIdentityManager) {
+	public FTMessageManager(ObjectContainer myDB, FTIdentityManager myIdentityManager) {
 		assert(myDB != null);
 		assert(myIdentityManager != null);
 
@@ -29,22 +29,22 @@ public abstract class FTMessageManager {
 		mIdentityManager = myIdentityManager;
 	}
 
-	public synchronized FMSMessage get(FreenetURI uri) {
+	public synchronized FTMessage get(FreenetURI uri) {
 		Query query = db.query();
-		query.constrain(FMSMessage.class);
+		query.constrain(FTMessage.class);
 		query.descend("mURI").constrain(uri);
-		ObjectSet<FMSMessage> result = query.execute();
+		ObjectSet<FTMessage> result = query.execute();
 
 		assert(result.size() <= 1);
 
 		return (result.size() == 0) ? null : result.next();
 	}
 
-	public synchronized FMSBoard getBoardByName(String name) {
+	public synchronized FTBoard getBoardByName(String name) {
 		Query query = db.query();
-		query.constrain(FMSBoard.class);
+		query.constrain(FTBoard.class);
 		query.descend("mName").constrain(name);
-		ObjectSet<FMSBoard> result = query.execute();
+		ObjectSet<FTBoard> result = query.execute();
 
 		assert(result.size() <= 1);
 
@@ -54,21 +54,21 @@ public abstract class FTMessageManager {
 	/**
 	 * Get an iterator of all boards.
 	 */
-	public synchronized Iterator<FMSBoard> boardIterator() {
+	public synchronized Iterator<FTBoard> boardIterator() {
 		/* FIXME: Accelerate this query. db4o should be configured to keep an alphabetic index of boards */
 		Query query = db.query();
-		query.constrain(FMSBoard.class);
+		query.constrain(FTBoard.class);
 		query.descend("mName").orderDescending();
 
-		ObjectSet<FMSBoard> result = query.execute();
+		ObjectSet<FTBoard> result = query.execute();
 
 		return result.iterator();
 	}
 
 	/**
-	 * Returns true if the message was not downloaded yet and any of the FMSOwnIdentity wants the message.
+	 * Returns true if the message was not downloaded yet and any of the FTOwnIdentity wants the message.
 	 */
-	protected synchronized boolean shouldDownloadMessage(FreenetURI uri, FMSIdentity author) {
+	protected synchronized boolean shouldDownloadMessage(FreenetURI uri, FTIdentity author) {
 		return (get(uri) != null) || mIdentityManager.anyOwnIdentityWantsMessagesFrom(author);
 	}
 }

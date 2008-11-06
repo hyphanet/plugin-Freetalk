@@ -8,11 +8,11 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import plugins.FMSPlugin.ui.Errors;
-import plugins.FMSPlugin.ui.IdentityEditor;
-import plugins.FMSPlugin.ui.Messages;
-import plugins.FMSPlugin.ui.Status;
-import plugins.FMSPlugin.ui.Welcome;
+import plugins.Freetalk.ui.Errors;
+import plugins.Freetalk.ui.IdentityEditor;
+import plugins.Freetalk.ui.Messages;
+import plugins.Freetalk.ui.Status;
+import plugins.Freetalk.ui.Welcome;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
@@ -51,7 +51,7 @@ import freenet.support.io.TempBucketFactory;
  */
 public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginThreadless, FredPluginVersioned {
 
-	public static String SELF_URI = "/plugins/plugins.FMSPlugin.FMSPlugin";
+	public static String SELF_URI = "/plugins/plugins.Freetalk.Freetalk";
 	public static String SELF_TITLE = "Freenet Message System";
 	public static String WOT_NAME = "plugins.WoT.WoT";
 
@@ -80,7 +80,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		pr = pr2;
 
 		pm = pr.getPageMaker();
-		pm.addNavigationLink(SELF_URI + "/", "Home", "FMS plugin home", false, null);
+		pm.addNavigationLink(SELF_URI + "/", "Home", "Freetalk plugin home", false, null);
 		pm.addNavigationLink(SELF_URI + "/ownidentities", "Own Identities", "Manage your own identities", false, null);
 		pm.addNavigationLink(SELF_URI + "/knownidentities", "Known Identities", "Manage others identities", false, null);
 		pm.addNavigationLink(SELF_URI + "/messages", "Messages", "View Messages", false, null);
@@ -91,18 +91,18 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 
 		Configuration config_config = Db4o.newConfiguration();
 		/*	We re-use all information from the WoT-plugin's database.
-		config_config.objectClass(FMSOwnIdentity.class).objectField("requestUri").indexed(true);
-		config_config.objectClass(FMSIdentity.class).objectField("requestUri").indexed(true);
+		config_config.objectClass(FTOwnIdentity.class).objectField("requestUri").indexed(true);
+		config_config.objectClass(FTIdentity.class).objectField("requestUri").indexed(true);
 		*/
 		db_config = Db4o.openFile(config_config, "fms_conf.db4o");
 
 		Configuration cache_config = Db4o.newConfiguration();
-		for(String f : FMSMessage.getIndexedFields())
-			cache_config.objectClass(FMSMessage.class).objectField(f).indexed(true);
-		cache_config.objectClass(FMSMessage.class).cascadeOnUpdate(true);
+		for(String f : FTMessage.getIndexedFields())
+			cache_config.objectClass(FTMessage.class).objectField(f).indexed(true);
+		cache_config.objectClass(FTMessage.class).cascadeOnUpdate(true);
 		// TODO: decide about cascade on delete. 
-		for(String f : FMSBoard.getIndexedFields())
-			cache_config.objectClass(FMSBoard.class).objectField(f).indexed(true);
+		for(String f : FTBoard.getIndexedFields())
+			cache_config.objectClass(FTBoard.class).objectField(f).indexed(true);
 		
 		db_cache = Db4o.openFile(cache_config, "fms_cache.db4o");
 
@@ -152,7 +152,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		if ("/messages".equals(page))
 			return Messages.makeMessagesPage(this, request);
 
-		throw new NotFoundPluginHTTPException("Resource not found in FMSPlugin", page);
+		throw new NotFoundPluginHTTPException("Resource not found in FreetalkPlugin", page);
 	}
 	
 	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
@@ -221,7 +221,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 				// FIXME: use identity manager to implement this
 				throw new UnsupportedOperationException();
 				/*
-				FMSOwnIdentity oi = new FMSOwnIdentity(nick, requestUri, insertUri, publish);
+				FTOwnIdentity oi = new FTOwnIdentity(nick, requestUri, insertUri, publish);
 				IdentityEditor.addNewOwnIdentity(db_config, oi, err);
 				*/
 			}
@@ -249,7 +249,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 				// FIXME: use identity manager to implement this
 				throw new UnsupportedOperationException();
 				/*
-				FMSIdentity i = new FMSIdentity("", requestUri);
+				FTIdentity i = new FTIdentity("", requestUri);
 				IdentityEditor.addNewKnownIdentity(db_config, i, err);
 				*/
 			}
@@ -327,21 +327,21 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	}
 	
 	public boolean isWoTpresent() {
-		FredPluginFCP plug = pr.getNode().pluginManager.getFCPPlugin(FMS.WOT_NAME);
+		FredPluginFCP plug = pr.getNode().pluginManager.getFCPPlugin(Freetalk.WOT_NAME);
 		return (plug != null);
 	}
 
 	public long countIdentities() {
-		return db_config.queryByExample(FMSIdentity.class).size() - countOwnIdentities();
+		return db_config.queryByExample(FTIdentity.class).size() - countOwnIdentities();
 	}
 
 	public long countOwnIdentities() {
-		return db_config.queryByExample(FMSOwnIdentity.class).size();
+		return db_config.queryByExample(FTOwnIdentity.class).size();
 	}
 	
 
 	final public HTMLNode getPageNode() {
-		return pm.getPageNode(FMS.SELF_TITLE, null);
+		return pm.getPageNode(Freetalk.SELF_TITLE, null);
 	}
 
 }

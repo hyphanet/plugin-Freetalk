@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import plugins.FMSPlugin.FMSIdentityManager;
+import plugins.Freetalk.FTIdentityManager;
 import plugins.WoT.WoT;
 
 import com.db4o.ObjectContainer;
@@ -16,7 +16,7 @@ import freenet.support.Executor;
  * @author xor
  *
  */
-public class FTIdentityManagerWoT extends FMSIdentityManager {
+public class FTIdentityManagerWoT extends FTIdentityManager {
 	
 	private WoT mWoT;
 

@@ -7,9 +7,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import plugins.FMSPlugin.FMSBoard;
-import plugins.FMSPlugin.FMSIdentity;
-import plugins.FMSPlugin.FMSMessage;
+import plugins.Freetalk.FTBoard;
+import plugins.Freetalk.FTIdentity;
+import plugins.Freetalk.FTMessage;
 
 import com.db4o.ObjectContainer;
 
@@ -19,9 +19,9 @@ import freenet.keys.FreenetURI;
  * @author xor
  *
  */
-public class FTMessageWoT extends FMSMessage {
+public class FTMessageWoT extends FTMessage {
 
-	public FTMessageWoT(ObjectContainer myDB, FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor,
+	public FTMessageWoT(ObjectContainer myDB, FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FTBoard> newBoards, FTIdentity newAuthor,
 			String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
 		super(myDB, newURI, newThreadURI, newParentURI, newBoards, newAuthor, newTitle, newDate, newText, newAttachments);
 		// TODO Auto-generated constructor stub

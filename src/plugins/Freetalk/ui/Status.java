@@ -3,12 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui;
 
-import plugins.FMSPlugin.FMS;
+import plugins.Freetalk.Freetalk;
 import freenet.support.HTMLNode;
 
 public class Status {
 	
-	public static String makeStatusPage(FMS fms) {
+	public static String makeStatusPage(Freetalk fms) {
 		HTMLNode pageNode = fms.getPageNode();
 		HTMLNode contentNode = fms.pm.getContentNode(pageNode);
 		contentNode.addChild("#", "makeStatusPage");

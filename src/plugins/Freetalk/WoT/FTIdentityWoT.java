@@ -6,7 +6,7 @@ package plugins.Freetalk.WoT;
 import java.util.Date;
 
 import freenet.keys.FreenetURI;
-import plugins.FMSPlugin.FMSIdentity;
+import plugins.Freetalk.FTIdentity;
 
 import plugins.WoT.Identity;
 
@@ -14,7 +14,7 @@ import plugins.WoT.Identity;
  * @author xor
  *
  */
-public class FTIdentityWoT implements FMSIdentity {
+public class FTIdentityWoT implements FTIdentity {
 	
 	protected final Identity mIdentity;
 

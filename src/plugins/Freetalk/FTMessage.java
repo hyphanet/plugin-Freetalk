@@ -31,10 +31,10 @@ public abstract class FTMessage {
 	/**
 	 * The URI of the thread this message belongs to.
 	 * We do not need it to construct the thread-tree from messages, but it boosts performance of thread-tree-construction:
-	 * Thread-size (amount of replies) is usually infinitesimal compared to the size of a FMSBoard (amount of threads).
+	 * Thread-size (amount of replies) is usually infinitesimal compared to the size of a FTBoard (amount of threads).
 	 * We receive messages in random order, therefore we will usually have orphan messages of which we need to find the parents.
 	 * If we receive the parent messages of those messages, we will be able to find their orphan children faster if we only need to search in
-	 * the thread they belong to and not in the whole FMSBoard - which may contain many thousands of messages.
+	 * the thread they belong to and not in the whole FTBoard - which may contain many thousands of messages.
 	 */
 	private final FreenetURI mThreadURI;
 	
@@ -46,9 +46,9 @@ public abstract class FTMessage {
 	/**
 	 * The boards to which this message was posted, in alphabetical order.
 	 */
-	private final FMSBoard[] mBoards; 
+	private final FTBoard[] mBoards; 
 	
-	private final FMSIdentity mAuthor;
+	private final FTIdentity mAuthor;
 
 	private final String mTitle;
 	
@@ -67,12 +67,12 @@ public abstract class FTMessage {
 	/**
 	 * The thread to which this message is a reply.
 	 */
-	private FMSMessage mThread = null;
+	private FTMessage mThread = null;
 	
 	/**
 	 * The message to which this message is a reply.
 	 */
-	private FMSMessage mParent = null;
+	private FTMessage mParent = null;
 	
 	/**
 	 * Get a list of fields which the database should create an index on.
@@ -81,7 +81,7 @@ public abstract class FTMessage {
 		return new String[] { "mURI", "mThreadURI", "mBoards"};
 	}
 	
-	public FTMessage(ObjectContainer db, FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FMSBoard> newBoards, FMSIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
+	public FTMessage(ObjectContainer db, FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FTBoard> newBoards, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
 		if (newURI == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
@@ -97,7 +97,7 @@ public abstract class FTMessage {
 		mURI = newURI;
 		mThreadURI = newThreadURI;
 		mParentURI = newParentURI;
-		mBoards = (FMSBoard[])newBoards.toArray();
+		mBoards = (FTBoard[])newBoards.toArray();
 		Arrays.sort(mBoards);
 		mAuthor = newAuthor;
 		mTitle = newTitle;
@@ -135,14 +135,14 @@ public abstract class FTMessage {
 	 * Get the boards to which this message was posted.
 	 * The boards are returned in alphabetical order.
 	 */
-	public FMSBoard[] getBoards() {
+	public FTBoard[] getBoards() {
 		return mBoards;
 	}
 
 	/**
 	 * Get the author of the message.
 	 */
-	public FMSIdentity getAuthor() {
+	public FTIdentity getAuthor() {
 		return mAuthor;
 	}
 
@@ -174,11 +174,11 @@ public abstract class FTMessage {
 		return mAttachments;
 	}
 	
-	public synchronized FMSMessage getThread() {
+	public synchronized FTMessage getThread() {
 		return mThread;
 	}
 	
-	public synchronized void setThread(FMSMessage newParentThread) {
+	public synchronized void setThread(FTMessage newParentThread) {
 		assert(mThread == null);
 		assert(mThreadURI == null);
 		mThread = newParentThread;
@@ -186,26 +186,26 @@ public abstract class FTMessage {
 		db.commit();
 	}
 
-	public synchronized FMSMessage getParent() {
+	public synchronized FTMessage getParent() {
 		return mParent;
 	}
 
-	public synchronized void setParent(FMSMessage newParent) throws UpdatableSortedLinkedListKilledException {
+	public synchronized void setParent(FTMessage newParent) throws UpdatableSortedLinkedListKilledException {
 		/* TODO: assert(newParent contains at least one board which mBoards contains) */
 		mParent = newParent;
 		db.store(this);
 		db.commit();
 	}
 	
-	public synchronized Iterator<FMSMessage> childrenIterator(final FMSBoard board) {
-		return new Iterator<FMSMessage>() {
-			private Iterator<FMSMessage> iter;
+	public synchronized Iterator<FTMessage> childrenIterator(final FTBoard board) {
+		return new Iterator<FTMessage>() {
+			private Iterator<FTMessage> iter;
 			
 			{
 				/* TODO: Accelerate this query: configure db4o to keep a per-message date-sorted index of children.
 				 * - Not very important for now since threads are usually small. */
 				Query q = db.query();
-				q.constrain(FMSMessage.class);
+				q.constrain(FTMessage.class);
 				q.descend("mBoard").constrain(board.getName());
 				q.descend("mParent").constrain(this);
 				q.descend("mDate").orderDescending();
@@ -217,7 +217,7 @@ public abstract class FTMessage {
 				return iter.hasNext();
 			}
 
-			public FMSMessage next() {
+			public FTMessage next() {
 				return iter.next();
 			}
 

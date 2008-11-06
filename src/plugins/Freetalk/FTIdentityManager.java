@@ -14,7 +14,7 @@ import freenet.support.Executor;
  * @author saces, xor
  * 
  */
-public abstract class FTIdentityManager implements Iterable<FMSIdentity> {
+public abstract class FTIdentityManager implements Iterable<FTIdentity> {
 
 	protected final ObjectContainer db;
 
@@ -25,21 +25,21 @@ public abstract class FTIdentityManager implements Iterable<FMSIdentity> {
 		mExecutor = newExecutor;
 	}
 
-	public synchronized Iterator<FMSIdentity> iterator() {
-		ObjectSet<FMSIdentity> ids = db.query(FMSIdentity.class);
+	public synchronized Iterator<FTIdentity> iterator() {
+		ObjectSet<FTIdentity> ids = db.query(FTIdentity.class);
 		return ids.iterator();
 	}
 
-	public synchronized Iterator<FMSOwnIdentity> ownIdentityIterator() {
-		ObjectSet<FMSOwnIdentity> oids = db.query(FMSOwnIdentity.class);
+	public synchronized Iterator<FTOwnIdentity> ownIdentityIterator() {
+		ObjectSet<FTOwnIdentity> oids = db.query(FTOwnIdentity.class);
 		return oids.iterator();
 	}
 
-	public synchronized boolean anyOwnIdentityWantsMessagesFrom(FMSIdentity identity) {
-		Iterator<FMSOwnIdentity> iter = ownIdentityIterator();
+	public synchronized boolean anyOwnIdentityWantsMessagesFrom(FTIdentity identity) {
+		Iterator<FTOwnIdentity> iter = ownIdentityIterator();
 
 		while (iter.hasNext()) {
-			FMSOwnIdentity oid = iter.next();
+			FTOwnIdentity oid = iter.next();
 			if (oid.wantsMessagesFrom(identity))
 				return true;
 		}
