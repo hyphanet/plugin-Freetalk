@@ -8,11 +8,14 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import plugins.Freetalk.WoT.FTIdentityManagerWoT;
+import plugins.Freetalk.WoT.FTMessageManagerWoT;
 import plugins.Freetalk.ui.Errors;
 import plugins.Freetalk.ui.IdentityEditor;
 import plugins.Freetalk.ui.Messages;
 import plugins.Freetalk.ui.Status;
 import plugins.Freetalk.ui.Welcome;
+import plugins.WoT.WoT;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
@@ -51,79 +54,77 @@ import freenet.support.io.TempBucketFactory;
  */
 public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginThreadless, FredPluginVersioned {
 
-	public static String SELF_URI = "/plugins/plugins.Freetalk.Freetalk";
-	public static String SELF_TITLE = "Freenet Message System";
+	/* Constants */
+	
+	public static String PLUGIN_URI = "/plugins/plugins.Freetalk.Freetalk";
+	public static String PLUGIN_TITLE = "Freetalk";
 	public static String WOT_NAME = "plugins.WoT.WoT";
+	public static String DATABASE_FILE = "freetalk_data.db4o";
 
-	public final String MESSAGEBASE = "fms";
+	/* References from the node */
+	
+	private PluginRespirator pr;
 
-	public PluginRespirator pr;
-
-	public PageMaker pm;
+	private PageMaker pm;
 
 	private LANGUAGE language;
+	
 	private THEME theme;
 
 	private HighLevelSimpleClient client;
-
-	private FTDealer dealer;
-
-	public ObjectContainer db_config;
-	public ObjectContainer db_cache;
 	
-	public TempBucketFactory tbf;
+	private TempBucketFactory tbf;
 	
-	public void runPlugin(PluginRespirator pr2) {
+	/* The plugin's own references */
+	
+	private ObjectContainer db;
+	
+	private FTIdentityManagerWoT mIdentityManager;
+	
+	private FTMessageManagerWoT mMessageManager;
+	
+	
+	public void runPlugin(PluginRespirator myPR) {
+		
+		Logger.debug(this, "Freetalk plugin starting up...");
 
-		Logger.error(this, "Start");
-
-		pr = pr2;
-
-		pm = pr.getPageMaker();
-		pm.addNavigationLink(SELF_URI + "/", "Home", "Freetalk plugin home", false, null);
-		pm.addNavigationLink(SELF_URI + "/ownidentities", "Own Identities", "Manage your own identities", false, null);
-		pm.addNavigationLink(SELF_URI + "/knownidentities", "Known Identities", "Manage others identities", false, null);
-		pm.addNavigationLink(SELF_URI + "/messages", "Messages", "View Messages", false, null);
-		pm.addNavigationLink(SELF_URI + "/status", "Dealer status", "Show what happens in background", false, null);
-		pm.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);
-
+		pr = myPR;
+		
 		client = pr.getHLSimpleClient();
 
-		Configuration config_config = Db4o.newConfiguration();
-		/*	We re-use all information from the WoT-plugin's database.
-		config_config.objectClass(FTOwnIdentity.class).objectField("requestUri").indexed(true);
-		config_config.objectClass(FTIdentity.class).objectField("requestUri").indexed(true);
-		*/
-		db_config = Db4o.openFile(config_config, "fms_conf.db4o");
-
-		Configuration cache_config = Db4o.newConfiguration();
+		Configuration dbCfg = Db4o.newConfiguration();
 		for(String f : FTMessage.getIndexedFields())
-			cache_config.objectClass(FTMessage.class).objectField(f).indexed(true);
-		cache_config.objectClass(FTMessage.class).cascadeOnUpdate(true);
+			dbCfg.objectClass(FTMessage.class).objectField(f).indexed(true);
+		dbCfg.objectClass(FTMessage.class).cascadeOnUpdate(true);
 		// TODO: decide about cascade on delete. 
 		for(String f : FTBoard.getIndexedFields())
-			cache_config.objectClass(FTBoard.class).objectField(f).indexed(true);
+			dbCfg.objectClass(FTBoard.class).objectField(f).indexed(true);
 		
-		db_cache = Db4o.openFile(cache_config, "fms_cache.db4o");
+		db = Db4o.openFile(dbCfg, DATABASE_FILE);
 
-		// while develop wipe cache on startup
-		ObjectSet<Object> result = db_cache.queryByExample(new Object());
-		if (result.size() > 0) {
-			for (Object o : result) {
-				db_cache.delete(o);
-			}
-			db_cache.commit();
-		}
-
-		dealer = new FTDealer(pr.getNode().executor);
+		/* DEBUG: Wipe database on startup */
+		ObjectSet<Object> result = db.queryByExample(new Object());
+		for (Object o : result) db.delete(o);
+		db.commit();
 
 		tbf = pr.getNode().clientCore.tempBucketFactory;
+		
+		mIdentityManager = new FTIdentityManagerWoT(db, pr.getNode().executor, (WoT)getWoTPlugin() );
+		
+		mMessageManager = new FTMessageManagerWoT(db, pr.getNode().executor, mIdentityManager);
+		
+		pm = pr.getPageMaker();
+		pm.addNavigationLink(PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
+		pm.addNavigationLink(PLUGIN_URI + "/ownidentities", "Own Identities", "Manage your own identities", false, null);
+		pm.addNavigationLink(PLUGIN_URI + "/knownidentities", "Known Identities", "Manage others identities", false, null);
+		pm.addNavigationLink(PLUGIN_URI + "/messages", "Messages", "View Messages", false, null);
+		pm.addNavigationLink(PLUGIN_URI + "/status", "Dealer status", "Show what happens in background", false, null);
+		pm.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);
 	}
 
 	public void terminate() {
-		dealer.killMe();
-		db_config.close();
-		db_cache.close();
+		/* FIXME: Signal the identity manager and message manager to shutdown */
+		db.close();
 	}
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
@@ -135,7 +136,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			}
 		}
 
-		String page = request.getPath().substring(SELF_URI.length());
+		String page = request.getPath().substring(PLUGIN_URI.length());
 		if ((page.length() < 1) || ("/".equals(page)))
 			return Welcome.makeWelcomePage(this);
 
@@ -167,7 +168,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			return Errors.makeErrorPage(this, "Buh! Invalid form password");
 		}
 
-		String page = request.getPath().substring(SELF_URI.length());
+		String page = request.getPath().substring(PLUGIN_URI.length());
 
 		if (page.length() < 1)
 			throw new NotFoundPluginHTTPException("Resource not found", page);
@@ -175,7 +176,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		if (page.equals("/exportDB")) {
 			StringWriter sw = new StringWriter();
 			try {
-				Backup.exportConfigDb(db_config, sw);
+				Backup.exportConfigDb(db, sw);
 			} catch (IOException e) {
 				Logger.error(this, "Error While exporting database!", e);
 				return Errors.makeErrorPage(this, "Server BuhBuh! " + e.getMessage());
@@ -189,12 +190,12 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 				return Errors.makeErrorPage(this, "No file to import selected!");
 			}
 			try {
-				Backup.importConfigDb(db_config, file.getData().getInputStream());
+				Backup.importConfigDb(db, file.getData().getInputStream());
 			} catch (Exception e) {
 				Logger.error(this, "Error While importing db from: " + file.getFilename(), e);
 				return Errors.makeErrorPage(this, "Error While importing db from: " + file.getFilename() + e.getMessage());
 			}
-			throw new RedirectPluginHTTPException("", SELF_URI);
+			throw new RedirectPluginHTTPException("", PLUGIN_URI);
 		}
 
 		if (page.equals("/createownidentity")) {
@@ -227,7 +228,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			}
 
 			if (err.size() == 0) {
-				throw new RedirectPluginHTTPException("", SELF_URI + "/ownidentities");
+				throw new RedirectPluginHTTPException("", PLUGIN_URI + "/ownidentities");
 			}
 
 			return IdentityEditor.makeNewOwnIdentityPage(this, nick, requestUri, insertUri, publish, err);
@@ -255,7 +256,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			}
 
 			if (err.size() == 0) {
-				throw new RedirectPluginHTTPException("", SELF_URI + "/knownidentities");
+				throw new RedirectPluginHTTPException("", PLUGIN_URI + "/knownidentities");
 			}
 
 			return IdentityEditor.makeNewKnownIdentityPage(this, requestUri, err);
@@ -279,7 +280,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			if (err.size() > 0) {
 				return IdentityEditor.makeDeleteOwnIdentityPage(this, requestUri, err);
 			}
-			throw new RedirectPluginHTTPException("", SELF_URI + "/ownidentities");
+			throw new RedirectPluginHTTPException("", PLUGIN_URI + "/ownidentities");
 			// return IdentityEditor.makeDeleteOwnIdentityPage(fms, requestUri,
 			// err);
 		}
@@ -302,7 +303,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			if (err.size() > 0) {
 				return IdentityEditor.makeDeleteKnownIdentityPage(this, requestUri, err);
 			}
-			throw new RedirectPluginHTTPException("", SELF_URI + "/knownidentities");
+			throw new RedirectPluginHTTPException("", PLUGIN_URI + "/knownidentities");
 		}
 		throw new NotFoundPluginHTTPException("Resource not found", page);
 	}
@@ -326,22 +327,21 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.error(this, "Set THEME to: " + theme.code);
 	}
 	
-	public boolean isWoTpresent() {
-		FredPluginFCP plug = pr.getNode().pluginManager.getFCPPlugin(Freetalk.WOT_NAME);
-		return (plug != null);
+	public FredPluginFCP getWoTPlugin() {
+		return pr.getNode().pluginManager.getFCPPlugin(Freetalk.WOT_NAME);
 	}
 
 	public long countIdentities() {
-		return db_config.queryByExample(FTIdentity.class).size() - countOwnIdentities();
+		return db.queryByExample(FTIdentity.class).size() - countOwnIdentities();
 	}
 
 	public long countOwnIdentities() {
-		return db_config.queryByExample(FTOwnIdentity.class).size();
+		return db.queryByExample(FTOwnIdentity.class).size();
 	}
 	
 
 	final public HTMLNode getPageNode() {
-		return pm.getPageNode(Freetalk.SELF_TITLE, null);
+		return pm.getPageNode(Freetalk.PLUGIN_TITLE, null);
 	}
 
 }

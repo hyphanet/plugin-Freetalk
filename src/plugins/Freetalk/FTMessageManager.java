@@ -10,23 +10,27 @@ import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
+import freenet.support.Executor;
 
 /**
  * @author xor
  *
  */
-public abstract class FTMessageManager {
+public abstract class FTMessageManager implements Runnable {
 
 	protected ObjectContainer db;
+	
+	protected Executor mExecutor;
 
 	protected FTIdentityManager mIdentityManager;
 
-	public FTMessageManager(ObjectContainer myDB, FTIdentityManager myIdentityManager) {
+	public FTMessageManager(ObjectContainer myDB, Executor myExecutor, FTIdentityManager myIdentityManager) {
 		assert(myDB != null);
 		assert(myIdentityManager != null);
 
 		db = myDB;
 		mIdentityManager = myIdentityManager;
+		mExecutor.execute(this, "FT Identity Manager");
 	}
 
 	public synchronized FTMessage get(FreenetURI uri) {

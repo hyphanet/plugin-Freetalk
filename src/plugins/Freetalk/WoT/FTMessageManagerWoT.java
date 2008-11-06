@@ -11,14 +11,15 @@ import plugins.Freetalk.FTMessageManager;
 import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
+import freenet.support.Executor;
 import freenet.support.UpdatableSortedLinkedListKilledException;
 
 public class FTMessageManagerWoT extends FTMessageManager {
 	
 	protected FTIdentityManagerWoT mIdentityManager;
 
-	public FTMessageManagerWoT(ObjectContainer myDB, FTIdentityManagerWoT myIdentityManager) {
-		super(myDB, myIdentityManager);
+	public FTMessageManagerWoT(ObjectContainer myDB, Executor myExecutor, FTIdentityManagerWoT myIdentityManager) {
+		super(myDB, myExecutor, myIdentityManager);
 		mIdentityManager = myIdentityManager;
 	}
 
@@ -46,5 +47,9 @@ public class FTMessageManagerWoT extends FTMessageManager {
 		for(FTBoard b : boards) {
 			b.addMessage(newMessage);
 		}
+	}
+	
+	public void run() {
+		
 	}
 }
