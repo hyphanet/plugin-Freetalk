@@ -3,22 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import java.util.Date;
-import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.List;
-
-import plugins.WoT.Identity;
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.WoT;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
-import com.db4o.query.Query;
 
-import freenet.keys.FreenetURI;
 import freenet.support.Executor;
-import freenet.support.Logger;
 
 /**
  * @author saces, xor
@@ -32,9 +22,10 @@ public abstract class FTIdentityManager implements Runnable, Iterable<FTIdentity
 	
 	public boolean isRunning = true;
 
-	public FTIdentityManager(ObjectContainer myDB, Executor newExecutor) {
+	public FTIdentityManager(ObjectContainer myDB, Executor myExecutor) {
 		db = myDB;
-		mExecutor = newExecutor;
+		mExecutor = myExecutor;
+		mExecutor.execute(this, "FT Identity Manager");
 	}
 
 	public synchronized Iterator<FTIdentity> iterator() {
