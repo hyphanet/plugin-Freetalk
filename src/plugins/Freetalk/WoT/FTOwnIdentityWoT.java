@@ -18,11 +18,11 @@ import freenet.keys.FreenetURI;
  * @author xor
  *
  */
-public class FMSOwnIdentityWoT extends FMSIdentityWoT implements FMSOwnIdentity {
+public class FTOwnIdentityWoT extends FMSIdentityWoT implements FMSOwnIdentity {
 	
 	private final LinkedList<FMSBoard> mSubscribedBoards = new LinkedList<FMSBoard>();
 
-	public FMSOwnIdentityWoT(OwnIdentity newIndentity) {
+	public FTOwnIdentityWoT(OwnIdentity newIndentity) {
 		super(newIndentity);
 	}
 	

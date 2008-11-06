@@ -16,14 +16,14 @@ import freenet.support.Executor;
  * @author xor
  *
  */
-public class FMSIdentityManagerWoT extends FMSIdentityManager {
+public class FTIdentityManagerWoT extends FMSIdentityManager {
 	
 	private WoT mWoT;
 
 	/**
 	 * @param executor
 	 */
-	public FMSIdentityManagerWoT(ObjectContainer myDB, Executor executor, WoT newWoT) {
+	public FTIdentityManagerWoT(ObjectContainer myDB, Executor executor, WoT newWoT) {
 		super(myDB, executor);
 		mWoT = newWoT;
 	}

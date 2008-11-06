@@ -6,14 +6,14 @@ package plugins.Freetalk;
 import freenet.support.Executor;
 import freenet.support.Logger;
 
-public class FMSDealer {
+public class FTDealer {
 	
 	private final Executor _executor;
 	
 	// services
 	private FMSIdentityManager identManager;
 	
-	FMSDealer(Executor executor) {
+	FTDealer(Executor executor) {
 		this._executor = executor;
 		_executor.execute(new Runnable() {
 			public void run() {

@@ -49,7 +49,7 @@ import freenet.support.io.TempBucketFactory;
  * @author saces
  *
  */
-public class FMS implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginThreadless, FredPluginVersioned {
+public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginThreadless, FredPluginVersioned {
 
 	public static String SELF_URI = "/plugins/plugins.FMSPlugin.FMSPlugin";
 	public static String SELF_TITLE = "Freenet Message System";
@@ -66,7 +66,7 @@ public class FMS implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPlugi
 
 	private HighLevelSimpleClient client;
 
-	private FMSDealer dealer;
+	private FTDealer dealer;
 
 	public ObjectContainer db_config;
 	public ObjectContainer db_cache;
@@ -115,7 +115,7 @@ public class FMS implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPlugi
 			db_cache.commit();
 		}
 
-		dealer = new FMSDealer(pr.getNode().executor);
+		dealer = new FTDealer(pr.getNode().executor);
 
 		tbf = pr.getNode().clientCore.tempBucketFactory;
 	}
