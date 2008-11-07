@@ -120,11 +120,14 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		pm.addNavigationLink(PLUGIN_URI + "/messages", "Messages", "View Messages", false, null);
 		pm.addNavigationLink(PLUGIN_URI + "/status", "Dealer status", "Show what happens in background", false, null);
 		pm.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);
+		
+		Logger.debug(this, "Freetalk plugin loaded.");
 	}
 
 	public void terminate() {
 		/* FIXME: Signal the identity manager and message manager to shutdown */
 		db.close();
+		Logger.debug(this, "Freetalk plugin terminated.");
 	}
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
