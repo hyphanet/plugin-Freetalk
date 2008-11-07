@@ -113,9 +113,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		db.commit();
 		Logger.debug(this, "Database wiped.");
 
-		Logger.debug(this, "Getting TBF...");
 		tbf = pr.getNode().clientCore.tempBucketFactory;
-		Logger.debug(this, "Got TBF.");
 		
 		Logger.debug(this, "Creating identity manager...");
 		mIdentityManager = new FTIdentityManagerWoT(db, pr.getNode().executor, (WoT)getWoTPlugin() );
@@ -123,7 +121,6 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.debug(this, "Creating message manager...");
 		mMessageManager = new FTMessageManagerWoT(db, pr.getNode().executor, mIdentityManager);
 		
-		Logger.debug(this, "Setting up PageMaker...");
 		pm = pr.getPageMaker();
 		pm.addNavigationLink(PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
 		pm.addNavigationLink(PLUGIN_URI + "/ownidentities", "Own Identities", "Manage your own identities", false, null);
@@ -131,33 +128,30 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		pm.addNavigationLink(PLUGIN_URI + "/messages", "Messages", "View Messages", false, null);
 		pm.addNavigationLink(PLUGIN_URI + "/status", "Dealer status", "Show what happens in background", false, null);
 		pm.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);
-		Logger.debug(this, "PageMaker is set up.");
 		
 		Logger.debug(this, "Plugin loaded.");
 	}
 
 	public void terminate() {
-		/* FIXME: Signal the identity manager and message manager to shutdown */
+		mMessageManager.terminate();
+		mIdentityManager.terminate();
+		db.commit();
 		db.close();
 		Logger.debug(this, "Freetalk plugin terminated.");
 	}
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
 
-		if (request.isParameterSet("formPassword")) {
-			String pass = request.getParam("formPassword");
-			if ((pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword)) {
-				return Errors.makeErrorPage(this, "Buh! Invalid form password");
-			}
-		}
+		String pass = request.getParam("formPassword");
+		if (pass == null || (pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword))
+			return Errors.makeErrorPage(this, "Buh! Invalid form password");
 
 		String page = request.getPath().substring(PLUGIN_URI.length());
 		if ((page.length() < 1) || ("/".equals(page)))
 			return Welcome.makeWelcomePage(this);
 
-		if ("/status".equals(page)) {
+		if ("/status".equals(page))
 			return Status.makeStatusPage(this);
-		}
 		
 		if ("/ownidentities".equals(page))
 			return IdentityEditor.makeOwnIdentitiesPage(this, request);
@@ -168,7 +162,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		if ("/messages".equals(page))
 			return Messages.makeMessagesPage(this, request);
 
-		throw new NotFoundPluginHTTPException("Resource not found in FreetalkPlugin", page);
+		throw new NotFoundPluginHTTPException("Resource not found in Freetalk plugin", page);
 	}
 	
 	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
@@ -326,27 +320,23 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	public String getVersion() {
 		return "α r" + Version.svnRevision;
 	}
-
+	
 	public String getString(String key) {
 		// Logger.error(this, "Request translation for "+key);
 		return key;
 	}
-
 	public void setLanguage(LANGUAGE newLanguage) {
 		language = newLanguage;
-		Logger.error(this, "Set LANGUAGE to: " + language.isoCode);
+		Logger.debug(this, "Set LANGUAGE to: " + language.isoCode);
 	}
 
 	public void setTheme(THEME newTheme) {
-		theme= newTheme;
+		theme = newTheme;
 		Logger.error(this, "Set THEME to: " + theme.code);
 	}
 	
 	public FredPluginFCP getWoTPlugin() {
-		Logger.debug(this, "Getting WoT plugin...");
-		FredPluginFCP wot = pr.getNode().pluginManager.getFCPPlugin(Freetalk.WOT_NAME);
-		Logger.debug(this, "Got WoT plugin: " + wot);
-		return wot;
+		return pr.getNode().pluginManager.getFCPPlugin(Freetalk.WOT_NAME);
 	}
 
 	public long countIdentities() {
@@ -361,5 +351,4 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	final public HTMLNode getPageNode() {
 		return pm.getPageNode(Freetalk.PLUGIN_TITLE, null);
 	}
-
 }
