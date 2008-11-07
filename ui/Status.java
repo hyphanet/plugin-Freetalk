@@ -8,9 +8,9 @@ import freenet.support.HTMLNode;
 
 public class Status {
 	
-	public static String makeStatusPage(Freetalk fms) {
-		HTMLNode pageNode = fms.getPageNode();
-		HTMLNode contentNode = fms.pm.getContentNode(pageNode);
+	public static String makeStatusPage(Freetalk ft) {
+		HTMLNode pageNode = ft.getPageNode();
+		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
 		contentNode.addChild("#", "makeStatusPage");
 		return pageNode.generate();
 	}

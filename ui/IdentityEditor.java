@@ -18,18 +18,19 @@ import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
 public class IdentityEditor {
-		
+
 	/* === own identities ==================== */
 	
-	public static final String makeOwnIdentitiesPage(Freetalk fms, HTTPRequest request) {
-		HTMLNode pageNode = fms.getPageNode();
-		HTMLNode contentNode = fms.pm.getContentNode(pageNode);
+	public static final String makeOwnIdentitiesPage(Freetalk ft, HTTPRequest request) {
+		
+		HTMLNode pageNode = ft.getPageNode();
+		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
 
-		HTMLNode box = fms.pm.getInfobox("Own Identities");
-		HTMLNode boxContent = fms.pm.getContentNode(box);
+		HTMLNode box = ft.pm.getInfobox("Own Identities");
+		HTMLNode boxContent = ft.pm.getContentNode(box);
 		contentNode.addChild(box);
 
-		ObjectSet<FTOwnIdentity> ownIdentities = fms.db_config.queryByExample(FTOwnIdentity.class);
+		ObjectSet<FTOwnIdentity> ownIdentities = ft.db.queryByExample(FTOwnIdentity.class);
 		if (ownIdentities.size() == 0) {
 			boxContent.addChild("p", "You have no own identity yet, you should create one...");
 		} else {
@@ -59,37 +60,37 @@ public class IdentityEditor {
 					lastUpdateCell.addChild(new HTMLNode("a", "href", "/" + id.getRequestURI().toString(), id.getLastInsert().toString()));
 				}
 				HTMLNode deleteCell = row.addChild("td");
-				HTMLNode deleteForm = fms.pr.addFormChild(deleteCell, Freetalk.SELF_URI + "/deleteOwnIdentity", "deleteForm");
+				HTMLNode deleteForm = ft.pr.addFormChild(deleteCell, Freetalk.PLUGIN_URI + "/deleteOwnIdentity", "deleteForm");
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI().toACIIString()});
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
 			}
 		}
 
-		contentNode.addChild(createNewOwnIdentityBox(fms));
+		contentNode.addChild(createNewOwnIdentityBox(ft));
 
 		return pageNode.generate();
 	}
 	
 	/* === new own identity ================== */
 	
-	public static final String makeNewOwnIdentityPage(Freetalk fms, String nick, String requestUri, String insertUri, boolean publish, List<String> errors) {
-		HTMLNode pageNode = fms.getPageNode();
-		HTMLNode contentNode = fms.pm.getContentNode(pageNode);
-		contentNode.addChild(createNewOwnIdentityBox(fms, nick, requestUri, insertUri, publish, errors));
+	public static final String makeNewOwnIdentityPage(Freetalk ft, String nick, String requestUri, String insertUri, boolean publish, List<String> errors) {
+		HTMLNode pageNode = ft.getPageNode();
+		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		contentNode.addChild(createNewOwnIdentityBox(ft, nick, requestUri, insertUri, publish, errors));
 		return pageNode.generate();
 	}
 
-	private static final HTMLNode createNewOwnIdentityBox(Freetalk fms) {
-		return createNewOwnIdentityBox(fms, "", "", "", true, null);
+	private static final HTMLNode createNewOwnIdentityBox(Freetalk ft) {
+		return createNewOwnIdentityBox(ft, "", "", "", true, null);
 	}
 
-	private static final HTMLNode createNewOwnIdentityBox(Freetalk fms, String nick, String requestUri, String insertUri, boolean publish, List<String> errors) {
-		HTMLNode addBox = fms.pm.getInfobox("New Identity");
-		HTMLNode addContent = fms.pm.getContentNode(addBox);
+	private static final HTMLNode createNewOwnIdentityBox(Freetalk ft, String nick, String requestUri, String insertUri, boolean publish, List<String> errors) {
+		HTMLNode addBox = ft.pm.getInfobox("New Identity");
+		HTMLNode addContent = ft.pm.getContentNode(addBox);
 
 		if (errors != null) {
-			HTMLNode errorBox = fms.pm.getInfobox("infobox-alert", "Typo");
-			HTMLNode errorContent = fms.pm.getContentNode(errorBox);
+			HTMLNode errorBox = ft.pm.getInfobox("infobox-alert", "Typo");
+			HTMLNode errorContent = ft.pm.getContentNode(errorBox);
 			for (String s : errors) {
 				errorContent.addChild("#", s);
 				errorContent.addChild("br");
@@ -97,7 +98,7 @@ public class IdentityEditor {
 			addContent.addChild(errorBox);
 		}
 
-		HTMLNode addForm = fms.pr.addFormChild(addContent, Freetalk.SELF_URI + "/createownidentity", "addForm");
+		HTMLNode addForm = ft.pr.addFormChild(addContent, Freetalk.PLUGIN_URI + "/createownidentity", "addForm");
 
 		HTMLNode table = addForm.addChild("table", "class", "column");
 		HTMLNode tr1 = table.addChild("tr");
@@ -129,20 +130,20 @@ public class IdentityEditor {
 	
 	/* === delete own identity =============== */
 	
-	public static String makeDeleteOwnIdentityPage(Freetalk fms, String requestUri, List<String> err) {
-		HTMLNode pageNode = fms.getPageNode();
-		HTMLNode contentNode = fms.pm.getContentNode(pageNode);
-		contentNode.addChild(deleteOwnIdentityBox(fms, "nick", requestUri, "insertUri", false, err));
+	public static String makeDeleteOwnIdentityPage(Freetalk ft, String requestUri, List<String> err) {
+		HTMLNode pageNode = ft.getPageNode();
+		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		contentNode.addChild(deleteOwnIdentityBox(ft, "nick", requestUri, "insertUri", false, err));
 		return pageNode.generate();
 	}
 	
-	private static final HTMLNode deleteOwnIdentityBox(Freetalk fms, String nick, String requestUri, String insertUri, boolean publish, List<String> errors) {
-		HTMLNode deleteBox = fms.pm.getInfobox("Delete Identity");
-		HTMLNode deleteContent = fms.pm.getContentNode(deleteBox);
+	private static final HTMLNode deleteOwnIdentityBox(Freetalk ft, String nick, String requestUri, String insertUri, boolean publish, List<String> errors) {
+		HTMLNode deleteBox = ft.pm.getInfobox("Delete Identity");
+		HTMLNode deleteContent = ft.pm.getContentNode(deleteBox);
 
 		if (errors != null) {
-			HTMLNode errorBox = fms.pm.getInfobox("infobox-alert", "Typo");
-			HTMLNode errorContent = fms.pm.getContentNode(errorBox);
+			HTMLNode errorBox = ft.pm.getInfobox("infobox-alert", "Typo");
+			HTMLNode errorContent = ft.pm.getContentNode(errorBox);
 			for (String s : errors) {
 				errorContent.addChild("#", s);
 				errorContent.addChild("br");
@@ -150,7 +151,7 @@ public class IdentityEditor {
 			deleteContent.addChild(errorBox);
 		}
 
-		HTMLNode deleteForm = fms.pr.addFormChild(deleteContent, Freetalk.SELF_URI + "/deleteOwnIdentity", "deleteForm");
+		HTMLNode deleteForm = ft.pr.addFormChild(deleteContent, Freetalk.PLUGIN_URI + "/deleteOwnIdentity", "deleteForm");
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "confirmed", "true"});
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", requestUri});
 		deleteForm.addChild("#", "Nick:\u00a0"+nick);
@@ -165,15 +166,15 @@ public class IdentityEditor {
 	
 	/* === others  identities ================ */
 	
-	public final static String makeKnownIdentitiesPage(Freetalk fms, HTTPRequest request) {
-		HTMLNode pageNode = fms.getPageNode();
-		HTMLNode contentNode = fms.pm.getContentNode(pageNode);
+	public final static String makeKnownIdentitiesPage(Freetalk ft, HTTPRequest request) {
+		HTMLNode pageNode = ft.getPageNode();
+		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
 
-		HTMLNode box = fms.pm.getInfobox("Known Identities");
-		HTMLNode boxContent = fms.pm.getContentNode(box);
+		HTMLNode box = ft.pm.getInfobox("Known Identities");
+		HTMLNode boxContent = ft.pm.getContentNode(box);
 		contentNode.addChild(box);
 
-		ObjectSet<FTIdentity> identities = fms.db_config.queryByExample(FTIdentity.class);
+		ObjectSet<FTIdentity> identities = ft.db.queryByExample(FTIdentity.class);
 
 		HTMLNode identitiesTable = boxContent.addChild("table", "border", "0");
 		HTMLNode row = identitiesTable.addChild("tr");
@@ -189,37 +190,37 @@ public class IdentityEditor {
 			row.addChild("td", id.getNickName());
 			row.addChild("td",  id.getRequestURI().toACIIString());
 			HTMLNode deleteCell = row.addChild("td");
-			HTMLNode deleteForm = fms.pr.addFormChild(deleteCell, Freetalk.SELF_URI + "/deleteIdentity", "deleteForm");
+			HTMLNode deleteForm = ft.pr.addFormChild(deleteCell, Freetalk.PLUGIN_URI + "/deleteIdentity", "deleteForm");
 			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI().toACIIString()});
 			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
 		}
 
-		contentNode.addChild(createNewKnownIdentityBox(fms));
+		contentNode.addChild(createNewKnownIdentityBox(ft));
 
 		return pageNode.generate();
 	}
 	
 	/* === new others identities ============= */
 	
-	public static final String makeNewKnownIdentityPage(Freetalk fms, String requestUri, List<String> errors) {
-		HTMLNode pageNode = fms.getPageNode();
-		HTMLNode contentNode = fms.pm.getContentNode(pageNode);
-		contentNode.addChild(createNewKnownIdentityBox(fms, requestUri, errors));
+	public static final String makeNewKnownIdentityPage(Freetalk ft, String requestUri, List<String> errors) {
+		HTMLNode pageNode = ft.getPageNode();
+		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		contentNode.addChild(createNewKnownIdentityBox(ft, requestUri, errors));
 		contentNode.addChild("#", "makeNewIdentitiesPagecc");
 		return pageNode.generate();
 	}
 	
-	private static final HTMLNode createNewKnownIdentityBox(Freetalk fms) {
-		return createNewKnownIdentityBox(fms, "", null);
+	private static final HTMLNode createNewKnownIdentityBox(Freetalk ft) {
+		return createNewKnownIdentityBox(ft, "", null);
 	}
 
-	private static final HTMLNode createNewKnownIdentityBox(Freetalk fms, String requestUri, List<String> errors) {
-		HTMLNode addBox = fms.pm.getInfobox("Add Identity");
-		HTMLNode addContent = fms.pm.getContentNode(addBox);
+	private static final HTMLNode createNewKnownIdentityBox(Freetalk ft, String requestUri, List<String> errors) {
+		HTMLNode addBox = ft.pm.getInfobox("Add Identity");
+		HTMLNode addContent = ft.pm.getContentNode(addBox);
 
 		if (errors != null) {
-			HTMLNode errorBox = fms.pm.getInfobox("infobox-alert", "Typo");
-			HTMLNode errorContent = fms.pm.getContentNode(errorBox);
+			HTMLNode errorBox = ft.pm.getInfobox("infobox-alert", "Typo");
+			HTMLNode errorContent = ft.pm.getContentNode(errorBox);
 			for (String s : errors) {
 				errorContent.addChild("#", s);
 				errorContent.addChild("br");
@@ -227,7 +228,7 @@ public class IdentityEditor {
 			addContent.addChild(errorBox);
 		}
 
-		HTMLNode addForm = fms.pr.addFormChild(addContent, Freetalk.SELF_URI + "/addknownidentity", "addForm");
+		HTMLNode addForm = ft.pr.addFormChild(addContent, Freetalk.PLUGIN_URI + "/addknownidentity", "addForm");
 
 		addForm.addChild("#", "Request URI : ");
 		addForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "requestURI", "70", requestUri });
@@ -236,20 +237,20 @@ public class IdentityEditor {
 	}
 	
 	/* delete */
-	public static String makeDeleteKnownIdentityPage(Freetalk fms, String requestUri, List<String> err) {
-		HTMLNode pageNode = fms.getPageNode();
-		HTMLNode contentNode = fms.pm.getContentNode(pageNode);
-		contentNode.addChild(deleteKnownIdentityBox(fms, "nick", requestUri, "insertUri", false, err));
+	public static String makeDeleteKnownIdentityPage(Freetalk ft, String requestUri, List<String> err) {
+		HTMLNode pageNode = ft.getPageNode();
+		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		contentNode.addChild(deleteKnownIdentityBox(ft, "nick", requestUri, "insertUri", false, err));
 		return pageNode.generate();
 	}
 	
-	private static final HTMLNode deleteKnownIdentityBox(Freetalk fms, String nick, String requestUri, String insertUri, boolean publish, List<String> errors) {
-		HTMLNode deleteBox = fms.pm.getInfobox("Delete Identity");
-		HTMLNode deleteContent = fms.pm.getContentNode(deleteBox);
+	private static final HTMLNode deleteKnownIdentityBox(Freetalk ft, String nick, String requestUri, String insertUri, boolean publish, List<String> errors) {
+		HTMLNode deleteBox = ft.pm.getInfobox("Delete Identity");
+		HTMLNode deleteContent = ft.pm.getContentNode(deleteBox);
 
 		if (errors != null) {
-			HTMLNode errorBox = fms.pm.getInfobox("infobox-alert", "Typo");
-			HTMLNode errorContent = fms.pm.getContentNode(errorBox);
+			HTMLNode errorBox = ft.pm.getInfobox("infobox-alert", "Typo");
+			HTMLNode errorContent = ft.pm.getContentNode(errorBox);
 			for (String s : errors) {
 				errorContent.addChild("#", s);
 				errorContent.addChild("br");
@@ -257,7 +258,7 @@ public class IdentityEditor {
 			deleteContent.addChild(errorBox);
 		}
 
-		HTMLNode deleteForm = fms.pr.addFormChild(deleteContent, Freetalk.SELF_URI + "/deleteIdentity", "deleteForm");
+		HTMLNode deleteForm = ft.pr.addFormChild(deleteContent, Freetalk.PLUGIN_URI + "/deleteIdentity", "deleteForm");
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "confirmed", "true"});
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", requestUri});
 		deleteForm.addChild("#", "Nick:\u00a0"+nick);
@@ -315,16 +316,16 @@ public class IdentityEditor {
 		}
 	}
 	
-	public static void deleteIdentity(Freetalk fms, String requestUri, List<String> err) {
+	public static void deleteIdentity(Freetalk ft, String requestUri, List<String> err) {
 		/*
 		FTIdentity templateId = new FTIdentity(null, requestUri);
 		
-		ObjectSet<FTIdentity> toDelete = fms.db_config.queryByExample(templateId);
+		ObjectSet<FTIdentity> toDelete = ft.db_config.queryByExample(templateId);
 		if (toDelete.size() > 0) {
 			for (FTIdentity id:toDelete) {
-				fms.db_config.delete(id);
+				ft.db_config.delete(id);
 			}
-			fms.db_config.commit();
+			ft.db_config.commit();
 		} else {
 			err.add("Identity »"+requestUri+"« not found, nothing deleted");
 		}*/

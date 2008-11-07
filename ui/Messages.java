@@ -9,9 +9,9 @@ import freenet.support.api.HTTPRequest;
 
 public class Messages {
 	
-	public static String makeMessagesPage(Freetalk fms, HTTPRequest request ) {
-		HTMLNode pageNode = fms.getPageNode();
-		HTMLNode contentNode = fms.pm.getContentNode(pageNode);
+	public static String makeMessagesPage(Freetalk ft, HTTPRequest request ) {
+		HTMLNode pageNode = ft.getPageNode();
+		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
 		contentNode.addChild("#", "makeMessagesPage");
 		return pageNode.generate();
 	}

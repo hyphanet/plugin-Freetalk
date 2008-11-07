@@ -8,47 +8,46 @@ import freenet.support.HTMLNode;
 
 public class Welcome {
 	
-	public static String makeWelcomePage(Freetalk fms) {
-		HTMLNode pageNode = fms.getPageNode();
-		HTMLNode contentNode = fms.pm.getContentNode(pageNode);
-		contentNode.addChild(createWelcomeBox(fms));
-		contentNode.addChild(createOverviewBox(fms));
-		contentNode.addChild(createBackupHintBox(fms));
+	public static String makeWelcomePage(Freetalk ft) {
+		HTMLNode pageNode = ft.getPageNode();
+		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		contentNode.addChild(createWelcomeBox(ft));
+		contentNode.addChild(createOverviewBox(ft));
+		contentNode.addChild(createBackupHintBox(ft));
 		return pageNode.generate();
 	}
 	
-	private static HTMLNode createWelcomeBox(Freetalk fms) {
-		HTMLNode welcomeBox = fms.pm.getInfobox("Welcome");
-		HTMLNode welcomeContent = fms.pm.getContentNode(welcomeBox);
-		welcomeContent.addChild("P", "Welcome to GenTec Labs. This is our last experiment: cloning FMS.");
+	private static HTMLNode createWelcomeBox(Freetalk ft) {
+		HTMLNode welcomeBox = ft.pm.getInfobox("Welcome");
+		HTMLNode welcomeContent = ft.pm.getContentNode(welcomeBox);
+		welcomeContent.addChild("P", "Welcome to GenTec Labs. This is our last experiment: cloning fms.");
 		welcomeContent.addChild("P", "Things happens you didn't expect? Call 0800-GordonFreeman for rescue");
 		return welcomeBox;
 	}
 
-	private static HTMLNode createOverviewBox(Freetalk fms) {
-		HTMLNode overviewBox = fms.pm.getInfobox("Overview");
-		HTMLNode overviewContent = fms.pm.getContentNode(overviewBox);
+	private static HTMLNode createOverviewBox(Freetalk ft) {
+		HTMLNode overviewBox = ft.pm.getInfobox("Overview");
+		HTMLNode overviewContent = ft.pm.getContentNode(overviewBox);
 		HTMLNode list = overviewContent.addChild("ul");
-		list.addChild(new HTMLNode("li", "Own Identities: " + fms.countOwnIdentities()));
-		list.addChild(new HTMLNode("li", "Known Identities: " + fms.countIdentities()));
-		list.addChild(new HTMLNode("li", "WoT plugin: " + (fms.isWoTpresent()?"":"not ") + "found"));
+		list.addChild(new HTMLNode("li", "Own Identities: " + ft.countOwnIdentities()));
+		list.addChild(new HTMLNode("li", "Known Identities: " + ft.countIdentities()));
 		return overviewBox;
 	}
 
-	private static HTMLNode createBackupHintBox(Freetalk fms) {
-		HTMLNode bhBox = fms.pm.getInfobox("The boring backup reminder");
-		HTMLNode bhContent = fms.pm.getContentNode(bhBox);
+	private static HTMLNode createBackupHintBox(Freetalk ft) {
+		HTMLNode bhBox = ft.pm.getInfobox("The boring backup reminder");
+		HTMLNode bhContent = ft.pm.getContentNode(bhBox);
 		bhContent.addChild("P", "You can not turn me off, because I'm boring. :P");
 		bhContent.addChild("P", "Don't forget to backup your data. You find the buttons below.");
-		bhContent.addChild(createExportBox(fms));
-		bhContent.addChild(createImportBox(fms));
+		bhContent.addChild(createExportBox(ft));
+		bhContent.addChild(createImportBox(ft));
 		return bhBox;
 	}
 	
-	private static HTMLNode createExportBox(Freetalk fms) {
-		HTMLNode exportBox = fms.pm.getInfobox("Export");
-		HTMLNode exportContent = fms.pm.getContentNode(exportBox);
-		HTMLNode exportForm = fms.pr.addFormChild(exportContent, Freetalk.SELF_URI + "/exportDB", "exportForm");
+	private static HTMLNode createExportBox(Freetalk ft) {
+		HTMLNode exportBox = ft.pm.getInfobox("Export");
+		HTMLNode exportContent = ft.pm.getContentNode(exportBox);
+		HTMLNode exportForm = ft.pr.addFormChild(exportContent, Freetalk.PLUGIN_URI + "/exportDB", "exportForm");
 		exportForm.addChild("#", "Export the database (Identities etc pp) to xml file. \u00a0 ");
 		exportForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "export", "Export" });
 		exportForm.addChild("br");
@@ -56,10 +55,10 @@ public class Welcome {
 		return exportBox;
 	}
 	
-	private static HTMLNode createImportBox(Freetalk fms) {
-		HTMLNode importBox = fms.pm.getInfobox("Import");
-		HTMLNode importContent = fms.pm.getContentNode(importBox);
-		HTMLNode importForm = fms.pr.addFormChild(importContent, Freetalk.SELF_URI + "/importDB", "importForm");
+	private static HTMLNode createImportBox(Freetalk ft) {
+		HTMLNode importBox = ft.pm.getInfobox("Import");
+		HTMLNode importContent = ft.pm.getContentNode(importBox);
+		HTMLNode importForm = ft.pr.addFormChild(importContent, Freetalk.PLUGIN_URI + "/importDB", "importForm");
 		importForm.addChild("#", "Choose xml file to import.\u00a0");
 		importForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "file", "filename", "" });
 		importForm.addChild("#", "\u00a0");
