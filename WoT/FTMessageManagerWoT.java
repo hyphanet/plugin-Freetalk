@@ -7,6 +7,7 @@ import java.util.NoSuchElementException;
 
 import plugins.Freetalk.FTBoard;
 import plugins.Freetalk.FTMessageManager;
+import plugins.WoT.exceptions.InvalidParameterException;
 
 import com.db4o.ObjectContainer;
 
@@ -17,7 +18,13 @@ import freenet.support.UpdatableSortedLinkedListKilledException;
 
 public class FTMessageManagerWoT extends FTMessageManager {
 	
-	protected FTIdentityManagerWoT mIdentityManager;
+	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
+	private static final int THREAD_PERIOD = 5 * 60 * 1000;
+	
+	private FTIdentityManagerWoT mIdentityManager;
+	
+	private boolean isRunning = true;
+	private Thread mThread;
 
 	public FTMessageManagerWoT(ObjectContainer myDB, Executor myExecutor, FTIdentityManagerWoT myIdentityManager) {
 		super(myDB, myExecutor, myIdentityManager);
@@ -52,6 +59,33 @@ public class FTMessageManagerWoT extends FTMessageManager {
 	}
 	
 	public void run() {
+		Logger.debug(this, "Message manager running.");
+		mThread = Thread.currentThread();
 		
+		try {
+			Logger.debug(this, "Waiting for the node to start up...");
+			Thread.sleep((long) (3*60*1000 * (0.5f + Math.random()))); /* Let the node start up */
+		} catch (InterruptedException e) { }
+		
+		while(isRunning) {
+			Logger.debug(this, "Message manager loop running...");
+
+			Logger.debug(this, "Message manager loop finished.");
+
+			try {
+				Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
+			} catch (InterruptedException e) { }
+		}
+	}
+	
+	public void terminate() {
+		Logger.debug(this, "Stopping the message manager..."); 
+		isRunning = false;
+		mThread.interrupt();
+		try {
+			mThread.join();
+		}
+		catch(InterruptedException e) { }
+		Logger.debug(this, "Stopped the message manager.");
 	}
 }

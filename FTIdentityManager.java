@@ -20,11 +20,9 @@ public abstract class FTIdentityManager implements Runnable, Iterable<FTIdentity
 	protected final ObjectContainer db;
 
 	protected final Executor mExecutor;
-	
-	public boolean isRunning = true;
 
 	public FTIdentityManager(ObjectContainer myDB, Executor myExecutor) {
-		Logger.debug(this, "Starting identity manager...");
+		Logger.debug(this, "Creating identity manager...");
 		db = myDB;
 		mExecutor = myExecutor;
 		mExecutor.execute(this, "FT Identity Manager");
@@ -53,4 +51,6 @@ public abstract class FTIdentityManager implements Runnable, Iterable<FTIdentity
 	}
 	
 	public abstract void run();
+	
+	public abstract void terminate();
 }
