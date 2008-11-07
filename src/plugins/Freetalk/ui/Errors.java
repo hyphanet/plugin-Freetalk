@@ -8,19 +8,19 @@ import freenet.support.HTMLNode;
 
 public class Errors {
 	
-	public static String makeErrorPage(Freetalk fms, String error) {
-		return makeErrorPage(fms, "ERROR", error);
+	public static String makeErrorPage(Freetalk ft, String error) {
+		return makeErrorPage(ft, "ERROR", error);
 	}
 
-	private static String makeErrorPage(Freetalk fms, String title, String error) {
-		HTMLNode pageNode = fms.getPageNode();
-		HTMLNode contentNode = fms.pm.getContentNode(pageNode);
-		contentNode.addChild(createErrorBox(fms, title, error));
+	private static String makeErrorPage(Freetalk ft, String title, String error) {
+		HTMLNode pageNode = ft.getPageNode();
+		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		contentNode.addChild(createErrorBox(ft, title, error));
 		return pageNode.generate();
 	}
 
-	private static HTMLNode createErrorBox(Freetalk fms, String title, String errmsg) {
-		HTMLNode errorBox = fms.pm.getInfobox("infobox-alert", title);
+	private static HTMLNode createErrorBox(Freetalk ft, String title, String errmsg) {
+		HTMLNode errorBox = ft.pm.getInfobox("infobox-alert", title);
 		errorBox.addChild("#", errmsg);
 		return errorBox;
 	}
