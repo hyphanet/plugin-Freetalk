@@ -30,6 +30,9 @@ public class FTIdentityManagerWoT extends FTIdentityManager {
 	private static final int THREAD_PERIOD = 5 * 60 * 1000;
 	
 	private WoT mWoT;
+	
+	private boolean isRunning = true;
+	private Thread mThread;
 
 	/**
 	 * @param executor
@@ -37,7 +40,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager {
 	public FTIdentityManagerWoT(ObjectContainer myDB, Executor executor, WoT newWoT) {
 		super(myDB, executor);
 		mWoT = newWoT;
-		Logger.debug(this, "Identity manager started.");
+		Logger.debug(this, "Identity manager created.");
 	}
 	
 	private void receiveIdentities() throws InvalidParameterException {
@@ -117,6 +120,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager {
 	@Override
 	public void run() {
 		Logger.debug(this, "Identity manager running.");
+		mThread = Thread.currentThread();
 		
 		try {
 			Logger.debug(this, "Waiting for the node to start up...");
@@ -142,5 +146,16 @@ public class FTIdentityManagerWoT extends FTIdentityManager {
 				Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
 			} catch (InterruptedException e) { }
 		}
+	}
+	
+	public void terminate() {
+		Logger.debug(this, "Stopping the identity manager...");
+		isRunning = false;
+		mThread.interrupt();
+		try {
+			mThread.join();
+		}
+		catch(InterruptedException e) { }
+		Logger.debug(this, "Stopped the indentity manager.");
 	}
 }

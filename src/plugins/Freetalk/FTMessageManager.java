@@ -77,4 +77,6 @@ public abstract class FTMessageManager implements Runnable {
 	protected synchronized boolean shouldDownloadMessage(FreenetURI uri, FTIdentity author) {
 		return (get(uri) != null) || mIdentityManager.anyOwnIdentityWantsMessagesFrom(author);
 	}
+	
+	public abstract void terminate();
 }
