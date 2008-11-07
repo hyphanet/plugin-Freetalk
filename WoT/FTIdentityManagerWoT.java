@@ -116,7 +116,10 @@ public class FTIdentityManagerWoT extends FTIdentityManager {
 
 	@Override
 	public void run() {
+		Logger.debug(this, "Identity manager running.");
+		
 		try {
+			Logger.debug(this, "Waiting for the node to start up...");
 			Thread.sleep((long) (3*60*1000 * (0.5f + Math.random()))); /* Let the node start up */
 		} catch (InterruptedException e) { }
 		
