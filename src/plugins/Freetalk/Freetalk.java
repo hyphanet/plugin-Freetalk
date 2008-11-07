@@ -56,16 +56,16 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 
 	/* Constants */
 	
-	public static String PLUGIN_URI = "/plugins/plugins.Freetalk.Freetalk";
-	public static String PLUGIN_TITLE = "Freetalk";
-	public static String WOT_NAME = "plugins.WoT.WoT";
-	public static String DATABASE_FILE = "freetalk_data.db4o";
+	public static final String PLUGIN_URI = "/plugins/plugins.Freetalk.Freetalk";
+	public static final String PLUGIN_TITLE = "Freetalk";
+	public static final String WOT_NAME = "plugins.WoT.WoT";
+	public static final String DATABASE_FILE = "freetalk_data.db4o";
 
 	/* References from the node */
 	
-	private PluginRespirator pr;
+	public PluginRespirator pr;
 
-	private PageMaker pm;
+	public PageMaker pm;
 
 	private LANGUAGE language;
 	
@@ -77,7 +77,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	
 	/* The plugin's own references */
 	
-	private ObjectContainer db;
+	public ObjectContainer db;
 	
 	private FTIdentityManagerWoT mIdentityManager;
 	
