@@ -113,12 +113,17 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		db.commit();
 		Logger.debug(this, "Database wiped.");
 
+		Logger.debug(this, "Getting TBF...");
 		tbf = pr.getNode().clientCore.tempBucketFactory;
+		Logger.debug(this, "Got TBF.");
 		
+		Logger.debug(this, "Creating identity manager...");
 		mIdentityManager = new FTIdentityManagerWoT(db, pr.getNode().executor, (WoT)getWoTPlugin() );
 		
+		Logger.debug(this, "Creating message manager...");
 		mMessageManager = new FTMessageManagerWoT(db, pr.getNode().executor, mIdentityManager);
 		
+		Logger.debug(this, "Setting up PageMaker...");
 		pm = pr.getPageMaker();
 		pm.addNavigationLink(PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
 		pm.addNavigationLink(PLUGIN_URI + "/ownidentities", "Own Identities", "Manage your own identities", false, null);
@@ -126,6 +131,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		pm.addNavigationLink(PLUGIN_URI + "/messages", "Messages", "View Messages", false, null);
 		pm.addNavigationLink(PLUGIN_URI + "/status", "Dealer status", "Show what happens in background", false, null);
 		pm.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);
+		Logger.debug(this, "PageMaker is set up.");
 		
 		Logger.debug(this, "Plugin loaded.");
 	}
