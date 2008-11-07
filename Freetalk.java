@@ -343,7 +343,10 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	}
 	
 	public FredPluginFCP getWoTPlugin() {
-		return pr.getNode().pluginManager.getFCPPlugin(Freetalk.WOT_NAME);
+		Logger.debug(this, "Getting WoT plugin...");
+		FredPluginFCP wot = pr.getNode().pluginManager.getFCPPlugin(Freetalk.WOT_NAME);
+		Logger.debug(this, "Got WoT plugin: " + wot);
+		return wot;
 	}
 
 	public long countIdentities() {
