@@ -12,6 +12,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Executor;
+import freenet.support.Logger;
 import freenet.support.UpdatableSortedLinkedListKilledException;
 
 public class FTMessageManagerWoT extends FTMessageManager {
@@ -21,6 +22,7 @@ public class FTMessageManagerWoT extends FTMessageManager {
 	public FTMessageManagerWoT(ObjectContainer myDB, Executor myExecutor, FTIdentityManagerWoT myIdentityManager) {
 		super(myDB, myExecutor, myIdentityManager);
 		mIdentityManager = myIdentityManager;
+		Logger.debug(this, "Message manager started.");
 	}
 
 	protected synchronized void deleteMessage(FreenetURI uri) throws NoSuchElementException {

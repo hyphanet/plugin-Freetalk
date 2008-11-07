@@ -37,6 +37,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager {
 	public FTIdentityManagerWoT(ObjectContainer myDB, Executor executor, WoT newWoT) {
 		super(myDB, executor);
 		mWoT = newWoT;
+		Logger.debug(this, "Identity manager started.");
 	}
 	
 	private void receiveIdentities() throws InvalidParameterException {
@@ -120,6 +121,8 @@ public class FTIdentityManagerWoT extends FTIdentityManager {
 		} catch (InterruptedException e) { }
 		
 		while(isRunning) {
+			Logger.debug(this, "Identity manager loop running...");
+			
 			try {
 				receiveIdentities();
 			}
@@ -129,6 +132,8 @@ public class FTIdentityManagerWoT extends FTIdentityManager {
 			}
 			
 			garbageCollectIdentities();
+			
+			Logger.debug(this, "Identity manager loop finished.");
 
 			try {
 				Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));

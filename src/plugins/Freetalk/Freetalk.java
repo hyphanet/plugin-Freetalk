@@ -86,12 +86,14 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	
 	public void runPlugin(PluginRespirator myPR) {
 		
-		Logger.debug(this, "Freetalk plugin starting up...");
+		Logger.debug(this, "Plugin starting up...");
 
 		pr = myPR;
 		
 		client = pr.getHLSimpleClient();
 
+		Logger.debug(this, "Opening database...");
+		
 		Configuration dbCfg = Db4o.newConfiguration();
 		for(String f : FTMessage.getIndexedFields())
 			dbCfg.objectClass(FTMessage.class).objectField(f).indexed(true);
@@ -101,11 +103,15 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			dbCfg.objectClass(FTBoard.class).objectField(f).indexed(true);
 		
 		db = Db4o.openFile(dbCfg, DATABASE_FILE);
+		
+		Logger.debug(this, "Database opened.");
 
+		Logger.debug(this, "Wiping database...");
 		/* DEBUG: Wipe database on startup */
 		ObjectSet<Object> result = db.queryByExample(new Object());
 		for (Object o : result) db.delete(o);
 		db.commit();
+		Logger.debug(this, "Database wiped.");
 
 		tbf = pr.getNode().clientCore.tempBucketFactory;
 		
@@ -121,7 +127,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		pm.addNavigationLink(PLUGIN_URI + "/status", "Dealer status", "Show what happens in background", false, null);
 		pm.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);
 		
-		Logger.debug(this, "Freetalk plugin loaded.");
+		Logger.debug(this, "Plugin loaded.");
 	}
 
 	public void terminate() {

@@ -11,6 +11,7 @@ import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Executor;
+import freenet.support.Logger;
 
 /**
  * @author xor
@@ -25,6 +26,7 @@ public abstract class FTMessageManager implements Runnable {
 	protected FTIdentityManager mIdentityManager;
 
 	public FTMessageManager(ObjectContainer myDB, Executor myExecutor, FTIdentityManager myIdentityManager) {
+		Logger.debug(this, "Starting message manager...");
 		assert(myDB != null);
 		assert(myIdentityManager != null);
 

@@ -9,6 +9,7 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
 import freenet.support.Executor;
+import freenet.support.Logger;
 
 /**
  * @author saces, xor
@@ -23,6 +24,7 @@ public abstract class FTIdentityManager implements Runnable, Iterable<FTIdentity
 	public boolean isRunning = true;
 
 	public FTIdentityManager(ObjectContainer myDB, Executor myExecutor) {
+		Logger.debug(this, "Starting identity manager...");
 		db = myDB;
 		mExecutor = myExecutor;
 		mExecutor.execute(this, "FT Identity Manager");
