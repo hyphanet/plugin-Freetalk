@@ -164,8 +164,13 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 
 			try {
 				Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
-			} catch (InterruptedException e) { }
+			}
+			catch (InterruptedException e)
+			{
+				Logger.debug(this, "Identity manager loop interrupted!");
+			}
 		}
+		Logger.debug(this, "Identity manager thread exiting.");
 	}
 	
 	public void terminate() {

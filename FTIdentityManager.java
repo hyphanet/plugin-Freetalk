@@ -50,7 +50,5 @@ public abstract class FTIdentityManager implements Runnable, Iterable<FTIdentity
 		return false;
 	}
 	
-	public abstract void run();
-	
 	public abstract void terminate();
 }
