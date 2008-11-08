@@ -170,11 +170,13 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
 
+		/* FIXME 
 		String pass = request.getParam("formPassword");
-		if(pass != null) {	/* FIXME: is this correct? what if the client just does not specify the password so that its null? */
+		if(pass != null) {	// FIXME: is this correct? what if the client just does not specify the password so that its null? 
 			if ((pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword))
 				return Errors.makeErrorPage(this, "Buh! Invalid form password");
 		}
+		*/
 
 		String page = request.getPath().substring(PLUGIN_URI.length());
 		if ((page.length() < 1) || ("/".equals(page)))
@@ -203,7 +205,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 
 	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
 		String pass = request.getPartAsString("formPassword", 32);
-		if ((pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword)) {
+		if (pass == null || (pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword)) {
 			return Errors.makeErrorPage(this, "Buh! Invalid form password");
 		}
 
