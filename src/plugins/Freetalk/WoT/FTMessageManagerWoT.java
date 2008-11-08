@@ -65,7 +65,11 @@ public class FTMessageManagerWoT extends FTMessageManager {
 		try {
 			Logger.debug(this, "Waiting for the node to start up...");
 			Thread.sleep((long) (3*60*1000 * (0.5f + Math.random()))); /* Let the node start up */
-		} catch (InterruptedException e) { }
+		}
+		catch (InterruptedException e)
+		{
+			mThread.interrupt();
+		}
 		
 		while(isRunning) {
 			Logger.debug(this, "Message manager loop running...");
@@ -77,6 +81,7 @@ public class FTMessageManagerWoT extends FTMessageManager {
 			}
 			catch (InterruptedException e)
 			{
+				mThread.interrupt();
 				Logger.debug(this, "Message manager loop interrupted!");
 			}
 		}
