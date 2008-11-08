@@ -3,20 +3,25 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import java.net.MalformedURLException;
 import java.util.List;
 
 import plugins.Freetalk.FTIdentityManager;
-import plugins.WoT.Identity;
-import plugins.WoT.OwnIdentity;
-import plugins.WoT.WoT;
-import plugins.WoT.exceptions.InvalidParameterException;
+import plugins.Freetalk.Freetalk;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
+import freenet.keys.FreenetURI;
+import freenet.pluginmanager.FredPluginTalker;
+import freenet.pluginmanager.PluginNotFoundException;
+import freenet.pluginmanager.PluginRespirator;
+import freenet.pluginmanager.PluginTalker;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
 
 /**
  * An identity manager which uses the identities from the WoT plugin.
@@ -24,34 +29,75 @@ import freenet.support.Logger;
  * @author xor
  *
  */
-public class FTIdentityManagerWoT extends FTIdentityManager {
+public class FTIdentityManagerWoT extends FTIdentityManager implements FredPluginTalker {
 	
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
 	private static final int THREAD_PERIOD = 5 * 60 * 1000;
-	
-	private WoT mWoT;
-	
+
 	private boolean isRunning = true;
 	private Thread mThread;
+
+	private PluginTalker mTalker;
 
 	/**
 	 * @param executor
 	 */
-	public FTIdentityManagerWoT(ObjectContainer myDB, Executor executor, WoT newWoT) {
-		super(myDB, executor);
-		mWoT = newWoT;
+	public FTIdentityManagerWoT(ObjectContainer myDB, PluginRespirator pr) throws PluginNotFoundException {
+		super(myDB, pr.getNode().executor);
+		mTalker = pr.getPluginTalker(this, Freetalk.WOT_NAME, Freetalk.PLUGIN_TITLE);
 		Logger.debug(this, "Identity manager created.");
 	}
 	
-	private void receiveIdentities() throws InvalidParameterException {
+	public void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data) {
 		long time = System.currentTimeMillis();
 		
+		if(params.get("Message").equals("Identities")) {
+			for(int idx = 1; ; idx++) {
+				String uid = params.get("Identity"+idx);
+				if(uid == null || uid.equals("")) /* FIXME: Figure out whether the second condition is necessary */
+					break;
+				String requestURI = params.get("RequestURI"+idx);
+				String nickname = params.get("Nickname"+idx);
+				
+				synchronized(this) { /* We lock here and not during the whole function to allow other threads to execute */
+					Query q = db.query();
+					q.constrain(FTIdentityWoT.class);
+					q.descend("mUID").equals(uid);
+					ObjectSet<FTIdentityWoT> result = q.execute();
+		
+					if(result.size() == 0) {
+						try {
+							db.store(new FTIdentityWoT(db, uid, new FreenetURI(requestURI), nickname));
+							db.commit();
+						}
+						catch(MalformedURLException e) {
+							Logger.error(this, "Error in OnReply()", e);
+						}
+					} else {
+						assert(result.size() == 1);
+						result.next().setLastReceivedFromWoT(time);
+					}
+				}
+			}
+		}
+		
+		garbageCollectIdentities();
+	}
+	
+	private void receiveIdentities() {
+		SimpleFieldSet params = new SimpleFieldSet(true);
+		params.putOverwrite("Message", "GetIdentitiesByScore");
+		params.putOverwrite("Select", "+");
+		params.putOverwrite("Context", "freetalk");
+		mTalker.send(params, null);
+		
+		/*
 		ObjectSet<OwnIdentity> oids = mWoT.getAllOwnIdentities();
 		for(OwnIdentity o : oids) {
-			synchronized(this) { /* We lock here and not during the whole function to allow other threads to execute */
+			synchronized(this) { // We lock here and not during the whole function to allow other threads to execute 
 				Query q = db.query();
 				q.constrain(FTOwnIdentityWoT.class);
-				q.descend("mIdentity").equals(o);
+				q.descend("mUID").equals();
 				ObjectSet<FTOwnIdentityWoT> result = q.execute();
 				
 				if(result.size() == 0) {
@@ -63,25 +109,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager {
 				}
 			}
 		}
-		
-		List<Identity> ids = mWoT.getIdentitiesByScore(null, 30, "freetalk");	/* FIXME: the "30" has to be configurable */
-
-		for(Identity i : ids) {
-			synchronized(this) { /* We lock here and not during the whole function to allow other threads to execute */
-				Query q = db.query();
-				q.constrain(FTIdentityWoT.class);
-				q.descend("mIdentity").equals(i);
-				ObjectSet<FTIdentityWoT> result = q.execute();
-	
-				if(result.size() == 0) {
-					db.store(new FTIdentityWoT(db, i));
-					db.commit();
-				} else {
-					assert(result.size() == 1);
-					result.next().setLastReceivedFromWoT(time);
-				}
-			}
-		}
+		*/
 	}
 	
 	private synchronized void garbageCollectIdentities() {
@@ -129,16 +157,8 @@ public class FTIdentityManagerWoT extends FTIdentityManager {
 		
 		while(isRunning) {
 			Logger.debug(this, "Identity manager loop running...");
-			
-			try {
-				receiveIdentities();
-			}
 
-			catch(InvalidParameterException e) {
-				Logger.error(this, "Exception in identity fetch loop", e);
-			}
-			
-			garbageCollectIdentities();
+			receiveIdentities();
 			
 			Logger.debug(this, "Identity manager loop finished.");
 
@@ -158,4 +178,5 @@ public class FTIdentityManagerWoT extends FTIdentityManager {
 		catch(InterruptedException e) { }
 		Logger.debug(this, "Stopped the indentity manager.");
 	}
+
 }
