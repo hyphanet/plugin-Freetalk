@@ -74,8 +74,13 @@ public class FTMessageManagerWoT extends FTMessageManager {
 
 			try {
 				Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
-			} catch (InterruptedException e) { }
+			}
+			catch (InterruptedException e)
+			{
+				Logger.debug(this, "Message manager loop interrupted!");
+			}
 		}
+		Logger.debug(this, "Message manager thread exiting.");
 	}
 	
 	public void terminate() {
