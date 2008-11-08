@@ -24,20 +24,17 @@ public class FTOwnIdentityWoT extends FTIdentityWoT implements FTOwnIdentity {
 
 	private final LinkedList<FTBoard> mSubscribedBoards = new LinkedList<FTBoard>();
 
-	public FTOwnIdentityWoT(ObjectContainer myDB, OwnIdentity newIndentity) {
-		super(myDB, newIndentity);
+	private final FreenetURI mInsertURI;
+	
+	public FTOwnIdentityWoT(ObjectContainer myDB, String myUID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
+		super(myDB, myUID, myRequestURI, myNickname);
+		if(myInsertURI == null)
+			throw new IllegalArgumentException();
+		mInsertURI = myInsertURI;
 	}
 	
-	protected OwnIdentity getOwnIdentity() {
-		return (OwnIdentity)mIdentity;
-	}
-
 	public FreenetURI getInsertURI() {
-		return getOwnIdentity().getInsertURI();
-	}
-
-	public synchronized Date getLastInsert() {
-		return getOwnIdentity().getLastInsert();
+		return mInsertURI;
 	}
 
 	public synchronized void postMessage(FTMessage message) {

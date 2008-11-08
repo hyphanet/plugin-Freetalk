@@ -15,8 +15,6 @@ import freenet.keys.FreenetURI;
 public interface FTOwnIdentity extends FTIdentity {
 	
 	public FreenetURI getInsertURI();
-
-	public Date getLastInsert();
 	
 	public boolean wantsMessagesFrom(FTIdentity identity);
 	

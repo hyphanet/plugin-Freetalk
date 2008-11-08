@@ -47,11 +47,12 @@ public class IdentityEditor {
 			while (ownIdentities.hasNext()) {
 				FTOwnIdentity id = ownIdentities.next();
 				row = identitiesTable.addChild("tr");
-				row.addChild("td", id.getNickName());
+				row.addChild("td", id.getNickname());
 				row.addChild("td", new String[]{"title"}, new String[]{id.getRequestURI().toACIIString()}, id.getRequestURI().toACIIString().substring(0, 35)+"...");
 				row.addChild("td", new String[]{"title"}, new String[]{id.getInsertURI().toACIIString()}, id.getInsertURI().toACIIString().substring(0, 15)+"...");
-				row.addChild("td", id.doesPublishTrustList()?"yes":"no");
+				/* row.addChild("td", id.doesPublishTrustList()?"yes":"no"); */
 				HTMLNode lastUpdateCell = row.addChild("td");
+				/*
 				if (id.getLastInsert() == null) {
 					lastUpdateCell.addChild("p", "Insert in progress...");
 				} else if (id.getLastInsert().equals(new Date(0))) {
@@ -59,6 +60,7 @@ public class IdentityEditor {
 				} else {
 					lastUpdateCell.addChild(new HTMLNode("a", "href", "/" + id.getRequestURI().toString(), id.getLastInsert().toString()));
 				}
+				*/
 				HTMLNode deleteCell = row.addChild("td");
 				HTMLNode deleteForm = ft.pr.addFormChild(deleteCell, Freetalk.PLUGIN_URI + "/deleteOwnIdentity", "deleteForm");
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI().toACIIString()});
@@ -187,7 +189,7 @@ public class IdentityEditor {
 			if (id instanceof FTOwnIdentity)
 				continue;
 			row = identitiesTable.addChild("tr");
-			row.addChild("td", id.getNickName());
+			row.addChild("td", id.getNickname());
 			row.addChild("td",  id.getRequestURI().toACIIString());
 			HTMLNode deleteCell = row.addChild("td");
 			HTMLNode deleteForm = ft.pr.addFormChild(deleteCell, Freetalk.PLUGIN_URI + "/deleteIdentity", "deleteForm");
