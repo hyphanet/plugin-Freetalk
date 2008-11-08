@@ -31,6 +31,7 @@ public abstract class FTMessageManager implements Runnable {
 		assert(myIdentityManager != null);
 
 		db = myDB;
+		mExecutor = myExecutor;
 		mIdentityManager = myIdentityManager;
 		mExecutor.execute(this, "FT Identity Manager");
 	}

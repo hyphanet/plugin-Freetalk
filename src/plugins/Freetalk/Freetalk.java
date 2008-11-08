@@ -147,10 +147,24 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	}
 
 	public void terminate() {
-		mMessageManager.terminate();
-		mIdentityManager.terminate();
-		db.commit();
-		db.close();
+		Logger.debug(this, "Terminating Freetalk ...");
+		
+		if(mMessageManager != null)
+			mMessageManager.terminate();
+		else
+			Logger.error(this, "Message manager was null!");
+		
+		if(mIdentityManager != null)
+			mIdentityManager.terminate();
+		else
+			Logger.error(this, "Identity manager was null!");
+		
+		if(db != null) {
+			db.commit();
+			db.close();
+		} else
+			Logger.error(this, "Database was null!");
+		
 		Logger.debug(this, "Freetalk plugin terminated.");
 	}
 
