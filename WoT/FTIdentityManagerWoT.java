@@ -183,7 +183,10 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 		try {
 			mThread.join();
 		}
-		catch(InterruptedException e) { }
+		catch(InterruptedException e)
+		{
+			Thread.currentThread().interrupt();
+		}
 		Logger.debug(this, "Stopped the indentity manager.");
 	}
 
