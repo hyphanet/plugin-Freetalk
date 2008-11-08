@@ -26,6 +26,7 @@ import freenet.clients.http.PageMaker;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n.LANGUAGE;
+import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.DownloadPluginHTTPException;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginFCP;
@@ -36,6 +37,7 @@ import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.NotFoundPluginHTTPException;
 import freenet.pluginmanager.PluginHTTPException;
+import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.pluginmanager.RedirectPluginHTTPException;
@@ -115,7 +117,20 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		tbf = pr.getNode().clientCore.tempBucketFactory;
 		
 		Logger.debug(this, "Creating identity manager...");
-		mIdentityManager = new FTIdentityManagerWoT(db, pr.getNode().executor);
+		int tries = 0;
+		do {
+			try {
+				++tries;
+				mIdentityManager = new FTIdentityManagerWoT(db, pr);
+			}
+		
+			catch(PluginNotFoundException e) {
+				if(tries == 10)
+					throw new RuntimeException(e);
+				Logger.error(this, "WoT plugin not found! Retrying ...");
+				try { Thread.sleep(10 * 1000); } catch(InterruptedException ex) {}
+			}
+		} while(mIdentityManager == null);
 		
 		Logger.debug(this, "Creating message manager...");
 		mMessageManager = new FTMessageManagerWoT(db, pr.getNode().executor, mIdentityManager);
