@@ -8,6 +8,7 @@ import java.util.Date;
 import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
+import freenet.support.SimpleFieldSet;
 import plugins.Freetalk.FTIdentity;
 
 import plugins.WoT.Identity;
@@ -18,9 +19,13 @@ import plugins.WoT.Identity;
  */
 public class FTIdentityWoT implements FTIdentity {
 	
-	protected final ObjectContainer db;
+	private final ObjectContainer db;
 	
-	protected final Identity mIdentity;
+	private final String mUID;
+    /** The requestURI used to fetch this identity from Freenet */
+	private final FreenetURI mRequestURI;
+	/** The nickname of this Identity */
+	private final String mNickname;
 	
 	/**
 	 * Used for garbage collecting old identities which are not returned by the WoT plugin anymore.
@@ -33,29 +38,30 @@ public class FTIdentityWoT implements FTIdentity {
 	 */
 	private boolean mIsNeeded;
 
-	public FTIdentityWoT(ObjectContainer myDB, Identity myIndentity) {
+	public FTIdentityWoT(ObjectContainer myDB, String myUID, FreenetURI myRequestURI, String myNickname) {
+		if(myUID == null || myUID.length() == 0 || myRequestURI == null || myNickname == null || myNickname.length() == 0)
+			throw new IllegalArgumentException();
+		
 		db = myDB;
-		mIdentity = myIndentity;
+		mUID = myUID;
+		mRequestURI = myRequestURI;
+		mNickname = myNickname;
 		mLastReceivedFromWoT = System.currentTimeMillis();
 		mIsNeeded = false;
 	}
-
-	public synchronized boolean doesPublishTrustList() {
-		return mIdentity.doesPublishTrustList();
-	}
-
-	public synchronized Date getLastChange() {
-		return mIdentity.getLastChange();
-	}
-
-	public synchronized String getNickName() {
-		return mIdentity.getNickName();
-	}
-
-	public synchronized FreenetURI getRequestURI() {
-		return mIdentity.getRequestURI();
-	}
 	
+	public String getUID() {
+		return mUID;
+	}
+
+	public FreenetURI getRequestURI() {
+		return mRequestURI;
+	}
+
+	public String getNickname() {
+		return mNickname;
+	}
+
 	public synchronized long getLastReceivedFromWoT() {
 		return mLastReceivedFromWoT;
 	}
@@ -77,5 +83,4 @@ public class FTIdentityWoT implements FTIdentity {
 		db.store(this);
 		db.commit();
 	}
-
 }
