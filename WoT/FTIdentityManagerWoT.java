@@ -143,9 +143,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 		q.descend("mAuthor").equals(i);
 		return (q.execute().size() == 0);
 	}
-	
 
-	@Override
 	public void run() {
 		Logger.debug(this, "Identity manager running.");
 		mThread = Thread.currentThread();
