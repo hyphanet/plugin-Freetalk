@@ -30,7 +30,9 @@ public class Backup {
 	private static SAXParser saxParser;
 
 	public final static void exportConfigDb(ObjectContainer config_db, Writer ow) throws IOException {
-
+		/* Creating XML manually is a bad idea so lets comment this out */
+		
+		/*
 		Writer w = new BufferedWriter(ow);
 
 		w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -77,8 +79,10 @@ public class Backup {
 
 		w.write("\t</Identities>\n");
 		w.write("</fms-kidding>\n");
+		
 		w.flush();
 		w.close();
+	*/
 	}
 
 	public final static void importConfigDb(ObjectContainer config_db, InputStream is) throws IOException, ParserConfigurationException, SAXException {

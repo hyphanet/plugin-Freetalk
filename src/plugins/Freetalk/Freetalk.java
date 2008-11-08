@@ -15,7 +15,6 @@ import plugins.Freetalk.ui.IdentityEditor;
 import plugins.Freetalk.ui.Messages;
 import plugins.Freetalk.ui.Status;
 import plugins.Freetalk.ui.Welcome;
-import plugins.WoT.WoT;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
@@ -49,7 +48,7 @@ import freenet.support.api.HTTPUploadedFile;
 import freenet.support.io.TempBucketFactory;
 
 /**
- * @author saces
+ * @author saces, xor
  *
  */
 public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginThreadless, FredPluginVersioned {
@@ -116,7 +115,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		tbf = pr.getNode().clientCore.tempBucketFactory;
 		
 		Logger.debug(this, "Creating identity manager...");
-		mIdentityManager = new FTIdentityManagerWoT(db, pr.getNode().executor, (WoT)getWoTPlugin() );
+		mIdentityManager = new FTIdentityManagerWoT(db, pr.getNode().executor);
 		
 		Logger.debug(this, "Creating message manager...");
 		mMessageManager = new FTMessageManagerWoT(db, pr.getNode().executor, mIdentityManager);
