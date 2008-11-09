@@ -48,15 +48,25 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 		Logger.debug(this, "Identity manager created.");
 	}
 	
+	private void addFreetalkContext(FTIdentityWoT oid) {
+		SimpleFieldSet params = new SimpleFieldSet(true);
+		params.putOverwrite("Message", "AddContext");
+		params.putOverwrite("Identity", oid.getUID());
+		params.putOverwrite("Context", Freetalk.WOT_CONTEXT);
+		mTalker.send(params, null);
+	}
+	
 	public void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data) {
 		long time = System.currentTimeMillis();
 		
-		if(params.get("Message").equals("Identities")) {
+		boolean bOwnIdentities = params.get("Message").equals("OwnIdentities");
+		if(params.get("Message").equals("Identities") || bOwnIdentities) {
 			for(int idx = 1; ; idx++) {
 				String uid = params.get("Identity"+idx);
 				if(uid == null || uid.equals("")) /* FIXME: Figure out whether the second condition is necessary */
 					break;
 				String requestURI = params.get("RequestURI"+idx);
+				String insertURI = bOwnIdentities ? params.get("InsertURI") : null;
 				String nickname = params.get("Nickname"+idx);
 				
 				synchronized(this) { /* We lock here and not during the whole function to allow other threads to execute */
@@ -64,10 +74,13 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 					q.constrain(FTIdentityWoT.class);
 					q.descend("mUID").equals(uid);
 					ObjectSet<FTIdentityWoT> result = q.execute();
+					FTIdentityWoT id = null; 
 		
 					if(result.size() == 0) {
 						try {
-							db.store(new FTIdentityWoT(db, uid, new FreenetURI(requestURI), nickname));
+							id = bOwnIdentities ?	new FTOwnIdentityWoT(db, uid, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
+													new FTIdentityWoT(db, uid, new FreenetURI(requestURI), nickname);
+							db.store(id);
 							db.commit();
 						}
 						catch(MalformedURLException e) {
@@ -75,21 +88,30 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 						}
 					} else {
 						assert(result.size() == 1);
-						result.next().setLastReceivedFromWoT(time);
+						id = result.next();
 					}
+					
+					if(bOwnIdentities)
+						addFreetalkContext(id);
+					id.setLastReceivedFromWoT(time);
 				}
 			}
 		}
+
 		
 		garbageCollectIdentities();
 	}
 	
 	private void receiveIdentities() {
-		SimpleFieldSet params = new SimpleFieldSet(true);
-		params.putOverwrite("Message", "GetIdentitiesByScore");
-		params.putOverwrite("Select", "+");
-		params.putOverwrite("Context", "freetalk");
-		mTalker.send(params, null);
+		SimpleFieldSet p1 = new SimpleFieldSet(true);
+		p1.putOverwrite("Message", "GetIdentitiesByScore");
+		p1.putOverwrite("Select", "+");
+		p1.putOverwrite("Context", Freetalk.WOT_CONTEXT);
+		mTalker.send(p1, null);
+		
+		SimpleFieldSet p2 = new SimpleFieldSet(true);
+		p2.putOverwrite("Message","GetOwnIdentities");
+		mTalker.send(p2, null);
 		
 		/*
 		ObjectSet<OwnIdentity> oids = mWoT.getAllOwnIdentities();
