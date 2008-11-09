@@ -60,6 +60,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	public static final String PLUGIN_URI = "/plugins/plugins.Freetalk.Freetalk";
 	public static final String PLUGIN_TITLE = "Freetalk";
 	public static final String WOT_NAME = "plugins.WoT.WoT";
+	public static final String WOT_CONTEXT = "freetalk";
 	public static final String DATABASE_FILE = "freetalk_data.db4o";
 
 	/* References from the node */
