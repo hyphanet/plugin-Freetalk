@@ -25,8 +25,8 @@ public class FTOwnIdentityWoT extends FTIdentityWoT implements FTOwnIdentity {
 
 	private final FreenetURI mInsertURI;
 	
-	public FTOwnIdentityWoT(ObjectContainer myDB, String myUID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
-		super(myDB, myUID, myRequestURI, myNickname);
+	public FTOwnIdentityWoT(String myUID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
+		super(myUID, myRequestURI, myNickname);
 		if(myInsertURI == null)
 			throw new IllegalArgumentException();
 		mInsertURI = myInsertURI;
@@ -36,24 +36,24 @@ public class FTOwnIdentityWoT extends FTIdentityWoT implements FTOwnIdentity {
 		return mInsertURI;
 	}
 
-	public synchronized void postMessage(FTMessage message) {
+	public synchronized void postMessage(ObjectContainer db, FTMessage message) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public synchronized void subscribeToBoard(FTBoard board) {
+	public synchronized void subscribeToBoard(ObjectContainer db, FTBoard board) {
 		if(mSubscribedBoards.contains(board)) {
 			assert(false); /* TODO: Add logging / check whether this should be allowed to happen */
 			return;
 		}
 		mSubscribedBoards.add(board);
 		
-		store();
+		store(db);
 	}
 
-	public synchronized void unsubscribeFromBoard(FTBoard board) {
+	public synchronized void unsubscribeFromBoard(ObjectContainer db, FTBoard board) {
 		mSubscribedBoards.remove(board);
-		store();
+		store(db);
 	}
 	
 	public synchronized Iterator<FTBoard> subscribedBoardsIterator() {

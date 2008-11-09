@@ -6,6 +6,7 @@ package plugins.Freetalk.WoT;
 import java.util.NoSuchElementException;
 
 import plugins.Freetalk.FTBoard;
+import plugins.Freetalk.FTMessage;
 import plugins.Freetalk.FTMessageManager;
 
 import com.db4o.ObjectContainer;
@@ -36,7 +37,7 @@ public class FTMessageManagerWoT extends FTMessageManager {
 	}
 
 	private synchronized void onMessageReceived(String newMessageData) throws UpdatableSortedLinkedListKilledException { 
-		FTMessageWoT newMessage = new FTMessageWoT(db, null, null, null, null, null, null, null, null, null);
+		FTMessage newMessage = new FTMessage(null, null, null, null, null, null, null, null, null);
 		String boardName = "";
 		/* FIXME: Store the description in FTOwnIdentity. We cannot store in FTBoard because we want to allow per-identity customization */
 

@@ -16,8 +16,6 @@ import freenet.keys.FreenetURI;
  */
 public class FTIdentityWoT implements FTIdentity {
 	
-	private final ObjectContainer db;
-	
 	private final String mUID;
     /** The requestURI used to fetch this identity from Freenet */
 	private final FreenetURI mRequestURI;
@@ -35,11 +33,10 @@ public class FTIdentityWoT implements FTIdentity {
 	 */
 	private boolean mIsNeeded;
 
-	public FTIdentityWoT(ObjectContainer myDB, String myUID, FreenetURI myRequestURI, String myNickname) {
+	public FTIdentityWoT(String myUID, FreenetURI myRequestURI, String myNickname) {
 		if(myUID == null || myUID.length() == 0 || myRequestURI == null || myNickname == null || myNickname.length() == 0)
 			throw new IllegalArgumentException();
 		
-		db = myDB;
 		mUID = myUID;
 		mRequestURI = myRequestURI;
 		mNickname = myNickname;
@@ -63,9 +60,9 @@ public class FTIdentityWoT implements FTIdentity {
 		return mLastReceivedFromWoT;
 	}
 	
-	public synchronized void setLastReceivedFromWoT(long time) {
+	public synchronized void setLastReceivedFromWoT(ObjectContainer db, long time) {
 		mLastReceivedFromWoT = time;
-		store();
+		store(db);
 	}
 	
 	public synchronized boolean isNeeded() {
@@ -76,7 +73,7 @@ public class FTIdentityWoT implements FTIdentity {
 		mIsNeeded = newValue;
 	}
 	
-	protected void store() {
+	public void store(ObjectContainer db) {
 		db.store(this);
 		db.commit();
 	}
