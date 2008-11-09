@@ -6,6 +6,8 @@ package plugins.Freetalk;
 import java.util.Date;
 import java.util.Iterator;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 
 /**
@@ -18,11 +20,11 @@ public interface FTOwnIdentity extends FTIdentity {
 	
 	public boolean wantsMessagesFrom(FTIdentity identity);
 	
-	public void postMessage(FTMessage message);
+	public void postMessage(ObjectContainer db, FTMessage message);
 	
-	public void subscribeToBoard(FTBoard board);
+	public void subscribeToBoard(ObjectContainer db, FTBoard board);
 	
-	public void unsubscribeFromBoard(FTBoard board);
+	public void unsubscribeFromBoard(ObjectContainer db, FTBoard board);
 	
 	public Iterator<FTBoard> subscribedBoardsIterator();
 }

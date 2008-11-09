@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 import java.util.List;
 
 import plugins.Freetalk.FTIdentityManager;
+import plugins.Freetalk.FTMessage;
 import plugins.Freetalk.Freetalk;
 
 import com.db4o.ObjectContainer;
@@ -78,10 +79,10 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 		
 					if(result.size() == 0) {
 						try {
-							id = bOwnIdentities ?	new FTOwnIdentityWoT(db, uid, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
-													new FTIdentityWoT(db, uid, new FreenetURI(requestURI), nickname);
-							db.store(id);
-							db.commit();
+							id = bOwnIdentities ?	new FTOwnIdentityWoT(uid, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
+													new FTIdentityWoT(uid, new FreenetURI(requestURI), nickname);
+
+							id.store(db);
 						}
 						catch(MalformedURLException e) {
 							Logger.error(this, "Error in OnReply()", e);
@@ -93,7 +94,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 					
 					if(bOwnIdentities)
 						addFreetalkContext(id);
-					id.setLastReceivedFromWoT(time);
+					id.setLastReceivedFromWoT(db, time);
 				}
 			}
 		}
@@ -161,7 +162,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 		/* FIXME: This function does not lock, it should probably. But we cannot lock on the message manager because it locks on the identity
 		 * manager and therefore this might cause deadlock. */
 		Query q = db.query();
-		q.constrain(FTMessageWoT.class);
+		q.constrain(FTMessage.class);
 		q.descend("mAuthor").equals(i);
 		return (q.execute().size() == 0);
 	}

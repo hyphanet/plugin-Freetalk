@@ -73,13 +73,13 @@ public class FTBoard {
 				FTMessage parentThread = findParentThread(newMessage);
 	
 				if(parentThread != null)
-					newMessage.setThread(parentThread);
+					newMessage.setThread(db, parentThread);
 	
 				if(parentMessage != null) {
-					newMessage.setParent(parentMessage);
+					newMessage.setParent(db, parentMessage);
 				} else { /* The message is an orphan */
 					if(parentThread != null) {
-						newMessage.setParent(parentThread);	/* We found its parent thread so just stick it in there for now */
+						newMessage.setParent(db, parentThread);	/* We found its parent thread so just stick it in there for now */
 					}
 					else {
 						 /* The message is an absolute orphan */
@@ -102,18 +102,18 @@ public class FTBoard {
 			Iterator<FTMessage> absoluteOrphans = absoluteOrphanIterator(newMessage.getURI());
 			while(absoluteOrphans.hasNext()){	/* Search in the absolute orphans for messages which belong to this thread  */
 				FTMessage orphan = absoluteOrphans.next();
-				orphan.setParent(newMessage);
+				orphan.setParent(db, newMessage);
 			}
 		}
 		else {
 			FTMessage parentThread = newMessage.getThread();
 			if(parentThread != null) {	/* Search in its parent thread for its children */
-				Iterator<FTMessage> iter = parentThread.childrenIterator(this);
+				Iterator<FTMessage> iter = parentThread.childrenIterator(db, this);
 				while(iter.hasNext()) {
 					FTMessage parentThreadChild = iter.next();
 					
 					if(parentThreadChild.getParentURI().equals(newMessage.getURI())) { /* We found its parent, yeah! */
-						parentThreadChild.setParent(newMessage); /* It's a child of the newMessage, not of the parentThread */
+						parentThreadChild.setParent(db, newMessage); /* It's a child of the newMessage, not of the parentThread */
 					}
 				}
 			}
@@ -126,7 +126,7 @@ public class FTBoard {
 					 * cache the list of absolute orphans locally. 
 					 */
 					if(orphan.getParentURI().equals(newMessage.getURI()))
-						orphan.setParent(newMessage);
+						orphan.setParent(db, newMessage);
 				}
 			}
 		}

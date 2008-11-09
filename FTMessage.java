@@ -19,10 +19,8 @@ import freenet.support.UpdatableSortedLinkedListKilledException;
  * @author saces, xor
  *
  */
-public abstract class FTMessage {
-	
-	protected ObjectContainer db;
-	
+public class FTMessage {
+
 	/**
 	 * The URI of this message.
 	 */
@@ -81,7 +79,7 @@ public abstract class FTMessage {
 		return new String[] { "mURI", "mThreadURI", "mBoards"};
 	}
 	
-	public FTMessage(ObjectContainer db, FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FTBoard> newBoards, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
+	public FTMessage(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FTBoard> newBoards, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
 		if (newURI == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
@@ -178,26 +176,24 @@ public abstract class FTMessage {
 		return mThread;
 	}
 	
-	public synchronized void setThread(FTMessage newParentThread) {
+	public synchronized void setThread(ObjectContainer db, FTMessage newParentThread) {
 		assert(mThread == null);
 		assert(mThreadURI == null);
 		mThread = newParentThread;
-		db.store(this);
-		db.commit();
+		store(db);
 	}
 
 	public synchronized FTMessage getParent() {
 		return mParent;
 	}
 
-	public synchronized void setParent(FTMessage newParent) throws UpdatableSortedLinkedListKilledException {
+	public synchronized void setParent(ObjectContainer db, FTMessage newParent) throws UpdatableSortedLinkedListKilledException {
 		/* TODO: assert(newParent contains at least one board which mBoards contains) */
 		mParent = newParent;
-		db.store(this);
-		db.commit();
+		store(db);
 	}
 	
-	public synchronized Iterator<FTMessage> childrenIterator(final FTBoard board) {
+	public synchronized Iterator<FTMessage> childrenIterator(final ObjectContainer db, final FTBoard board) {
 		return new Iterator<FTMessage>() {
 			private Iterator<FTMessage> iter;
 			
@@ -261,5 +257,10 @@ public abstract class FTMessage {
 	static public String makeTextValid(String text) {
 		// FIXME: Implement.
 		return text;
+	}
+	
+	public void store(ObjectContainer db) {
+		db.store(this);
+		db.commit();
 	}
 }
