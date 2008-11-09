@@ -3,15 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import java.util.Date;
+import plugins.Freetalk.FTIdentity;
 
 import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
-import freenet.support.SimpleFieldSet;
-import plugins.Freetalk.FTIdentity;
 
-import plugins.WoT.Identity;
 
 /**
  * @author xor

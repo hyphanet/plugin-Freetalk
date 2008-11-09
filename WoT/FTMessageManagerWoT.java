@@ -7,7 +7,6 @@ import java.util.NoSuchElementException;
 
 import plugins.Freetalk.FTBoard;
 import plugins.Freetalk.FTMessageManager;
-import plugins.WoT.exceptions.InvalidParameterException;
 
 import com.db4o.ObjectContainer;
 
