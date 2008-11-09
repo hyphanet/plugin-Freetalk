@@ -3,17 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
-
-import com.db4o.ObjectContainer;
 
 import plugins.Freetalk.FTBoard;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTMessage;
 import plugins.Freetalk.FTOwnIdentity;
-import plugins.WoT.OwnIdentity;
+
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 
 /**
