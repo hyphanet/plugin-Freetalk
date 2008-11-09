@@ -73,7 +73,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 				synchronized(this) { /* We lock here and not during the whole function to allow other threads to execute */
 					Query q = db.query();
 					q.constrain(FTIdentityWoT.class);
-					q.descend("mUID").equals(uid);
+					q.descend("mUID").constrain(uid);
 					ObjectSet<FTIdentityWoT> result = q.execute();
 					FTIdentityWoT id = null; 
 		
@@ -113,26 +113,6 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 		SimpleFieldSet p2 = new SimpleFieldSet(true);
 		p2.putOverwrite("Message","GetOwnIdentities");
 		mTalker.send(p2, null);
-		
-		/*
-		ObjectSet<OwnIdentity> oids = mWoT.getAllOwnIdentities();
-		for(OwnIdentity o : oids) {
-			synchronized(this) { // We lock here and not during the whole function to allow other threads to execute 
-				Query q = db.query();
-				q.constrain(FTOwnIdentityWoT.class);
-				q.descend("mUID").equals();
-				ObjectSet<FTOwnIdentityWoT> result = q.execute();
-				
-				if(result.size() == 0) {
-					db.store(new FTOwnIdentityWoT(db, o));
-					db.commit();
-				} else {
-					assert(result.size() == 1);
-					result.next().setLastReceivedFromWoT(time);
-				}
-			}
-		}
-		*/
 	}
 	
 	private synchronized void garbageCollectIdentities() {
@@ -142,7 +122,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 		
 		Query q = db.query();
 		q.constrain(FTIdentityWoT.class);
-		q.descend("isNeeded").equals(false);
+		q.descend("isNeeded").constrain(false);
 		q.descend("lastReceivedFromWoT").constrain(new Long(lastAcceptTime)).smaller();
 		ObjectSet<FTIdentityWoT> result = q.execute();
 		
@@ -163,7 +143,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 		 * manager and therefore this might cause deadlock. */
 		Query q = db.query();
 		q.constrain(FTMessage.class);
-		q.descend("mAuthor").equals(i);
+		q.descend("mAuthor").constrain(i);
 		return (q.execute().size() == 0);
 	}
 
