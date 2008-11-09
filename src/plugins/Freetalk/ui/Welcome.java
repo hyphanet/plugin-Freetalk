@@ -13,7 +13,9 @@ public class Welcome {
 		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
 		contentNode.addChild(createWelcomeBox(ft));
 		contentNode.addChild(createOverviewBox(ft));
-		contentNode.addChild(createBackupHintBox(ft));
+		/* FIXME: the backup stuff is broken. repair it or get rid of it. i think we should rather autobackup or whatever.
+		contentNode.addChild(createBackupHintBox(ft)); 
+		*/
 		return pageNode.generate();
 	}
 	
