@@ -32,7 +32,7 @@ import freenet.support.api.Bucket;
 public class FTIdentityManagerWoT extends FTIdentityManager implements FredPluginTalker {
 	
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
-	private static final int THREAD_PERIOD = 5 * 60 * 1000;
+	private static final int THREAD_PERIOD = 1 * 60 * 1000;
 
 	private boolean isRunning = true;
 	private Thread mThread;
@@ -51,7 +51,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 	private void addFreetalkContext(FTIdentityWoT oid) {
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "AddContext");
-		params.putOverwrite("Identity", oid.getUID());
+		params.putOverwrite("Identity", oid.getRequestURI().toString());
 		params.putOverwrite("Context", Freetalk.WOT_CONTEXT);
 		mTalker.send(params, null);
 	}
@@ -66,7 +66,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 				if(uid == null || uid.equals("")) /* FIXME: Figure out whether the second condition is necessary */
 					break;
 				String requestURI = params.get("RequestURI"+idx);
-				String insertURI = bOwnIdentities ? params.get("InsertURI") : null;
+				String insertURI = bOwnIdentities ? params.get("InsertURI"+idx) : null;
 				String nickname = params.get("Nickname"+idx);
 				
 				synchronized(this) { /* We lock here and not during the whole function to allow other threads to execute */
@@ -172,7 +172,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 		
 		try {
 			Logger.debug(this, "Waiting for the node to start up...");
-			Thread.sleep((long) (3*60*1000 * (0.5f + Math.random()))); /* Let the node start up */
+			Thread.sleep((long) (1*60*1000 * (0.5f + Math.random()))); /* Let the node start up */
 		}
 		catch (InterruptedException e)
 		{
