@@ -3,7 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Locale;
+
+import plugins.Freetalk.exceptions.InvalidParameterException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -25,6 +30,8 @@ public class FTBoard {
 	private transient final FTMessageManager mMessageManager;
 
 	private final String mName;
+	
+	private static transient final HashSet<String> ISOLanguages = new HashSet<String>(Arrays.asList(Locale.getISOLanguages()));
 
 	/**
 	 * Get a list of fields which the database should create an index on.
@@ -33,9 +40,11 @@ public class FTBoard {
 		return new String[] {"mName"};
 	}
 	
-	public FTBoard(ObjectContainer myDB, FTMessageManager newMessageManager, String newName) {
+	public FTBoard(ObjectContainer myDB, FTMessageManager newMessageManager, String newName) throws InvalidParameterException {
 		if(newName==null || newName.length() == 0)
 			throw new IllegalArgumentException("Empty board name.");
+		if(!isNameValid(newName))
+			throw new InvalidParameterException("Board names have to be either in English or have an ISO language code at the beginning followed by a dot.");
 
 		assert(myDB != null);
 		assert(newMessageManager != null);
@@ -48,11 +57,44 @@ public class FTBoard {
 		db.store(this);
 		db.commit();
 	}
+	
+	/**
+	 * I suggest that we allow letters of any language in the name of a board with one restriction:
+	 * If the name contains any letters different than A to Z and '.' then the part of the name before the first dot
+	 * has to be only letters of A to Z specifying an ISO language code. This allows users which cannot type the
+	 * letters of that language to filter based on the first part because they then can type its name.
+	 * Further, it is polite to specify what language a board is in if it is not English.
+	 */
+	public static boolean isNameValid(String name) {
+		int firstDot = name.indexOf('.');
+		String firstPart = firstDot!=-1 ? name.substring(0, firstDot) : name;
+
+		return name.matches("[a-zA-Z0-9.]") || ISOLanguages.contains(firstPart);
+	}
+	
+	/* 
+	 * FIXME:
+	 * We should post a warning on the interface if a user wants to post to a board with a non-NNTP-valid name and show him what the NNTP client
+	 * will display the board name as, as soon as we have a getNameNNTP() function which converts the name to something displayable by NNTP
+	 * readers.  
+	 */
+	/**
+	 * Check whether the boardname is valid in the context of NNTP.
+	 */
+	public static boolean isNameValidNNTP(String name) {
+		/* 
+		 * FIXME:
+		 * - Check the specification of NNTP and see if it allows anything else than the following regular expression.
+		 */
+		
+		return name.matches("[a-zA-Z0-9.]");
+	}
 
 	/**
 	 * @return The name.
 	 */
 	public String getName() {
+		/* FIXME: Provide a getNameNNTP() which converts non-English characters to something English and still readable maybe. */
 		return mName;
 	}
 
