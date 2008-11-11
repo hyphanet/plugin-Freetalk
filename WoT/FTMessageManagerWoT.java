@@ -8,13 +8,13 @@ import java.util.NoSuchElementException;
 import plugins.Freetalk.FTBoard;
 import plugins.Freetalk.FTMessage;
 import plugins.Freetalk.FTMessageManager;
+import plugins.Freetalk.exceptions.InvalidParameterException;
 
 import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Executor;
 import freenet.support.Logger;
-import freenet.support.UpdatableSortedLinkedListKilledException;
 
 public class FTMessageManagerWoT extends FTMessageManager {
 	
@@ -36,7 +36,7 @@ public class FTMessageManagerWoT extends FTMessageManager {
 		/* FIXME: implement */
 	}
 
-	private synchronized void onMessageReceived(String newMessageData) throws UpdatableSortedLinkedListKilledException { 
+	private synchronized void onMessageReceived(String newMessageData) throws InvalidParameterException { 
 		FTMessage newMessage = new FTMessage(null, null, null, null, null, null, null, null, null);
 		String boardName = "";
 		/* FIXME: Store the description in FTOwnIdentity. We cannot store in FTBoard because we want to allow per-identity customization */
