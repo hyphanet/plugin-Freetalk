@@ -15,7 +15,6 @@ import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
-import freenet.support.UpdatableSortedLinkedListKilledException;
 
 /**
  * @author xor
@@ -103,7 +102,7 @@ public class FTBoard {
 	 * The job for this function is to find the right place in the thread-tree for the new message and to move around older messages
 	 * if a parent message of them is received.
 	 */
-	public synchronized void addMessage(FTMessage newMessage) throws UpdatableSortedLinkedListKilledException {
+	public synchronized void addMessage(FTMessage newMessage) {
 		synchronized(mMessageManager) {
 			db.store(newMessage);
 			db.commit();
@@ -139,7 +138,7 @@ public class FTBoard {
 		}
 	}
 
-	private synchronized void linkOrphansToNewParent(FTMessage newMessage) throws UpdatableSortedLinkedListKilledException {
+	private synchronized void linkOrphansToNewParent(FTMessage newMessage) {
 		if(newMessage.isThread()) {
 			Iterator<FTMessage> absoluteOrphans = absoluteOrphanIterator(newMessage.getURI());
 			while(absoluteOrphans.hasNext()){	/* Search in the absolute orphans for messages which belong to this thread  */

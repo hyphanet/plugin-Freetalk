@@ -13,7 +13,6 @@ import com.db4o.ObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
-import freenet.support.UpdatableSortedLinkedListKilledException;
 
 /**
  * @author saces, xor
@@ -187,7 +186,7 @@ public class FTMessage {
 		return mParent;
 	}
 
-	public synchronized void setParent(ObjectContainer db, FTMessage newParent) throws UpdatableSortedLinkedListKilledException {
+	public synchronized void setParent(ObjectContainer db, FTMessage newParent)  {
 		/* TODO: assert(newParent contains at least one board which mBoards contains) */
 		mParent = newParent;
 		store(db);
