@@ -207,8 +207,8 @@ public class FTBoard {
 				 * Or somehow tell db4o to keep a per-board thread index which is sorted by Date? - This would be the best solution */
 				Query q = db.query();
 				q.constrain(FTMessage.class);
-				q.descend("mBoards").constrain(mName); /* FIXME: mBoards is an array. Does constrain() check whether it contains the element mName? */
-				q.descend("mThread").constrain(null);
+				q.descend("mBoards").constrain(mName); /* FIXME: mBoards is an array. constrain() does NOT check whether it contains the element mName. We need to change this code. */
+				q.descend("mThread").constrain(null).identity();
 				q.descend("mDate").orderDescending();
 
 				iter = q.execute().iterator();
