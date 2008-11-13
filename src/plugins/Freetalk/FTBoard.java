@@ -68,6 +68,9 @@ public class FTBoard {
 		int firstDot = name.indexOf('.');
 		String firstPart = firstDot!=-1 ? name.substring(0, firstDot) : name;
 
+		/* FIXME: This is just the basic check, we should do more checks:
+		 * The rest of the name should match a whitelist of allowed punctuation (excluding for example &<>%#), or letters (i.e. not necessarily
+		 * English letters) according to Character.isLetter(). */
 		return name.matches("[a-zA-Z0-9.]") || ISOLanguages.contains(firstPart);
 	}
 	
