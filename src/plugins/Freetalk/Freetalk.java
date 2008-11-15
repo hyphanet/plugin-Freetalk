@@ -53,7 +53,7 @@ import freenet.support.io.TempBucketFactory;
  * @author saces, xor
  *
  */
-public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginThreadless, FredPluginVersioned {
+public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginVersioned {
 
 	/* Constants */
 	
