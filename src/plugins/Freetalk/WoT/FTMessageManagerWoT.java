@@ -23,7 +23,7 @@ public class FTMessageManagerWoT extends FTMessageManager {
 	
 	private FTIdentityManagerWoT mIdentityManager;
 	
-	private boolean isRunning = true;
+	private volatile boolean isRunning = true;
 	private Thread mThread;
 
 	public FTMessageManagerWoT(ObjectContainer myDB, Executor myExecutor, FTIdentityManagerWoT myIdentityManager) {
