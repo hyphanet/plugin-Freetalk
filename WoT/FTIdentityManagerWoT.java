@@ -35,7 +35,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
 	private static final int THREAD_PERIOD = 1 * 60 * 1000;
 
-	private boolean isRunning = true;
+	private volatile boolean isRunning = true;
 	private Thread mThread;
 
 	private PluginTalker mTalker;
@@ -96,6 +96,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 						addFreetalkContext(id);
 					id.setLastReceivedFromWoT(db, time);
 				}
+				Thread.yield();
 			}
 		}
 
