@@ -100,7 +100,8 @@ public class FTMessage {
 		mTitle = newTitle;
 		mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
 		mText = newText;
-		mAttachments = newAttachments!=null ? (FreenetURI[])newAttachments.toArray() : new FreenetURI[0];
+		mAttachments = newAttachments != null ? newAttachments.toArray(new FreenetURI[newAttachments.size()])
+		        : new FreenetURI[0];
 	}
 	
 	/**
