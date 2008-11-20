@@ -94,7 +94,7 @@ public class FTMessage {
 		mURI = newURI;
 		mThreadURI = newThreadURI;
 		mParentURI = newParentURI;
-		mBoards = (FTBoard[])newBoards.toArray();
+		mBoards = newBoards.toArray(new FTBoard[newBoards.size()]);
 		Arrays.sort(mBoards);
 		mAuthor = newAuthor;
 		mTitle = newTitle;
