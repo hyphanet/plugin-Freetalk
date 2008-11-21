@@ -86,9 +86,7 @@ public class FTMessage {
 		return new String[] { "mURI", "mThreadURI", "mBoards"};
 	}
 	
-	public FTMessage(ObjectContainer myDB, FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FTBoard> newBoards, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
-		assert(myDB != null);
-		
+	public FTMessage(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FTBoard> newBoards, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
 		if (newURI == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
@@ -101,7 +99,6 @@ public class FTMessage {
 		if (!isTextValid(newText))
 			throw new IllegalArgumentException("Invalid message text in message " + newURI);
 		
-		db = myDB;
 		mURI = newURI;
 		mThreadURI = newThreadURI;
 		mParentURI = newParentURI;
