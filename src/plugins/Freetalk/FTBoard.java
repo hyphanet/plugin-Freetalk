@@ -129,7 +129,7 @@ public class FTBoard {
 	 */
 	public synchronized void addMessage(FTMessage newMessage) {
 		synchronized(mMessageManager) {
-			newMessage.initializeTransient(db);
+			newMessage.initializeTransient(db, mMessageManager);
 			newMessage.store();
 
 			if(!newMessage.isThread())
@@ -217,7 +217,7 @@ public class FTBoard {
 			return null;
 		else {
 			FTMessage thread = parents.next();
-			thread.initializeTransient(db);
+			thread.initializeTransient(db, mMessageManager);
 			return thread;
 		}
 	}
@@ -262,7 +262,7 @@ public class FTBoard {
 			public FTMessage next() {
 				FTMessage result = hasNext() ? next : null;
 				next = iter.hasNext() ? iter.next() : null;
-				result.initializeTransient(db);
+				result.initializeTransient(db, mMessageManager);
 				return result;
 			}
 
@@ -299,7 +299,7 @@ public class FTBoard {
 
 			public FTMessage next() {
 				FTMessage next = iter.next();
-				next.initializeTransient(db);
+				next.initializeTransient(db, mMessageManager);
 				return next;
 			}
 

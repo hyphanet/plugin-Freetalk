@@ -53,7 +53,7 @@ public abstract class FTMessageManager implements Runnable {
 			return null;
 		else {
 			FTMessage m = result.next();
-			m.initializeTransient(db);
+			m.initializeTransient(db, this);
 			return m;
 		}
 	}
