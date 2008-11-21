@@ -22,15 +22,22 @@ import freenet.keys.FreenetURI;
  */
 public class FTBoard {
 
-	private transient final ObjectContainer db;
-
-	private transient final FTBoard self = this;
-
-	private transient final FTMessageManager mMessageManager;
+	/* Constants */
+	
+	private static transient final HashSet<String> ISOLanguages = new HashSet<String>(Arrays.asList(Locale.getISOLanguages()));
+	
+	
+	/* Attributes, stored in the database */
 
 	private final String mName;
 	
-	private static transient final HashSet<String> ISOLanguages = new HashSet<String>(Arrays.asList(Locale.getISOLanguages()));
+	
+	/* References to objects of the plugin, not stored in the database. */
+	
+	private transient ObjectContainer db;
+	private transient FTMessageManager mMessageManager;
+	private transient FTBoard self;
+	
 
 	/**
 	 * Get a list of fields which the database should create an index on.
@@ -50,11 +57,21 @@ public class FTBoard {
 
 		db = myDB;
 		mMessageManager = newMessageManager;
+		self = this;
+		
 		// FIXME: Validate name and description.
 		mName = newName;
-		
-		db.store(this);
-		db.commit();
+	}
+	
+	/**
+	 * Has to be used after loading a FTBoard object from the database to initialize the transient fields.
+	 */
+	public void initializeTransient(ObjectContainer myDB, FTMessageManager myMessageManager) {
+		assert(myDB != null);
+		assert(myMessageManager != null);
+		self = this;
+		db = myDB;
+		mMessageManager = myMessageManager;
 	}
 	
 	/**
@@ -96,7 +113,14 @@ public class FTBoard {
 	 * @return The name.
 	 */
 	public String getName() {
-		/* FIXME: Provide a getNameNNTP() which converts non-English characters to something English and still readable maybe. */
+		return mName;
+	}
+	
+	/**
+	 * @return An NNTP-conform representation of the name of the board.
+	 */
+	public String getNameNNTP() {
+		/* FIXME: Implement. */
 		return mName;
 	}
 
@@ -107,8 +131,8 @@ public class FTBoard {
 	 */
 	public synchronized void addMessage(FTMessage newMessage) {
 		synchronized(mMessageManager) {
-			db.store(newMessage);
-			db.commit();
+			newMessage.initializeTransient(db);
+			newMessage.store();
 
 			if(!newMessage.isThread())
 			{
@@ -117,13 +141,13 @@ public class FTBoard {
 				FTMessage parentThread = findParentThread(newMessage);
 	
 				if(parentThread != null)
-					newMessage.setThread(db, parentThread);
+					newMessage.setThread(parentThread);
 	
 				if(parentMessage != null) {
-					newMessage.setParent(db, parentMessage);
+					newMessage.setParent(parentMessage);
 				} else { /* The message is an orphan */
 					if(parentThread != null) {
-						newMessage.setParent(db, parentThread);	/* We found its parent thread so just stick it in there for now */
+						newMessage.setParent(parentThread);	/* We found its parent thread so just stick it in there for now */
 					}
 					else {
 						 /* The message is an absolute orphan */
@@ -141,24 +165,24 @@ public class FTBoard {
 		}
 	}
 
+	/**
+	 * Assumes that the transient fields of the newMessage are initialized already.
+	 */
 	private synchronized void linkOrphansToNewParent(FTMessage newMessage) {
 		if(newMessage.isThread()) {
 			Iterator<FTMessage> absoluteOrphans = absoluteOrphanIterator(newMessage.getURI());
-			while(absoluteOrphans.hasNext()){	/* Search in the absolute orphans for messages which belong to this thread  */
-				FTMessage orphan = absoluteOrphans.next();
-				orphan.setParent(db, newMessage);
-			}
+			while(absoluteOrphans.hasNext())	/* Search in the absolute orphans for messages which belong to this thread  */
+				absoluteOrphans.next().setParent(newMessage);
 		}
 		else {
 			FTMessage parentThread = newMessage.getThread();
 			if(parentThread != null) {	/* Search in its parent thread for its children */
-				Iterator<FTMessage> iter = parentThread.childrenIterator(db, this);
+				Iterator<FTMessage> iter = parentThread.childrenIterator(this);
 				while(iter.hasNext()) {
 					FTMessage parentThreadChild = iter.next();
 					
-					if(parentThreadChild.getParentURI().equals(newMessage.getURI())) { /* We found its parent, yeah! */
-						parentThreadChild.setParent(db, newMessage); /* It's a child of the newMessage, not of the parentThread */
-					}
+					if(parentThreadChild.getParentURI().equals(newMessage.getURI())) /* We found its parent, yeah! */
+						parentThreadChild.setParent(newMessage); /* It's a child of the newMessage, not of the parentThread */
 				}
 			}
 			else { /* The new message is an absolute orphan, find its children amongst the other absolute orphans */
@@ -170,12 +194,15 @@ public class FTBoard {
 					 * cache the list of absolute orphans locally. 
 					 */
 					if(orphan.getParentURI().equals(newMessage.getURI()))
-						orphan.setParent(db, newMessage);
+						orphan.setParent(newMessage);
 				}
 			}
 		}
 	}
 	
+	/**
+	 * Finds the parent thread of a message in the database. The transient fields of the returned message will be initialized already.
+	 */
 	protected synchronized FTMessage findParentThread(FTMessage m) {
 		Query q = db.query();
 		q.constrain(FTMessage.class);
@@ -188,12 +215,19 @@ public class FTBoard {
 		
 		assert(parents.size() <= 1);
 		
-		return (parents.size() != 0 ? parents.next()  : null);
+		if(parents.size() == 0)
+			return null;
+		else {
+			FTMessage thread = parents.next();
+			thread.initializeTransient(db);
+			return thread;
+		}
 	}
 	
 
 	/**
 	 * Get all threads in the board. The view is specified to the FTOwnIdentity displaying it, therefore you have to pass one as parameter.
+	 * The transient fields of the returned messages will be initialized already.
 	 * @param identity The identity viewing the board.
 	 * @return An iterator of the message which the identity will see (based on its trust levels).
 	 */
@@ -230,6 +264,7 @@ public class FTBoard {
 			public FTMessage next() {
 				FTMessage result = hasNext() ? next : null;
 				next = iter.hasNext() ? iter.next() : null;
+				result.initializeTransient(db);
 				return result;
 			}
 
@@ -242,10 +277,10 @@ public class FTBoard {
 	
 	/**
 	 * Get an iterator over messages for which the parent thread with the given URI was not known. 
+	 * The transient fields of the returned messages will be initialized already.
 	 */
 	public synchronized Iterator<FTMessage> absoluteOrphanIterator(final FreenetURI thread) {
 		return new Iterator<FTMessage>() {
-			private final ObjectSet<FTMessage> mMessages;
 			private final Iterator<FTMessage> iter;
 
 			{
@@ -256,21 +291,29 @@ public class FTBoard {
 				q.descend("mBoards").constrain(mName); /* FIXME: mBoards is an array. Does constrain() check whether it contains the element mName? */
 				q.descend("mThreadURI").constrain(thread);
 				q.descend("mThread").constrain(null);
-				mMessages = q.execute();
-				iter = mMessages.iterator();
+				ObjectSet<FTMessage> result = q.execute();
+				iter = result.iterator();
 			}
 
 			public boolean hasNext() {
-				return mMessages.hasNext();
+				return iter.hasNext();
 			}
 
 			public FTMessage next() {
-				return mMessages.next();
+				FTMessage next = iter.next();
+				next.initializeTransient(db);
+				return next;
 			}
 
 			public void remove() {
 				throw new UnsupportedOperationException();
 			}
 		};
+	}
+	
+	public synchronized void store() {
+		/* FIXME: check for duplicates */
+		db.store(this);
+		db.commit();
 	}
 }
