@@ -19,7 +19,9 @@ import freenet.keys.FreenetURI;
  *
  */
 public class FTMessage {
-
+	
+	/* Attributes, stored in the database */
+	
 	/**
 	 * The URI of this message.
 	 */
@@ -71,6 +73,12 @@ public class FTMessage {
 	 */
 	private FTMessage mParent = null;
 	
+	
+	/* References to objects of the plugin, not stored in the database. */
+	
+	private transient ObjectContainer db;
+	
+	
 	/**
 	 * Get a list of fields which the database should create an index on.
 	 */
@@ -78,7 +86,9 @@ public class FTMessage {
 		return new String[] { "mURI", "mThreadURI", "mBoards"};
 	}
 	
-	public FTMessage(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FTBoard> newBoards, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
+	public FTMessage(ObjectContainer myDB, FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FTBoard> newBoards, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
+		assert(myDB != null);
+		
 		if (newURI == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
@@ -91,6 +101,7 @@ public class FTMessage {
 		if (!isTextValid(newText))
 			throw new IllegalArgumentException("Invalid message text in message " + newURI);
 		
+		db = myDB;
 		mURI = newURI;
 		mThreadURI = newThreadURI;
 		mParentURI = newParentURI;
@@ -102,6 +113,13 @@ public class FTMessage {
 		mText = newText;
 		mAttachments = newAttachments != null ? newAttachments.toArray(new FreenetURI[newAttachments.size()])
 		        : new FreenetURI[0];
+	}
+	
+	/**
+	 * Has to be used after loading a FTBoard object from the database to initialize the transient fields.
+	 */
+	public void initializeTransient(ObjectContainer myDB) {
+		db = myDB;
 	}
 	
 	/**
@@ -172,28 +190,40 @@ public class FTMessage {
 		return mAttachments;
 	}
 	
+	/**
+	 * Get the thread to which this message belongs. The transient fields of the returned message will be initialized already.
+	 */
 	public synchronized FTMessage getThread() {
+		mThread.initializeTransient(db);
 		return mThread;
 	}
 	
-	public synchronized void setThread(ObjectContainer db, FTMessage newParentThread) {
+	public synchronized void setThread(FTMessage newParentThread) {
 		assert(mThread == null);
 		assert(mThreadURI == null);
 		mThread = newParentThread;
-		store(db);
+		store();
 	}
 
+	/**
+	 * Get the message to which this message is a reply. The transient fields of the returned message will be initialized already.
+	 */
 	public synchronized FTMessage getParent() {
+		mParent.initializeTransient(db);
 		return mParent;
 	}
 
-	public synchronized void setParent(ObjectContainer db, FTMessage newParent)  {
+	public synchronized void setParent(FTMessage newParent)  {
 		/* TODO: assert(newParent contains at least one board which mBoards contains) */
 		mParent = newParent;
-		store(db);
+		store();
 	}
 	
-	public synchronized Iterator<FTMessage> childrenIterator(final ObjectContainer db, final FTBoard board) {
+	/**
+	 * Returns an iterator over the children of the message, sorted descending by date.
+	 * The transient fields of the children will be initialized already.
+	 */
+	public synchronized Iterator<FTMessage> childrenIterator(final FTBoard board) {
 		return new Iterator<FTMessage>() {
 			private Iterator<FTMessage> iter;
 			
@@ -214,7 +244,9 @@ public class FTMessage {
 			}
 
 			public FTMessage next() {
-				return iter.next();
+				FTMessage child = iter.next();
+				child.initializeTransient(db);
+				return child;
 			}
 
 			public void remove() {
@@ -259,7 +291,8 @@ public class FTMessage {
 		return text;
 	}
 	
-	public void store(ObjectContainer db) {
+	public void store() {
+		/* FIXME: Check for duplicates */
 		db.store(this);
 		db.commit();
 	}
