@@ -38,7 +38,7 @@ public class FTMessageManagerWoT extends FTMessageManager {
 
 	private synchronized void onMessageReceived(String newMessageData) throws InvalidParameterException { 
 		FTMessage newMessage = new FTMessage(null, null, null, null, null, null, null, null, null);
-		newMessage.initializeTransient(db);
+		newMessage.initializeTransient(db, this);
 		String boardName = "";
 		/* FIXME: Store the description in FTOwnIdentity. We cannot store in FTBoard because we want to allow per-identity customization */
 

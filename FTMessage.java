@@ -78,6 +78,8 @@ public class FTMessage {
 	
 	private transient ObjectContainer db;
 	
+	private transient FTMessageManager mMessageManager;
+	
 	
 	/**
 	 * Get a list of fields which the database should create an index on.
@@ -115,9 +117,11 @@ public class FTMessage {
 	/**
 	 * Has to be used after loading a FTBoard object from the database to initialize the transient fields.
 	 */
-	public void initializeTransient(ObjectContainer myDB) {
+	public void initializeTransient(ObjectContainer myDB, FTMessageManager myMessageManager) {
 		assert(myDB != null);
+		assert(myMessageManager != null);
 		db = myDB;
+		mMessageManager = myMessageManager;
 	}
 	
 	/**
@@ -146,10 +150,12 @@ public class FTMessage {
 	}
 	
 	/**
-	 * Get the boards to which this message was posted.
-	 * The boards are returned in alphabetical order.
+	 * Get the boards to which this message was posted. The boards are returned in alphabetical order.
+	 * The transient fields of the returned boards are initialized already.
 	 */
 	public FTBoard[] getBoards() {
+		for(FTBoard b : mBoards)
+			b.initializeTransient(db, mMessageManager);
 		return mBoards;
 	}
 
@@ -157,6 +163,7 @@ public class FTMessage {
 	 * Get the author of the message.
 	 */
 	public FTIdentity getAuthor() {
+		mAuthor.initializeTransient(db);
 		return mAuthor;
 	}
 
@@ -192,7 +199,7 @@ public class FTMessage {
 	 * Get the thread to which this message belongs. The transient fields of the returned message will be initialized already.
 	 */
 	public synchronized FTMessage getThread() {
-		mThread.initializeTransient(db);
+		mThread.initializeTransient(db, mMessageManager);
 		return mThread;
 	}
 	
@@ -207,7 +214,7 @@ public class FTMessage {
 	 * Get the message to which this message is a reply. The transient fields of the returned message will be initialized already.
 	 */
 	public synchronized FTMessage getParent() {
-		mParent.initializeTransient(db);
+		mParent.initializeTransient(db, mMessageManager);
 		return mParent;
 	}
 
@@ -243,7 +250,7 @@ public class FTMessage {
 
 			public FTMessage next() {
 				FTMessage child = iter.next();
-				child.initializeTransient(db);
+				child.initializeTransient(db, mMessageManager);
 				return child;
 			}
 
