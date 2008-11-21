@@ -119,6 +119,7 @@ public class FTMessage {
 	 * Has to be used after loading a FTBoard object from the database to initialize the transient fields.
 	 */
 	public void initializeTransient(ObjectContainer myDB) {
+		assert(myDB != null);
 		db = myDB;
 	}
 	
