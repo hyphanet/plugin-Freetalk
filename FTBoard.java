@@ -46,16 +46,14 @@ public class FTBoard {
 		return new String[] {"mName"};
 	}
 	
-	public FTBoard(ObjectContainer myDB, FTMessageManager newMessageManager, String newName) throws InvalidParameterException {
+	public FTBoard(FTMessageManager newMessageManager, String newName) throws InvalidParameterException {
 		if(newName==null || newName.length() == 0)
 			throw new IllegalArgumentException("Empty board name.");
 		if(!isNameValid(newName))
 			throw new InvalidParameterException("Board names have to be either in English or have an ISO language code at the beginning followed by a dot.");
 
-		assert(myDB != null);
 		assert(newMessageManager != null);
 
-		db = myDB;
 		mMessageManager = newMessageManager;
 		self = this;
 		
