@@ -172,6 +172,10 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	public FTIdentityManager getIdentityManager() {
 		return mIdentityManager;
 	}	
+	
+	public FTMessageManager getMessageManager() {
+		return mMessageManager;
+	}
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
 
