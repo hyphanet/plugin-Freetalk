@@ -4,6 +4,7 @@
 package plugins.Freetalk.ui;
 
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import plugins.Freetalk.Freetalk;
@@ -30,8 +31,8 @@ public class IdentityEditor {
 		HTMLNode boxContent = ft.pm.getContentNode(box);
 		contentNode.addChild(box);
 
-		ObjectSet<FTOwnIdentity> ownIdentities = ft.db.queryByExample(FTOwnIdentity.class);
-		if (ownIdentities.size() == 0) {
+		Iterator<FTOwnIdentity> ownIdentities = ft.getIdentityManager().ownIdentityIterator();
+		if (ownIdentities.hasNext() == false) {
 			boxContent.addChild("p", "You have no own identity yet, you should create one...");
 		} else {
 
@@ -174,7 +175,7 @@ public class IdentityEditor {
 		HTMLNode boxContent = ft.pm.getContentNode(box);
 		contentNode.addChild(box);
 
-		ObjectSet<FTIdentity> identities = ft.db.queryByExample(FTIdentity.class);
+		Iterator<FTIdentity> identities = ft.getIdentityManager().iterator();
 
 		HTMLNode identitiesTable = boxContent.addChild("table", "border", "0");
 		HTMLNode row = identitiesTable.addChild("tr");
@@ -294,25 +295,21 @@ public class IdentityEditor {
 		}
 	}
 	
-	public static final void addNewOwnIdentity(ObjectContainer db, FTOwnIdentity identity, List<String> err) {
+	public static final void addNewOwnIdentity(Freetalk ft, FTOwnIdentity identity, List<String> err) {
 		try {
-			db.store(identity);
-			db.commit();
+			ft.getIdentityManager().addNewOwnIdentity(identity);
 		} catch (Throwable t) {
 			Logger.error(IdentityEditor.class, "Error while adding Identity: " + t.getMessage(), t);
 			err.add("Error while adding Identity: " + t.getMessage());
-			db.rollback();
 		}
 	}
 	
-	public static final void addNewKnownIdentity(ObjectContainer db, FTIdentity identity, List<String> err) {
+	public static final void addNewKnownIdentity(Freetalk ft, FTIdentity identity, List<String> err) {
 		try {
-			db.store(identity);
-			db.commit();
+			ft.getIdentityManager().addNewIdentity(identity);
 		} catch (Throwable t) {
 			Logger.error(IdentityEditor.class, "Error while adding Identity: " + t.getMessage(), t);
 			err.add("Error while adding Identity: " + t.getMessage());
-			db.rollback();
 		}
 	}
 	

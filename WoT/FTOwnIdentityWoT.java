@@ -20,10 +20,17 @@ import freenet.keys.FreenetURI;
  *
  */
 public class FTOwnIdentityWoT extends FTIdentityWoT implements FTOwnIdentity {
+	
+	/* Attributes, stored in the database. */
 
 	private final LinkedList<FTBoard> mSubscribedBoards = new LinkedList<FTBoard>();
 
 	private final FreenetURI mInsertURI;
+	
+	
+	/* References to objects of the plugin, not stored in the database */
+	
+	private transient ObjectContainer db;
 	
 	public FTOwnIdentityWoT(String myUID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
 		super(myUID, myRequestURI, myNickname);
@@ -32,28 +39,37 @@ public class FTOwnIdentityWoT extends FTIdentityWoT implements FTOwnIdentity {
 		mInsertURI = myInsertURI;
 	}
 	
+	/**
+	 * Has to be used after loading a FTOwnIdentityWoT object from the database to initialize the transient fields.
+	 */
+	public void initializeTransient(ObjectContainer myDB) {
+		assert(myDB != null);
+		db = myDB;
+	}
+	
 	public FreenetURI getInsertURI() {
 		return mInsertURI;
 	}
 
-	public synchronized void postMessage(ObjectContainer db, FTMessage message) {
+	public synchronized void postMessage(FTMessage message) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public synchronized void subscribeToBoard(ObjectContainer db, FTBoard board) {
+	public synchronized void subscribeToBoard(FTBoard board) {
 		if(mSubscribedBoards.contains(board)) {
 			assert(false); /* TODO: Add logging / check whether this should be allowed to happen */
 			return;
 		}
 		mSubscribedBoards.add(board);
 		
-		store(db);
+		store();
 	}
 
-	public synchronized void unsubscribeFromBoard(ObjectContainer db, FTBoard board) {
+	public synchronized void unsubscribeFromBoard(FTBoard board) {
 		mSubscribedBoards.remove(board);
-		store(db);
+		
+		store();
 	}
 	
 	public synchronized Iterator<FTBoard> subscribedBoardsIterator() {

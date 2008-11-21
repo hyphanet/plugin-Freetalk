@@ -79,7 +79,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	
 	/* The plugin's own references */
 	
-	public ObjectContainer db;
+	private ObjectContainer db;
 	
 	private FTIdentityManagerWoT mIdentityManager;
 	
@@ -168,6 +168,10 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		
 		Logger.debug(this, "Freetalk plugin terminated.");
 	}
+	
+	public FTIdentityManager getIdentityManager() {
+		return mIdentityManager;
+	}	
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
 
