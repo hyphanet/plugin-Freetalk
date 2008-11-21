@@ -16,6 +16,8 @@ import freenet.keys.FreenetURI;
  */
 public class FTIdentityWoT implements FTIdentity {
 	
+	/* Attributes, stored in the database. */
+	
 	private final String mUID;
     /** The requestURI used to fetch this identity from Freenet */
 	private final FreenetURI mRequestURI;
@@ -32,6 +34,12 @@ public class FTIdentityWoT implements FTIdentity {
 	 * Set to true if the identity is referenced by any messages.
 	 */
 	private boolean mIsNeeded;
+	
+	
+	/* References to objects of the plugin, not stored in the database. */
+	
+	private transient ObjectContainer db;
+	
 
 	public FTIdentityWoT(String myUID, FreenetURI myRequestURI, String myNickname) {
 		if(myUID == null || myUID.length() == 0 || myRequestURI == null || myNickname == null || myNickname.length() == 0)
@@ -42,6 +50,14 @@ public class FTIdentityWoT implements FTIdentity {
 		mNickname = myNickname;
 		mLastReceivedFromWoT = System.currentTimeMillis();
 		mIsNeeded = false;
+	}
+	
+	/**
+	 * Has to be used after loading a FTIdentityWoT object from the database to initialize the transient fields.
+	 */
+	public void initializeTransient(ObjectContainer myDB) {
+		assert(myDB != null);
+		db = myDB;
 	}
 	
 	public String getUID() {
@@ -60,9 +76,9 @@ public class FTIdentityWoT implements FTIdentity {
 		return mLastReceivedFromWoT;
 	}
 	
-	public synchronized void setLastReceivedFromWoT(ObjectContainer db, long time) {
+	public synchronized void setLastReceivedFromWoT(long time) {
 		mLastReceivedFromWoT = time;
-		store(db);
+		store();
 	}
 	
 	public synchronized boolean isNeeded() {
@@ -71,9 +87,11 @@ public class FTIdentityWoT implements FTIdentity {
 	
 	public synchronized void setIsNeeded(boolean newValue) {
 		mIsNeeded = newValue;
+		store();
 	}
 	
-	public void store(ObjectContainer db) {
+	public void store() {
+		/* FIXME: check for duplicates */
 		db.store(this);
 		db.commit();
 	}

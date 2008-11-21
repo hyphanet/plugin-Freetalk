@@ -82,7 +82,8 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 							id = bOwnIdentities ?	new FTOwnIdentityWoT(uid, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
 													new FTIdentityWoT(uid, new FreenetURI(requestURI), nickname);
 
-							id.store(db);
+							id.initializeTransient(db);
+							id.store();
 						}
 						catch(MalformedURLException e) {
 							Logger.error(this, "Error in OnReply()", e);
@@ -90,11 +91,12 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 					} else {
 						assert(result.size() == 1);
 						id = result.next();
+						id.initializeTransient(db);
 					}
 					
 					if(bOwnIdentities)
 						addFreetalkContext(id);
-					id.setLastReceivedFromWoT(db, time);
+					id.setLastReceivedFromWoT(time);
 				}
 				Thread.yield();
 			}

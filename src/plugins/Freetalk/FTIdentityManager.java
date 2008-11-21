@@ -7,6 +7,7 @@ import java.util.Iterator;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.query.Query;
 
 import freenet.support.Executor;
 import freenet.support.Logger;
@@ -29,13 +30,55 @@ public abstract class FTIdentityManager implements Runnable, Iterable<FTIdentity
 	}
 
 	public synchronized Iterator<FTIdentity> iterator() {
-		ObjectSet<FTIdentity> ids = db.query(FTIdentity.class);
-		return ids.iterator();
+		return new Iterator<FTIdentity> () {
+			Iterator<FTIdentity> iter;
+			
+			{
+				 Query q = db.query();
+				 q.constrain(FTIdentity.class);
+				 iter = q.execute().iterator();
+			}
+			
+			public boolean hasNext() {
+				return iter.hasNext();
+			}
+
+			public FTIdentity next() {
+				FTIdentity i = iter.next();
+				i.initializeTransient(db);
+				return i;
+			}
+
+			public void remove() {
+				throw new UnsupportedOperationException("Cannot delete identities.");
+			}
+		};
 	}
 
 	public synchronized Iterator<FTOwnIdentity> ownIdentityIterator() {
-		ObjectSet<FTOwnIdentity> oids = db.query(FTOwnIdentity.class);
-		return oids.iterator();
+		return new Iterator<FTOwnIdentity> () {
+			Iterator<FTOwnIdentity> iter;
+			
+			{
+				 Query q = db.query();
+				 q.constrain(FTOwnIdentity.class);
+				 iter = q.execute().iterator();
+			}
+			
+			public boolean hasNext() {
+				return iter.hasNext();
+			}
+
+			public FTOwnIdentity next() {
+				FTOwnIdentity oi = iter.next();
+				oi.initializeTransient(db);
+				return oi;
+			}
+
+			public void remove() {
+				throw new UnsupportedOperationException("Cannot delete own identities via ownIdentityIterator().");
+			}
+		};
 	}
 
 	public synchronized boolean anyOwnIdentityWantsMessagesFrom(FTIdentity identity) {
@@ -48,6 +91,15 @@ public abstract class FTIdentityManager implements Runnable, Iterable<FTIdentity
 		}
 
 		return false;
+	}
+	
+	public synchronized void addNewIdentity(FTIdentity identity) {
+		/* FIXME: implement */
+	}
+	
+	public synchronized void addNewOwnIdentity(FTOwnIdentity identity) {
+		/* FIXME: implement. */
+		
 	}
 	
 	public abstract void terminate();

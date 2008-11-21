@@ -3,9 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 
 public interface FTIdentity {
+	
+	public void initializeTransient(ObjectContainer myDB);
 
 	public String getUID();
 	
