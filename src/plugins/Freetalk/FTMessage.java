@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Date;
@@ -135,7 +136,11 @@ public class FTMessage {
 	
 	public static String generateID(FreenetURI uri) {
 		/* FIXME: Maybe find an easier way for message ID generation before release */
-		return HexUtil.bytesToHex(SHA256.digest(uri.toACIIString().getBytes(Charset.forName("US-ASCII"))));
+		try {
+			return HexUtil.bytesToHex(SHA256.digest(uri.toACIIString().getBytes("US-ASCII")));
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	/**
