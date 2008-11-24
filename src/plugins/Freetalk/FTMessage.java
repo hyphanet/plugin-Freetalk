@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
@@ -12,7 +13,9 @@ import java.util.Set;
 import com.db4o.ObjectContainer;
 import com.db4o.query.Query;
 
+import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
+import freenet.support.HexUtil;
 
 /**
  * @author saces, xor
@@ -25,7 +28,12 @@ public class FTMessage {
 	/**
 	 * The URI of this message.
 	 */
-	private final FreenetURI mURI;	
+	private final FreenetURI mURI;
+	
+	/**
+	 * The ID of the message, a (hash) function of the URI, lowercase characters of [0-9a-z] only.
+	 */
+	private final String mID;
 	
 	/**
 	 * The URI of the thread this message belongs to.
@@ -85,7 +93,7 @@ public class FTMessage {
 	 * Get a list of fields which the database should create an index on.
 	 */
 	public static String[] getIndexedFields() {
-		return new String[] { "mURI", "mThreadURI", "mBoards"};
+		return new String[] { "mURI", "mID", "mThreadURI", "mBoards"};
 	}
 	
 	public FTMessage(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FTBoard> newBoards, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
@@ -102,6 +110,7 @@ public class FTMessage {
 			throw new IllegalArgumentException("Invalid message text in message " + newURI);
 		
 		mURI = newURI;
+		mID = generateID(mURI);
 		mThreadURI = newThreadURI;
 		mParentURI = newParentURI;
 		mBoards = newBoards.toArray(new FTBoard[newBoards.size()]);
@@ -124,11 +133,20 @@ public class FTMessage {
 		mMessageManager = myMessageManager;
 	}
 	
+	public static String generateID(FreenetURI uri) {
+		/* FIXME: Maybe find an easier way for message ID generation before release */
+		return HexUtil.bytesToHex(SHA256.digest(uri.toACIIString().getBytes(Charset.forName("US-ASCII"))));
+	}
+	
 	/**
 	 * Get the URI of the message.
 	 */
 	public FreenetURI getURI() {
 		return mURI;
+	}
+	
+	public String getID() {
+		return mID;
 	}
 	
 	/**
