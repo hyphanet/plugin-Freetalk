@@ -4,14 +4,19 @@
 package plugins.Freetalk.WoT;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Random;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
+import freenet.node.Node;
 import freenet.support.Executor;
+import plugins.Freetalk.FTIdentityManager;
 import plugins.Freetalk.FTMessageFetcher;
 
 /**
@@ -19,72 +24,39 @@ import plugins.Freetalk.FTMessageFetcher;
  *
  */
 public class FTMessageFetcherWoT extends FTMessageFetcher {
+	
+	private static final int PARALLEL_MESSAGE_FETCH_COUNT = 128;
+	
+	private Random mRandom;
 
-	/**
-	 * @param myExecutor
-	 * @param myName
-	 */
-	public FTMessageFetcherWoT(Executor myExecutor, String myName) {
-		super(myExecutor, myName);
-		// TODO Auto-generated constructor stub
+	public FTMessageFetcherWoT(Node myNode, HighLevelSimpleClient myClient, String myName, FTIdentityManager myIdentityManager) {
+		super(myNode, myClient, myName, myIdentityManager);
+		mRandom = mNode.fastWeakRandom;
+		start();
 	}
 
 	@Override
-	public Collection<ClientGetter> getFetchStorage() {
-		// TODO Auto-generated method stub
+	protected Collection<ClientGetter> createFetchStorage() {
+		return new HashSet<ClientGetter>(PARALLEL_MESSAGE_FETCH_COUNT * 2);
+	}
+
+	@Override
+	protected Collection<BaseClientPutter> createInsertStorage() {
 		return null;
 	}
 
 	@Override
-	public Collection<BaseClientPutter> getInsertStorage() {
-		// TODO Auto-generated method stub
-		return null;
+	protected long getStartupDelay() {
+		return STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY);
+	}
+	
+	@Override
+	protected long getSleepTime() {
+		return THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
 	}
 
 	@Override
-	public long getSleepTime() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public long getStartupDelay() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public void iterate() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void onFailure(FetchException e, ClientGetter state) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void onFailure(InsertException e, BaseClientPutter state) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void onFetchable(BaseClientPutter state) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void onMajorProgress() {
+	protected void iterate() {
 		// TODO Auto-generated method stub
 
 	}
@@ -92,13 +64,29 @@ public class FTMessageFetcherWoT extends FTMessageFetcher {
 	@Override
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		// TODO Auto-generated method stub
-
 	}
+	
+	@Override
+	public void onFailure(FetchException e, ClientGetter state) {
+		// TODO Auto-generated method stub
+	}
+	
+	
+	/* Not needed functions, called for inserts */
 
 	@Override
-	public void onSuccess(BaseClientPutter state) {
-		// TODO Auto-generated method stub
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
+	
+	@Override
+	public void onSuccess(BaseClientPutter state) { }
+	
+	@Override
+	public void onFailure(InsertException e, BaseClientPutter state) { }
+	
+	@Override
+	public void onFetchable(BaseClientPutter state) { }
 
-	}
+	@Override
+	public void onMajorProgress() { }
 
 }
