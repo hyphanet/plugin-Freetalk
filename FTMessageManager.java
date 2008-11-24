@@ -41,10 +41,14 @@ public abstract class FTMessageManager implements Runnable {
 	/**
 	 * Get a message by its URI. The transient fields of the returned message will be initialized already.
 	 */
-	public synchronized FTMessage get(FreenetURI uri) {
+	public FTMessage get(FreenetURI uri) {
+		return get(FTMessage.generateID(uri));
+	}
+	
+	public synchronized FTMessage get(String id) {
 		Query query = db.query();
 		query.constrain(FTMessage.class);
-		query.descend("mURI").constrain(uri);
+		query.descend("mID").constrain(id);
 		ObjectSet<FTMessage> result = query.execute();
 
 		assert(result.size() <= 1);
