@@ -47,7 +47,7 @@ public class FreetalkNNTPHandler implements Runnable {
 
 	private void printStatusLine(String line) {
 		out.print(line);
-		out.print("\r\n");
+		out.print("\r\n"); /* FIXME: Why windows nextline? */
 		out.flush();
 	}
 
