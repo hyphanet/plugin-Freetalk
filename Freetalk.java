@@ -15,6 +15,7 @@ import plugins.Freetalk.ui.IdentityEditor;
 import plugins.Freetalk.ui.Messages;
 import plugins.Freetalk.ui.Status;
 import plugins.Freetalk.ui.Welcome;
+import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
@@ -84,7 +85,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	private FTIdentityManagerWoT mIdentityManager;
 	
 	private FTMessageManagerWoT mMessageManager;
-	
+
+	private FreetalkNNTPServer nntpServer;
 	
 	public void runPlugin(PluginRespirator myPR) {
 		
@@ -135,20 +137,28 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		
 		Logger.debug(this, "Creating message manager...");
 		mMessageManager = new FTMessageManagerWoT(db, pr.getNode().executor, mIdentityManager);
-		
+
+		Logger.debug(this, "Starting NNTP server...");
+		nntpServer = new FreetalkNNTPServer(this, 1199, null, null);
+		Thread serverThread = new Thread(nntpServer);
+		serverThread.start();
+
 		pm = pr.getPageMaker();
 		pm.addNavigationLink(PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
 		pm.addNavigationLink(PLUGIN_URI + "/ownidentities", "Own Identities", "Manage your own identities", false, null);
 		pm.addNavigationLink(PLUGIN_URI + "/knownidentities", "Known Identities", "Manage others identities", false, null);
 		pm.addNavigationLink(PLUGIN_URI + "/messages", "Messages", "View Messages", false, null);
 		pm.addNavigationLink(PLUGIN_URI + "/status", "Dealer status", "Show what happens in background", false, null);
-		pm.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);
+		pm.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);		
 		
 		Logger.debug(this, "Plugin loaded.");
 	}
 
 	public void terminate() {
 		Logger.debug(this, "Terminating Freetalk ...");
+
+		if(nntpServer != null)
+			nntpServer.terminate();
 		
 		if(mMessageManager != null)
 			mMessageManager.terminate();
