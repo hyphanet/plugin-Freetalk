@@ -312,9 +312,9 @@ public class FTBoard {
 	
 	public synchronized List<FTMessage> getAllMessages() {
 		Query q = db.query();
-		q.constrain(FTMessage.class);
-		q.descend("mBoards").constrain(mName); /* FIXME: mBoards is an array. Does constrain() check whether it contains the element mName? */
-		return q.execute();
+		q.constrain(BoardMessageLink.class);
+		q.descend("mBoard").constrain(this);
+		return q.descend("mMessage").execute();
 	}
 	
 	public synchronized void store() {
@@ -323,7 +323,23 @@ public class FTBoard {
 		db.commit();
 	}
 	
-	private final class MessageInBoard {
+	/**
+	 * Helper class to associate messages with boards in the database
+	 */
+	private final class BoardMessageLink {
+		private final FTBoard mBoard;
+		private final FTMessage mMessage;
 		
+		public BoardMessageLink(FTBoard myBoard, FTMessage myMessage) {
+			assert(myBoard != null && myMessage != null);
+			mBoard = myBoard;
+			mMessage = myMessage;
+		}
+		
+		public void store(ObjectContainer db) {
+			db.store(this);
+			db.commit();
+		}
 	}
+	
 }
