@@ -132,6 +132,8 @@ public class FTBoard {
 		synchronized(mMessageManager) {
 			newMessage.initializeTransient(db, mMessageManager);
 			newMessage.store();
+			
+			new BoardMessageLink(this, newMessage).store(db);
 
 			if(!newMessage.isThread())
 			{
@@ -204,12 +206,13 @@ public class FTBoard {
 	 */
 	protected synchronized FTMessage findParentThread(FTMessage m) {
 		Query q = db.query();
-		q.constrain(FTMessage.class);
+		q.constrain(BoardMessageLink.class);
 		/* FIXME: I assume that db4o is configured to keep an URI index per board. We still have to ensure in FMS.java that it is configured to do so.
 		 * If my second assumption - that the descend() statements are evaluated in the specified order - is true, then it might be faste because the
 		 * URI index is smaller per board than the global URI index. */
-		q.descend("mBoards").constrain(mName); 
-		q.descend("mURI").constrain(m.getParentThreadURI());
+		q.descend("mBoard").constrain(this); 
+		q.descend("mMessage").descend("mURI").constrain(m.getParentThreadURI());
+		/* FIXME: this certainly will return BoardMessageLink instead of FTMessage. how to return the messages? */
 		ObjectSet<FTMessage> parents = q.execute();
 		
 		assert(parents.size() <= 1);
@@ -242,11 +245,11 @@ public class FTBoard {
 				 * Maybe we can just keep the Query-object and call q.execute() as many times as we like to?
 				 * Or somehow tell db4o to keep a per-board thread index which is sorted by Date? - This would be the best solution */
 				Query q = db.query();
-				q.constrain(FTMessage.class);
-				q.descend("mBoards").constrain(mName); /* FIXME: mBoards is an array. constrain() does NOT check whether it contains the element mName. We need to change this code. */
-				q.descend("mThread").constrain(null).identity();
-				q.descend("mDate").orderDescending();
-
+				q.constrain(BoardMessageLink.class);
+				q.descend("mBoard").constrain(this);
+				q.descend("mMessage").descend("mThread").constrain(null).identity();
+				q.descend("mMessage").descend("mDate").orderDescending();
+				/* FIXME: this certainly will return BoardMessageLink instead of FTMessage. how to return the messages? */
 				iter = q.execute().iterator();
 				next = iter.hasNext() ? iter.next() : null;
 			}
@@ -278,7 +281,7 @@ public class FTBoard {
 	 * Get an iterator over messages for which the parent thread with the given URI was not known. 
 	 * The transient fields of the returned messages will be initialized already.
 	 */
-	public synchronized Iterator<FTMessage> absoluteOrphanIterator(final FreenetURI thread) {
+	private synchronized Iterator<FTMessage> absoluteOrphanIterator(final FreenetURI thread) {
 		return new Iterator<FTMessage>() {
 			private final Iterator<FTMessage> iter;
 
@@ -286,10 +289,11 @@ public class FTBoard {
 				/* FIXME: This query should be accelerated. The amount of absolute orphans is very small usually, so we should configure db4o
 				 * to keep a separate list of those. */
 				Query q = db.query();
-				q.constrain(FTMessage.class);
-				q.descend("mBoards").constrain(mName); /* FIXME: mBoards is an array. Does constrain() check whether it contains the element mName? */
-				q.descend("mThreadURI").constrain(thread);
-				q.descend("mThread").constrain(null);
+				q.constrain(BoardMessageLink.class);
+				q.descend("mBoard").constrain(mName); /* FIXME: mBoards is an array. Does constrain() check whether it contains the element mName? */
+				q.descend("mMessage").descend("mThreadURI").constrain(thread);
+				q.descend("mMessage").descend("mThread").constrain(null).identity();
+				/* FIXME: this certainly will return BoardMessageLink instead of FTMessage. how to return the messages? */
 				ObjectSet<FTMessage> result = q.execute();
 				iter = result.iterator();
 			}
@@ -314,7 +318,7 @@ public class FTBoard {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
 		q.descend("mBoard").constrain(this);
-		return q.descend("mMessage").execute();
+		return q.descend("mMessage").execute(); /* FIXME: does this return the FTMessage? */
 	}
 	
 	public synchronized void store() {
