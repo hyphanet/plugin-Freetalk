@@ -16,20 +16,24 @@ import freenet.node.Node;
 import freenet.support.Logger;
 
 /**
- * How to implement this:
- * - Getting a board list: mMessageManager.boardIterator()
- * - Getting messages in a board: mMessageManager.threadIterator()
- * - Getting replies to a message: message.childrenIterator()
- * - Things which might be missing: Functions in FTMessage and FTidentity for getting UIDs which are compatible to NNTP, plus functions
- * in FTMessageManager/FTIdentityManager for retrieving by those UIDs. Ask for them and they will be implemented.
+ * NNTP server.
+ *
+ * The server runs in a background thread so it can wait for
+ * connections from clients.  Each handler runs in its own thread as
+ * well.  Use terminate() to shut everything down.
+ *
+ * @author Benjamin Moody
  */
 public class FreetalkNNTPServer implements Runnable {
 
 	private Node node;
 	private Freetalk freetalk;
 
+	/** Port to listen on for connections. */
 	private int port;
+	/** Comma-separated list of addresses to bind to. */
 	private String bindTo;
+	/** Comma-separated list of hosts to accept connections from. */
 	private String allowedHosts;
 
 	private NetworkInterface iface;
@@ -49,6 +53,10 @@ public class FreetalkNNTPServer implements Runnable {
 		node.executor.execute(this, "Freetalk NNTP Server");
 	}
 
+	/**
+	 * Shut down the server and disconnect any currently-connected
+	 * clients.
+	 */
 	public void terminate() {
 		shutdown = true;
 		try {
@@ -66,6 +74,9 @@ public class FreetalkNNTPServer implements Runnable {
 		}
 	}
 
+	/**
+	 * Main server connection loop
+	 */
 	public void run() {
 		try {
 			serverThread = Thread.currentThread();
@@ -78,6 +89,8 @@ public class FreetalkNNTPServer implements Runnable {
 			while (!shutdown) {
 				try {
 					Socket clientSocket = iface.accept();
+					Logger.debug(this, "Accepted an NNTP connection from " + clientSocket.getInetAddress());
+
 					FreetalkNNTPHandler handler = new FreetalkNNTPHandler(freetalk, clientSocket);
 					node.executor.execute(handler, "Freetalk NNTP Client " + clientSocket.getInetAddress());
 
@@ -86,13 +99,7 @@ public class FreetalkNNTPServer implements Runnable {
 				catch (SocketTimeoutException e) {
 					// ignore
 				}
-				/* FIXME: This catch block is unreachable according to my java compiler, Benjamin you should uncomment it and see if your 
-				 * Eclipse also underlines the IOException yellow and tells you that it's unreachable. If not, its misconfigured. 
-				catch (IOException e) {
-					Logger.error(this, "Error in NNTP server", e);
-				}
-				*/
-				
+
 				// Remove disconnected clients from the list
 				for (Iterator<FreetalkNNTPHandler> i = clientHandlers.iterator(); i.hasNext(); ) {
 					FreetalkNNTPHandler handler = i.next();
@@ -113,11 +120,11 @@ public class FreetalkNNTPServer implements Runnable {
 	
 	private void terminateHandlers() {
 		synchronized(clientHandlers) {
-		// Close client sockets
-		for (Iterator<FreetalkNNTPHandler> i = clientHandlers.iterator(); i.hasNext(); ) {
-			FreetalkNNTPHandler handler = (FreetalkNNTPHandler) i.next();
-			handler.terminate();
-		}
+			// Close client sockets
+			for (Iterator<FreetalkNNTPHandler> i = clientHandlers.iterator(); i.hasNext(); ) {
+				FreetalkNNTPHandler handler = (FreetalkNNTPHandler) i.next();
+				handler.terminate();
+			}
 		}
 	}
 }
