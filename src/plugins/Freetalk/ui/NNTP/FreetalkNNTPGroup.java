@@ -29,7 +29,7 @@ public class FreetalkNNTPGroup {
 	 * Estimate number of messages that have been posted.
 	 */
 	public long messageCount() {
-		return 0;				// FIXME
+		return board.getAllMessages().size();
 	}
 
 	/**
