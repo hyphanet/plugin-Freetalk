@@ -6,6 +6,7 @@ package plugins.Freetalk;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
@@ -309,9 +310,20 @@ public class FTBoard {
 		};
 	}
 	
+	public synchronized List<FTMessage> getAllMessages() {
+		Query q = db.query();
+		q.constrain(FTMessage.class);
+		q.descend("mBoards").constrain(mName); /* FIXME: mBoards is an array. Does constrain() check whether it contains the element mName? */
+		return q.execute();
+	}
+	
 	public synchronized void store() {
 		/* FIXME: check for duplicates */
 		db.store(this);
 		db.commit();
+	}
+	
+	private final class MessageInBoard {
+		
 	}
 }
