@@ -35,6 +35,8 @@ public class FreetalkNNTPHandler implements Runnable {
 
 	/** Current board (selected by the GROUP command) */
 	private FreetalkNNTPGroup currentGroup;
+	
+	private final static String CRLF = "\r\n";
 
 	public FreetalkNNTPHandler(Freetalk ft, Socket socket) {
 		mIdentityManager = ft.getIdentityManager();
@@ -68,7 +70,7 @@ public class FreetalkNNTPHandler implements Runnable {
 	private void printStatusLine(String line) {
 		out.print(line);
 		// NNTP spec requires all command and response lines end with CR+LF
-		out.print("\r\n");
+		out.print(CRLF);
 		out.flush();
 	}
 
@@ -81,14 +83,14 @@ public class FreetalkNNTPHandler implements Runnable {
 		if (line.length() > 0 && line.charAt(0) == '.')
 			out.print(".");
 		out.print(line);
-		out.print("\r\n");
+		out.print(CRLF);
 	}
 
 	/**
 	 * Print a single dot to indicate the end of a text response.
 	 */
 	private void endTextResponse() {
-		out.print(".\r\n");
+		out.print("." + CRLF);
 	}
 
 	/**
@@ -133,8 +135,10 @@ public class FreetalkNNTPHandler implements Runnable {
 		String[] tokens = line.split("[ \t\r\n]+");
 		if (tokens.length == 0)
 			return;
+		
+		String command = tokens[0];
 
-		if (tokens[0].equalsIgnoreCase("GROUP")) {
+		if (command.equalsIgnoreCase("GROUP")) {
 			if (tokens.length == 2) {
 				selectGroup(tokens[1]);
 			}
@@ -142,7 +146,7 @@ public class FreetalkNNTPHandler implements Runnable {
 				printStatusLine("501 Syntax error");
 			}
 		}
-		else if (tokens[0].equalsIgnoreCase("LIST")) {
+		else if (command.equalsIgnoreCase("LIST")) {
 			if (tokens.length == 1 || tokens[1].equalsIgnoreCase("ACTIVE")) {
 				if (tokens.length > 2)
 					listActiveGroups(tokens[2]);
@@ -153,7 +157,7 @@ public class FreetalkNNTPHandler implements Runnable {
 				printStatusLine("501 Syntax error");
 			}
 		}
-		else if (tokens[0].equalsIgnoreCase("QUIT")) {
+		else if (command.equalsIgnoreCase("QUIT")) {
 			printStatusLine("205 Have a nice day.");
 			socket.close();
 		}
