@@ -16,6 +16,7 @@ import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.Executor;
+import freenet.support.io.NativeThread;
 import plugins.Freetalk.FTIdentityManager;
 import plugins.Freetalk.FTMessageFetcher;
 
@@ -45,6 +46,11 @@ public class FTMessageFetcherWoT extends FTMessageFetcher {
 		return null;
 	}
 
+	@Override
+	public int getPriority() {
+		return NativeThread.NORM_PRIORITY;
+	}
+	
 	@Override
 	protected long getStartupDelay() {
 		return STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY);

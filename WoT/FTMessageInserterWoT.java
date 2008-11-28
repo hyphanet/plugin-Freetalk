@@ -13,6 +13,7 @@ import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.Executor;
+import freenet.support.io.NativeThread;
 import plugins.Freetalk.FTIdentityManager;
 import plugins.Freetalk.FTMessage;
 import plugins.Freetalk.FTMessageInserter;
@@ -45,6 +46,11 @@ public class FTMessageInserterWoT extends FTMessageInserter {
 	}
 
 	@Override
+	public int getPriority() {
+		return NativeThread.NORM_PRIORITY;
+	}
+	
+	@Override
 	protected long getStartupDelay() {
 		return STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY);
 	}
@@ -59,7 +65,7 @@ public class FTMessageInserterWoT extends FTMessageInserter {
 		// TODO Auto-generated method stub
 
 	}
-	
+
 	@Override
 	public void onSuccess(BaseClientPutter state) {
 		// TODO Auto-generated method stub

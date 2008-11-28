@@ -9,6 +9,7 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
+import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.Logger;
 
@@ -16,7 +17,7 @@ import freenet.support.Logger;
  * @author saces, xor
  * 
  */
-public abstract class FTIdentityManager implements Runnable, Iterable<FTIdentity> {
+public abstract class FTIdentityManager implements PrioRunnable, Iterable<FTIdentity> {
 	
 	protected final ObjectContainer db;
 
