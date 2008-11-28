@@ -23,6 +23,7 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
+import freenet.support.io.NativeThread;
 
 /**
  * An identity manager which uses the identities from the WoT plugin.
@@ -36,9 +37,13 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 	private static final int THREAD_PERIOD = 1 * 60 * 1000;
 
 	private volatile boolean isRunning = true;
-	private Thread mThread;
+	private Thread mThread = null;
 
 	private PluginTalker mTalker;
+	
+	private final Object sfsLock = new Object();
+	private SimpleFieldSet sfsIdentities = null;
+	private SimpleFieldSet sfsOwnIdentities = null;
 
 	/**
 	 * @param executor
@@ -57,11 +62,38 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 		mTalker.send(params, null);
 	}
 	
+	/**
+	 * Called by the PluginTalker, it is run in a different Thread. Therefore, we store the result and let our own thread process it so we
+	 * can run the processing at minimal thread priority, which is necessary because the amount of identities might become large.
+	 */
 	public void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data) {
-		long time = System.currentTimeMillis();
+		String message = params.get("Message");
 		
-		boolean bOwnIdentities = params.get("Message").equals("OwnIdentities");
-		if(params.get("Message").equals("Identities") || bOwnIdentities) {
+		synchronized(sfsLock) {
+			if(message.equals("Identities"))
+				sfsIdentities = params;
+			else if(message.equals("OwnIdentities"))
+				sfsOwnIdentities = params;
+		}
+		
+		mThread.interrupt();
+	}
+	
+	private void requestIdentities() {
+		SimpleFieldSet p1 = new SimpleFieldSet(true);
+		p1.putOverwrite("Message", "GetIdentitiesByScore");
+		p1.putOverwrite("Select", "+");
+		p1.putOverwrite("Context", Freetalk.WOT_CONTEXT);
+		mTalker.send(p1, null);
+		
+		SimpleFieldSet p2 = new SimpleFieldSet(true);
+		p2.putOverwrite("Message","GetOwnIdentities");
+		mTalker.send(p2, null);
+	}
+	
+	private void parseIdentities(SimpleFieldSet params, boolean bOwnIdentities) {
+		long time = System.currentTimeMillis();
+	
 			for(int idx = 1; ; idx++) {
 				String uid = params.get("Identity"+idx);
 				if(uid == null || uid.equals("")) /* FIXME: Figure out whether the second condition is necessary */
@@ -86,7 +118,7 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 							id.store();
 						}
 						catch(MalformedURLException e) {
-							Logger.error(this, "Error in OnReply()", e);
+							Logger.error(this, "Error in parseIdentities", e);
 						}
 					} else {
 						assert(result.size() == 1);
@@ -94,34 +126,18 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 						id.initializeTransient(db);
 					}
 					
-					if(bOwnIdentities)
+					if(bOwnIdentities)	/* FIXME: Only add the context if the user actually uses the identity with Freetalk */
 						addFreetalkContext(id);
 					id.setLastReceivedFromWoT(time);
 				}
 				Thread.yield();
 			}
-		}
-
-		
-		garbageCollectIdentities();
-	}
-	
-	private void receiveIdentities() {
-		SimpleFieldSet p1 = new SimpleFieldSet(true);
-		p1.putOverwrite("Message", "GetIdentitiesByScore");
-		p1.putOverwrite("Select", "+");
-		p1.putOverwrite("Context", Freetalk.WOT_CONTEXT);
-		mTalker.send(p1, null);
-		
-		SimpleFieldSet p2 = new SimpleFieldSet(true);
-		p2.putOverwrite("Message","GetOwnIdentities");
-		mTalker.send(p2, null);
 	}
 	
 	private synchronized void garbageCollectIdentities() {
 		/* Executing the thread loop once will always take longer than THREAD_PERIOD. Therefore, if we set the limit to 3*THREAD_PERIOD,
 		 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */
-		long lastAcceptTime = System.currentTimeMillis() - THREAD_PERIOD * 3;
+		long lastAcceptTime = System.currentTimeMillis() - THREAD_PERIOD * 3; /* FIXME: Use UTC */
 		
 		Query q = db.query();
 		q.constrain(FTIdentityWoT.class);
@@ -166,7 +182,24 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 		while(isRunning) {
 			Logger.debug(this, "Identity manager loop running...");
 
-			receiveIdentities();
+			boolean identitiesWereReceived;
+			
+			synchronized(sfsLock) {
+				identitiesWereReceived = sfsIdentities != null || sfsOwnIdentities != null;
+				if(sfsIdentities != null) {
+					parseIdentities(sfsIdentities, false);
+					sfsIdentities = null;
+				}
+				if(sfsOwnIdentities != null) {
+					parseIdentities(sfsOwnIdentities, false);
+					sfsOwnIdentities = null;
+				}
+			}
+			
+			if(identitiesWereReceived == false)
+				requestIdentities();
+			else
+				garbageCollectIdentities();
 			
 			Logger.debug(this, "Identity manager loop finished.");
 
@@ -176,10 +209,13 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 			catch (InterruptedException e)
 			{
 				mThread.interrupt();
-				Logger.debug(this, "Identity manager loop interrupted!");
 			}
 		}
 		Logger.debug(this, "Identity manager thread exiting.");
+	}
+	
+	public int getPriority() {
+		return NativeThread.MIN_PRIORITY;
 	}
 	
 	public void terminate() {
