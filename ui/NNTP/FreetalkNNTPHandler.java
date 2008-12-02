@@ -103,6 +103,7 @@ public class FreetalkNNTPHandler implements Runnable {
 	 */
 	private void endTextResponse() {
 		out.print("." + CRLF);
+		out.flush();
 	}
 
 	/**
@@ -278,8 +279,8 @@ public class FreetalkNNTPHandler implements Runnable {
 			OutputStream os = socket.getOutputStream();
 			String line;
 
-			in = new BufferedReader(new InputStreamReader(is));
-			out = new PrintStream(os);
+			in = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+			out = new PrintStream(os, false, "UTF-8");
 
 			printStatusLine("200 Welcome to Freetalk");
 			while (!socket.isClosed()) {
