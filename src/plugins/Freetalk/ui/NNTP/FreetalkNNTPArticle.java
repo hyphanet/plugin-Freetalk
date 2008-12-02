@@ -5,6 +5,7 @@ package plugins.Freetalk.ui.NNTP;
 
 import plugins.Freetalk.FTMessage;
 import plugins.Freetalk.FTBoard;
+import plugins.Freetalk.Freetalk;
 
 import freenet.keys.FreenetURI;
 
@@ -20,6 +21,11 @@ public class FreetalkNNTPArticle {
 	public static final String[] ALL_HEADERS = { "From", "Subject", "Newsgroups",
 												 "Date", "Message-ID", "References",
 												 "Path", "Content-Type" };
+	
+	/* FIXME: Message.getDate() returns UTC time. If newsreaders expect UTC, this is correct. If they expect to receive their local time
+	 * then we need to convert to the local time of the newsreader by specifying the time zone when creating the SimpleDateFormat. 
+	 * SimpleDateFormat interprets Date objects given to it as UTC and converts them to the specified timezone automaticall. */
+	public static final SimpleDateFormat mDateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
 
 	private final FTMessage message;
 
@@ -39,14 +45,19 @@ public class FreetalkNNTPArticle {
 	 * present, return the empty string.
 	 */
 	public String getHeaderByName(String name) {
+		
+		/* FIXME: To speed this up, do not use String name but create an enum Headers which has an entry for each header and index the 
+		 * String[] ALL_HEADERS by the elements of that enum. Then this function will just have to switch() on a value of the enum instead
+		 * of comparing strings */
+		
 		if (name.equalsIgnoreCase("From")) {
-			// FIXME: what is the format of the UID?  Is it something
-			// that looks like an address?
-			return message.getAuthor().getUID();
+			/* The UID of an author is the base64 encoded routing key of his SSK keypair. We append ".freetalk" to the UID to make it look 
+			 * like a valid domain. */
+			return message.getAuthor().getNickname() + "@" + message.getAuthor().getUID() + "." + Freetalk.WOT_CONTEXT;
 		}
 		else if (name.equalsIgnoreCase("Subject")) {
-			// FIXME: do we need to clean this up?  (No control
-			// characters allowed)
+			/* FIXME: The title is not cleaned up yet. Please give me (xor) the list of the control characters which the RFC forbids and I
+			 * will provide a function to return a cleaned up title */ 
 			return message.getTitle();
 		}
 		else if (name.equalsIgnoreCase("Newsgroups")) {
@@ -64,8 +75,9 @@ public class FreetalkNNTPArticle {
 			return builder.toString();
 		}
 		else if (name.equalsIgnoreCase("Date")) {
-			SimpleDateFormat fmt = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
-			return fmt.format(message.getDate());
+			synchronized(mDateFormat) {
+				return mDateFormat.format(message.getDate());
+			}
 		}
 		else if (name.equalsIgnoreCase("Message-ID")) {
 			return "<" + message.getID() + ">";
@@ -75,14 +87,13 @@ public class FreetalkNNTPArticle {
 			// list of earlier messages in the thread, in case the
 			// parent message can't be retrieved.
 
-			FreenetURI parentURI = message.getParentURI();
-			if (parentURI == null)
+			if (message.isThread())
 				return "";
 			else
-				return "<" + FTMessage.generateID(parentURI) + ">";
+				return "<" + message.getParentID() + ">";
 		}
 		else if (name.equalsIgnoreCase("Path")) {
-			return "freenet";
+			return Freetalk.WOT_CONTEXT;
 		}
 		else if (name.equalsIgnoreCase("Content-Type")) {
 			return "text/plain; charset=UTF-8";
