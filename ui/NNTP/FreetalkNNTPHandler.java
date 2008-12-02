@@ -6,6 +6,7 @@ package plugins.Freetalk.ui.NNTP;
 import plugins.Freetalk.FTIdentityManager;
 import plugins.Freetalk.FTMessageManager;
 import plugins.Freetalk.FTBoard;
+import plugins.Freetalk.FTMessage;
 import plugins.Freetalk.Freetalk;
 
 import java.net.Socket;
@@ -87,10 +88,68 @@ public class FreetalkNNTPHandler implements Runnable {
 	}
 
 	/**
+	 * Print out a block of text (changing all line terminators to
+	 * CR+LF and dot-stuffing as necessary.)
+	 */
+	private void printText(String text) {
+		String[] lines = text.split("\r\n?|\n");
+		for (int i = 0; i < lines.length; i++) {
+			printTextResponseLine(lines[i]);
+		}
+	}
+
+	/**
 	 * Print a single dot to indicate the end of a text response.
 	 */
 	private void endTextResponse() {
 		out.print("." + CRLF);
+	}
+
+	/**
+	 * Handle the ARTICLE / BODY / HEAD / STAT commands.
+	 */
+	private void selectArticle(String name, boolean printHead, boolean printBody) {
+
+		// Look up by message ID
+		if (name != null && name.length() > 2 && name.charAt(0) == '<'
+			&& name.charAt(name.length() - 1) == '>') {
+
+			String msgid = name.substring(1, name.length() - 1);
+			FTMessage msg = mMessageManager.get(msgid);
+
+			if (msg == null) {
+				printStatusLine("430 No such article");
+				return;
+			}
+
+			FreetalkNNTPArticle article = new FreetalkNNTPArticle(msg);
+
+			if (printHead && printBody) {
+				printStatusLine("220 0 <" + msgid + ">");
+				printText(article.getHead());
+				printTextResponseLine("");
+				printText(article.getBody());
+				endTextResponse();
+			}
+			else if (printHead) {
+				printStatusLine("221 0 <" + msgid + ">");
+				printText(article.getHead());
+				endTextResponse();
+			}
+			else if (printBody) {
+				printStatusLine("222 0 <" + msgid + ">");
+				printText(article.getBody());
+				endTextResponse();
+			}
+			else {
+				printStatusLine("223 0 <" + msgid + ">");
+			}
+		}
+		else {
+			// Other forms of these commands are not (yet) implemented
+			printStatusLine("501 Syntax error");
+			return;
+		}
 	}
 
 	/**
@@ -135,12 +194,45 @@ public class FreetalkNNTPHandler implements Runnable {
 		String[] tokens = line.split("[ \t\r\n]+");
 		if (tokens.length == 0)
 			return;
-		
+
 		String command = tokens[0];
 
-		if (command.equalsIgnoreCase("GROUP")) {
+		if (command.equalsIgnoreCase("ARTICLE")) {
+			if (tokens.length == 2) {
+				selectArticle(tokens[1], true, true);
+			}
+			else if (tokens.length == 1) {
+				selectArticle(null, true, true);
+			}
+			else {
+				printStatusLine("501 Syntax error");
+			}
+		}
+		else if (command.equalsIgnoreCase("BODY")) {
+			if (tokens.length == 2) {
+				selectArticle(tokens[1], false, true);
+			}
+			else if (tokens.length == 1) {
+				selectArticle(null, false, true);
+			}
+			else {
+				printStatusLine("501 Syntax error");
+			}
+		}
+		else if (command.equalsIgnoreCase("GROUP")) {
 			if (tokens.length == 2) {
 				selectGroup(tokens[1]);
+			}
+			else {
+				printStatusLine("501 Syntax error");
+			}
+		}
+		else if (command.equalsIgnoreCase("HEAD")) {
+			if (tokens.length == 2) {
+				selectArticle(tokens[1], true, false);
+			}
+			else if (tokens.length == 1) {
+				selectArticle(null, true, false);
 			}
 			else {
 				printStatusLine("501 Syntax error");
@@ -160,6 +252,17 @@ public class FreetalkNNTPHandler implements Runnable {
 		else if (command.equalsIgnoreCase("QUIT")) {
 			printStatusLine("205 Have a nice day.");
 			socket.close();
+		}
+		else if (command.equalsIgnoreCase("STAT")) {
+			if (tokens.length == 2) {
+				selectArticle(tokens[1], false, false);
+			}
+			else if (tokens.length == 1) {
+				selectArticle(null, false, false);
+			}
+			else {
+				printStatusLine("501 Syntax error");
+			}
 		}
 		else {
 			printStatusLine("500 Command not recognized");
