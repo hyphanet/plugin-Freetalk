@@ -161,11 +161,22 @@ public class FTMessage {
 		return mThreadURI;
 	}
 	
+	public synchronized String getParentThreadID() {
+		/* TODO: Which requires more CPU, to synchronize the function so that we can check for mThread != null and use its cached ID or to
+		 * just generate the ID by SHA256 hashing the parent URI and bytesToHex ?
+		 * I suppose the synchronization is faster. Anyone else? */
+		return mThread != null ? mThread.getID() : generateID(mThreadURI);
+	}
+	
 	/**
 	 * Get the FreenetURI to which this message is a reply. Null if the message is a thread.
 	 */
 	public FreenetURI getParentURI() {
 		return mParentURI;
+	}
+	
+	public synchronized String getParentID() {
+		return mParent != null ? mParent.getID() : generateID(mParentURI);
 	}
 	
 	public boolean isThread() {
