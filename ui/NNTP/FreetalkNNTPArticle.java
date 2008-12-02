@@ -64,8 +64,7 @@ public class FreetalkNNTPArticle {
 			FTBoard boards[] = message.getBoards();
 			StringBuilder builder = new StringBuilder();
 
-			if (boards.length > 0)
-				builder.append(boards[0].getNameNNTP());
+			builder.append(boards[0].getNameNNTP());
 
 			for (int i = 1; i < boards.length; i++) {
 				builder.append(", ");
