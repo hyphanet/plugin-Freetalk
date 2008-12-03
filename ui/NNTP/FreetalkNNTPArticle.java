@@ -11,6 +11,8 @@ import freenet.keys.FreenetURI;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+import java.util.regex.Pattern;
+import java.io.UnsupportedEncodingException;
 
 /**
  * Object representing a single news article.
@@ -18,14 +20,28 @@ import java.util.Locale;
  * @author Benjamin Moody
  */
 public class FreetalkNNTPArticle {
-	public static final String[] ALL_HEADERS = { "From", "Subject", "Newsgroups",
-												 "Date", "Message-ID", "References",
-												 "Path", "Content-Type" };
-	
+	public enum Header {
+		FROM ("From"), SUBJECT ("Subject"), NEWSGROUPS ("Newsgroups"),
+		DATE ("Date"), MESSAGE_ID ("Message-ID"), REFERENCES ("References"),
+		PATH ("Path"), CONTENT_TYPE ("Content-Type");
+
+		private String name;
+
+		Header(String name) {
+			this.name = name;
+		}
+
+		public String getName() {
+			return name;
+		}
+	}
+
 	/* FIXME: Message.getDate() returns UTC time. If newsreaders expect UTC, this is correct. If they expect to receive their local time
 	 * then we need to convert to the local time of the newsreader by specifying the time zone when creating the SimpleDateFormat. 
 	 * SimpleDateFormat interprets Date objects given to it as UTC and converts them to the specified timezone automaticall. */
 	public static final SimpleDateFormat mDateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
+
+	public static final Pattern endOfLinePattern = Pattern.compile("\r\n?|\n");
 
 	private final FTMessage message;
 
@@ -45,22 +61,29 @@ public class FreetalkNNTPArticle {
 	 * present, return the empty string.
 	 */
 	public String getHeaderByName(String name) {
-		
-		/* FIXME: To speed this up, do not use String name but create an enum Headers which has an entry for each header and index the 
-		 * String[] ALL_HEADERS by the elements of that enum. Then this function will just have to switch() on a value of the enum instead
-		 * of comparing strings */
-		
-		if (name.equalsIgnoreCase("From")) {
+		for (Header hdr : Header.values())
+			if (name.equalsIgnoreCase(hdr.getName()))
+				return getHeader(hdr);
+
+		return "";
+	}
+
+	/**
+	 * Get the contents of the given header.
+	 */
+	public String getHeader(Header hdr) {
+		switch (hdr) {
+		case FROM:
 			/* The UID of an author is the base64 encoded routing key of his SSK keypair. We append ".freetalk" to the UID to make it look 
 			 * like a valid domain. */
 			return message.getAuthor().getNickname() + "@" + message.getAuthor().getUID() + "." + Freetalk.WOT_CONTEXT;
-		}
-		else if (name.equalsIgnoreCase("Subject")) {
+
+		case SUBJECT:
 			/* FIXME: The title is not cleaned up yet. Please give me (xor) the list of the control characters which the RFC forbids and I
 			 * will provide a function to return a cleaned up title */ 
 			return message.getTitle();
-		}
-		else if (name.equalsIgnoreCase("Newsgroups")) {
+
+		case NEWSGROUPS:
 			FTBoard boards[] = message.getBoards();
 			StringBuilder builder = new StringBuilder();
 
@@ -72,16 +95,16 @@ public class FreetalkNNTPArticle {
 			}
 
 			return builder.toString();
-		}
-		else if (name.equalsIgnoreCase("Date")) {
+
+		case DATE:
 			synchronized(mDateFormat) {
 				return mDateFormat.format(message.getDate());
 			}
-		}
-		else if (name.equalsIgnoreCase("Message-ID")) {
+
+		case MESSAGE_ID:
 			return "<" + message.getID() + ">";
-		}
-		else if (name.equalsIgnoreCase("References")) {
+
+		case REFERENCES:
 			// FIXME: it would be good for the message to include a
 			// list of earlier messages in the thread, in case the
 			// parent message can't be retrieved.
@@ -90,15 +113,16 @@ public class FreetalkNNTPArticle {
 				return "";
 			else
 				return "<" + message.getParentID() + ">";
-		}
-		else if (name.equalsIgnoreCase("Path")) {
+
+		case PATH:
 			return Freetalk.WOT_CONTEXT;
-		}
-		else if (name.equalsIgnoreCase("Content-Type")) {
+
+		case CONTENT_TYPE:
 			return "text/plain; charset=UTF-8";
-		}
-		else
+
+		default:
 			return "";
+		}
 	}
 
 	/**
@@ -108,12 +132,12 @@ public class FreetalkNNTPArticle {
 		StringBuilder builder = new StringBuilder();
 
 		synchronized (message) {
-			for (int i = 0; i < ALL_HEADERS.length; i++) {
-				String hdr = getHeaderByName(ALL_HEADERS[i]);
-				if (!hdr.equals("")) {
-					builder.append(ALL_HEADERS[i]);
+			for (Header hdr : Header.values()) {
+				String text = getHeader(hdr);
+				if (!text.equals("")) {
+					builder.append(hdr.getName());
 					builder.append(": ");
-					builder.append(hdr);
+					builder.append(text);
 					builder.append("\n");
 				}
 			}
@@ -127,5 +151,44 @@ public class FreetalkNNTPArticle {
 	 */
 	public String getBody() {
 		return message.getText();
+	}
+
+	/**
+	 * Get the number of lines in the article's body.
+	 */
+	public long getBodyLineCount() {
+		String[] bodyLines = endOfLinePattern.split(getBody());
+		return bodyLines.length;
+	}
+
+	/**
+	 * Get number of bytes to encode string as UTF-8
+	 */
+	private long byteCountUTF8(String s) {
+		// GAH!  There must be a simpler way to do this
+		try {
+			byte[] b = s.getBytes("UTF-8");
+			return b.length;
+		}
+		catch (UnsupportedEncodingException e) {
+			return 0;
+		}
+	}
+
+	/**
+	 * Get the total size of the article.
+	 */
+	public long getByteCount() {
+		String[] headLines = endOfLinePattern.split(getHead());
+		String[] bodyLines = endOfLinePattern.split(getBody());
+		long count = 2;
+		int i;
+
+		for (i = 0; i < headLines.length; i++)
+			count += byteCountUTF8(headLines[i]) + 2;
+		for (i = 0; i < bodyLines.length; i++)
+			count += byteCountUTF8(bodyLines[i]) + 2;
+
+		return count;
 	}
 }

@@ -92,7 +92,7 @@ public class FreetalkNNTPHandler implements Runnable {
 	 * CR+LF and dot-stuffing as necessary.)
 	 */
 	private void printText(String text) {
-		String[] lines = text.split("\r\n?|\n");
+		String[] lines = FreetalkNNTPArticle.endOfLinePattern.split(text);
 		for (int i = 0; i < lines.length; i++) {
 			printTextResponseLine(lines[i]);
 		}
@@ -107,49 +107,59 @@ public class FreetalkNNTPHandler implements Runnable {
 	}
 
 	/**
-	 * Handle the ARTICLE / BODY / HEAD / STAT commands.
+	 * Find the article named by 'desc'.  Print an error message if it
+	 * can't be found.
 	 */
-	private void selectArticle(String name, boolean printHead, boolean printBody) {
+	private FreetalkNNTPArticle getArticle(String desc, boolean setCurrent) {
+		if (desc != null && desc.length() > 2 && desc.charAt(0) == '<'
+			&& desc.charAt(desc.length() - 1) == '>') {
 
-		// Look up by message ID
-		if (name != null && name.length() > 2 && name.charAt(0) == '<'
-			&& name.charAt(name.length() - 1) == '>') {
-
-			String msgid = name.substring(1, name.length() - 1);
+			String msgid = desc.substring(1, desc.length() - 1);
 			FTMessage msg = mMessageManager.get(msgid);
 
 			if (msg == null) {
 				printStatusLine("430 No such article");
-				return;
+				return null;
 			}
 
-			FreetalkNNTPArticle article = new FreetalkNNTPArticle(msg);
-
-			if (printHead && printBody) {
-				printStatusLine("220 0 <" + msgid + ">");
-				printText(article.getHead());
-				printTextResponseLine("");
-				printText(article.getBody());
-				endTextResponse();
-			}
-			else if (printHead) {
-				printStatusLine("221 0 <" + msgid + ">");
-				printText(article.getHead());
-				endTextResponse();
-			}
-			else if (printBody) {
-				printStatusLine("222 0 <" + msgid + ">");
-				printText(article.getBody());
-				endTextResponse();
-			}
-			else {
-				printStatusLine("223 0 <" + msgid + ">");
-			}
+			return new FreetalkNNTPArticle(msg);
 		}
 		else {
 			// Other forms of these commands are not (yet) implemented
 			printStatusLine("501 Syntax error");
+			return null;
+		}
+	}
+
+
+	/**
+	 * Handle the ARTICLE / BODY / HEAD / STAT commands.
+	 */
+	private void selectArticle(String desc, boolean printHead, boolean printBody) {
+		FreetalkNNTPArticle article = getArticle(desc, true);
+
+		if (article == null)
 			return;
+
+		if (printHead && printBody) {
+			printStatusLine("220 0 <" + article.getMessage().getID() + ">");
+			printText(article.getHead());
+			printTextResponseLine("");
+			printText(article.getBody());
+			endTextResponse();
+		}
+		else if (printHead) {
+			printStatusLine("221 0 <" + article.getMessage().getID() + ">");
+			printText(article.getHead());
+			endTextResponse();
+		}
+		else if (printBody) {
+			printStatusLine("222 0 <" + article.getMessage().getID() + ">");
+			printText(article.getBody());
+			endTextResponse();
+		}
+		else {
+			printStatusLine("223 0 <" + article.getMessage().getID() + ">");
 		}
 	}
 
@@ -185,6 +195,68 @@ public class FreetalkNNTPHandler implements Runnable {
 								  + " " + group.firstMessage()
 								  + " " + group.postingStatus());
 		}
+		endTextResponse();
+	}
+
+	/**
+	 * Handle the HDR / XHDR command.
+	 */
+	private void printArticleHeader(String header, String articleDesc) {
+		FreetalkNNTPArticle article = getArticle(articleDesc, false);
+		if (article != null) {
+			printStatusLine("224 Header contents follow");
+			if (header.equalsIgnoreCase(":bytes"))
+				printTextResponseLine("0 " + article.getByteCount());
+			else if (header.equalsIgnoreCase(":lines"))
+				printTextResponseLine("0 " + article.getBodyLineCount());
+			else
+				printTextResponseLine("0 " + article.getHeaderByName(header));
+			endTextResponse();
+		}
+	}
+
+	/**
+	 * Handle the OVER / XOVER command.
+	 */
+	private void printArticleOverview(String articleDesc) {
+		FreetalkNNTPArticle article = getArticle(articleDesc, false);
+		if (article != null) {
+			printStatusLine("224 Overview follows");
+			printTextResponseLine("0\t" + article.getHeader(FreetalkNNTPArticle.Header.SUBJECT)
+								  + "\t" + article.getHeader(FreetalkNNTPArticle.Header.FROM)
+								  + "\t" + article.getHeader(FreetalkNNTPArticle.Header.DATE)
+								  + "\t" + article.getHeader(FreetalkNNTPArticle.Header.MESSAGE_ID)
+								  + "\t" + article.getHeader(FreetalkNNTPArticle.Header.REFERENCES)
+								  + "\t" + article.getByteCount()
+								  + "\t" + article.getBodyLineCount());
+			endTextResponse();
+		}
+	}
+
+	/**
+	 * Handle the LIST HEADERS command.
+	 */
+	private void printHeaderList() {
+		printStatusLine("215 Header list follows");
+		// We allow querying any header (:) as well as byte and line counts
+		printTextResponseLine(":");
+		printTextResponseLine(":bytes");
+		printTextResponseLine(":lines");
+		endTextResponse();
+	}
+
+	/**
+	 * Handle the LIST OVERVIEW.FMT command.
+	 */
+	private void printOverviewFormat() {
+		printStatusLine("215 Overview format follows");
+		printTextResponseLine("Subject:");
+		printTextResponseLine("From:");
+		printTextResponseLine("Date:");
+		printTextResponseLine("Message-ID:");
+		printTextResponseLine("References:");
+		printTextResponseLine(":bytes");
+		printTextResponseLine(":lines");
 		endTextResponse();
 	}
 
@@ -228,6 +300,17 @@ public class FreetalkNNTPHandler implements Runnable {
 				printStatusLine("501 Syntax error");
 			}
 		}
+		else if (command.equalsIgnoreCase("HDR") || command.equalsIgnoreCase("XHDR")) {
+			if (tokens.length == 3) {
+				printArticleHeader(tokens[1], tokens[2]);
+			}
+			else if (tokens.length == 2) {
+				printArticleHeader(tokens[1], null);
+			}
+			else {
+				printStatusLine("501 Syntax error");
+			}
+		}
 		else if (command.equalsIgnoreCase("HEAD")) {
 			if (tokens.length == 2) {
 				selectArticle(tokens[1], true, false);
@@ -245,6 +328,25 @@ public class FreetalkNNTPHandler implements Runnable {
 					listActiveGroups(tokens[2]);
 				else
 					listActiveGroups(null);
+			}
+			else if (tokens[1].equalsIgnoreCase("HEADERS")) {
+				printHeaderList();
+			}
+			else if (tokens[1].equalsIgnoreCase("OVERVIEW.FMT")) {
+				printOverviewFormat();
+			}
+			else {
+				printStatusLine("501 Syntax error");
+			}
+		}
+		// We accept XOVER for OVER because a lot of (broken)
+		// newsreaders expect us to
+		else if (command.equalsIgnoreCase("OVER") || command.equalsIgnoreCase("XOVER")) {
+			if (tokens.length == 2) {
+				printArticleOverview(tokens[1]);
+			}
+			else if (tokens.length == 1) {
+				printArticleOverview(null);
 			}
 			else {
 				printStatusLine("501 Syntax error");
