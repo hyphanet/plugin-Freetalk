@@ -8,6 +8,9 @@ import freenet.node.Node;
 import freenet.support.TransferThread;
 
 /**
+ * This class periodically searches the database for OwnMessage objects which are marked as not inserted yet and inserts them.
+ * To make it insert an OwnMessage, you just have to store the object in the database.
+ * 
  * @author xor
  *
  */
@@ -18,11 +21,11 @@ public abstract class MessageInserter extends TransferThread {
 	
 	protected IdentityManager mIdentityManager;
 	
-	public MessageInserter(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager) {
+	protected MessageManager mMessageManager;
+	
+	public MessageInserter(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager, MessageManager myMessageManager) {
 		super(myNode, myClient, myName);
 		mIdentityManager = myIdentityManager;
+		mMessageManager = myMessageManager;
 	}
-	
-	public abstract void postMessage(FTOwnIdentity identity, Message message);
-	
 }
