@@ -5,9 +5,9 @@ package plugins.Freetalk.WoT;
 
 import java.util.NoSuchElementException;
 
-import plugins.Freetalk.FTBoard;
-import plugins.Freetalk.FTMessage;
-import plugins.Freetalk.FTMessageManager;
+import plugins.Freetalk.Board;
+import plugins.Freetalk.Message;
+import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 
 import com.db4o.ObjectContainer;
@@ -16,17 +16,17 @@ import freenet.keys.FreenetURI;
 import freenet.support.Executor;
 import freenet.support.Logger;
 
-public class FTMessageManagerWoT extends FTMessageManager {
+public class WoTMessageManager extends MessageManager {
 	
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
 	private static final int THREAD_PERIOD = 5 * 60 * 1000;
 	
-	private FTIdentityManagerWoT mIdentityManager;
+	private WoTIdentityManager mIdentityManager;
 	
 	private volatile boolean isRunning = true;
 	private Thread mThread;
 
-	public FTMessageManagerWoT(ObjectContainer myDB, Executor myExecutor, FTIdentityManagerWoT myIdentityManager) {
+	public WoTMessageManager(ObjectContainer myDB, Executor myExecutor, WoTIdentityManager myIdentityManager) {
 		super(myDB, myExecutor, myIdentityManager);
 		mIdentityManager = myIdentityManager;
 		Logger.debug(this, "Message manager started.");
@@ -37,26 +37,26 @@ public class FTMessageManagerWoT extends FTMessageManager {
 	}
 
 	private synchronized void onMessageReceived(String newMessageData) throws InvalidParameterException { 
-		FTMessage newMessage = new FTMessage(null, null, null, null, null, null, null, null, null);
+		Message newMessage = new Message(null, null, null, null, null, null, null, null, null);
 		newMessage.initializeTransient(db, this);
 		String boardName = "";
 		/* FIXME: Store the description in FTOwnIdentity. We cannot store in FTBoard because we want to allow per-identity customization */
 
 		String[] boardNames = new String[0];
-		FTBoard[] boards = new FTBoard[boardNames.length];
+		Board[] boards = new Board[boardNames.length];
 		                                    
 		for(int idx = 0; idx < boards.length; ++idx) {
-			FTBoard board = getBoardByName(boardNames[idx]);
+			Board board = getBoardByName(boardNames[idx]);
 			
 			if(board == null) {
-				board = new FTBoard(this, boardName);
+				board = new Board(this, boardName);
 				board.initializeTransient(db, this);
 			}
 			
 			boards[idx] = board;
 		}
 		
-		for(FTBoard b : boards) {
+		for(Board b : boards) {
 			b.addMessage(newMessage);
 		}
 	}

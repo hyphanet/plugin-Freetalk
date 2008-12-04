@@ -6,9 +6,9 @@ package plugins.Freetalk.WoT;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import plugins.Freetalk.FTBoard;
+import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
-import plugins.Freetalk.FTMessage;
+import plugins.Freetalk.Message;
 import plugins.Freetalk.FTOwnIdentity;
 
 import com.db4o.ObjectContainer;
@@ -19,11 +19,11 @@ import freenet.keys.FreenetURI;
  * @author xor
  *
  */
-public class FTOwnIdentityWoT extends FTIdentityWoT implements FTOwnIdentity {
+public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	
 	/* Attributes, stored in the database. */
 
-	private final LinkedList<FTBoard> mSubscribedBoards = new LinkedList<FTBoard>();
+	private final LinkedList<Board> mSubscribedBoards = new LinkedList<Board>();
 
 	private final FreenetURI mInsertURI;
 	
@@ -32,7 +32,7 @@ public class FTOwnIdentityWoT extends FTIdentityWoT implements FTOwnIdentity {
 	
 	private transient ObjectContainer db;
 	
-	public FTOwnIdentityWoT(String myUID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
+	public WoTOwnIdentity(String myUID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
 		super(myUID, myRequestURI, myNickname);
 		if(myInsertURI == null)
 			throw new IllegalArgumentException();
@@ -51,12 +51,12 @@ public class FTOwnIdentityWoT extends FTIdentityWoT implements FTOwnIdentity {
 		return mInsertURI;
 	}
 
-	public synchronized void postMessage(FTMessage message) {
+	public synchronized void postMessage(Message message) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public synchronized void subscribeToBoard(FTBoard board) {
+	public synchronized void subscribeToBoard(Board board) {
 		if(mSubscribedBoards.contains(board)) {
 			assert(false); /* TODO: Add logging / check whether this should be allowed to happen */
 			return;
@@ -66,13 +66,13 @@ public class FTOwnIdentityWoT extends FTIdentityWoT implements FTOwnIdentity {
 		store();
 	}
 
-	public synchronized void unsubscribeFromBoard(FTBoard board) {
+	public synchronized void unsubscribeFromBoard(Board board) {
 		mSubscribedBoards.remove(board);
 		
 		store();
 	}
 	
-	public synchronized Iterator<FTBoard> subscribedBoardsIterator() {
+	public synchronized Iterator<Board> subscribedBoardsIterator() {
 		return mSubscribedBoards.iterator();
 	}
 

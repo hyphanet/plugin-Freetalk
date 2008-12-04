@@ -3,10 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.NNTP;
 
-import plugins.Freetalk.FTIdentityManager;
-import plugins.Freetalk.FTMessageManager;
-import plugins.Freetalk.FTBoard;
-import plugins.Freetalk.FTMessage;
+import plugins.Freetalk.IdentityManager;
+import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.Board;
+import plugins.Freetalk.Message;
 import plugins.Freetalk.Freetalk;
 
 import java.net.Socket;
@@ -27,8 +27,8 @@ import freenet.support.Logger;
  */
 public class FreetalkNNTPHandler implements Runnable {
 
-	private FTIdentityManager mIdentityManager;
-	private FTMessageManager mMessageManager;
+	private IdentityManager mIdentityManager;
+	private MessageManager mMessageManager;
 
 	private Socket socket;
 	private BufferedReader in;
@@ -115,7 +115,7 @@ public class FreetalkNNTPHandler implements Runnable {
 			&& desc.charAt(desc.length() - 1) == '>') {
 
 			String msgid = desc.substring(1, desc.length() - 1);
-			FTMessage msg = mMessageManager.get(msgid);
+			Message msg = mMessageManager.get(msgid);
 
 			if (msg == null) {
 				printStatusLine("430 No such article");
@@ -168,7 +168,7 @@ public class FreetalkNNTPHandler implements Runnable {
 	 */
 	private void selectGroup(String name) {
 		// FIXME: look up by "NNTP name"
-		FTBoard board = mMessageManager.getBoardByName(name);
+		Board board = mMessageManager.getBoardByName(name);
 		if (board == null) {
 			printStatusLine("411 No such group");
 		}
@@ -187,8 +187,8 @@ public class FreetalkNNTPHandler implements Runnable {
 	private void listActiveGroups(String pattern) {
 		// FIXME: filter by wildmat
 		printStatusLine("215 List of newsgroups follows:");
-		for (Iterator<FTBoard> i = mMessageManager.boardIterator(); i.hasNext(); ) {
-			FTBoard board = i.next();
+		for (Iterator<Board> i = mMessageManager.boardIterator(); i.hasNext(); ) {
+			Board board = i.next();
 			FreetalkNNTPGroup group = new FreetalkNNTPGroup(board);
 			printTextResponseLine(board.getNameNNTP()
 								  + " " + group.lastMessage()

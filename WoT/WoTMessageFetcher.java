@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Random;
 
+import plugins.Freetalk.IdentityManager;
+import plugins.Freetalk.MessageFetcher;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -15,22 +17,19 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
-import freenet.support.Executor;
 import freenet.support.io.NativeThread;
-import plugins.Freetalk.FTIdentityManager;
-import plugins.Freetalk.FTMessageFetcher;
 
 /**
  * @author xor
  *
  */
-public class FTMessageFetcherWoT extends FTMessageFetcher {
+public class WoTMessageFetcher extends MessageFetcher {
 	
 	private static final int PARALLEL_MESSAGE_FETCH_COUNT = 128;
 	
 	private Random mRandom;
 
-	public FTMessageFetcherWoT(Node myNode, HighLevelSimpleClient myClient, String myName, FTIdentityManager myIdentityManager) {
+	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager) {
 		super(myNode, myClient, myName, myIdentityManager);
 		mRandom = mNode.fastWeakRandom;
 		start();
@@ -46,7 +45,6 @@ public class FTMessageFetcherWoT extends FTMessageFetcher {
 		return null;
 	}
 
-	@Override
 	public int getPriority() {
 		return NativeThread.NORM_PRIORITY;
 	}

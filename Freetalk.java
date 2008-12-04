@@ -8,8 +8,8 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import plugins.Freetalk.WoT.FTIdentityManagerWoT;
-import plugins.Freetalk.WoT.FTMessageManagerWoT;
+import plugins.Freetalk.WoT.WoTIdentityManager;
+import plugins.Freetalk.WoT.WoTMessageManager;
 import plugins.Freetalk.ui.Errors;
 import plugins.Freetalk.ui.IdentityEditor;
 import plugins.Freetalk.ui.Messages;
@@ -82,9 +82,9 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	
 	private ObjectContainer db;
 	
-	private FTIdentityManagerWoT mIdentityManager;
+	private WoTIdentityManager mIdentityManager;
 	
-	private FTMessageManagerWoT mMessageManager;
+	private WoTMessageManager mMessageManager;
 
 	private FreetalkNNTPServer mNNTPServer;
 	
@@ -99,12 +99,12 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.debug(this, "Opening database...");
 		
 		Configuration dbCfg = Db4o.newConfiguration();
-		for(String f : FTMessage.getIndexedFields())
-			dbCfg.objectClass(FTMessage.class).objectField(f).indexed(true);
-		dbCfg.objectClass(FTMessage.class).cascadeOnUpdate(true);
+		for(String f : Message.getIndexedFields())
+			dbCfg.objectClass(Message.class).objectField(f).indexed(true);
+		dbCfg.objectClass(Message.class).cascadeOnUpdate(true);
 		// TODO: decide about cascade on delete. 
-		for(String f : FTBoard.getIndexedFields())
-			dbCfg.objectClass(FTBoard.class).objectField(f).indexed(true);
+		for(String f : Board.getIndexedFields())
+			dbCfg.objectClass(Board.class).objectField(f).indexed(true);
 		
 		db = Db4o.openFile(dbCfg, DATABASE_FILE);
 		
@@ -124,7 +124,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		do {
 			try {
 				++tries;
-				mIdentityManager = new FTIdentityManagerWoT(db, pr);
+				mIdentityManager = new WoTIdentityManager(db, pr);
 			}
 		
 			catch(PluginNotFoundException e) {
@@ -136,7 +136,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		} while(mIdentityManager == null);
 		
 		Logger.debug(this, "Creating message manager...");
-		mMessageManager = new FTMessageManagerWoT(db, pr.getNode().executor, mIdentityManager);
+		mMessageManager = new WoTMessageManager(db, pr.getNode().executor, mIdentityManager);
 
 		Logger.debug(this, "Starting NNTP server...");
 		mNNTPServer = new FreetalkNNTPServer(pr.getNode(), this, 1199, null, null);
@@ -179,11 +179,11 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.debug(this, "Freetalk plugin terminated.");
 	}
 	
-	public FTIdentityManager getIdentityManager() {
+	public IdentityManager getIdentityManager() {
 		return mIdentityManager;
 	}	
 	
-	public FTMessageManager getMessageManager() {
+	public MessageManager getMessageManager() {
 		return mMessageManager;
 	}
 

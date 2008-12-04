@@ -20,11 +20,11 @@ public interface FTOwnIdentity extends FTIdentity {
 	
 	public boolean wantsMessagesFrom(FTIdentity identity);
 	
-	public void postMessage(FTMessage message);
+	public void postMessage(Message message);
 	
-	public void subscribeToBoard(FTBoard board);
+	public void subscribeToBoard(Board board);
 	
-	public void unsubscribeFromBoard(FTBoard board);
+	public void unsubscribeFromBoard(Board board);
 	
-	public Iterator<FTBoard> subscribedBoardsIterator();
+	public Iterator<Board> subscribedBoardsIterator();
 }
