@@ -3,10 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import java.util.Date;
 import java.util.Iterator;
-
-import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
 
@@ -19,8 +16,6 @@ public interface FTOwnIdentity extends FTIdentity {
 	public FreenetURI getInsertURI();
 	
 	public boolean wantsMessagesFrom(FTIdentity identity);
-	
-	public void postMessage(Message message);
 	
 	public void subscribeToBoard(Board board);
 	
