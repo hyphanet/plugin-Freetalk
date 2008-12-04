@@ -19,11 +19,11 @@ public class OwnMessage extends Message {
 		return null;
 	}
 	
-	public boolean wasInserted() {
+	public synchronized boolean wasInserted() {
 		return iWasInserted;
 	}
 	
-	public void markAsInserted() {
+	public synchronized void markAsInserted() {
 		iWasInserted = true;
 	}
 
