@@ -1,37 +1,39 @@
 package plugins.Freetalk.WoT;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Random;
 
 import plugins.Freetalk.IdentityManager;
-import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageInserter;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.OwnMessage;
+import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.InsertBlock;
+import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
+import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.support.Logger;
+import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
 
 public class WoTMessageInserter extends MessageInserter {
 
 	private Random mRandom;
 	
-	public WoTMessageInserter(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager) {
-		super(myNode, myClient, myName, myIdentityManager);
-		mRandom = mNode.fastWeakRandom;
-		start();
-	}
-
-	@Override
-	public void postMessage(FTOwnIdentity identity, Message message) {
-		// TODO Auto-generated method stub
-
+	public WoTMessageInserter(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager,
+			MessageManager myMessageManager) {
+		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
 	}
 
 	@Override
@@ -60,18 +62,61 @@ public class WoTMessageInserter extends MessageInserter {
 
 	@Override
 	protected void iterate() {
-		// TODO Auto-generated method stub
+		abortAllTransfers();
+		
+		Iterator<OwnMessage> messages = mMessageManager.notInsertedMessageIterator();
+		while(messages.hasNext()) {
+			try {
+				/* FIXME: Delay the messages!!!!! And set their date to reflect the delay */
+				insertMessage(messages.next());
+			}
+			catch(Exception e) {
+				Logger.error(this, "Insert of message failed", e);
+			}
+		}
+	}
+	
+	protected void insertMessage(OwnMessage m) throws InsertException, IOException {
+		Bucket tempB = mTBF.makeBucket(2048 + m.getText().length()); /* TODO: set to a reasonable value */
+		OutputStream os = tempB.getOutputStream();
+		
+		try {
+			MessageEncoder.encode(m, os);
+			os.close(); os = null;
+			tempB.setReadOnly();
 
+			ClientMetadata cmd = new ClientMetadata("text/xml");
+			InsertBlock ib = new InsertBlock(tempB, cmd, m.getInsertURI());
+			InsertContext ictx = mClient.getInsertContext(true);
+
+			/* FIXME: are these parameters correct? */
+			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
+			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
+			addInsert(pu);
+			tempB = null;
+
+			m.store();
+			Logger.debug(this, "Started insert of message from " + m.getAuthor().getNickname());
+		}
+		finally {
+			if(tempB != null)
+				tempB.free();
+			if(os != null)
+				os.close();
+		}
 	}
 
 	@Override
 	public void onSuccess(BaseClientPutter state) {
-		// TODO Auto-generated method stub
+		OwnMessage m = (OwnMessage)mMessageManager.get(state.getURI());
+		m.markAsInserted();
+		removeInsert(state);
 	}
 	
 	@Override
 	public void onFailure(InsertException e, BaseClientPutter state) {
-		// TODO Auto-generated method stub
+		Logger.error(this, "Message insert failed", e);
+		removeInsert(state);
 	}
 
 	
@@ -91,5 +136,12 @@ public class WoTMessageInserter extends MessageInserter {
 
 	@Override
 	public void onMajorProgress() { }
+	
+	
+	private static class MessageEncoder {
+		
+		public static void encode(OwnMessage m, OutputStream os) {
+		}
+	}
 
 }

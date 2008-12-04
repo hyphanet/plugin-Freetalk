@@ -94,9 +94,7 @@ public abstract class MessageManager implements Runnable {
 				Query query = db.query();
 				query.constrain(Board.class);
 				query.descend("mName").orderDescending();
-
-				ObjectSet<Board> result = query.execute();
-				iter = result.iterator();
+				iter = query.execute().iterator();
 			}
 
 			public boolean hasNext() {
@@ -113,6 +111,33 @@ public abstract class MessageManager implements Runnable {
 				throw new UnsupportedOperationException("Boards cannot be deleted yet.");
 			}
 			
+		};
+	}
+	
+	public synchronized Iterator<OwnMessage> notInsertedMessageIterator() {
+		return new Iterator<OwnMessage>() {
+			private Iterator<OwnMessage> iter;
+
+			{
+				Query query = db.query();
+				query.constrain(OwnMessage.class);
+				query.descend("iWasInserted").constrain(false);
+				iter = query.execute().iterator();
+			}
+			
+			public boolean hasNext() {
+				return iter.hasNext();
+			}
+
+			public OwnMessage next() {
+				OwnMessage next = iter.next();
+				next.initializeTransient(db, self);
+				return next;
+			}
+
+			public void remove() {
+				throw new UnsupportedOperationException();
+			}
 		};
 	}
 
