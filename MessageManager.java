@@ -149,4 +149,8 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 	public abstract void terminate();
+
+	public IdentityManager getIdentityManager() {
+		return mIdentityManager;
+	}
 }

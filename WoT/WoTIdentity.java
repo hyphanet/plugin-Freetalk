@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import plugins.Freetalk.FTIdentity;
+import plugins.Freetalk.IdentityManager;
 
 import com.db4o.ObjectContainer;
 
@@ -59,7 +60,7 @@ public class WoTIdentity implements FTIdentity {
 	
 	/* References to objects of the plugin, not stored in the database. */
 	
-	private transient ObjectContainer db;
+	protected transient ObjectContainer db;
 	
 	private transient static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 	
@@ -82,7 +83,7 @@ public class WoTIdentity implements FTIdentity {
 	/**
 	 * Has to be used after loading a FTIdentityWoT object from the database to initialize the transient fields.
 	 */
-	public void initializeTransient(ObjectContainer myDB) {
+	public void initializeTransient(ObjectContainer myDB, IdentityManager myIdentityManager) {
 		assert(myDB != null);
 		db = myDB;
 	}

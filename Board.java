@@ -37,7 +37,6 @@ public class Board {
 	
 	private transient ObjectContainer db;
 	private transient MessageManager mMessageManager;
-	private transient Board self;
 	
 
 	/**
@@ -56,7 +55,6 @@ public class Board {
 		assert(newMessageManager != null);
 
 		mMessageManager = newMessageManager;
-		self = this;
 		
 		// FIXME: Validate name and description.
 		mName = newName;
@@ -68,7 +66,6 @@ public class Board {
 	public void initializeTransient(ObjectContainer myDB, MessageManager myMessageManager) {
 		assert(myDB != null);
 		assert(myMessageManager != null);
-		self = this;
 		db = myDB;
 		mMessageManager = myMessageManager;
 	}

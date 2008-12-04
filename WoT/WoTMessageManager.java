@@ -20,9 +20,7 @@ public class WoTMessageManager extends MessageManager {
 	
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
 	private static final int THREAD_PERIOD = 5 * 60 * 1000;
-	
-	private WoTIdentityManager mIdentityManager;
-	
+
 	private volatile boolean isRunning = true;
 	private Thread mThread;
 

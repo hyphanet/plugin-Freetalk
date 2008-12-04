@@ -6,6 +6,7 @@ package plugins.Freetalk.WoT;
 import java.net.MalformedURLException;
 import java.util.List;
 
+import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Freetalk;
@@ -53,7 +54,12 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		mTalker = pr.getPluginTalker(this, Freetalk.WOT_NAME, Freetalk.PLUGIN_TITLE);
 		Logger.debug(this, "Identity manager created.");
 	}
-	
+
+	public int getScore(WoTOwnIdentity treeOwner, FTIdentity target) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 	private void addFreetalkContext(WoTIdentity oid) {
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "AddContext");
@@ -114,7 +120,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 							id = bOwnIdentities ?	new WoTOwnIdentity(uid, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
 													new WoTIdentity(uid, new FreenetURI(requestURI), nickname);
 
-							id.initializeTransient(db);
+							id.initializeTransient(db, this);
 							id.store();
 						}
 						catch(MalformedURLException e) {
@@ -123,7 +129,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 					} else {
 						assert(result.size() == 1);
 						id = result.next();
-						id.initializeTransient(db);
+						id.initializeTransient(db, this);
 					}
 					
 					if(bOwnIdentities)	/* FIXME: Only add the context if the user actually uses the identity with Freetalk */

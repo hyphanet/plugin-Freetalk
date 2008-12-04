@@ -4,7 +4,6 @@
 package plugins.Freetalk;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
@@ -197,7 +196,7 @@ public class Message {
 	 * Get the author of the message.
 	 */
 	public FTIdentity getAuthor() {
-		mAuthor.initializeTransient(db);
+		mAuthor.initializeTransient(db, mMessageManager.getIdentityManager());
 		return mAuthor;
 	}
 
