@@ -17,13 +17,13 @@ import freenet.support.Logger;
  * @author saces, xor
  * 
  */
-public abstract class FTIdentityManager implements PrioRunnable, Iterable<FTIdentity> {
+public abstract class IdentityManager implements PrioRunnable, Iterable<FTIdentity> {
 	
 	protected final ObjectContainer db;
 
 	protected final Executor mExecutor;
 
-	public FTIdentityManager(ObjectContainer myDB, Executor myExecutor) {
+	public IdentityManager(ObjectContainer myDB, Executor myExecutor) {
 		Logger.debug(this, "Creating identity manager...");
 		db = myDB;
 		mExecutor = myExecutor;

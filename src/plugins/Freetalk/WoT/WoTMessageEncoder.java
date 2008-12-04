@@ -1,6 +1,6 @@
 package plugins.Freetalk.WoT;
 
-import plugins.Freetalk.FTMessage;
+import plugins.Freetalk.Message;
 
 /**
  * Class to encode the message XML of Freetalk messages based on WoT.
@@ -8,9 +8,9 @@ import plugins.Freetalk.FTMessage;
  * @author xor
  *
  */
-public class FTMessageEncoderWoT {
+public class WoTMessageEncoder {
 	
-	public String encodeMessage(FTMessage message) {
+	public String encodeMessage(Message message) {
 		return null;
 	}
 }

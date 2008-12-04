@@ -21,7 +21,7 @@ import freenet.keys.FreenetURI;
  * @author xor
  *
  */
-public class FTBoard {
+public class Board {
 
 	/* Constants */
 	
@@ -36,8 +36,8 @@ public class FTBoard {
 	/* References to objects of the plugin, not stored in the database. */
 	
 	private transient ObjectContainer db;
-	private transient FTMessageManager mMessageManager;
-	private transient FTBoard self;
+	private transient MessageManager mMessageManager;
+	private transient Board self;
 	
 
 	/**
@@ -47,7 +47,7 @@ public class FTBoard {
 		return new String[] {"mName"};
 	}
 	
-	public FTBoard(FTMessageManager newMessageManager, String newName) throws InvalidParameterException {
+	public Board(MessageManager newMessageManager, String newName) throws InvalidParameterException {
 		if(newName==null || newName.length() == 0)
 			throw new IllegalArgumentException("Empty board name.");
 		if(!isNameValid(newName))
@@ -65,7 +65,7 @@ public class FTBoard {
 	/**
 	 * Has to be used after loading a FTBoard object from the database to initialize the transient fields.
 	 */
-	public void initializeTransient(ObjectContainer myDB, FTMessageManager myMessageManager) {
+	public void initializeTransient(ObjectContainer myDB, MessageManager myMessageManager) {
 		assert(myDB != null);
 		assert(myMessageManager != null);
 		self = this;
@@ -128,7 +128,7 @@ public class FTBoard {
 	 * The job for this function is to find the right place in the thread-tree for the new message and to move around older messages
 	 * if a parent message of them is received.
 	 */
-	public synchronized void addMessage(FTMessage newMessage) {
+	public synchronized void addMessage(Message newMessage) {
 		synchronized(mMessageManager) {
 			newMessage.initializeTransient(db, mMessageManager);
 			newMessage.store();
@@ -138,8 +138,8 @@ public class FTBoard {
 			if(!newMessage.isThread())
 			{
 				FreenetURI parentURI = newMessage.getParentURI();
-				FTMessage parentMessage = mMessageManager.get(parentURI); /* TODO: This allows crossposting. Figure out whether we need to handle it specially */
-				FTMessage parentThread = findParentThread(newMessage);
+				Message parentMessage = mMessageManager.get(parentURI); /* TODO: This allows crossposting. Figure out whether we need to handle it specially */
+				Message parentThread = findParentThread(newMessage);
 	
 				if(parentThread != null)
 					newMessage.setThread(parentThread);
@@ -169,27 +169,27 @@ public class FTBoard {
 	/**
 	 * Assumes that the transient fields of the newMessage are initialized already.
 	 */
-	private synchronized void linkOrphansToNewParent(FTMessage newMessage) {
+	private synchronized void linkOrphansToNewParent(Message newMessage) {
 		if(newMessage.isThread()) {
-			Iterator<FTMessage> absoluteOrphans = absoluteOrphanIterator(newMessage.getURI());
+			Iterator<Message> absoluteOrphans = absoluteOrphanIterator(newMessage.getURI());
 			while(absoluteOrphans.hasNext())	/* Search in the absolute orphans for messages which belong to this thread  */
 				absoluteOrphans.next().setParent(newMessage);
 		}
 		else {
-			FTMessage parentThread = newMessage.getThread();
+			Message parentThread = newMessage.getThread();
 			if(parentThread != null) {	/* Search in its parent thread for its children */
-				Iterator<FTMessage> iter = parentThread.childrenIterator(this);
+				Iterator<Message> iter = parentThread.childrenIterator(this);
 				while(iter.hasNext()) {
-					FTMessage parentThreadChild = iter.next();
+					Message parentThreadChild = iter.next();
 					
 					if(parentThreadChild.getParentURI().equals(newMessage.getURI())) /* We found its parent, yeah! */
 						parentThreadChild.setParent(newMessage); /* It's a child of the newMessage, not of the parentThread */
 				}
 			}
 			else { /* The new message is an absolute orphan, find its children amongst the other absolute orphans */
-				Iterator<FTMessage> absoluteOrphans = absoluteOrphanIterator(newMessage.getURI());
+				Iterator<Message> absoluteOrphans = absoluteOrphanIterator(newMessage.getURI());
 				while(absoluteOrphans.hasNext()){	/* Search in the orphans for messages which belong to this message  */
-					FTMessage orphan = absoluteOrphans.next();
+					Message orphan = absoluteOrphans.next();
 					/*
 					 * The following if() could be joined into the db4o query in absoluteOrphanIterator(). I did not do it because we could
 					 * cache the list of absolute orphans locally. 
@@ -204,7 +204,7 @@ public class FTBoard {
 	/**
 	 * Finds the parent thread of a message in the database. The transient fields of the returned message will be initialized already.
 	 */
-	protected synchronized FTMessage findParentThread(FTMessage m) {
+	protected synchronized Message findParentThread(Message m) {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
 		/* FIXME: I assume that db4o is configured to keep an URI index per board. We still have to ensure in FMS.java that it is configured to do so.
@@ -213,14 +213,14 @@ public class FTBoard {
 		q.descend("mBoard").constrain(this); 
 		q.descend("mMessage").descend("mURI").constrain(m.getParentThreadURI());
 		/* FIXME: this certainly will return BoardMessageLink instead of FTMessage. how to return the messages? */
-		ObjectSet<FTMessage> parents = q.execute();
+		ObjectSet<Message> parents = q.execute();
 		
 		assert(parents.size() <= 1);
 		
 		if(parents.size() == 0)
 			return null;
 		else {
-			FTMessage thread = parents.next();
+			Message thread = parents.next();
 			thread.initializeTransient(db, mMessageManager);
 			return thread;
 		}
@@ -233,11 +233,11 @@ public class FTBoard {
 	 * @param identity The identity viewing the board.
 	 * @return An iterator of the message which the identity will see (based on its trust levels).
 	 */
-	public synchronized Iterator<FTMessage> threadIterator(final FTOwnIdentity identity) {
-		return new Iterator<FTMessage>() {
+	public synchronized Iterator<Message> threadIterator(final FTOwnIdentity identity) {
+		return new Iterator<Message>() {
 			private final FTOwnIdentity mIdentity = identity;
-			private final Iterator<FTMessage> iter;
-			private FTMessage next;
+			private final Iterator<Message> iter;
+			private Message next;
 			 
 			{
 				/* FIXME: If db4o supports precompiled queries, this one should be stored precompiled.
@@ -263,8 +263,8 @@ public class FTBoard {
 				return false;
 			}
 
-			public FTMessage next() {
-				FTMessage result = hasNext() ? next : null;
+			public Message next() {
+				Message result = hasNext() ? next : null;
 				next = iter.hasNext() ? iter.next() : null;
 				result.initializeTransient(db, mMessageManager);
 				return result;
@@ -281,9 +281,9 @@ public class FTBoard {
 	 * Get an iterator over messages for which the parent thread with the given URI was not known. 
 	 * The transient fields of the returned messages will be initialized already.
 	 */
-	private synchronized Iterator<FTMessage> absoluteOrphanIterator(final FreenetURI thread) {
-		return new Iterator<FTMessage>() {
-			private final Iterator<FTMessage> iter;
+	private synchronized Iterator<Message> absoluteOrphanIterator(final FreenetURI thread) {
+		return new Iterator<Message>() {
+			private final Iterator<Message> iter;
 
 			{
 				/* FIXME: This query should be accelerated. The amount of absolute orphans is very small usually, so we should configure db4o
@@ -294,7 +294,7 @@ public class FTBoard {
 				q.descend("mMessage").descend("mThreadURI").constrain(thread);
 				q.descend("mMessage").descend("mThread").constrain(null).identity();
 				/* FIXME: this certainly will return BoardMessageLink instead of FTMessage. how to return the messages? */
-				ObjectSet<FTMessage> result = q.execute();
+				ObjectSet<Message> result = q.execute();
 				iter = result.iterator();
 			}
 
@@ -302,8 +302,8 @@ public class FTBoard {
 				return iter.hasNext();
 			}
 
-			public FTMessage next() {
-				FTMessage next = iter.next();
+			public Message next() {
+				Message next = iter.next();
 				next.initializeTransient(db, mMessageManager);
 				return next;
 			}
@@ -314,7 +314,7 @@ public class FTBoard {
 		};
 	}
 	
-	public synchronized List<FTMessage> getAllMessages() {
+	public synchronized List<Message> getAllMessages() {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
 		q.descend("mBoard").constrain(this);
@@ -331,10 +331,10 @@ public class FTBoard {
 	 * Helper class to associate messages with boards in the database
 	 */
 	private final class BoardMessageLink {
-		private final FTBoard mBoard;
-		private final FTMessage mMessage;
+		private final Board mBoard;
+		private final Message mMessage;
 		
-		public BoardMessageLink(FTBoard myBoard, FTMessage myMessage) {
+		public BoardMessageLink(Board myBoard, Message myMessage) {
 			assert(myBoard != null && myMessage != null);
 			mBoard = myBoard;
 			mMessage = myMessage;

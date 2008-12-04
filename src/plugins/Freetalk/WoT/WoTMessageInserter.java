@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Random;
 
+import plugins.Freetalk.IdentityManager;
+import plugins.Freetalk.Message;
+import plugins.Freetalk.MessageInserter;
+import plugins.Freetalk.FTOwnIdentity;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -12,25 +16,20 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
-import freenet.support.Executor;
 import freenet.support.io.NativeThread;
-import plugins.Freetalk.FTIdentityManager;
-import plugins.Freetalk.FTMessage;
-import plugins.Freetalk.FTMessageInserter;
-import plugins.Freetalk.FTOwnIdentity;
 
-public class FTMessageInserterWoT extends FTMessageInserter {
+public class WoTMessageInserter extends MessageInserter {
 
 	private Random mRandom;
 	
-	public FTMessageInserterWoT(Node myNode, HighLevelSimpleClient myClient, String myName, FTIdentityManager myIdentityManager) {
+	public WoTMessageInserter(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager) {
 		super(myNode, myClient, myName, myIdentityManager);
 		mRandom = mNode.fastWeakRandom;
 		start();
 	}
 
 	@Override
-	public void postMessage(FTOwnIdentity identity, FTMessage message) {
+	public void postMessage(FTOwnIdentity identity, Message message) {
 		// TODO Auto-generated method stub
 
 	}
@@ -45,7 +44,6 @@ public class FTMessageInserterWoT extends FTMessageInserter {
 		return new ArrayList<BaseClientPutter>(10);
 	}
 
-	@Override
 	public int getPriority() {
 		return NativeThread.NORM_PRIORITY;
 	}

@@ -22,7 +22,7 @@ import freenet.support.HexUtil;
  * @author saces, xor
  *
  */
-public class FTMessage {
+public class Message {
 	
 	/* Attributes, stored in the database */
 	
@@ -54,7 +54,7 @@ public class FTMessage {
 	/**
 	 * The boards to which this message was posted, in alphabetical order.
 	 */
-	private final FTBoard[] mBoards; 
+	private final Board[] mBoards; 
 	
 	private final FTIdentity mAuthor;
 
@@ -75,19 +75,19 @@ public class FTMessage {
 	/**
 	 * The thread to which this message is a reply.
 	 */
-	private FTMessage mThread = null;
+	private Message mThread = null;
 	
 	/**
 	 * The message to which this message is a reply.
 	 */
-	private FTMessage mParent = null;
+	private Message mParent = null;
 	
 	
 	/* References to objects of the plugin, not stored in the database. */
 	
 	private transient ObjectContainer db;
 	
-	private transient FTMessageManager mMessageManager;
+	private transient MessageManager mMessageManager;
 	
 	
 	/**
@@ -97,7 +97,7 @@ public class FTMessage {
 		return new String[] { "mURI", "mID", "mThreadURI", "mBoards"};
 	}
 	
-	public FTMessage(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<FTBoard> newBoards, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
+	public Message(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
 		if (newURI == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
@@ -114,7 +114,7 @@ public class FTMessage {
 		mID = generateID(mURI);
 		mThreadURI = newThreadURI;
 		mParentURI = newParentURI;
-		mBoards = newBoards.toArray(new FTBoard[newBoards.size()]);
+		mBoards = newBoards.toArray(new Board[newBoards.size()]);
 		Arrays.sort(mBoards);
 		mAuthor = newAuthor;
 		mTitle = newTitle;
@@ -127,7 +127,7 @@ public class FTMessage {
 	/**
 	 * Has to be used after loading a FTBoard object from the database to initialize the transient fields.
 	 */
-	public void initializeTransient(ObjectContainer myDB, FTMessageManager myMessageManager) {
+	public void initializeTransient(ObjectContainer myDB, MessageManager myMessageManager) {
 		assert(myDB != null);
 		assert(myMessageManager != null);
 		db = myDB;
@@ -187,8 +187,8 @@ public class FTMessage {
 	 * Get the boards to which this message was posted. The boards are returned in alphabetical order.
 	 * The transient fields of the returned boards are initialized already.
 	 */
-	public FTBoard[] getBoards() {
-		for(FTBoard b : mBoards)
+	public Board[] getBoards() {
+		for(Board b : mBoards)
 			b.initializeTransient(db, mMessageManager);
 		return mBoards;
 	}
@@ -232,12 +232,12 @@ public class FTMessage {
 	/**
 	 * Get the thread to which this message belongs. The transient fields of the returned message will be initialized already.
 	 */
-	public synchronized FTMessage getThread() {
+	public synchronized Message getThread() {
 		mThread.initializeTransient(db, mMessageManager);
 		return mThread;
 	}
 	
-	public synchronized void setThread(FTMessage newParentThread) {
+	public synchronized void setThread(Message newParentThread) {
 		assert(mThread == null);
 		assert(mThreadURI == null);
 		mThread = newParentThread;
@@ -247,12 +247,12 @@ public class FTMessage {
 	/**
 	 * Get the message to which this message is a reply. The transient fields of the returned message will be initialized already.
 	 */
-	public synchronized FTMessage getParent() {
+	public synchronized Message getParent() {
 		mParent.initializeTransient(db, mMessageManager);
 		return mParent;
 	}
 
-	public synchronized void setParent(FTMessage newParent)  {
+	public synchronized void setParent(Message newParent)  {
 		/* TODO: assert(newParent contains at least one board which mBoards contains) */
 		mParent = newParent;
 		store();
@@ -262,15 +262,15 @@ public class FTMessage {
 	 * Returns an iterator over the children of the message, sorted descending by date.
 	 * The transient fields of the children will be initialized already.
 	 */
-	public synchronized Iterator<FTMessage> childrenIterator(final FTBoard board) {
-		return new Iterator<FTMessage>() {
-			private Iterator<FTMessage> iter;
+	public synchronized Iterator<Message> childrenIterator(final Board board) {
+		return new Iterator<Message>() {
+			private Iterator<Message> iter;
 			
 			{
 				/* TODO: Accelerate this query: configure db4o to keep a per-message date-sorted index of children.
 				 * - Not very important for now since threads are usually small. */
 				Query q = db.query();
-				q.constrain(FTMessage.class);
+				q.constrain(Message.class);
 				q.descend("mBoard").constrain(board.getName());
 				q.descend("mParent").constrain(this);
 				q.descend("mDate").orderDescending();
@@ -282,8 +282,8 @@ public class FTMessage {
 				return iter.hasNext();
 			}
 
-			public FTMessage next() {
-				FTMessage child = iter.next();
+			public Message next() {
+				Message child = iter.next();
 				child.initializeTransient(db, mMessageManager);
 				return child;
 			}

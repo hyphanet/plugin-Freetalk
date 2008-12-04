@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.NNTP;
 
-import plugins.Freetalk.FTBoard;
+import plugins.Freetalk.Board;
 
 /**
  * Object representing a newsgroup, as seen from the NNTP client's
@@ -12,16 +12,16 @@ import plugins.Freetalk.FTBoard;
  * @author Benjamin Moody
  */
 public class FreetalkNNTPGroup {
-	private final FTBoard board;
+	private final Board board;
 
-	public FreetalkNNTPGroup(FTBoard board) {
+	public FreetalkNNTPGroup(Board board) {
 		this.board = board;
 	}
 
 	/**
 	 * Get the FTBoard object associated with this group.
 	 */
-	public FTBoard getBoard() {
+	public Board getBoard() {
 		return board;
 	}
 

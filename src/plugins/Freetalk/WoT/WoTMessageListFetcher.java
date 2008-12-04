@@ -10,21 +10,13 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
-import plugins.Freetalk.FTMessage;
-import plugins.Freetalk.FTMessagelistInserter;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.MessageListFetcher;
 
-public class FTMessagelistInserterWoT extends FTMessagelistInserter {
+public class WoTMessageListFetcher extends MessageListFetcher {
 
-	public FTMessagelistInserterWoT(Node myNode, HighLevelSimpleClient myClient, String myName) {
+	public WoTMessageListFetcher(Node myNode, HighLevelSimpleClient myClient, String myName) {
 		super(myNode, myClient, myName);
 		// TODO Auto-generated constructor stub
-	}
-
-	@Override
-	public void postMessage(FTOwnIdentity identity, FTMessage message) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override

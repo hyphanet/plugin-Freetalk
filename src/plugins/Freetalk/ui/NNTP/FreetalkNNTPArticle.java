@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.NNTP;
 
-import plugins.Freetalk.FTMessage;
-import plugins.Freetalk.FTBoard;
+import plugins.Freetalk.Message;
+import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 
 import freenet.keys.FreenetURI;
@@ -43,16 +43,16 @@ public class FreetalkNNTPArticle {
 
 	public static final Pattern endOfLinePattern = Pattern.compile("\r\n?|\n");
 
-	private final FTMessage message;
+	private final Message message;
 
-	public FreetalkNNTPArticle(FTMessage message) {
+	public FreetalkNNTPArticle(Message message) {
 		this.message = message;
 	}
 
 	/**
 	 * Get the FTMessage object associated with this group.
 	 */
-	public FTMessage getMessage() {
+	public Message getMessage() {
 		return message;
 	}
 
@@ -84,7 +84,7 @@ public class FreetalkNNTPArticle {
 			return message.getTitle();
 
 		case NEWSGROUPS:
-			FTBoard boards[] = message.getBoards();
+			Board boards[] = message.getBoards();
 			StringBuilder builder = new StringBuilder();
 
 			builder.append(boards[0].getNameNNTP());

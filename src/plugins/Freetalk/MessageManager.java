@@ -17,17 +17,17 @@ import freenet.support.Logger;
  * @author xor
  *
  */
-public abstract class FTMessageManager implements Runnable {
+public abstract class MessageManager implements Runnable {
 	
-	protected final FTMessageManager self = this;
+	protected final MessageManager self = this;
 
 	protected ObjectContainer db;
 	
 	protected Executor mExecutor;
 
-	protected FTIdentityManager mIdentityManager;
+	protected IdentityManager mIdentityManager;
 
-	public FTMessageManager(ObjectContainer myDB, Executor myExecutor, FTIdentityManager myIdentityManager) {
+	public MessageManager(ObjectContainer myDB, Executor myExecutor, IdentityManager myIdentityManager) {
 		Logger.debug(this, "Starting message manager...");
 		assert(myDB != null);
 		assert(myIdentityManager != null);
@@ -41,22 +41,22 @@ public abstract class FTMessageManager implements Runnable {
 	/**
 	 * Get a message by its URI. The transient fields of the returned message will be initialized already.
 	 */
-	public FTMessage get(FreenetURI uri) {
-		return get(FTMessage.generateID(uri));
+	public Message get(FreenetURI uri) {
+		return get(Message.generateID(uri));
 	}
 	
-	public synchronized FTMessage get(String id) {
+	public synchronized Message get(String id) {
 		Query query = db.query();
-		query.constrain(FTMessage.class);
+		query.constrain(Message.class);
 		query.descend("mID").constrain(id);
-		ObjectSet<FTMessage> result = query.execute();
+		ObjectSet<Message> result = query.execute();
 
 		assert(result.size() <= 1);
 		
 		if(result.size() == 0)
 			return null;
 		else {
-			FTMessage m = result.next();
+			Message m = result.next();
 			m.initializeTransient(db, this);
 			return m;
 		}
@@ -65,18 +65,18 @@ public abstract class FTMessageManager implements Runnable {
 	/**
 	 * Get a board by its name. The transient fields of the returned board will be initialized already.
 	 */
-	public synchronized FTBoard getBoardByName(String name) {
+	public synchronized Board getBoardByName(String name) {
 		Query query = db.query();
-		query.constrain(FTBoard.class);
+		query.constrain(Board.class);
 		query.descend("mName").constrain(name);
-		ObjectSet<FTBoard> result = query.execute();
+		ObjectSet<Board> result = query.execute();
 
 		assert(result.size() <= 1);
 
 		if(result.size() == 0)
 			return null;
 		else {
-			FTBoard b = result.next();
+			Board b = result.next();
 			b.initializeTransient(db, this);
 			return b;
 		}
@@ -85,17 +85,17 @@ public abstract class FTMessageManager implements Runnable {
 	/**
 	 * Get an iterator of all boards. The transient fields of the returned boards will be initialized already.
 	 */
-	public synchronized Iterator<FTBoard> boardIterator() {
-		return new Iterator<FTBoard>() {
-			private Iterator<FTBoard> iter;
+	public synchronized Iterator<Board> boardIterator() {
+		return new Iterator<Board>() {
+			private Iterator<Board> iter;
 			
 			{
 				/* FIXME: Accelerate this query. db4o should be configured to keep an alphabetic index of boards */
 				Query query = db.query();
-				query.constrain(FTBoard.class);
+				query.constrain(Board.class);
 				query.descend("mName").orderDescending();
 
-				ObjectSet<FTBoard> result = query.execute();
+				ObjectSet<Board> result = query.execute();
 				iter = result.iterator();
 			}
 
@@ -103,8 +103,8 @@ public abstract class FTMessageManager implements Runnable {
 				return iter.hasNext();
 			}
 
-			public FTBoard next() {
-				FTBoard next = iter.next();
+			public Board next() {
+				Board next = iter.next();
 				next.initializeTransient(db, self);
 				return next;
 			}

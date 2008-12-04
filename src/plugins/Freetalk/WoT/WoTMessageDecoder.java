@@ -1,6 +1,6 @@
 package plugins.Freetalk.WoT;
 
-import plugins.Freetalk.FTMessage;
+import plugins.Freetalk.Message;
 
 /**
  * Class to decode the message XML of Freetalk messages based on WoT.
@@ -8,9 +8,9 @@ import plugins.Freetalk.FTMessage;
  * @author xor
  *
  */
-public class FTMessageParserWoT {
+public class WoTMessageDecoder {
 	
-	public FTMessage parseMessage(String xml) {
+	public Message parseMessage(String xml) {
 		return null;
 	}
 	

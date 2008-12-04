@@ -6,8 +6,8 @@ package plugins.Freetalk.WoT;
 import java.net.MalformedURLException;
 import java.util.List;
 
-import plugins.Freetalk.FTIdentityManager;
-import plugins.Freetalk.FTMessage;
+import plugins.Freetalk.IdentityManager;
+import plugins.Freetalk.Message;
 import plugins.Freetalk.Freetalk;
 
 import com.db4o.ObjectContainer;
@@ -31,7 +31,7 @@ import freenet.support.io.NativeThread;
  * @author xor
  *
  */
-public class FTIdentityManagerWoT extends FTIdentityManager implements FredPluginTalker {
+public class WoTIdentityManager extends IdentityManager implements FredPluginTalker {
 	
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
 	private static final int THREAD_PERIOD = 1 * 60 * 1000;
@@ -48,13 +48,13 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 	/**
 	 * @param executor
 	 */
-	public FTIdentityManagerWoT(ObjectContainer myDB, PluginRespirator pr) throws PluginNotFoundException {
+	public WoTIdentityManager(ObjectContainer myDB, PluginRespirator pr) throws PluginNotFoundException {
 		super(myDB, pr.getNode().executor);
 		mTalker = pr.getPluginTalker(this, Freetalk.WOT_NAME, Freetalk.PLUGIN_TITLE);
 		Logger.debug(this, "Identity manager created.");
 	}
 	
-	private void addFreetalkContext(FTIdentityWoT oid) {
+	private void addFreetalkContext(WoTIdentity oid) {
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "AddContext");
 		params.putOverwrite("Identity", oid.getRequestURI().toString());
@@ -104,15 +104,15 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 				
 				synchronized(this) { /* We lock here and not during the whole function to allow other threads to execute */
 					Query q = db.query();
-					q.constrain(FTIdentityWoT.class);
+					q.constrain(WoTIdentity.class);
 					q.descend("mUID").constrain(uid);
-					ObjectSet<FTIdentityWoT> result = q.execute();
-					FTIdentityWoT id = null; 
+					ObjectSet<WoTIdentity> result = q.execute();
+					WoTIdentity id = null; 
 		
 					if(result.size() == 0) {
 						try {
-							id = bOwnIdentities ?	new FTOwnIdentityWoT(uid, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
-													new FTIdentityWoT(uid, new FreenetURI(requestURI), nickname);
+							id = bOwnIdentities ?	new WoTOwnIdentity(uid, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
+													new WoTIdentity(uid, new FreenetURI(requestURI), nickname);
 
 							id.initializeTransient(db);
 							id.store();
@@ -140,13 +140,13 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 		long lastAcceptTime = System.currentTimeMillis() - THREAD_PERIOD * 3; /* FIXME: Use UTC */
 		
 		Query q = db.query();
-		q.constrain(FTIdentityWoT.class);
+		q.constrain(WoTIdentity.class);
 		q.descend("isNeeded").constrain(false);
 		q.descend("lastReceivedFromWoT").constrain(new Long(lastAcceptTime)).smaller();
-		ObjectSet<FTIdentityWoT> result = q.execute();
+		ObjectSet<WoTIdentity> result = q.execute();
 		
 		while(result.hasNext()) {
-			FTIdentityWoT i = result.next();
+			WoTIdentity i = result.next();
 			assert(identityIsNotNeeded(i)); /* Check whether the isNeeded field of the identity was correct */
 			db.delete(i);
 		}
@@ -157,11 +157,11 @@ public class FTIdentityManagerWoT extends FTIdentityManager implements FredPlugi
 	/**
 	 * Debug function for checking whether the isNeeded field of an identity is correct.
 	 */
-	private boolean identityIsNotNeeded(FTIdentityWoT i) {
+	private boolean identityIsNotNeeded(WoTIdentity i) {
 		/* FIXME: This function does not lock, it should probably. But we cannot lock on the message manager because it locks on the identity
 		 * manager and therefore this might cause deadlock. */
 		Query q = db.query();
-		q.constrain(FTMessage.class);
+		q.constrain(Message.class);
 		q.descend("mAuthor").constrain(i);
 		return (q.execute().size() == 0);
 	}

@@ -18,7 +18,7 @@ import freenet.keys.FreenetURI;
  * @author xor
  *
  */
-public class FTIdentityWoT implements FTIdentity {
+public class WoTIdentity implements FTIdentity {
 	
 	/* Attributes, stored in the database. */
 	
@@ -64,7 +64,7 @@ public class FTIdentityWoT implements FTIdentity {
 	private transient static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 	
 
-	public FTIdentityWoT(String myUID, FreenetURI myRequestURI, String myNickname) {
+	public WoTIdentity(String myUID, FreenetURI myRequestURI, String myNickname) {
 		if(myUID == null || myUID.length() == 0 || myRequestURI == null || myNickname == null || myNickname.length() == 0)
 			throw new IllegalArgumentException();
 		
