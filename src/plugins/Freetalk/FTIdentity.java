@@ -9,7 +9,7 @@ import freenet.keys.FreenetURI;
 
 public interface FTIdentity {
 	
-	public void initializeTransient(ObjectContainer myDB);
+	public void initializeTransient(ObjectContainer myDB, IdentityManager myIdentityManager);
 
 	public String getUID();
 	
