@@ -129,7 +129,7 @@ public abstract class MessageManager implements Runnable {
 		q.descend("mIndex").orderDescending();
 		ObjectSet<OwnMessage> result = q.execute();
 		
-		return result.size() > 0 ? result.next().getIndex()+1 : 1;
+		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
 	
 	public synchronized Iterator<OwnMessage> notInsertedMessageIterator() {

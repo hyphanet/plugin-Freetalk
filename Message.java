@@ -136,8 +136,7 @@ public class Message {
 		if (!isTextValid(newText))
 			throw new IllegalArgumentException("Invalid message text in message " + newURI);
 		
-		/* FIXME: If 0 is also a valid USK index, change to 0 */
-		if (newIndex < 1)
+		if (newIndex < 0)
 			throw new IllegalArgumentException("Invalid message index in message " + newURI);
 		
 		mURI = newURI;
