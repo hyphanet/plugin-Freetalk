@@ -56,6 +56,8 @@ public class Message {
 	 */
 	protected final Board[] mBoards; 
 	
+	protected final Board mReplyToBoard;
+	
 	protected final FTIdentity mAuthor;
 
 	protected final String mTitle;
@@ -120,7 +122,7 @@ public class Message {
 		return new String[] { "mURI", "mID", "mThreadURI", "mBoards"};
 	}
 	
-	public Message(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, FTIdentity newAuthor, String newTitle, Date newDate, int newIndex, String newText, List<Attachment> newAttachments) {
+	public Message(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, int newIndex, String newText, List<Attachment> newAttachments) {
 		if (newURI == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
@@ -130,6 +132,11 @@ public class Message {
 		if (newBoards.isEmpty())
 			throw new IllegalArgumentException("No boards in message " + newURI);
 		
+		if (newReplyToBoard != null && !newBoards.contains(newReplyToBoard)) {
+			Logger.error(this, "Message created with replyToBoard not being in newBoards: " + newURI);
+			newBoards.add(newReplyToBoard);
+		}
+
 		if (!isTitleValid(newTitle))
 			throw new IllegalArgumentException("Invalid message title in message " + newURI);
 		
@@ -144,7 +151,8 @@ public class Message {
 		mThreadURI = newThreadURI;
 		mParentURI = newParentURI;
 		mBoards = newBoards.toArray(new Board[newBoards.size()]);
-		Arrays.sort(mBoards);
+		Arrays.sort(mBoards);		
+		mReplyToBoard = newReplyToBoard;
 		mAuthor = newAuthor;
 		mTitle = newTitle;
 		mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
@@ -220,6 +228,10 @@ public class Message {
 		for(Board b : mBoards)
 			b.initializeTransient(db, mMessageManager);
 		return mBoards;
+	}
+	
+	public Board getReplyToBoard() {
+		return mReplyToBoard;
 	}
 
 	/**
