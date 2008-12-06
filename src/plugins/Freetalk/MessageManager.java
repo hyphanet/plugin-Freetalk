@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Set;
 
 import plugins.Freetalk.Message.Attachment;
+import plugins.Freetalk.exceptions.DuplicateBoardException;
+import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
@@ -74,15 +76,15 @@ public abstract class MessageManager implements Runnable {
 		query.descend("mID").constrain(id);
 		ObjectSet<Message> result = query.execute();
 
-		assert(result.size() <= 1);
+		if(result.size() > 1)
+			throw new DuplicateMessageException();
 		
 		if(result.size() == 0)
 			throw new NoSuchMessageException();
 
-			Message m = result.next();
-			m.initializeTransient(db, this);
-			return m;
-		
+		Message m = result.next();
+		m.initializeTransient(db, this);
+		return m;
 	}
 
 	/**
@@ -95,15 +97,15 @@ public abstract class MessageManager implements Runnable {
 		query.descend("mName").constrain(name);
 		ObjectSet<Board> result = query.execute();
 
-		assert(result.size() <= 1);
+		if(result.size() > 1)
+			throw new DuplicateBoardException();
 
 		if(result.size() == 0)
 			throw new NoSuchBoardException();
 		
-			Board b = result.next();
-			b.initializeTransient(db, this);
-			return b;
-		
+		Board b = result.next();
+		b.initializeTransient(db, this);
+		return b;
 	}
 
 	/**
