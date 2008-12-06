@@ -3,7 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import java.util.Date;
 import java.util.Iterator;
+
+import plugins.WoT.introduction.IntroductionPuzzle;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -112,6 +115,21 @@ public abstract class MessageManager implements Runnable {
 			}
 			
 		};
+	}
+	
+	/**
+	 * Get the next free index for an OwnMessage. Please synchronize on OwnMessage.class while creating a message, this method does not
+	 * provide synchronization.
+	 */
+	public int getFreeMessageIndex(FTOwnIdentity messageAuthor, Date date)  {
+		Query q = db.query();
+		q.constrain(OwnMessage.class);
+		q.descend("mAuthor").constrain(messageAuthor);
+		q.descend("mDate").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
+		q.descend("mIndex").orderDescending();
+		ObjectSet<OwnMessage> result = q.execute();
+		
+		return result.size() > 0 ? result.next().getIndex()+1 : 1;
 	}
 	
 	public synchronized Iterator<OwnMessage> notInsertedMessageIterator() {
