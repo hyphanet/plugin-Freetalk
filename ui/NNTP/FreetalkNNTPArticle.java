@@ -23,7 +23,8 @@ public class FreetalkNNTPArticle {
 	public enum Header {
 		FROM ("From"), SUBJECT ("Subject"), NEWSGROUPS ("Newsgroups"),
 		DATE ("Date"), MESSAGE_ID ("Message-ID"), REFERENCES ("References"),
-		PATH ("Path"), CONTENT_TYPE ("Content-Type");
+		PATH ("Path"), CONTENT_TYPE ("Content-Type"),
+		FOLLOWUP_TO ("Followup-To");
 
 		private String name;
 
@@ -95,6 +96,13 @@ public class FreetalkNNTPArticle {
 			}
 
 			return builder.toString();
+
+		case FOLLOWUP_TO:
+			Board board = message.getReplyToBoard();
+			if (board == null)
+				return "";
+			else
+				return board.getNameNNTP();
 
 		case DATE:
 			synchronized(mDateFormat) {
