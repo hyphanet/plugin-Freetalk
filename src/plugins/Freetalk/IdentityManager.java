@@ -5,6 +5,8 @@ package plugins.Freetalk;
 
 import java.util.Iterator;
 
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
+
 import com.db4o.ObjectContainer;
 import com.db4o.query.Query;
 
@@ -82,6 +84,10 @@ public abstract class IdentityManager implements PrioRunnable, Iterable<FTIdenti
 			}
 		};
 	}
+	
+	public abstract FTIdentity getIdentity(String uid) throws NoSuchIdentityException;
+	
+	public abstract FTOwnIdentity getOwnIdentity(String uid) throws NoSuchIdentityException;
 
 	public synchronized boolean anyOwnIdentityWantsMessagesFrom(FTIdentity identity) {
 		Iterator<FTOwnIdentity> iter = ownIdentityIterator();

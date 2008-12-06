@@ -4,12 +4,14 @@
 package plugins.Freetalk.WoT;
 
 import java.net.MalformedURLException;
-import java.util.List;
 
 import plugins.Freetalk.FTIdentity;
+import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
-import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.exceptions.DuplicateIdentityException;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -20,7 +22,6 @@ import freenet.pluginmanager.FredPluginTalker;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.pluginmanager.PluginTalker;
-import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -53,6 +54,36 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		super(myDB, pr.getNode().executor);
 		mTalker = pr.getPluginTalker(this, Freetalk.WOT_NAME, Freetalk.PLUGIN_TITLE);
 		Logger.debug(this, "Identity manager created.");
+	}
+	
+	public synchronized FTIdentity getIdentity(String uid) throws NoSuchIdentityException {
+		Query q = db.query();
+		q.constrain(WoTIdentity.class);
+		q.descend("mUID").constrain(uid);
+		ObjectSet<WoTOwnIdentity> result = q.execute();
+		
+		if(result.size() > 1)
+			throw new DuplicateIdentityException();
+	
+		if(result.size() == 0)
+			throw new NoSuchIdentityException();
+		
+		return result.next();
+	}
+	
+	public synchronized FTOwnIdentity getOwnIdentity(String uid) throws NoSuchIdentityException {
+		Query q = db.query();
+		q.constrain(WoTOwnIdentity.class);
+		q.descend("mUID").constrain(uid);
+		ObjectSet<WoTOwnIdentity> result = q.execute();
+		
+		if(result.size() > 1)
+			throw new DuplicateIdentityException();
+	
+		if(result.size() == 0)
+			throw new NoSuchIdentityException();
+		
+		return result.next();
 	}
 
 	public int getScore(WoTOwnIdentity treeOwner, FTIdentity target) {
