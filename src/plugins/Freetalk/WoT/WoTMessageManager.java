@@ -35,7 +35,7 @@ public class WoTMessageManager extends MessageManager {
 	}
 
 	private synchronized void onMessageReceived(String newMessageData) throws InvalidParameterException { 
-		Message newMessage = new Message(null, null, null, null, null, null, null, null, null);
+		Message newMessage = new Message(null, null, null, null, null, null, null, 1, null, null);
 		newMessage.initializeTransient(db, this);
 		String boardName = "";
 		/* FIXME: Store the description in FTOwnIdentity. We cannot store in FTBoard because we want to allow per-identity customization */
