@@ -16,6 +16,7 @@ import com.db4o.query.Query;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.support.HexUtil;
+import freenet.support.Logger;
 
 /**
  * @author saces, xor
@@ -28,12 +29,12 @@ public class Message {
 	/**
 	 * The URI of this message.
 	 */
-	private final FreenetURI mURI;
+	protected final FreenetURI mURI;
 	
 	/**
 	 * The ID of the message, a (hash) function of the URI, lowercase characters of [0-9a-z] only.
 	 */
-	private final String mID;
+	protected final String mID;
 	
 	/**
 	 * The URI of the thread this message belongs to.
@@ -43,33 +44,38 @@ public class Message {
 	 * If we receive the parent messages of those messages, we will be able to find their orphan children faster if we only need to search in
 	 * the thread they belong to and not in the whole FTBoard - which may contain many thousands of messages.
 	 */
-	private final FreenetURI mThreadURI;
+	protected final FreenetURI mThreadURI;
 	
 	/**
 	 * The URI of the message to which this message is a reply. Null if it is a thread.
 	 */
-	private final FreenetURI mParentURI;
+	protected final FreenetURI mParentURI;
 	
 	/**
 	 * The boards to which this message was posted, in alphabetical order.
 	 */
-	private final Board[] mBoards; 
+	protected final Board[] mBoards; 
 	
-	private final FTIdentity mAuthor;
+	protected final FTIdentity mAuthor;
 
-	private final String mTitle;
+	protected final String mTitle;
 	
 	/**
 	 * The date when the message was written in <strong>UTC time</strong>.
 	 */
-	private final Date mDate;
+	protected final Date mDate;
 	
-	private final String mText;
+	/**
+	 * The index of the message on it's date. 
+	 */
+	protected final int mIndex;
+	
+	protected final String mText;
 	
 	/**
 	 * The attachments of this message, in the order in which they were received in the original message.
 	 */
-	private final Attachment[] mAttachments;
+	protected final Attachment[] mAttachments;
 	
 	public class Attachment {
 		private final FreenetURI mURI;
@@ -114,9 +120,12 @@ public class Message {
 		return new String[] { "mURI", "mID", "mThreadURI", "mBoards"};
 	}
 	
-	public Message(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) {
+	public Message(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, FTIdentity newAuthor, String newTitle, Date newDate, int newIndex, String newText, List<Attachment> newAttachments) {
 		if (newURI == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
+		
+		if(newParentURI != null && newThreadURI == null) 
+			Logger.error(this, "Message with parent URI but without thread URI created: " + newURI);
 		
 		if (newBoards.isEmpty())
 			throw new IllegalArgumentException("No boards in message " + newURI);
@@ -127,6 +136,10 @@ public class Message {
 		if (!isTextValid(newText))
 			throw new IllegalArgumentException("Invalid message text in message " + newURI);
 		
+		/* FIXME: If 0 is also a valid USK index, change to 0 */
+		if (newIndex < 1)
+			throw new IllegalArgumentException("Invalid message index in message " + newURI);
+		
 		mURI = newURI;
 		mID = generateID(mURI);
 		mThreadURI = newThreadURI;
@@ -136,6 +149,7 @@ public class Message {
 		mAuthor = newAuthor;
 		mTitle = newTitle;
 		mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
+		mIndex = newIndex;
 		mText = newText;
 		mAttachments = newAttachments == null ? null : (Attachment[])newAttachments.toArray();
 	}
@@ -232,6 +246,13 @@ public class Message {
 	}
 	
 	/**
+	 * Get the index of the message on it's date.
+	 */
+	public int getIndex() {
+		return mIndex;
+	}
+	
+	/**
 	 * Get the text of the message.
 	 */
 	public String getText() {
@@ -255,7 +276,8 @@ public class Message {
 	
 	public synchronized void setThread(Message newParentThread) {
 		assert(mThread == null);
-		assert(mThreadURI == null);
+		assert(mThreadURI != null);
+		assert(newParentThread.getURI().equals(mThreadURI));
 		mThread = newParentThread;
 		store();
 	}
@@ -269,6 +291,7 @@ public class Message {
 	}
 
 	public synchronized void setParent(Message newParent)  {
+		assert(newParent.getURI().equals(mParentURI));
 		/* TODO: assert(newParent contains at least one board which mBoards contains) */
 		mParent = newParent;
 		store();
