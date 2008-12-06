@@ -7,18 +7,15 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
-import java.util.TimeZone;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -31,7 +28,6 @@ import org.w3c.dom.Element;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
-import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageInserter;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.OwnMessage;
@@ -49,7 +45,6 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
-import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
@@ -218,9 +213,11 @@ public class WoTMessageInserter extends MessageInserter {
 				}
 				messageTag.appendChild(boardsTag);
 				
-				Element replyBoardTag = xmlDoc.createElement("ReplyBoard");
-				replyBoardTag.appendChild(xmlDoc.createCDATASection(m.getBoards()[0].getName())); /* FIXME: Allow the user to specify the reply board */
-				messageTag.appendChild(replyBoardTag);
+				if(m.getReplyToBoard() != null) {
+					Element replyBoardTag = xmlDoc.createElement("ReplyBoard");
+					replyBoardTag.appendChild(xmlDoc.createCDATASection(m.getReplyToBoard().getName()));
+					messageTag.appendChild(replyBoardTag);
+				}
 				
 				if(!m.isThread()) {
 					Element inReplyToTag = xmlDoc.createElement("InReplyTo");
@@ -272,10 +269,6 @@ public class WoTMessageInserter extends MessageInserter {
 			}
 		}
 		
-		
-	}
-	
-	private class MessageDecoder {
 		
 	}
 

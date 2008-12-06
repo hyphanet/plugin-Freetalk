@@ -3,9 +3,18 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.TimeZone;
+
 import plugins.Freetalk.Board;
+import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.OwnMessage;
+import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 
@@ -21,15 +30,37 @@ public class WoTMessageManager extends MessageManager {
 
 	private volatile boolean isRunning = true;
 	private Thread mThread;
+	
+	private static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
 	public WoTMessageManager(ObjectContainer myDB, Executor myExecutor, WoTIdentityManager myIdentityManager) {
 		super(myDB, myExecutor, myIdentityManager);
 		mIdentityManager = myIdentityManager;
 		Logger.debug(this, "Message manager started.");
 	}
+	
+	public OwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
+			String myTitle, String myText, List<Attachment> myAttachments) {
+		OwnMessage m;
+		
+		synchronized(OwnMessage.class) {
+			Date date = mCalendar.getTime();
+			Message parentThread = myParentMessage!= null ? myParentMessage.getThread() : null;
+			int index = getFreeMessageIndex(myAuthor, date);
+			
+			m = new OwnMessage(parentThread, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, index,
+				myText, myAttachments);
+			
+			m.initializeTransient(db, this);
+			
+			m.store();
+		}
+		
+		return m;
+	}
 
 	private synchronized void onMessageReceived(String newMessageData) throws InvalidParameterException { 
-		Message newMessage = new Message(null, null, null, null, null, null, null, 1, null, null);
+		Message newMessage = new Message(null, null, null, null, null, null, null, null, 1, null, null);
 		newMessage.initializeTransient(db, this);
 		String boardName = "";
 		/* FIXME: Store the description in FTOwnIdentity. We cannot store in FTBoard because we want to allow per-identity customization */

@@ -5,10 +5,12 @@ package plugins.Freetalk;
 
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
+import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
-import plugins.WoT.introduction.IntroductionPuzzle;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -42,6 +44,21 @@ public abstract class MessageManager implements Runnable {
 		mIdentityManager = myIdentityManager;
 		mExecutor.execute(this, "FT Identity Manager");
 	}
+	
+	/**
+	 * This is the primary function for posting messages.
+	 * 
+	 * @param myParentMessage The message to which the new message is a reply. Null if the message should be a thread.
+	 * @param myBoards The boards to which the new message should be posted. Has to contain at least one board.
+	 * @param myReplyToBoard The board to which replies to this message should be sent. This is just a recommendation. Notice that it should be contained in myBoards. Can be null.
+	 * @param myAuthor The author of the new message. Cannot be null.
+	 * @param myTitle The subject of the new message. Cannot be null or empty.
+	 * @param myText The body of the new message. Cannot be null.
+	 * @param myAttachments The Attachments of the new Message. See <code>Message.Attachment</code>. Set to null if the message has none.
+	 * @return The new message.
+	 */
+	public abstract OwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
+			String myTitle, String myText, List<Attachment> myAttachments);
 
 	/**
 	 * Get a message by its URI. The transient fields of the returned message will be initialized already.
