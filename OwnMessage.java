@@ -7,6 +7,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import plugins.Freetalk.Message.Attachment;
+
 import freenet.keys.FreenetURI;
 
 public class OwnMessage extends Message {
@@ -14,7 +16,7 @@ public class OwnMessage extends Message {
 	private boolean iWasInserted = false;
 
 	public OwnMessage(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, FTOwnIdentity newAuthor,
-			String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
+			String newTitle, Date newDate, String newText, List<Attachment> newAttachments) {
 		super(newURI, newThreadURI, newParentURI, newBoards, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
 	

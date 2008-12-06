@@ -69,7 +69,25 @@ public class Message {
 	/**
 	 * The attachments of this message, in the order in which they were received in the original message.
 	 */
-	private final FreenetURI[] mAttachments;
+	private final Attachment[] mAttachments;
+	
+	public class Attachment {
+		private final FreenetURI mURI;
+		private final int mSize; /* Size in bytes */
+		
+		public Attachment(FreenetURI myURI, int mySize) {
+			mURI = myURI;
+			mSize = mySize;
+		}
+		
+		public FreenetURI getURI() {
+			return mURI;
+		}
+		
+		public int getSize() {
+			return mSize;
+		}
+	}
 	
 	/**
 	 * The thread to which this message is a reply.
@@ -96,7 +114,7 @@ public class Message {
 		return new String[] { "mURI", "mID", "mThreadURI", "mBoards"};
 	}
 	
-	public Message(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<FreenetURI> newAttachments) {
+	public Message(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) {
 		if (newURI == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
@@ -119,8 +137,7 @@ public class Message {
 		mTitle = newTitle;
 		mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
 		mText = newText;
-		mAttachments = newAttachments != null ? newAttachments.toArray(new FreenetURI[newAttachments.size()])
-		        : new FreenetURI[0];
+		mAttachments = newAttachments == null ? null : (Attachment[])newAttachments.toArray();
 	}
 	
 	/**
@@ -224,7 +241,7 @@ public class Message {
 	/**
 	 * Get the attachments of the message, in the order in which they were received.
 	 */
-	public FreenetURI[] getAttachments() {
+	public Attachment[] getAttachments() {
 		return mAttachments;
 	}
 	
