@@ -5,15 +5,37 @@ package plugins.Freetalk.WoT;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.TimeZone;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import plugins.Freetalk.Board;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
+import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageInserter;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.OwnMessage;
+import plugins.Freetalk.Message.Attachment;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -26,6 +48,7 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
@@ -79,7 +102,7 @@ public class WoTMessageInserter extends MessageInserter {
 		}
 	}
 	
-	protected void insertMessage(OwnMessage m) throws InsertException, IOException {
+	protected void insertMessage(OwnMessage m) throws InsertException, IOException, TransformerException, ParserConfigurationException {
 		Bucket tempB = mTBF.makeBucket(2048 + m.getText().length()); /* TODO: set to a reasonable value */
 		OutputStream os = tempB.getOutputStream();
 		
@@ -98,7 +121,6 @@ public class WoTMessageInserter extends MessageInserter {
 			addInsert(pu);
 			tempB = null;
 
-			m.store();
 			Logger.debug(this, "Started insert of message from " + m.getAuthor().getNickname());
 		}
 		finally {
@@ -140,11 +162,114 @@ public class WoTMessageInserter extends MessageInserter {
 	@Override
 	public void onMajorProgress() { }
 	
-	
+	/**
+	 * Encodes a Freetalk message to a format which is compatible with the FMS message format. This was done to allow developers to add 
+	 * code to Freetalk or FMS to retrieve each others messages.
+	 */
 	private static class MessageEncoder {
+		private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		private static final SimpleDateFormat mTimeFormat = new SimpleDateFormat("HH:mm:ss");
 		
-		public static void encode(OwnMessage m, OutputStream os) {
+		public static void encode(OwnMessage m, OutputStream os) throws TransformerException, ParserConfigurationException {
+			synchronized(m) {
+				StreamResult resultStream = new StreamResult(os);
+	
+				DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
+				DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
+				DOMImplementation impl = xmlBuilder.getDOMImplementation();
+				Document xmlDoc = impl.createDocument(null, Freetalk.PLUGIN_TITLE, null);
+				Element rootElement = xmlDoc.getDocumentElement();
+	
+				Element messageTag = xmlDoc.createElement("Message");
+				messageTag.setAttribute("version", "1"); /* Version of the XML format */
+				
+				Element idTag = xmlDoc.createElement("MessageID");
+				idTag.appendChild(xmlDoc.createCDATASection(m.getID()));
+				messageTag.appendChild(idTag);
+	
+				Element subjectTag = xmlDoc.createElement("Subject");
+				subjectTag.appendChild(xmlDoc.createCDATASection(m.getTitle()));
+				messageTag.appendChild(subjectTag);
+				
+				Element dateTag = xmlDoc.createElement("Date");
+				synchronized(mDateFormat) {
+					dateTag.appendChild(xmlDoc.createTextNode(mDateFormat.format(m.getDate())));
+				}
+				messageTag.appendChild(dateTag);
+				
+				Element timeTag = xmlDoc.createElement("Time");
+				synchronized(mTimeFormat) {
+					timeTag.appendChild(xmlDoc.createTextNode(mTimeFormat.format(m.getDate())));
+				}
+				messageTag.appendChild(timeTag);
+				
+				Element boardsTag = xmlDoc.createElement("Boards");
+				for(Board b : m.getBoards()) {
+					Element boardTag = xmlDoc.createElement("Board");
+					boardTag.appendChild(xmlDoc.createCDATASection(b.getName()));
+					boardsTag.appendChild(boardTag);
+				}
+				messageTag.appendChild(boardsTag);
+				
+				Element replyBoardTag = xmlDoc.createElement("ReplyBoard");
+				replyBoardTag.appendChild(xmlDoc.createCDATASection(m.getBoards()[0].getName())); /* FIXME: Allow the user to specify the reply board */
+				messageTag.appendChild(replyBoardTag);
+				
+				if(!m.isThread()) {
+					Element inReplyToTag = xmlDoc.createElement("InReplyTo");
+						Element inReplyToMessage = xmlDoc.createElement("Message");
+							Element inReplyToOrder = xmlDoc.createElement("Order"); inReplyToOrder.appendChild(xmlDoc.createTextNode("0"));	/* For FMS compatibility, not used by Freetalk */
+							Element inReplyToID = xmlDoc.createElement("MessageID"); inReplyToID.appendChild(xmlDoc.createCDATASection(m.getParentID()));
+							Element inReplyToURI = xmlDoc.createElement("MessageURI"); inReplyToURI.appendChild(xmlDoc.createCDATASection(m.getParentURI().toString()));
+						inReplyToMessage.appendChild(inReplyToOrder);
+						inReplyToMessage.appendChild(inReplyToID);
+						inReplyToMessage.appendChild(inReplyToURI);
+						
+						Element inReplyToThread = xmlDoc.createElement("Thread");
+							inReplyToID = xmlDoc.createElement("MessageID"); inReplyToID.appendChild(xmlDoc.createCDATASection(m.getParentThreadID()));
+							inReplyToURI = xmlDoc.createElement("MessageURI"); inReplyToURI.appendChild(xmlDoc.createCDATASection(m.getParentThreadURI().toString()));
+						inReplyToThread.appendChild(inReplyToID);
+						inReplyToThread.appendChild(inReplyToURI);
+					inReplyToTag.appendChild(inReplyToMessage);
+					inReplyToTag.appendChild(inReplyToThread);
+					messageTag.appendChild(inReplyToTag);
+				}
+	
+				Element bodyTag = xmlDoc.createElement("Body");
+				bodyTag.appendChild(xmlDoc.createCDATASection(m.getText()));
+				messageTag.appendChild(bodyTag);
+				
+				Attachment[] attachments = m.getAttachments();
+				if(attachments != null) {
+					Element attachmentsTag = xmlDoc.createElement("Attachments");
+					for(Attachment a : attachments) {
+						Element fileTag = xmlDoc.createElement("File"); 
+							Element keyTag = xmlDoc.createElement("Key"); keyTag.appendChild(xmlDoc.createCDATASection(a.getURI().toString()));
+							Element sizeTag = xmlDoc.createElement("Size"); sizeTag.appendChild(xmlDoc.createCDATASection(Integer.toString(a.getSize())));
+						fileTag.appendChild(keyTag);
+						fileTag.appendChild(sizeTag);
+						attachmentsTag.appendChild(fileTag);
+					}
+					messageTag.appendChild(attachmentsTag);
+				}
+	
+				rootElement.appendChild(messageTag);
+	
+				DOMSource domSource = new DOMSource(xmlDoc);
+				TransformerFactory transformFactory = TransformerFactory.newInstance();
+				Transformer serializer = transformFactory.newTransformer();
+				
+				serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+				serializer.setOutputProperty(OutputKeys.INDENT,"yes");
+				serializer.transform(domSource, resultStream);
+			}
 		}
+		
+		
+	}
+	
+	private class MessageDecoder {
+		
 	}
 
 }
