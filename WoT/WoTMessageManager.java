@@ -7,6 +7,7 @@ import plugins.Freetalk.Board;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.NoSuchBoardException;
 
 import com.db4o.ObjectContainer;
 
@@ -37,14 +38,14 @@ public class WoTMessageManager extends MessageManager {
 		Board[] boards = new Board[boardNames.length];
 		                                    
 		for(int idx = 0; idx < boards.length; ++idx) {
-			Board board = getBoardByName(boardNames[idx]);
-			
-			if(board == null) {
-				board = new Board(this, boardName);
-				board.initializeTransient(db, this);
+			try {		
+				boards[idx] = getBoardByName(boardNames[idx]);
 			}
-			
-			boards[idx] = board;
+			catch(NoSuchBoardException e) {
+				Board board = new Board(this, boardName);
+				board.initializeTransient(db, this);
+				boards[idx] = board;
+			}
 		}
 		
 		for(Board b : boards) {

@@ -6,6 +6,8 @@ package plugins.Freetalk;
 import java.util.Date;
 import java.util.Iterator;
 
+import plugins.Freetalk.exceptions.NoSuchBoardException;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.WoT.introduction.IntroductionPuzzle;
 
 import com.db4o.ObjectContainer;
@@ -43,12 +45,13 @@ public abstract class MessageManager implements Runnable {
 
 	/**
 	 * Get a message by its URI. The transient fields of the returned message will be initialized already.
+	 * @throws NoSuchMessageException 
 	 */
-	public Message get(FreenetURI uri) {
+	public Message get(FreenetURI uri) throws NoSuchMessageException {
 		return get(Message.generateID(uri));
 	}
 	
-	public synchronized Message get(String id) {
+	public synchronized Message get(String id) throws NoSuchMessageException {
 		Query query = db.query();
 		query.constrain(Message.class);
 		query.descend("mID").constrain(id);
@@ -57,18 +60,19 @@ public abstract class MessageManager implements Runnable {
 		assert(result.size() <= 1);
 		
 		if(result.size() == 0)
-			return null;
-		else {
+			throw new NoSuchMessageException();
+
 			Message m = result.next();
 			m.initializeTransient(db, this);
 			return m;
-		}
+		
 	}
 
 	/**
 	 * Get a board by its name. The transient fields of the returned board will be initialized already.
+	 * @throws NoSuchBoardException 
 	 */
-	public synchronized Board getBoardByName(String name) {
+	public synchronized Board getBoardByName(String name) throws NoSuchBoardException {
 		Query query = db.query();
 		query.constrain(Board.class);
 		query.descend("mName").constrain(name);
@@ -77,12 +81,12 @@ public abstract class MessageManager implements Runnable {
 		assert(result.size() <= 1);
 
 		if(result.size() == 0)
-			return null;
-		else {
+			throw new NoSuchBoardException();
+		
 			Board b = result.next();
 			b.initializeTransient(db, this);
 			return b;
-		}
+		
 	}
 
 	/**
@@ -163,7 +167,13 @@ public abstract class MessageManager implements Runnable {
 	 * Returns true if the message was not downloaded yet and any of the FTOwnIdentity wants the message.
 	 */
 	protected synchronized boolean shouldDownloadMessage(FreenetURI uri, FTIdentity author) {
-		return (get(uri) != null) || mIdentityManager.anyOwnIdentityWantsMessagesFrom(author);
+		try {
+			get(uri);
+			return false;
+		}
+		catch(NoSuchMessageException e) {
+			return mIdentityManager.anyOwnIdentityWantsMessagesFrom(author);
+		}
 	}
 	
 	public abstract void terminate();

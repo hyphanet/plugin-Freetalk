@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -135,15 +136,18 @@ public class Board {
 			if(!newMessage.isThread())
 			{
 				FreenetURI parentURI = newMessage.getParentURI();
-				Message parentMessage = mMessageManager.get(parentURI); /* TODO: This allows crossposting. Figure out whether we need to handle it specially */
-				Message parentThread = findParentThread(newMessage);
+				Message parentThread = null;
 	
-				if(parentThread != null)
+				try {
+					parentThread = findParentThread(newMessage);
 					newMessage.setThread(parentThread);
+				}
+				catch(NoSuchMessageException e) {}
 	
-				if(parentMessage != null) {
-					newMessage.setParent(parentMessage);
-				} else { /* The message is an orphan */
+				try {
+					newMessage.setParent(mMessageManager.get(parentURI)); /* TODO: This allows crossposting. Figure out whether we need to handle it specially */
+				}
+				catch(NoSuchMessageException e) {/* The message is an orphan */
 					if(parentThread != null) {
 						newMessage.setParent(parentThread);	/* We found its parent thread so just stick it in there for now */
 					}
@@ -200,8 +204,9 @@ public class Board {
 	
 	/**
 	 * Finds the parent thread of a message in the database. The transient fields of the returned message will be initialized already.
+	 * @throws NoSuchMessageException 
 	 */
-	protected synchronized Message findParentThread(Message m) {
+	protected synchronized Message findParentThread(Message m) throws NoSuchMessageException {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
 		/* FIXME: I assume that db4o is configured to keep an URI index per board. We still have to ensure in FMS.java that it is configured to do so.
@@ -215,7 +220,7 @@ public class Board {
 		assert(parents.size() <= 1);
 		
 		if(parents.size() == 0)
-			return null;
+			throw new NoSuchMessageException();
 		else {
 			Message thread = parents.next();
 			thread.initializeTransient(db, mMessageManager);

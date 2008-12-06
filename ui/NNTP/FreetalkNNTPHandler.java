@@ -8,6 +8,8 @@ import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.exceptions.NoSuchBoardException;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import java.net.Socket;
 import java.io.InputStream;
@@ -115,14 +117,13 @@ public class FreetalkNNTPHandler implements Runnable {
 			&& desc.charAt(desc.length() - 1) == '>') {
 
 			String msgid = desc.substring(1, desc.length() - 1);
-			Message msg = mMessageManager.get(msgid);
-
-			if (msg == null) {
+			try {
+				return new FreetalkNNTPArticle(mMessageManager.get(msgid));
+			}
+			catch(NoSuchMessageException e) {
 				printStatusLine("430 No such article");
 				return null;
 			}
-
-			return new FreetalkNNTPArticle(msg);
 		}
 		else {
 			// Other forms of these commands are not (yet) implemented
@@ -168,16 +169,16 @@ public class FreetalkNNTPHandler implements Runnable {
 	 */
 	private void selectGroup(String name) {
 		// FIXME: look up by "NNTP name"
-		Board board = mMessageManager.getBoardByName(name);
-		if (board == null) {
-			printStatusLine("411 No such group");
-		}
-		else {
+		try {
+			Board board = mMessageManager.getBoardByName(name);
 			currentGroup = new FreetalkNNTPGroup(board);
 			printStatusLine("211 " + currentGroup.messageCount()
 							+ " " + currentGroup.firstMessage()
 							+ " " + currentGroup.lastMessage()
 							+ " " + board.getNameNNTP());
+		}
+		catch(NoSuchBoardException e) {
+			printStatusLine("411 No such group");
 		}
 	}
 
