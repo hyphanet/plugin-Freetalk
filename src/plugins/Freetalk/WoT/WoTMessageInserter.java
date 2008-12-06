@@ -36,6 +36,7 @@ import plugins.Freetalk.MessageInserter;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.Message.Attachment;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -133,8 +134,14 @@ public class WoTMessageInserter extends MessageInserter {
 
 	@Override
 	public void onSuccess(BaseClientPutter state) {
-		OwnMessage m = (OwnMessage)mMessageManager.get(state.getURI());
-		m.markAsInserted();
+		try {
+			OwnMessage m = (OwnMessage)mMessageManager.get(state.getURI());
+			m.markAsInserted();
+		}
+		catch(NoSuchMessageException e) {
+			Logger.error(this, "Message insert finished but message was deleted: " + state.getURI());
+		}
+		
 		removeInsert(state);
 	}
 	
