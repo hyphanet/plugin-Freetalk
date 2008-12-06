@@ -108,9 +108,9 @@ public class Message {
 	
 	/* References to objects of the plugin, not stored in the database. */
 	
-	private transient ObjectContainer db;
+	protected transient ObjectContainer db;
 	
-	private transient MessageManager mMessageManager;
+	protected transient MessageManager mMessageManager;
 	
 	
 	/**
