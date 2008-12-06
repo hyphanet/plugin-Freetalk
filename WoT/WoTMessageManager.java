@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import java.util.NoSuchElementException;
-
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageManager;
@@ -12,7 +10,6 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 
 import com.db4o.ObjectContainer;
 
-import freenet.keys.FreenetURI;
 import freenet.support.Executor;
 import freenet.support.Logger;
 
@@ -28,10 +25,6 @@ public class WoTMessageManager extends MessageManager {
 		super(myDB, myExecutor, myIdentityManager);
 		mIdentityManager = myIdentityManager;
 		Logger.debug(this, "Message manager started.");
-	}
-
-	protected synchronized void deleteMessage(FreenetURI uri) throws NoSuchElementException {
-		/* FIXME: implement */
 	}
 
 	private synchronized void onMessageReceived(String newMessageData) throws InvalidParameterException { 
@@ -102,4 +95,5 @@ public class WoTMessageManager extends MessageManager {
 		}
 		Logger.debug(this, "Stopped the message manager.");
 	}
+
 }
