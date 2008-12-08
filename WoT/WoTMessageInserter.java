@@ -168,7 +168,7 @@ public class WoTMessageInserter extends MessageInserter {
 	 * Encodes a Freetalk message to a format which is compatible with the FMS message format. This was done to allow developers to add 
 	 * code to Freetalk or FMS to retrieve each others messages.
 	 */
-	private static class MessageEncoder {
+	public static class MessageEncoder {
 		private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		private static final SimpleDateFormat mTimeFormat = new SimpleDateFormat("HH:mm:ss");
 		
@@ -268,8 +268,6 @@ public class WoTMessageInserter extends MessageInserter {
 				serializer.transform(domSource, resultStream);
 			}
 		}
-		
-		
 	}
 
 }
