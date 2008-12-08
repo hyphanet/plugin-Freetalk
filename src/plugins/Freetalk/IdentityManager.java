@@ -31,6 +31,11 @@ public abstract class IdentityManager implements PrioRunnable, Iterable<FTIdenti
 		mExecutor.execute(this, "FT Identity Manager");
 	}
 
+	public IdentityManager() {
+		db = null;
+		mExecutor = null;
+	}
+
 	public synchronized Iterator<FTIdentity> iterator() {
 		final IdentityManager mIdentityManager = this;
 		return new Iterator<FTIdentity> () {
