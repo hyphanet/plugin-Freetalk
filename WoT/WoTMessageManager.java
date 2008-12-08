@@ -39,6 +39,10 @@ public class WoTMessageManager extends MessageManager {
 		Logger.debug(this, "Message manager started.");
 	}
 	
+	public WoTMessageManager() {
+		super();
+	}
+
 	public OwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
 			String myTitle, String myText, List<Attachment> myAttachments) {
 		OwnMessage m;

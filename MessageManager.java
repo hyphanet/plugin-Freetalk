@@ -47,6 +47,12 @@ public abstract class MessageManager implements Runnable {
 		mExecutor.execute(this, "FT Identity Manager");
 	}
 	
+	public MessageManager() {
+		db = null;
+		mExecutor = null;
+		mIdentityManager = null;
+	}
+	
 	/**
 	 * This is the primary function for posting messages.
 	 * 

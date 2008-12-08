@@ -56,6 +56,10 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		Logger.debug(this, "Identity manager created.");
 	}
 	
+	public WoTIdentityManager() {
+		super();
+	}
+
 	public synchronized FTIdentity getIdentity(String uid) throws NoSuchIdentityException {
 		Query q = db.query();
 		q.constrain(WoTIdentity.class);
