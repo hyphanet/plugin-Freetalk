@@ -85,7 +85,7 @@ public class Board {
 		/* FIXME: This is just the basic check, we should do more checks:
 		 * The rest of the name should match a whitelist of allowed punctuation (excluding for example &<>%#), or letters (i.e. not necessarily
 		 * English letters) according to Character.isLetter() and numerals. */
-		return name.matches("[a-zA-Z0-9.]") || ISOLanguages.contains(firstPart);
+		return name.matches("[a-zA-Z0-9.]+") || ISOLanguages.contains(firstPart);
 	}
 	
 	/* 
