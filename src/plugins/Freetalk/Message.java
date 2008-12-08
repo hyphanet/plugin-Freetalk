@@ -79,7 +79,7 @@ public class Message {
 	 */
 	protected final Attachment[] mAttachments;
 	
-	public class Attachment {
+	public static class Attachment {
 		private final FreenetURI mURI;
 		private final int mSize; /* Size in bytes */
 		
@@ -158,7 +158,7 @@ public class Message {
 		mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
 		mIndex = newIndex;
 		mText = newText;
-		mAttachments = newAttachments == null ? null : (Attachment[])newAttachments.toArray();
+		mAttachments = newAttachments == null ? null : newAttachments.toArray(new Attachment[newAttachments.size()]);
 	}
 	
 	/**
