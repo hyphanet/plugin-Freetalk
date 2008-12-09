@@ -333,6 +333,18 @@ public class Board {
 		return result.next().getIndex();
 	}
 	
+	public synchronized Message getMessageByIndex(int index) throws NoSuchMessageException {
+		Query q = db.query();
+		q.constrain(BoardMessageLink.class);
+		q.descend("mBoard").constrain(this);
+		q.descend("mMessageIndex").constrain(index);
+		ObjectSet<MessageReference> result = q.execute();
+		if(result.size() == 0)
+			throw new NoSuchMessageException();
+		
+		return result.next().getMessage();
+	}
+	
 	private int mFreeMessageIndex = 1;
 	
 	private synchronized int getFreeMessageIndex() {
