@@ -8,17 +8,13 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import plugins.Freetalk.FTIdentity;
-import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageFetcher;
-import plugins.WoT.Identity;
-import plugins.WoT.introduction.IntroductionPuzzle;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
