@@ -22,6 +22,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.HashSet;
+import java.util.Date;
+import java.util.SimpleTimeZone;
+import java.text.SimpleDateFormat;
 
 import freenet.support.Logger;
 
@@ -42,6 +45,11 @@ public class FreetalkNNTPHandler implements Runnable {
 	private FreetalkNNTPGroup currentGroup;
 	
 	private final static String CRLF = "\r\n";
+
+	/** Date format used by the DATE command */
+	private final static SimpleDateFormat serverDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+
+	private final static SimpleTimeZone utcTimeZone = new SimpleTimeZone(0, "UTC");
 
 	public FreetalkNNTPHandler(Freetalk ft, Socket socket) {
 		mIdentityManager = ft.getIdentityManager();
@@ -264,6 +272,17 @@ public class FreetalkNNTPHandler implements Runnable {
 	}
 
 	/**
+	 * Handle the DATE command.
+	 */
+	private void printDate() {
+		Date date = new Date();
+		synchronized (serverDateFormat) {
+			serverDateFormat.setTimeZone(utcTimeZone);
+			printTextResponseLine("111 " + serverDateFormat.format(date));
+		}
+	}
+
+	/**
 	 * Handle a command from the client.  If the command requires a
 	 * text data section, this function returns true (and
 	 * finishCommand should be called after the text has been
@@ -297,6 +316,9 @@ public class FreetalkNNTPHandler implements Runnable {
 			else {
 				printStatusLine("501 Syntax error");
 			}
+		}
+		else if (command.equalsIgnoreCase("DATE")) {
+			printDate();
 		}
 		else if (command.equalsIgnoreCase("GROUP")) {
 			if (tokens.length == 2) {
@@ -340,6 +362,14 @@ public class FreetalkNNTPHandler implements Runnable {
 			}
 			else if (tokens[1].equalsIgnoreCase("OVERVIEW.FMT")) {
 				printOverviewFormat();
+			}
+			else {
+				printStatusLine("501 Syntax error");
+			}
+		}
+		else if (command.equalsIgnoreCase("MODE")) {
+			if (tokens.length == 2 && tokens[1].equalsIgnoreCase("READER")) {
+				printStatusLine("200 Reader mode acknowledged, posting allowed");
 			}
 			else {
 				printStatusLine("501 Syntax error");
