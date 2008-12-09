@@ -139,7 +139,7 @@ public class Board {
 				Message parentThread = null;
 	
 				try {
-					parentThread = findParentThread(newMessage);
+					parentThread = findParentThread(newMessage).getMessage();
 					newMessage.setThread(parentThread);
 				}
 				catch(NoSuchMessageException e) {}
@@ -206,7 +206,7 @@ public class Board {
 	 * Finds the parent thread of a message in the database. The transient fields of the returned message will be initialized already.
 	 * @throws NoSuchMessageException 
 	 */
-	protected synchronized Message findParentThread(Message m) throws NoSuchMessageException {
+	protected synchronized MessageReference findParentThread(Message m) throws NoSuchMessageException {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
 		/* FIXME: I assume that db4o is configured to keep an URI index per board. We still have to ensure in FMS.java that it is configured to do so.
@@ -214,16 +214,15 @@ public class Board {
 		 * URI index is smaller per board than the global URI index. */
 		q.descend("mBoard").constrain(this); 
 		q.descend("mMessage").descend("mURI").constrain(m.getParentThreadURI());
-		/* FIXME: this certainly will return BoardMessageLink instead of FTMessage. how to return the messages? */
-		ObjectSet<Message> parents = q.execute();
+		ObjectSet<MessageReference> parents = q.execute();
 		
 		assert(parents.size() <= 1);
 		
 		if(parents.size() == 0)
 			throw new NoSuchMessageException();
 		else {
-			Message thread = parents.next();
-			thread.initializeTransient(db, mMessageManager);
+			MessageReference thread = parents.next();
+			thread.getMessage().initializeTransient(db, mMessageManager);
 			return thread;
 		}
 	}
@@ -235,11 +234,11 @@ public class Board {
 	 * @param identity The identity viewing the board.
 	 * @return An iterator of the message which the identity will see (based on its trust levels).
 	 */
-	public synchronized Iterator<Message> threadIterator(final FTOwnIdentity identity) {
-		return new Iterator<Message>() {
+	public synchronized Iterator<MessageReference> threadIterator(final FTOwnIdentity identity) {
+		return new Iterator<MessageReference>() {
 			private final FTOwnIdentity mIdentity = identity;
-			private final Iterator<Message> iter;
-			private Message next;
+			private final Iterator<MessageReference> iter;
+			private MessageReference next;
 			 
 			{
 				/* FIXME: If db4o supports precompiled queries, this one should be stored precompiled.
@@ -251,7 +250,6 @@ public class Board {
 				q.descend("mBoard").constrain(this);
 				q.descend("mMessage").descend("mThread").constrain(null).identity();
 				q.descend("mMessage").descend("mDate").orderDescending();
-				/* FIXME: this certainly will return BoardMessageLink instead of FTMessage. how to return the messages? */
 				iter = q.execute().iterator();
 				next = iter.hasNext() ? iter.next() : null;
 			}
@@ -265,10 +263,10 @@ public class Board {
 				return false;
 			}
 
-			public Message next() {
-				Message result = hasNext() ? next : null;
+			public MessageReference next() {
+				MessageReference result = hasNext() ? next : null;
 				next = iter.hasNext() ? iter.next() : null;
-				result.initializeTransient(db, mMessageManager);
+				result.getMessage().initializeTransient(db, mMessageManager);
 				return result;
 			}
 
@@ -316,11 +314,29 @@ public class Board {
 		};
 	}
 	
-	public synchronized List<Message> getAllMessages() {
+	public synchronized List<MessageReference> getAllMessages() {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
 		q.descend("mBoard").constrain(this);
-		return q.descend("mMessage").execute(); /* FIXME: does this return the FTMessage? */
+		return q.execute();
+	}
+	
+	public synchronized int getMessageIndex(Message message) throws NoSuchMessageException {
+		Query q = db.query();
+		q.constrain(BoardMessageLink.class);
+		q.descend("mMessage").constrain(message);
+		ObjectSet<BoardMessageLink> result = q.execute();
+		
+		if(result.size() == 0)
+			throw new NoSuchMessageException();
+		
+		return result.next().getIndex();
+	}
+	
+	private int mFreeMessageIndex = 1;
+	
+	private synchronized int getFreeMessageIndex() {
+		return mFreeMessageIndex++;
 	}
 	
 	public synchronized void store() {
@@ -329,22 +345,41 @@ public class Board {
 		db.commit();
 	}
 	
+	public interface MessageReference {
+		/** Get the message to which this reference points */
+		public Message getMessage();
+		
+		/** Get an unique index number of this message in the board where which the query for the message was executed.
+		 * This index number is needed for NNTP. */
+		public int getIndex();
+	}
+	
 	/**
 	 * Helper class to associate messages with boards in the database
 	 */
-	private final class BoardMessageLink {
+	private final class BoardMessageLink implements MessageReference {
 		private final Board mBoard;
 		private final Message mMessage;
+		private final int mMessageIndex;
 		
 		public BoardMessageLink(Board myBoard, Message myMessage) {
 			assert(myBoard != null && myMessage != null);
 			mBoard = myBoard;
 			mMessage = myMessage;
+			mMessageIndex = getFreeMessageIndex();
 		}
 		
 		public void store(ObjectContainer db) {
 			db.store(this);
 			db.commit();
+		}
+
+		public int getIndex() {
+			return mMessageIndex;
+		}
+
+		public Message getMessage() {
+			return mMessage;
 		}
 	}
 	
