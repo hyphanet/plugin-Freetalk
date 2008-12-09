@@ -1,5 +1,6 @@
 package plugins.Freetalk;
 
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 
@@ -16,6 +17,10 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import com.db4o.ObjectContainer;
+
+import freenet.keys.FreenetURI;
 
 import plugins.Freetalk.Message.Attachment;
 
@@ -121,7 +126,7 @@ public class MessageXML {
 		}
 	}
 	
-	public static Message decode(String xml) {
+	public static Message decode(ObjectContainer db, InputStream inputStream, FreenetURI uri) {
 		return null;
 	}
 }
