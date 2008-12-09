@@ -12,9 +12,14 @@ import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import com.db4o.ObjectContainer;
+
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageFetcher;
+import plugins.Freetalk.MessageXML;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.WoT.introduction.IntroductionPuzzle;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -40,13 +45,16 @@ public class WoTMessageFetcher extends MessageFetcher {
 	
 	private Random mRandom;
 	
+	private final ObjectContainer db;
+	
 	/* FIXME FIXME FIXME: Use LRUQueue instead. ArrayBlockingQueue does not use a Hashset for contains()! */
-	private final ArrayBlockingQueue<WoTIdentity> mIdentities = new ArrayBlockingQueue<WoTIdentity>(PARALLEL_MESSAGE_FETCH_COUNT * 10); /* FIXME: figure out a decent size */
+	private final ArrayBlockingQueue<FTIdentity> mIdentities = new ArrayBlockingQueue<FTIdentity>(PARALLEL_MESSAGE_FETCH_COUNT * 10); /* FIXME: figure out a decent size */
 	
 	private static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
-	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager) {
+	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, ObjectContainer myDB, String myName, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
+		db = myDB;
 		mIdentityManager = myIdentityManager;
 		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
@@ -79,14 +87,13 @@ public class WoTMessageFetcher extends MessageFetcher {
 
 	@Override
 	protected void iterate() {
-		ArrayList<WoTIdentity> identitiesToFetchFrom = new ArrayList<WoTIdentity>(PARALLEL_MESSAGE_FETCH_COUNT);
+		ArrayList<FTIdentity> identitiesToFetchFrom = new ArrayList<FTIdentity>(PARALLEL_MESSAGE_FETCH_COUNT);
 		
 		for(FTIdentity identity : mIdentityManager) {
 			synchronized(mIdentities) {
 				if(!mIdentities.contains(identity) && mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
-					WoTIdentity wotIdentity = (WoTIdentity)identity;
-					identitiesToFetchFrom.add(wotIdentity);
-					mIdentities.add(wotIdentity);
+					identitiesToFetchFrom.add(identity);
+					mIdentities.add(identity);
 				}
 			}
 		}
@@ -98,17 +105,16 @@ public class WoTMessageFetcher extends MessageFetcher {
 			 for(FTIdentity identity : mIdentityManager) {
 				 synchronized(mIdentities) {
 					 if(mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
-						 WoTIdentity wotIdentity = (WoTIdentity)identity;
-						 identitiesToFetchFrom.add(wotIdentity);
-						 mIdentities.add(wotIdentity);
+						 identitiesToFetchFrom.add(identity);
+						 mIdentities.add(identity);
 					 }
 				 }
 			 }
 		}
 		
-		for(WoTIdentity identity : identitiesToFetchFrom) {
+		for(FTIdentity identity : identitiesToFetchFrom) {
 			try {
-				fetchMessages((WoTIdentity)identity, mCalendar.getTime());
+				fetchMessages(identity, mCalendar.getTime());
 			}
 			catch(FetchException e) {
 				Logger.error(this, "Fetching of messages from " + identity.getNickname() + " failed.", e);
@@ -116,11 +122,11 @@ public class WoTMessageFetcher extends MessageFetcher {
 		}
 	}
 	
-	private void fetchMessages(WoTIdentity author, Date date) throws FetchException {
+	private void fetchMessages(FTIdentity author, Date date) throws FetchException {
 		fetchMessage(author, date, mMessageManager.getUnavailableMessageIndex(author, date));
 	}
 	
-	private void fetchMessage(WoTIdentity author, Date date, int index) throws FetchException {
+	private void fetchMessage(FTIdentity author, Date date, int index) throws FetchException {
 		FreenetURI uri = Message.generateRequestURI(author, date, index);
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = 3;
@@ -141,12 +147,29 @@ public class WoTMessageFetcher extends MessageFetcher {
 
 	@Override
 	public void onSuccess(FetchResult result, ClientGetter state) {
-		// TODO Auto-generated method stub
+		Logger.debug(this, "Fetched message: " + state.getURI());
+		
+		try {
+			Message message = MessageXML.decode(db, result.asBucket().getInputStream(), state.getURI());
+			try {
+				mMessageManager.get(message.getID());
+			}
+			catch(NoSuchMessageException e) {
+				message.store();
+			}
+			removeFetch(state);
+			
+			fetchMessage(message.getAuthor(), message.getDate(), message.getIndex() + 1);
+		}
+		catch (Exception e) {
+			Logger.error(this, "Parsing failed for message " + state.getURI());
+		}
 	}
 	
 	@Override
 	public void onFailure(FetchException e, ClientGetter state) {
-		// TODO Auto-generated method stub
+		Logger.debug(this, "Downloading message " + state.getURI() + " failed.", e);
+		removeFetch(state);
 	}
 	
 	
