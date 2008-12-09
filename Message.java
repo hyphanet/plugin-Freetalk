@@ -4,6 +4,7 @@
 package plugins.Freetalk;
 
 import java.io.UnsupportedEncodingException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
@@ -178,6 +179,22 @@ public class Message {
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	
+	protected static FreenetURI generateURI(FreenetURI baseURI, FTIdentity author, Date date, int index) {
+		String dayOfInsertion;
+		synchronized (mDateFormat) {
+			dayOfInsertion = mDateFormat.format(date);
+		}
+		baseURI = baseURI.setKeyType("SSK");
+		baseURI = baseURI.setDocName(Freetalk.PLUGIN_TITLE + "|" + "Message" + "|" + dayOfInsertion + "-" + index + ".xml");
+		return baseURI.setMetaString(null);
+	}
+	
+	public static FreenetURI generateRequestURI(FTIdentity author, Date date, int index) {
+		return generateURI(author.getRequestURI(), author, date, index);
 	}
 	
 	/**
