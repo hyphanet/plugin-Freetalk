@@ -122,7 +122,7 @@ public class FreetalkNNTPServer implements Runnable {
 		synchronized(clientHandlers) {
 			// Close client sockets
 			for (Iterator<FreetalkNNTPHandler> i = clientHandlers.iterator(); i.hasNext(); ) {
-				FreetalkNNTPHandler handler = (FreetalkNNTPHandler) i.next();
+				FreetalkNNTPHandler handler = i.next();
 				handler.terminate();
 			}
 		}

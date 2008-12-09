@@ -7,18 +7,21 @@ import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.OwnMessage;
+import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import java.net.Socket;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Iterator;
+import java.util.HashSet;
 
 import freenet.support.Logger;
 
@@ -33,7 +36,6 @@ public class FreetalkNNTPHandler implements Runnable {
 	private MessageManager mMessageManager;
 
 	private Socket socket;
-	private BufferedReader in;
 	private PrintStream out;
 
 	/** Current board (selected by the GROUP command) */
@@ -262,12 +264,15 @@ public class FreetalkNNTPHandler implements Runnable {
 	}
 
 	/**
-	 * Handle a command from the client.
+	 * Handle a command from the client.  If the command requires a
+	 * text data section, this function returns true (and
+	 * finishCommand should be called after the text has been
+	 * received.)
 	 */
-	private synchronized void handleCommand(String line) throws IOException {
+	private synchronized boolean beginCommand(String line) throws IOException {
 		String[] tokens = line.split("[ \t\r\n]+");
 		if (tokens.length == 0)
-			return;
+			return false;
 
 		String command = tokens[0];
 
@@ -353,6 +358,10 @@ public class FreetalkNNTPHandler implements Runnable {
 				printStatusLine("501 Syntax error");
 			}
 		}
+		else if (command.equalsIgnoreCase("POST")) {
+			printStatusLine("340 Please send article to be posted");
+			return true;
+		}
 		else if (command.equalsIgnoreCase("QUIT")) {
 			printStatusLine("205 Have a nice day.");
 			socket.close();
@@ -371,7 +380,181 @@ public class FreetalkNNTPHandler implements Runnable {
 		else {
 			printStatusLine("500 Command not recognized");
 		}
+
+		return false;
 	}
+
+	/**
+	 * Find the user's OwnIdentity corresponding to the given mail
+	 * address.  Use domain part to disambiguate if we have multiple
+	 * identities with the same nickname.
+	 */
+	private FTOwnIdentity getAuthorIdentity(String name, String domain) {
+		FTOwnIdentity bestMatch = null;
+		boolean matchName = false, matchDomain = false, multiple = false;
+
+		Logger.debug(this, "Received message from " + name + "@" + domain);
+
+		Iterator<FTOwnIdentity> i = mIdentityManager.ownIdentityIterator();
+		while (i.hasNext()) {
+			FTOwnIdentity identity = i.next();
+			if (identity.getNickname().equals(name)) {
+				String uid = identity.getUID();
+				if (uid.startsWith(domain) || domain.startsWith(uid)) {
+					if (matchDomain)
+						multiple = true;
+					bestMatch = identity;
+					matchName = matchDomain = true;
+				}
+				else if (!matchDomain) {
+					if (matchName)
+						multiple = true;
+					bestMatch = identity;
+					matchName = true;
+				}
+			}
+		}
+
+		if (multiple) {
+			printStatusLine("441 Multiple identities matching sender");
+			return null;
+		}
+		else if (bestMatch == null) {
+			printStatusLine("441 Unknown sender <" + name + "@" + domain + ">");
+			return null;
+		}
+		else
+			return bestMatch;
+	}
+
+	/**
+	 * Handle a command that includes a text data block.
+	 */
+	private synchronized void finishCommand(String line, ByteBuffer text) {
+		ArticleParser parser = new ArticleParser();
+
+		if (!parser.parseMessage(text)) {
+			printStatusLine("441 Unable to parse message");
+		}
+		else {
+			FTOwnIdentity myIdentity = getAuthorIdentity(parser.getAuthorName(), parser.getAuthorDomain());
+			if (myIdentity == null)
+				return;
+
+			synchronized(mMessageManager) {
+				HashSet<Board> boardSet = new HashSet<Board>();
+				for (Iterator<String> i = parser.getBoards().iterator(); i.hasNext(); ) {
+					String name = i.next();
+					try {
+						Board board = mMessageManager.getBoardByName(name);
+						boardSet.add(board);
+					}
+					catch (NoSuchBoardException e) {
+						// FIXME: what to do here?  Create the board,
+						// as FMS does?  Silently ignore it?  Reject
+						// the message?
+					}
+				}
+
+				Board replyBoard = null;
+				String replyBoardName = parser.getReplyToBoard();
+				if (replyBoardName != null) {
+					try {
+						replyBoard = mMessageManager.getBoardByName(replyBoardName);
+						boardSet.add(replyBoard);
+					}
+					catch (NoSuchBoardException e) {
+						// FIXME: same question as above...
+					}
+				}
+
+				Message parentMessage = null;
+				String parentMessageID = parser.getParentID();
+				if (parentMessageID != null) {
+					try {
+						parentMessage = mMessageManager.get(parentMessageID);
+					}
+					catch (NoSuchMessageException e) {
+						// ignore (?)
+					}
+				}
+
+				try {
+					OwnMessage message = mMessageManager.postMessage(parentMessage, boardSet, replyBoard, myIdentity, parser.getTitle(), parser.getText(), null);
+					printStatusLine("240 Message posted; ID is <" + message.getID() + ">");
+				}
+				catch (Exception e) {
+					Logger.normal(this, "Error posting message: ", e);
+					printStatusLine("441 Posting failed");
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * Read an input line (terminated by the ASCII LF character) as a
+	 * byte sequence.
+	 */
+	private ByteBuffer readLineBytes(InputStream is) throws IOException {
+		ByteBuffer buf = ByteBuffer.allocateDirect(100);
+		int b;
+
+		do {
+			b = is.read();
+			if (b >= 0) {
+				if (!buf.hasRemaining()) {
+					// resize input buffer
+					ByteBuffer newbuf = ByteBuffer.allocateDirect(buf.capacity() * 2);
+					newbuf.put(buf);
+					buf = newbuf;
+				}
+				buf.put((byte) b);
+			}
+		} while (b >= 0 && b != '\n');
+
+		buf.flip();
+		return buf;
+	}
+
+	/**
+	 * Read a complete text block (terminated by a '.' on a line by
+	 * itself).
+	 */
+	private ByteBuffer readTextDataBytes(InputStream is) throws IOException {
+		ByteBuffer buf = ByteBuffer.allocateDirect(1024);
+		ByteBuffer line;
+
+		while (true) {
+			line = readLineBytes(is);
+
+			if (!line.hasRemaining())
+				return null;	// text block not completed --
+								// consider message aborted.
+
+			if (line.get(0) == '.') {
+				if ((line.remaining() == 2 && line.get(1) == '\n')
+					|| (line.remaining() == 3 && line.get(1) == '\r' && line.get(2) == '\n')) {
+					buf.flip();
+					return buf;
+				}
+				else {
+					// Initial dot must always be skipped (even if the
+					// second character isn't a dot)
+					line.get();
+				}
+			}
+
+			// append line to the end of the buffer
+			if (line.remaining() > buf.remaining()) {
+				ByteBuffer newbuf = ByteBuffer.allocateDirect((buf.position() + line.remaining()) * 2);
+				newbuf.put(buf);
+				buf = newbuf;
+			}
+			buf.put(line);
+		}
+	}
+
 
 	/**
 	 * Main command loop
@@ -380,16 +563,20 @@ public class FreetalkNNTPHandler implements Runnable {
 		try {
 			InputStream is = socket.getInputStream();
 			OutputStream os = socket.getOutputStream();
+			ByteBuffer bytes;
 			String line;
+			Charset utf8 = Charset.forName("UTF-8");
 
-			in = new BufferedReader(new InputStreamReader(is, "UTF-8"));
 			out = new PrintStream(os, false, "UTF-8");
 
 			printStatusLine("200 Welcome to Freetalk");
 			while (!socket.isClosed()) {
-				line = in.readLine();
-				if (line != null)
-					handleCommand(line);
+				bytes = readLineBytes(is);
+				line = utf8.decode(bytes).toString();
+				if (beginCommand(line)) {
+					bytes = readTextDataBytes(is);
+					finishCommand(line, bytes);
+				}
 			}
 		}
 		catch (IOException e) {
