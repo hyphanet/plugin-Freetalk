@@ -145,6 +145,8 @@ public class FreetalkNNTPArticle {
 				if (!text.equals("")) {
 					builder.append(hdr.getName());
 					builder.append(": ");
+					// FIXME: fold header onto multiple lines if
+					// necessary
 					builder.append(text);
 					builder.append("\n");
 				}
