@@ -60,7 +60,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		super();
 	}
 
-	public synchronized FTIdentity getIdentity(String uid) throws NoSuchIdentityException {
+	public synchronized WoTIdentity getIdentity(String uid) throws NoSuchIdentityException {
 		Query q = db.query();
 		q.constrain(WoTIdentity.class);
 		q.descend("mUID").constrain(uid);
@@ -75,7 +75,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		return result.next();
 	}
 	
-	public synchronized FTOwnIdentity getOwnIdentity(String uid) throws NoSuchIdentityException {
+	public synchronized WoTOwnIdentity getOwnIdentity(String uid) throws NoSuchIdentityException {
 		Query q = db.query();
 		q.constrain(WoTOwnIdentity.class);
 		q.descend("mUID").constrain(uid);

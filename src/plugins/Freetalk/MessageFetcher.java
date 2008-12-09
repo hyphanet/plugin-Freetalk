@@ -11,12 +11,14 @@ import freenet.support.TransferThread;
 public abstract class MessageFetcher extends TransferThread {
 
 	protected static final int STARTUP_DELAY = 1 * 60 * 1000;
-	protected static final int THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release */
+	protected static final int THREAD_PERIOD = 15 * 60 * 1000; /* FIXME: tweak before release */
 	
 	protected IdentityManager mIdentityManager;
+	protected MessageManager mMessageManager;
 	
-	public MessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager) {
+	public MessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager, MessageManager myMessageManager) {
 		super(myNode, myClient, myName);
 		mIdentityManager = myIdentityManager;
+		mMessageManager = myMessageManager;
 	}
 }
