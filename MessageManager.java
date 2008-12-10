@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
 
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
@@ -67,9 +68,36 @@ public abstract class MessageManager implements Runnable {
 	 */
 	public abstract OwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
 			String myTitle, String myText, List<Attachment> myAttachments);
-	
-	public abstract OwnMessage postMessage(Message myParentMessage, Set<String> myBoards, String myReplyToBoard, FTOwnIdentity myAuthor,
-			String myTitle, String myText, List<Attachment> myAttachments);
+
+	public OwnMessage postMessage(Message myParentMessage, Set<String> myBoards, String myReplyToBoard, FTOwnIdentity myAuthor,
+			String myTitle, String myText, List<Attachment> myAttachments) {
+
+		// FIXME: still need to figure out our policy for creating new
+		// boards.
+		HashSet<Board> boardSet = new HashSet<Board>();
+		for (Iterator<String> i = myBoards.iterator(); i.hasNext(); ) {
+			String boardName = i.next();
+			try {
+				Board board = getBoardByName(boardName);
+				boardSet.add(board);
+			}
+			catch (NoSuchBoardException e) {
+
+			}
+		}
+
+		Board replyToBoard = null;
+		if (myReplyToBoard != null) {
+			try {
+				replyToBoard = getBoardByName(myReplyToBoard);
+			}
+			catch (NoSuchBoardException e) {
+				// ignore
+			}
+		}
+
+		return postMessage(myParentMessage, boardSet, replyToBoard, myAuthor, myTitle, myText, myAttachments);
+	}
 
 	/**
 	 * Get a message by its URI. The transient fields of the returned message will be initialized already.
