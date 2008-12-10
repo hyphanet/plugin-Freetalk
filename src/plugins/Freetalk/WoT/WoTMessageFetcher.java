@@ -12,14 +12,14 @@ import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import com.db4o.ObjectContainer;
-
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageFetcher;
 import plugins.Freetalk.MessageXML;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
-import plugins.WoT.introduction.IntroductionPuzzle;
+
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
