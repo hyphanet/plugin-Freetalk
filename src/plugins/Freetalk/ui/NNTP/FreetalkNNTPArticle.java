@@ -46,8 +46,16 @@ public class FreetalkNNTPArticle {
 
 	private final Message message;
 
+	private final int messageNum;
+
 	public FreetalkNNTPArticle(Message message) {
 		this.message = message;
+		messageNum = 0;
+	}
+
+	public FreetalkNNTPArticle(Message message, int messageNum) {
+		this.message = message;
+		this.messageNum = messageNum;
 	}
 
 	/**
@@ -55,6 +63,13 @@ public class FreetalkNNTPArticle {
 	 */
 	public Message getMessage() {
 		return message;
+	}
+
+	/**
+	 * Get the message number, or 0 if none was set.
+	 */
+	public int getMessageNum() {
+		return messageNum;
 	}
 
 	/**

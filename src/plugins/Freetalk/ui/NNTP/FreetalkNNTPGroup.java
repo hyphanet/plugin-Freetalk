@@ -4,6 +4,8 @@
 package plugins.Freetalk.ui.NNTP;
 
 import plugins.Freetalk.Board;
+import plugins.Freetalk.Message;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 /**
  * Object representing a newsgroup, as seen from the NNTP client's
@@ -35,15 +37,23 @@ public class FreetalkNNTPGroup {
 	/**
 	 * Get the first valid message number.
 	 */
-	public long firstMessage() {
+	public int firstMessage() {
 		return 1;				// FIXME
 	}
 
 	/**
 	 * Get the last valid message number.
 	 */
-	public long lastMessage() {
+	public int lastMessage() {
 		return 0;				// FIXME
+	}
+
+	/**
+	 * Get the article with the given index
+	 */
+	public FreetalkNNTPArticle getMessage(int messageNum) throws NoSuchMessageException {
+		Message msg = board.getMessageByIndex(messageNum);
+		return new FreetalkNNTPArticle(msg, messageNum);
 	}
 
 	/**
