@@ -39,5 +39,4 @@ public class MessageXMLTest extends TestCase {
 		
 		/* FIXME: As soon as the decoder is available, decode the message again and check whether the decoded message equals the original one */
 	}
-
 }
