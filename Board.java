@@ -348,7 +348,10 @@ public class Board {
 	private int mFreeMessageIndex = 1;
 	
 	private synchronized int getFreeMessageIndex() {
-		return mFreeMessageIndex++;
+		int result = mFreeMessageIndex;
+		++mFreeMessageIndex;
+		store();
+		return result;
 	}
 	
 	public synchronized void store() {
