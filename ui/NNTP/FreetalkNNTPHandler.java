@@ -43,7 +43,10 @@ public class FreetalkNNTPHandler implements Runnable {
 
 	/** Current board (selected by the GROUP command) */
 	private FreetalkNNTPGroup currentGroup;
-	
+
+	/** Current message number within the group */
+	private int currentMessageNum;
+
 	private final static String CRLF = "\r\n";
 
 	/** Date format used by the DATE command */
@@ -123,8 +126,23 @@ public class FreetalkNNTPHandler implements Runnable {
 	 * can't be found.
 	 */
 	private FreetalkNNTPArticle getArticle(String desc, boolean setCurrent) {
-		if (desc != null && desc.length() > 2 && desc.charAt(0) == '<'
-			&& desc.charAt(desc.length() - 1) == '>') {
+		if (desc == null) {
+			if (currentGroup == null) {
+				printStatusLine("412 No newsgroup selected");
+				return null;
+			}
+			else {
+				try {
+					return currentGroup.getMessage(currentMessageNum);
+				}
+				catch (NoSuchMessageException e) {
+					printStatusLine("420 Current article number is invalid");
+					return null;
+				}
+			}
+		}
+		else if (desc.length() > 2 && desc.charAt(0) == '<'
+				 && desc.charAt(desc.length() - 1) == '>') {
 
 			String msgid = desc.substring(1, desc.length() - 1);
 			try {
@@ -136,9 +154,27 @@ public class FreetalkNNTPHandler implements Runnable {
 			}
 		}
 		else {
-			// Other forms of these commands are not (yet) implemented
-			printStatusLine("501 Syntax error");
-			return null;
+			try {
+				int messageNum = Integer.parseInt(desc);
+				if (currentGroup == null) {
+					printStatusLine("412 No newsgroup selected");
+					return null;
+				}
+				else {
+					FreetalkNNTPArticle article = currentGroup.getMessage(messageNum);
+					if (setCurrent)
+						currentMessageNum = messageNum;
+					return article;
+				}
+			}
+			catch (NoSuchMessageException e) {
+				printStatusLine("423 No article with that number");
+				return null;
+			}
+			catch (NumberFormatException e) {
+				printStatusLine("501 Syntax error");
+				return null;
+			}
 		}
 	}
 
@@ -153,24 +189,28 @@ public class FreetalkNNTPHandler implements Runnable {
 			return;
 
 		if (printHead && printBody) {
-			printStatusLine("220 0 <" + article.getMessage().getID() + ">");
+			printStatusLine("220 " + article.getMessageNum()
+							+ " <" + article.getMessage().getID() + ">");
 			printText(article.getHead());
 			printTextResponseLine("");
 			printText(article.getBody());
 			endTextResponse();
 		}
 		else if (printHead) {
-			printStatusLine("221 0 <" + article.getMessage().getID() + ">");
+			printStatusLine("221 " + article.getMessageNum()
+							+ " <" + article.getMessage().getID() + ">");
 			printText(article.getHead());
 			endTextResponse();
 		}
 		else if (printBody) {
-			printStatusLine("222 0 <" + article.getMessage().getID() + ">");
+			printStatusLine("222 " + article.getMessageNum()
+							+ " <" + article.getMessage().getID() + ">");
 			printText(article.getBody());
 			endTextResponse();
 		}
 		else {
-			printStatusLine("223 0 <" + article.getMessage().getID() + ">");
+			printStatusLine("223 " + article.getMessageNum()
+							+ " <" + article.getMessage().getID() + ">");
 		}
 	}
 
@@ -182,6 +222,7 @@ public class FreetalkNNTPHandler implements Runnable {
 		try {
 			Board board = mMessageManager.getBoardByName(name);
 			currentGroup = new FreetalkNNTPGroup(board);
+			currentMessageNum = currentGroup.firstMessage();
 			printStatusLine("211 " + currentGroup.messageCount()
 							+ " " + currentGroup.firstMessage()
 							+ " " + currentGroup.lastMessage()
@@ -217,11 +258,11 @@ public class FreetalkNNTPHandler implements Runnable {
 		if (article != null) {
 			printStatusLine("224 Header contents follow");
 			if (header.equalsIgnoreCase(":bytes"))
-				printTextResponseLine("0 " + article.getByteCount());
+				printTextResponseLine(article.getMessageNum() + " " + article.getByteCount());
 			else if (header.equalsIgnoreCase(":lines"))
-				printTextResponseLine("0 " + article.getBodyLineCount());
+				printTextResponseLine(article.getMessageNum() + " " + article.getBodyLineCount());
 			else
-				printTextResponseLine("0 " + article.getHeaderByName(header));
+				printTextResponseLine(article.getMessageNum() + " " + article.getHeaderByName(header));
 			endTextResponse();
 		}
 	}
@@ -233,7 +274,7 @@ public class FreetalkNNTPHandler implements Runnable {
 		FreetalkNNTPArticle article = getArticle(articleDesc, false);
 		if (article != null) {
 			printStatusLine("224 Overview follows");
-			printTextResponseLine("0\t" + article.getHeader(FreetalkNNTPArticle.Header.SUBJECT)
+			printTextResponseLine(article.getMessageNum() + "\t" + article.getHeader(FreetalkNNTPArticle.Header.SUBJECT)
 								  + "\t" + article.getHeader(FreetalkNNTPArticle.Header.FROM)
 								  + "\t" + article.getHeader(FreetalkNNTPArticle.Header.DATE)
 								  + "\t" + article.getHeader(FreetalkNNTPArticle.Header.MESSAGE_ID)
