@@ -67,6 +67,9 @@ public abstract class MessageManager implements Runnable {
 	 */
 	public abstract OwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
 			String myTitle, String myText, List<Attachment> myAttachments);
+	
+	public abstract OwnMessage postMessage(Message myParentMessage, Set<String> myBoards, String myReplyToBoard, FTOwnIdentity myAuthor,
+			String myTitle, String myText, List<Attachment> myAttachments);
 
 	/**
 	 * Get a message by its URI. The transient fields of the returned message will be initialized already.

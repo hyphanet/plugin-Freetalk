@@ -472,45 +472,10 @@ public class FreetalkNNTPHandler implements Runnable {
 				return;
 
 			synchronized(mMessageManager) {
-				HashSet<Board> boardSet = new HashSet<Board>();
-				for (Iterator<String> i = parser.getBoards().iterator(); i.hasNext(); ) {
-					String name = i.next();
-					try {
-						Board board = mMessageManager.getBoardByName(name);
-						boardSet.add(board);
-					}
-					catch (NoSuchBoardException e) {
-						// FIXME: what to do here?  Create the board,
-						// as FMS does?  Silently ignore it?  Reject
-						// the message?
-					}
-				}
-
-				Board replyBoard = null;
-				String replyBoardName = parser.getReplyToBoard();
-				if (replyBoardName != null) {
-					try {
-						replyBoard = mMessageManager.getBoardByName(replyBoardName);
-						boardSet.add(replyBoard);
-					}
-					catch (NoSuchBoardException e) {
-						// FIXME: same question as above...
-					}
-				}
-
-				Message parentMessage = null;
-				String parentMessageID = parser.getParentID();
-				if (parentMessageID != null) {
-					try {
-						parentMessage = mMessageManager.get(parentMessageID);
-					}
-					catch (NoSuchMessageException e) {
-						// ignore (?)
-					}
-				}
-
 				try {
-					OwnMessage message = mMessageManager.postMessage(parentMessage, boardSet, replyBoard, myIdentity, parser.getTitle(), parser.getText(), null);
+					Message parentMessage = mMessageManager.get(parser.getParentID());
+					HashSet<String> boardSet = new HashSet<String>(parser.getBoards());
+					OwnMessage message = mMessageManager.postMessage(parentMessage, boardSet, parser.getReplyToBoard(), myIdentity, parser.getTitle(), parser.getText(), null);
 					printStatusLine("240 Message posted; ID is <" + message.getID() + ">");
 				}
 				catch (Exception e) {
