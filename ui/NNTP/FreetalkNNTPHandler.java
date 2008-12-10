@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Date;
@@ -264,14 +265,80 @@ public class FreetalkNNTPHandler implements Runnable {
 		try {
 			Board board = mMessageManager.getBoardByName(name);
 			currentGroup = new FreetalkNNTPGroup(board);
+			synchronized (board) {
+				currentMessageNum = currentGroup.firstMessage();
+				printStatusLine("211 " + currentGroup.messageCount()
+								+ " " + currentGroup.firstMessage()
+								+ " " + currentGroup.lastMessage()
+								+ " " + board.getNameNNTP());
+			}
+		}
+		catch(NoSuchBoardException e) {
+			printStatusLine("411 No such group");
+		}
+	}
+
+	/**
+	 * Handle the LISTGROUP command.
+	 */
+	private void selectGroupWithList(String name, String range) {
+		Matcher matcher = rangePattern.matcher(range);
+
+		if (!matcher.matches()) {
+			printStatusLine("501 Syntax error");
+			return;
+		}
+
+		String startStr = matcher.group(1);
+		String dashStr = matcher.group(2);
+		String endStr = matcher.group(3);
+
+		int start = Integer.parseInt(startStr);
+		int end;
+
+		if (dashStr == null)
+			end = start;
+		else if (endStr == null)
+			end = -1;
+		else
+			end = Integer.parseInt(endStr);
+
+		if (name != null) {
+			try {
+				Board board = mMessageManager.getBoardByName(name);
+				currentGroup = new FreetalkNNTPGroup(board);
+			}
+			catch (NoSuchBoardException e) {
+				printStatusLine("411 No such group");
+				return;
+			}
+		}
+		else if (currentGroup == null) {
+			printStatusLine("412 No newsgroup selected");
+			return;
+		}
+
+		synchronized (currentGroup.getBoard()) {
 			currentMessageNum = currentGroup.firstMessage();
 			printStatusLine("211 " + currentGroup.messageCount()
 							+ " " + currentGroup.firstMessage()
 							+ " " + currentGroup.lastMessage()
-							+ " " + board.getNameNNTP());
-		}
-		catch(NoSuchBoardException e) {
-			printStatusLine("411 No such group");
+							+ " " + currentGroup.getBoard().getNameNNTP());
+
+			if (end == -1)
+				end = currentGroup.lastMessage();
+
+			List<Board.MessageReference> messages = currentGroup.getBoard().getAllMessages();
+
+			for (Iterator<Board.MessageReference> i = messages.iterator(); i.hasNext(); ) {
+				int index = i.next().getIndex();
+				if (index > end)
+					break;
+				else if (index >= start)
+					printTextResponseLine(Integer.toString(index));
+			}
+
+			endTextResponse();
 		}
 	}
 
@@ -455,6 +522,20 @@ public class FreetalkNNTPHandler implements Runnable {
 			}
 			else if (tokens[1].equalsIgnoreCase("OVERVIEW.FMT")) {
 				printOverviewFormat();
+			}
+			else {
+				printStatusLine("501 Syntax error");
+			}
+		}
+		else if (command.equalsIgnoreCase("LISTGROUP")) {
+			if (tokens.length == 1) {
+				selectGroupWithList(null, "1-");
+			}
+			else if (tokens.length == 2) {
+				selectGroupWithList(tokens[1], "1-");
+			}
+			else if (tokens.length == 3) {
+				selectGroupWithList(tokens[1], tokens[2]);
 			}
 			else {
 				printStatusLine("501 Syntax error");

@@ -318,6 +318,7 @@ public class Board {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
 		q.descend("mBoard").constrain(this);
+		q.descend("mMessageIndex").orderAscending();
 		return q.execute();
 	}
 	
