@@ -7,6 +7,9 @@ import plugins.Freetalk.Board;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 /**
  * Object representing a newsgroup, as seen from the NNTP client's
  * point of view.
@@ -38,22 +41,71 @@ public class FreetalkNNTPGroup {
 	 * Get the first valid message number.
 	 */
 	public int firstMessage() {
-		return 1;				// FIXME
+		return 1;
 	}
 
 	/**
 	 * Get the last valid message number.
 	 */
 	public int lastMessage() {
-		return 0;				// FIXME
+		return board.getLastMessageIndex();
 	}
 
 	/**
-	 * Get the article with the given index
+	 * Get an iterator for articles in the given range.
 	 */
-	public FreetalkNNTPArticle getMessage(int messageNum) throws NoSuchMessageException {
-		Message msg = board.getMessageByIndex(messageNum);
-		return new FreetalkNNTPArticle(msg, messageNum);
+	public Iterator<FreetalkNNTPArticle> getMessageIterator(int start, int end) throws NoSuchMessageException {
+		synchronized (board) {
+			if (start < firstMessage())
+				start = firstMessage();
+
+			if (end == -1 || end > lastMessage())
+				end = lastMessage();
+
+			Iterator<FreetalkNNTPArticle> iter;
+
+			final int startIndex = start;
+			final int endIndex = end;
+
+			iter = new Iterator<FreetalkNNTPArticle>() {
+				private int currentIndex = startIndex;
+				private Message currentMessage = null;
+
+				public boolean hasNext() {
+					if (currentMessage != null)
+						return true;
+
+					while (currentIndex <= endIndex) {
+						try {
+							currentMessage = board.getMessageByIndex(currentIndex);
+							return true;
+						}
+						catch (NoSuchMessageException e) {
+							// ignore
+						}
+						currentIndex++;
+					}
+					return false;
+				}
+
+				public FreetalkNNTPArticle next() {
+					if (!hasNext())
+						throw new NoSuchElementException();
+					else {
+						return new FreetalkNNTPArticle(currentMessage, currentIndex++);
+					}
+				}
+
+				public void remove() {
+					throw new UnsupportedOperationException();
+				}
+			};
+
+			if (!iter.hasNext())
+				throw new NoSuchMessageException();
+
+			return iter;
+		}
 	}
 
 	/**

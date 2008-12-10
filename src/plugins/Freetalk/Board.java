@@ -332,6 +332,10 @@ public class Board {
 		
 		return result.next().getIndex();
 	}
+
+	public synchronized int getLastMessageIndex() {
+		return mFreeMessageIndex - 1;
+	}
 	
 	public synchronized Message getMessageByIndex(int index) throws NoSuchMessageException {
 		Query q = db.query();
