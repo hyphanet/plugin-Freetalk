@@ -13,6 +13,7 @@ import junit.framework.TestCase;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.MessageXML;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.Message.Attachment;
@@ -35,7 +36,7 @@ public class XMLTest extends TestCase {
 		attachments.add(new Attachment(new FreenetURI("KSK@attachment1"), 10001));
 		attachments.add(new Attachment(new FreenetURI("KSK@attachment2"), 10002));
 		OwnMessage originalMessage = new OwnMessage(parentThread, parentThread, boards, board, identity, "title2", new Date(), 24, "text2", attachments);
-		WoTMessageInserter.MessageEncoder.encode(originalMessage, System.out);
+		MessageXML.encode(originalMessage, System.out);
 		
 		/* FIXME: As soon as the decoder is available, decode the message again and check whether the decoded message equals the original one */
 	}
