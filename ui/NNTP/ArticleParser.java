@@ -77,7 +77,9 @@ public class ArticleParser {
 		return replyToBoard;
 	}
 
-	public String getParentID() {
+	public String getParentID() throws NoSuchFieldException {
+		if(parentID == null)
+			throw new NoSuchFieldException(); /* FIXME: Also throw this in the other getter functions */
 		return parentID;
 	}
 
