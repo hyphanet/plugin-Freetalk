@@ -21,10 +21,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Date;
 import java.util.SimpleTimeZone;
 import java.text.SimpleDateFormat;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import freenet.support.Logger;
 
@@ -53,6 +56,10 @@ public class FreetalkNNTPHandler implements Runnable {
 	private final static SimpleDateFormat serverDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
 	private final static SimpleTimeZone utcTimeZone = new SimpleTimeZone(0, "UTC");
+
+	/** Pattern for matching valid "range" arguments. */
+	private final static Pattern rangePattern = Pattern.compile("(\\d+)(-(\\d+)?)?");
+
 
 	public FreetalkNNTPHandler(Freetalk ft, Socket socket) {
 		mIdentityManager = ft.getIdentityManager();
@@ -122,23 +129,27 @@ public class FreetalkNNTPHandler implements Runnable {
 	}
 
 	/**
-	 * Find the article named by 'desc'.  Print an error message if it
-	 * can't be found.
+	 * Get an iterator for the article or range of articles described
+	 * by 'desc'.  (The description may either be null, indicating the
+	 * current article; a message ID, enclosed in angle brackets; a
+	 * single number, indicating that message number; a number
+	 * followed by a dash, indicating an unbounded range; or a number
+	 * followed by a dash and a second number, indicating a bounded
+	 * range.)  Print an error message if it can't be found.
 	 */
-	private FreetalkNNTPArticle getArticle(String desc, boolean setCurrent) {
+	private Iterator<FreetalkNNTPArticle> getArticleRangeIterator(String desc, boolean single) {
 		if (desc == null) {
 			if (currentGroup == null) {
 				printStatusLine("412 No newsgroup selected");
 				return null;
 			}
-			else {
-				try {
-					return currentGroup.getMessage(currentMessageNum);
-				}
-				catch (NoSuchMessageException e) {
-					printStatusLine("420 Current article number is invalid");
-					return null;
-				}
+
+			try {
+				return currentGroup.getMessageIterator(currentMessageNum, currentMessageNum);
+			}
+			catch (NoSuchMessageException e) {
+				printStatusLine("420 Current article number is invalid");
+				return null;
 			}
 		}
 		else if (desc.length() > 2 && desc.charAt(0) == '<'
@@ -146,7 +157,10 @@ public class FreetalkNNTPHandler implements Runnable {
 
 			String msgid = desc.substring(1, desc.length() - 1);
 			try {
-				return new FreetalkNNTPArticle(mMessageManager.get(msgid));
+				Message msg = mMessageManager.get(msgid);
+				ArrayList<FreetalkNNTPArticle> list = new ArrayList<FreetalkNNTPArticle>();
+				list.add(new FreetalkNNTPArticle(msg));
+				return list.iterator();
 			}
 			catch(NoSuchMessageException e) {
 				printStatusLine("430 No such article");
@@ -155,21 +169,44 @@ public class FreetalkNNTPHandler implements Runnable {
 		}
 		else {
 			try {
-				int messageNum = Integer.parseInt(desc);
+				Matcher matcher = rangePattern.matcher(desc);
+
+				if (!matcher.matches()) {
+					printStatusLine("501 Syntax error");
+					return null;
+				}
+
+				String startStr = matcher.group(1);
+				String dashStr = matcher.group(2);
+				String endStr = matcher.group(3);
+
+				int start = Integer.parseInt(startStr);
+				int end;
+
+				if (dashStr == null)
+					end = start;
+				else if (endStr == null)
+					end = -1;
+				else
+					end = Integer.parseInt(endStr);
+
+				if (dashStr != null && single) {
+					printStatusLine("501 Syntax error");
+					return null;
+				}
+
 				if (currentGroup == null) {
 					printStatusLine("412 No newsgroup selected");
 					return null;
 				}
-				else {
-					FreetalkNNTPArticle article = currentGroup.getMessage(messageNum);
-					if (setCurrent)
-						currentMessageNum = messageNum;
-					return article;
+
+				try {
+					return currentGroup.getMessageIterator(start, end);
 				}
-			}
-			catch (NoSuchMessageException e) {
-				printStatusLine("423 No article with that number");
-				return null;
+				catch (NoSuchMessageException e) {
+					printStatusLine("423 No articles in that range");
+					return null;
+				}
 			}
 			catch (NumberFormatException e) {
 				printStatusLine("501 Syntax error");
@@ -183,10 +220,15 @@ public class FreetalkNNTPHandler implements Runnable {
 	 * Handle the ARTICLE / BODY / HEAD / STAT commands.
 	 */
 	private void selectArticle(String desc, boolean printHead, boolean printBody) {
-		FreetalkNNTPArticle article = getArticle(desc, true);
+		Iterator<FreetalkNNTPArticle> iter = getArticleRangeIterator(desc, true);
 
-		if (article == null)
+		if (iter == null)
 			return;
+
+		FreetalkNNTPArticle article = iter.next();
+
+		if (article.getMessageNum() != 0)
+			currentMessageNum = article.getMessageNum();
 
 		if (printHead && printBody) {
 			printStatusLine("220 " + article.getMessageNum()
@@ -254,15 +296,20 @@ public class FreetalkNNTPHandler implements Runnable {
 	 * Handle the HDR / XHDR command.
 	 */
 	private void printArticleHeader(String header, String articleDesc) {
-		FreetalkNNTPArticle article = getArticle(articleDesc, false);
-		if (article != null) {
+		Iterator<FreetalkNNTPArticle> iter = getArticleRangeIterator(articleDesc, false);
+
+		if (iter != null) {
 			printStatusLine("224 Header contents follow");
-			if (header.equalsIgnoreCase(":bytes"))
-				printTextResponseLine(article.getMessageNum() + " " + article.getByteCount());
-			else if (header.equalsIgnoreCase(":lines"))
-				printTextResponseLine(article.getMessageNum() + " " + article.getBodyLineCount());
-			else
-				printTextResponseLine(article.getMessageNum() + " " + article.getHeaderByName(header));
+			while (iter.hasNext()) {
+				FreetalkNNTPArticle article = iter.next();
+
+				if (header.equalsIgnoreCase(":bytes"))
+					printTextResponseLine(article.getMessageNum() + " " + article.getByteCount());
+				else if (header.equalsIgnoreCase(":lines"))
+					printTextResponseLine(article.getMessageNum() + " " + article.getBodyLineCount());
+				else
+					printTextResponseLine(article.getMessageNum() + " " + article.getHeaderByName(header));
+			}
 			endTextResponse();
 		}
 	}
@@ -271,16 +318,21 @@ public class FreetalkNNTPHandler implements Runnable {
 	 * Handle the OVER / XOVER command.
 	 */
 	private void printArticleOverview(String articleDesc) {
-		FreetalkNNTPArticle article = getArticle(articleDesc, false);
-		if (article != null) {
+		Iterator<FreetalkNNTPArticle> iter = getArticleRangeIterator(articleDesc, false);
+
+		if (iter != null) {
 			printStatusLine("224 Overview follows");
-			printTextResponseLine(article.getMessageNum() + "\t" + article.getHeader(FreetalkNNTPArticle.Header.SUBJECT)
-								  + "\t" + article.getHeader(FreetalkNNTPArticle.Header.FROM)
-								  + "\t" + article.getHeader(FreetalkNNTPArticle.Header.DATE)
-								  + "\t" + article.getHeader(FreetalkNNTPArticle.Header.MESSAGE_ID)
-								  + "\t" + article.getHeader(FreetalkNNTPArticle.Header.REFERENCES)
-								  + "\t" + article.getByteCount()
-								  + "\t" + article.getBodyLineCount());
+			while (iter.hasNext()) {
+				FreetalkNNTPArticle article = iter.next();
+
+				printTextResponseLine(article.getMessageNum() + "\t" + article.getHeader(FreetalkNNTPArticle.Header.SUBJECT)
+									  + "\t" + article.getHeader(FreetalkNNTPArticle.Header.FROM)
+									  + "\t" + article.getHeader(FreetalkNNTPArticle.Header.DATE)
+									  + "\t" + article.getHeader(FreetalkNNTPArticle.Header.MESSAGE_ID)
+									  + "\t" + article.getHeader(FreetalkNNTPArticle.Header.REFERENCES)
+									  + "\t" + article.getByteCount()
+									  + "\t" + article.getBodyLineCount());
+			}
 			endTextResponse();
 		}
 	}
