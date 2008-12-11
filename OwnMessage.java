@@ -15,11 +15,11 @@ public final class OwnMessage extends Message {
 
 	public OwnMessage(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor, String newTitle,
 			Date newDate, int newIndex, String newText, List<Attachment> newAttachments) {
-		super(generateRequestURI(newAuthor, newDate, newIndex), newParentThread.getURI(), newParentMessage.getURI(), newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newIndex, newText, newAttachments);
+		super(generateRequestURI(newAuthor, newIndex), newParentThread.getURI(), newParentMessage.getURI(), newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
 
 	public FreenetURI getInsertURI() {
-		return generateURI(((FTOwnIdentity)mAuthor).getInsertURI(), mAuthor, mDate, mIndex);
+		return generateURI(((FTOwnIdentity)mAuthor).getInsertURI(), mAuthor, mIndex);
 	}
 	
 	public synchronized boolean wasInserted() {

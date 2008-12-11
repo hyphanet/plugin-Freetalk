@@ -75,6 +75,11 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		return result.next();
 	}
 	
+	public FTIdentity getIdentityByURI(FreenetURI uri) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 	public synchronized WoTOwnIdentity getOwnIdentity(String uid) throws NoSuchIdentityException {
 		Query q = db.query();
 		q.constrain(WoTOwnIdentity.class);
@@ -272,5 +277,4 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		}
 		Logger.debug(this, "Stopped the indentity manager.");
 	}
-
 }

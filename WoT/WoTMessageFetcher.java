@@ -114,7 +114,7 @@ public class WoTMessageFetcher extends MessageFetcher {
 		
 		for(FTIdentity identity : identitiesToFetchFrom) {
 			try {
-				fetchMessages(identity, mCalendar.getTime());
+				fetchMessages(identity);
 			}
 			catch(FetchException e) {
 				Logger.error(this, "Fetching of messages from " + identity.getNickname() + " failed.", e);
@@ -122,21 +122,21 @@ public class WoTMessageFetcher extends MessageFetcher {
 		}
 	}
 	
-	private void fetchMessages(FTIdentity author, Date date) throws FetchException {
-		fetchMessage(author, date, mMessageManager.getUnavailableMessageIndex(author, date));
+	private void fetchMessages(FTIdentity author) throws FetchException {
+		fetchMessage(author, mMessageManager.getUnavailableMessageIndex(author));
 	}
 	
-	private void fetchMessage(FTIdentity author, Date date, int index) throws FetchException {
-		FreenetURI uri = Message.generateRequestURI(author, date, index);
+	private void fetchMessage(FTIdentity author, int index) throws FetchException {
+		FreenetURI uri = Message.generateRequestURI(author, index);
 		FetchContext fetchContext = mClient.getFetchContext();
-		fetchContext.maxSplitfileBlockRetries = 3;
-		fetchContext.maxNonSplitfileRetries = 3;
+		fetchContext.maxSplitfileBlockRetries = 2;
+		fetchContext.maxNonSplitfileRetries = 2;
 		ClientGetter g = mClient.fetch(uri, -1, this, this, fetchContext);
 		//g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
 		addFetch(g);
 		synchronized(mIdentities) {
 			if(!mIdentities.contains(author)) {
-				mIdentities.poll();	/* the oldest identity falls out of the FIFO and therefore puzzle downloads from that one are allowed again */
+				mIdentities.poll();	/* the oldest identity falls out of the FIFO and therefore message downloads from that one are allowed again */
 				try {
 					mIdentities.put(author); /* put this identity at the beginning of the FIFO */
 				} catch(InterruptedException e) {}
@@ -150,7 +150,7 @@ public class WoTMessageFetcher extends MessageFetcher {
 		Logger.debug(this, "Fetched message: " + state.getURI());
 		
 		try {
-			Message message = MessageXML.decode(db, result.asBucket().getInputStream(), state.getURI());
+			Message message = MessageXML.decode(db, result.asBucket().getInputStream(), mIdentityManager.getIdentityByURI(state.getURI()), state.getURI());
 			try {
 				mMessageManager.get(message.getID());
 			}
@@ -159,7 +159,7 @@ public class WoTMessageFetcher extends MessageFetcher {
 			}
 			removeFetch(state);
 			
-			fetchMessage(message.getAuthor(), message.getDate(), message.getIndex() + 1);
+			fetchMessage(message.getAuthor(), message.getIndex() + 1);
 		}
 		catch (Exception e) {
 			Logger.error(this, "Parsing failed for message " + state.getURI());
