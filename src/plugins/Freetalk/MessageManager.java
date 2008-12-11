@@ -195,11 +195,10 @@ public abstract class MessageManager implements Runnable {
 	/**
 	 * Get the next index of which a message from the selected identity is not stored.
 	 */
-	public int getUnavailableMessageIndex(FTIdentity messageAuthor, Date date) {
+	public int getUnavailableMessageIndex(FTIdentity messageAuthor) {
 		Query q = db.query();
 		q.constrain(Message.class);
 		q.descend("mAuthor").constrain(messageAuthor);
-		q.descend("mDate").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
 		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
 		ObjectSet<Message> result = q.execute();
 		

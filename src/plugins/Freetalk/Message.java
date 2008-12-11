@@ -123,7 +123,7 @@ public class Message {
 		return new String[] { "mURI", "mID", "mThreadURI", "mBoards"};
 	}
 	
-	public Message(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, int newIndex, String newText, List<Attachment> newAttachments) {
+	public Message(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) {
 		if (newURI == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
@@ -143,10 +143,7 @@ public class Message {
 		
 		if (!isTextValid(newText))
 			throw new IllegalArgumentException("Invalid message text in message " + newURI);
-		
-		if (newIndex < 0)
-			throw new IllegalArgumentException("Invalid message index in message " + newURI);
-		
+	
 		mURI = newURI;
 		mID = generateID(mURI);
 		mThreadURI = newThreadURI;
@@ -157,7 +154,7 @@ public class Message {
 		mAuthor = newAuthor;
 		mTitle = newTitle;
 		mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
-		mIndex = newIndex;
+		mIndex = getIndexFromURI(mURI);
 		mText = newText;
 		mAttachments = newAttachments == null ? null : newAttachments.toArray(new Attachment[newAttachments.size()]);
 	}
@@ -181,20 +178,18 @@ public class Message {
 		}
 	}
 	
-	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-	
-	protected static FreenetURI generateURI(FreenetURI baseURI, FTIdentity author, Date date, int index) {
-		String dayOfInsertion;
-		synchronized (mDateFormat) {
-			dayOfInsertion = mDateFormat.format(date);
-		}
+	protected static FreenetURI generateURI(FreenetURI baseURI, FTIdentity author, int index) {
 		baseURI = baseURI.setKeyType("SSK");
-		baseURI = baseURI.setDocName(Freetalk.PLUGIN_TITLE + "|" + "Message" + "|" + dayOfInsertion + "-" + index + ".xml");
+		baseURI = baseURI.setDocName(Freetalk.PLUGIN_TITLE + "|" + "Message" + "-" + index + ".xml");
 		return baseURI.setMetaString(null);
 	}
 	
-	public static FreenetURI generateRequestURI(FTIdentity author, Date date, int index) {
-		return generateURI(author.getRequestURI(), author, date, index);
+	protected static int getIndexFromURI(FreenetURI uri) {
+		return Integer.parseInt(uri.getDocName().split("[-]")[1]);
+	}
+	
+	public static FreenetURI generateRequestURI(FTIdentity author, int index) {
+		return generateURI(author.getRequestURI(), author, index);
 	}
 	
 	/**
