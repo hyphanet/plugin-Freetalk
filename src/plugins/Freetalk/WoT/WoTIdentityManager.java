@@ -224,6 +224,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		}
 		
 		while(isRunning) {
+			Thread.interrupted();
 			Logger.debug(this, "Identity manager loop running...");
 
 			boolean identitiesWereReceived;
