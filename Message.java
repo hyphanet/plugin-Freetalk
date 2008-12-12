@@ -11,6 +11,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import plugins.Freetalk.exceptions.InvalidParameterException;
+
 import com.db4o.ObjectContainer;
 import com.db4o.query.Query;
 
@@ -123,7 +125,7 @@ public class Message {
 		return new String[] { "mURI", "mID", "mThreadURI", "mBoards"};
 	}
 	
-	public Message(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) {
+	public Message(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		if (newURI == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
@@ -131,7 +133,7 @@ public class Message {
 			Logger.error(this, "Message with parent URI but without thread URI created: " + newURI);
 		
 		if (newBoards.isEmpty())
-			throw new IllegalArgumentException("No boards in message " + newURI);
+			throw new InvalidParameterException("No boards in message " + newURI);
 		
 		if (newReplyToBoard != null && !newBoards.contains(newReplyToBoard)) {
 			Logger.error(this, "Message created with replyToBoard not being in newBoards: " + newURI);
@@ -139,10 +141,10 @@ public class Message {
 		}
 
 		if (!isTitleValid(newTitle))
-			throw new IllegalArgumentException("Invalid message title in message " + newURI);
+			throw new InvalidParameterException("Invalid message title in message " + newURI);
 		
 		if (!isTextValid(newText))
-			throw new IllegalArgumentException("Invalid message text in message " + newURI);
+			throw new InvalidParameterException("Invalid message text in message " + newURI);
 	
 		mURI = newURI;
 		mID = generateID(mURI);

@@ -7,6 +7,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import plugins.Freetalk.exceptions.InvalidParameterException;
+
 import freenet.keys.FreenetURI;
 
 public final class OwnMessage extends Message {
@@ -14,7 +16,7 @@ public final class OwnMessage extends Message {
 	private boolean iWasInserted = false;
 
 	public OwnMessage(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor, String newTitle,
-			Date newDate, int newIndex, String newText, List<Attachment> newAttachments) {
+			Date newDate, int newIndex, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		super(generateRequestURI(newAuthor, newIndex),
 			  (newParentThread == null ? null : newParentThread.getURI()),
 			  (newParentMessage == null ? null : newParentMessage.getURI()),
