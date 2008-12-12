@@ -87,18 +87,37 @@ public abstract class MessageManager implements Runnable {
 
 		return postMessage(myParentMessage, boardSet, replyToBoard, myAuthor, myTitle, myText, myAttachments);
 	}
+	
+	public synchronized void onMessageReceived(Message message) {
+		try {
+			get(message.getID());
+			Logger.debug(this, "Downloaded a message which we already have: " + message.getURI());
+		}
+		catch(NoSuchMessageException e) {
+			message.store();
+			for(Board board : message.getBoards())
+				board.addMessage(message);
+		}
+	}
 
 	/**
 	 * Get a message by its URI. The transient fields of the returned message will be initialized already.
+	 * This will NOT return OwnMessage objects. Your own messages will be returned by this function as soon as they have been downloaded.
 	 * @throws NoSuchMessageException 
 	 */
 	public Message get(FreenetURI uri) throws NoSuchMessageException {
 		return get(Message.generateID(uri));
 	}
 	
+	/**
+	 * Get a message by its ID. The transient fields of the returned message will be initialized already.
+	 * This will NOT return OwnMessage objects. Your own messages will be returned by this function as soon as they have been downloaded.
+	 * @throws NoSuchMessageException 
+	 */
 	public synchronized Message get(String id) throws NoSuchMessageException {
 		Query query = db.query();
 		query.constrain(Message.class);
+		query.constrain(OwnMessage.class).not();
 		query.descend("mID").constrain(id);
 		ObjectSet<Message> result = query.execute();
 
@@ -202,6 +221,7 @@ public abstract class MessageManager implements Runnable {
 	public int getUnavailableMessageIndex(FTIdentity messageAuthor) {
 		Query q = db.query();
 		q.constrain(Message.class);
+		q.constrain(OwnMessage.class).not(); /* We also download our own message. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
 		q.descend("mAuthor").constrain(messageAuthor);
 		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
 		ObjectSet<Message> result = q.execute();

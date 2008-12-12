@@ -15,7 +15,6 @@ import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageFetcher;
 import plugins.Freetalk.MessageXML;
-import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.ObjectContainer;
 
@@ -155,12 +154,7 @@ public class WoTMessageFetcher extends MessageFetcher {
 		
 		try {
 			Message message = MessageXML.decode(mMessageManager, result.asBucket().getInputStream(), mIdentityManager.getIdentityByURI(state.getURI()), state.getURI());
-			try {
-				mMessageManager.get(message.getID());
-			}
-			catch(NoSuchMessageException e) {
-				message.store();
-			}
+			mMessageManager.onMessageReceived(message);
 			removeFetch(state);
 			
 			fetchMessage(message.getAuthor(), message.getIndex() + 1);

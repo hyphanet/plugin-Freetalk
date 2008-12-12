@@ -140,6 +140,12 @@ public class Board implements Comparable<Board> {
 	 */
 	public synchronized void addMessage(Message newMessage) {
 		synchronized(mMessageManager) {
+			if(newMessage instanceof OwnMessage) {
+				/* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
+				 * successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
+				throw new IllegalArgumentException("Adding OwnMessages to a board is not allowed.");
+			}
+				
 			newMessage.initializeTransient(db, mMessageManager);
 			newMessage.store();
 			
