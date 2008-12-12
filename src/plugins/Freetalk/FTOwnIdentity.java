@@ -22,4 +22,5 @@ public interface FTOwnIdentity extends FTIdentity {
 	public void unsubscribeFromBoard(Board board);
 	
 	public Iterator<Board> subscribedBoardsIterator();
+	
 }
