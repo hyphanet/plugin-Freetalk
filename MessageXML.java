@@ -31,9 +31,6 @@ import org.xml.sax.ext.DefaultHandler2;
 
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageXML.XMLTreeGenerator.XMLElement;
-
-import com.db4o.ObjectContainer;
-
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;

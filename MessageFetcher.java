@@ -5,7 +5,6 @@ package plugins.Freetalk;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.node.Node;
-import freenet.support.Executor;
 import freenet.support.TransferThread;
 
 public abstract class MessageFetcher extends TransferThread {

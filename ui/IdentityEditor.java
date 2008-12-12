@@ -3,17 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui;
 
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
-
-import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-
+import plugins.Freetalk.Freetalk;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;

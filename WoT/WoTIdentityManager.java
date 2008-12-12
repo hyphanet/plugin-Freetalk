@@ -6,7 +6,6 @@ package plugins.Freetalk.WoT;
 import java.net.MalformedURLException;
 
 import plugins.Freetalk.FTIdentity;
-import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
