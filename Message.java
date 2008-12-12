@@ -186,7 +186,7 @@ public class Message {
 		return baseURI.setMetaString(null);
 	}
 	
-	protected static int getIndexFromURI(FreenetURI uri) {
+	public static int getIndexFromURI(FreenetURI uri) {
 		return Integer.parseInt(uri.getDocName().split("[|]")[1].split("[-]")[1].replace(".xml", ""));
 	}
 	
