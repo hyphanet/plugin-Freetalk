@@ -92,7 +92,9 @@ public class FreetalkNNTPGroup {
 					if (!hasNext())
 						throw new NoSuchElementException();
 					else {
-						return new FreetalkNNTPArticle(currentMessage, currentIndex++);
+						Message msg = currentMessage;
+						currentMessage = null;
+						return new FreetalkNNTPArticle(msg, currentIndex++);
 					}
 				}
 
