@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.test;
 
 import java.io.ByteArrayInputStream;
@@ -46,6 +49,7 @@ public class MessageXMLTest extends TestCase {
 		ByteArrayOutputStream encodedDecodedEncodedMessage = new ByteArrayOutputStream(4096);
 		MessageXML.encode(MessageXML.decode(messageManager, is, identity, originalMessage.getURI()), encodedDecodedEncodedMessage);		
 		
+		/* FIXME: This will not hit if the enocoder is broken and leaves out fields! We should rather hardcode a message as String here */
 		assertTrue("Message mismatch: Encoded:\n" + encodedMessage.toString() + "\nDecoded: " + encodedDecodedEncodedMessage.toString(),
 				Arrays.equals(encodedMessage.toByteArray(), encodedDecodedEncodedMessage.toByteArray()));
 	}
