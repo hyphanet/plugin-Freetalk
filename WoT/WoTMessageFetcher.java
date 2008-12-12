@@ -150,7 +150,7 @@ public class WoTMessageFetcher extends MessageFetcher {
 		Logger.debug(this, "Fetched message: " + state.getURI());
 		
 		try {
-			Message message = MessageXML.decode(db, result.asBucket().getInputStream(), mIdentityManager.getIdentityByURI(state.getURI()), state.getURI());
+			Message message = MessageXML.decode(mMessageManager, result.asBucket().getInputStream(), mIdentityManager.getIdentityByURI(state.getURI()), state.getURI());
 			try {
 				mMessageManager.get(message.getID());
 			}

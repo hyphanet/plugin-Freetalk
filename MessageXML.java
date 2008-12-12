@@ -3,10 +3,18 @@ package plugins.Freetalk;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.EmptyStackException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Stack;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -17,19 +25,29 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import plugins.Freetalk.Message.Attachment;
+import plugins.Freetalk.MessageXML.XMLTreeGenerator.XMLElement;
 
 import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
+import freenet.support.MultiValueTable;
 
-import plugins.Freetalk.Message.Attachment;
-
-
+/**
+ * Generator & parsers of message XML. Compatible to the FMS message XML format.
+ */
 public class MessageXML {
+	private static final int XML_FORMAT_VERSION = 1;
+	
 	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	private static final SimpleDateFormat mTimeFormat = new SimpleDateFormat("HH:mm:ss");
 	
-	public static void encode(OwnMessage m, OutputStream os) throws TransformerException, ParserConfigurationException {
+	public static void encode(Message m, OutputStream os) throws TransformerException, ParserConfigurationException {
 		synchronized(m) {
 			StreamResult resultStream = new StreamResult(os);
 
@@ -40,8 +58,9 @@ public class MessageXML {
 			Element rootElement = xmlDoc.getDocumentElement();
 
 			Element messageTag = xmlDoc.createElement("Message");
-			messageTag.setAttribute("version", "1"); /* Version of the XML format */
+			messageTag.setAttribute("version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
 			
+			/* Not parsed, it is derived from the message URI when parsing a message. Just for FMS compatibility */
 			Element idTag = xmlDoc.createElement("MessageID");
 			idTag.appendChild(xmlDoc.createCDATASection(m.getID()));
 			messageTag.appendChild(idTag);
@@ -80,14 +99,14 @@ public class MessageXML {
 				Element inReplyToTag = xmlDoc.createElement("InReplyTo");
 					Element inReplyToMessage = xmlDoc.createElement("Message");
 						Element inReplyToOrder = xmlDoc.createElement("Order"); inReplyToOrder.appendChild(xmlDoc.createTextNode("0"));	/* For FMS compatibility, not used by Freetalk */
-						Element inReplyToID = xmlDoc.createElement("MessageID"); inReplyToID.appendChild(xmlDoc.createCDATASection(m.getParentID()));
+						Element inReplyToID = xmlDoc.createElement("MessageID"); inReplyToID.appendChild(xmlDoc.createCDATASection(m.getParentID())); /* For FMS compatibility, not used by Freetalk */
 						Element inReplyToURI = xmlDoc.createElement("MessageURI"); inReplyToURI.appendChild(xmlDoc.createCDATASection(m.getParentURI().toString()));
 					inReplyToMessage.appendChild(inReplyToOrder);
 					inReplyToMessage.appendChild(inReplyToID);
 					inReplyToMessage.appendChild(inReplyToURI);
 					
 					Element inReplyToThread = xmlDoc.createElement("Thread");
-						inReplyToID = xmlDoc.createElement("MessageID"); inReplyToID.appendChild(xmlDoc.createCDATASection(m.getParentThreadID()));
+						inReplyToID = xmlDoc.createElement("MessageID"); inReplyToID.appendChild(xmlDoc.createCDATASection(m.getParentThreadID())); /* For FMS compatibility, not used by Freetalk */
 						inReplyToURI = xmlDoc.createElement("MessageURI"); inReplyToURI.appendChild(xmlDoc.createCDATASection(m.getParentThreadURI().toString()));
 					inReplyToThread.appendChild(inReplyToID);
 					inReplyToThread.appendChild(inReplyToURI);
@@ -126,7 +145,145 @@ public class MessageXML {
 		}
 	}
 	
-	public static Message decode(ObjectContainer db, InputStream inputStream, FreenetURI uri) {
-		return null;
+	/** Valid element names for message XML version 1 */
+	private static final HashSet<String> messageXMLElements1 = new HashSet<String>(Arrays.asList(
+		new String[] { Freetalk.PLUGIN_TITLE, "Message", "MessageID", "Subject", "Date", "Time", "Boards", "Board", "ReplyBoard", "InReplyTo",
+					  	"Order", "MessageURI", "Thread", "Body", "Attachments", "File", "Key", "Size"}));
+	
+	/**
+	 * 
+	 * @param db
+	 * @param inputStream
+	 * @param messageManager Needed for retrieving the Board object from the Strings of the board names.
+	 * @param author
+	 * @param uri
+	 * @return
+	 * @throws Exception
+	 */
+	public static Message decode(MessageManager messageManager, InputStream inputStream, FTIdentity author, FreenetURI uri) throws Exception {
+		XMLTreeGenerator xmlTreeGenerator = new XMLTreeGenerator(messageXMLElements1);
+		SAXParserFactory.newInstance().newSAXParser().parse(inputStream, xmlTreeGenerator);
+		
+		XMLElement rootElement = xmlTreeGenerator.getRoot();
+		
+		/* FIXME FIXME FIXME
+		 * getValue() returns null even though debugging shows that the value IS there !?!?
+		 * Is this a bug in the parser?
+		if(Integer.parseInt(rootElement.attrs.getValue("version")) > XML_FORMAT_VERSION)
+			throw new Exception("Version > " + XML_FORMAT_VERSION);
+		*/
+		
+		String messageTitle = rootElement.children.get("Subject").cdata;
+		Date messageDate = mDateFormat.parse(rootElement.children.get("Date").cdata);
+		Date messageTime = mTimeFormat.parse(rootElement.children.get("Time").cdata);
+		messageDate.setHours(messageTime.getHours()); messageDate.setMinutes(messageTime.getMinutes()); messageDate.setSeconds(messageTime.getSeconds());
+		
+		Set<Board> messageBoards = new HashSet<Board>();
+		for(XMLElement board : rootElement.children.get("Boards").children.iterateAll("Board")) {
+			messageBoards.add(messageManager.getOrCreateBoard(board.cdata));
+		}
+		
+		XMLElement replyToBoardElement = rootElement.children.get("ReplyBoard");
+		Board messageReplyToBoard =  replyToBoardElement != null ? messageManager.getOrCreateBoard(replyToBoardElement.cdata) : null; 
+		
+		String parentMessageURI = null;
+		String parentThreadURI = null;
+		
+		XMLElement inReplyToElement = rootElement.children.get("InReplyTo");
+		if(inReplyToElement != null) {
+			for(XMLElement inReplyToMessageElement : inReplyToElement.children.iterateAll("Message")) {
+				if(inReplyToMessageElement.children.get("Order").equals("0"))
+					parentMessageURI = inReplyToMessageElement.children.get("MessageURI").cdata;
+			}
+		
+			XMLElement threadElement = inReplyToElement.children.get("Thread");
+			if(threadElement != null)
+				parentThreadURI = threadElement.children.get("MessageURI").cdata;
+		}
+		
+		String messageBody = rootElement.children.get("Body").cdata;
+		
+		ArrayList<Message.Attachment> messageAttachments = new ArrayList<Message.Attachment>(10);
+		
+		XMLElement attachmentsElement = rootElement.children.get("Attachments");
+		if(attachmentsElement != null) {
+			for(XMLElement fileElement : attachmentsElement.children.iterateAll("File")) {
+				XMLElement sizeElement = fileElement.children.get("Size");
+				messageAttachments.add(new Message.Attachment(	new FreenetURI(fileElement.children.get("Key").cdata),
+																sizeElement != null ? Integer.parseInt(sizeElement.cdata) : -1));
+			}
+		}
+		
+		return new Message(uri, new FreenetURI(parentThreadURI), new FreenetURI(parentMessageURI), messageBoards, messageReplyToBoard, author, messageTitle, messageDate, messageBody, messageAttachments);
+	}
+	
+	/**
+	 * TODO: This class is useful for general XML parsing. It should maybe be put into freenet.support.
+	 * TODO: Also use this class in the WoT XML parsers.
+	 */
+	protected static class XMLTreeGenerator extends DefaultHandler {
+		private final Set<String> mAllowedElementNames;
+
+		public XMLTreeGenerator(Set<String> allowedElementNames) {
+			mAllowedElementNames = allowedElementNames;
+		}
+		
+		public XMLElement getRoot() {
+			return rootElement;
+		}
+		
+		public class XMLElement {
+			public final String name;
+			public final Attributes attrs;
+			public String cdata = null;
+			public MultiValueTable<String, XMLElement> children = new MultiValueTable<String, XMLElement>();
+			
+			public XMLElement(String newName, Attributes newAttributes) throws Exception {
+				name = newName;
+				attrs = newAttributes;
+				
+				if(!mAllowedElementNames.contains(name))
+					throw new Exception("Unknown element in Message: " + name);
+			}
+		}
+		
+		private XMLElement rootElement = null;
+		
+		private final Stack<XMLElement> elements = new Stack<XMLElement>();
+		
+		@Override
+		public void startElement(String nameSpaceURI, String localName, String qName, Attributes attrs) throws SAXException {
+			String name = (qName == null ? localName : qName);
+
+			try {
+				XMLElement element = new XMLElement(name, attrs);
+				
+				if(rootElement == null)
+					rootElement = element;
+				
+				System.out.println(name);
+				elements.push(element);
+			} catch (Exception e) {
+				Logger.error(this, "Parsing error", e);
+			}
+		}
+		
+		/* FIXME FIXME FIXME: This is WRONG. characters() is not only called for CDATA sections! :(
+		 * How to read the CDATA using SAXParser? */
+		public void characters(char[] ch, int start, int length) {
+			try {
+				elements.peek().cdata = new String(ch, start, length);
+			}
+			catch(EmptyStackException e) {}
+		}
+
+		@Override
+		public void endElement(String uri, String localName, String qName) {
+			try {
+				XMLElement newElement = elements.pop(); /* This can fail because we do not push elements with invalid name */
+				elements.peek().children.put(newElement.name, newElement);
+			}
+			catch(EmptyStackException e) {}
+		}
 	}
 }
