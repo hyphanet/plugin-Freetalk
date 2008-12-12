@@ -79,20 +79,20 @@ public abstract class MessageManager implements Runnable {
 		for (Iterator<String> i = myBoards.iterator(); i.hasNext(); ) {
 			String boardName = i.next();
 			try {
-				Board board = getBoardByName(boardName);
+				Board board = getOrCreateBoard(boardName);
 				boardSet.add(board);
 			}
-			catch (NoSuchBoardException e) {
-
+			catch (InvalidParameterException e) {
+				// ignore
 			}
 		}
 
 		Board replyToBoard = null;
 		if (myReplyToBoard != null) {
 			try {
-				replyToBoard = getBoardByName(myReplyToBoard);
+				replyToBoard = getOrCreateBoard(myReplyToBoard);
 			}
-			catch (NoSuchBoardException e) {
+			catch (InvalidParameterException e) {
 				// ignore
 			}
 		}

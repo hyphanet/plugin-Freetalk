@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.Iterator;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
@@ -58,6 +59,11 @@ public class WoTMessageManager extends MessageManager {
 			m.initializeTransient(db, this);
 			
 			m.store();
+
+			for (Iterator<Board> i = myBoards.iterator(); i.hasNext(); ) {
+				Board board = i.next();
+				board.addMessage(m);
+			}
 		}
 		
 		return m;
