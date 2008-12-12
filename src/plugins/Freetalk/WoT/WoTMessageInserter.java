@@ -125,6 +125,7 @@ public class WoTMessageInserter extends MessageInserter {
 		try {
 			OwnMessage m = (OwnMessage)mMessageManager.get(state.getURI());
 			m.markAsInserted();
+			Logger.debug(this, "Successful insert of " + m.getURI());
 		}
 		catch(NoSuchMessageException e) {
 			Logger.error(this, "Message insert finished but message was deleted: " + state.getURI());
