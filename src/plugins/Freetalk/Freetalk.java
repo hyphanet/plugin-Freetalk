@@ -181,11 +181,21 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 
 	public void terminate() {
 		Logger.debug(this, "Terminating Freetalk ...");
-
+		
 		if(mNNTPServer != null)
 			mNNTPServer.terminate();
 		else
 			Logger.debug(this, "NNTP server was null.");
+		
+		if(mMessageInserter != null)
+			mMessageInserter.terminate();
+		else
+			Logger.error(this, "Message inserter was null!");
+		
+		if(mMessageFetcher != null)
+			mMessageFetcher.terminate();
+		else
+			Logger.error(this, "Message fetcher was null!");
 		
 		if(mMessageManager != null)
 			mMessageManager.terminate();
@@ -196,7 +206,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			mIdentityManager.terminate();
 		else
 			Logger.error(this, "Identity manager was null!");
-		
+
 		if(db != null) {
 			db.commit();
 			db.close();

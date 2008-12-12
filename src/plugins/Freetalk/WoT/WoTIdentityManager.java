@@ -76,8 +76,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	}
 	
 	public FTIdentity getIdentityByURI(FreenetURI uri) {
-		// TODO Auto-generated method stub
-		return null;
+		return getIdentity(WoTIdentity.getUIDFromURI(uri));
 	}
 	
 	public synchronized WoTOwnIdentity getOwnIdentity(String uid) throws NoSuchIdentityException {
@@ -96,7 +95,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	}
 
 	public int getScore(WoTOwnIdentity treeOwner, FTIdentity target) {
-		// TODO Auto-generated method stub
+		// FIXME: implement
 		return 0;
 	}
 
