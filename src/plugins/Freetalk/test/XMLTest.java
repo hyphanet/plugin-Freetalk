@@ -26,6 +26,7 @@ import freenet.keys.FreenetURI;
 public class XMLTest extends TestCase {
 
 	public void testXML() throws MalformedURLException, InvalidParameterException, TransformerException, ParserConfigurationException {
+		/* FIXME: Why is this here?  It doesn't compile, and it appears to have been replaced by MessageXMLTest.  Can we get rid of it?
 		MessageManager messageManager = new WoTMessageManager();
 		Board board = new Board(messageManager, "board");
 		HashSet<Board> boards = new HashSet<Board>();
@@ -37,6 +38,7 @@ public class XMLTest extends TestCase {
 		attachments.add(new Attachment(new FreenetURI("KSK@attachment2"), 10002));
 		OwnMessage originalMessage = new OwnMessage(parentThread, parentThread, boards, board, identity, "title2", new Date(), 24, "text2", attachments);
 		MessageXML.encode(originalMessage, System.out);
+		*/
 		
 		/* FIXME: As soon as the decoder is available, decode the message again and check whether the decoded message equals the original one */
 	}
