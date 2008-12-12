@@ -329,7 +329,7 @@ public class Board implements Comparable {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
 		q.descend("mBoard").constrain(this);
-		q.descend("mMessageIndex").orderAscending();
+		q.descend("mMessageIndex").orderAscending(); /* Needed for NNTP */
 		return q.execute();
 	}
 	
@@ -410,6 +410,8 @@ public class Board implements Comparable {
 		}
 
 		public Message getMessage() {
+			/* We do not have to initialize mBoard and can assume that it is initialized because a BoardMessageLink will only be loaded
+			 * by the board it belongs to. */
 			mMessage.initializeTransient(mBoard.db, mBoard.mMessageManager);
 			return mMessage;
 		}
