@@ -39,8 +39,8 @@ public class WoTMessageManager extends MessageManager {
 		Logger.debug(this, "Message manager started.");
 	}
 	
-	public WoTMessageManager() {
-		super();
+	public WoTMessageManager(ObjectContainer myDB) {
+		super(myDB);
 	}
 
 	public OwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
@@ -61,31 +61,6 @@ public class WoTMessageManager extends MessageManager {
 		}
 		
 		return m;
-	}
-
-	private synchronized void onMessageReceived(String newMessageData) throws InvalidParameterException { 
-		Message newMessage = null;
-		newMessage.initializeTransient(db, this);
-		String boardName = "";
-		/* FIXME: Store the description in FTOwnIdentity. We cannot store in FTBoard because we want to allow per-identity customization */
-
-		String[] boardNames = new String[0];
-		Board[] boards = new Board[boardNames.length];
-		                                    
-		for(int idx = 0; idx < boards.length; ++idx) {
-			try {		
-				boards[idx] = getBoardByName(boardNames[idx]);
-			}
-			catch(NoSuchBoardException e) {
-				Board board = new Board(this, boardName);
-				board.initializeTransient(db, this);
-				boards[idx] = board;
-			}
-		}
-		
-		for(Board b : boards) {
-			b.addMessage(newMessage);
-		}
 	}
 	
 	public void run() {

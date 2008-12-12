@@ -185,7 +185,7 @@ public class Message {
 	}
 	
 	protected static int getIndexFromURI(FreenetURI uri) {
-		return Integer.parseInt(uri.getDocName().split("[-]")[1]);
+		return Integer.parseInt(uri.getDocName().split("[|]")[1].split("[-]")[1].replace(".xml", ""));
 	}
 	
 	public static FreenetURI generateRequestURI(FTIdentity author, int index) {

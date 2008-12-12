@@ -12,6 +12,7 @@ import java.util.HashSet;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
+import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
@@ -48,8 +49,8 @@ public abstract class MessageManager implements Runnable {
 		mExecutor.execute(this, "FT Identity Manager");
 	}
 	
-	public MessageManager() {
-		db = null;
+	public MessageManager(ObjectContainer myDB) {
+		db = myDB;
 		mExecutor = null;
 		mIdentityManager = null;
 	}
@@ -143,6 +144,21 @@ public abstract class MessageManager implements Runnable {
 		Board b = result.next();
 		b.initializeTransient(db, this);
 		return b;
+	}
+	
+	public synchronized Board getOrCreateBoard(String name) throws InvalidParameterException {
+		Board board;
+
+		try {		
+			board = getBoardByName(name);
+		}
+		catch(NoSuchBoardException e) {
+			board = new Board(this, name);
+			board.initializeTransient(db, this);
+			board.store();
+		}
+		
+		return board;
 	}
 
 	/**
