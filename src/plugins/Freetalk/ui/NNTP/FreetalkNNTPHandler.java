@@ -293,15 +293,22 @@ public class FreetalkNNTPHandler implements Runnable {
 		String dashStr = matcher.group(2);
 		String endStr = matcher.group(3);
 
-		int start = Integer.parseInt(startStr);
-		int end;
+		int start, end;
 
-		if (dashStr == null)
-			end = start;
-		else if (endStr == null)
-			end = -1;
-		else
-			end = Integer.parseInt(endStr);
+		try {
+			start = Integer.parseInt(startStr);
+
+			if (dashStr == null)
+				end = start;
+			else if (endStr == null)
+				end = -1;
+			else
+				end = Integer.parseInt(endStr);
+		}
+		catch (NumberFormatException e) {
+			printStatusLine("501 Syntax error");
+			return;
+		}
 
 		if (name != null) {
 			try {
