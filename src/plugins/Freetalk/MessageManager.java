@@ -39,14 +39,12 @@ public abstract class MessageManager implements Runnable {
 	protected IdentityManager mIdentityManager;
 
 	public MessageManager(ObjectContainer myDB, Executor myExecutor, IdentityManager myIdentityManager) {
-		Logger.debug(this, "Starting message manager...");
 		assert(myDB != null);
 		assert(myIdentityManager != null);
 
 		db = myDB;
 		mExecutor = myExecutor;
 		mIdentityManager = myIdentityManager;
-		mExecutor.execute(this, "FT Identity Manager");
 	}
 	
 	public MessageManager(ObjectContainer myDB) {

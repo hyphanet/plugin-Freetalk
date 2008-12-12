@@ -28,7 +28,6 @@ public abstract class IdentityManager implements PrioRunnable, Iterable<FTIdenti
 		Logger.debug(this, "Creating identity manager...");
 		db = myDB;
 		mExecutor = myExecutor;
-		mExecutor.execute(this, "FT Identity Manager");
 	}
 
 	public IdentityManager() {

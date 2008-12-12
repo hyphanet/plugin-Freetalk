@@ -42,6 +42,8 @@ public class WoTMessageInserter extends MessageInserter {
 	public WoTMessageInserter(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager,
 			MessageManager myMessageManager) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
+		start();
+		Logger.debug(this, "Message inserter started.");
 	}
 
 	@Override

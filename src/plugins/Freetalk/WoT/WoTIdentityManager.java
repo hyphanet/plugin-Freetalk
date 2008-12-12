@@ -52,7 +52,8 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	public WoTIdentityManager(ObjectContainer myDB, PluginRespirator pr) throws PluginNotFoundException {
 		super(myDB, pr.getNode().executor);
 		mTalker = pr.getPluginTalker(this, Freetalk.WOT_NAME, Freetalk.PLUGIN_TITLE);
-		Logger.debug(this, "Identity manager created.");
+		mExecutor.execute(this, "FT Identity Manager");
+		Logger.debug(this, "Identity manager started.");
 	}
 	
 	public WoTIdentityManager() {

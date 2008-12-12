@@ -157,10 +157,10 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		mMessageManager = new WoTMessageManager(db, mPluginRespirator.getNode().executor, mIdentityManager);
 		
 		Logger.debug(this, "Creating message fetcher...");
-		mMessageFetcher = new WoTMessageFetcher(mNode, mClient, db, "Freetalk message fetcher", mIdentityManager, mMessageManager);
+		mMessageFetcher = new WoTMessageFetcher(mNode, mClient, db, "FT Message Fetcher", mIdentityManager, mMessageManager);
 		
 		Logger.debug(this, "Creating message inserter...");
-		mMessageInserter = new WoTMessageInserter(mNode, mClient, "Freetalk message inserter", mIdentityManager, mMessageManager);
+		mMessageInserter = new WoTMessageInserter(mNode, mClient, "FT Message Inserter", mIdentityManager, mMessageManager);
 
 		Logger.debug(this, "Starting NNTP server...");
 		mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "127.0.0.1", "127.0.0.1");
