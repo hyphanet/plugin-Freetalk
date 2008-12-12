@@ -58,6 +58,7 @@ public class WoTMessageFetcher extends MessageFetcher {
 		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
 		start();
+		Logger.debug(this, "Message fetcher started.");
 	}
 
 	@Override

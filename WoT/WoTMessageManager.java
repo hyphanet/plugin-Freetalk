@@ -35,6 +35,7 @@ public class WoTMessageManager extends MessageManager {
 	public WoTMessageManager(ObjectContainer myDB, Executor myExecutor, WoTIdentityManager myIdentityManager) {
 		super(myDB, myExecutor, myIdentityManager);
 		mIdentityManager = myIdentityManager;
+		mExecutor.execute(this, "FT Message Manager");
 		Logger.debug(this, "Message manager started.");
 	}
 	
