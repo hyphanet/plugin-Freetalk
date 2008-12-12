@@ -27,7 +27,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
+import org.xml.sax.ext.DefaultHandler2;
 
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageXML.XMLTreeGenerator.XMLElement;
@@ -166,6 +166,8 @@ public class MessageXML {
 		
 		XMLElement rootElement = xmlTreeGenerator.getRoot();
 		
+		rootElement = rootElement.children.get("Message");
+		
 		/* FIXME FIXME FIXME
 		 * getValue() returns null even though debugging shows that the value IS there !?!?
 		 * Is this a bug in the parser?
@@ -192,7 +194,7 @@ public class MessageXML {
 		XMLElement inReplyToElement = rootElement.children.get("InReplyTo");
 		if(inReplyToElement != null) {
 			for(XMLElement inReplyToMessageElement : inReplyToElement.children.iterateAll("Message")) {
-				if(inReplyToMessageElement.children.get("Order").equals("0"))
+				if(inReplyToMessageElement.children.get("Order").cdata.equals("0"))
 					parentMessageURI = inReplyToMessageElement.children.get("MessageURI").cdata;
 			}
 		
@@ -214,14 +216,15 @@ public class MessageXML {
 			}
 		}
 		
-		return new Message(uri, new FreenetURI(parentThreadURI), new FreenetURI(parentMessageURI), messageBoards, messageReplyToBoard, author, messageTitle, messageDate, messageBody, messageAttachments);
+		return new Message(uri, parentThreadURI != null ? new FreenetURI(parentThreadURI) : null, parentMessageURI != null ? new FreenetURI(parentMessageURI) : null,
+							messageBoards, messageReplyToBoard, author, messageTitle, messageDate, messageBody, messageAttachments);
 	}
 	
 	/**
 	 * TODO: This class is useful for general XML parsing. It should maybe be put into freenet.support.
 	 * TODO: Also use this class in the WoT XML parsers.
 	 */
-	protected static class XMLTreeGenerator extends DefaultHandler {
+	protected static class XMLTreeGenerator extends DefaultHandler2 {
 		private final Set<String> mAllowedElementNames;
 
 		public XMLTreeGenerator(Set<String> allowedElementNames) {
@@ -261,29 +264,42 @@ public class MessageXML {
 				if(rootElement == null)
 					rootElement = element;
 				
-				System.out.println(name);
+				try {
+					elements.peek().children.put(name, element);
+				}
+				catch(EmptyStackException e) { }
 				elements.push(element);
+				cdata = new StringBuffer(10 * 1024);
 			} catch (Exception e) {
 				Logger.error(this, "Parsing error", e);
 			}
 		}
 		
-		/* FIXME FIXME FIXME: This is WRONG. characters() is not only called for CDATA sections! :(
-		 * How to read the CDATA using SAXParser? */
+		StringBuffer cdata;
+		
+		public void beginCDATA() {
+			 cdata = new StringBuffer(10 * 1024);
+		}
+		
 		public void characters(char[] ch, int start, int length) {
-			try {
-				elements.peek().cdata = new String(ch, start, length);
-			}
-			catch(EmptyStackException e) {}
+			if(cdata != null)
+				cdata.append(ch, start, length);
+		}
+		
+		public void endCDATA() {
+			elements.peek().cdata = cdata.toString();
+			cdata = null;
 		}
 
 		@Override
 		public void endElement(String uri, String localName, String qName) {
 			try {
 				XMLElement newElement = elements.pop(); /* This can fail because we do not push elements with invalid name */
-				elements.peek().children.put(newElement.name, newElement);
+				if(cdata != null)
+					newElement.cdata = cdata.toString();
 			}
 			catch(EmptyStackException e) {}
+			cdata = null;
 		}
 	}
 }
