@@ -60,10 +60,8 @@ public class WoTMessageManager extends MessageManager {
 			
 			m.store();
 
-			for (Iterator<Board> i = myBoards.iterator(); i.hasNext(); ) {
-				Board board = i.next();
+			for(Board board : myBoards)
 				board.addMessage(m);
-			}
 		}
 		
 		return m;
