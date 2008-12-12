@@ -22,8 +22,8 @@ public class Welcome {
 	private static HTMLNode createWelcomeBox(Freetalk ft) {
 		HTMLNode welcomeBox = ft.mPageMaker.getInfobox("Welcome");
 		HTMLNode welcomeContent = ft.mPageMaker.getContentNode(welcomeBox);
-		welcomeContent.addChild("P", "Welcome to GenTec Labs. This is our last experiment: cloning fms.");
-		welcomeContent.addChild("P", "Things happens you didn't expect? Call 0800-GordonFreeman for rescue");
+		welcomeContent.addChild("P", "To use Freetalk, set up a connection with your newsreader to localhost port 1199.");
+		welcomeContent.addChild("P", "As the account login, specify the nickname of an own identity and as the e-mail address specify the Freetalk address. You can look it up on the own identities page.");
 		return welcomeBox;
 	}
 
