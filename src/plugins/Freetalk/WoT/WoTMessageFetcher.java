@@ -162,7 +162,7 @@ public class WoTMessageFetcher extends MessageFetcher {
 		}
 		
 		try {
-			fetchMessage(mIdentityManager.getIdentityByURI(state.getURI()), Message.getIndexFromURI(state.getURI()));
+			fetchMessage(mIdentityManager.getIdentityByURI(state.getURI()), Message.getIndexFromURI(state.getURI()) + 1);
 		} catch(FetchException e) {
 			Logger.error(this, "Fetching of next message failed.", e);
 		}
