@@ -15,9 +15,6 @@ import freenet.support.TransferThread;
  *
  */
 public abstract class MessageInserter extends TransferThread {
-
-	protected static final int STARTUP_DELAY = 1 * 60 * 1000;
-	protected static final int THREAD_PERIOD = 30 * 60 * 1000; /* FIXME: tweak before release */
 	
 	protected IdentityManager mIdentityManager;
 	

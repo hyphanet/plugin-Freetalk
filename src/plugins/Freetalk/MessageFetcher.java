@@ -8,9 +8,6 @@ import freenet.node.Node;
 import freenet.support.TransferThread;
 
 public abstract class MessageFetcher extends TransferThread {
-
-	protected static final int STARTUP_DELAY = 1 * 60 * 1000;
-	protected static final int THREAD_PERIOD = 15 * 60 * 1000; /* FIXME: tweak before release */
 	
 	protected IdentityManager mIdentityManager;
 	protected MessageManager mMessageManager;

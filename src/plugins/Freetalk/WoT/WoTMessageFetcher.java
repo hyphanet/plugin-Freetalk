@@ -37,6 +37,8 @@ import freenet.support.io.NativeThread;
  */
 public class WoTMessageFetcher extends MessageFetcher {
 	
+	protected static final int STARTUP_DELAY = 1 * 60 * 1000;
+	protected static final int THREAD_PERIOD = 15 * 60 * 1000; /* FIXME: tweak before release */
 	private static final int PARALLEL_MESSAGE_FETCH_COUNT = 128;
 	
 	private final WoTIdentityManager mIdentityManager;
