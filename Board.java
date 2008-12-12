@@ -22,7 +22,7 @@ import freenet.keys.FreenetURI;
  * @author xor
  *
  */
-public class Board implements Comparable {
+public class Board implements Comparable<Board> {
 
 	/* Constants */
 	
@@ -125,11 +125,8 @@ public class Board implements Comparable {
 	 * Compare boards by comparing their names; provided so we can
 	 * sort an array of boards.
 	 */
-	public int compareTo(Object obj) {
-		if (obj instanceof Board)
-			return getName().compareTo(((Board) obj).getName());
-		else
-			throw new ClassCastException();
+	public int compareTo(Board b) {
+		return getName().compareTo(b.getName());
 	}
 
 	/**
