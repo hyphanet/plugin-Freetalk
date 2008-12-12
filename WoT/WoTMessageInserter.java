@@ -72,6 +72,7 @@ public class WoTMessageInserter extends MessageInserter {
 
 	@Override
 	protected void iterate() {
+		Logger.debug(this, "Message inserter loop running ...");
 		abortAllTransfers();
 		
 		Iterator<OwnMessage> messages = mMessageManager.notInsertedMessageIterator();
@@ -84,6 +85,7 @@ public class WoTMessageInserter extends MessageInserter {
 				Logger.error(this, "Insert of message failed", e);
 			}
 		}
+		Logger.debug(this, "Message inserter loop finished.");
 	}
 	
 	protected void insertMessage(OwnMessage m) throws InsertException, IOException, TransformerException, ParserConfigurationException {
