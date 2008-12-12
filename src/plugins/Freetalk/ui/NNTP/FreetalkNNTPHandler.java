@@ -14,6 +14,7 @@ import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import java.net.Socket;
+import java.net.SocketException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -62,10 +63,11 @@ public class FreetalkNNTPHandler implements Runnable {
 	private final static Pattern rangePattern = Pattern.compile("(\\d+)(-(\\d+)?)?");
 
 
-	public FreetalkNNTPHandler(Freetalk ft, Socket socket) {
+	public FreetalkNNTPHandler(Freetalk ft, Socket socket) throws SocketException {
 		mIdentityManager = ft.getIdentityManager();
 		mMessageManager = ft.getMessageManager();
 		this.socket = socket;
+		socket.setSoTimeout(1000);
 	}
 
 	/**
