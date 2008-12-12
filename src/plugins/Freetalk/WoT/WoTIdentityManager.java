@@ -237,7 +237,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 					sfsIdentities = null;
 				}
 				if(sfsOwnIdentities != null) {
-					parseIdentities(sfsOwnIdentities, false);
+					parseIdentities(sfsOwnIdentities, true);
 					sfsOwnIdentities = null;
 				}
 			}
