@@ -66,35 +66,25 @@ public abstract class MessageManager implements Runnable {
 	 * @param myText The body of the new message. Cannot be null.
 	 * @param myAttachments The Attachments of the new Message. See <code>Message.Attachment</code>. Set to null if the message has none.
 	 * @return The new message.
+	 * @throws InvalidParameterException Invalid board names, invalid title, invalid body.
 	 */
 	public abstract OwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
-			String myTitle, String myText, List<Attachment> myAttachments);
+			String myTitle, String myText, List<Attachment> myAttachments) throws InvalidParameterException;
 
 	public OwnMessage postMessage(Message myParentMessage, Set<String> myBoards, String myReplyToBoard, FTOwnIdentity myAuthor,
-			String myTitle, String myText, List<Attachment> myAttachments) {
+			String myTitle, String myText, List<Attachment> myAttachments) throws InvalidParameterException {
 
-		// FIXME: still need to figure out our policy for creating new
-		// boards.
+		/* FIXME: Instead of always creating the boards, notify the user that they do not exist and ask if he made a typo */
 		HashSet<Board> boardSet = new HashSet<Board>();
 		for (Iterator<String> i = myBoards.iterator(); i.hasNext(); ) {
 			String boardName = i.next();
-			try {
-				Board board = getOrCreateBoard(boardName);
-				boardSet.add(board);
-			}
-			catch (InvalidParameterException e) {
-				// ignore
-			}
+			Board board = getOrCreateBoard(boardName);
+			boardSet.add(board);
 		}
 
 		Board replyToBoard = null;
 		if (myReplyToBoard != null) {
-			try {
-				replyToBoard = getOrCreateBoard(myReplyToBoard);
-			}
-			catch (InvalidParameterException e) {
-				// ignore
-			}
+			replyToBoard = getOrCreateBoard(myReplyToBoard);
 		}
 
 		return postMessage(myParentMessage, boardSet, replyToBoard, myAuthor, myTitle, myText, myAttachments);
