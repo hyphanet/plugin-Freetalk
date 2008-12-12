@@ -156,11 +156,15 @@ public class WoTMessageFetcher extends MessageFetcher {
 			Message message = MessageXML.decode(mMessageManager, result.asBucket().getInputStream(), mIdentityManager.getIdentityByURI(state.getURI()), state.getURI());
 			mMessageManager.onMessageReceived(message);
 			removeFetch(state);
-			
-			fetchMessage(message.getAuthor(), message.getIndex() + 1);
 		}
 		catch (Exception e) {
-			Logger.error(this, "Parsing failed for message " + state.getURI());
+			Logger.error(this, "Parsing failed for message " + state.getURI(), e);
+		}
+		
+		try {
+			fetchMessage(mIdentityManager.getIdentityByURI(state.getURI()), Message.getIndexFromURI(state.getURI()));
+		} catch(FetchException e) {
+			Logger.error(this, "Fetching of next message failed.", e);
 		}
 	}
 	
