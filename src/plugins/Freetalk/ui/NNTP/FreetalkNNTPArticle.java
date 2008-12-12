@@ -90,9 +90,7 @@ public class FreetalkNNTPArticle {
 	public String getHeader(Header hdr) {
 		switch (hdr) {
 		case FROM:
-			/* The UID of an author is the base64 encoded routing key of his SSK keypair. We append ".freetalk" to the UID to make it look 
-			 * like a valid domain. */
-			return message.getAuthor().getNickname() + "@" + message.getAuthor().getUID() + "." + Freetalk.WOT_CONTEXT;
+			return message.getAuthor().getFreetalkAddress();
 
 		case SUBJECT:
 			/* FIXME: The title is not cleaned up yet. Please give me (xor) the list of the control characters which the RFC forbids and I
