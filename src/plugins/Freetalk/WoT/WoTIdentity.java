@@ -124,7 +124,7 @@ public class WoTIdentity implements FTIdentity {
 	}
 	
 	public String getFreetalkAddress() {
-		return mNickname + "@" + mUID + "." + Freetalk.WOT_CONTEXT;	
+		return mNickname + "@" + mUID + "." + Freetalk.WOT_CONTEXT.toLowerCase();	
 	}
 
 	public synchronized long getLastReceivedFromWoT() {
