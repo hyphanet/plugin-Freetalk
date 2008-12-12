@@ -8,7 +8,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.Iterator;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
@@ -17,7 +16,6 @@ import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.InvalidParameterException;
-import plugins.Freetalk.exceptions.NoSuchBoardException;
 
 import com.db4o.ObjectContainer;
 

@@ -6,7 +6,6 @@ package plugins.Freetalk.WoT;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.TimeZone;

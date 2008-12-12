@@ -8,12 +8,7 @@ import java.util.LinkedList;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
-import plugins.Freetalk.IdentityManager;
-import plugins.Freetalk.Message;
 import plugins.Freetalk.FTOwnIdentity;
-
-import com.db4o.ObjectContainer;
-
 import freenet.keys.FreenetURI;
 
 /**

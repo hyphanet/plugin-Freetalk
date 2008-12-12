@@ -52,7 +52,6 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.HTTPUploadedFile;
-import freenet.support.io.TempBucketFactory;
 
 /**
  * @author saces, xor
