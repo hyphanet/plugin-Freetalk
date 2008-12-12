@@ -654,7 +654,17 @@ public class FreetalkNNTPHandler implements Runnable {
 
 			synchronized(mMessageManager) {
 				try {
-					Message parentMessage = mMessageManager.get(parser.getParentID());
+					Message parentMessage;
+					try {
+						parentMessage = mMessageManager.get(parser.getParentID());
+					}
+					catch (NoSuchFieldException e) {
+						parentMessage = null;
+					}
+					catch (NoSuchMessageException e) {
+						parentMessage = null;
+					}
+
 					HashSet<String> boardSet = new HashSet<String>(parser.getBoards());
 					OwnMessage message = mMessageManager.postMessage(parentMessage, boardSet, parser.getReplyToBoard(), myIdentity, parser.getTitle(), parser.getText(), null);
 					printStatusLine("240 Message posted; ID is <" + message.getID() + ">");
