@@ -19,4 +19,7 @@ public interface FTIdentity {
 	public FreenetURI getRequestURI();
 	
 	public String getNickname();
+	
+	public String getFreetalkAddress();
+	
 }
