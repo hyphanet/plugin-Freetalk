@@ -3,6 +3,7 @@ package plugins.Freetalk.test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -45,6 +46,7 @@ public class MessageXMLTest extends TestCase {
 		ByteArrayOutputStream encodedDecodedEncodedMessage = new ByteArrayOutputStream(4096);
 		MessageXML.encode(MessageXML.decode(messageManager, is, identity, originalMessage.getURI()), encodedDecodedEncodedMessage);		
 		
-		assertEquals(encodedMessage.toByteArray(), encodedDecodedEncodedMessage.toByteArray());
+		assertTrue("Message mismatch: Encoded:\n" + encodedMessage.toString() + "\nDecoded: " + encodedDecodedEncodedMessage.toString(),
+				Arrays.equals(encodedMessage.toByteArray(), encodedDecodedEncodedMessage.toByteArray()));
 	}
 }
