@@ -28,7 +28,7 @@ public class IdentityEditor {
 
 		Iterator<FTOwnIdentity> ownIdentities = ft.getIdentityManager().ownIdentityIterator();
 		if (ownIdentities.hasNext() == false) {
-			boxContent.addChild("p", "You have no own identity yet, you should create one...");
+			boxContent.addChild("p", "No own identities received from the WoT plugin yet. Please create one there and wait for 15 minutes until it appears here.");
 		} else {
 
 			HTMLNode identitiesTable = boxContent.addChild("table");
@@ -55,14 +55,18 @@ public class IdentityEditor {
 					lastUpdateCell.addChild(new HTMLNode("a", "href", "/" + id.getRequestURI().toString(), id.getLastInsert().toString()));
 				}
 				*/
+				/* FIXME: repair, i.e. make it use the WoT plugin */
+				/*
 				HTMLNode deleteCell = row.addChild("td");
 				HTMLNode deleteForm = ft.mPluginRespirator.addFormChild(deleteCell, Freetalk.PLUGIN_URI + "/deleteOwnIdentity", "deleteForm");
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI().toACIIString()});
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
+				*/
 			}
 		}
 
-		contentNode.addChild(createNewOwnIdentityBox(ft));
+		/* FIXME: repair, i.e. make it use the WoT plugin */
+		/* contentNode.addChild(createNewOwnIdentityBox(ft)); */
 
 		return pageNode.generate();
 	}
@@ -186,12 +190,16 @@ public class IdentityEditor {
 			row.addChild("td", id.getNickname());
 			row.addChild("td",  id.getRequestURI().toACIIString());
 			HTMLNode deleteCell = row.addChild("td");
+			/* FIXME: repair, i.e. make it use the WoT plugin */
+			/*
 			HTMLNode deleteForm = ft.mPluginRespirator.addFormChild(deleteCell, Freetalk.PLUGIN_URI + "/deleteIdentity", "deleteForm");
 			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI().toACIIString()});
 			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
+			*/
 		}
 
-		contentNode.addChild(createNewKnownIdentityBox(ft));
+		/* FIXME: repair, i.e. make it use the WoT plugin */
+		/* contentNode.addChild(createNewKnownIdentityBox(ft)); */
 
 		return pageNode.generate();
 	}

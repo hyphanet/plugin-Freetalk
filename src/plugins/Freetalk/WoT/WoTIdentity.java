@@ -63,6 +63,8 @@ public class WoTIdentity implements FTIdentity {
 	
 	protected transient ObjectContainer db;
 	
+	protected transient WoTIdentityManager mIdentityManager;
+	
 	private transient static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 	
 	/** Get a list of fields which the database should create an index on. */
@@ -91,6 +93,7 @@ public class WoTIdentity implements FTIdentity {
 	public void initializeTransient(ObjectContainer myDB, IdentityManager myIdentityManager) {
 		assert(myDB != null);
 		db = myDB;
+		mIdentityManager = (WoTIdentityManager)myIdentityManager;
 	}
 	
 	public String getUID() {
