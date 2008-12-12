@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import plugins.Freetalk.FTIdentity;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 
 import com.db4o.ObjectContainer;
@@ -120,6 +121,10 @@ public class WoTIdentity implements FTIdentity {
 
 	public String getNickname() {
 		return mNickname;
+	}
+	
+	public String getFreetalkAddress() {
+		return mNickname + "@" + mUID + "." + Freetalk.WOT_CONTEXT;	
 	}
 
 	public synchronized long getLastReceivedFromWoT() {
