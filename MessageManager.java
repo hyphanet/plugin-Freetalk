@@ -94,6 +94,7 @@ public abstract class MessageManager implements Runnable {
 			Logger.debug(this, "Downloaded a message which we already have: " + message.getURI());
 		}
 		catch(NoSuchMessageException e) {
+			message.initializeTransient(db, this);
 			message.store();
 			for(Board board : message.getBoards())
 				board.addMessage(message);
