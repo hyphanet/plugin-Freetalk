@@ -58,9 +58,9 @@ public class WoTMessageManager extends MessageManager {
 			m.initializeTransient(db, this);
 			
 			m.store();
-
-			for(Board board : myBoards)
-				board.addMessage(m);
+			
+			/* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
+			 * successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
 		}
 		
 		return m;
