@@ -22,6 +22,7 @@ public class Welcome {
 	private static HTMLNode createWelcomeBox(Freetalk ft) {
 		HTMLNode welcomeBox = ft.mPageMaker.getInfobox("Welcome");
 		HTMLNode welcomeContent = ft.mPageMaker.getContentNode(welcomeBox);
+		welcomeContent.addChild("P", "IMPORTANT NOTE: All messages you post with the current Freetalk release are considered as testing messages and will NOT be readable by the first stable release. This is necessary so that we could change internal stuff completely if there is a need to do so.");
 		welcomeContent.addChild("P", "To use Freetalk, set up a connection with your newsreader to localhost port 1199.");
 		welcomeContent.addChild("P", "As the account login, specify the nickname of an own identity and as the e-mail address specify the Freetalk address. You can look it up on the own identities page.");
 		return welcomeBox;
