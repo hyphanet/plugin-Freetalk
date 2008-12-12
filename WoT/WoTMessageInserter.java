@@ -37,11 +37,14 @@ import freenet.support.io.NativeThread;
 
 public class WoTMessageInserter extends MessageInserter {
 
+	protected static final int STARTUP_DELAY = 1 * 60 * 1000;
+	protected static final int THREAD_PERIOD = 5 * 60 * 1000; /* FIXME: tweak before release */
 	private Random mRandom;
 	
 	public WoTMessageInserter(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager,
 			MessageManager myMessageManager) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
+		mRandom = mNode.fastWeakRandom;
 		start();
 		Logger.debug(this, "Message inserter started.");
 	}
