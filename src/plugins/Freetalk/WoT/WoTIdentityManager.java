@@ -35,7 +35,7 @@ import freenet.support.io.NativeThread;
 public class WoTIdentityManager extends IdentityManager implements FredPluginTalker {
 	
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
-	private static final int THREAD_PERIOD = 1 * 60 * 1000;
+	private static final int THREAD_PERIOD = 10 * 60 * 1000;
 
 	private volatile boolean isRunning = true;
 	private Thread mThread = null;
