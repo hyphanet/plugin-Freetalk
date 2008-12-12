@@ -34,19 +34,17 @@ public class IdentityEditor {
 			HTMLNode identitiesTable = boxContent.addChild("table");
 			HTMLNode row = identitiesTable.addChild("tr");
 			row.addChild("th", "Name");
-			row.addChild("th", "Request URI");
-			row.addChild("th", "Insert URI");
-			row.addChild("th", "Last update");
-			row.addChild("th");
+			row.addChild("th", "Freetalk address");
 
 			while (ownIdentities.hasNext()) {
 				FTOwnIdentity id = ownIdentities.next();
 				row = identitiesTable.addChild("tr");
 				row.addChild("td", id.getNickname());
-				row.addChild("td", new String[]{"title"}, new String[]{id.getRequestURI().toACIIString()}, id.getRequestURI().toACIIString().substring(0, 35)+"...");
-				row.addChild("td", new String[]{"title"}, new String[]{id.getInsertURI().toACIIString()}, id.getInsertURI().toACIIString().substring(0, 35)+"...");
-				HTMLNode lastUpdateCell = row.addChild("td");
+
+				row.addChild("td", id.getFreetalkAddress());
 				/*
+				HTMLNode lastUpdateCell = row.addChild("td");
+				
 				if (id.getLastInsert() == null) {
 					lastUpdateCell.addChild("p", "Insert in progress...");
 				} else if (id.getLastInsert().equals(new Date(0))) {
