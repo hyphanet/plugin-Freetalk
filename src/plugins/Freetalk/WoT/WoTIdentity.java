@@ -64,6 +64,10 @@ public class WoTIdentity implements FTIdentity {
 	
 	private transient static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 	
+	/** Get a list of fields which the database should create an index on. */
+	public static String[] getIndexedFields() {
+		return new String[] { "mUID", "mRequestURI" };
+	}
 
 	public WoTIdentity(String myUID, FreenetURI myRequestURI, String myNickname) {
 		if(myUID == null || myUID.length() == 0 || myRequestURI == null || myNickname == null || myNickname.length() == 0)
@@ -149,5 +153,5 @@ public class WoTIdentity implements FTIdentity {
 		db.store(this);
 		db.commit();
 	}
-
+	
 }

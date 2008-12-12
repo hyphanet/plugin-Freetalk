@@ -47,6 +47,10 @@ public class Board implements Comparable<Board> {
 		return new String[] {"mName"};
 	}
 	
+	public static String[] getBoardMessageLinkIndexedFields() { /* TODO: ugly! find a better way */
+		return new String[] {"mBoard", "mMessage"};
+	}
+	
 	public Board(MessageManager newMessageManager, String newName) throws InvalidParameterException {
 		if(newName==null || newName.length() == 0)
 			throw new IllegalArgumentException("Empty board name.");
@@ -385,7 +389,7 @@ public class Board implements Comparable<Board> {
 	/**
 	 * Helper class to associate messages with boards in the database
 	 */
-	private final class BoardMessageLink implements MessageReference {
+	public final class BoardMessageLink implements MessageReference { /* TODO: This is only public for configuring db4o. Find a better way */
 		private final Board mBoard;
 		private final Message mMessage;
 		private final int mMessageIndex;

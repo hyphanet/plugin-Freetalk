@@ -4,11 +4,11 @@
 package plugins.Freetalk;
 
 import java.io.UnsupportedEncodingException;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
@@ -122,7 +122,7 @@ public class Message {
 	 * Get a list of fields which the database should create an index on.
 	 */
 	public static String[] getIndexedFields() {
-		return new String[] { "mURI", "mID", "mThreadURI", "mBoards"};
+		return new String[] { "mURI", "mID", "mThreadURI", };
 	}
 	
 	public Message(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
@@ -326,28 +326,43 @@ public class Message {
 	 * Returns an iterator over the children of the message, sorted descending by date.
 	 * The transient fields of the children will be initialized already.
 	 */
-	public synchronized Iterator<Message> childrenIterator(final Board board) {
+	public synchronized Iterator<Message> childrenIterator(final Board targetBoard) {
 		return new Iterator<Message>() {
 			private Iterator<Message> iter;
+			private Board board;
+			private Message next;
 			
 			{
+				board = targetBoard;
+				
 				/* TODO: Accelerate this query: configure db4o to keep a per-message date-sorted index of children.
 				 * - Not very important for now since threads are usually small. */
 				Query q = db.query();
 				q.constrain(Message.class);
-				q.descend("mBoard").constrain(board.getName());
 				q.descend("mParent").constrain(this);
 				q.descend("mDate").orderDescending();
 				
 				iter = q.execute().iterator();
+				next = iter.hasNext() ? iter.next() : null;
 			}
 
 			public boolean hasNext() {
-				return iter.hasNext();
+				while(next != null) {
+					if(Arrays.binarySearch(next.getBoards(), board) >= 0)
+						return true;
+				}
+				
+				return false;
 			}
 
 			public Message next() {
-				Message child = iter.next();
+				if(!hasNext()) { /* We have to call hasNext() to ignore messages which do not belong to the selected board */
+					assert(false); /* However, the users of the function should do this for us */
+					throw new NoSuchElementException();
+				}
+				
+				Message child = next;
+				next = iter.hasNext() ? iter.next() : null;
 				child.initializeTransient(db, mMessageManager);
 				return child;
 			}

@@ -30,6 +30,13 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	
 	private transient WoTIdentityManager mIdentityManager = null;
 
+	/** Get a list of fields which the database should create an index on. */
+	public static String[] getIndexedFields() {
+		/* FIXME: Figure out whether indexed fields are inherited from parent classes. Otherwise we would have to also list the indexed fields
+		 * of WoTIdentity here. */
+		/* FIXME: Figure out whether we really need lookups by insert URI. If not, remove the index */
+		return new String[] { "mInsertURI" }; 
+	}
 
 	public WoTOwnIdentity(String myUID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
 		super(myUID, myRequestURI, myNickname);

@@ -25,10 +25,10 @@ public class IdentityEditor {
 	public static final String makeOwnIdentitiesPage(Freetalk ft, HTTPRequest request) {
 		
 		HTMLNode pageNode = ft.getPageNode();
-		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
 
-		HTMLNode box = ft.pm.getInfobox("Own Identities");
-		HTMLNode boxContent = ft.pm.getContentNode(box);
+		HTMLNode box = ft.mPageMaker.getInfobox("Own Identities");
+		HTMLNode boxContent = ft.mPageMaker.getContentNode(box);
 		contentNode.addChild(box);
 
 		Iterator<FTOwnIdentity> ownIdentities = ft.getIdentityManager().ownIdentityIterator();
@@ -61,7 +61,7 @@ public class IdentityEditor {
 				}
 				*/
 				HTMLNode deleteCell = row.addChild("td");
-				HTMLNode deleteForm = ft.pr.addFormChild(deleteCell, Freetalk.PLUGIN_URI + "/deleteOwnIdentity", "deleteForm");
+				HTMLNode deleteForm = ft.mPluginRespirator.addFormChild(deleteCell, Freetalk.PLUGIN_URI + "/deleteOwnIdentity", "deleteForm");
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI().toACIIString()});
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
 			}
@@ -76,7 +76,7 @@ public class IdentityEditor {
 	
 	public static final String makeNewOwnIdentityPage(Freetalk ft, String nick, String requestUri, String insertUri, boolean publish, List<String> errors) {
 		HTMLNode pageNode = ft.getPageNode();
-		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
 		contentNode.addChild(createNewOwnIdentityBox(ft, nick, requestUri, insertUri, publish, errors));
 		return pageNode.generate();
 	}
@@ -86,12 +86,12 @@ public class IdentityEditor {
 	}
 
 	private static final HTMLNode createNewOwnIdentityBox(Freetalk ft, String nick, String requestUri, String insertUri, boolean publish, List<String> errors) {
-		HTMLNode addBox = ft.pm.getInfobox("New Identity");
-		HTMLNode addContent = ft.pm.getContentNode(addBox);
+		HTMLNode addBox = ft.mPageMaker.getInfobox("New Identity");
+		HTMLNode addContent = ft.mPageMaker.getContentNode(addBox);
 
 		if (errors != null) {
-			HTMLNode errorBox = ft.pm.getInfobox("infobox-alert", "Typo");
-			HTMLNode errorContent = ft.pm.getContentNode(errorBox);
+			HTMLNode errorBox = ft.mPageMaker.getInfobox("infobox-alert", "Typo");
+			HTMLNode errorContent = ft.mPageMaker.getContentNode(errorBox);
 			for (String s : errors) {
 				errorContent.addChild("#", s);
 				errorContent.addChild("br");
@@ -99,7 +99,7 @@ public class IdentityEditor {
 			addContent.addChild(errorBox);
 		}
 
-		HTMLNode addForm = ft.pr.addFormChild(addContent, Freetalk.PLUGIN_URI + "/createownidentity", "addForm");
+		HTMLNode addForm = ft.mPluginRespirator.addFormChild(addContent, Freetalk.PLUGIN_URI + "/createownidentity", "addForm");
 
 		HTMLNode table = addForm.addChild("table", "class", "column");
 		HTMLNode tr1 = table.addChild("tr");
@@ -133,18 +133,18 @@ public class IdentityEditor {
 	
 	public static String makeDeleteOwnIdentityPage(Freetalk ft, String requestUri, List<String> err) {
 		HTMLNode pageNode = ft.getPageNode();
-		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
 		contentNode.addChild(deleteOwnIdentityBox(ft, "nick", requestUri, "insertUri", false, err));
 		return pageNode.generate();
 	}
 	
 	private static final HTMLNode deleteOwnIdentityBox(Freetalk ft, String nick, String requestUri, String insertUri, boolean publish, List<String> errors) {
-		HTMLNode deleteBox = ft.pm.getInfobox("Delete Identity");
-		HTMLNode deleteContent = ft.pm.getContentNode(deleteBox);
+		HTMLNode deleteBox = ft.mPageMaker.getInfobox("Delete Identity");
+		HTMLNode deleteContent = ft.mPageMaker.getContentNode(deleteBox);
 
 		if (errors != null) {
-			HTMLNode errorBox = ft.pm.getInfobox("infobox-alert", "Typo");
-			HTMLNode errorContent = ft.pm.getContentNode(errorBox);
+			HTMLNode errorBox = ft.mPageMaker.getInfobox("infobox-alert", "Typo");
+			HTMLNode errorContent = ft.mPageMaker.getContentNode(errorBox);
 			for (String s : errors) {
 				errorContent.addChild("#", s);
 				errorContent.addChild("br");
@@ -152,7 +152,7 @@ public class IdentityEditor {
 			deleteContent.addChild(errorBox);
 		}
 
-		HTMLNode deleteForm = ft.pr.addFormChild(deleteContent, Freetalk.PLUGIN_URI + "/deleteOwnIdentity", "deleteForm");
+		HTMLNode deleteForm = ft.mPluginRespirator.addFormChild(deleteContent, Freetalk.PLUGIN_URI + "/deleteOwnIdentity", "deleteForm");
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "confirmed", "true"});
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", requestUri});
 		deleteForm.addChild("#", "Nick:\u00a0"+nick);
@@ -169,10 +169,10 @@ public class IdentityEditor {
 	
 	public final static String makeKnownIdentitiesPage(Freetalk ft, HTTPRequest request) {
 		HTMLNode pageNode = ft.getPageNode();
-		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
 
-		HTMLNode box = ft.pm.getInfobox("Known Identities");
-		HTMLNode boxContent = ft.pm.getContentNode(box);
+		HTMLNode box = ft.mPageMaker.getInfobox("Known Identities");
+		HTMLNode boxContent = ft.mPageMaker.getContentNode(box);
 		contentNode.addChild(box);
 
 		Iterator<FTIdentity> identities = ft.getIdentityManager().iterator();
@@ -191,7 +191,7 @@ public class IdentityEditor {
 			row.addChild("td", id.getNickname());
 			row.addChild("td",  id.getRequestURI().toACIIString());
 			HTMLNode deleteCell = row.addChild("td");
-			HTMLNode deleteForm = ft.pr.addFormChild(deleteCell, Freetalk.PLUGIN_URI + "/deleteIdentity", "deleteForm");
+			HTMLNode deleteForm = ft.mPluginRespirator.addFormChild(deleteCell, Freetalk.PLUGIN_URI + "/deleteIdentity", "deleteForm");
 			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI().toACIIString()});
 			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
 		}
@@ -205,7 +205,7 @@ public class IdentityEditor {
 	
 	public static final String makeNewKnownIdentityPage(Freetalk ft, String requestUri, List<String> errors) {
 		HTMLNode pageNode = ft.getPageNode();
-		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
 		contentNode.addChild(createNewKnownIdentityBox(ft, requestUri, errors));
 		contentNode.addChild("#", "makeNewIdentitiesPagecc");
 		return pageNode.generate();
@@ -216,12 +216,12 @@ public class IdentityEditor {
 	}
 
 	private static final HTMLNode createNewKnownIdentityBox(Freetalk ft, String requestUri, List<String> errors) {
-		HTMLNode addBox = ft.pm.getInfobox("Add Identity");
-		HTMLNode addContent = ft.pm.getContentNode(addBox);
+		HTMLNode addBox = ft.mPageMaker.getInfobox("Add Identity");
+		HTMLNode addContent = ft.mPageMaker.getContentNode(addBox);
 
 		if (errors != null) {
-			HTMLNode errorBox = ft.pm.getInfobox("infobox-alert", "Typo");
-			HTMLNode errorContent = ft.pm.getContentNode(errorBox);
+			HTMLNode errorBox = ft.mPageMaker.getInfobox("infobox-alert", "Typo");
+			HTMLNode errorContent = ft.mPageMaker.getContentNode(errorBox);
 			for (String s : errors) {
 				errorContent.addChild("#", s);
 				errorContent.addChild("br");
@@ -229,7 +229,7 @@ public class IdentityEditor {
 			addContent.addChild(errorBox);
 		}
 
-		HTMLNode addForm = ft.pr.addFormChild(addContent, Freetalk.PLUGIN_URI + "/addknownidentity", "addForm");
+		HTMLNode addForm = ft.mPluginRespirator.addFormChild(addContent, Freetalk.PLUGIN_URI + "/addknownidentity", "addForm");
 
 		addForm.addChild("#", "Request URI : ");
 		addForm.addChild("input", new String[] { "type", "name", "size", "value" }, new String[] { "text", "requestURI", "70", requestUri });
@@ -240,18 +240,18 @@ public class IdentityEditor {
 	/* delete */
 	public static String makeDeleteKnownIdentityPage(Freetalk ft, String requestUri, List<String> err) {
 		HTMLNode pageNode = ft.getPageNode();
-		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
 		contentNode.addChild(deleteKnownIdentityBox(ft, "nick", requestUri, "insertUri", false, err));
 		return pageNode.generate();
 	}
 	
 	private static final HTMLNode deleteKnownIdentityBox(Freetalk ft, String nick, String requestUri, String insertUri, boolean publish, List<String> errors) {
-		HTMLNode deleteBox = ft.pm.getInfobox("Delete Identity");
-		HTMLNode deleteContent = ft.pm.getContentNode(deleteBox);
+		HTMLNode deleteBox = ft.mPageMaker.getInfobox("Delete Identity");
+		HTMLNode deleteContent = ft.mPageMaker.getContentNode(deleteBox);
 
 		if (errors != null) {
-			HTMLNode errorBox = ft.pm.getInfobox("infobox-alert", "Typo");
-			HTMLNode errorContent = ft.pm.getContentNode(errorBox);
+			HTMLNode errorBox = ft.mPageMaker.getInfobox("infobox-alert", "Typo");
+			HTMLNode errorContent = ft.mPageMaker.getContentNode(errorBox);
 			for (String s : errors) {
 				errorContent.addChild("#", s);
 				errorContent.addChild("br");
@@ -259,7 +259,7 @@ public class IdentityEditor {
 			deleteContent.addChild(errorBox);
 		}
 
-		HTMLNode deleteForm = ft.pr.addFormChild(deleteContent, Freetalk.PLUGIN_URI + "/deleteIdentity", "deleteForm");
+		HTMLNode deleteForm = ft.mPluginRespirator.addFormChild(deleteContent, Freetalk.PLUGIN_URI + "/deleteIdentity", "deleteForm");
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "confirmed", "true"});
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", requestUri});
 		deleteForm.addChild("#", "Nick:\u00a0"+nick);
