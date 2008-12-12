@@ -67,7 +67,6 @@ public class FreetalkNNTPHandler implements Runnable {
 		mIdentityManager = ft.getIdentityManager();
 		mMessageManager = ft.getMessageManager();
 		this.socket = socket;
-		socket.setSoTimeout(1000);
 	}
 
 	/**
