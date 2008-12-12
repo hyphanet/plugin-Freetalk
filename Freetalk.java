@@ -109,23 +109,32 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Configuration dbCfg = Db4o.newConfiguration();
 		for(String f : Message.getIndexedFields())
 			dbCfg.objectClass(Message.class).objectField(f).indexed(true);
-		
+		dbCfg.objectClass(Message.class).cascadeOnActivate(true);
 		dbCfg.objectClass(Message.class).cascadeOnUpdate(true);
+		
 		// TODO: decide about cascade on delete. 
 		for(String f : Board.getIndexedFields())
 			dbCfg.objectClass(Board.class).objectField(f).indexed(true);
+		dbCfg.objectClass(Board.class).cascadeOnActivate(true);
+		dbCfg.objectClass(Board.class).cascadeOnUpdate(true);
 		
 		for(String f : Board.getBoardMessageLinkIndexedFields()) {
 			dbCfg.objectClass(Board.BoardMessageLink.class).objectField(f).indexed(true);
 		}
-		
+		dbCfg.objectClass(Board.BoardMessageLink.class).cascadeOnActivate(true);
+		dbCfg.objectClass(Board.BoardMessageLink.class).cascadeOnUpdate(true);
+
 		for(String f :  WoTIdentity.getIndexedFields()) {
 			dbCfg.objectClass(WoTIdentity.class).objectField(f).indexed(true);
 		}
+		dbCfg.objectClass(FTIdentity.class).cascadeOnActivate(true);
+		dbCfg.objectClass(FTIdentity.class).cascadeOnUpdate(true);
 		
 		for(String f :  WoTOwnIdentity.getIndexedFields()) {
 			dbCfg.objectClass(WoTOwnIdentity.class).objectField(f).indexed(true);
 		}
+		dbCfg.objectClass(FTOwnIdentity.class).cascadeOnActivate(true);
+		dbCfg.objectClass(FTOwnIdentity.class).cascadeOnUpdate(true);
 		
 		db = Db4o.openFile(dbCfg, DATABASE_FILE);
 		
