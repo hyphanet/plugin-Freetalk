@@ -10,7 +10,7 @@ public class Status {
 	
 	public static String makeStatusPage(Freetalk ft) {
 		HTMLNode pageNode = ft.getPageNode();
-		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
 		contentNode.addChild("#", "makeStatusPage");
 		return pageNode.generate();
 	}

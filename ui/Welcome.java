@@ -10,7 +10,7 @@ public class Welcome {
 	
 	public static String makeWelcomePage(Freetalk ft) {
 		HTMLNode pageNode = ft.getPageNode();
-		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
 		contentNode.addChild(createWelcomeBox(ft));
 		contentNode.addChild(createOverviewBox(ft));
 		/* FIXME: the backup stuff is broken. repair it or get rid of it. i think we should rather autobackup or whatever.
@@ -20,16 +20,16 @@ public class Welcome {
 	}
 	
 	private static HTMLNode createWelcomeBox(Freetalk ft) {
-		HTMLNode welcomeBox = ft.pm.getInfobox("Welcome");
-		HTMLNode welcomeContent = ft.pm.getContentNode(welcomeBox);
+		HTMLNode welcomeBox = ft.mPageMaker.getInfobox("Welcome");
+		HTMLNode welcomeContent = ft.mPageMaker.getContentNode(welcomeBox);
 		welcomeContent.addChild("P", "Welcome to GenTec Labs. This is our last experiment: cloning fms.");
 		welcomeContent.addChild("P", "Things happens you didn't expect? Call 0800-GordonFreeman for rescue");
 		return welcomeBox;
 	}
 
 	private static HTMLNode createOverviewBox(Freetalk ft) {
-		HTMLNode overviewBox = ft.pm.getInfobox("Overview");
-		HTMLNode overviewContent = ft.pm.getContentNode(overviewBox);
+		HTMLNode overviewBox = ft.mPageMaker.getInfobox("Overview");
+		HTMLNode overviewContent = ft.mPageMaker.getContentNode(overviewBox);
 		HTMLNode list = overviewContent.addChild("ul");
 		list.addChild(new HTMLNode("li", "Own Identities: " + ft.countOwnIdentities()));
 		list.addChild(new HTMLNode("li", "Known Identities: " + ft.countIdentities()));
@@ -37,8 +37,8 @@ public class Welcome {
 	}
 
 	private static HTMLNode createBackupHintBox(Freetalk ft) {
-		HTMLNode bhBox = ft.pm.getInfobox("The boring backup reminder");
-		HTMLNode bhContent = ft.pm.getContentNode(bhBox);
+		HTMLNode bhBox = ft.mPageMaker.getInfobox("The boring backup reminder");
+		HTMLNode bhContent = ft.mPageMaker.getContentNode(bhBox);
 		bhContent.addChild("P", "You can not turn me off, because I'm boring. :P");
 		bhContent.addChild("P", "Don't forget to backup your data. You find the buttons below.");
 		bhContent.addChild(createExportBox(ft));
@@ -47,9 +47,9 @@ public class Welcome {
 	}
 	
 	private static HTMLNode createExportBox(Freetalk ft) {
-		HTMLNode exportBox = ft.pm.getInfobox("Export");
-		HTMLNode exportContent = ft.pm.getContentNode(exportBox);
-		HTMLNode exportForm = ft.pr.addFormChild(exportContent, Freetalk.PLUGIN_URI + "/exportDB", "exportForm");
+		HTMLNode exportBox = ft.mPageMaker.getInfobox("Export");
+		HTMLNode exportContent = ft.mPageMaker.getContentNode(exportBox);
+		HTMLNode exportForm = ft.mPluginRespirator.addFormChild(exportContent, Freetalk.PLUGIN_URI + "/exportDB", "exportForm");
 		exportForm.addChild("#", "Export the database (Identities etc pp) to xml file. \u00a0 ");
 		exportForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "export", "Export" });
 		exportForm.addChild("br");
@@ -58,9 +58,9 @@ public class Welcome {
 	}
 	
 	private static HTMLNode createImportBox(Freetalk ft) {
-		HTMLNode importBox = ft.pm.getInfobox("Import");
-		HTMLNode importContent = ft.pm.getContentNode(importBox);
-		HTMLNode importForm = ft.pr.addFormChild(importContent, Freetalk.PLUGIN_URI + "/importDB", "importForm");
+		HTMLNode importBox = ft.mPageMaker.getInfobox("Import");
+		HTMLNode importContent = ft.mPageMaker.getContentNode(importBox);
+		HTMLNode importForm = ft.mPluginRespirator.addFormChild(importContent, Freetalk.PLUGIN_URI + "/importDB", "importForm");
 		importForm.addChild("#", "Choose xml file to import.\u00a0");
 		importForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "file", "filename", "" });
 		importForm.addChild("#", "\u00a0");

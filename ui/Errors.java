@@ -14,13 +14,13 @@ public class Errors {
 
 	private static String makeErrorPage(Freetalk ft, String title, String error) {
 		HTMLNode pageNode = ft.getPageNode();
-		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
 		contentNode.addChild(createErrorBox(ft, title, error));
 		return pageNode.generate();
 	}
 
 	private static HTMLNode createErrorBox(Freetalk ft, String title, String errmsg) {
-		HTMLNode errorBox = ft.pm.getInfobox("infobox-alert", title);
+		HTMLNode errorBox = ft.mPageMaker.getInfobox("infobox-alert", title);
 		errorBox.addChild("#", errmsg);
 		return errorBox;
 	}

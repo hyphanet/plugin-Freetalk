@@ -11,7 +11,7 @@ public class Messages {
 	
 	public static String makeMessagesPage(Freetalk ft, HTTPRequest request ) {
 		HTMLNode pageNode = ft.getPageNode();
-		HTMLNode contentNode = ft.pm.getContentNode(pageNode);
+		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
 		contentNode.addChild("#", "makeMessagesPage");
 		return pageNode.generate();
 	}

@@ -8,8 +8,12 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
+import plugins.Freetalk.WoT.WoTMessageFetcher;
+import plugins.Freetalk.WoT.WoTMessageInserter;
 import plugins.Freetalk.WoT.WoTMessageManager;
+import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.ui.Errors;
 import plugins.Freetalk.ui.IdentityEditor;
 import plugins.Freetalk.ui.Messages;
@@ -27,7 +31,7 @@ import freenet.clients.http.PageMaker;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n.LANGUAGE;
-import freenet.pluginmanager.PluginNotFoundException;
+import freenet.node.Node;
 import freenet.pluginmanager.DownloadPluginHTTPException;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginFCP;
@@ -66,17 +70,18 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 
 	/* References from the node */
 	
-	public PluginRespirator pr;
-
-	public PageMaker pm;
-
-	private LANGUAGE language;
+	public PluginRespirator mPluginRespirator; /* TODO: remove references in other classes so we can make this private */
 	
-	private THEME theme;
-
-	private HighLevelSimpleClient client;
+	private Node mNode;
 	
-	private TempBucketFactory tbf;
+	private HighLevelSimpleClient mClient;
+
+	public PageMaker mPageMaker;
+
+	private LANGUAGE mLanguage;
+	
+	private THEME mTheme;
+
 	
 	/* The plugin's own references */
 	
@@ -85,6 +90,10 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	private WoTIdentityManager mIdentityManager;
 	
 	private WoTMessageManager mMessageManager;
+	
+	private WoTMessageFetcher mMessageFetcher;
+	
+	private WoTMessageInserter mMessageInserter;
 
 	private FreetalkNNTPServer mNNTPServer;
 	
@@ -92,19 +101,32 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		
 		Logger.debug(this, "Plugin starting up...");
 
-		pr = myPR;
-		
-		client = pr.getHLSimpleClient();
+		mPluginRespirator = myPR;
+		mNode = mPluginRespirator.getNode();
+		mClient = mPluginRespirator.getHLSimpleClient();
 
 		Logger.debug(this, "Opening database...");
 		
 		Configuration dbCfg = Db4o.newConfiguration();
 		for(String f : Message.getIndexedFields())
 			dbCfg.objectClass(Message.class).objectField(f).indexed(true);
+		
 		dbCfg.objectClass(Message.class).cascadeOnUpdate(true);
 		// TODO: decide about cascade on delete. 
 		for(String f : Board.getIndexedFields())
 			dbCfg.objectClass(Board.class).objectField(f).indexed(true);
+		
+		for(String f : Board.getBoardMessageLinkIndexedFields()) {
+			dbCfg.objectClass(Board.BoardMessageLink.class).objectField(f).indexed(true);
+		}
+		
+		for(String f :  WoTIdentity.getIndexedFields()) {
+			dbCfg.objectClass(WoTIdentity.class).objectField(f).indexed(true);
+		}
+		
+		for(String f :  WoTOwnIdentity.getIndexedFields()) {
+			dbCfg.objectClass(WoTOwnIdentity.class).objectField(f).indexed(true);
+		}
 		
 		db = Db4o.openFile(dbCfg, DATABASE_FILE);
 		
@@ -112,19 +134,18 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 
 		Logger.debug(this, "Wiping database...");
 		/* DEBUG: Wipe database on startup */
+		/* FIXME: This does not work. Why? */
 		ObjectSet<Object> result = db.queryByExample(new Object());
 		for (Object o : result) db.delete(o);
 		db.commit();
 		Logger.debug(this, "Database wiped.");
-
-		tbf = pr.getNode().clientCore.tempBucketFactory;
 		
 		Logger.debug(this, "Creating identity manager...");
 		int tries = 0;
 		do {
 			try {
 				++tries;
-				mIdentityManager = new WoTIdentityManager(db, pr);
+				mIdentityManager = new WoTIdentityManager(db, mPluginRespirator);
 			}
 		
 			catch(PluginNotFoundException e) {
@@ -136,18 +157,24 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		} while(mIdentityManager == null);
 		
 		Logger.debug(this, "Creating message manager...");
-		mMessageManager = new WoTMessageManager(db, pr.getNode().executor, mIdentityManager);
+		mMessageManager = new WoTMessageManager(db, mPluginRespirator.getNode().executor, mIdentityManager);
+		
+		Logger.debug(this, "Creating message fetcher...");
+		mMessageFetcher = new WoTMessageFetcher(mNode, mClient, db, "Freetalk message fetcher", mIdentityManager, mMessageManager);
+		
+		Logger.debug(this, "Creating message inserter...");
+		mMessageInserter = new WoTMessageInserter(mNode, mClient, "Freetalk message inserter", mIdentityManager, mMessageManager);
 
 		Logger.debug(this, "Starting NNTP server...");
-		mNNTPServer = new FreetalkNNTPServer(pr.getNode(), this, 1199, null, null);
+		mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "127.0.0.1", "127.0.0.1");
 
-		pm = pr.getPageMaker();
-		pm.addNavigationLink(PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
-		pm.addNavigationLink(PLUGIN_URI + "/ownidentities", "Own Identities", "Manage your own identities", false, null);
-		pm.addNavigationLink(PLUGIN_URI + "/knownidentities", "Known Identities", "Manage others identities", false, null);
-		pm.addNavigationLink(PLUGIN_URI + "/messages", "Messages", "View Messages", false, null);
-		pm.addNavigationLink(PLUGIN_URI + "/status", "Dealer status", "Show what happens in background", false, null);
-		pm.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);
+		mPageMaker = mPluginRespirator.getPageMaker();
+		mPageMaker.addNavigationLink(PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
+		mPageMaker.addNavigationLink(PLUGIN_URI + "/ownidentities", "Own Identities", "Manage your own identities", false, null);
+		mPageMaker.addNavigationLink(PLUGIN_URI + "/knownidentities", "Known Identities", "Manage others identities", false, null);
+		mPageMaker.addNavigationLink(PLUGIN_URI + "/messages", "Messages", "View Messages", false, null);
+		mPageMaker.addNavigationLink(PLUGIN_URI + "/status", "Dealer status", "Show what happens in background", false, null);
+		mPageMaker.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);
 		
 		Logger.debug(this, "Plugin loaded.");
 	}
@@ -224,7 +251,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 
 	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
 		String pass = request.getPartAsString("formPassword", 32);
-		if (pass == null || (pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword)) {
+		if (pass == null || (pass.length() == 0) || !pass.equals(mPluginRespirator.getNode().clientCore.formPassword)) {
 			return Errors.makeErrorPage(this, "Buh! Invalid form password");
 		}
 
@@ -268,7 +295,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			IdentityEditor.checkNick(err, nick);
 
 			if ((requestUri.length() == 0) && (insertUri.length() == 0)) {
-				FreenetURI[] kp = client.generateKeyPair("fms");
+				FreenetURI[] kp = mClient.generateKeyPair("fms");
 				insertUri = kp[0].toString();
 				requestUri = kp[1].toString();
 				err.add("URI was empty, I generated one for you.");
@@ -377,17 +404,17 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		return key;
 	}
 	public void setLanguage(LANGUAGE newLanguage) {
-		language = newLanguage;
-		Logger.debug(this, "Set LANGUAGE to: " + language.isoCode);
+		mLanguage = newLanguage;
+		Logger.debug(this, "Set LANGUAGE to: " + mLanguage.isoCode);
 	}
 
 	public void setTheme(THEME newTheme) {
-		theme = newTheme;
-		Logger.error(this, "Set THEME to: " + theme.code);
+		mTheme = newTheme;
+		Logger.error(this, "Set THEME to: " + mTheme.code);
 	}
 	
 	public FredPluginFCP getWoTPlugin() {
-		return pr.getNode().pluginManager.getFCPPlugin(Freetalk.WOT_NAME);
+		return mPluginRespirator.getNode().pluginManager.getFCPPlugin(Freetalk.WOT_NAME);
 	}
 
 	public long countIdentities() {
@@ -400,6 +427,6 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	
 
 	final public HTMLNode getPageNode() {
-		return pm.getPageNode(Freetalk.PLUGIN_TITLE, null);
+		return mPageMaker.getPageNode(Freetalk.PLUGIN_TITLE, null);
 	}
 }
