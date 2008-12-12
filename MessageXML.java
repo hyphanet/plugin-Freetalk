@@ -269,6 +269,11 @@ public class MessageXML {
 				}
 				catch(EmptyStackException e) { }
 				elements.push(element);
+				
+				/* FIXME: A speedup would be to only store CDATA for elements selected by the creator of the XMLTreeGenerator. */
+				/* Alternatively the <Date> and <Time> elements could be changed to also contain a CDATA tag, then the following
+				 * line could be removed because all CDATA in the message XML is also labeled as CDATA. We should ask SomeDude
+				 * whether FMS can be modified to also do that, we want to stay compatible to FMS message XML. */
 				cdata = new StringBuffer(10 * 1024);
 			} catch (Exception e) {
 				Logger.error(this, "Parsing error", e);
