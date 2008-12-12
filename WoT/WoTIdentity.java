@@ -13,6 +13,7 @@ import plugins.Freetalk.IdentityManager;
 import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
+import freenet.support.Base64;
 
 
 /**
@@ -94,6 +95,20 @@ public class WoTIdentity implements FTIdentity {
 	
 	public String getUID() {
 		return mUID;
+	}
+	
+	/**
+	 * Generates a unique id from a {@link FreenetURI}. 
+	 * It is simply a String representing it's routing key.
+	 * We use this to identify identities and perform requests on the database. 
+	 * 
+	 * @param uri The requestURI of the Identity
+	 * @return A string to uniquely identify an Identity
+	 */
+	public static String getUIDFromURI (FreenetURI uri) {
+		/* WARNING: This is a copy of the code of plugins.WoT.Identity. Freetalk is not allowed to have its own custom IDs, you cannot change
+		 * this code here. */
+		return Base64.encode(uri.getRoutingKey());
 	}
 
 	public FreenetURI getRequestURI() {
