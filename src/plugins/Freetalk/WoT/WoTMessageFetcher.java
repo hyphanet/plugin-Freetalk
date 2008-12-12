@@ -87,6 +87,7 @@ public class WoTMessageFetcher extends MessageFetcher {
 
 	@Override
 	protected void iterate() {
+		Logger.debug(this, "Message fetcher loop running ...");
 		ArrayList<FTIdentity> identitiesToFetchFrom = new ArrayList<FTIdentity>(PARALLEL_MESSAGE_FETCH_COUNT);
 		
 		for(FTIdentity identity : mIdentityManager) {
@@ -120,6 +121,7 @@ public class WoTMessageFetcher extends MessageFetcher {
 				Logger.error(this, "Fetching of messages from " + identity.getNickname() + " failed.", e);
 			}
 		}
+		Logger.debug(this, "Message fetcher loop finished.");
 	}
 	
 	private void fetchMessages(FTIdentity author) throws FetchException {
