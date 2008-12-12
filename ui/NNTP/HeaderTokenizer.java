@@ -10,7 +10,11 @@ package plugins.Freetalk.ui.NNTP;
  * can be used, following RFC 822 syntax.
  */
 public class HeaderTokenizer {
-	/** Default list of special characters. */
+	/**
+	 * Default list of special characters.  All control characters are
+	 * also considered special, with the exception of tab, LF, and CR
+	 * (which are considered whitespace.)
+	 */
 	public static final String DEFAULT_SPECIALS = "[]()<>@,;:\\.";
 
 	/** Header text we are parsing */
@@ -95,7 +99,7 @@ public class HeaderTokenizer {
 		char c = text.charAt(position);
 		position++;
 
-		if (specials.indexOf(c) != -1)
+		if (specials.indexOf(c) != -1 || c < ' ' || c == 127)
 			return c;
 
 		if (useQuotes && c == '"') {
