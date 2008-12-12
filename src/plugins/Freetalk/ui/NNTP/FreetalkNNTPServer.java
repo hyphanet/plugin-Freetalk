@@ -38,7 +38,7 @@ public class FreetalkNNTPServer implements Runnable {
 
 	private NetworkInterface iface;
 	private volatile boolean shutdown;
-	private Thread serverThread;
+	private boolean shutdownFinished;
 
 	private ArrayList<FreetalkNNTPHandler> clientHandlers;
 
@@ -48,7 +48,7 @@ public class FreetalkNNTPServer implements Runnable {
 		this.port = port; /* TODO: As soon as Freetalk has a configuration class, read it from there */
 		this.bindTo = bindTo; /* TODO: As soon as Freetalk has a configuration class, read it from there */
 		this.allowedHosts = allowedHosts; /* TODO: As soon as Freetalk has a configuration class, read it from there */
-		shutdown = false;
+		shutdown = shutdownFinished = false;
 		clientHandlers = new ArrayList<FreetalkNNTPHandler>();
 		node.executor.execute(this, "Freetalk NNTP Server");
 	}
@@ -66,11 +66,15 @@ public class FreetalkNNTPServer implements Runnable {
 			Logger.error(this, "Error shutting down NNTP server", e);
 		}
 		
-		try {
-			serverThread.join();
-		}
-		catch(InterruptedException e) {
-			Thread.currentThread().interrupt(); /* Some HOWTO on the web said that we have to do this here */
+		synchronized (this) {
+			while (!shutdownFinished) {
+				try {
+					wait();
+				}
+				catch (InterruptedException e) {
+					// ignore
+				}
+			}
 		}
 	}
 
@@ -79,7 +83,6 @@ public class FreetalkNNTPServer implements Runnable {
 	 */
 	public void run() {
 		try {
-			serverThread = Thread.currentThread();
 			iface = NetworkInterface.create(port, bindTo, allowedHosts,
 											node.executor, true);
 			/* FIXME: NetworkInterface.accept() currently does not support being interrupted by Thread.interrupt(),
@@ -118,6 +121,11 @@ public class FreetalkNNTPServer implements Runnable {
 		
 		finally {
 			terminateHandlers();
+
+			synchronized (this) {
+				shutdownFinished = true;
+				notify();
+			}
 		}
 	}
 	
