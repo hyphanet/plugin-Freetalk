@@ -200,6 +200,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		while(result.hasNext()) {
 			WoTIdentity i = result.next();
 			assert(identityIsNotNeeded(i)); /* Check whether the isNeeded field of the identity was correct */
+			Logger.debug(this, "Garbage collecting identity " + i.getRequestURI());
 			db.delete(i);
 		}
 		
