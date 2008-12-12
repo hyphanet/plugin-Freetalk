@@ -22,7 +22,7 @@ import freenet.keys.FreenetURI;
  * @author xor
  *
  */
-public class Board {
+public class Board implements Comparable {
 
 	/* Constants */
 	
@@ -119,6 +119,17 @@ public class Board {
 	public String getNameNNTP() {
 		/* FIXME: Implement. */
 		return mName;
+	}
+
+	/**
+	 * Compare boards by comparing their names; provided so we can
+	 * sort an array of boards.
+	 */
+	public int compareTo(Object obj) {
+		if (obj instanceof Board)
+			return getName().compareTo(((Board) obj).getName());
+		else
+			throw new ClassCastException();
 	}
 
 	/**
