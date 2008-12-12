@@ -113,14 +113,21 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	public void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data) {
 		String message = params.get("Message");
 		
+		boolean identitiesWereReceived = false;
+		
 		synchronized(sfsLock) {
-			if(message.equals("Identities"))
+			if(message.equals("Identities")) {
 				sfsIdentities = params;
-			else if(message.equals("OwnIdentities"))
+				identitiesWereReceived = true;
+			}
+			else if(message.equals("OwnIdentities")) {
 				sfsOwnIdentities = params;
+				identitiesWereReceived = true;
+			}
 		}
 		
-		mThread.interrupt();
+		if(identitiesWereReceived)
+			mThread.interrupt();
 	}
 	
 	private void requestIdentities() {
@@ -235,7 +242,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 					parseIdentities(sfsIdentities, false);
 					sfsIdentities = null;
 				}
-				if(sfsOwnIdentities != null) {
+				else if(sfsOwnIdentities != null) {	/* This has to be ELSE if, otherwise we receive the second interrupt() without identities */
 					parseIdentities(sfsOwnIdentities, true);
 					sfsOwnIdentities = null;
 				}

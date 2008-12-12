@@ -22,8 +22,6 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	private final LinkedList<Board> mSubscribedBoards = new LinkedList<Board>();
 
 	private final FreenetURI mInsertURI;
-	
-	private transient WoTIdentityManager mIdentityManager = null;
 
 	/** Get a list of fields which the database should create an index on. */
 	public static String[] getIndexedFields() {
@@ -65,7 +63,7 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	}
 
 	public synchronized boolean wantsMessagesFrom(FTIdentity identity) {
-		return mIdentityManager.getScore(this, identity) > 0;	/* this has to be configurable */
+		return mIdentityManager.getScore(this, identity) >= 0;	/* FIXME: this has to be configurable */
 	}
 
 }
