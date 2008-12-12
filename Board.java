@@ -410,6 +410,7 @@ public class Board implements Comparable {
 		}
 
 		public Message getMessage() {
+			mMessage.initializeTransient(mBoard.db, mBoard.mMessageManager);
 			return mMessage;
 		}
 	}
