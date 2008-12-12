@@ -108,6 +108,9 @@ public class FreetalkNNTPServer implements Runnable {
 					}
 				}
 			}
+
+			Logger.debug(this, "NNTP Server exiting...");
+			iface.close();
 		}
 		catch (IOException e) {
 			Logger.error(this, "Unable to start NNTP server", e);
@@ -119,6 +122,7 @@ public class FreetalkNNTPServer implements Runnable {
 	}
 	
 	private void terminateHandlers() {
+		Logger.debug(this, "Closing client handlers...");
 		synchronized(clientHandlers) {
 			// Close client sockets
 			for (Iterator<FreetalkNNTPHandler> i = clientHandlers.iterator(); i.hasNext(); ) {
