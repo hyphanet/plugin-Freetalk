@@ -246,6 +246,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		}
 
 		try {
+			/* FIXME: Figure out whether we can use db4o to tell whether this commit() does something. If it does, then log an error, because then
+			 * probably we forgot a commit() somewhere. */
 			db.commit();
 			db.close();
 		} catch(Exception e) {
