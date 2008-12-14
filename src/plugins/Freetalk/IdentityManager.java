@@ -95,14 +95,16 @@ public abstract class IdentityManager implements PrioRunnable, Iterable<FTIdenti
 
 	public synchronized boolean anyOwnIdentityWantsMessagesFrom(FTIdentity identity) {
 		Iterator<FTOwnIdentity> iter = ownIdentityIterator();
+		boolean noOwnIdentities = true;
 
 		while (iter.hasNext()) {
+			noOwnIdentities = false;
 			FTOwnIdentity oid = iter.next();
 			if (oid.wantsMessagesFrom(identity))
 				return true;
 		}
 
-		return false;
+		return noOwnIdentities ? true : false;
 	}
 	
 	public synchronized void addNewIdentity(FTIdentity identity) {
