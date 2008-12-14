@@ -37,7 +37,8 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
 	private static final int THREAD_PERIOD = 10 * 60 * 1000;
 
-	private volatile boolean isRunning = true;
+	private volatile boolean isRunning = false;
+	private volatile boolean shutdownFinished = false;
 	private Thread mThread = null;
 
 	private PluginTalker mTalker;
@@ -52,6 +53,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	public WoTIdentityManager(ObjectContainer myDB, PluginRespirator pr) throws PluginNotFoundException {
 		super(myDB, pr.getNode().executor);
 		mTalker = pr.getPluginTalker(this, Freetalk.WOT_NAME, Freetalk.PLUGIN_TITLE);
+		isRunning = true;
 		mExecutor.execute(this, "FT Identity Manager");
 		Logger.debug(this, "Identity manager started.");
 	}
@@ -234,6 +236,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 			mThread.interrupt();
 		}
 		
+		try {
 		while(isRunning) {
 			Thread.interrupted();
 			Logger.debug(this, "Identity manager loop running...");
@@ -267,7 +270,15 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 				mThread.interrupt();
 			}
 		}
-		Logger.debug(this, "Identity manager thread exiting.");
+		}
+		
+		finally {
+			synchronized (this) {
+				shutdownFinished = true;
+				Logger.debug(this, "Identity manager thread exiting.");
+				notify();
+			}
+		}
 	}
 	
 	public int getPriority() {
@@ -278,12 +289,15 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		Logger.debug(this, "Stopping the identity manager...");
 		isRunning = false;
 		mThread.interrupt();
-		try {
-			mThread.join();
-		}
-		catch(InterruptedException e)
-		{
-			Thread.currentThread().interrupt();
+		synchronized(this) {
+			while(!shutdownFinished) {
+				try {
+					wait();
+				}
+				catch (InterruptedException e) {
+					Thread.interrupted();
+				}
+			}
 		}
 		Logger.debug(this, "Stopped the indentity manager.");
 	}
