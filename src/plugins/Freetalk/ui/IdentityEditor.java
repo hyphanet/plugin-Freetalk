@@ -177,8 +177,8 @@ public class IdentityEditor {
 		HTMLNode identitiesTable = boxContent.addChild("table", "border", "0");
 		HTMLNode row = identitiesTable.addChild("tr");
 		row.addChild("th", "Name");
-		row.addChild("th", "Request URI");
-		row.addChild("th");
+		row.addChild("th", "Freetalk address");
+		//row.addChild("th");
 
 		while (identities.hasNext()) {
 			FTIdentity id = identities.next();
@@ -186,8 +186,8 @@ public class IdentityEditor {
 				continue;
 			row = identitiesTable.addChild("tr");
 			row.addChild("td", id.getNickname());
-			row.addChild("td",  id.getRequestURI().toACIIString());
-			HTMLNode deleteCell = row.addChild("td");
+			row.addChild("td", id.getFreetalkAddress());
+			//HTMLNode deleteCell = row.addChild("td");
 			/* FIXME: repair, i.e. make it use the WoT plugin */
 			/*
 			HTMLNode deleteForm = ft.mPluginRespirator.addFormChild(deleteCell, Freetalk.PLUGIN_URI + "/deleteIdentity", "deleteForm");
