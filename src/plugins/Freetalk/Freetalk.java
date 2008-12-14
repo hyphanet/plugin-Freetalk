@@ -175,8 +175,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		mMessageInserter = new WoTMessageInserter(mNode, mClient, "FT Message Inserter", mIdentityManager, mMessageManager);
 
 		Logger.debug(this, "Starting NNTP server...");
-		mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "127.0.0.1", "127.0.0.1");
-		//mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "0.0.0.0", null);
+		//mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "127.0.0.1", "127.0.0.1");
+		mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "0.0.0.0", "*");
 
 		mPageMaker = mPluginRespirator.getPageMaker();
 		mPageMaker.addNavigationLink(PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
@@ -235,8 +235,12 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			Logger.error(this, "Identity manager was null!");
 
 		if(db != null) {
-			db.commit();
-			db.close();
+			try {
+				db.commit();
+				db.close();
+			} catch(Exception e) {
+				Logger.error(this, "Error while closing database.", e);
+			}
 		} else
 			Logger.error(this, "Database was null!");
 		
