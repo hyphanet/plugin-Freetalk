@@ -59,7 +59,7 @@ public class WoTMessageManager extends MessageManager {
 			catch(NoSuchMessageException e) {
 				parentThread = null;
 			}
-			int index = getFreeMessageIndex(myAuthor, date);
+			int index = getFreeMessageIndex(myAuthor);
 			
 			m = new OwnMessage(parentThread, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, index,
 				myText, myAttachments);
