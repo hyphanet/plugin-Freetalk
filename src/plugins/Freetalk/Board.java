@@ -197,8 +197,9 @@ public class Board implements Comparable<Board> {
 				absoluteOrphans.next().setParent(newMessage);
 		}
 		else {
-			Message parentThread = newMessage.getThread();
-			if(parentThread != null) {	/* Search in its parent thread for its children */
+			try {
+				Message parentThread = newMessage.getThread();
+				/* Search in its parent thread for its children */
 				Iterator<Message> iter = parentThread.childrenIterator(this);
 				while(iter.hasNext()) {
 					Message parentThreadChild = iter.next();
@@ -207,7 +208,8 @@ public class Board implements Comparable<Board> {
 						parentThreadChild.setParent(newMessage); /* It's a child of the newMessage, not of the parentThread */
 				}
 			}
-			else { /* The new message is an absolute orphan, find its children amongst the other absolute orphans */
+			catch(NoSuchMessageException e)
+			{ /* The new message is an absolute orphan, find its children amongst the other absolute orphans */
 				Iterator<Message> absoluteOrphans = absoluteOrphanIterator(newMessage.getURI());
 				while(absoluteOrphans.hasNext()){	/* Search in the orphans for messages which belong to this message  */
 					Message orphan = absoluteOrphans.next();

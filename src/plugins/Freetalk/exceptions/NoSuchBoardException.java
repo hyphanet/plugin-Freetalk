@@ -3,9 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.exceptions;
 
-import java.util.NoSuchElementException;
 
-public class NoSuchBoardException extends NoSuchElementException {
+public class NoSuchBoardException extends Exception {
 
 	private static final long serialVersionUID = 1L;
 
