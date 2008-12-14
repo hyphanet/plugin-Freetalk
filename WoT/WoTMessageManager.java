@@ -27,7 +27,8 @@ public class WoTMessageManager extends MessageManager {
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
 	private static final int THREAD_PERIOD = 5 * 60 * 1000;
 
-	private volatile boolean isRunning = true;
+	private volatile boolean isRunning = false;
+	private volatile boolean shutdownFinished = false;
 	private Thread mThread;
 	
 	private static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
@@ -35,6 +36,7 @@ public class WoTMessageManager extends MessageManager {
 	public WoTMessageManager(ObjectContainer myDB, Executor myExecutor, WoTIdentityManager myIdentityManager) {
 		super(myDB, myExecutor, myIdentityManager);
 		mIdentityManager = myIdentityManager;
+		isRunning = true;
 		mExecutor.execute(this, "FT Message Manager");
 		Logger.debug(this, "Message manager started.");
 	}
@@ -79,6 +81,7 @@ public class WoTMessageManager extends MessageManager {
 			mThread.interrupt();
 		}
 		
+		try {
 		while(isRunning) {
 			Logger.debug(this, "Message manager loop running...");
 
@@ -93,19 +96,30 @@ public class WoTMessageManager extends MessageManager {
 				Logger.debug(this, "Message manager loop interrupted!");
 			}
 		}
-		Logger.debug(this, "Message manager thread exiting.");
+		}
+		
+		finally {
+			synchronized (this) {
+				shutdownFinished = true;
+				Logger.debug(this, "Message manager thread exiting.");
+				notify();
+			}
+		}
 	}
 	
 	public void terminate() {
 		Logger.debug(this, "Stopping the message manager..."); 
 		isRunning = false;
 		mThread.interrupt();
-		try {
-			mThread.join();
-		}
-		catch(InterruptedException e)
-		{
-			Thread.currentThread().interrupt();
+		synchronized(this) {
+			while(!shutdownFinished) {
+				try {
+					wait();
+				}
+				catch (InterruptedException e) {
+					Thread.interrupted();
+				}
+			}
 		}
 		Logger.debug(this, "Stopped the message manager.");
 	}
