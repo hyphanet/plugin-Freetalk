@@ -170,7 +170,11 @@ public class WoTMessageFetcher extends MessageFetcher {
 	
 	@Override
 	public void onFailure(FetchException e, ClientGetter state) {
-		Logger.debug(this, "Downloading message " + state.getURI() + " failed.", e);
+		if(e.getMode() == FetchException.DATA_NOT_FOUND)
+			Logger.debug(this, "Downloading message " + state.getURI() + " failed, data not found.");
+		else
+			Logger.error(this, "Downloading message " + state.getURI() + " failed.", e);
+		
 		removeFetch(state);
 	}
 	
