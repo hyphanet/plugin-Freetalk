@@ -295,7 +295,8 @@ public class Message {
 	 * Get the thread to which this message belongs. The transient fields of the returned message will be initialized already.
 	 */
 	public synchronized Message getThread() {
-		mThread.initializeTransient(db, mMessageManager);
+		if(mThread != null)
+			mThread.initializeTransient(db, mMessageManager);
 		return mThread;
 	}
 	
@@ -311,7 +312,8 @@ public class Message {
 	 * Get the message to which this message is a reply. The transient fields of the returned message will be initialized already.
 	 */
 	public synchronized Message getParent() {
-		mParent.initializeTransient(db, mMessageManager);
+		if(mParent != null)
+			mParent.initializeTransient(db, mMessageManager);
 		return mParent;
 	}
 
