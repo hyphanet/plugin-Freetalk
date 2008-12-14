@@ -219,11 +219,10 @@ public abstract class MessageManager implements Runnable {
 	 * Get the next free index for an OwnMessage. Please synchronize on OwnMessage.class while creating a message, this method does not
 	 * provide synchronization.
 	 */
-	public int getFreeMessageIndex(FTOwnIdentity messageAuthor, Date date)  {
+	public int getFreeMessageIndex(FTOwnIdentity messageAuthor)  {
 		Query q = db.query();
 		q.constrain(OwnMessage.class);
 		q.descend("mAuthor").constrain(messageAuthor);
-		q.descend("mDate").constrain(new Date(date.getYear(), date.getMonth(), date.getDate()));
 		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
 		ObjectSet<OwnMessage> result = q.execute();
 		
