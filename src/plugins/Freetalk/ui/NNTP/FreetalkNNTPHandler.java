@@ -491,6 +491,14 @@ public class FreetalkNNTPHandler implements Runnable {
 			printDate();
 		}
 		else if (command.equalsIgnoreCase("GROUP")) {
+			/* FIXME: Thunderbird sends "GROUP freetalk" and "GROUP Test" because there are currently messages in board freetalk and in board
+			 * test. The NNTP server answers "211 1 1 1" for both boards. For the Freetalk board, Thunderbird then retrieves the message in 
+			 * the board and also shows it. But for the Test board, it does NOT even send another command for receiving the message. Therefore,
+			 * it also does not show the message. Why doesn't it download it even though the NNTP server answers with the correct reply of
+			 * "211 1 1 1" which means that there is 1 message in the Test board? Maybe message numbers are not per-board but global and Thunderbird
+			 * identifies message number 1 with the message from the freetalk board?
+			 * - I also tried with Windows Mail, that one does show the message in the Test board!
+			 */
 			if (tokens.length == 2) {
 				selectGroup(tokens[1]);
 			}
@@ -573,6 +581,7 @@ public class FreetalkNNTPHandler implements Runnable {
 			}
 		}
 		else if (command.equalsIgnoreCase("POST")) {
+			/* FIXME: This happens when trying to send a reply to a message with Thunderbird */
 			printStatusLine("340 Please send article to be posted");
 			return true;
 		}
@@ -591,6 +600,8 @@ public class FreetalkNNTPHandler implements Runnable {
 				printStatusLine("501 Syntax error");
 			}
 		}
+		/* FIXME: Implement the login command. People with a newsreader which always tries to login will receive command not recognized
+		 * and therefore cannot use NNTP. */
 		else {
 			printStatusLine("500 Command not recognized");
 		}
