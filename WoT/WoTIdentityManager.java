@@ -229,12 +229,14 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		
 		try {
 			Logger.debug(this, "Waiting for the node to start up...");
-			Thread.sleep((long) (1*60*1000 * (0.5f + Math.random()))); /* Let the node start up */
+			Thread.sleep((long) (0.5f*60*1000 * (0.5f + Math.random()))); /* Let the node start up */
 		}
 		catch (InterruptedException e)
 		{
 			mThread.interrupt();
 		}
+		
+		long nextIdentityRequestTime = 0;
 		
 		try {
 		while(isRunning) {
@@ -249,21 +251,26 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 					parseIdentities(sfsIdentities, false);
 					sfsIdentities = null;
 				}
-				else if(sfsOwnIdentities != null) {	/* This has to be ELSE if, otherwise we receive the second interrupt() without identities */
+				if(sfsOwnIdentities != null) {
 					parseIdentities(sfsOwnIdentities, true);
 					sfsOwnIdentities = null;
 				}
+				
+				if(identitiesWereReceived)
+					garbageCollectIdentities();
 			}
-			
-			if(identitiesWereReceived == false)
+
+			long currentTime = System.currentTimeMillis();
+			long sleepTime = (long) (THREAD_PERIOD * (0.5f + Math.random()));
+			if(currentTime >= nextIdentityRequestTime) {
 				requestIdentities();
-			else
-				garbageCollectIdentities();
+				nextIdentityRequestTime = currentTime + sleepTime;
+			}
 			
 			Logger.debug(this, "Identity manager loop finished.");
 
 			try {
-				Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
+				Thread.sleep(sleepTime);
 			}
 			catch (InterruptedException e)
 			{
