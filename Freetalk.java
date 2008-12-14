@@ -20,11 +20,14 @@ import plugins.Freetalk.ui.Messages;
 import plugins.Freetalk.ui.Status;
 import plugins.Freetalk.ui.Welcome;
 import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
+import plugins.WoT.Score;
+import plugins.WoT.Trust;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
+import com.db4o.query.Query;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker;
@@ -140,6 +143,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		
 		Logger.debug(this, "Database opened.");
 		
+		deleteBrokenObjects();
+		
 		/*
 		Logger.debug(this, "Wiping database...");
 		ObjectSet<Object> result = db.queryByExample(new Object());
@@ -186,6 +191,23 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		mPageMaker.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);
 		
 		Logger.debug(this, "Plugin loaded.");
+	}
+	
+	/**
+	 * Debug function.
+	 */
+	private void deleteBrokenObjects() {
+		Query q = db.query();
+		q.constrain(Message.class);
+		q.descend("mAuthor").constrain(null).identity();
+		
+		ObjectSet<Message> brokenMessages = q.execute();
+		for(Message m : brokenMessages) {
+			Logger.error(m, "Deleting message with mAuthor == null: " + m.getURI());
+			db.delete(m);
+		}
+
+		db.commit();
 	}
 
 	public void terminate() {
