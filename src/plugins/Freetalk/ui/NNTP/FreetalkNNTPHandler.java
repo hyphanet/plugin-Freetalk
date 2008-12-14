@@ -492,10 +492,10 @@ public class FreetalkNNTPHandler implements Runnable {
 		}
 		else if (command.equalsIgnoreCase("GROUP")) {
 			/* FIXME: Thunderbird sends "GROUP freetalk" and "GROUP Test" because there are currently messages in board freetalk and in board
-			 * test. The NNTP server answers "211 1 1 1" for both boards. For the Freetalk board, Thunderbird then retrieves the message in 
+			 * test. The NNTP server answers "211 1 1 1 boardname" for both boards. For the Freetalk board, Thunderbird then retrieves the message in 
 			 * the board and also shows it. But for the Test board, it does NOT even send another command for receiving the message. Therefore,
 			 * it also does not show the message. Why doesn't it download it even though the NNTP server answers with the correct reply of
-			 * "211 1 1 1" which means that there is 1 message in the Test board? Maybe message numbers are not per-board but global and Thunderbird
+			 * "211 1 1 1 boardname" which means that there is 1 message in the Test board? Maybe message numbers are not per-board but global and Thunderbird
 			 * identifies message number 1 with the message from the freetalk board?
 			 * - I also tried with Windows Mail, that one does show the message in the Test board!
 			 */
