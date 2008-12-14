@@ -108,6 +108,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.debug(this, "Opening database...");
 		
 		Configuration dbCfg = Db4o.newConfiguration();
+		dbCfg.activationDepth(5); /* FIXME: Figure out a reasonable value */
+		
 		for(String f : Message.getIndexedFields())
 			dbCfg.objectClass(Message.class).objectField(f).indexed(true);
 		dbCfg.objectClass(Message.class).cascadeOnActivate(true);
