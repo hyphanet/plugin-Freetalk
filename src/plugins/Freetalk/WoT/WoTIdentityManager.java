@@ -146,46 +146,46 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	private void parseIdentities(SimpleFieldSet params, boolean bOwnIdentities) {
 		long time = System.currentTimeMillis();
 	
-			for(int idx = 1; ; idx++) {
-				String uid = params.get("Identity"+idx);
-				if(uid == null || uid.equals("")) /* FIXME: Figure out whether the second condition is necessary */
-					break;
-				String requestURI = params.get("RequestURI"+idx);
-				String insertURI = bOwnIdentities ? params.get("InsertURI"+idx) : null;
-				String nickname = params.get("Nickname"+idx);
-				
-				synchronized(this) { /* We lock here and not during the whole function to allow other threads to execute */
-					Query q = db.query();
-					q.constrain(WoTIdentity.class);
-					q.descend("mUID").constrain(uid);
-					ObjectSet<WoTIdentity> result = q.execute();
-					WoTIdentity id = null; 
-		
-					if(result.size() == 0) {
-						try {
-							Logger.debug(this, "Importing identity from WoT: " + requestURI);
-							id = bOwnIdentities ?	new WoTOwnIdentity(uid, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
-													new WoTIdentity(uid, new FreenetURI(requestURI), nickname);
+		for(int idx = 1; ; idx++) {
+			String uid = params.get("Identity"+idx);
+			if(uid == null || uid.equals("")) /* FIXME: Figure out whether the second condition is necessary */
+				break;
+			String requestURI = params.get("RequestURI"+idx);
+			String insertURI = bOwnIdentities ? params.get("InsertURI"+idx) : null;
+			String nickname = params.get("Nickname"+idx);
 
-							id.initializeTransient(db, this);
-							id.store();
-						}
-						catch(MalformedURLException e) {
-							Logger.error(this, "Error in parseIdentities", e);
-						}
-					} else {
-						Logger.debug(this, "Not importing already existing identity " + requestURI);
-						assert(result.size() == 1);
-						id = result.next();
+			synchronized(this) { /* We lock here and not during the whole function to allow other threads to execute */
+				Query q = db.query();
+				q.constrain(WoTIdentity.class);
+				q.descend("mUID").constrain(uid);
+				ObjectSet<WoTIdentity> result = q.execute();
+				WoTIdentity id = null; 
+
+				if(result.size() == 0) {
+					try {
+						Logger.debug(this, "Importing identity from WoT: " + requestURI);
+						id = bOwnIdentities ?	new WoTOwnIdentity(uid, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
+							new WoTIdentity(uid, new FreenetURI(requestURI), nickname);
+
 						id.initializeTransient(db, this);
+						id.store();
 					}
-					
-					if(bOwnIdentities)	/* FIXME: Only add the context if the user actually uses the identity with Freetalk */
-						addFreetalkContext(id);
-					id.setLastReceivedFromWoT(time);
+					catch(MalformedURLException e) {
+						Logger.error(this, "Error in parseIdentities", e);
+					}
+				} else {
+					Logger.debug(this, "Not importing already existing identity " + requestURI);
+					assert(result.size() == 1);
+					id = result.next();
+					id.initializeTransient(db, this);
 				}
-				Thread.yield();
+
+				if(bOwnIdentities)	/* FIXME: Only add the context if the user actually uses the identity with Freetalk */
+					addFreetalkContext(id);
+				id.setLastReceivedFromWoT(time);
 			}
+			Thread.yield();
+		}
 	}
 	
 	private synchronized void garbageCollectIdentities() {
