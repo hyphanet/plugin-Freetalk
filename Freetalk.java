@@ -175,8 +175,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		mMessageInserter = new WoTMessageInserter(mNode, mClient, "FT Message Inserter", mIdentityManager, mMessageManager);
 
 		Logger.debug(this, "Starting NNTP server...");
-		mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "127.0.0.1", "127.0.0.1");
-		//mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "0.0.0.0", "*");
+		//mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "127.0.0.1", "127.0.0.1");
+		mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "0.0.0.0", "*");
 
 		mPageMaker = mPluginRespirator.getPageMaker();
 		mPageMaker.addNavigationLink(PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
@@ -209,40 +209,47 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	public void terminate() {
 		Logger.debug(this, "Terminating Freetalk ...");
 		
-		if(mNNTPServer != null)
+		try {
 			mNNTPServer.terminate();
-		else
-			Logger.debug(this, "NNTP server was null.");
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
 		
-		if(mMessageInserter != null)
+		try {
 			mMessageInserter.terminate();
-		else
-			Logger.error(this, "Message inserter was null!");
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
 		
-		if(mMessageFetcher != null)
+		try {
 			mMessageFetcher.terminate();
-		else
-			Logger.error(this, "Message fetcher was null!");
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
 		
-		if(mMessageManager != null)
+		try {
 			mMessageManager.terminate();
-		else
-			Logger.error(this, "Message manager was null!");
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
 		
-		if(mIdentityManager != null)
+		try {
 			mIdentityManager.terminate();
-		else
-			Logger.error(this, "Identity manager was null!");
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
 
-		if(db != null) {
-			try {
-				db.commit();
-				db.close();
-			} catch(Exception e) {
-				Logger.error(this, "Error while closing database.", e);
-			}
-		} else
-			Logger.error(this, "Database was null!");
+		try {
+			db.commit();
+			db.close();
+		} catch(Exception e) {
+			Logger.error(this, "Error while closing database.", e);
+		}
 		
 		Logger.debug(this, "Freetalk plugin terminated.");
 	}
