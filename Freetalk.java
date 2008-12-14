@@ -64,7 +64,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	public static final String PLUGIN_URI = "/plugins/plugins.Freetalk.Freetalk";
 	public static final String PLUGIN_TITLE = "Freetalk-testing"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
 	public static final String WOT_NAME = "plugins.WoT.WoT";
-	public static final String WOT_CONTEXT = PLUGIN_TITLE;
+	public static final String WOT_CONTEXT = "Freetalk";
 	public static final String DATABASE_FILE = "freetalk_data.db4o";
 
 	/* References from the node */
@@ -140,11 +140,13 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		
 		Logger.debug(this, "Database opened.");
 		
+		/*
 		Logger.debug(this, "Wiping database...");
 		ObjectSet<Object> result = db.queryByExample(new Object());
 		for (Object o : result) db.delete(o);
 		db.commit();
 		Logger.debug(this, "Database wiped.");
+		*/
 		
 		Logger.debug(this, "Creating identity manager...");
 		int tries = 0;
@@ -173,6 +175,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 
 		Logger.debug(this, "Starting NNTP server...");
 		mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "127.0.0.1", "127.0.0.1");
+		//mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "0.0.0.0", null);
 
 		mPageMaker = mPluginRespirator.getPageMaker();
 		mPageMaker.addNavigationLink(PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
