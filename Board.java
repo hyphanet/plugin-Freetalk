@@ -149,7 +149,9 @@ public class Board implements Comparable<Board> {
 			newMessage.initializeTransient(db, mMessageManager);
 			newMessage.store();
 			
-			new BoardMessageLink(this, newMessage).store(db);
+			synchronized(BoardMessageLink.class) {
+				new BoardMessageLink(this, newMessage, mMessageManager.getFreeNNTPMessageIndex()).store(db);
+			}
 
 			if(!newMessage.isThread())
 			{
@@ -351,10 +353,6 @@ public class Board implements Comparable<Board> {
 		
 		return result.next().getIndex();
 	}
-
-	public synchronized int getLastMessageIndex() {
-		return mFreeMessageIndex - 1;
-	}
 	
 	public synchronized Message getMessageByIndex(int index) throws NoSuchMessageException {
 		Query q = db.query();
@@ -368,13 +366,13 @@ public class Board implements Comparable<Board> {
 		return result.next().getMessage();
 	}
 	
-	private int mFreeMessageIndex = 1;
-	
-	private synchronized int getFreeMessageIndex() {
-		int result = mFreeMessageIndex;
-		++mFreeMessageIndex;
-		store();
-		return result;
+	public int getLastMessageIndex() {
+		Query q = db.query();
+		q.constrain(BoardMessageLink.class);
+		q.descend("mBoard").constrain(this);
+		q.descend("mMessageIndex").orderDescending(); /* FIXME: Use a db4o native query to find the maximum instead of sorting. O(n) vs. O(n log(n))! */
+		ObjectSet<MessageReference> result = q.execute();
+		return result.size() == 0 ? 0 : result.next().getIndex();
 	}
 	
 	public synchronized void store() {
@@ -398,13 +396,13 @@ public class Board implements Comparable<Board> {
 	public final class BoardMessageLink implements MessageReference { /* TODO: This is only public for configuring db4o. Find a better way */
 		private final Board mBoard;
 		private final Message mMessage;
-		private final int mMessageIndex;
+		private final int mMessageIndex; /* TODO: The NNTP server should maintain the index values itself maybe. */
 		
-		public BoardMessageLink(Board myBoard, Message myMessage) {
+		public BoardMessageLink(Board myBoard, Message myMessage, int myIndex) {
 			assert(myBoard != null && myMessage != null);
 			mBoard = myBoard;
 			mMessage = myMessage;
-			mMessageIndex = getFreeMessageIndex();
+			mMessageIndex = myIndex;
 		}
 		
 		public void store(ObjectContainer db) {

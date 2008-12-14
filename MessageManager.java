@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 
+import plugins.Freetalk.Board.BoardMessageLink;
+import plugins.Freetalk.Board.MessageReference;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
@@ -199,6 +201,18 @@ public abstract class MessageManager implements Runnable {
 			}
 			
 		};
+	}
+	
+	/**
+	 * Get the next free NNTP index for a message. Please synchronize on BoardMessageLink.class when creating a message, this method
+	 * does not provide synchronization.
+	 */
+	public int getFreeNNTPMessageIndex() {
+		Query q = db.query();
+		q.constrain(BoardMessageLink.class);
+		q.descend("mMessageIndex").orderDescending(); /* FIXME: Use a db4o native query to find the maximum instead of sorting. O(n) vs. O(n log(n))! */
+		ObjectSet<MessageReference> result = q.execute();
+		return result.size() == 0 ? 1 : result.next().getIndex()+1;
 	}
 	
 	/**

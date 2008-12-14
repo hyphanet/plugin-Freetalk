@@ -143,13 +143,11 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		
 		deleteBrokenObjects();
 		
-		/*
 		Logger.debug(this, "Wiping database...");
 		ObjectSet<Object> result = db.queryByExample(new Object());
 		for (Object o : result) db.delete(o);
 		db.commit();
 		Logger.debug(this, "Database wiped.");
-		*/
 		
 		Logger.debug(this, "Creating identity manager...");
 		int tries = 0;
