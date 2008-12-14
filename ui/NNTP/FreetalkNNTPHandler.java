@@ -255,6 +255,7 @@ public class FreetalkNNTPHandler implements Runnable {
 		else {
 			printStatusLine("223 " + article.getMessageNum()
 							+ " <" + article.getMessage().getID() + ">");
+			endTextResponse();
 		}
 	}
 
