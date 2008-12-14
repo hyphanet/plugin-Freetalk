@@ -77,7 +77,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		return result.next();
 	}
 	
-	public FTIdentity getIdentityByURI(FreenetURI uri) {
+	public FTIdentity getIdentityByURI(FreenetURI uri) throws NoSuchIdentityException {
 		return getIdentity(WoTIdentity.getUIDFromURI(uri));
 	}
 	

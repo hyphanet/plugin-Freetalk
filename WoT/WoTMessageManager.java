@@ -16,6 +16,7 @@ import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.ObjectContainer;
 
@@ -51,7 +52,13 @@ public class WoTMessageManager extends MessageManager {
 		
 		synchronized(OwnMessage.class) {
 			Date date = mCalendar.getTime();
-			Message parentThread = myParentMessage!= null ? myParentMessage.getThread() : null;
+			Message parentThread;
+			try {
+				parentThread =  myParentMessage!= null ? myParentMessage.getThread() : null;
+			}
+			catch(NoSuchMessageException e) {
+				parentThread = null;
+			}
 			int index = getFreeMessageIndex(myAuthor, date);
 			
 			m = new OwnMessage(parentThread, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, index,

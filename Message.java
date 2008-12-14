@@ -12,6 +12,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.query.Query;
@@ -294,9 +295,10 @@ public class Message {
 	/**
 	 * Get the thread to which this message belongs. The transient fields of the returned message will be initialized already.
 	 */
-	public synchronized Message getThread() {
-		if(mThread != null)
-			mThread.initializeTransient(db, mMessageManager);
+	public synchronized Message getThread() throws NoSuchMessageException {
+		if(mThread == null)
+			throw new NoSuchMessageException();
+		mThread.initializeTransient(db, mMessageManager);
 		return mThread;
 	}
 	
@@ -311,9 +313,10 @@ public class Message {
 	/**
 	 * Get the message to which this message is a reply. The transient fields of the returned message will be initialized already.
 	 */
-	public synchronized Message getParent() {
-		if(mParent != null)
-			mParent.initializeTransient(db, mMessageManager);
+	public synchronized Message getParent() throws NoSuchMessageException {
+		if(mParent == null)
+			throw new NoSuchMessageException();
+		mParent.initializeTransient(db, mMessageManager);
 		return mParent;
 	}
 
