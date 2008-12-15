@@ -134,6 +134,27 @@ public abstract class MessageManager implements Runnable {
 		m.initializeTransient(db, this);
 		return m;
 	}
+	
+	public OwnMessage getOwnMessage(FreenetURI uri) throws NoSuchMessageException {
+		return getOwnMessage(Message.generateID(uri));
+	}
+	
+	public synchronized OwnMessage getOwnMessage(String id) throws NoSuchMessageException {
+		Query query = db.query();
+		query.constrain(OwnMessage.class);
+		query.descend("mID").constrain(id);
+		ObjectSet<OwnMessage> result = query.execute();
+
+		if(result.size() > 1)
+			throw new DuplicateMessageException();
+		
+		if(result.size() == 0)
+			throw new NoSuchMessageException();
+
+		OwnMessage m = result.next();
+		m.initializeTransient(db, this);
+		return m;
+	}
 
 	/**
 	 * Get a board by its name. The transient fields of the returned board will be initialized already.

@@ -72,9 +72,9 @@ public class Message {
 	protected final Date mDate;
 	
 	/**
-	 * The index of the message on it's date. 
+	 * The index of the message on the inserter's message USK/SSK.
 	 */
-	protected final int mIndex;
+	protected int mIndex;
 	
 	protected final String mText;
 	

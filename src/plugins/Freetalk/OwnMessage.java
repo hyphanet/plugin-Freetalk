@@ -27,6 +27,16 @@ public final class OwnMessage extends Message {
 		return generateURI(((FTOwnIdentity)mAuthor).getInsertURI(), mAuthor, mIndex);
 	}
 	
+	/**
+	 * Called when we detect a collision during insertion.
+	 */
+	public synchronized void incrementInsertIndex() {
+		synchronized(OwnMessage.class) {
+			mIndex = mMessageManager.getFreeMessageIndex((FTOwnIdentity)mAuthor); 
+			store();
+		}
+	}
+	
 	public synchronized boolean wasInserted() {
 		return iWasInserted;
 	}
