@@ -9,6 +9,7 @@ import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -138,6 +139,7 @@ public class FreetalkNNTPArticle {
 					return "<" + message.getParentID() + ">";
 				}
 				catch(NoSuchMessageException e) {
+					Logger.error(this, "Should not happen", e);
 					return "";
 				}
 			}
