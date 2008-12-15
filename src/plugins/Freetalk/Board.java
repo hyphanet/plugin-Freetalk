@@ -17,6 +17,7 @@ import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 
 /**
  * @author xor
@@ -155,10 +156,11 @@ public class Board implements Comparable<Board> {
 
 			if(!newMessage.isThread())
 			{
-				FreenetURI parentURI = newMessage.getParentURI();
+				FreenetURI parentURI = null;
 				Message parentThread = null;
 	
 				try {
+					parentURI = newMessage.getParentURI();
 					parentThread = findParentThread(newMessage).getMessage();
 					newMessage.setThread(parentThread);
 				}
@@ -217,8 +219,13 @@ public class Board implements Comparable<Board> {
 					 * The following if() could be joined into the db4o query in absoluteOrphanIterator(). I did not do it because we could
 					 * cache the list of absolute orphans locally. 
 					 */
-					if(orphan.getParentURI().equals(newMessage.getURI()))
-						orphan.setParent(newMessage);
+					try {
+						if(orphan.getParentURI().equals(newMessage.getURI()))
+							orphan.setParent(newMessage);
+					}
+					catch(NoSuchMessageException error) {
+						Logger.error(this, "Should not happen", error);
+					}
 				}
 			}
 		}

@@ -6,6 +6,7 @@ package plugins.Freetalk.ui.NNTP;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import freenet.keys.FreenetURI;
 
@@ -132,8 +133,14 @@ public class FreetalkNNTPArticle {
 
 			if (message.isThread())
 				return "";
-			else
-				return "<" + message.getParentID() + ">";
+			else {
+				try {
+					return "<" + message.getParentID() + ">";
+				}
+				catch(NoSuchMessageException e) {
+					return "";
+				}
+			}
 
 		case PATH:
 			return Freetalk.WOT_CONTEXT;
