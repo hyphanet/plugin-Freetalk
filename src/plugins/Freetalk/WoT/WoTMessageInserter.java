@@ -137,6 +137,10 @@ public class WoTMessageInserter extends MessageInserter {
 	@Override
 	public void onFailure(InsertException e, BaseClientPutter state) {
 		Logger.error(this, "Message insert failed", e);
+	
+		/* FIXME: To make message insertion absolutely failsafe, check whether e.getMode() == InsertException.COLLISION. If that is the case,
+		 * restart the insert with an incremented edition number. This might happen when the user has a blank database and has not downloaded
+		 * all of his identity's own messages yet. */
 		removeInsert(state);
 	}
 
