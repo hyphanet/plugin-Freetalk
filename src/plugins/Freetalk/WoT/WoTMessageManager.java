@@ -52,13 +52,19 @@ public class WoTMessageManager extends MessageManager {
 		
 		synchronized(OwnMessage.class) {
 			Date date = mCalendar.getTime();
-			Message parentThread;
+			Message parentThread = null;
 			try {
-				parentThread =  myParentMessage!= null ? myParentMessage.getThread() : null;
+				if(myParentMessage != null) {
+					if(myParentMessage.isThread())
+						parentThread = myParentMessage;
+					else
+						parentThread = myParentMessage.getThread();
+				}
 			}
 			catch(NoSuchMessageException e) {
-				parentThread = null;
+
 			}
+			
 			int index = getFreeMessageIndex(myAuthor);
 			
 			m = new OwnMessage(parentThread, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, index,
