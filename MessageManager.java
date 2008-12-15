@@ -212,7 +212,7 @@ public abstract class MessageManager implements Runnable {
 		q.constrain(Message.class);
 		q.descend("mAuthor").constrain(messageAuthor);
 		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
-		ObjectSet<OwnMessage> result = q.execute();
+		ObjectSet<Message> result = q.execute();
 		
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
