@@ -150,7 +150,7 @@ public class Board implements Comparable<Board> {
 			newMessage.store();
 			
 			synchronized(BoardMessageLink.class) {
-				new BoardMessageLink(this, newMessage, mMessageManager.getFreeNNTPMessageIndex()).store(db);
+				new BoardMessageLink(this, newMessage, getFreeMessageIndex()).store(db);
 			}
 
 			if(!newMessage.isThread())
@@ -355,6 +355,10 @@ public class Board implements Comparable<Board> {
 		
 		return result.next().getIndex();
 	}
+
+	public synchronized int getLastMessageIndex() {
+		return getFreeMessageIndex() - 1;
+	}
 	
 	public synchronized Message getMessageByIndex(int index) throws NoSuchMessageException {
 		Query q = db.query();
@@ -368,13 +372,17 @@ public class Board implements Comparable<Board> {
 		return result.next().getMessage();
 	}
 	
-	public int getLastMessageIndex() {
+	/**
+	 * Get the next free NNTP index for a message. Please synchronize on BoardMessageLink.class when creating a message, this method
+	 * does not provide synchronization.
+	 */
+	public int getFreeMessageIndex() {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
 		q.descend("mBoard").constrain(this);
 		q.descend("mMessageIndex").orderDescending(); /* FIXME: Use a db4o native query to find the maximum instead of sorting. O(n) vs. O(n log(n))! */
 		ObjectSet<MessageReference> result = q.execute();
-		return result.size() == 0 ? 0 : result.next().getIndex();
+		return result.size() == 0 ? 1 : result.next().getIndex()+1;
 	}
 	
 	public synchronized void store() {
