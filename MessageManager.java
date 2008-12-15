@@ -204,18 +204,6 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 	/**
-	 * Get the next free NNTP index for a message. Please synchronize on BoardMessageLink.class when creating a message, this method
-	 * does not provide synchronization.
-	 */
-	public int getFreeNNTPMessageIndex() {
-		Query q = db.query();
-		q.constrain(BoardMessageLink.class);
-		q.descend("mMessageIndex").orderDescending(); /* FIXME: Use a db4o native query to find the maximum instead of sorting. O(n) vs. O(n log(n))! */
-		ObjectSet<MessageReference> result = q.execute();
-		return result.size() == 0 ? 1 : result.next().getIndex()+1;
-	}
-	
-	/**
 	 * Get the next free index for an OwnMessage. Please synchronize on OwnMessage.class while creating a message, this method does not
 	 * provide synchronization.
 	 */
