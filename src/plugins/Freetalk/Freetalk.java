@@ -26,6 +26,7 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
 import com.db4o.query.Query;
+import com.db4o.reflect.jdk.JdkReflector;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker;
@@ -41,6 +42,7 @@ import freenet.pluginmanager.FredPluginL10n;
 import freenet.pluginmanager.FredPluginThemed;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
+import freenet.pluginmanager.FredPluginWithClassLoader;
 import freenet.pluginmanager.NotFoundPluginHTTPException;
 import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginNotFoundException;
@@ -58,7 +60,8 @@ import freenet.support.api.HTTPUploadedFile;
  * @author saces, xor
  *
  */
-public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginThreadless, FredPluginVersioned {
+public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginThreadless,
+	FredPluginVersioned, FredPluginWithClassLoader {
 
 	/* Constants */
 	
@@ -69,6 +72,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	public static final String DATABASE_FILE = "freetalk_data.db4o";
 
 	/* References from the node */
+	
+	private ClassLoader mClassLoader;
 	
 	public PluginRespirator mPluginRespirator; /* TODO: remove references in other classes so we can make this private */
 	
@@ -108,6 +113,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.debug(this, "Opening database...");
 		
 		Configuration dbCfg = Db4o.newConfiguration();
+		dbCfg.reflectWith(new JdkReflector(mClassLoader)); 
 		dbCfg.activationDepth(5); /* FIXME: Figure out a reasonable value */
 		
 		for(String f : Message.getIndexedFields())
@@ -456,6 +462,11 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		// Logger.error(this, "Request translation for "+key);
 		return key;
 	}
+
+	public void setClassLoader(ClassLoader myClassLoader) {
+		mClassLoader = myClassLoader;
+	}
+	
 	public void setLanguage(LANGUAGE newLanguage) {
 		mLanguage = newLanguage;
 		Logger.debug(this, "Set LANGUAGE to: " + mLanguage.isoCode);
@@ -482,4 +493,5 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	final public HTMLNode getPageNode() {
 		return mPageMaker.getPageNode(Freetalk.PLUGIN_TITLE, null);
 	}
+
 }
