@@ -209,7 +209,7 @@ public abstract class MessageManager implements Runnable {
 	 */
 	public int getFreeMessageIndex(FTOwnIdentity messageAuthor)  {
 		Query q = db.query();
-		q.constrain(OwnMessage.class);
+		q.constrain(Message.class);
 		q.descend("mAuthor").constrain(messageAuthor);
 		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
 		ObjectSet<OwnMessage> result = q.execute();
