@@ -31,6 +31,7 @@ import org.xml.sax.ext.DefaultHandler2;
 
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageXML.XMLTreeGenerator.XMLElement;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -92,7 +93,8 @@ public class MessageXML {
 				messageTag.appendChild(replyBoardTag);
 			}
 			
-			if(!m.isThread()) {
+
+			try {
 				Element inReplyToTag = xmlDoc.createElement("InReplyTo");
 					Element inReplyToMessage = xmlDoc.createElement("Message");
 						Element inReplyToOrder = xmlDoc.createElement("Order"); inReplyToOrder.appendChild(xmlDoc.createTextNode("0"));	/* For FMS compatibility, not used by Freetalk */
@@ -111,6 +113,10 @@ public class MessageXML {
 				inReplyToTag.appendChild(inReplyToThread);
 				messageTag.appendChild(inReplyToTag);
 			}
+			catch(NoSuchMessageException e) {
+				
+			}
+			
 
 			Element bodyTag = xmlDoc.createElement("Body");
 			bodyTag.appendChild(xmlDoc.createCDATASection(m.getText()));

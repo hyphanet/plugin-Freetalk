@@ -208,31 +208,38 @@ public class Message {
 	
 	/**
 	 * Get the FreenetURI of the thread this message belongs to.
+	 * @throws NoSuchMessageException 
 	 */
-	public FreenetURI getParentThreadURI() {
+	public FreenetURI getParentThreadURI() throws NoSuchMessageException {
+		if(mThreadURI == null)
+			throw new NoSuchMessageException();
+		
 		return mThreadURI;
 	}
 	
-	public synchronized String getParentThreadID() {
+	public synchronized String getParentThreadID() throws NoSuchMessageException {
 		/* TODO: Which requires more CPU, to synchronize the function so that we can check for mThread != null and use its cached ID or to
 		 * just generate the ID by SHA256 hashing the parent URI and bytesToHex ?
 		 * I suppose the synchronization is faster. Anyone else? */
-		return mThread != null ? mThread.getID() : generateID(mThreadURI);
+		return mThread != null ? mThread.getID() : generateID(getParentThreadURI());
 	}
 	
 	/**
 	 * Get the FreenetURI to which this message is a reply. Null if the message is a thread.
 	 */
-	public FreenetURI getParentURI() {
+	public FreenetURI getParentURI() throws NoSuchMessageException {
+		if(mParentURI == null)
+			throw new NoSuchMessageException();
+		
 		return mParentURI;
 	}
 	
-	public synchronized String getParentID() {
-		return mParent != null ? mParent.getID() : generateID(mParentURI);
+	public synchronized String getParentID() throws NoSuchMessageException {
+		return mParent != null ? mParent.getID() : generateID(getParentURI());
 	}
 	
 	public boolean isThread() {
-		return getParentURI() == null;
+		return mParentURI == null;
 	}
 	
 	/**
