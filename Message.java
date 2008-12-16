@@ -442,4 +442,13 @@ public class Message {
 		db.store(this);
 		db.commit();
 	}
+	
+	public void objectOnUpdate(ObjectContainer db) {
+		if(mAuthor == null) throw new RuntimeException("mAuthor == null");
+		Logger.debug(this, "object on update: mAuthor == " + mAuthor);
+	}
+
+	public void objectOnNew(ObjectContainer db) {
+		objectOnUpdate(db);
+	}
 }
