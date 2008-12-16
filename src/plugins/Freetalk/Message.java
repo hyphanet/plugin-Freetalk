@@ -260,6 +260,9 @@ public class Message {
 	 * Get the author of the message.
 	 */
 	public FTIdentity getAuthor() {
+		db.activate(this, 3);
+		if(mAuthor == null)
+			throw new RuntimeException("mAuthor == null");
 		mAuthor.initializeTransient(db, mMessageManager.getIdentityManager());
 		return mAuthor;
 	}
@@ -423,6 +426,19 @@ public class Message {
 	
 	public void store() {
 		/* FIXME: Check for duplicates */
+		if(db.ext().isStored(this) && !db.ext().isActive(this))
+			throw new RuntimeException("Trying to store a non-active Message object");
+		
+		if(mAuthor == null)
+			throw new RuntimeException("Trying to store a message with mAuthor == null");
+		
+		db.store(mURI);
+		if(mThreadURI != null)
+			db.store(mThreadURI);
+		if(mParentURI != null)
+			db.store(mParentURI);
+		db.store(mDate);
+		db.store(mAttachments);
 		db.store(this);
 		db.commit();
 	}

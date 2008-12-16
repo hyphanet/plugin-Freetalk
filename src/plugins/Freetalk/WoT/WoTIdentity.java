@@ -127,6 +127,7 @@ public class WoTIdentity implements FTIdentity {
 
 	public void store() {
 		/* FIXME: check for duplicates */
+		db.store(mRequestURI);
 		db.store(this);
 		db.commit();
 	}

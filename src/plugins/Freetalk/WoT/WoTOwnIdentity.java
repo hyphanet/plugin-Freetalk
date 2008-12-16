@@ -65,5 +65,12 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	public synchronized boolean wantsMessagesFrom(FTIdentity identity) {
 		return mIdentityManager.getScore(this, identity) >= 0;	/* FIXME: this has to be configurable */
 	}
+	
+	public void store() {
+		/* FIXME: check for duplicates */
+		db.store(mSubscribedBoards);
+		db.store(mInsertURI);
+		super.store();
+	}
 
 }
