@@ -199,10 +199,10 @@ public class MessageXML {
 		XMLElement inReplyToElement = rootElement.children.get("InReplyTo");
 		if(inReplyToElement != null) {
 			if(inReplyToElement.children.containsKey("Message")) {
-			for(XMLElement inReplyToMessageElement : inReplyToElement.children.iterateAll("Message")) {
-				if(inReplyToMessageElement.children.get("Order").cdata.equals("0"))
-					parentMessageURI = inReplyToMessageElement.children.get("MessageURI").cdata;
-			}
+				for(XMLElement inReplyToMessageElement : inReplyToElement.children.iterateAll("Message")) {
+					if(inReplyToMessageElement.children.get("Order").cdata.equals("0"))
+						parentMessageURI = inReplyToMessageElement.children.get("MessageURI").cdata;
+				}
 			}
 		
 			XMLElement threadElement = inReplyToElement.children.get("Thread");
