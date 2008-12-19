@@ -21,6 +21,7 @@ import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.StringValidityChecker;
 
 /**
  * @author saces, xor
@@ -393,8 +394,7 @@ public class Message {
 	 * - ...
 	 */
 	static public boolean isTitleValid(String title) {
-		// FIXME: Implement.
-		return true;
+		return StringValidityChecker.containsNoLinebreaks(title);
 	}
 	
 	/**
@@ -410,10 +410,12 @@ public class Message {
 	 * Makes the passed title valid in means of <code>isTitleValid()</code>
 	 * @see isTitleValid
 	 */
+	/*
 	static public String makeTitleValid(String title) {
 		// FIXME: Implement.
 		return title;
 	}
+	*/
 
 	/**
 	 * Makes the passed text valid in means of <code>isTextValid()</code>
