@@ -163,7 +163,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 				ObjectSet<WoTIdentity> result = q.execute();
 				WoTIdentity id = null; 
 
-				if(result.size() == 0 && !nickname.equals("")) {
+				if(result.size() == 0) {
 					try {
 						Logger.debug(this, "Importing identity from WoT: " + requestURI);
 						id = bOwnIdentities ?	new WoTOwnIdentity(uid, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
@@ -172,7 +172,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 						id.initializeTransient(db, this);
 						id.store();
 					}
-					catch(Exception e) {
+					catch(MalformedURLException e) {
 						Logger.error(this, "Error in parseIdentities", e);
 					}
 				} else {
