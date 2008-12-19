@@ -437,8 +437,8 @@ public class Message {
 			db.store(mThreadURI);
 		if(mParentURI != null)
 			db.store(mParentURI);
-		db.store(mDate);
-		db.store(mAttachments);
+		// db.store(mDate); /* Not stored because it is a primitive for db4o */
+		// db.store(mAttachments); /* Not stored because it is a primitive for db4o */
 		db.store(this);
 		db.commit();
 	}
