@@ -113,7 +113,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.debug(this, "Opening database...");
 		
 		Configuration dbCfg = Db4o.newConfiguration();
-		dbCfg.reflectWith(new JdkReflector(mClassLoader)); 
+		dbCfg.reflectWith(new JdkReflector(mClassLoader));
+		dbCfg.exceptionsOnNotStorable(true);
 		dbCfg.activationDepth(5); /* FIXME: Figure out a reasonable value */
 		
 		for(String f : Message.getIndexedFields())
