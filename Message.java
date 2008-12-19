@@ -263,9 +263,6 @@ public class Message {
 	 * Get the author of the message.
 	 */
 	public FTIdentity getAuthor() {
-		db.activate(this, 3);
-		if(mAuthor == null)
-			throw new RuntimeException("mAuthor == null");
 		mAuthor.initializeTransient(db, mMessageManager.getIdentityManager());
 		return mAuthor;
 	}
@@ -447,13 +444,5 @@ public class Message {
 		db.store(this);
 		db.commit();
 	}
-	
-	public void objectOnUpdate(ObjectContainer db) {
-		if(mAuthor == null) throw new RuntimeException("mAuthor == null");
-		Logger.debug(this, "object on update: mAuthor == " + mAuthor);
-	}
 
-	public void objectOnNew(ObjectContainer db) {
-		objectOnUpdate(db);
-	}
 }
