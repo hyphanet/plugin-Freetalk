@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
@@ -34,12 +33,12 @@ public class Message {
 	/**
 	 * The URI of this message.
 	 */
-	protected final FreenetURI mURI;
+	protected FreenetURI mURI; /* Not final because OwnMessage.incrementInsertIndex() changes it */ 
 	
 	/**
 	 * The ID of the message, a (hash) function of the URI, lowercase characters of [0-9a-z] only.
 	 */
-	protected final String mID;
+	protected String mID; /* Not final because OwnMessage.incrementInsertIndex() changes it */
 	
 	/**
 	 * The URI of the thread this message belongs to.
@@ -131,6 +130,9 @@ public class Message {
 		if (newURI == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
+		if(Arrays.equals(newURI.getRoutingKey(), newAuthor.getRequestURI().getRoutingKey()) == false)
+			throw new InvalidParameterException("Trying to create a message with an URI different to the URI of the author: newURI == " + newURI + "; newAuthor.requestURI == " + newAuthor.getRequestURI());	
+		
 		if(newParentURI != null && newThreadURI == null) 
 			Logger.error(this, "Message with parent URI but without thread URI created: " + newURI);
 		
@@ -182,7 +184,7 @@ public class Message {
 		}
 	}
 	
-	protected static FreenetURI generateURI(FreenetURI baseURI, FTIdentity author, int index) {
+	protected static FreenetURI generateURI(FreenetURI baseURI, int index) {
 		baseURI = baseURI.setKeyType("SSK");
 		baseURI = baseURI.setDocName(Freetalk.PLUGIN_TITLE + "|" + "Message" + "-" + index + ".xml");
 		return baseURI.setMetaString(null);
@@ -193,17 +195,17 @@ public class Message {
 	}
 	
 	public static FreenetURI generateRequestURI(FTIdentity author, int index) {
-		return generateURI(author.getRequestURI(), author, index);
+		return generateURI(author.getRequestURI(), index);
 	}
 	
 	/**
 	 * Get the URI of the message.
 	 */
-	public FreenetURI getURI() {
+	public FreenetURI getURI() { /* Not synchronized because only OwnMessage might change the URI */
 		return mURI;
 	}
 	
-	public String getID() {
+	public String getID() { /* Not synchronized because only OwnMessage might change the ID */
 		return mID;
 	}
 	

@@ -23,8 +23,20 @@ public final class OwnMessage extends Message {
 			  newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
 
-	public FreenetURI getInsertURI() {
-		return generateURI(((FTOwnIdentity)mAuthor).getInsertURI(), mAuthor, mIndex);
+	/* Override for synchronization */
+	@Override
+	public synchronized FreenetURI getURI() {
+		return mURI;
+	}
+	
+	/* Override for synchronization */
+	@Override
+	public synchronized String getID() {
+		return mID;
+	}
+
+	public synchronized FreenetURI getInsertURI() {
+		return generateURI(((FTOwnIdentity)mAuthor).getInsertURI(), mIndex);
 	}
 	
 	/**
@@ -32,7 +44,9 @@ public final class OwnMessage extends Message {
 	 */
 	public synchronized void incrementInsertIndex() {
 		synchronized(OwnMessage.class) {
-			mIndex = mMessageManager.getFreeMessageIndex((FTOwnIdentity)mAuthor); 
+			mIndex = mMessageManager.getFreeMessageIndex((FTOwnIdentity)mAuthor);
+			mURI = generateRequestURI(mAuthor, mIndex);
+			mID = generateID(mURI);
 			store();
 		}
 	}
