@@ -94,8 +94,9 @@ public class MessageXML {
 			}
 			
 
-			try {
+
 				Element inReplyToTag = xmlDoc.createElement("InReplyTo");
+				try {
 					Element inReplyToMessage = xmlDoc.createElement("Message");
 						Element inReplyToOrder = xmlDoc.createElement("Order"); inReplyToOrder.appendChild(xmlDoc.createTextNode("0"));	/* For FMS compatibility, not used by Freetalk */
 						Element inReplyToID = xmlDoc.createElement("MessageID"); inReplyToID.appendChild(xmlDoc.createCDATASection(m.getParentID())); /* For FMS compatibility, not used by Freetalk */
@@ -103,20 +104,21 @@ public class MessageXML {
 					inReplyToMessage.appendChild(inReplyToOrder);
 					inReplyToMessage.appendChild(inReplyToID);
 					inReplyToMessage.appendChild(inReplyToURI);
+					inReplyToTag.appendChild(inReplyToMessage);
+				}
+				catch(NoSuchMessageException e) { }
 					
+				try {
 					Element inReplyToThread = xmlDoc.createElement("Thread");
-						inReplyToID = xmlDoc.createElement("MessageID"); inReplyToID.appendChild(xmlDoc.createCDATASection(m.getParentThreadID())); /* For FMS compatibility, not used by Freetalk */
-						inReplyToURI = xmlDoc.createElement("MessageURI"); inReplyToURI.appendChild(xmlDoc.createCDATASection(m.getParentThreadURI().toString()));
+						Element inReplyToID = xmlDoc.createElement("MessageID"); inReplyToID.appendChild(xmlDoc.createCDATASection(m.getParentThreadID())); /* For FMS compatibility, not used by Freetalk */
+						Element inReplyToURI = xmlDoc.createElement("MessageURI"); inReplyToURI.appendChild(xmlDoc.createCDATASection(m.getParentThreadURI().toString()));
 					inReplyToThread.appendChild(inReplyToID);
 					inReplyToThread.appendChild(inReplyToURI);
-				inReplyToTag.appendChild(inReplyToMessage);
-				inReplyToTag.appendChild(inReplyToThread);
-				messageTag.appendChild(inReplyToTag);
-			}
-			catch(NoSuchMessageException e) {
+					inReplyToTag.appendChild(inReplyToThread);
+				}
+				catch(NoSuchMessageException e) { }
 				
-			}
-			
+				messageTag.appendChild(inReplyToTag);
 
 			Element bodyTag = xmlDoc.createElement("Body");
 			bodyTag.appendChild(xmlDoc.createCDATASection(m.getText()));
