@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
@@ -425,7 +426,13 @@ public class Message {
 	}
 	
 	public void store() {
-		/* FIXME: Check for duplicates */
+		try {
+			Message existingMessage = mMessageManager.get(mID);
+			if(existingMessage != this)
+				throw new DuplicateMessageException();
+		} 
+		catch(NoSuchMessageException e) { }
+		
 		if(db.ext().isStored(this) && !db.ext().isActive(this))
 			throw new RuntimeException("Trying to store a non-active Message object");
 		
