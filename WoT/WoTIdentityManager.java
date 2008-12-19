@@ -172,7 +172,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 						id.initializeTransient(db, this);
 						id.store();
 					}
-					catch(MalformedURLException e) {
+					catch(Exception e) {
 						Logger.error(this, "Error in parseIdentities", e);
 					}
 				} else {
