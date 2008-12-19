@@ -426,12 +426,7 @@ public class Message {
 	}
 	
 	public void store() {
-		try {
-			Message existingMessage = mMessageManager.get(mID);
-			if(existingMessage != this)
-				throw new DuplicateMessageException();
-		} 
-		catch(NoSuchMessageException e) { }
+		/* FIXME: Check for duplicates. Also notice that an OwnMessage which is equal might exist */
 		
 		if(db.ext().isStored(this) && !db.ext().isActive(this))
 			throw new RuntimeException("Trying to store a non-active Message object");
