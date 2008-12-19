@@ -92,9 +92,8 @@ public class MessageXML {
 				replyBoardTag.appendChild(xmlDoc.createCDATASection(m.getReplyToBoard().getName()));
 				messageTag.appendChild(replyBoardTag);
 			}
-			
 
-
+			if(!m.isThread()) {
 				Element inReplyToTag = xmlDoc.createElement("InReplyTo");
 				try {
 					Element inReplyToMessage = xmlDoc.createElement("Message");
@@ -119,6 +118,7 @@ public class MessageXML {
 				catch(NoSuchMessageException e) { }
 				
 				messageTag.appendChild(inReplyToTag);
+			}
 
 			Element bodyTag = xmlDoc.createElement("Body");
 			bodyTag.appendChild(xmlDoc.createCDATASection(m.getText()));
@@ -198,9 +198,11 @@ public class MessageXML {
 		
 		XMLElement inReplyToElement = rootElement.children.get("InReplyTo");
 		if(inReplyToElement != null) {
+			if(inReplyToElement.children.containsKey("Message")) {
 			for(XMLElement inReplyToMessageElement : inReplyToElement.children.iterateAll("Message")) {
 				if(inReplyToMessageElement.children.get("Order").cdata.equals("0"))
 					parentMessageURI = inReplyToMessageElement.children.get("MessageURI").cdata;
+			}
 			}
 		
 			XMLElement threadElement = inReplyToElement.children.get("Thread");
