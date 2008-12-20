@@ -121,6 +121,11 @@ public class Board implements Comparable<Board> {
 		return mName;
 	}
 	
+	public String getDescription(FTOwnIdentity viewer) {
+		/* FIXME: Implement */
+		return "";
+	}
+	
 	/**
 	 * @return An NNTP-conform representation of the name of the board.
 	 */
@@ -159,24 +164,19 @@ public class Board implements Comparable<Board> {
 
 			if(!newMessage.isThread())
 			{
-				FreenetURI parentURI = null;
 				Message parentThread = null;
 	
 				try {
-					parentURI = newMessage.getParentURI();
 					parentThread = findParentThread(newMessage).getMessage();
 					newMessage.setThread(parentThread);
 				}
 				catch(NoSuchMessageException e) {}
 	
 				try {
-					newMessage.setParent(mMessageManager.get(parentURI)); /* TODO: This allows crossposting. Figure out whether we need to handle it specially */
+					newMessage.setParent(mMessageManager.get(newMessage.getParentURI())); /* TODO: This allows crossposting. Figure out whether we need to handle it specially */
 				}
 				catch(NoSuchMessageException e) {/* The message is an orphan */
-					if(parentThread != null) {
-						newMessage.setParent(parentThread);	/* We found its parent thread so just stick it in there for now */
-					}
-					else {
+					if(parentThread == null) {
 						 /* The message is an absolute orphan */
 	
 						/* 
@@ -198,8 +198,16 @@ public class Board implements Comparable<Board> {
 	private synchronized void linkOrphansToNewParent(Message newMessage) {
 		if(newMessage.isThread()) {
 			Iterator<Message> absoluteOrphans = absoluteOrphanIterator(newMessage.getURI());
-			while(absoluteOrphans.hasNext())	/* Search in the absolute orphans for messages which belong to this thread  */
-				absoluteOrphans.next().setParent(newMessage);
+			while(absoluteOrphans.hasNext()) {	/* Search in the absolute orphans for messages which belong to this thread  */
+				Message orphan = absoluteOrphans.next();
+				orphan.setThread(newMessage);
+				try {
+					if(orphan.getParentURI().equals(newMessage.getURI()))
+						orphan.setParent(newMessage);
+				} catch (NoSuchMessageException e) {
+					Logger.error(this, "Message is reply to thread but parentURI == null: " + orphan.getURI());
+				}
+			}
 		}
 		else {
 			try {
@@ -209,8 +217,13 @@ public class Board implements Comparable<Board> {
 				while(iter.hasNext()) {
 					Message parentThreadChild = iter.next();
 					
-					if(parentThreadChild.getParentURI().equals(newMessage.getURI())) /* We found its parent, yeah! */
-						parentThreadChild.setParent(newMessage); /* It's a child of the newMessage, not of the parentThread */
+					try {
+						if(parentThreadChild.getParentURI().equals(newMessage.getURI())) /* We found its parent, yeah! */
+							parentThreadChild.setParent(newMessage); /* It's a child of the newMessage, not of the parentThread */
+					}
+					catch(NoSuchMessageException e) {
+						Logger.error(this, "Message is reply to thread but parentURI == null: " + parentThreadChild.getURI());
+					}
 				}
 			}
 			catch(NoSuchMessageException e)
@@ -406,7 +419,12 @@ public class Board implements Comparable<Board> {
 		 * and then check whether a BoardMessageLink to this board exists. */
 		q.constrain(BoardMessageLink.class);
 		q.descend("mBoard").constrain(this);
-		q.descend("mMessage").descend("mThread").constrain(thread);
+		try {
+			q.descend("mMessage").descend("mThreadURI").constrain(thread.isThread() ? thread.getURI() : thread.getParentThreadURI());
+		} catch (NoSuchMessageException e) {
+			Logger.error(this, "Message is no thread but parentThreadURI == null : " + thread.getURI());
+			return -1; /* To make the users report this bug */
+		}
 		return q.execute().size();
 	}
 	
