@@ -16,6 +16,7 @@ import plugins.Freetalk.WoT.WoTMessageManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
 import plugins.Freetalk.ui.web.BoardPage;
 import plugins.Freetalk.ui.web.BoardsPage;
@@ -23,6 +24,7 @@ import plugins.Freetalk.ui.web.Errors;
 import plugins.Freetalk.ui.web.IdentityEditor;
 import plugins.Freetalk.ui.web.Messages;
 import plugins.Freetalk.ui.web.Status;
+import plugins.Freetalk.ui.web.ThreadPage;
 import plugins.Freetalk.ui.web.Welcome;
 
 import com.db4o.Db4o;
@@ -305,12 +307,19 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		try {
 			if(page.equals("/showBoard"))
 				return new BoardPage(this, mIdentityManager.getOwnIdentity(request.getParam("identity")), request).toHTML();
+			
+			else if(page.equals("/showThread"))
+				return new ThreadPage(this, mIdentityManager.getOwnIdentity(request.getParam("identity")), request).toHTML();
 		}
+		/* TODO: Make this exceptions store the specified non-existant element theirselves */
 		catch(NoSuchIdentityException e) {
 			throw new NotFoundPluginHTTPException("Unknown identity " + request.getParam("identity"), page);
 		}
 		catch(NoSuchBoardException e) {
 			throw new NotFoundPluginHTTPException("Unknown board " + request.getParam("name"), page);
+		}
+		catch(NoSuchMessageException e) {
+			throw new NotFoundPluginHTTPException("Unknown message " + request.getParam("id"), page);
 		}
 
 		throw new NotFoundPluginHTTPException("Resource not found in Freetalk plugin", page);
