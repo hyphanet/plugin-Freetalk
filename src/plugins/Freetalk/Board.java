@@ -252,11 +252,8 @@ public class Board implements Comparable<Board> {
 		
 		if(parents.size() == 0)
 			throw new NoSuchMessageException();
-		else {
-			MessageReference thread = parents.next();
-			thread.getMessage().initializeTransient(db, mMessageManager);
-			return thread;
-		}
+		else
+			return parents.next();
 	}
 	
 
@@ -314,7 +311,7 @@ public class Board implements Comparable<Board> {
 	 */
 	private synchronized Iterator<Message> absoluteOrphanIterator(final FreenetURI threadURI) {
 		return new Iterator<Message>() {
-			private final Iterator<Message> iter;
+			private final Iterator<BoardMessageLink> iter;
 
 			{
 				/* FIXME: This query should be accelerated. The amount of absolute orphans is very small usually, so we should configure db4o
@@ -324,9 +321,7 @@ public class Board implements Comparable<Board> {
 				q.descend("mBoard").constrain(Board.this); /* FIXME: mBoards is an array. Does constrain() check whether it contains the element mName? */
 				q.descend("mMessage").descend("mThreadURI").constrain(threadURI);
 				q.descend("mMessage").descend("mThread").constrain(null).identity();
-				/* FIXME: this certainly will return BoardMessageLink instead of FTMessage. how to return the messages? */
-				ObjectSet<Message> result = q.execute();
-				iter = result.iterator();
+				iter = q.execute().iterator();
 			}
 
 			public boolean hasNext() {
@@ -334,9 +329,7 @@ public class Board implements Comparable<Board> {
 			}
 
 			public Message next() {
-				Message next = iter.next();
-				next.initializeTransient(db, mMessageManager);
-				return next;
+				return iter.next().getMessage();
 			}
 
 			public void remove() {
@@ -460,7 +453,7 @@ public class Board implements Comparable<Board> {
 			/* We do not have to initialize mBoard and can assume that it is initialized because a BoardMessageLink will only be loaded
 			 * by the board it belongs to. */
 			mMessage.initializeTransient(mBoard.db, mBoard.mMessageManager);
-			db.activate(mMessage, 2);
+			db.activate(mMessage, 2); /* FIXME: Figure out a reasonable depth */
 			return mMessage;
 		}
 	}
