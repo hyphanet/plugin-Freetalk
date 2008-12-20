@@ -269,7 +269,7 @@ public class Board implements Comparable<Board> {
 	public synchronized Iterator<MessageReference> threadIterator(final FTOwnIdentity identity) {
 		return new Iterator<MessageReference>() {
 			private final FTOwnIdentity mIdentity = identity;
-			private final Iterator<MessageReference> iter;
+			private final Iterator<BoardMessageLink> iter;
 			private MessageReference next;
 			 
 			{
@@ -279,7 +279,7 @@ public class Board implements Comparable<Board> {
 				 * Or somehow tell db4o to keep a per-board thread index which is sorted by Date? - This would be the best solution */
 				Query q = db.query();
 				q.constrain(BoardMessageLink.class);
-				q.descend("mBoard").constrain(this);
+				q.descend("mBoard").constrain(Board.this);
 				q.descend("mMessage").descend("mThread").constrain(null).identity();
 				q.descend("mMessage").descend("mDate").orderDescending();
 				iter = q.execute().iterator();
@@ -289,7 +289,7 @@ public class Board implements Comparable<Board> {
 			public boolean hasNext() {
 				for(; next != null; next = iter.hasNext() ? iter.next() : null)
 				{
-					if(mIdentity.wantsMessagesFrom(identity))
+					if(mIdentity.wantsMessagesFrom(next.getMessage().getAuthor()))
 						return true;
 				}
 				return false;
@@ -298,7 +298,6 @@ public class Board implements Comparable<Board> {
 			public MessageReference next() {
 				MessageReference result = hasNext() ? next : null;
 				next = iter.hasNext() ? iter.next() : null;
-				result.getMessage().initializeTransient(db, mMessageManager);
 				return result;
 			}
 
@@ -313,7 +312,7 @@ public class Board implements Comparable<Board> {
 	 * Get an iterator over messages for which the parent thread with the given URI was not known. 
 	 * The transient fields of the returned messages will be initialized already.
 	 */
-	private synchronized Iterator<Message> absoluteOrphanIterator(final FreenetURI thread) {
+	private synchronized Iterator<Message> absoluteOrphanIterator(final FreenetURI threadURI) {
 		return new Iterator<Message>() {
 			private final Iterator<Message> iter;
 
@@ -322,8 +321,8 @@ public class Board implements Comparable<Board> {
 				 * to keep a separate list of those. */
 				Query q = db.query();
 				q.constrain(BoardMessageLink.class);
-				q.descend("mBoard").constrain(mName); /* FIXME: mBoards is an array. Does constrain() check whether it contains the element mName? */
-				q.descend("mMessage").descend("mThreadURI").constrain(thread);
+				q.descend("mBoard").constrain(Board.this); /* FIXME: mBoards is an array. Does constrain() check whether it contains the element mName? */
+				q.descend("mMessage").descend("mThreadURI").constrain(threadURI);
 				q.descend("mMessage").descend("mThread").constrain(null).identity();
 				/* FIXME: this certainly will return BoardMessageLink instead of FTMessage. how to return the messages? */
 				ObjectSet<Message> result = q.execute();
@@ -395,6 +394,29 @@ public class Board implements Comparable<Board> {
 		return result.size() == 0 ? 1 : result.next().getIndex()+1;
 	}
 	
+	/**
+	 * Get the number of messages in this board.
+	 */
+	public synchronized int messageCount() {
+		Query q = db.query();
+		q.constrain(BoardMessageLink.class);
+		q.descend("mBoard").constrain(this);
+		return q.execute().size();
+	}
+	
+	/**
+	 * Get the number of replies to the given thread.
+	 */
+	public synchronized int threadReplyCount(Message thread) {
+		Query q = db.query();
+		/* FIXME: Check whether this query is fast. I think it should rather first query for objects of Message.class which have mThread == thread
+		 * and then check whether a BoardMessageLink to this board exists. */
+		q.constrain(BoardMessageLink.class);
+		q.descend("mBoard").constrain(this);
+		q.descend("mMessage").descend("mThread").constrain(thread);
+		return q.execute().size();
+	}
+	
 	public synchronized void store() {
 		/* FIXME: check for duplicates */
 		db.store(this);
@@ -438,6 +460,7 @@ public class Board implements Comparable<Board> {
 			/* We do not have to initialize mBoard and can assume that it is initialized because a BoardMessageLink will only be loaded
 			 * by the board it belongs to. */
 			mMessage.initializeTransient(mBoard.db, mBoard.mMessageManager);
+			db.activate(mMessage, 2);
 			return mMessage;
 		}
 	}
