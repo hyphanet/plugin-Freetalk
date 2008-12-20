@@ -25,8 +25,6 @@ public abstract class WebPageImpl implements WebPage {
 
 	/** The node's pagemaker */
 	protected PageMaker mPM;
-	/** HTMLNode representing the web page */
-	protected HTMLNode mPageNode;
 	/** A reference to Freetalk */
 	protected Freetalk mFreetalk;
 	/** The request performed by the user */
@@ -55,7 +53,7 @@ public abstract class WebPageImpl implements WebPage {
 		mFreetalk = ft;
 		mPM = mFreetalk.mPageMaker;
 		mOwnIdentity = viewer;
-		mPageNode = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getFreetalkAddress(), null);
+
 		mRequest = request;
 
 		mContentBoxes = new ArrayList<HTMLNode>(32); /* FIXME: Figure out a reasonable value */
@@ -67,23 +65,20 @@ public abstract class WebPageImpl implements WebPage {
 	 * @return HTML code of the page.
 	 */
 	public String toHTML() {
-		
+		HTMLNode pageNode = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getFreetalkAddress(), null);
+		addToPage(pageNode);
+		return pageNode.generate();
+	}
+	
+	public void addToPage(HTMLNode pageNode) {
 		make();
-
-		HTMLNode contentNode = mPM.getContentNode(mPageNode);
+		
+		HTMLNode contentNode = mPM.getContentNode(pageNode);
 
 		// We add every ContentBoxes
 		Iterator<HTMLNode> contentBox = mContentBoxes.iterator();
 		while (contentBox.hasNext())
 			contentNode.addChild(contentBox.next());
-
-		/* FIXME: This code does seem to get executed but the test box is invisible. Why? */
-		HTMLNode test = mPM.getInfobox("infobox-alert", "Test");
-		test.addChild("#", "Test");
-		mPageNode.addChild(test);
-
-		// Generate the HTML output
-		return mPageNode.generate();
 	}
 
 	/**
