@@ -14,7 +14,11 @@ import plugins.Freetalk.WoT.WoTMessageFetcher;
 import plugins.Freetalk.WoT.WoTMessageInserter;
 import plugins.Freetalk.WoT.WoTMessageManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
+import plugins.Freetalk.exceptions.NoSuchBoardException;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
+import plugins.Freetalk.ui.web.BoardPage;
+import plugins.Freetalk.ui.web.BoardsPage;
 import plugins.Freetalk.ui.web.Errors;
 import plugins.Freetalk.ui.web.IdentityEditor;
 import plugins.Freetalk.ui.web.Messages;
@@ -274,7 +278,12 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		}
 		*/
 
+		/* FIXME: ugly hack! remove! */
 		String page = request.getPath().substring(PLUGIN_URI.length());
+		int endIndex = request.getPath().indexOf('?');
+		if(endIndex > 0)
+			page = page.substring(0, endIndex);
+		
 		if ((page.length() < 1) || ("/".equals(page)))
 			return Welcome.makeWelcomePage(this);
 
@@ -288,7 +297,21 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			return IdentityEditor.makeKnownIdentitiesPage(this, request);
 
 		if ("/messages".equals(page))
+			return new BoardsPage(this, mIdentityManager.ownIdentityIterator().next(), request).toHTML();
+			/*
 			return Messages.makeMessagesPage(this, request);
+			*/
+		
+		try {
+			if(page.equals("/showBoard"))
+				return new BoardPage(this, mIdentityManager.getOwnIdentity(request.getParam("identity")), request).toHTML();
+		}
+		catch(NoSuchIdentityException e) {
+			throw new NotFoundPluginHTTPException("Unknown identity " + request.getParam("identity"), page);
+		}
+		catch(NoSuchBoardException e) {
+			throw new NotFoundPluginHTTPException("Unknown board " + request.getParam("name"), page);
+		}
 
 		throw new NotFoundPluginHTTPException("Resource not found in Freetalk plugin", page);
 	}
