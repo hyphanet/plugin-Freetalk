@@ -433,7 +433,7 @@ public class Board implements Comparable<Board> {
 	/**
 	 * Get all replies to the given thread, sorted ascending by date
 	 */
-	public List<MessageReference> getAllThreadReplies(Message thread) {
+	public synchronized List<MessageReference> getAllThreadReplies(Message thread) {
 		Query q = db.query();
 		/* FIXME: Check whether this query is fast. I think it should rather first query for objects of Message.class which have mThread == thread
 		 * and then check whether a BoardMessageLink to this board exists. */
