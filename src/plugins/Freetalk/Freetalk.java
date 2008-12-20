@@ -14,12 +14,12 @@ import plugins.Freetalk.WoT.WoTMessageFetcher;
 import plugins.Freetalk.WoT.WoTMessageInserter;
 import plugins.Freetalk.WoT.WoTMessageManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
-import plugins.Freetalk.ui.Errors;
-import plugins.Freetalk.ui.IdentityEditor;
-import plugins.Freetalk.ui.Messages;
-import plugins.Freetalk.ui.Status;
-import plugins.Freetalk.ui.Welcome;
 import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
+import plugins.Freetalk.ui.web.Errors;
+import plugins.Freetalk.ui.web.IdentityEditor;
+import plugins.Freetalk.ui.web.Messages;
+import plugins.Freetalk.ui.web.Status;
+import plugins.Freetalk.ui.web.Welcome;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
