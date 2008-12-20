@@ -59,6 +59,8 @@ public abstract class WebPageImpl implements WebPage {
 	 * @return HTML code of the page.
 	 */
 	public String toHTML() {
+		
+		make();
 
 		HTMLNode contentNode = mPM.getContentNode(mPageNode);
 
