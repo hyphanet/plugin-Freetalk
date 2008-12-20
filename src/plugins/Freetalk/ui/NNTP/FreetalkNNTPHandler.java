@@ -367,6 +367,17 @@ public class FreetalkNNTPHandler implements Runnable {
 		endTextResponse();
 	}
 
+	private void listGroups(String pattern) {
+		// FIXME: add filtering
+		printStatusLine("215 Information follows:");
+		for (Iterator<Board> i = mMessageManager.boardIterator(); i.hasNext(); ) {
+			Board board = i.next();
+			printTextResponseLine(board.getNameNNTP()
+					+ " " + board.getDescription(null));
+		}
+		endTextResponse();
+	}
+
 	/**
 	 * Handle the HDR / XHDR command.
 	 */
@@ -524,6 +535,12 @@ public class FreetalkNNTPHandler implements Runnable {
 					listActiveGroups(tokens[2]);
 				else
 					listActiveGroups(null);
+			}
+			else if (tokens[1].equalsIgnoreCase("NEWSGROUPS")) {
+				if (tokens.length > 2)
+					listGroups(tokens[2]);
+				else
+					listGroups(null);
 			}
 			else if (tokens[1].equalsIgnoreCase("HEADERS")) {
 				printHeaderList();
