@@ -1,8 +1,6 @@
-/**
- * This code is part of WoT, a plugin for Freenet. It is distributed 
- * under the GNU General Public License, version 2 (or at your option
- * any later version). See http://www.gnu.org/ for details of the GPL.
- */
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
 import java.util.ArrayList;
@@ -17,7 +15,7 @@ import freenet.support.api.HTTPRequest;
  * Basic implementation of the WebPage interface. It contains common features
  * for every WebPages.
  * 
- * @author Julien Cornuwel (batosai@freenetproject.org)
+ * @author Julien Cornuwel (batosai@freenetproject.org), xor
  */
 public abstract class WebPageImpl implements WebPage {
 
