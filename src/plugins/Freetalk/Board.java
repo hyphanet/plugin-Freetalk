@@ -197,7 +197,7 @@ public class Board implements Comparable<Board> {
 	 */
 	private synchronized void linkOrphansToNewParent(Message newMessage) {
 		if(newMessage.isThread()) {
-			Iterator<Message> absoluteOrphans = absoluteOrphanIterator(newMessage.getURI());
+			Iterator<Message> absoluteOrphans = absoluteOrphanIterator(newMessage.getID());
 			while(absoluteOrphans.hasNext()) {	/* Search in the absolute orphans for messages which belong to this thread  */
 				Message orphan = absoluteOrphans.next();
 				orphan.setThread(newMessage);
@@ -228,7 +228,7 @@ public class Board implements Comparable<Board> {
 			}
 			catch(NoSuchMessageException e)
 			{ /* The new message is an absolute orphan, find its children amongst the other absolute orphans */
-				Iterator<Message> absoluteOrphans = absoluteOrphanIterator(newMessage.getURI());
+				Iterator<Message> absoluteOrphans = absoluteOrphanIterator(newMessage.getID());
 				while(absoluteOrphans.hasNext()){	/* Search in the orphans for messages which belong to this message  */
 					Message orphan = absoluteOrphans.next();
 					/*
@@ -258,7 +258,7 @@ public class Board implements Comparable<Board> {
 		 * If my second assumption - that the descend() statements are evaluated in the specified order - is true, then it might be faste because the
 		 * URI index is smaller per board than the global URI index. */
 		q.descend("mBoard").constrain(this); 
-		q.descend("mMessage").descend("mURI").constrain(m.getParentThreadURI());
+		q.descend("mMessage").descend("mThreadID").constrain(m.getParentThreadID());
 		ObjectSet<MessageReference> parents = q.execute();
 		
 		assert(parents.size() <= 1);
@@ -319,10 +319,10 @@ public class Board implements Comparable<Board> {
 	}
 	
 	/**
-	 * Get an iterator over messages for which the parent thread with the given URI was not known. 
+	 * Get an iterator over messages for which the parent thread with the given ID was not known. 
 	 * The transient fields of the returned messages will be initialized already.
 	 */
-	private synchronized Iterator<Message> absoluteOrphanIterator(final FreenetURI threadURI) {
+	private synchronized Iterator<Message> absoluteOrphanIterator(final String threadID) {
 		return new Iterator<Message>() {
 			private final Iterator<BoardMessageLink> iter;
 
@@ -332,7 +332,7 @@ public class Board implements Comparable<Board> {
 				Query q = db.query();
 				q.constrain(BoardMessageLink.class);
 				q.descend("mBoard").constrain(Board.this); /* FIXME: mBoards is an array. Does constrain() check whether it contains the element mName? */
-				q.descend("mMessage").descend("mThreadURI").constrain(threadURI);
+				q.descend("mMessage").descend("mThreadID").constrain(threadID);
 				q.descend("mMessage").descend("mThread").constrain(null).identity();
 				iter = q.execute().iterator();
 			}
@@ -420,13 +420,36 @@ public class Board implements Comparable<Board> {
 		q.constrain(BoardMessageLink.class);
 		q.descend("mBoard").constrain(this);
 		try {
-			q.descend("mMessage").descend("mThreadURI").constrain(thread.isThread() ? thread.getURI() : thread.getParentThreadURI());
+			Query sub = q.descend("mMessage");
+			sub.constrain(thread).not();
+			sub.descend("mThreadID").constrain(thread.isThread() ? thread.getID() : thread.getParentThreadID());
 		} catch (NoSuchMessageException e) {
 			Logger.error(this, "Message is no thread but parentThreadURI == null : " + thread.getURI());
 			return -1; /* To make the users report this bug */
 		}
 		return q.execute().size();
 	}
+	
+	/**
+	 * Get all replies to the given thread, sorted ascending by date
+	 */
+	public List<MessageReference> getAllThreadReplies(Message thread) {
+		Query q = db.query();
+		/* FIXME: Check whether this query is fast. I think it should rather first query for objects of Message.class which have mThread == thread
+		 * and then check whether a BoardMessageLink to this board exists. */
+		q.constrain(BoardMessageLink.class);
+		q.descend("mBoard").constrain(this);
+		try {
+			Query sub = q.descend("mMessage");
+			sub.constrain(thread).not();
+			sub.descend("mThreadID").constrain(thread.isThread() ? thread.getID() : thread.getParentThreadID());
+		} catch (NoSuchMessageException e) {
+			throw new RuntimeException( "Message is no thread but parentThreadURI == null : " + thread.getURI());
+		}
+		
+		return q.execute();
+	}
+	
 	
 	public synchronized void store() {
 		/* FIXME: check for duplicates */

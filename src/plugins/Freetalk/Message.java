@@ -51,10 +51,14 @@ public class Message {
 	 */
 	protected final FreenetURI mThreadURI;
 	
+	protected final String mThreadID;
+	
 	/**
 	 * The URI of the message to which this message is a reply. Null if it is a thread.
 	 */
 	protected final FreenetURI mParentURI;
+	
+	protected final String mParentID;
 	
 	/**
 	 * The boards to which this message was posted, in alphabetical order.
@@ -154,7 +158,9 @@ public class Message {
 		mURI = newURI;
 		mID = generateID(mURI);
 		mThreadURI = newThreadURI;
+		mThreadID = mThreadURI != null ? generateID(mThreadURI) : null;
 		mParentURI = newParentURI;
+		mParentID = mParentURI != null ? generateID(mParentURI) : null;
 		mBoards = newBoards.toArray(new Board[newBoards.size()]);
 		Arrays.sort(mBoards);		
 		mReplyToBoard = newReplyToBoard;
@@ -221,11 +227,11 @@ public class Message {
 		return mThreadURI;
 	}
 	
-	public synchronized String getParentThreadID() throws NoSuchMessageException {
-		/* TODO: Which requires more CPU, to synchronize the function so that we can check for mThread != null and use its cached ID or to
-		 * just generate the ID by SHA256 hashing the parent URI and bytesToHex ?
-		 * I suppose the synchronization is faster. Anyone else? */
-		return mThread != null ? mThread.getID() : generateID(getParentThreadURI());
+	public String getParentThreadID() throws NoSuchMessageException {
+		if(mThreadID != null)
+			return mThreadID;
+		else
+			throw new NoSuchMessageException();
 	}
 	
 	/**
@@ -238,8 +244,11 @@ public class Message {
 		return mParentURI;
 	}
 	
-	public synchronized String getParentID() throws NoSuchMessageException {
-		return mParent != null ? mParent.getID() : generateID(getParentURI());
+	public String getParentID() throws NoSuchMessageException {
+		if(mParentID != null)
+			return mParentID;
+		else
+			throw new NoSuchMessageException();
 	}
 	
 	public boolean isThread() {
