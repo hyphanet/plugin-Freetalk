@@ -36,7 +36,6 @@ public abstract class IdentityManager implements PrioRunnable, Iterable<FTIdenti
 	}
 
 	public synchronized Iterator<FTIdentity> iterator() {
-		final IdentityManager mIdentityManager = this;
 		return new Iterator<FTIdentity> () {
 			Iterator<FTIdentity> iter;
 			
@@ -52,7 +51,7 @@ public abstract class IdentityManager implements PrioRunnable, Iterable<FTIdenti
 
 			public FTIdentity next() {
 				FTIdentity i = iter.next();
-				i.initializeTransient(db, mIdentityManager);
+				i.initializeTransient(db, IdentityManager.this);
 				return i;
 			}
 
@@ -63,7 +62,6 @@ public abstract class IdentityManager implements PrioRunnable, Iterable<FTIdenti
 	}
 
 	public synchronized Iterator<FTOwnIdentity> ownIdentityIterator() {
-		final IdentityManager mIdentityManager = this;
 		return new Iterator<FTOwnIdentity> () {
 			Iterator<FTOwnIdentity> iter;
 			
@@ -79,7 +77,7 @@ public abstract class IdentityManager implements PrioRunnable, Iterable<FTIdenti
 
 			public FTOwnIdentity next() {
 				FTOwnIdentity oi = iter.next();
-				oi.initializeTransient(db, mIdentityManager);
+				oi.initializeTransient(db, IdentityManager.this);
 				return oi;
 			}
 
