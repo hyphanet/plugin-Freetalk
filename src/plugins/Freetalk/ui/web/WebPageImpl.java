@@ -6,6 +6,7 @@ package plugins.Freetalk.ui.web;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import freenet.clients.http.PageMaker;
 import freenet.support.HTMLNode;
@@ -32,6 +33,11 @@ public abstract class WebPageImpl implements WebPage {
 	protected HTTPRequest mRequest;
 	/** List of all content boxes */
 	protected ArrayList<HTMLNode> mContentBoxes;
+	
+	/**
+	 * The FTOwnIdentity which is viewing this page.
+	 */
+	protected FTOwnIdentity mOwnIdentity;
 
 	/**
 	 * Creates a new WebPageImpl. It is abstract because only a subclass can run
@@ -40,17 +46,19 @@ public abstract class WebPageImpl implements WebPage {
 	 * @param mFreetalk
 	 *            a reference to Freetalk, used to get references to database,
 	 *            client, whatever is needed.
+	 * @param viewer The FTOwnIdentity which is viewing this page.
 	 * @param request
 	 *            the request from the user.
 	 */
-	public WebPageImpl(Freetalk ft, HTTPRequest request) {
+	public WebPageImpl(Freetalk ft, FTOwnIdentity viewer, HTTPRequest request) {
 
-		this.mFreetalk = ft;
-		this.mPM = mFreetalk.mPageMaker;
-		this.mPageNode = mPM.getPageNode(Freetalk.PLUGIN_TITLE, null);
-		this.mRequest = request;
+		mFreetalk = ft;
+		mPM = mFreetalk.mPageMaker;
+		mOwnIdentity = viewer;
+		mPageNode = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getFreetalkAddress(), null);
+		mRequest = request;
 
-		this.mContentBoxes = new ArrayList<HTMLNode>(32); /* FIXME: Figure out a reasonable value */
+		mContentBoxes = new ArrayList<HTMLNode>(32); /* FIXME: Figure out a reasonable value */
 	}
 
 	/**
