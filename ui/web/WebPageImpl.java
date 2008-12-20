@@ -67,6 +67,7 @@ public abstract class WebPageImpl implements WebPage {
 		while (contentBox.hasNext())
 			contentNode.addChild(contentBox.next());
 
+		/* FIXME: This code does seem to get executed but the test box is invisible. Why? */
 		HTMLNode test = mPM.getInfobox("infobox-alert", "Test");
 		test.addChild("#", "Test");
 		mPageNode.addChild(test);
