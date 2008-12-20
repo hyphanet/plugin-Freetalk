@@ -41,7 +41,8 @@ public class BoardPage extends WebPageImpl {
 			row = threadsTable.addChild("tr");
 			
 			HTMLNode titleCell = row.addChild("td", new String[] { "align" }, new String[] { "left" });
-			titleCell.addChild(new HTMLNode("a", "href", SELF_URI + "/showThread?identity=" + mOwnIdentity.getUID() + "&id=" + thread.getID(), thread.getTitle()));
+			titleCell.addChild(new HTMLNode("a", "href", SELF_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
+					"&board=" + mBoard.getName() + "&id=" + thread.getID(), thread.getTitle()));
 
 			/* Author */
 			String authorText = thread.getAuthor().getFreetalkAddress();
