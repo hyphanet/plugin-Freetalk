@@ -27,7 +27,7 @@ public class BoardPage extends WebPageImpl {
 		HTMLNode threadsBox = getContentBox("Threads in '" + mBoard.getName() + "'");
 		
 		// Display the list of known identities
-		HTMLNode threadsTable = threadsBox.addChild("table", "border", "0");
+		HTMLNode threadsTable = threadsBox.addChild("table", new String[] {"border", "width"}, new String[] {"0", "100%"});
 		HTMLNode row = threadsTable.addChild("tr");
 		row.addChild("th", "Title");
 		row.addChild("th", "Author");
