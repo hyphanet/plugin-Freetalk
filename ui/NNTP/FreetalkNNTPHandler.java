@@ -271,7 +271,7 @@ public class FreetalkNNTPHandler implements Runnable {
 				printStatusLine("211 " + currentGroup.messageCount()
 								+ " " + currentGroup.firstMessage()
 								+ " " + currentGroup.lastMessage()
-								+ " " + board.getNameNNTP());
+								+ " " + board.getName()); /* FIXME: Implement FreetalkNNTPArticle.getNameNNTP() */
 			}
 		}
 		catch(NoSuchBoardException e) {
@@ -331,7 +331,7 @@ public class FreetalkNNTPHandler implements Runnable {
 			printStatusLine("211 " + currentGroup.messageCount()
 							+ " " + currentGroup.firstMessage()
 							+ " " + currentGroup.lastMessage()
-							+ " " + currentGroup.getBoard().getNameNNTP());
+							+ " " + currentGroup.getBoard().getName()); /* FIXME: Implement FreetalkNNTPArticle.getNameNNTP() */
 
 			if (end == -1)
 				end = currentGroup.lastMessage();
@@ -359,7 +359,7 @@ public class FreetalkNNTPHandler implements Runnable {
 		for (Iterator<Board> i = mMessageManager.boardIterator(); i.hasNext(); ) {
 			Board board = i.next();
 			FreetalkNNTPGroup group = new FreetalkNNTPGroup(board);
-			printTextResponseLine(board.getNameNNTP()
+			printTextResponseLine(board.getName() /* FIXME: Implement FreetalkNNTPArticle.getNameNNTP() */
 								  + " " + group.lastMessage()
 								  + " " + group.firstMessage()
 								  + " " + group.postingStatus());
@@ -375,7 +375,7 @@ public class FreetalkNNTPHandler implements Runnable {
 		printStatusLine("215 Information follows:");
 		for (Iterator<Board> i = mMessageManager.boardIterator(); i.hasNext(); ) {
 			Board board = i.next();
-			printTextResponseLine(board.getNameNNTP()
+			printTextResponseLine(board.getName() /* FIXME: Implement FreetalkNNTPArticle.getNameNNTP() */
 					+ " " + board.getDescription(null));
 		}
 		endTextResponse();

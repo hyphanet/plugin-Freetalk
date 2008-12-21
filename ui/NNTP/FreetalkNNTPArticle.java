@@ -103,11 +103,11 @@ public class FreetalkNNTPArticle {
 			Board boards[] = message.getBoards();
 			StringBuilder builder = new StringBuilder();
 
-			builder.append(boards[0].getNameNNTP());
+			builder.append(boards[0].getName()); /* FIXME: Implement a getNameNNTP() in this class */
 
 			for (int i = 1; i < boards.length; i++) {
 				builder.append(", ");
-				builder.append(boards[i].getNameNNTP());
+				builder.append(boards[i].getName()); /* FIXME: Implement a getNameNNTP() in this class */
 			}
 
 			return builder.toString();
@@ -117,7 +117,7 @@ public class FreetalkNNTPArticle {
 			if (board == null)
 				return "";
 			else
-				return board.getNameNNTP();
+				return board.getName(); /* FIXME: Implement a getNameNNTP() in this class */
 
 		case DATE:
 			synchronized(mDateFormat) {
