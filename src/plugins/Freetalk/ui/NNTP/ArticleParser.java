@@ -384,6 +384,7 @@ public class ArticleParser {
 		String newsgroupsHeader = getHeader(headLines, "newsgroups");
 		String followupToHeader = getHeader(headLines, "followup-to");
 		String referencesHeader = getHeader(headLines, "references");
+		String inReplyToHeader = getHeader(headLines, "in-reply-to");
 
 		if (newsgroupsHeader == null) {
 			Logger.debug(this, "Unable to find Newsgroups header");
@@ -455,7 +456,12 @@ public class ArticleParser {
 				replyToBoard = followups.get(0);
 		}
 
-		if (referencesHeader != null) {
+		if (inReplyToHeader != null) {
+			ArrayList<String> refs = parseReferences(inReplyToHeader);
+			if (!refs.isEmpty())
+				parentID = refs.get(refs.size() - 1);
+		}
+		else if (referencesHeader != null) {
 			ArrayList<String> refs = parseReferences(referencesHeader);
 			if (!refs.isEmpty())
 				parentID = refs.get(refs.size() - 1);
