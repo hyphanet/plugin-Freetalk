@@ -16,15 +16,17 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
-import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 
 /**
+ * Represents a forum / newsgroups / discussion board in Freetalk. Boards are created by the <code>MessageManager</code> on demand, you do
+ * not need to manually create them. The <code>MessageManager</code> takes care of anything related to boards, to someone who just wants to
+ * write a user interface this class can be considered as read-only.
+ * 
  * @author xor
- *
  */
-public class Board implements Comparable<Board> {
+public final class Board implements Comparable<Board> {
 
 	/* Constants */
 	
@@ -53,6 +55,12 @@ public class Board implements Comparable<Board> {
 		return new String[] {"mBoard", "mMessage"};
 	}
 	
+	/**
+	 * Create a board. You have to store() it yourself after creation.
+	 * @param newMessageManager The MessageManager of the board. Not needed in the constructor, saves a call to initializeTransient().
+	 * @param newName The name of the board. For restrictions, see <code>isNameValid()</code>
+	 * @throws InvalidParameterException If none or an invalid name is given.
+	 */
 	public Board(MessageManager newMessageManager, String newName) throws InvalidParameterException {
 		if(newName==null || newName.length() == 0)
 			throw new IllegalArgumentException("Empty board name.");
@@ -105,14 +113,13 @@ public class Board implements Comparable<Board> {
 	/**
 	 * Check whether the boardname is valid in the context of NNTP.
 	 */
+	/*
 	public static boolean isNameValidNNTP(String name) {
-		/* 
-		 * FIXME:
-		 * - Check the specification of NNTP and see if it allows anything else than the following regular expression.
-		 */
-		
+		// FIXME: Check the specification of NNTP and see if it allows anything else than the following regular expression.
+		 
 		return name.matches("[a-zA-Z0-9.]");
 	}
+	*/
 
 	/**
 	 * @return The name.
@@ -121,7 +128,7 @@ public class Board implements Comparable<Board> {
 		return mName;
 	}
 	
-	public String getDescription(FTOwnIdentity viewer) {
+	public synchronized String getDescription(FTOwnIdentity viewer) {
 		/* FIXME: Implement */
 		return "";
 	}
@@ -129,10 +136,12 @@ public class Board implements Comparable<Board> {
 	/**
 	 * @return An NNTP-conform representation of the name of the board.
 	 */
+	/*
 	public String getNameNNTP() {
-		/* FIXME: Implement. */
+		// FIXME: Implement.
 		return mName;
 	}
+	*/
 
 	/**
 	 * Compare boards by comparing their names; provided so we can
@@ -251,7 +260,8 @@ public class Board implements Comparable<Board> {
 	 * Finds the parent thread of a message in the database. The transient fields of the returned message will be initialized already.
 	 * @throws NoSuchMessageException 
 	 */
-	protected synchronized MessageReference findParentThread(Message m) throws NoSuchMessageException {
+	@SuppressWarnings("unchecked")
+	private synchronized MessageReference findParentThread(Message m) throws NoSuchMessageException {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
 		/* FIXME: I assume that db4o is configured to keep an URI index per board. We still have to ensure in FMS.java that it is configured to do so.
@@ -276,6 +286,7 @@ public class Board implements Comparable<Board> {
 	 * @param identity The identity viewing the board.
 	 * @return An iterator of the message which the identity will see (based on its trust levels).
 	 */
+	@SuppressWarnings("unchecked")
 	public synchronized Iterator<MessageReference> threadIterator(final FTOwnIdentity identity) {
 		return new Iterator<MessageReference>() {
 			private final FTOwnIdentity mIdentity = identity;
@@ -322,6 +333,7 @@ public class Board implements Comparable<Board> {
 	 * Get an iterator over messages for which the parent thread with the given ID was not known. 
 	 * The transient fields of the returned messages will be initialized already.
 	 */
+	@SuppressWarnings("unchecked")
 	private synchronized Iterator<Message> absoluteOrphanIterator(final String threadID) {
 		return new Iterator<Message>() {
 			private final Iterator<BoardMessageLink> iter;
@@ -351,6 +363,7 @@ public class Board implements Comparable<Board> {
 		};
 	}
 	
+	@SuppressWarnings("unchecked")
 	public synchronized List<MessageReference> getAllMessages() {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
@@ -359,6 +372,7 @@ public class Board implements Comparable<Board> {
 		return q.execute();
 	}
 	
+	@SuppressWarnings("unchecked")
 	public synchronized int getMessageIndex(Message message) throws NoSuchMessageException {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
@@ -375,6 +389,7 @@ public class Board implements Comparable<Board> {
 		return getFreeMessageIndex() - 1;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public synchronized Message getMessageByIndex(int index) throws NoSuchMessageException {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
@@ -391,6 +406,7 @@ public class Board implements Comparable<Board> {
 	 * Get the next free NNTP index for a message. Please synchronize on BoardMessageLink.class when creating a message, this method
 	 * does not provide synchronization.
 	 */
+	@SuppressWarnings("unchecked")
 	public int getFreeMessageIndex() {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
@@ -433,6 +449,7 @@ public class Board implements Comparable<Board> {
 	/**
 	 * Get all replies to the given thread, sorted ascending by date
 	 */
+	@SuppressWarnings("unchecked")
 	public synchronized List<MessageReference> getAllThreadReplies(Message thread) {
 		Query q = db.query();
 		/* FIXME: Check whether this query is fast. I think it should rather first query for objects of Message.class which have mThread == thread
