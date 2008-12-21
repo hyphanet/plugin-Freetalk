@@ -367,7 +367,10 @@ public class FreetalkNNTPHandler implements Runnable {
 		endTextResponse();
 	}
 
-	private void listGroups(String pattern) {
+	/**
+	 * Handle the LIST NEWSGROUPS command.
+	 */
+	private void listGroupDescriptions(String pattern) {
 		// FIXME: add filtering
 		printStatusLine("215 Information follows:");
 		for (Iterator<Board> i = mMessageManager.boardIterator(); i.hasNext(); ) {
@@ -538,9 +541,9 @@ public class FreetalkNNTPHandler implements Runnable {
 			}
 			else if (tokens[1].equalsIgnoreCase("NEWSGROUPS")) {
 				if (tokens.length > 2)
-					listGroups(tokens[2]);
+					listGroupDescriptions(tokens[2]);
 				else
-					listGroups(null);
+					listGroupDescriptions(null);
 			}
 			else if (tokens[1].equalsIgnoreCase("HEADERS")) {
 				printHeaderList();
