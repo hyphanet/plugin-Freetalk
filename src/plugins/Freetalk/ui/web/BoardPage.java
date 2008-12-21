@@ -7,23 +7,27 @@ import java.util.Iterator;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
-import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Board.MessageReference;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
-public class BoardPage extends WebPageImpl {
+/**
+ * 
+ * @author xor
+ *
+ */
+public final class BoardPage extends WebPageImpl {
 
-	private Board mBoard;
+	private final Board mBoard;
 	
-	public BoardPage(Freetalk ft, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchBoardException {
-		super(ft, viewer, request);
-		mBoard = ft.getMessageManager().getBoardByName(request.getParam("name"));
+	public BoardPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchBoardException {
+		super(myWebInterface, viewer, request);
+		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getParam("name"));
 	}
 
-	public void make() {
+	public final void make() {
 		HTMLNode threadsBox = getContentBox("Threads in '" + mBoard.getName() + "'");
 		
 		// Display the list of known identities
@@ -58,7 +62,6 @@ public class BoardPage extends WebPageImpl {
 			/* Reply count */
 			row.addChild("td", new String[] { "align" }, new String[] { "right" }, Integer.toString(mBoard.threadReplyCount(mOwnIdentity, thread)));
 		}
-
 	}
 
 }

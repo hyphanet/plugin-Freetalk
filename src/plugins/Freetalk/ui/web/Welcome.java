@@ -3,40 +3,41 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
-import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.FTOwnIdentity;
 import freenet.support.HTMLNode;
+import freenet.support.api.HTTPRequest;
 
-public class Welcome {
+/**
+ * 
+ * @author xor, saces
+ */
+public final class Welcome extends WebPageImpl {
 	
-	public static String makeWelcomePage(Freetalk ft) {
-		HTMLNode pageNode = ft.getPageNode();
-		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
-		contentNode.addChild(createWelcomeBox(ft));
-		contentNode.addChild(createOverviewBox(ft));
-		/* FIXME: the backup stuff is broken. repair it or get rid of it. i think we should rather autobackup or whatever.
-		contentNode.addChild(createBackupHintBox(ft)); 
-		*/
-		return pageNode.generate();
+	public Welcome(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) {
+		super(myWebInterface, viewer, request);
+		// TODO Auto-generated constructor stub
+	}
+
+	public final void make() {
+		makeWelcomeBox();
+		makeOverviewBox();
 	}
 	
-	private static HTMLNode createWelcomeBox(Freetalk ft) {
-		HTMLNode welcomeBox = ft.mPageMaker.getInfobox("Welcome");
-		HTMLNode welcomeContent = ft.mPageMaker.getContentNode(welcomeBox);
-		welcomeContent.addChild("P", "IMPORTANT NOTE: All messages you post with the current Freetalk release are considered as testing messages and will NOT be readable by the first stable release. This is necessary so that we could change internal stuff completely if there is a need to do so.");
-		welcomeContent.addChild("P", "To use Freetalk, set up a connection with your newsreader to localhost port 1199.");
-		welcomeContent.addChild("P", "As the account name, specify the nickname of an own identity and as the e-mail address specify the Freetalk address. You can look it up on the own identities page. A password is not required.");
-		return welcomeBox;
+	private final void makeWelcomeBox() {
+		HTMLNode welcomeBox = getContentBox("Welcome");
+		welcomeBox.addChild("p", "IMPORTANT NOTE: All messages you post with the current Freetalk release are considered as testing messages and will NOT be readable by the first stable release. This is necessary so that we could change internal stuff completely if there is a need to do so.");
+		welcomeBox.addChild("p", "To use Freetalk, set up a connection with your newsreader to localhost port 1199.");
+		welcomeBox.addChild("p", "As the account name, specify the nickname of an own identity and as the e-mail address specify the Freetalk address. You can look it up on the own identities page. A password is not required.");
 	}
 
-	private static HTMLNode createOverviewBox(Freetalk ft) {
-		HTMLNode overviewBox = ft.mPageMaker.getInfobox("Overview");
-		HTMLNode overviewContent = ft.mPageMaker.getContentNode(overviewBox);
-		HTMLNode list = overviewContent.addChild("ul");
-		list.addChild(new HTMLNode("li", "Own Identities: " + ft.countOwnIdentities()));
-		list.addChild(new HTMLNode("li", "Known Identities: " + ft.countIdentities()));
-		return overviewBox;
+	private final void makeOverviewBox() {
+		HTMLNode overviewBox = getContentBox("Overview");
+		HTMLNode list = overviewBox.addChild("ul");
+		list.addChild(new HTMLNode("li", "Known Identities: " + mFreetalk.getIdentityManager().countKnownIdentities()));
+		list.addChild(new HTMLNode("li", "Messages waiting to be sent: " + mFreetalk.getMessageManager().countUnsentMessages()));
 	}
 
+	/*
 	private static HTMLNode createBackupHintBox(Freetalk ft) {
 		HTMLNode bhBox = ft.mPageMaker.getInfobox("The boring backup reminder");
 		HTMLNode bhContent = ft.mPageMaker.getContentNode(bhBox);
@@ -46,7 +47,9 @@ public class Welcome {
 		bhContent.addChild(createImportBox(ft));
 		return bhBox;
 	}
+	*/
 	
+	/*
 	private static HTMLNode createExportBox(Freetalk ft) {
 		HTMLNode exportBox = ft.mPageMaker.getInfobox("Export");
 		HTMLNode exportContent = ft.mPageMaker.getContentNode(exportBox);
@@ -57,7 +60,9 @@ public class Welcome {
 		exportForm.addChild("#", "Store the backup at a safe place. You can reimport it at any node and continue flaming...");
 		return exportBox;
 	}
+	*/
 	
+	/*
 	private static HTMLNode createImportBox(Freetalk ft) {
 		HTMLNode importBox = ft.mPageMaker.getInfobox("Import");
 		HTMLNode importContent = ft.mPageMaker.getContentNode(importBox);
@@ -70,4 +75,5 @@ public class Welcome {
 		importForm.addChild("#", "You should only try to import files that was exported with the function above. Otherwise call the rescue number.");
 		return importBox;
 	}
+	*/
 }

@@ -71,7 +71,7 @@ public abstract class MessageManager implements Runnable {
 	public abstract OwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
 			String myTitle, String myText, List<Attachment> myAttachments) throws InvalidParameterException;
 
-	public OwnMessage postMessage(Message myParentMessage, Set<String> myBoards, String myReplyToBoard, FTOwnIdentity myAuthor,
+	public synchronized OwnMessage postMessage(Message myParentMessage, Set<String> myBoards, String myReplyToBoard, FTOwnIdentity myAuthor,
 			String myTitle, String myText, List<Attachment> myAttachments) throws InvalidParameterException {
 
 		/* FIXME: Instead of always creating the boards, notify the user that they do not exist and ask if he made a typo */
@@ -88,6 +88,16 @@ public abstract class MessageManager implements Runnable {
 		}
 
 		return postMessage(myParentMessage, boardSet, replyToBoard, myAuthor, myTitle, myText, myAttachments);
+	}
+	
+
+	public synchronized int countUnsentMessages() {
+		/* FIXME: This is not fully synchronized: MessageInserter calls OwnMessage.wasInserted() to mark a message as inserted and that
+		 * function synchronizes on the OwnMessage object. */
+		Query q = db.query();
+		q.constrain(OwnMessage.class);
+		q.descend("iWasInserted").constrain(false);
+		return q.execute().size();
 	}
 	
 	public synchronized void onMessageReceived(Message message) {

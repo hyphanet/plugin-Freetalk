@@ -1,8 +1,10 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
-import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Board.MessageReference;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
@@ -10,19 +12,22 @@ import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
-public class ThreadPage extends WebPageImpl {
+/**
+ * 
+ * @author xor
+ */
+public final class ThreadPage extends WebPageImpl {
 	
-	private Board mBoard;
-	private Message mThread;
+	private final Board mBoard;
+	private final Message mThread;
 
-	public ThreadPage(Freetalk ft, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchMessageException, NoSuchBoardException {
-		super(ft, viewer, request);
-		mBoard = ft.getMessageManager().getBoardByName(request.getParam("board"));
-		mThread = ft.getMessageManager().get(request.getParam("id"));
+	public ThreadPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchMessageException, NoSuchBoardException {
+		super(myWebInterface, viewer, request);
+		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getParam("board"));
+		mThread = mFreetalk.getMessageManager().get(request.getParam("id"));
 	}
-
-	public void make() {
-		
+	
+	public final void make() {
 		HTMLNode messageBox = getContentBox("Subject: " + mThread.getTitle());
 		messageBox.addChild("p", "Author: " + mThread.getAuthor().getFreetalkAddress());
 		addDebugInfo(messageBox, mThread);

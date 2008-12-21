@@ -46,7 +46,7 @@ public class WoTMessageManager extends MessageManager {
 		super(myDB);
 	}
 
-	public OwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
+	public synchronized OwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
 			String myTitle, String myText, List<Attachment> myAttachments) throws InvalidParameterException {
 		OwnMessage m;
 		

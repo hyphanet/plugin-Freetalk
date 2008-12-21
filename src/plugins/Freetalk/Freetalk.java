@@ -3,29 +3,15 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
-
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTMessageFetcher;
 import plugins.Freetalk.WoT.WoTMessageInserter;
 import plugins.Freetalk.WoT.WoTMessageManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
-import plugins.Freetalk.exceptions.NoSuchBoardException;
-import plugins.Freetalk.exceptions.NoSuchIdentityException;
-import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.ui.FCP.FCPInterface;
 import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
-import plugins.Freetalk.ui.web.BoardPage;
-import plugins.Freetalk.ui.web.BoardsPage;
-import plugins.Freetalk.ui.web.Errors;
-import plugins.Freetalk.ui.web.IdentityEditor;
-import plugins.Freetalk.ui.web.Messages;
-import plugins.Freetalk.ui.web.Status;
-import plugins.Freetalk.ui.web.ThreadPage;
-import plugins.Freetalk.ui.web.Welcome;
+import plugins.Freetalk.ui.web.WebInterface;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
@@ -35,12 +21,9 @@ import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.PageMaker;
 import freenet.clients.http.PageMaker.THEME;
-import freenet.keys.FreenetURI;
 import freenet.l10n.L10n.LANGUAGE;
 import freenet.node.Node;
-import freenet.pluginmanager.DownloadPluginHTTPException;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.FredPluginHTTP;
@@ -49,18 +32,14 @@ import freenet.pluginmanager.FredPluginThemed;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.FredPluginWithClassLoader;
-import freenet.pluginmanager.NotFoundPluginHTTPException;
 import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
-import freenet.pluginmanager.RedirectPluginHTTPException;
-import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
-import freenet.support.api.HTTPUploadedFile;
 
 /**
  * @author saces, xor
@@ -81,13 +60,11 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	
 	private ClassLoader mClassLoader;
 	
-	public PluginRespirator mPluginRespirator; /* TODO: remove references in other classes so we can make this private */
+	private PluginRespirator mPluginRespirator; /* TODO: remove references in other classes so we can make this private */
 	
 	private Node mNode;
 	
 	private HighLevelSimpleClient mClient;
-
-	public PageMaker mPageMaker;
 
 	private LANGUAGE mLanguage;
 	
@@ -106,7 +83,12 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	
 	private WoTMessageInserter mMessageInserter;
 
+	private WebInterface mWebInterface;
+	
+	private FCPInterface mFCPInterface;
+	
 	private FreetalkNNTPServer mNNTPServer;
+	
 	
 	public void runPlugin(PluginRespirator myPR) {
 		
@@ -179,17 +161,15 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.debug(this, "Creating message inserter...");
 		mMessageInserter = new WoTMessageInserter(mNode, mClient, "FT Message Inserter", mIdentityManager, mMessageManager);
 
+		Logger.debug(this, "Creating webinterface ...");
+		mWebInterface = new WebInterface(this);
+		
+		Logger.debug(this, "Creating FCP interface...");
+		mFCPInterface = new FCPInterface(this);
+		
 		Logger.debug(this, "Starting NNTP server...");
 		mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "127.0.0.1", "127.0.0.1");
 		//mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "0.0.0.0", "*");
-
-		mPageMaker = mPluginRespirator.getPageMaker();
-		mPageMaker.addNavigationLink(PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
-		mPageMaker.addNavigationLink(PLUGIN_URI + "/ownidentities", "Own Identities", "Manage your own identities", false, null);
-		mPageMaker.addNavigationLink(PLUGIN_URI + "/knownidentities", "Known Identities", "Manage others identities", false, null);
-		mPageMaker.addNavigationLink(PLUGIN_URI + "/messages", "Messages", "View Messages", false, null);
-		mPageMaker.addNavigationLink(PLUGIN_URI + "/status", "Dealer status", "Show what happens in background", false, null);
-		mPageMaker.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);
 		
 		Logger.debug(this, "Plugin loaded.");
 	}
@@ -262,6 +242,22 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.debug(this, "Freetalk plugin terminated.");
 	}
 	
+	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
+		return mWebInterface.handleHTTPGet(request);
+	}
+	
+	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
+		return mWebInterface.handleHTTPPost(request);
+	}
+	
+	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
+		mFCPInterface.handle(replysender, params, data, accesstype);
+	}
+	
+	public PluginRespirator getPluginRespirator() {
+		return mPluginRespirator;
+	}
+	
 	public IdentityManager getIdentityManager() {
 		return mIdentityManager;
 	}	
@@ -269,214 +265,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	public MessageManager getMessageManager() {
 		return mMessageManager;
 	}
-
-	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
-
-		/* FIXME 
-		String pass = request.getParam("formPassword");
-		if(pass != null) {	// FIXME: is this correct? what if the client just does not specify the password so that its null? 
-			if ((pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword))
-				return Errors.makeErrorPage(this, "Buh! Invalid form password");
-		}
-		*/
-
-		/* FIXME: ugly hack! remove! */
-		String page = request.getPath().substring(PLUGIN_URI.length());
-		int endIndex = request.getPath().indexOf('?');
-		if(endIndex > 0)
-			page = page.substring(0, endIndex);
-		
-		if ((page.length() < 1) || ("/".equals(page)))
-			return Welcome.makeWelcomePage(this);
-
-		if ("/status".equals(page))
-			return Status.makeStatusPage(this);
-		
-		if ("/ownidentities".equals(page))
-			return IdentityEditor.makeOwnIdentitiesPage(this, request);
-
-		if ("/knownidentities".equals(page))
-			return IdentityEditor.makeKnownIdentitiesPage(this, request);
-
-		if ("/messages".equals(page))
-			return new BoardsPage(this, mIdentityManager.ownIdentityIterator().next(), request).toHTML();
-			/*
-			return Messages.makeMessagesPage(this, request);
-			*/
-		
-		try {
-			if(page.equals("/showBoard"))
-				return new BoardPage(this, mIdentityManager.getOwnIdentity(request.getParam("identity")), request).toHTML();
-			
-			else if(page.equals("/showThread"))
-				return new ThreadPage(this, mIdentityManager.getOwnIdentity(request.getParam("identity")), request).toHTML();
-		}
-		/* TODO: Make this exceptions store the specified non-existant element theirselves */
-		catch(NoSuchIdentityException e) {
-			throw new NotFoundPluginHTTPException("Unknown identity " + request.getParam("identity"), page);
-		}
-		catch(NoSuchBoardException e) {
-			throw new NotFoundPluginHTTPException("Unknown board " + request.getParam("name"), page);
-		}
-		catch(NoSuchMessageException e) {
-			throw new NotFoundPluginHTTPException("Unknown message " + request.getParam("id"), page);
-		}
-
-		throw new NotFoundPluginHTTPException("Resource not found in Freetalk plugin", page);
-	}
 	
-	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
-		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		sfs.putOverwrite("Hello", "Nice try ;)");
-		sfs.putOverwrite("Sorry", "Not implemeted yet :(");
-	}
-
-	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
-		String pass = request.getPartAsString("formPassword", 32);
-		if (pass == null || (pass.length() == 0) || !pass.equals(mPluginRespirator.getNode().clientCore.formPassword)) {
-			return Errors.makeErrorPage(this, "Buh! Invalid form password");
-		}
-
-		String page = request.getPath().substring(PLUGIN_URI.length());
-
-		if (page.length() < 1)
-			throw new NotFoundPluginHTTPException("Resource not found", page);
-
-		if (page.equals("/exportDB")) {
-			StringWriter sw = new StringWriter();
-			try {
-				Backup.exportConfigDb(db, sw);
-			} catch (IOException e) {
-				Logger.error(this, "Error While exporting database!", e);
-				return Errors.makeErrorPage(this, "Server BuhBuh! " + e.getMessage());
-			}
-			throw new DownloadPluginHTTPException(sw.toString().getBytes(), "fms-kidding.xml", "fms-clone/db-backup");
-		}
-		
-		if (page.equals("/importDB")) {
-			HTTPUploadedFile file = request.getUploadedFile("filename");
-			if (file == null || file.getFilename().trim().length() == 0) {
-				return Errors.makeErrorPage(this, "No file to import selected!");
-			}
-			try {
-				Backup.importConfigDb(db, file.getData().getInputStream());
-			} catch (Exception e) {
-				Logger.error(this, "Error While importing db from: " + file.getFilename(), e);
-				return Errors.makeErrorPage(this, "Error While importing db from: " + file.getFilename() + e.getMessage());
-			}
-			throw new RedirectPluginHTTPException("", PLUGIN_URI);
-		}
-
-		if (page.equals("/createownidentity")) {
-			List<String> err = new ArrayList<String>();
-			String nick = request.getPartAsString("nick", 1024).trim();
-			String requestUri = request.getPartAsString("requestURI", 1024);
-			String insertUri = request.getPartAsString("insertURI", 1024);
-			boolean publish = "true".equals(request.getPartAsString("publishTrustList", 24));
-
-			IdentityEditor.checkNick(err, nick);
-
-			if ((requestUri.length() == 0) && (insertUri.length() == 0)) {
-				FreenetURI[] kp = mClient.generateKeyPair("fms");
-				insertUri = kp[0].toString();
-				requestUri = kp[1].toString();
-				err.add("URI was empty, I generated one for you.");
-				return IdentityEditor.makeNewOwnIdentityPage(this, nick, requestUri, insertUri, publish, err);
-			}
-
-			IdentityEditor.checkInsertURI(err, insertUri);
-			IdentityEditor.checkRequestURI(err, requestUri);
-
-			if (err.size() == 0) {
-				// FIXME: use identity manager to implement this
-				throw new UnsupportedOperationException();
-				/*
-				FTOwnIdentity oi = new FTOwnIdentity(nick, requestUri, insertUri, publish);
-				IdentityEditor.addNewOwnIdentity(db_config, oi, err);
-				*/
-			}
-
-			if (err.size() == 0) {
-				throw new RedirectPluginHTTPException("", PLUGIN_URI + "/ownidentities");
-			}
-
-			return IdentityEditor.makeNewOwnIdentityPage(this, nick, requestUri, insertUri, publish, err);
-		}
-
-		if (page.equals("/addknownidentity")) {
-			List<String> err = new ArrayList<String>();
-
-			String requestUri = request.getPartAsString("requestURI", 1024);
-
-			if (requestUri.length() == 0) {
-				err.add("Are you jokingly? URI was empty.");
-				return IdentityEditor.makeNewKnownIdentityPage(this, requestUri, err);
-			}
-
-			IdentityEditor.checkRequestURI(err, requestUri);
-
-			if (err.size() == 0) {
-				// FIXME: use identity manager to implement this
-				throw new UnsupportedOperationException();
-				/*
-				FTIdentity i = new FTIdentity("", requestUri);
-				IdentityEditor.addNewKnownIdentity(db_config, i, err);
-				*/
-			}
-
-			if (err.size() == 0) {
-				throw new RedirectPluginHTTPException("", PLUGIN_URI + "/knownidentities");
-			}
-
-			return IdentityEditor.makeNewKnownIdentityPage(this, requestUri, err);
-		}
-
-		if (page.equals("/deleteOwnIdentity")) {
-			List<String> err = new ArrayList<String>();
-
-			String requestUri = request.getPartAsString("identity", 1024);
-			if (requestUri.length() == 0) {
-				err.add("Are you jokingly? URI was empty.");
-				return IdentityEditor.makeDeleteOwnIdentityPage(this, requestUri, err);
-			}
-
-			if (request.isPartSet("confirmed")) {
-				IdentityEditor.deleteIdentity(this, requestUri, err);
-			} else {
-				err.add("Please confirm.");
-			}
-
-			if (err.size() > 0) {
-				return IdentityEditor.makeDeleteOwnIdentityPage(this, requestUri, err);
-			}
-			throw new RedirectPluginHTTPException("", PLUGIN_URI + "/ownidentities");
-			// return IdentityEditor.makeDeleteOwnIdentityPage(fms, requestUri,
-			// err);
-		}
-
-		if (page.equals("/deleteIdentity")) {
-			List<String> err = new ArrayList<String>();
-
-			String requestUri = request.getPartAsString("identity", 1024);
-			if (requestUri.length() == 0) {
-				err.add("Are you jokingly? URI was empty.");
-				return IdentityEditor.makeDeleteKnownIdentityPage(this, requestUri, err);
-			}
-
-			if (request.isPartSet("confirmed")) {
-				IdentityEditor.deleteIdentity(this, requestUri, err);
-			} else {
-				err.add("Please confirm.");
-			}
-
-			if (err.size() > 0) {
-				return IdentityEditor.makeDeleteKnownIdentityPage(this, requestUri, err);
-			}
-			throw new RedirectPluginHTTPException("", PLUGIN_URI + "/knownidentities");
-		}
-		throw new NotFoundPluginHTTPException("Resource not found", page);
-	}
-
 	public String getVersion() {
 		return "α r" + Version.svnRevision;
 	}
@@ -500,21 +289,10 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.error(this, "Set THEME to: " + mTheme.code);
 	}
 	
+	/*
 	public FredPluginFCP getWoTPlugin() {
 		return mPluginRespirator.getNode().pluginManager.getFCPPlugin(Freetalk.WOT_NAME);
 	}
-
-	public long countIdentities() {
-		return db.queryByExample(FTIdentity.class).size() - countOwnIdentities();
-	}
-
-	public long countOwnIdentities() {
-		return db.queryByExample(FTOwnIdentity.class).size();
-	}
-	
-
-	final public HTMLNode getPageNode() {
-		return mPageMaker.getPageNode(Freetalk.PLUGIN_TITLE, null);
-	}
+	*/
 
 }

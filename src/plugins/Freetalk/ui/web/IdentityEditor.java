@@ -4,34 +4,37 @@
 package plugins.Freetalk.ui.web;
 
 import java.util.Iterator;
-import java.util.List;
 
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
-import plugins.Freetalk.Freetalk;
 import freenet.support.HTMLNode;
-import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
-public class IdentityEditor {
+/**
+ * 
+ * @author xor, saces
+ */
+public final class IdentityEditor extends WebPageImpl {
 
-	/* === own identities ==================== */
+	public IdentityEditor(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) {
+		super(myWebInterface, viewer, request);
+		// TODO Auto-generated constructor stub
+	}
+
+	public final void make() {
+		makeOwnIdentitiesBox();
+		makeKnownIdentitiesBox();
+	}
 	
-	public static final String makeOwnIdentitiesPage(Freetalk ft, HTTPRequest request) {
-		
-		HTMLNode pageNode = ft.getPageNode();
-		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
+	private final void makeOwnIdentitiesBox() {
+		HTMLNode box = getContentBox("Own Identities");
 
-		HTMLNode box = ft.mPageMaker.getInfobox("Own Identities");
-		HTMLNode boxContent = ft.mPageMaker.getContentNode(box);
-		contentNode.addChild(box);
-
-		Iterator<FTOwnIdentity> ownIdentities = ft.getIdentityManager().ownIdentityIterator();
+		Iterator<FTOwnIdentity> ownIdentities = mFreetalk.getIdentityManager().ownIdentityIterator();
 		if (ownIdentities.hasNext() == false) {
-			boxContent.addChild("p", "No own identities received from the WoT plugin yet. Please create one there and wait for 15 minutes until it appears here.");
+			box.addChild("p", "No own identities received from the WoT plugin yet. Please create one there and wait for 15 minutes until it appears here.");
 		} else {
 
-			HTMLNode identitiesTable = boxContent.addChild("table");
+			HTMLNode identitiesTable = box.addChild("table");
 			HTMLNode row = identitiesTable.addChild("tr");
 			row.addChild("th", "Name");
 			row.addChild("th", "Freetalk address");
@@ -65,12 +68,43 @@ public class IdentityEditor {
 
 		/* FIXME: repair, i.e. make it use the WoT plugin */
 		/* contentNode.addChild(createNewOwnIdentityBox(ft)); */
+	}
 
-		return pageNode.generate();
+	private final void makeKnownIdentitiesBox() {
+
+		HTMLNode box = getContentBox("Known Identities");
+
+		Iterator<FTIdentity> identities = mFreetalk.getIdentityManager().iterator();
+
+		HTMLNode identitiesTable = box.addChild("table", "border", "0");
+		HTMLNode row = identitiesTable.addChild("tr");
+		row.addChild("th", "Name");
+		row.addChild("th", "Freetalk address");
+		//row.addChild("th");
+
+		while (identities.hasNext()) {
+			FTIdentity id = identities.next();
+			if (id instanceof FTOwnIdentity)
+				continue;
+			row = identitiesTable.addChild("tr");
+			row.addChild("td", id.getNickname());
+			row.addChild("td", id.getFreetalkAddress());
+			//HTMLNode deleteCell = row.addChild("td");
+			/* FIXME: repair, i.e. make it use the WoT plugin */
+			/*
+			HTMLNode deleteForm = ft.mPluginRespirator.addFormChild(deleteCell, Freetalk.PLUGIN_URI + "/deleteIdentity", "deleteForm");
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI().toACIIString()});
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
+			*/
+		}
+
+		/* FIXME: repair, i.e. make it use the WoT plugin */
+		/* contentNode.addChild(createNewKnownIdentityBox(ft)); */
 	}
 	
 	/* === new own identity ================== */
 	
+	/*
 	public static final String makeNewOwnIdentityPage(Freetalk ft, String nick, String requestUri, String insertUri, boolean publish, List<String> errors) {
 		HTMLNode pageNode = ft.getPageNode();
 		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
@@ -125,9 +159,11 @@ public class IdentityEditor {
 		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "create", "Create a new identity !" });
 		return addBox;
 	}
+	*/
 	
 	/* === delete own identity =============== */
 	
+	/*
 	public static String makeDeleteOwnIdentityPage(Freetalk ft, String requestUri, List<String> err) {
 		HTMLNode pageNode = ft.getPageNode();
 		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
@@ -161,49 +197,12 @@ public class IdentityEditor {
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete identity" });
 		return deleteBox;
 	}
+	*/
 	
-	/* === others  identities ================ */
-	
-	public final static String makeKnownIdentitiesPage(Freetalk ft, HTTPRequest request) {
-		HTMLNode pageNode = ft.getPageNode();
-		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
-
-		HTMLNode box = ft.mPageMaker.getInfobox("Known Identities");
-		HTMLNode boxContent = ft.mPageMaker.getContentNode(box);
-		contentNode.addChild(box);
-
-		Iterator<FTIdentity> identities = ft.getIdentityManager().iterator();
-
-		HTMLNode identitiesTable = boxContent.addChild("table", "border", "0");
-		HTMLNode row = identitiesTable.addChild("tr");
-		row.addChild("th", "Name");
-		row.addChild("th", "Freetalk address");
-		//row.addChild("th");
-
-		while (identities.hasNext()) {
-			FTIdentity id = identities.next();
-			if (id instanceof FTOwnIdentity)
-				continue;
-			row = identitiesTable.addChild("tr");
-			row.addChild("td", id.getNickname());
-			row.addChild("td", id.getFreetalkAddress());
-			//HTMLNode deleteCell = row.addChild("td");
-			/* FIXME: repair, i.e. make it use the WoT plugin */
-			/*
-			HTMLNode deleteForm = ft.mPluginRespirator.addFormChild(deleteCell, Freetalk.PLUGIN_URI + "/deleteIdentity", "deleteForm");
-			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI().toACIIString()});
-			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete" });
-			*/
-		}
-
-		/* FIXME: repair, i.e. make it use the WoT plugin */
-		/* contentNode.addChild(createNewKnownIdentityBox(ft)); */
-
-		return pageNode.generate();
-	}
 	
 	/* === new others identities ============= */
 	
+	/*
 	public static final String makeNewKnownIdentityPage(Freetalk ft, String requestUri, List<String> errors) {
 		HTMLNode pageNode = ft.getPageNode();
 		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
@@ -237,8 +236,10 @@ public class IdentityEditor {
 		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "create", "Add identity !" });
 		return addBox;
 	}
+	*/
 	
 	/* delete */
+	/*
 	public static String makeDeleteKnownIdentityPage(Freetalk ft, String requestUri, List<String> err) {
 		HTMLNode pageNode = ft.getPageNode();
 		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
@@ -269,17 +270,6 @@ public class IdentityEditor {
 		deleteForm.addChild("br");
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete", "Delete identity" });
 		return deleteBox;
-	}
-
-	
-	/* === utils ============================= */
-	
-	public static final void checkNick(List<String> err, String nick) {
-		if (nick.length() == 0) {
-			err.add("Nick can not be empty.");
-		} else if (nick.length() > 128) {
-			err.add("Nick to long. 127 chars should be enougth...");
-		}
 	}
 	
 	public static final void checkInsertURI(List<String> err, String insertUri) {
@@ -313,21 +303,6 @@ public class IdentityEditor {
 			err.add("Error while adding Identity: " + t.getMessage());
 		}
 	}
-	
-	public static void deleteIdentity(Freetalk ft, String requestUri, List<String> err) {
-		/*
-		FTIdentity templateId = new FTIdentity(null, requestUri);
-		
-		ObjectSet<FTIdentity> toDelete = ft.db_config.queryByExample(templateId);
-		if (toDelete.size() > 0) {
-			for (FTIdentity id:toDelete) {
-				ft.db_config.delete(id);
-			}
-			ft.db_config.commit();
-		} else {
-			err.add("Identity »"+requestUri+"« not found, nothing deleted");
-		}*/
-		
-		// FIXME: Implement by using the identity manager.
-	}
+	*/
+
 }

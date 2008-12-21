@@ -3,25 +3,23 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
-import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.FTOwnIdentity;
 import freenet.support.HTMLNode;
+import freenet.support.api.HTTPRequest;
 
-public class Errors {
+public final class Errors extends WebPageImpl {
 	
-	public static String makeErrorPage(Freetalk ft, String error) {
-		return makeErrorPage(ft, "ERROR", error);
+	private final String mErrorTitle;
+	private final String mErrorMessage;
+
+	public Errors(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, String errorTitle, String errorMessage) {
+		super(myWebInterface, viewer, request);
+		mErrorTitle = errorTitle;
+		mErrorMessage = errorMessage;
 	}
 
-	private static String makeErrorPage(Freetalk ft, String title, String error) {
-		HTMLNode pageNode = ft.getPageNode();
-		HTMLNode contentNode = ft.mPageMaker.getContentNode(pageNode);
-		contentNode.addChild(createErrorBox(ft, title, error));
-		return pageNode.generate();
-	}
-
-	private static HTMLNode createErrorBox(Freetalk ft, String title, String errmsg) {
-		HTMLNode errorBox = ft.mPageMaker.getInfobox("infobox-alert", title);
-		errorBox.addChild("#", errmsg);
-		return errorBox;
+	public final void make() {
+		HTMLNode errorBox = getAlertBox(mErrorTitle);
+		errorBox.addChild("#", mErrorMessage);
 	}
 }

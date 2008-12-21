@@ -7,18 +7,21 @@ import java.util.Iterator;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
-import plugins.Freetalk.Freetalk;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
-public class BoardsPage extends WebPageImpl {
+/**
+ * 
+ * @author xor
+ */
+public final class BoardsPage extends WebPageImpl {
 
-	public BoardsPage(Freetalk ft, FTOwnIdentity viewer, HTTPRequest request) {
-		super(ft, viewer, request);
+	public BoardsPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) {
+		super(myWebInterface, viewer, request);
 		// TODO Auto-generated constructor stub
 	}
 
-	public void make() {
+	public final void make() {
 		makeBoardsList();
 	}
 
