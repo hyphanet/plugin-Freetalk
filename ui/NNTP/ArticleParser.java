@@ -4,6 +4,7 @@
 package plugins.Freetalk.ui.NNTP;
 
 import plugins.Freetalk.Board;
+import plugins.Freetalk.Message;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -268,98 +269,6 @@ public class ArticleParser {
 	}
 
 	/**
-	 * Convert Subject string to a canonical form containing no
-	 * newlines or tabs, and remove or replace forbidden characters.
-	 */
-	private static String cleanupSubject(String subject) {
-		StringBuilder result = new StringBuilder();
-		boolean replacingNewline = false;
-		int dirCount = 0;
-		boolean inAnnotatedText = false;
-		boolean inAnnotation = false;
-
-		for (int i = 0; i < subject.length(); ) {
-			int c = subject.codePointAt(i);
-			i += Character.charCount(c);
-
-			if (c == '\r' || c == '\n') {
-				if (!replacingNewline) {
-					replacingNewline = true;
-					result.append(' ');
-				}
-			}
-			else if (c == '\t' || c == ' ') {
-				if (!replacingNewline)
-					result.append(' ');
-			}
-			else if (c == 0x202A	// LEFT-TO-RIGHT EMBEDDING
-					 || c == 0x202B		// RIGHT-TO-LEFT EMBEDDING
-					 || c == 0x202D		// LEFT-TO-RIGHT OVERRIDE
-					 || c == 0x202E) {	// RIGHT-TO-LEFT OVERRIDE
-				dirCount++;
-				result.appendCodePoint(c);
-			}
-			else if (c == 0x202C) {	// POP DIRECTIONAL FORMATTING
-				if (dirCount > 0) {
-					dirCount--;
-					result.appendCodePoint(c);
-				}
-			}
-			else if (c == 0xFFF9) {	// INTERLINEAR ANNOTATION ANCHOR
-				if (!inAnnotatedText && !inAnnotation) {
-					result.appendCodePoint(c);
-					inAnnotatedText = true;
-				}
-			}
-			else if (c == 0xFFFA) {	// INTERLINEAR ANNOTATION SEPARATOR
-				if (inAnnotatedText) {
-					result.appendCodePoint(c);
-					inAnnotatedText = false;
-					inAnnotation = true;
-				}
-			}
-			else if (c == 0xFFFB) { // INTERLINEAR ANNOTATION TERMINATOR
-				if (inAnnotation) {
-					result.appendCodePoint(c);
-					inAnnotation = false;
-				}
-			}
-			else if ((c & 0xFFFE) == 0xFFFE) {
-				// invalid character, ignore
-			}
-			else {
-				replacingNewline = false;
-
-				switch (Character.getType(c)) {
-				case Character.CONTROL:
-				case Character.SURROGATE:
-				case Character.LINE_SEPARATOR:
-				case Character.PARAGRAPH_SEPARATOR:
-					break;
-
-				default:
-					result.appendCodePoint(c);
-				}
-			}
-		}
-
-		if (inAnnotatedText) {
-			result.appendCodePoint(0xFFFA);
-			result.appendCodePoint(0xFFFB);
-		}
-		else if (inAnnotation) {
-			result.appendCodePoint(0xFFFB);
-		}
-
-		while (dirCount > 0) {
-			result.appendCodePoint(0x202C);
-			dirCount--;
-		}
-
-		return result.toString();
-	}
-
-	/**
 	 * Get the named header contents.
 	 */
 	private static String getHeader(String[] headLines, String name) {
@@ -536,7 +445,7 @@ public class ArticleParser {
 		authorName = addr.local;
 		authorDomain = addr.domain;
 
-		title = cleanupSubject(subjectHeader);
+		title = Message.makeTitleValid(subjectHeader);
 
 		boards = parseNewsgroups(newsgroupsHeader);
 

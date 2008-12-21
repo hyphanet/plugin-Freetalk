@@ -400,10 +400,15 @@ public class Message {
 	
 	/**
 	 * Checks whether the title of the message is valid. Validity conditions:
-	 * - ...
+	 * - No line breaks, tabs, or any other control characters.
+	 * - No invalid characters.
+	 * - No invalid formatting (unpaired direction or annotation characters.)
 	 */
 	static public boolean isTitleValid(String title) {
-		return StringValidityChecker.containsNoLinebreaks(title);
+		return (StringValidityChecker.containsNoInvalidCharacters(title)
+				&& StringValidityChecker.containsNoLinebreaks(title)
+				&& StringValidityChecker.containsNoControlCharacters(title)
+				&& StringValidityChecker.containsNoInvalidFormatting(title));
 	}
 	
 	/**
@@ -419,12 +424,99 @@ public class Message {
 	 * Makes the passed title valid in means of <code>isTitleValid()</code>
 	 * @see isTitleValid
 	 */
-	/*
 	static public String makeTitleValid(String title) {
-		// FIXME: Implement.
-		return title;
+		// FIXME: the newline handling here is based on the RFC 822
+		// format (newline + linear white space = single space).  If
+		// necessary, we could move that part of the cleaning-up to
+		// ui.NNTP.ArticleParser, but the same algorithm should work
+		// fine in the general case.
+
+		StringBuilder result = new StringBuilder();
+		boolean replacingNewline = false;
+		int dirCount = 0;
+		boolean inAnnotatedText = false;
+		boolean inAnnotation = false;
+
+		for (int i = 0; i < title.length(); ) {
+			int c = title.codePointAt(i);
+			i += Character.charCount(c);
+
+			if (c == '\r' || c == '\n') {
+				if (!replacingNewline) {
+					replacingNewline = true;
+					result.append(' ');
+				}
+			}
+			else if (c == '\t' || c == ' ') {
+				if (!replacingNewline)
+					result.append(' ');
+			}
+			else if (c == 0x202A	// LEFT-TO-RIGHT EMBEDDING
+					 || c == 0x202B		// RIGHT-TO-LEFT EMBEDDING
+					 || c == 0x202D		// LEFT-TO-RIGHT OVERRIDE
+					 || c == 0x202E) {	// RIGHT-TO-LEFT OVERRIDE
+				dirCount++;
+				result.appendCodePoint(c);
+			}
+			else if (c == 0x202C) {	// POP DIRECTIONAL FORMATTING
+				if (dirCount > 0) {
+					dirCount--;
+					result.appendCodePoint(c);
+				}
+			}
+			else if (c == 0xFFF9) {	// INTERLINEAR ANNOTATION ANCHOR
+				if (!inAnnotatedText && !inAnnotation) {
+					result.appendCodePoint(c);
+					inAnnotatedText = true;
+				}
+			}
+			else if (c == 0xFFFA) {	// INTERLINEAR ANNOTATION SEPARATOR
+				if (inAnnotatedText) {
+					result.appendCodePoint(c);
+					inAnnotatedText = false;
+					inAnnotation = true;
+				}
+			}
+			else if (c == 0xFFFB) { // INTERLINEAR ANNOTATION TERMINATOR
+				if (inAnnotation) {
+					result.appendCodePoint(c);
+					inAnnotation = false;
+				}
+			}
+			else if ((c & 0xFFFE) == 0xFFFE) {
+				// invalid character, ignore
+			}
+			else {
+				replacingNewline = false;
+
+				switch (Character.getType(c)) {
+				case Character.CONTROL:
+				case Character.SURROGATE:
+				case Character.LINE_SEPARATOR:
+				case Character.PARAGRAPH_SEPARATOR:
+					break;
+
+				default:
+					result.appendCodePoint(c);
+				}
+			}
+		}
+
+		if (inAnnotatedText) {
+			result.appendCodePoint(0xFFFA);
+			result.appendCodePoint(0xFFFB);
+		}
+		else if (inAnnotation) {
+			result.appendCodePoint(0xFFFB);
+		}
+
+		while (dirCount > 0) {
+			result.appendCodePoint(0x202C);
+			dirCount--;
+		}
+
+		return result.toString();
 	}
-	*/
 
 	/**
 	 * Makes the passed text valid in means of <code>isTextValid()</code>
