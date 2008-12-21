@@ -4,10 +4,13 @@
 package plugins.Freetalk;
 
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -37,12 +40,15 @@ public final class Board implements Comparable<Board> {
 
 	private final String mName;
 	
+	private final Date mFirstSeenDate;
+	
 	
 	/* References to objects of the plugin, not stored in the database. */
 	
 	private transient ObjectContainer db;
 	private transient MessageManager mMessageManager;
 	
+	private static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
 	/**
 	 * Get a list of fields which the database should create an index on.
@@ -68,6 +74,7 @@ public final class Board implements Comparable<Board> {
 		
 		// FIXME: Validate name and description.
 		mName = newName;
+		mFirstSeenDate = mCalendar.getTime();
 	}
 	
 	/**
@@ -130,6 +137,10 @@ public final class Board implements Comparable<Board> {
 	 */
 	public String getName() {
 		return mName;
+	}
+	
+	public Date getFirstSeenDate() {
+		return mFirstSeenDate;
 	}
 	
 	public synchronized String getDescription(FTOwnIdentity viewer) {
