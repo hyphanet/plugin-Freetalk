@@ -57,19 +57,14 @@ public final class Board implements Comparable<Board> {
 	
 	/**
 	 * Create a board. You have to store() it yourself after creation.
-	 * @param newMessageManager The MessageManager of the board. Not needed in the constructor, saves a call to initializeTransient().
 	 * @param newName The name of the board. For restrictions, see <code>isNameValid()</code>
 	 * @throws InvalidParameterException If none or an invalid name is given.
 	 */
-	public Board(MessageManager newMessageManager, String newName) throws InvalidParameterException {
+	public Board(String newName) throws InvalidParameterException {
 		if(newName==null || newName.length() == 0)
 			throw new IllegalArgumentException("Empty board name.");
 		if(!isNameValid(newName))
 			throw new InvalidParameterException("Board names have to be either in English or have an ISO language code at the beginning followed by a dot.");
-
-		assert(newMessageManager != null);
-
-		mMessageManager = newMessageManager;
 		
 		// FIXME: Validate name and description.
 		mName = newName;
@@ -83,6 +78,15 @@ public final class Board implements Comparable<Board> {
 		assert(myMessageManager != null);
 		db = myDB;
 		mMessageManager = myMessageManager;
+	}
+	
+	/**
+	 * Store this object in the database. You have to initializeTransient() before.
+	 */
+	public synchronized void store() {
+		/* FIXME: check for duplicates */
+		db.store(this);
+		db.commit();
 	}
 	
 	/**
@@ -363,6 +367,8 @@ public final class Board implements Comparable<Board> {
 		};
 	}
 	
+	/* FIXME: This function returns all messages, not only the ones which the viewer wants to see. Convert the function to an iterator
+	 * which picks threads chosen by the viewer, see threadIterator() for how to do this */
 	@SuppressWarnings("unchecked")
 	public synchronized List<MessageReference> getAllMessages() {
 		Query q = db.query();
@@ -385,6 +391,7 @@ public final class Board implements Comparable<Board> {
 		return result.next().getIndex();
 	}
 
+	/* FIXME: This function counts all messages, not only the ones which the viewer wants to see. */
 	public synchronized int getLastMessageIndex() {
 		return getFreeMessageIndex() - 1;
 	}
@@ -419,6 +426,7 @@ public final class Board implements Comparable<Board> {
 	/**
 	 * Get the number of messages in this board.
 	 */
+	/* FIXME: This function counts all messages, not only the ones which the viewer wants to see. */
 	public synchronized int messageCount() {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
@@ -429,8 +437,10 @@ public final class Board implements Comparable<Board> {
 	/**
 	 * Get the number of replies to the given thread.
 	 */
-	public synchronized int threadReplyCount(Message thread) {
+	/* FIXME: This function counts all replies, not only the ones which the viewer wants to see. */
+	public synchronized int threadReplyCount(FTOwnIdentity viewer, Message thread) {
 		Query q = db.query();
+		
 		/* FIXME: Check whether this query is fast. I think it should rather first query for objects of Message.class which have mThread == thread
 		 * and then check whether a BoardMessageLink to this board exists. */
 		q.constrain(BoardMessageLink.class);
@@ -449,6 +459,8 @@ public final class Board implements Comparable<Board> {
 	/**
 	 * Get all replies to the given thread, sorted ascending by date
 	 */
+	/* FIXME: This function returns all replies, not only the ones which the viewer wants to see. Convert the function to an iterator
+	 * which picks threads chosen by the viewer, see threadIterator() for how to do this */
 	@SuppressWarnings("unchecked")
 	public synchronized List<MessageReference> getAllThreadReplies(Message thread) {
 		Query q = db.query();
@@ -465,13 +477,6 @@ public final class Board implements Comparable<Board> {
 		}
 		
 		return q.execute();
-	}
-	
-	
-	public synchronized void store() {
-		/* FIXME: check for duplicates */
-		db.store(this);
-		db.commit();
 	}
 	
 	public interface MessageReference {

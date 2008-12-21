@@ -184,7 +184,7 @@ public abstract class MessageManager implements Runnable {
 			board = getBoardByName(name);
 		}
 		catch(NoSuchBoardException e) {
-			board = new Board(this, name);
+			board = new Board(name);
 			board.initializeTransient(db, this);
 			board.store();
 		}
