@@ -61,10 +61,6 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	private ClassLoader mClassLoader;
 	
 	private PluginRespirator mPluginRespirator; /* TODO: remove references in other classes so we can make this private */
-	
-	private Node mNode;
-	
-	private HighLevelSimpleClient mClient;
 
 	private LANGUAGE mLanguage;
 	
@@ -91,15 +87,63 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	
 	
 	public void runPlugin(PluginRespirator myPR) {
-		
 		Logger.debug(this, "Plugin starting up...");
 
 		mPluginRespirator = myPR;
-		mNode = mPluginRespirator.getNode();
-		mClient = mPluginRespirator.getHLSimpleClient();
 
 		Logger.debug(this, "Opening database...");
+		db = openDatabase(DATABASE_FILE);
+		Logger.debug(this, "Database opened.");
+
+		deleteBrokenObjects();
 		
+		/* FIXME: Debug code, remove when not needed anymore */
+		Logger.debug(this, "Wiping database...");
+		ObjectSet<Object> result = db.queryByExample(new Object());
+		for (Object o : result)
+			db.delete(o);
+		db.commit();
+		Logger.debug(this, "Database wiped.");
+		
+		Logger.debug(this, "Creating identity manager...");
+		int tries = 0;
+		do {
+			try {
+				++tries;
+				mIdentityManager = new WoTIdentityManager(db, mPluginRespirator);
+			}
+		
+			catch(PluginNotFoundException e) {
+				if(tries == 10)
+					throw new RuntimeException(e);
+				Logger.error(this, "WoT plugin not found! Retrying ...");
+				try { Thread.sleep(10 * 1000); } catch(InterruptedException ex) {}
+			}
+		} while(mIdentityManager == null);
+		
+		Logger.debug(this, "Creating message manager...");
+		mMessageManager = new WoTMessageManager(db, mPluginRespirator.getNode().executor, mIdentityManager);
+		
+		Logger.debug(this, "Creating message fetcher...");
+		mMessageFetcher = new WoTMessageFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), db, "FT Message Fetcher", mIdentityManager, mMessageManager);
+		
+		Logger.debug(this, "Creating message inserter...");
+		mMessageInserter = new WoTMessageInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT Message Inserter", mIdentityManager, mMessageManager);
+
+		Logger.debug(this, "Creating webinterface ...");
+		mWebInterface = new WebInterface(this);
+		
+		Logger.debug(this, "Creating FCP interface...");
+		mFCPInterface = new FCPInterface(this);
+		
+		Logger.debug(this, "Starting NNTP server...");
+		mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "127.0.0.1", "127.0.0.1");
+		//mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "0.0.0.0", "*");
+		
+		Logger.debug(this, "Plugin loaded.");
+	}
+	
+	private ObjectContainer openDatabase(String filename) {
 		Configuration dbCfg = Db4o.newConfiguration();
 		dbCfg.reflectWith(new JdkReflector(mClassLoader));
 		dbCfg.exceptionsOnNotStorable(true);
@@ -124,54 +168,15 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			dbCfg.objectClass(WoTOwnIdentity.class).objectField(f).indexed(true);
 		}
 		
-		db = Db4o.openFile(dbCfg, DATABASE_FILE);
-		
-		Logger.debug(this, "Database opened.");
-		
-		deleteBrokenObjects();
-		
-		Logger.debug(this, "Wiping database...");
-		ObjectSet<Object> result = db.queryByExample(new Object());
-		for (Object o : result) db.delete(o);
-		db.commit();
-		Logger.debug(this, "Database wiped.");
-		
-		Logger.debug(this, "Creating identity manager...");
-		int tries = 0;
-		do {
-			try {
-				++tries;
-				mIdentityManager = new WoTIdentityManager(db, mPluginRespirator);
-			}
-		
-			catch(PluginNotFoundException e) {
-				if(tries == 10)
-					throw new RuntimeException(e);
-				Logger.error(this, "WoT plugin not found! Retrying ...");
-				try { Thread.sleep(10 * 1000); } catch(InterruptedException ex) {}
-			}
-		} while(mIdentityManager == null);
-		
-		Logger.debug(this, "Creating message manager...");
-		mMessageManager = new WoTMessageManager(db, mPluginRespirator.getNode().executor, mIdentityManager);
-		
-		Logger.debug(this, "Creating message fetcher...");
-		mMessageFetcher = new WoTMessageFetcher(mNode, mClient, db, "FT Message Fetcher", mIdentityManager, mMessageManager);
-		
-		Logger.debug(this, "Creating message inserter...");
-		mMessageInserter = new WoTMessageInserter(mNode, mClient, "FT Message Inserter", mIdentityManager, mMessageManager);
-
-		Logger.debug(this, "Creating webinterface ...");
-		mWebInterface = new WebInterface(this);
-		
-		Logger.debug(this, "Creating FCP interface...");
-		mFCPInterface = new FCPInterface(this);
-		
-		Logger.debug(this, "Starting NNTP server...");
-		mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "127.0.0.1", "127.0.0.1");
-		//mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "0.0.0.0", "*");
-		
-		Logger.debug(this, "Plugin loaded.");
+		return Db4o.openFile(dbCfg, filename);
+	}
+	
+	private void closeDatabase(ObjectContainer myDB) {
+		/* FIXME: Figure out whether we can use db4o to tell whether this commit() does something. If it does, then log an error, because then
+		 * probably we forgot a commit() somewhere. */
+		/* FIXME: We should rater rollback() than commit(). But while the plugin is not stable enough it might be necessary to commit() */
+		myDB.commit();
+		myDB.close();
 	}
 	
 	/**
@@ -202,6 +207,10 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			Logger.error(this, "Error during termination.", e);
 		}
 		
+		/* TODO: Terminate FCPInterface if necessary */
+		
+		/* WebInterface is stateless and does not need to be terminated */
+		
 		try {
 			mMessageInserter.terminate();
 		}
@@ -231,10 +240,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		}
 
 		try {
-			/* FIXME: Figure out whether we can use db4o to tell whether this commit() does something. If it does, then log an error, because then
-			 * probably we forgot a commit() somewhere. */
-			db.commit();
-			db.close();
+			closeDatabase(db);
 		} catch(Exception e) {
 			Logger.error(this, "Error while closing database.", e);
 		}
@@ -267,7 +273,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	}
 	
 	public String getVersion() {
-		return "α r" + Version.svnRevision;
+		return "r" + Version.svnRevision;
 	}
 	
 	public String getString(String key) {
@@ -275,6 +281,10 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		return key;
 	}
 
+	/**
+	 * Called by the node during the loading of the plugin. The <code>ClassLoader</code> which was used by the node is passed to db4o
+	 * by Freetalk. Db4o needs to know the <code>ClassLoader</code> which was used to create the classes of the objects it is supposed to store.
+	 */
 	public void setClassLoader(ClassLoader myClassLoader) {
 		mClassLoader = myClassLoader;
 	}
@@ -288,11 +298,5 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		mTheme = newTheme;
 		Logger.error(this, "Set THEME to: " + mTheme.code);
 	}
-	
-	/*
-	public FredPluginFCP getWoTPlugin() {
-		return mPluginRespirator.getNode().pluginManager.getFCPPlugin(Freetalk.WOT_NAME);
-	}
-	*/
 
 }
