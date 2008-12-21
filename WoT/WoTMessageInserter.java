@@ -93,9 +93,10 @@ public class WoTMessageInserter extends MessageInserter {
 	
 	protected void insertMessage(OwnMessage m) throws InsertException, IOException, TransformerException, ParserConfigurationException {
 		Bucket tempB = mTBF.makeBucket(2048 + m.getText().length()); /* TODO: set to a reasonable value */
-		OutputStream os = tempB.getOutputStream();
+		OutputStream os = null;
 		
 		try {
+			os = tempB.getOutputStream();
 			MessageXML.encode(m, os);
 			os.close(); os = null;
 			tempB.setReadOnly();
