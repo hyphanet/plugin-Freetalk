@@ -56,7 +56,7 @@ public class BoardPage extends WebPageImpl {
 			row.addChild("td", new String[] { "align" }, new String[] { "center" }, thread.getDate().toLocaleString()); /* FIXME: Use Calendar */
 	
 			/* Reply count */
-			row.addChild("td", new String[] { "align" }, new String[] { "right" }, Integer.toString(mBoard.threadReplyCount(thread)));
+			row.addChild("td", new String[] { "align" }, new String[] { "right" }, Integer.toString(mBoard.threadReplyCount(mOwnIdentity, thread)));
 		}
 
 	}
