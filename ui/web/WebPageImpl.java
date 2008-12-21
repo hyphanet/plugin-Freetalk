@@ -21,21 +21,26 @@ import freenet.support.api.HTTPRequest;
 public abstract class WebPageImpl implements WebPage {
 
 	/** The URI the plugin can be accessed from. */
-	protected static String SELF_URI = Freetalk.PLUGIN_URI;
+	protected static final String SELF_URI = Freetalk.PLUGIN_URI;
 
-	/** The node's pagemaker */
-	protected PageMaker mPM;
+	protected final WebInterface mWebInterface;
+	
 	/** A reference to Freetalk */
-	protected Freetalk mFreetalk;
+	protected final Freetalk mFreetalk;
+	
+	/** The node's pagemaker */
+	protected final PageMaker mPM;
+	
 	/** The request performed by the user */
-	protected HTTPRequest mRequest;
+	protected final HTTPRequest mRequest;
+	
 	/** List of all content boxes */
-	protected ArrayList<HTMLNode> mContentBoxes;
+	protected final ArrayList<HTMLNode> mContentBoxes;
 	
 	/**
 	 * The FTOwnIdentity which is viewing this page.
 	 */
-	protected FTOwnIdentity mOwnIdentity;
+	protected final FTOwnIdentity mOwnIdentity;
 
 	/**
 	 * Creates a new WebPageImpl. It is abstract because only a subclass can run
@@ -48,10 +53,14 @@ public abstract class WebPageImpl implements WebPage {
 	 * @param request
 	 *            the request from the user.
 	 */
-	public WebPageImpl(Freetalk ft, FTOwnIdentity viewer, HTTPRequest request) {
+	public WebPageImpl(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) {
 
-		mFreetalk = ft;
-		mPM = mFreetalk.mPageMaker;
+		mWebInterface = myWebInterface;
+		
+		mFreetalk = mWebInterface.getFreetalk();
+		
+		mPM = mWebInterface.getPageMaker();
+		
 		mOwnIdentity = viewer;
 
 		mRequest = request;
@@ -64,13 +73,16 @@ public abstract class WebPageImpl implements WebPage {
 	 * 
 	 * @return HTML code of the page.
 	 */
-	public String toHTML() {
+	public final String toHTML() {
 		HTMLNode pageNode = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getFreetalkAddress(), null);
 		addToPage(pageNode);
 		return pageNode.generate();
 	}
 	
-	public void addToPage(HTMLNode pageNode) {
+	/**
+	 * Adds this WebPage to the given page as a HTMLNode.
+	 */
+	public final void addToPage(HTMLNode pageNode) {
 		make();
 		
 		HTMLNode contentNode = mPM.getContentNode(pageNode);
@@ -84,13 +96,17 @@ public abstract class WebPageImpl implements WebPage {
 	/**
 	 * Adds a new InfoBox to the WebPage.
 	 * 
-	 * @param title
-	 *            The title of the desired InfoBox
+	 * @param title The title of the desired InfoBox
 	 * @return the contentNode of the newly created InfoBox
 	 */
-	protected HTMLNode getContentBox(String title) {
-
+	protected final HTMLNode getContentBox(String title) {
 		HTMLNode box = mPM.getInfobox(title);
+		mContentBoxes.add(box);
+		return mPM.getContentNode(box);
+	}
+	
+	protected final HTMLNode getAlertBox(String title) {
+		HTMLNode box = mPM.getInfobox("infobox-alert", title);
 		mContentBoxes.add(box);
 		return mPM.getContentNode(box);
 	}

@@ -60,6 +60,14 @@ public abstract class IdentityManager implements PrioRunnable, Iterable<FTIdenti
 			}
 		};
 	}
+	
+	public synchronized int countKnownIdentities() {
+		/* FIXME: This should probably take an FTOwnIdentity as param and count the identities seen by it */
+		Query q = db.query();
+		q.constrain(FTIdentity.class);
+		q.constrain(FTOwnIdentity.class).not();
+		return q.execute().size();
+	}
 
 	public synchronized Iterator<FTOwnIdentity> ownIdentityIterator() {
 		return new Iterator<FTOwnIdentity> () {
@@ -115,4 +123,5 @@ public abstract class IdentityManager implements PrioRunnable, Iterable<FTIdenti
 	}
 	
 	public abstract void terminate();
+
 }
