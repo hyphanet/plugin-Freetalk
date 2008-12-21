@@ -264,14 +264,15 @@ public class FreetalkNNTPHandler implements Runnable {
 	private void selectGroup(String name) {
 		// FIXME: look up by "NNTP name"
 		try {
-			Board board = mMessageManager.getBoardByName(name);
+			String boardName = FreetalkNNTPGroup.groupToBoardName(name);
+			Board board = mMessageManager.getBoardByName(boardName);
 			currentGroup = new FreetalkNNTPGroup(board);
 			synchronized (board) {
 				currentMessageNum = currentGroup.firstMessage();
 				printStatusLine("211 " + currentGroup.messageCount()
 								+ " " + currentGroup.firstMessage()
 								+ " " + currentGroup.lastMessage()
-								+ " " + board.getName()); /* FIXME: Implement FreetalkNNTPArticle.getNameNNTP() */
+								+ " " + currentGroup.getName()); /* FIXME: Implement FreetalkNNTPArticle.getNameNNTP() */
 			}
 		}
 		catch(NoSuchBoardException e) {
@@ -313,7 +314,8 @@ public class FreetalkNNTPHandler implements Runnable {
 
 		if (name != null) {
 			try {
-				Board board = mMessageManager.getBoardByName(name);
+				String boardName = FreetalkNNTPGroup.groupToBoardName(name);
+				Board board = mMessageManager.getBoardByName(boardName);
 				currentGroup = new FreetalkNNTPGroup(board);
 			}
 			catch (NoSuchBoardException e) {
@@ -331,7 +333,7 @@ public class FreetalkNNTPHandler implements Runnable {
 			printStatusLine("211 " + currentGroup.messageCount()
 							+ " " + currentGroup.firstMessage()
 							+ " " + currentGroup.lastMessage()
-							+ " " + currentGroup.getBoard().getName()); /* FIXME: Implement FreetalkNNTPArticle.getNameNNTP() */
+							+ " " + currentGroup.getName());
 
 			if (end == -1)
 				end = currentGroup.lastMessage();
@@ -359,7 +361,7 @@ public class FreetalkNNTPHandler implements Runnable {
 		for (Iterator<Board> i = mMessageManager.boardIterator(); i.hasNext(); ) {
 			Board board = i.next();
 			FreetalkNNTPGroup group = new FreetalkNNTPGroup(board);
-			printTextResponseLine(board.getName() /* FIXME: Implement FreetalkNNTPArticle.getNameNNTP() */
+			printTextResponseLine(group.getName()
 								  + " " + group.lastMessage()
 								  + " " + group.firstMessage()
 								  + " " + group.postingStatus());
@@ -375,8 +377,8 @@ public class FreetalkNNTPHandler implements Runnable {
 		printStatusLine("215 Information follows:");
 		for (Iterator<Board> i = mMessageManager.boardIterator(); i.hasNext(); ) {
 			Board board = i.next();
-			printTextResponseLine(board.getName() /* FIXME: Implement FreetalkNNTPArticle.getNameNNTP() */
-					+ " " + board.getDescription(null));
+			String groupName = FreetalkNNTPGroup.boardToGroupName(board.getName());
+			printTextResponseLine(groupName	+ " " + board.getDescription(null));
 		}
 		endTextResponse();
 	}
