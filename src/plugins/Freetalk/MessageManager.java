@@ -201,22 +201,18 @@ public abstract class MessageManager implements Runnable {
 		
 		return board;
 	}
-
+	
 	/**
-	 * Get an iterator of all boards. The transient fields of the returned boards will be initialized already.
+	 * For a database Query of result type <code>ObjectSet\<Board\></code>, this function provides an iterator. The iterator of the ObjectSet
+	 * cannot be used instead because it will not call initializeTransient() on the boards. The iterator which is returned by this function
+	 * takes care of that.
+	 * Please synchronize on the <code>MessageManager</code> when using this function, it is not synchronized itself.
 	 */
-	public synchronized Iterator<Board> boardIterator() {
+	@SuppressWarnings("unchecked")
+	protected Iterator<Board> generalBoardIterator(final Query q) {
 		return new Iterator<Board>() {
-			private Iterator<Board> iter;
+			private Iterator<Board> iter = q.execute().iterator();
 			
-			{
-				/* FIXME: Accelerate this query. db4o should be configured to keep an alphabetic index of boards */
-				Query query = db.query();
-				query.constrain(Board.class);
-				query.descend("mName").orderDescending();
-				iter = query.execute().iterator();
-			}
-
 			public boolean hasNext() {
 				return iter.hasNext();
 			}
@@ -232,6 +228,28 @@ public abstract class MessageManager implements Runnable {
 			}
 			
 		};
+	}
+
+	/**
+	 * Get an iterator of all boards. The transient fields of the returned boards will be initialized already.
+	 */
+	public synchronized Iterator<Board> boardIterator() {
+		/* FIXME: Accelerate this query. db4o should be configured to keep an alphabetic index of boards */
+		Query query = db.query();
+		query.constrain(Board.class);
+		query.descend("mName").orderDescending();
+		return generalBoardIterator(query);
+	}
+	
+	/**
+	 * Get an iterator of boards which were first seen after the given Date, sorted ascending by the date they were first seen at.
+	 */
+	public synchronized Iterator<Board> boardIteratorSortedByDate(final Date seenAfter) {
+		Query query = db.query();
+		query.constrain(Board.class);
+		query.descend("mFirstSeenDate").constrain(seenAfter).greater();
+		query.descend("mFirstSeenDate").orderAscending();
+		return generalBoardIterator(query);
 	}
 	
 	/**
