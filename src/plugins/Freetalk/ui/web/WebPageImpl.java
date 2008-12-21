@@ -74,7 +74,11 @@ public abstract class WebPageImpl implements WebPage {
 	 * @return HTML code of the page.
 	 */
 	public final String toHTML() {
-		HTMLNode pageNode = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getFreetalkAddress(), null);
+		HTMLNode pageNode;
+		if(mOwnIdentity != null)
+			pageNode = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getFreetalkAddress(), null);
+		else
+			pageNode = mPM.getPageNode(Freetalk.PLUGIN_TITLE, null);
 		addToPage(pageNode);
 		return pageNode.generate();
 	}
