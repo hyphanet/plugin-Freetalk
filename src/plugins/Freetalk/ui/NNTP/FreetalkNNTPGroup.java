@@ -24,10 +24,33 @@ public class FreetalkNNTPGroup {
 	}
 
 	/**
+	 * Convert NNTP group name into a Freetalk board name.
+	 */
+	public static String groupToBoardName(String name) {
+		return name;
+	}
+
+	/**
+	 * Convert a Freetalk board name into an NNTP group name.
+	 */
+	public static String boardToGroupName(String name) {
+		// FIXME: implement
+		return name;
+	}
+
+	/**
 	 * Get the FTBoard object associated with this group.
 	 */
 	public Board getBoard() {
+		// FIXME: implement
 		return board;
+	}
+
+	/**
+	 * Get the group name
+	 */
+	public String getName() {
+		return boardToGroupName(board.getName());
 	}
 
 	/**

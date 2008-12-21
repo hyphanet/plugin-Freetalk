@@ -229,8 +229,9 @@ public class ArticleParser {
 			int c = tokenizer.getToken();
 			if (c == 0) {
 				String name = tokenizer.getTokenText();
-				if (Board.isNameValid(name))
-					result.add(name);
+				String boardName = FreetalkNNTPGroup.groupToBoardName(name);
+				if (Board.isNameValid(boardName))
+					result.add(boardName);
 			}
 		}
 
