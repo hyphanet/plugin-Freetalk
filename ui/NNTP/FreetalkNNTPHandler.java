@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.Date;
 import java.util.SimpleTimeZone;
 import java.text.SimpleDateFormat;
+import java.text.ParsePosition;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -384,6 +385,28 @@ public class FreetalkNNTPHandler implements Runnable {
 	}
 
 	/**
+	 * Handle the NEWGROUPS command.
+	 */
+	private void listNewGroupsSince(String datestr, String format, boolean gmt) {
+		if (gmt) {
+			format = format + " z";
+			datestr = datestr + " GMT";
+		}
+
+		SimpleDateFormat df = new SimpleDateFormat(format);
+		Date date = df.parse(datestr, new ParsePosition(0));
+		for (Iterator<Board> i = mMessageManager.boardIteratorSortedByDate(date); i.hasNext(); ) {
+			Board board = i.next();
+			FreetalkNNTPGroup group = new FreetalkNNTPGroup(board);
+			printTextResponseLine(board.getName()
+								  + " " + group.lastMessage()
+								  + " " + group.firstMessage()
+								  + " " + group.postingStatus());
+		}
+		endTextResponse();
+	}
+
+	/**
 	 * Handle the HDR / XHDR command.
 	 */
 	private void printArticleHeader(String header, String articleDesc) {
@@ -566,6 +589,26 @@ public class FreetalkNNTPHandler implements Runnable {
 			}
 			else if (tokens.length == 3) {
 				selectGroupWithList(tokens[1], tokens[2]);
+			}
+			else {
+				printStatusLine("501 Syntax error");
+			}
+		}
+		else if (command.equalsIgnoreCase("NEWGROUPS")) {
+			boolean gmt = false;
+			if ((tokens.length == 4 && (gmt = tokens[3].equalsIgnoreCase("GMT"))) ||
+					(tokens.length == 3))
+			{
+				String date = tokens[1] + " " + tokens[2];
+				if (date.length() == 15) {
+					listNewGroupsSince(date, "yyyyMMdd HHmmss", gmt);
+				}
+				else if (date.length() == 13) {
+					listNewGroupsSince(date, "yyMMdd HHmmss", gmt);
+				}
+				else {
+					printStatusLine("501 Syntax error");
+				}
 			}
 			else {
 				printStatusLine("501 Syntax error");
