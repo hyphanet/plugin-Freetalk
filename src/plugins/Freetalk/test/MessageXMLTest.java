@@ -32,7 +32,7 @@ public class MessageXMLTest extends TestCase {
 	public void testXML() throws Exception {
 		ObjectContainer db = Db4o.openFile("test.db4o"); /* FIXME: This HAS to be flushed */
 		MessageManager messageManager = new WoTMessageManager(db);
-		Board board = new Board(messageManager, "board");
+		Board board = new Board("board");
 		HashSet<Board> boards = new HashSet<Board>();
 		boards.add(board);
 		FTOwnIdentity identity = new WoTOwnIdentity("uid1", new FreenetURI("KSK@identityURI"), new FreenetURI("KSK@identityInsertURI"), "nickname");
