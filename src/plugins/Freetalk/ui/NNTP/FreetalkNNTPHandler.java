@@ -760,6 +760,7 @@ public class FreetalkNNTPHandler implements Runnable {
 				if (!buf.hasRemaining()) {
 					// resize input buffer
 					ByteBuffer newbuf = ByteBuffer.allocateDirect(buf.capacity() * 2);
+					buf.flip();
 					newbuf.put(buf);
 					buf = newbuf;
 				}
@@ -802,6 +803,7 @@ public class FreetalkNNTPHandler implements Runnable {
 			// append line to the end of the buffer
 			if (line.remaining() > buf.remaining()) {
 				ByteBuffer newbuf = ByteBuffer.allocateDirect((buf.position() + line.remaining()) * 2);
+				buf.flip();
 				newbuf.put(buf);
 				buf = newbuf;
 			}
