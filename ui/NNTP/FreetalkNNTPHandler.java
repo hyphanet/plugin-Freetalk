@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Date;
+import java.util.TimeZone;
 import java.util.SimpleTimeZone;
 import java.text.SimpleDateFormat;
 import java.text.ParsePosition;
@@ -388,12 +389,10 @@ public class FreetalkNNTPHandler implements Runnable {
 	 * Handle the NEWGROUPS command.
 	 */
 	private void listNewGroupsSince(String datestr, String format, boolean gmt) {
-		if (gmt) {
-			format = format + " z";
-			datestr = datestr + " GMT";
-		}
-
 		SimpleDateFormat df = new SimpleDateFormat(format);
+		if (gmt)
+			df.setTimeZone(TimeZone.getTimeZone("UTC"));
+
 		Date date = df.parse(datestr, new ParsePosition(0));
 		for (Iterator<Board> i = mMessageManager.boardIteratorSortedByDate(date); i.hasNext(); ) {
 			Board board = i.next();
