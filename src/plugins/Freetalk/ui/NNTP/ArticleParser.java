@@ -5,6 +5,7 @@ package plugins.Freetalk.ui.NNTP;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.ui.NNTP.MIME.TransferEncoding;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -13,6 +14,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import freenet.support.Logger;
 
@@ -21,6 +24,10 @@ import freenet.support.Logger;
  * of the POST command.)
  */
 public class ArticleParser {
+
+	private static final Pattern encodedWordPattern = Pattern.compile("=\\?([^\\]\\[()<>@,;:\"/?.=]+)" // charset
+																	  + "\\?([^\\]\\[()<>@,;:\"/?.=]+)" // encoding
+																	  + "\\?([^? ]*)\\?="); // text
 
 	/** Author's nickname (local part of mail address) */
 	private String authorName;
@@ -270,6 +277,39 @@ public class ArticleParser {
 	}
 
 	/**
+	 * Decode any encoded words in the header as per RFC 2047
+	 */
+	private static String decodeMIMEHeader(String str) {
+		StringBuilder result = new StringBuilder();
+		Matcher matcher = encodedWordPattern.matcher(str);
+		int pos = 0;
+
+		while (matcher.find()) {
+			String charsetName = matcher.group(1);
+			String encodingName = matcher.group(2);
+			String data = matcher.group(3);
+
+			result.append(str.substring(pos, matcher.start()));
+
+			try {
+				Charset charset = Charset.forName(charsetName);
+				TransferEncoding encoding = TransferEncoding.headerWordEncoding(encodingName);
+				byte[] encodedBytes = data.getBytes("US-ASCII");
+				ByteBuffer decodedBytes = encoding.decode(ByteBuffer.wrap(encodedBytes));
+				result.append(charset.decode(decodedBytes));
+			}
+			catch (Exception e) {
+				result.append(matcher.group());
+			}
+
+			pos = matcher.end();
+		}
+
+		result.append(str.substring(pos));
+		return result.toString();
+	}
+
+	/**
 	 * Get the named header contents.
 	 */
 	private static String getHeader(String[] headLines, String name) {
@@ -299,7 +339,7 @@ public class ArticleParser {
 					   || headLines[i].charAt(j) == '\t'))
 				j++;
 
-			StringBuilder result = new StringBuilder(headLines[i].substring(j));
+			StringBuilder result = new StringBuilder(decodeMIMEHeader(headLines[i].substring(j)));
 
 			// Find continuation lines
 			i++;
@@ -308,12 +348,9 @@ public class ArticleParser {
 				   && (headLines[i].charAt(0) == ' '
 					   || headLines[i].charAt(0) == '\t')) {
 				result.append('\n');
-				result.append(headLines[i]);
+				result.append(decodeMIMEHeader(headLines[i]));
 				i++;
 			}
-
-			// FIXME: decode any "encoded words" within the header (as
-			// per RFC 2047)
 
 			return result.toString();
 		}
@@ -324,7 +361,7 @@ public class ArticleParser {
 	/**
 	 * Parse the message body.
 	 */
-	private void parseBody(ByteBuffer bytes, ContentType type) {
+	private void parseBody(ByteBuffer bytes, ContentType type, String encodingName) {
 		// FIXME: handle multi-part content, upload non-text parts as
 		// attachments, etc.
 
@@ -336,7 +373,14 @@ public class ArticleParser {
 			bodyCharset = Charset.forName("UTF-8");
 		}
 
-		text = bodyCharset.decode(bytes).toString();
+		try {
+			TransferEncoding encoding = TransferEncoding.bodyEncoding(encodingName);
+			ByteBuffer decodedBytes = encoding.decode(bytes);
+			text = bodyCharset.decode(decodedBytes).toString();
+		}
+		catch (Exception e) {
+			text = bodyCharset.decode(bytes).toString();
+		}
 	}
 
 	/**
@@ -386,6 +430,7 @@ public class ArticleParser {
 		String followupToHeader = getHeader(headLines, "followup-to");
 		String referencesHeader = getHeader(headLines, "references");
 		String inReplyToHeader = getHeader(headLines, "in-reply-to");
+		String transferEncodingHeader = getHeader(headLines, "content-transfer-encoding");
 
 		if (newsgroupsHeader == null) {
 			Logger.debug(this, "Unable to find Newsgroups header");
@@ -468,7 +513,11 @@ public class ArticleParser {
 				parentID = refs.get(refs.size() - 1);
 		}
 
-		parseBody(bodyBytes, bodyType);
+		if (transferEncodingHeader != null)
+			parseBody(bodyBytes, bodyType, transferEncodingHeader);
+		else
+			parseBody(bodyBytes, bodyType, "8bit");
+
 		return true;
 	}
 }
