@@ -34,8 +34,14 @@ public final class Board implements Comparable<Board> {
 	/* Constants */
 	
 	private static transient final HashSet<String> ISOLanguages = new HashSet<String>(Arrays.asList(Locale.getISOLanguages()));
-	
-	
+
+	// Characters not allowed in board names:
+	//  ! , ? * [ \ ] (space)  not allowed by NNTP
+	//  / : < > | "            not allowed in filenames on certain platforms
+	//                         (a problem for some newsreaders)
+	private static final String DISALLOWED_NAME_CHARACTERS = "!,?*[\\] /:<>|\"";
+
+
 	/* Attributes, stored in the database */
 
 	private final String mName;
@@ -95,42 +101,47 @@ public final class Board implements Comparable<Board> {
 		db.store(this);
 		db.commit();
 	}
-	
+
 	/**
-	 * I suggest that we allow letters of any language in the name of a board with one restriction:
-	 * If the name contains any letters different than A to Z and '.' then the part of the name before the first dot
-	 * has to be only letters of A to Z specifying an ISO language code. This allows users which cannot type the
-	 * letters of that language to filter based on the first part because they then can type its name.
-	 * Further, it is polite to specify what language a board is in if it is not English.
+	 * Check if a board name is valid.
+	 *
+	 * Board names are required to begin with a known language code,
+	 * and may not contain any blacklisted characters.  Formatting
+	 * characters must be properly paired within each part of the name
+	 * (special formatting characters may be needed, e.g. for some
+	 * Arabic or Hebrew group names to be displayed properly.)
 	 */
 	public static boolean isNameValid(String name) {
-		int firstDot = name.indexOf('.');
-		String firstPart = firstDot!=-1 ? name.substring(0, firstDot) : name;
+		// check for illegal characters
 
-		/* FIXME: This is just the basic check, we should do more checks:
-		 * The rest of the name should match a whitelist of allowed punctuation (excluding for example &<>%#), or letters (i.e. not necessarily
-		 * English letters) according to Character.isLetter() and numerals. */
-		return name.matches("[a-zA-Z0-9.]+") || 
-				(ISOLanguages.contains(firstPart)
-					&& StringValidityChecker.containsNoIDNBlacklistCharacters(name));
+		if (!StringValidityChecker.containsNoLinebreaks(name)
+			|| !StringValidityChecker.containsNoInvalidCharacters(name)
+			|| !StringValidityChecker.containsNoControlCharacters(name)
+			|| !StringValidityChecker.containsNoIDNBlacklistCharacters(name))
+			return false;
+
+		for (Character c : name.toCharArray()) {
+			if (DISALLOWED_NAME_CHARACTERS.indexOf(c) != -1)
+				return false;
+		}
+
+		// check for invalid formatting characters (each dot-separated
+		// part of the input string must be valid on its own)
+
+		String[] parts = name.split("\\.");
+		if (parts.length < 2)
+			return false;
+
+		for (int i = 0; i < parts.length; i++) {
+			if (!StringValidityChecker.containsNoInvalidFormatting(parts[i]))
+				return false;
+		}
+
+		// first part of name must be a recognized language code
+
+		return (ISOLanguages.contains(parts[0]));
 	}
 	
-	/* 
-	 * FIXME:
-	 * We should post a warning on the interface if a user wants to post to a board with a non-NNTP-valid name and show him what the NNTP client
-	 * will display the board name as, as soon as we have a getNameNNTP() function which converts the name to something displayable by NNTP
-	 * readers.  
-	 */
-	/**
-	 * Check whether the boardname is valid in the context of NNTP.
-	 */
-	/*
-	public static boolean isNameValidNNTP(String name) {
-		// FIXME: Check the specification of NNTP and see if it allows anything else than the following regular expression.
-		 
-		return name.matches("[a-zA-Z0-9.]");
-	}
-	*/
 
 	/**
 	 * @return The name.
