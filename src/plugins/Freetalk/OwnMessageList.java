@@ -7,13 +7,13 @@ import java.util.ArrayList;
 
 import freenet.keys.FreenetURI;
 
-public final class OwnMessageList extends MessageList {
+public abstract class OwnMessageList extends MessageList {
 	
 	private boolean iAmBeingInserted = false;
 	
 	private boolean iWasInserted = false;
 
-	private OwnMessageList(FTOwnIdentity newAuthor, int newIndex) {
+	public OwnMessageList(FTOwnIdentity newAuthor, int newIndex) {
 		super(newAuthor, newIndex, new ArrayList<FreenetURI>(32)); // TODO: Figure out a reasonable value
 	}
 	
@@ -33,7 +33,7 @@ public final class OwnMessageList extends MessageList {
 			if(newMessage.getAuthor() != mAuthor)
 				throw new IllegalArgumentException("Trying to add a message with wrong author " + newMessage.getAuthor() + " to an own message list of " + mAuthor);
 			
-			mMessages.add(newMessage.getRealURI());
+			mMessages.add(new MessageReference(newMessage.getRealURI()));
 			newMessage.setMessageList(this);
 		}
 	}
