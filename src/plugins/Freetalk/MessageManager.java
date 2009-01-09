@@ -119,7 +119,7 @@ public abstract class MessageManager implements Runnable {
 	 * @throws NoSuchMessageException 
 	 */
 	public Message get(FreenetURI uri) throws NoSuchMessageException {
-		return get(Message.generateID(uri));
+		return get(Message.getIDFromURI(uri));
 	}
 	
 	/**
@@ -146,7 +146,7 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 	public OwnMessage getOwnMessage(FreenetURI uri) throws NoSuchMessageException {
-		return getOwnMessage(Message.generateID(uri));
+		return getOwnMessage(Message.getIDFromURI(uri));
 	}
 	
 	public synchronized OwnMessage getOwnMessage(String id) throws NoSuchMessageException {
@@ -256,29 +256,29 @@ public abstract class MessageManager implements Runnable {
 	 * Get the next free index for an OwnMessage. Please synchronize on OwnMessage.class while creating a message, this method does not
 	 * provide synchronization.
 	 */
-	public int getFreeMessageIndex(FTOwnIdentity messageAuthor)  {
-		Query q = db.query();
-		q.constrain(Message.class);
-		q.descend("mAuthor").constrain(messageAuthor);
-		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
-		ObjectSet<Message> result = q.execute();
-		
-		return result.size() > 0 ? result.next().getIndex()+1 : 0;
-	}
+//	public int getFreeMessageIndex(FTOwnIdentity messageAuthor)  {
+//		Query q = db.query();
+//		q.constrain(Message.class);
+//		q.descend("mAuthor").constrain(messageAuthor);
+//		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
+//		ObjectSet<Message> result = q.execute();
+//		
+//		return result.size() > 0 ? result.next().getIndex()+1 : 0;
+//	}
 	
 	/**
 	 * Get the next index of which a message from the selected identity is not stored.
 	 */
-	public int getUnavailableMessageIndex(FTIdentity messageAuthor) {
-		Query q = db.query();
-		q.constrain(Message.class);
-		q.constrain(OwnMessage.class).not(); /* We also download our own message. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
-		q.descend("mAuthor").constrain(messageAuthor);
-		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
-		ObjectSet<Message> result = q.execute();
-		
-		return result.size() > 0 ? result.next().getIndex()+1 : 0;
-	}
+//	public int getUnavailableMessageIndex(FTIdentity messageAuthor) {
+//		Query q = db.query();
+//		q.constrain(Message.class);
+//		q.constrain(OwnMessage.class).not(); /* We also download our own message. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
+//		q.descend("mAuthor").constrain(messageAuthor);
+//		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
+//		ObjectSet<Message> result = q.execute();
+//		
+//		return result.size() > 0 ? result.next().getIndex()+1 : 0;
+//	}
 	
 	public synchronized Iterator<OwnMessage> notInsertedMessageIterator() {
 		return new Iterator<OwnMessage>() {
@@ -310,15 +310,15 @@ public abstract class MessageManager implements Runnable {
 	/**
 	 * Returns true if the message was not downloaded yet and any of the FTOwnIdentity wants the message.
 	 */
-	protected synchronized boolean shouldDownloadMessage(FreenetURI uri, FTIdentity author) {
-		try {
-			get(uri);
-			return false;
-		}
-		catch(NoSuchMessageException e) {
-			return mIdentityManager.anyOwnIdentityWantsMessagesFrom(author);
-		}
-	}
+//	protected synchronized boolean shouldDownloadMessage(FreenetURI uri, FTIdentity author) {
+//		try {
+//			get(uri);
+//			return false;
+//		}
+//		catch(NoSuchMessageException e) {
+//			return mIdentityManager.anyOwnIdentityWantsMessagesFrom(author);
+//		}
+//	}
 	
 	public abstract void terminate();
 
