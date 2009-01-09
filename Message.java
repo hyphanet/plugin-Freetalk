@@ -125,7 +125,7 @@ public class Message implements Comparable<Message> {
 	 * Get a list of fields which the database should create an index on.
 	 */
 	public static String[] getIndexedFields() {
-		return new String[] { "mURI", "mID", "mThreadURI", };
+		return new String[] { "mURI", "mID", "mParentID" };
 	}
 
 	/**
