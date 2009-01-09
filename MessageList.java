@@ -11,13 +11,44 @@ import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
 
-public class MessageList implements Iterable<FreenetURI> {
+public abstract class MessageList implements Iterable<MessageList.MessageReference> {
 	
 	protected final FTIdentity mAuthor;
 	
 	protected final int mIndex;
 	
-	protected final ArrayList<FreenetURI> mMessages;
+	public class MessageReference {
+		
+		private final FreenetURI mURI;
+		
+		private boolean iWasDownloaded = false;
+		
+		public MessageReference(FreenetURI newURI) {
+			mURI = newURI;
+		}
+		
+		public FreenetURI getURI() {
+			return mURI;
+		}
+		
+		public synchronized boolean wasDownloaded() {
+			return iWasDownloaded;
+		}
+		
+		public synchronized void markAsDownloaded() {
+			synchronized(MessageList.this) {
+				assert(iWasDownloaded == false);
+				if(!iWasDownloaded)
+					--mNumberOfNotDownloadedMessages;
+				iWasDownloaded = true;
+			}
+		}
+		
+	}
+	
+	protected final ArrayList<MessageReference> mMessages;
+	
+	protected int mNumberOfNotDownloadedMessages;
 	
 	public MessageList(FTIdentity newAuthor, int newIndex, List<FreenetURI> newMessages) {
 		if(newAuthor == null)
@@ -31,7 +62,11 @@ public class MessageList implements Iterable<FreenetURI> {
 	
 		mAuthor = newAuthor;
 		mIndex = newIndex;
-		mMessages = new ArrayList<FreenetURI>(newMessages);
+		mNumberOfNotDownloadedMessages = newMessages.size();
+		mMessages = new ArrayList<MessageReference>(mNumberOfNotDownloadedMessages);
+		for(FreenetURI u : newMessages) {
+			mMessages.add(new MessageReference(u));
+		}
 	}
 	
 	protected transient ObjectContainer db;
@@ -45,6 +80,12 @@ public class MessageList implements Iterable<FreenetURI> {
 		db.commit();
 	}
 	
+	public FreenetURI getURI() {
+		return generateURI(mAuthor.getRequestURI());
+	}
+	
+	protected abstract FreenetURI generateURI(FreenetURI baseURI);
+	
 	public FTIdentity getAuthor() {
 		return mAuthor;
 	}
@@ -53,19 +94,21 @@ public class MessageList implements Iterable<FreenetURI> {
 		return mIndex;
 	}
 	
-	public FreenetURI getURI() {
-		return generateURI(mAuthor.getRequestURI());
-	}
-	
-	protected FreenetURI generateURI(FreenetURI baseURI) {
-		baseURI = baseURI.setKeyType("USK");
-		baseURI = baseURI.setDocName(Freetalk.PLUGIN_TITLE + "|" + "MessageList" + "-" + mIndex + ".xml");
-		baseURI = baseURI.setMetaString(null);
-		return baseURI;
-	}
-	
-	public Iterator<FreenetURI> iterator() {
+	/**
+	 * You have to synchronize on the <code>MessageList</code> when using this method.
+	 */
+	public Iterator<MessageReference> iterator() {
 		return mMessages.iterator();
+	}
+	
+	public synchronized void markAsDownloaded(FreenetURI uri) {
+		/* TODO: Figure out whether MessageLists are usually large enough so that we can gain speed by using a Hashtable instead of ArrayList */
+		for(MessageReference ref : mMessages) {
+			if(ref.getURI().equals(uri)) {
+				ref.markAsDownloaded();
+				return;
+			}
+		}
 	}
 	
 }
