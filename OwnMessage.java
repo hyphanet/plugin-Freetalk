@@ -13,12 +13,19 @@ import freenet.keys.FreenetURI;
 
 public final class OwnMessage extends Message {
 	
-	private boolean iWasInserted = false;
+	/**
+	 * The CHK URI of the message. Null until the message was inserted and the URI is known.
+	 */
+	private FreenetURI mRealURI = null;
+	
+	public OwnMessage construct(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor,
+			String newTitle, Date newDate, int newIndex, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+		return new OwnMessage(newParentThread, newParentMessage, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newIndex, newText, newAttachments);
+	}
 
-	public OwnMessage(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor, String newTitle,
-			Date newDate, int newIndex, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		super(generateRequestURI(newAuthor, newIndex),
-			  (newParentThread == null ? null : newParentThread.getURI()),
+	protected OwnMessage(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor,
+			String newTitle, Date newDate, int newIndex, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+		super(null, generateRandomID(newAuthor), null, (newParentThread == null ? null : newParentThread.getURI()),
 			  (newParentMessage == null ? null : newParentMessage.getURI()),
 			  newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
@@ -29,34 +36,37 @@ public final class OwnMessage extends Message {
 		return mURI;
 	}
 	
-	/* Override for synchronization */
-	@Override
-	public synchronized String getID() {
-		return mID;
-	}
 
+	/**
+	 * Generate the insert URI for a message with a given index. The URI is constructed as:
+	 * CHK@hash/Freetalk|Message|id.xml
+	 * where id is the message ID.
+	 */
 	public synchronized FreenetURI getInsertURI() {
-		return generateURI(((FTOwnIdentity)mAuthor).getInsertURI(), mIndex);
+		return new FreenetURI("CHK", Freetalk.PLUGIN_TITLE + "|" + "Message" + "|" + mID + ".xml");
 	}
 	
 	/**
-	 * Called when we detect a collision during insertion.
+	 * @throws RuntimeException If the message was not inserted yet and therefore the real URI is unknown.
+	 * @return The CHK URI of the message.
 	 */
-	public synchronized void incrementInsertIndex() {
-		synchronized(OwnMessage.class) {
-			mIndex = mMessageManager.getFreeMessageIndex((FTOwnIdentity)mAuthor);
-			mURI = generateRequestURI(mAuthor, mIndex);
-			mID = generateID(mURI);
-			store();
-		}
+	public synchronized FreenetURI getRealURI() {
+		if(mRealURI == null)
+			throw new RuntimeException("getRealURI() called on the not inserted message " + this);
+		
+		return mRealURI;
+	}
+
+	public synchronized void setMessageList(OwnMessageList newMessageList) {
+		mMessageList = newMessageList;
 	}
 	
 	public synchronized boolean wasInserted() {
-		return iWasInserted;
+		return (mRealURI != null);
 	}
 	
-	public synchronized void markAsInserted() {
-		iWasInserted = true;
+	public synchronized void markAsInserted(FreenetURI myRealURI) {
+		mRealURI = myRealURI;
 	}
 
 }

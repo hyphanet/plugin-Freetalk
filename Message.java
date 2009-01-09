@@ -3,13 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.UUID;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -17,7 +17,6 @@ import plugins.Freetalk.exceptions.NoSuchMessageException;
 import com.db4o.ObjectContainer;
 import com.db4o.query.Query;
 
-import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -27,19 +26,22 @@ import freenet.support.StringValidityChecker;
  * @author saces, xor
  *
  */
-public class Message {
+public class Message implements Comparable<Message> {
 	
 	/* Attributes, stored in the database */
 	
 	/**
-	 * The URI of this message.
+	 * The URI of this message. Format: SSK@author_ssk_uri/Freetalk|MessageList-index.xml#uuid
+	 * The "uuid" in the URI is the part after the "@" in the message ID.
 	 */
-	protected FreenetURI mURI; /* Not final because OwnMessage.incrementInsertIndex() changes it */ 
+	protected FreenetURI mURI; /* Not final because for OwnMessages it is set after the MessageList was inserted */
 	
 	/**
-	 * The ID of the message, a (hash) function of the URI, lowercase characters of [0-9a-z] only.
+	 * The ID of the message. Format: Hex encoded author routing key + "@" + hex encoded random UUID. 
 	 */
-	protected String mID; /* Not final because OwnMessage.incrementInsertIndex() changes it */
+	protected final String mID;
+	
+	protected MessageList mMessageList; /* Not final because OwnMessages are assigned to message lists after a certain delay */
 	
 	/**
 	 * The URI of the thread this message belongs to.
@@ -75,11 +77,6 @@ public class Message {
 	 * The date when the message was written in <strong>UTC time</strong>.
 	 */
 	protected final Date mDate;
-	
-	/**
-	 * The index of the message on the inserter's message USK/SSK.
-	 */
-	protected int mIndex;
 	
 	protected final String mText;
 	
@@ -130,13 +127,27 @@ public class Message {
 	public static String[] getIndexedFields() {
 		return new String[] { "mURI", "mID", "mThreadURI", };
 	}
-	
-	public Message(FreenetURI newURI, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		if (newURI == null || newBoards == null || newAuthor == null)
+
+	/**
+	 * Constructor for received messages.
+	 */
+	public Message construct(FreenetURI newURI, String newID, MessageList newMessageList, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+		if (newURI == null || newMessageList == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
 		if(Arrays.equals(newURI.getRoutingKey(), newAuthor.getRequestURI().getRoutingKey()) == false)
-			throw new InvalidParameterException("Trying to create a message with an URI different to the URI of the author: newURI == " + newURI + "; newAuthor.requestURI == " + newAuthor.getRequestURI());	
+			throw new InvalidParameterException("Trying to create a message with an URI different to the URI of the author: newURI == " + newURI + "; newAuthor.requestURI == " + newAuthor.getRequestURI());
+		
+		if(newMessageList.getAuthor() != newAuthor)
+			throw new InvalidParameterException("Trying to construct a message of " + newAuthor + " with a messagelist which belong to a different author: " + newMessageList.getAuthor());
+		
+		return new Message(newURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
+	}
+
+	protected Message(FreenetURI newURI, String newID, MessageList newMessageList, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+		assert(newURI == null || Arrays.equals(newURI.getRoutingKey(), newAuthor.getRequestURI().getRoutingKey()));
+		
+		verifyID(newAuthor, newID);
 		
 		if(newParentURI != null && newThreadURI == null) 
 			Logger.error(this, "Message with parent URI but without thread URI created: " + newURI);
@@ -156,18 +167,18 @@ public class Message {
 			throw new InvalidParameterException("Invalid message text in message " + newURI);
 	
 		mURI = newURI;
-		mID = generateID(mURI);
+		mMessageList = newMessageList;
+		mAuthor = newAuthor;
+		mID = newID;
 		mThreadURI = newThreadURI;
-		mThreadID = mThreadURI != null ? generateID(mThreadURI) : null;
+		mThreadID = mThreadURI != null ? getIDFromURI(mThreadURI) : null;
 		mParentURI = newParentURI;
-		mParentID = mParentURI != null ? generateID(mParentURI) : null;
+		mParentID = mParentURI != null ? getIDFromURI(mParentURI) : null;
 		mBoards = newBoards.toArray(new Board[newBoards.size()]);
 		Arrays.sort(mBoards);		
 		mReplyToBoard = newReplyToBoard;
-		mAuthor = newAuthor;
 		mTitle = newTitle;
 		mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
-		mIndex = getIndexFromURI(mURI);
 		mText = newText;
 		mAttachments = newAttachments == null ? null : newAttachments.toArray(new Attachment[newAttachments.size()]);
 	}
@@ -182,27 +193,22 @@ public class Message {
 		mMessageManager = myMessageManager;
 	}
 	
-	public static String generateID(FreenetURI uri) {
-		/* FIXME: Maybe find an easier way for message ID generation before release */
-		try {
-			return HexUtil.bytesToHex(SHA256.digest(uri.toACIIString().getBytes("US-ASCII")));
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
-		}
+	public static String generateRandomID(FTIdentity author) {
+		return HexUtil.bytesToHex(author.getRequestURI().getRoutingKey()) + "@" + UUID.randomUUID();
 	}
 	
-	protected static FreenetURI generateURI(FreenetURI baseURI, int index) {
-		baseURI = baseURI.setKeyType("SSK");
-		baseURI = baseURI.setDocName(Freetalk.PLUGIN_TITLE + "|" + "Message" + "-" + index + ".xml");
-		return baseURI.setMetaString(null);
+	public static String getIDFromURI(FreenetURI uri) {
+		String uuid = uri.getDocName().split("[#]")[1];
+		return HexUtil.bytesToHex(uri.getRoutingKey()) + "@" + uuid;
 	}
 	
-	public static int getIndexFromURI(FreenetURI uri) {
-		return Integer.parseInt(uri.getDocName().split("[|]")[1].split("[-]")[1].replace(".xml", ""));
-	}
-	
-	public static FreenetURI generateRequestURI(FTIdentity author, int index) {
-		return generateURI(author.getRequestURI(), index);
+	/**
+	 * Verifies that the given message ID begins with the routing key of the author.
+	 * @throws InvalidParameterException If the ID is not valid. 
+	 */
+	public static void verifyID(FTIdentity author, String id) throws InvalidParameterException {
+		if(id.startsWith(HexUtil.bytesToHex(author.getRequestURI().getRoutingKey())) == false)
+			throw new InvalidParameterException("Illegal id:" + id);
 	}
 	
 	/**
@@ -228,10 +234,11 @@ public class Message {
 	}
 	
 	public String getParentThreadID() throws NoSuchMessageException {
-		if(mThreadID != null)
-			return mThreadID;
-		else
+		if(mThreadID == null)
 			throw new NoSuchMessageException();
+		
+		
+		return mThreadID;
 	}
 	
 	/**
@@ -245,10 +252,10 @@ public class Message {
 	}
 	
 	public String getParentID() throws NoSuchMessageException {
-		if(mParentID != null)
-			return mParentID;
-		else
+		if(mParentID == null)
 			throw new NoSuchMessageException();
+		
+		return mParentID;
 	}
 	
 	public boolean isThread() {
@@ -290,14 +297,7 @@ public class Message {
 	public Date getDate() {
 		return mDate;
 	}
-	
-	/**
-	 * Get the index of the message on it's date.
-	 */
-	public int getIndex() {
-		return mIndex;
-	}
-	
+
 	/**
 	 * Get the text of the message.
 	 */
@@ -351,6 +351,7 @@ public class Message {
 	 * Returns an iterator over the children of the message, sorted descending by date.
 	 * The transient fields of the children will be initialized already.
 	 */
+	@SuppressWarnings("unchecked")
 	public synchronized Iterator<Message> childrenIterator(final Board targetBoard) {
 		return new Iterator<Message>() {
 			private Iterator<Message> iter;
@@ -546,6 +547,10 @@ public class Message {
 		// db.store(mAttachments); /* Not stored because it is a primitive for db4o */
 		db.store(this);
 		db.commit();
+	}
+
+	public int compareTo(Message other) {
+		return mDate.compareTo(other.mDate);
 	}
 
 }
