@@ -3,23 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Random;
-import java.util.TimeZone;
-import java.util.concurrent.ArrayBlockingQueue;
 
-import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageFetcher;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageXML;
-
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -33,29 +26,34 @@ import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
 /**
+ * Periodically wakes up and fetches messages by their CHK URI. The CHK URIs of messages are obtained by querying the <code>MessageManager</code>
+ * for MessageLists which contain messages which were not downloaded yet.
+ * 
  * @author xor
- *
  */
 public class WoTMessageFetcher extends MessageFetcher {
 	
 	protected static final int STARTUP_DELAY = 1 * 60 * 1000;
 	protected static final int THREAD_PERIOD = 15 * 60 * 1000; /* FIXME: tweak before release */
-	private static final int PARALLEL_MESSAGE_FETCH_COUNT = 128;
+	private static final int MAX_PARALLEL_MESSAGE_FETCH_COUNT = 64;
 	
-	private final WoTIdentityManager mIdentityManager;
-	private final WoTMessageManager mMessageManager;
+	/**
+	 * If a message download succeeds/fails and there are less parallel downloads than this constant, the sleeping loop of the fetch thread
+	 * is interrupted by onSuccess/onFailure so that it starts new downloads. Do not set this too high, otherwise the thread will be interrupted
+	 * too often if there are no more message links in the database.
+	 */
+	private static final int MIN_PARALLEL_MESSAGE_FETCH_COUNT = 4; 
 	
-	private Random mRandom;
+	private final Random mRandom;
 	
-	private final ObjectContainer db;
-	
-	private final Hashtable<ClientGetter, WoTMessageList> mMessageLists = new Hashtable<ClientGetter, WoTMessageList>(PARALLEL_MESSAGE_FETCH_COUNT * 2);
+	/**
+	 * For each <code>ClientGetter</code> (= an object associated with a fetch) this hashtable stores the ID of the MessageList to which the
+	 * message which is being fetched belongs.
+	 */
+	private final Hashtable<ClientGetter, String> mMessageLists = new Hashtable<ClientGetter, String>(MAX_PARALLEL_MESSAGE_FETCH_COUNT * 2);
 
-	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, ObjectContainer myDB, String myName, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager) {
+	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
-		db = myDB;
-		mIdentityManager = myIdentityManager;
-		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
 		start();
 		Logger.debug(this, "Message fetcher started.");
@@ -63,7 +61,7 @@ public class WoTMessageFetcher extends MessageFetcher {
 
 	@Override
 	protected Collection<ClientGetter> createFetchStorage() {
-		return new HashSet<ClientGetter>(PARALLEL_MESSAGE_FETCH_COUNT * 2);
+		return new HashSet<ClientGetter>(MAX_PARALLEL_MESSAGE_FETCH_COUNT * 2);
 	}
 
 	@Override
@@ -86,13 +84,31 @@ public class WoTMessageFetcher extends MessageFetcher {
 	}
 
 	@Override
-	protected void iterate() {
+	protected synchronized void iterate() {
 		Logger.debug(this, "Message fetcher loop running ...");
+		abortAllTransfers();
+		
+		synchronized(MessageList.class) {
+			Iterator<MessageList> iter = mMessageManager.notDownloadedMessageListIterator();
+			while(iter.hasNext()) {
+				fetchMessages(iter.next());
+				
+				/* FIXME: Investigate whether this is fair, i.e. whether it will not always try to download the same messages if downloading
+				 * of some of them stalls for so long that the thread re-iterates before onFailure is called which results in the messages
+				 * not being marked as undownloadable. (Currently, we do not mark messages as undownloadable anyway! However, onFailure
+				 * should do that in the future) */
+				if(mMessageLists.size() > MAX_PARALLEL_MESSAGE_FETCH_COUNT)
+					break;
+			}
+		}
 
 		Logger.debug(this, "Message fetcher loop finished.");
 	}
 	
-	private void fetchMessages(WoTMessageList list) {
+	/**
+	 * You have to synchronize on this <code>WoTMessageFetcher</code> when using this function.
+	 */
+	private void fetchMessages(MessageList list) {
 		for(MessageList.MessageReference ref : list) {
 			if(!ref.wasDownloaded()) {
 				try {
@@ -105,14 +121,17 @@ public class WoTMessageFetcher extends MessageFetcher {
 		}
 	}
 
-	private void fetchMessage(WoTMessageList list, FreenetURI uri) throws FetchException {
+	/**
+	 * You have to synchronize on this <code>WoTMessageFetcher</code> when using this function.
+	 */
+	private void fetchMessage(MessageList list, FreenetURI uri) throws FetchException {
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = 2;
 		fetchContext.maxNonSplitfileRetries = 2;
 		ClientGetter g = mClient.fetch(uri, -1, this, this, fetchContext);
 		//g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
 		addFetch(g);
-		mMessageLists.put(g, list);
+		mMessageLists.put(g, list.getID());
 		Logger.debug(this, "Trying to fetch message from " + uri);
 	}
 
@@ -121,7 +140,8 @@ public class WoTMessageFetcher extends MessageFetcher {
 		Logger.debug(this, "Fetched message: " + state.getURI());
 		
 		try {
-			Message message = MessageXML.decode(mMessageManager, result.asBucket().getInputStream(), mMessageLists.get(state), state.getURI());
+			WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
+			Message message = MessageXML.decode(mMessageManager, result.asBucket().getInputStream(), list, state.getURI());
 			mMessageManager.onMessageReceived(message);
 		}
 		catch (Exception e) {
@@ -130,24 +150,44 @@ public class WoTMessageFetcher extends MessageFetcher {
 		}
 		finally {
 			removeFetch(state); /* FIXME: This was in the try{} block somewhere else in the FT/WoT code. Move it to finally{} there, too */
+			
+			if(mMessageLists.size() < MIN_PARALLEL_MESSAGE_FETCH_COUNT)
+				nextIteration();
 		}
 	}
 	
 	@Override
 	public synchronized void onFailure(FetchException e, ClientGetter state) {
-		/* TODO: Handle DNF in some reasonable way. Mark the messages in the MessageList maybe.
-		if(e.getMode() == FetchException.DATA_NOT_FOUND) {
-		
+		try {
+			/* TODO: Handle DNF in some reasonable way. Mark the messages in the MessageList maybe.
+			if(e.getMode() == FetchException.DATA_NOT_FOUND) {
+			
+			}
+			*/
+			
+			Logger.error(this, "Downloading message " + state.getURI() + " failed.", e);
 		}
-		*/
 		
-		Logger.error(this, "Downloading message " + state.getURI() + " failed.", e);
-		removeFetch(state);
+		finally {
+			removeFetch(state);
+		
+			if(mMessageLists.size() < MIN_PARALLEL_MESSAGE_FETCH_COUNT)
+				nextIteration();
+		}
 	}
 	
 	/**
 	 * You have to synchronize on this <code>WoTMessageFetcher</code> when using this function.
 	 */
+	@Override
+	protected void abortAllTransfers() {
+		mMessageLists.clear();
+	}
+	
+	/**
+	 * You have to synchronize on this <code>WoTMessageFetcher</code> when using this function.
+	 */
+	@Override
 	protected void removeFetch(ClientGetter g) {
 		super.removeFetch(g);
 		mMessageLists.remove(g);
