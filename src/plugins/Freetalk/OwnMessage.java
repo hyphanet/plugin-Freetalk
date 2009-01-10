@@ -18,13 +18,13 @@ public final class OwnMessage extends Message {
 	 */
 	private FreenetURI mRealURI = null;
 	
-	public OwnMessage construct(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor,
-			String newTitle, Date newDate, int newIndex, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		return new OwnMessage(newParentThread, newParentMessage, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newIndex, newText, newAttachments);
+	public static OwnMessage construct(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor,
+			String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+		return new OwnMessage(newParentThread, newParentMessage, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
 
 	protected OwnMessage(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor,
-			String newTitle, Date newDate, int newIndex, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+			String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		super(null, generateRandomID(newAuthor), null, (newParentThread == null ? null : newParentThread.getURI()),
 			  (newParentMessage == null ? null : newParentMessage.getURI()),
 			  newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
@@ -38,7 +38,7 @@ public final class OwnMessage extends Message {
 	
 
 	/**
-	 * Generate the insert URI for a message with a given index. The URI is constructed as:
+	 * Generate the insert URI for a message. The URI is constructed as:
 	 * CHK@hash/Freetalk|Message|id.xml
 	 * where id is the message ID.
 	 */
