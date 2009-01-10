@@ -15,8 +15,9 @@ public final class WoTOwnMessageList extends OwnMessageList {
 	/* Attention: This code is duplicated in WoTMessageList */
 	protected FreenetURI generateURI(FreenetURI baseURI) {
 		baseURI = baseURI.setKeyType("USK");
-		baseURI = baseURI.setDocName(Freetalk.PLUGIN_TITLE + "|" + "MessageList" + "-" + mIndex + ".xml");
-		baseURI = baseURI.setMetaString(null);
+		baseURI = baseURI.setDocName(Freetalk.PLUGIN_TITLE + "|" + "MessageList");
+		baseURI = baseURI.setSuggestedEdition(mIndex);
+		baseURI = baseURI.setMetaString(new String[] {"messages.xml"});
 		return baseURI;
 	}
 
