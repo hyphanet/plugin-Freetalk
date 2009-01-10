@@ -9,8 +9,9 @@ import freenet.support.TransferThread;
 
 public abstract class MessageFetcher extends TransferThread {
 	
-	protected IdentityManager mIdentityManager;
-	protected MessageManager mMessageManager;
+	protected final IdentityManager mIdentityManager;
+	
+	protected final MessageManager mMessageManager;
 	
 	public MessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager, MessageManager myMessageManager) {
 		super(myNode, myClient, myName);
