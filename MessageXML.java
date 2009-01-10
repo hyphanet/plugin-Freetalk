@@ -31,6 +31,7 @@ import org.xml.sax.ext.DefaultHandler2;
 
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageXML.XMLTreeGenerator.XMLElement;
+import plugins.Freetalk.WoT.WoTMessageList;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
@@ -58,7 +59,6 @@ public class MessageXML {
 			Element messageTag = xmlDoc.createElement("Message");
 			messageTag.setAttribute("version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
 			
-			/* Not parsed, it is derived from the message URI when parsing a message. Just for FMS compatibility */
 			Element idTag = xmlDoc.createElement("MessageID");
 			idTag.appendChild(xmlDoc.createCDATASection(m.getID()));
 			messageTag.appendChild(idTag);
@@ -98,7 +98,7 @@ public class MessageXML {
 				try {
 					Element inReplyToMessage = xmlDoc.createElement("Message");
 						Element inReplyToOrder = xmlDoc.createElement("Order"); inReplyToOrder.appendChild(xmlDoc.createTextNode("0"));	/* For FMS compatibility, not used by Freetalk */
-						Element inReplyToID = xmlDoc.createElement("MessageID"); inReplyToID.appendChild(xmlDoc.createCDATASection(m.getParentID())); /* For FMS compatibility, not used by Freetalk */
+						Element inReplyToID = xmlDoc.createElement("MessageID"); inReplyToID.appendChild(xmlDoc.createCDATASection(m.getParentID()));
 						Element inReplyToURI = xmlDoc.createElement("MessageURI"); inReplyToURI.appendChild(xmlDoc.createCDATASection(m.getParentURI().toString()));
 					inReplyToMessage.appendChild(inReplyToOrder);
 					inReplyToMessage.appendChild(inReplyToID);
@@ -109,7 +109,7 @@ public class MessageXML {
 					
 				try {
 					Element inReplyToThread = xmlDoc.createElement("Thread");
-						Element inReplyToID = xmlDoc.createElement("MessageID"); inReplyToID.appendChild(xmlDoc.createCDATASection(m.getParentThreadID())); /* For FMS compatibility, not used by Freetalk */
+						Element inReplyToID = xmlDoc.createElement("MessageID"); inReplyToID.appendChild(xmlDoc.createCDATASection(m.getParentThreadID()));
 						Element inReplyToURI = xmlDoc.createElement("MessageURI"); inReplyToURI.appendChild(xmlDoc.createCDATASection(m.getParentThreadURI().toString()));
 					inReplyToThread.appendChild(inReplyToID);
 					inReplyToThread.appendChild(inReplyToURI);
@@ -160,12 +160,12 @@ public class MessageXML {
 	 * @param db
 	 * @param inputStream
 	 * @param messageManager Needed for retrieving the Board object from the Strings of the board names.
-	 * @param author
+	 * @param messageList
 	 * @param uri
 	 * @return
 	 * @throws Exception
 	 */
-	public static Message decode(MessageManager messageManager, InputStream inputStream, FTIdentity author, FreenetURI uri) throws Exception {
+	public static Message decode(MessageManager messageManager, InputStream inputStream, WoTMessageList messageList, FreenetURI uri) throws Exception {
 		XMLTreeGenerator xmlTreeGenerator = new XMLTreeGenerator(messageXMLElements1);
 		SAXParserFactory.newInstance().newSAXParser().parse(inputStream, xmlTreeGenerator);
 		
@@ -180,6 +180,8 @@ public class MessageXML {
 			throw new Exception("Version > " + XML_FORMAT_VERSION);
 		*/
 		
+		String messageID = rootElement.children.get("MessageID").cdata;
+		
 		String messageTitle = rootElement.children.get("Subject").cdata;
 		Date messageDate = mDateFormat.parse(rootElement.children.get("Date").cdata);
 		Date messageTime = mTimeFormat.parse(rootElement.children.get("Time").cdata);
@@ -193,21 +195,21 @@ public class MessageXML {
 		XMLElement replyToBoardElement = rootElement.children.get("ReplyBoard");
 		Board messageReplyToBoard =  replyToBoardElement != null ? messageManager.getOrCreateBoard(replyToBoardElement.cdata) : null; 
 		
-		String parentMessageURI = null;
-		String parentThreadURI = null;
+		FreenetURI parentMessageURI = null;
+		FreenetURI parentThreadURI = null;
 		
 		XMLElement inReplyToElement = rootElement.children.get("InReplyTo");
 		if(inReplyToElement != null) {
 			if(inReplyToElement.children.containsKey("Message")) {
 				for(XMLElement inReplyToMessageElement : inReplyToElement.children.iterateAll("Message")) {
 					if(inReplyToMessageElement.children.get("Order").cdata.equals("0"))
-						parentMessageURI = inReplyToMessageElement.children.get("MessageURI").cdata;
+						parentMessageURI = new FreenetURI(inReplyToMessageElement.children.get("MessageURI").cdata);
 				}
 			}
 		
 			XMLElement threadElement = inReplyToElement.children.get("Thread");
 			if(threadElement != null)
-				parentThreadURI = threadElement.children.get("MessageURI").cdata;
+				parentThreadURI = new FreenetURI(threadElement.children.get("MessageURI").cdata);
 		}
 		
 		String messageBody = rootElement.children.get("Body").cdata;
@@ -223,8 +225,8 @@ public class MessageXML {
 			}
 		}
 		
-		return new Message(uri, parentThreadURI != null ? new FreenetURI(parentThreadURI) : null, parentMessageURI != null ? new FreenetURI(parentMessageURI) : null,
-							messageBoards, messageReplyToBoard, author, messageTitle, messageDate, messageBody, messageAttachments);
+		return Message.construct(messageList, messageID, parentThreadURI, parentMessageURI, messageBoards, messageReplyToBoard,
+									messageList.getAuthor(), messageTitle, messageDate, messageBody, messageAttachments);
 	}
 	
 	/**
