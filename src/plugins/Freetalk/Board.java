@@ -208,7 +208,7 @@ public final class Board implements Comparable<Board> {
 				catch(NoSuchMessageException e) {}
 	
 				try {
-					newMessage.setParent(mMessageManager.get(newMessage.getParentURI())); /* TODO: This allows crossposting. Figure out whether we need to handle it specially */
+					newMessage.setParent(mMessageManager.get(newMessage.getParentID())); /* TODO: This allows crossposting. Figure out whether we need to handle it specially */
 				}
 				catch(NoSuchMessageException e) {/* The message is an orphan */
 					if(parentThread == null) {
