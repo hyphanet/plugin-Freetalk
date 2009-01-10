@@ -16,9 +16,9 @@ import freenet.support.TransferThread;
  */
 public abstract class MessageInserter extends TransferThread {
 	
-	protected IdentityManager mIdentityManager;
+	protected final IdentityManager mIdentityManager;
 	
-	protected MessageManager mMessageManager;
+	protected final MessageManager mMessageManager;
 	
 	public MessageInserter(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager, MessageManager myMessageManager) {
 		super(myNode, myClient, myName);
