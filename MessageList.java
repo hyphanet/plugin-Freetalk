@@ -10,8 +10,11 @@ import java.util.List;
 import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
+import freenet.support.Base64;
 
 public abstract class MessageList implements Iterable<MessageList.MessageReference> {
+	
+	protected final String mID;
 	
 	protected final FTIdentity mAuthor;
 	
@@ -62,6 +65,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	
 		mAuthor = newAuthor;
 		mIndex = newIndex;
+		mID = calculateID();
 		mNumberOfNotDownloadedMessages = newMessages.size();
 		mMessages = new ArrayList<MessageReference>(mNumberOfNotDownloadedMessages);
 		for(FreenetURI u : newMessages) {
@@ -78,6 +82,18 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	public void store() {
 		db.store(this);
 		db.commit();
+	}
+	
+	protected String calculateID() {
+		return calculateID(mAuthor, mIndex);
+	}
+	
+	public static String calculateID(FTIdentity author, int index) {
+		return index + "@" + Base64.encodeStandard(author.getRequestURI().getRoutingKey());
+	}
+	
+	public String getID() {
+		return mID;
 	}
 	
 	public FreenetURI getURI() {
