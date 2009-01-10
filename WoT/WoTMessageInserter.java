@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Random;
 
@@ -35,11 +36,28 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
 
-public class WoTMessageInserter extends MessageInserter {
+/**
+ * Periodically wakes up and inserts messages as CHK. The CHK URIs are then stored in the messages.
+ * When downloading messages, their CHK URI will have to be obtained by the reader by downloading messagelists from the given identity.
+ * Therefore, when a message is inserted by this class, only half of the work is done. After messages were inserted as CHK, the
+ * <code>WoTMessageListInserter</code> will obtain the CHK URIs of the messages from the <code>MessageManager</code> and publish them in
+ * a <code>MessageList</code>.
+ * 
+ * @author xor
+ */
+public final class WoTMessageInserter extends MessageInserter {
 
 	protected static final int STARTUP_DELAY = 1 * 60 * 1000;
 	protected static final int THREAD_PERIOD = 5 * 60 * 1000; /* FIXME: tweak before release */
-	private Random mRandom;
+	protected static final int ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT = 10;
+	
+	private final Random mRandom;
+	
+	/**
+	 * For each <code>BaseClientPutter</code> (= an object associated with an insert) this hashtable stores the ID of the message which is being
+	 * inserted by the <code>BaseClientPutter</code>.
+	 */
+	private final Hashtable<BaseClientPutter, String> mMessageIDs = new Hashtable<BaseClientPutter, String>(2*ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT);
 	
 	public WoTMessageInserter(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager,
 			MessageManager myMessageManager) {
@@ -56,7 +74,7 @@ public class WoTMessageInserter extends MessageInserter {
 
 	@Override
 	protected Collection<BaseClientPutter> createInsertStorage() {
-		return new ArrayList<BaseClientPutter>(10);
+		return new ArrayList<BaseClientPutter>(ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT);
 	}
 
 	public int getPriority() {
@@ -74,23 +92,28 @@ public class WoTMessageInserter extends MessageInserter {
 	}
 
 	@Override
-	protected void iterate() {
+	protected synchronized void iterate() {
 		Logger.debug(this, "Message inserter loop running ...");
 		abortAllTransfers();
 		
-		Iterator<OwnMessage> messages = mMessageManager.notInsertedMessageIterator();
-		while(messages.hasNext()) {
-			try {
-				/* FIXME: Delay the messages!!!!! And set their date to reflect the delay */
-				insertMessage(messages.next());
-			}
-			catch(Exception e) {
-				Logger.error(this, "Insert of message failed", e);
+		synchronized(mMessageManager) {
+			Iterator<OwnMessage> messages = mMessageManager.notInsertedMessageIterator();
+			while(messages.hasNext()) {
+				try {
+					/* FIXME: Delay the messages!!!!! And set their date to reflect the delay */
+					insertMessage(messages.next());
+				}
+				catch(Exception e) {
+					Logger.error(this, "Insert of message failed", e);
+				}
 			}
 		}
 		Logger.debug(this, "Message inserter loop finished.");
 	}
 	
+	/**
+	 * You have to synchronize on this <code>WoTMessageInserter</code> when using this function.
+	 */
 	protected void insertMessage(OwnMessage m) throws InsertException, IOException, TransformerException, ParserConfigurationException {
 		Bucket tempB = mTBF.makeBucket(2048 + m.getText().length()); /* TODO: set to a reasonable value */
 		OutputStream os = null;
@@ -105,10 +128,11 @@ public class WoTMessageInserter extends MessageInserter {
 			InsertBlock ib = new InsertBlock(tempB, cmd, m.getInsertURI());
 			InsertContext ictx = mClient.getInsertContext(true);
 
-			/* FIXME: are these parameters correct? */
+			/* FIXME: are these parameters correct? Especially, is the "getCHKonly" only necessary for SSK/USK? We are inserting as CHK anyway. */
 			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
 			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
 			addInsert(pu);
+			mMessageIDs.put(pu, m.getID());
 			tempB = null;
 
 			Logger.debug(this, "Started insert of message from " + m.getAuthor().getNickname());
@@ -122,35 +146,47 @@ public class WoTMessageInserter extends MessageInserter {
 	}
 
 	@Override
-	public void onSuccess(BaseClientPutter state) {
+	public synchronized void onSuccess(BaseClientPutter state) {
 		try {
-			OwnMessage m = mMessageManager.getOwnMessage(state.getURI());
-			m.markAsInserted();
+			OwnMessage m = mMessageManager.getOwnMessage(mMessageIDs.get(state));
+			m.markAsInserted(state.getURI());
 			Logger.debug(this, "Successful insert of " + m.getURI());
 		}
 		catch(NoSuchMessageException e) {
 			Logger.error(this, "Message insert finished but message was deleted: " + state.getURI());
 		}
 		
-		removeInsert(state);
+		finally {
+			removeInsert(state);
+		}
 	}
 	
 	@Override
-	public void onFailure(InsertException e, BaseClientPutter state) {
-		removeInsert(state);
-		
-		if(e.getMode() == InsertException.COLLISION) {
-			Logger.error(this, "Message insert collided, trying to insert with higher index ...");
-			try {
-				OwnMessage message = mMessageManager.getOwnMessage(state.getURI());
-				message.incrementInsertIndex();
-				insertMessage(message);
-			}
-			catch(Exception ex) {
-				Logger.error(this, "Inserting with higher index failed", ex);
-			}
-		} else
+	public synchronized void onFailure(InsertException e, BaseClientPutter state) {
+		try {
 			Logger.error(this, "Message insert failed", e);
+		}
+		
+		finally {
+			removeInsert(state);
+		}
+	}
+	
+	/**
+	 * You have to synchronize on this <code>WoTMessageInserter</code> when using this function.
+	 */
+	@Override
+	protected void abortAllTransfers() {
+		mMessageIDs.clear();
+	}
+	
+	/**
+	 * You have to synchronize on this <code>WoTMessageInserter</code> when using this function.
+	 */
+	@Override
+	protected void removeInsert(BaseClientPutter p) {
+		super.removeInsert(p);
+		mMessageIDs.remove(p);
 	}
 
 	
