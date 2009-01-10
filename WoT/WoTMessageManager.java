@@ -50,7 +50,7 @@ public class WoTMessageManager extends MessageManager {
 			String myTitle, String myText, List<Attachment> myAttachments) throws InvalidParameterException {
 		OwnMessage m;
 		
-		synchronized(OwnMessage.class) {
+		synchronized(OwnMessage.class) {	/* TODO: Investigate whether this lock is necessary. */
 			Date date = mCalendar.getTime();
 			Message parentThread = null;
 			try {
@@ -65,10 +65,7 @@ public class WoTMessageManager extends MessageManager {
 
 			}
 			
-			int index = getFreeMessageIndex(myAuthor);
-			
-			m = new OwnMessage(parentThread, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, index,
-				myText, myAttachments);
+			m = OwnMessage.construct(parentThread, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
 			
 			m.initializeTransient(db, this);
 			
