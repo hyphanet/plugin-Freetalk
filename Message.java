@@ -131,17 +131,14 @@ public class Message implements Comparable<Message> {
 	/**
 	 * Constructor for received messages.
 	 */
-	public Message construct(FreenetURI newURI, String newID, MessageList newMessageList, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		if (newURI == null || newMessageList == null || newBoards == null || newAuthor == null)
+	public static Message construct(MessageList newMessageList, String newID, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+		if (newMessageList == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
-		if(Arrays.equals(newURI.getRoutingKey(), newAuthor.getRequestURI().getRoutingKey()) == false)
-			throw new InvalidParameterException("Trying to create a message with an URI different to the URI of the author: newURI == " + newURI + "; newAuthor.requestURI == " + newAuthor.getRequestURI());
-		
-		if(newMessageList.getAuthor() != newAuthor)
+		if (newMessageList.getAuthor() != newAuthor)
 			throw new InvalidParameterException("Trying to construct a message of " + newAuthor + " with a messagelist which belong to a different author: " + newMessageList.getAuthor());
 		
-		return new Message(newURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
+		return new Message(calculateURI(newMessageList, newID), newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
 
 	protected Message(FreenetURI newURI, String newID, MessageList newMessageList, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
@@ -195,6 +192,12 @@ public class Message implements Comparable<Message> {
 	
 	public static String generateRandomID(FTIdentity author) {
 		return HexUtil.bytesToHex(author.getRequestURI().getRoutingKey()) + "@" + UUID.randomUUID();
+	}
+	
+	public static FreenetURI calculateURI(MessageList myMessageList, String myID) {
+		FreenetURI uri = myMessageList.getURI();
+		uri = uri.setDocName(uri.getDocName() + "#" + myID);
+		return uri;
 	}
 	
 	public static String getIDFromURI(FreenetURI uri) {
