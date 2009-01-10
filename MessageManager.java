@@ -4,25 +4,24 @@
 package plugins.Freetalk;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
 
-import plugins.Freetalk.Board.BoardMessageLink;
-import plugins.Freetalk.Board.MessageReference;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
+import plugins.Freetalk.exceptions.DuplicateMessageListException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.exceptions.NoSuchMessageListException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
-import freenet.keys.FreenetURI;
 import freenet.support.Executor;
 import freenet.support.Logger;
 
@@ -118,13 +117,14 @@ public abstract class MessageManager implements Runnable {
 	 * This will NOT return OwnMessage objects. Your own messages will be returned by this function as soon as they have been downloaded.
 	 * @throws NoSuchMessageException 
 	 */
-	public Message get(FreenetURI uri) throws NoSuchMessageException {
-		return get(Message.getIDFromURI(uri));
-	}
+//	public Message get(FreenetURI uri) throws NoSuchMessageException {
+//		return get(Message.getIDFromURI(uri));
+//	}
 	
 	/**
 	 * Get a message by its ID. The transient fields of the returned message will be initialized already.
-	 * This will NOT return OwnMessage objects. Your own messages will be returned by this function as soon as they have been downloaded.
+	 * This will NOT return OwnMessage objects. Your own messages will be returned by this function as soon as they have been downloaded as
+	 * if they were normal messages of someone else.
 	 * @throws NoSuchMessageException 
 	 */
 	public synchronized Message get(String id) throws NoSuchMessageException {
@@ -145,9 +145,50 @@ public abstract class MessageManager implements Runnable {
 		return m;
 	}
 	
-	public OwnMessage getOwnMessage(FreenetURI uri) throws NoSuchMessageException {
-		return getOwnMessage(Message.getIDFromURI(uri));
+	/**
+	 * Get a <code>MessageList</code> by its ID. The transient fields of the returned <code>MessageList</code>  will be initialized already.
+	 * This will NOT return <code>OwnMessageList</code> objects. Your own message lists will be returned by this function as soon as they have
+	 * been downloaded as if they were normal message  lists of someone else.
+	 * @throws NoSuchMessageListException 
+	 */
+	public synchronized MessageList getMessageList(String id) throws NoSuchMessageListException {
+		Query query = db.query();
+		query.constrain(MessageList.class);
+		query.constrain(OwnMessageList.class).not();
+		query.descend("mID").constrain(id);
+		ObjectSet<MessageList> result = query.execute();
+
+		if(result.size() > 1)
+			throw new DuplicateMessageListException();
+		
+		if(result.size() == 0)
+			throw new NoSuchMessageListException();
+
+		MessageList m = result.next();
+		m.initializeTransient(db);
+		return m;
 	}
+	
+	public synchronized OwnMessageList getOwnMessageList(String id) throws NoSuchMessageListException {
+		Query query = db.query();
+		query.constrain(OwnMessageList.class);
+		query.descend("mID").constrain(id);
+		ObjectSet<OwnMessageList> result = query.execute();
+
+		if(result.size() > 1)
+			throw new DuplicateMessageListException();
+		
+		if(result.size() == 0)
+			throw new NoSuchMessageListException();
+
+		OwnMessageList m = result.next();
+		m.initializeTransient(db);
+		return m;
+	}
+	
+//	public OwnMessage getOwnMessage(FreenetURI uri) throws NoSuchMessageException {
+//		return getOwnMessage(Message.getIDFromURI(uri));
+//	}
 	
 	public synchronized OwnMessage getOwnMessage(String id) throws NoSuchMessageException {
 		Query query = db.query();
@@ -298,6 +339,35 @@ public abstract class MessageManager implements Runnable {
 			public OwnMessage next() {
 				OwnMessage next = iter.next();
 				next.initializeTransient(db, self);
+				return next;
+			}
+
+			public void remove() {
+				throw new UnsupportedOperationException();
+			}
+		};
+	}
+	
+	public synchronized Iterator<MessageList> notDownloadedMessageListIterator() {
+		return new Iterator<MessageList>() {
+			private Iterator<MessageList> iter;
+
+			{
+				Query query = db.query();
+				query.constrain(MessageList.class);
+				query.constrain(OwnMessageList.class).not();
+				query.descend("mNumberOfNotDownloadedMessages").constrain(0).not();
+				/* FIXME: Order the message lists by something random */
+				iter = query.execute().iterator();
+			}
+
+			public boolean hasNext() {
+				return iter.hasNext();
+			}
+
+			public MessageList next() {
+				MessageList next = iter.next();
+				next.initializeTransient(db);
 				return next;
 			}
 
