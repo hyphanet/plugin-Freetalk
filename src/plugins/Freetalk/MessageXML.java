@@ -32,7 +32,7 @@ import freenet.keys.FreenetURI;
 /**
  * Generator & parsers of message XML. Compatible to the FMS message XML format.
  */
-public class MessageXML {
+public final class MessageXML {
 	private static final int XML_FORMAT_VERSION = 1;
 	
 	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -137,7 +137,7 @@ public class MessageXML {
 			Transformer serializer = transformFactory.newTransformer();
 			
 			serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-			serializer.setOutputProperty(OutputKeys.INDENT,"yes");
+			serializer.setOutputProperty(OutputKeys.INDENT, "yes"); /* FIXME: Set to no before release. */
 			serializer.transform(domSource, resultStream);
 		}
 	}
