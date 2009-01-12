@@ -98,7 +98,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 				 * of some of them stalls for so long that the thread re-iterates before onFailure is called which results in the messages
 				 * not being marked as undownloadable. (Currently, we do not mark messages as undownloadable anyway! However, onFailure
 				 * should do that in the future) */
-				if(mMessageLists.size() > MAX_PARALLEL_MESSAGE_FETCH_COUNT)
+				if(fetchCount() > MAX_PARALLEL_MESSAGE_FETCH_COUNT)
 					break;
 			}
 		}
@@ -152,7 +152,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		finally {
 			removeFetch(state); /* FIXME: This was in the try{} block somewhere else in the FT/WoT code. Move it to finally{} there, too */
 			
-			if(mMessageLists.size() < MIN_PARALLEL_MESSAGE_FETCH_COUNT)
+			if(fetchCount() < MIN_PARALLEL_MESSAGE_FETCH_COUNT)
 				nextIteration();
 		}
 	}
@@ -172,7 +172,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		finally {
 			removeFetch(state);
 		
-			if(mMessageLists.size() < MIN_PARALLEL_MESSAGE_FETCH_COUNT)
+			if(fetchCount() < MIN_PARALLEL_MESSAGE_FETCH_COUNT)
 				nextIteration();
 		}
 	}
