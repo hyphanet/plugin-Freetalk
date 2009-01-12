@@ -25,10 +25,9 @@ import org.w3c.dom.Element;
 
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.WoT.WoTMessageList;
+import plugins.Freetalk.XMLTree.XMLElement;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
-import freenet.support.XMLTree;
-import freenet.support.XMLTree.XMLElement;
 
 /**
  * Generator & parsers of message XML. Compatible to the FMS message XML format.
