@@ -1,5 +1,6 @@
 package plugins.Freetalk.WoT;
 
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 
@@ -17,9 +18,13 @@ import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import freenet.keys.FreenetURI;
+
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
+import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
@@ -39,7 +44,7 @@ public final class WoTMessageListXML {
 			Element rootElement = xmlDoc.getDocumentElement();
 
 			Element messageListTag = xmlDoc.createElement("MessageList");
-			messageListTag.setAttribute("version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
+			messageListTag.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
 			
 			for(MessageList.MessageReference ref : list) {
 				OwnMessage message = messageManager.getOwnMessage(ref.getID());
@@ -72,5 +77,9 @@ public final class WoTMessageListXML {
 			serializer.setOutputProperty(OutputKeys.INDENT, "yes"); /* FIXME: Set to no before release. */
 			serializer.transform(domSource, resultStream);
 		}
+	}
+	
+	public static WoTMessageList decode(InputStream inputStream) { 
+		return null;
 	}
 }

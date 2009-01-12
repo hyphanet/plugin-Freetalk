@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import plugins.Freetalk.Message.Attachment;
+import plugins.Freetalk.WoT.WoTMessageList;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.DuplicateMessageListException;
@@ -111,6 +112,17 @@ public abstract class MessageManager implements Runnable {
 				board.addMessage(message);
 		}
 	}
+	
+	public synchronized void onMessageListReceived(WoTMessageList list) {
+		try {
+			getMessageList(list.getID());
+			Logger.debug(this, "Downloaded a MessageList which we already have: " + list.getURI());
+		}
+		catch(NoSuchMessageListException e) {
+			list.initializeTransient(db);
+			list.store();
+		}
+	}
 
 	/**
 	 * Get a message by its URI. The transient fields of the returned message will be initialized already.
@@ -167,6 +179,41 @@ public abstract class MessageManager implements Runnable {
 		MessageList m = result.next();
 		m.initializeTransient(db);
 		return m;
+	}
+	
+	public synchronized int getUnavailableNewMessageListIndex(FTIdentity identity) {
+		Query query = db.query();
+		query.constrain(MessageList.class);
+		query.constrain(OwnMessageList.class).not();
+		query.descend("mIndex").orderDescending(); /* FIXME: This is inefficient! Use a native query instead, we just need to find the maximum */
+		ObjectSet<MessageList> result = query.execute();
+		
+		if(result.size() == 0)
+			return 0;
+		
+		return result.next().getIndex() + 1;
+	}
+	
+	public synchronized int getUnavailableOldMessageListIndex(FTIdentity identity) {
+		Query query = db.query();
+		query.constrain(MessageList.class);
+		query.constrain(OwnMessageList.class).not();
+		query.descend("mIndex").orderDescending(); /* FIXME: This is inefficient! Use a native query instead */
+		ObjectSet<MessageList> result = query.execute();
+		
+		if(result.size() == 0)
+			return 0;
+		
+		int latestAvailableIndex = result.next().getIndex();
+		int freeIndex = latestAvailableIndex - 1;
+		for(; result.hasNext() && result.next().getIndex() == freeIndex; ) {
+			--freeIndex;
+		}
+		
+		/* FIXME: To avoid always checking ALL messagelists for a missing one, store somewhere in the FTIdentity what the latest index is up to
+		 * which all messagelists are available! */
+		
+		return freeIndex>0 ? freeIndex : latestAvailableIndex+1;
 	}
 	
 	public synchronized OwnMessageList getOwnMessageList(String id) throws NoSuchMessageListException {
@@ -395,4 +442,5 @@ public abstract class MessageManager implements Runnable {
 	public IdentityManager getIdentityManager() {
 		return mIdentityManager;
 	}
+
 }
