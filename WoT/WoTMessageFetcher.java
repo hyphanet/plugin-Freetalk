@@ -31,10 +31,10 @@ import freenet.support.io.NativeThread;
  * 
  * @author xor
  */
-public class WoTMessageFetcher extends MessageFetcher {
+public final class WoTMessageFetcher extends MessageFetcher {
 	
-	protected static final int STARTUP_DELAY = 1 * 60 * 1000;
-	protected static final int THREAD_PERIOD = 15 * 60 * 1000; /* FIXME: tweak before release */
+	private static final int STARTUP_DELAY = 1 * 60 * 1000;
+	private static final int THREAD_PERIOD = 5 * 60 * 1000; /* FIXME: tweak before release */
 	private static final int MAX_PARALLEL_MESSAGE_FETCH_COUNT = 64;
 	
 	/**

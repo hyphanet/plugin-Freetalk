@@ -47,9 +47,9 @@ import freenet.support.io.NativeThread;
  */
 public final class WoTMessageInserter extends MessageInserter {
 
-	protected static final int STARTUP_DELAY = 1 * 60 * 1000;
-	protected static final int THREAD_PERIOD = 5 * 60 * 1000; /* FIXME: tweak before release */
-	protected static final int ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT = 10;
+	private static final int STARTUP_DELAY = 1 * 60 * 1000;
+	private static final int THREAD_PERIOD = 5 * 60 * 1000; /* FIXME: tweak before release */
+	private static final int ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT = 10;
 	
 	private final Random mRandom;
 	
