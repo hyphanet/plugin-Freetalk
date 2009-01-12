@@ -15,14 +15,21 @@ public class WoTMessageList extends MessageList {
 	}
 
 	public FreenetURI getURI() {
-		return generateURI(mAuthor.getRequestURI());
+		return assembleURI(mAuthor.getRequestURI(), mIndex);
 	}
 	
-	/* Attention: This code is duplicated in WoTOwnMessageList */
-	protected FreenetURI generateURI(FreenetURI baseURI) {
+	protected FreenetURI generateURI(FreenetURI baseURI, int index) {
+		return assembleURI(baseURI, index);
+	}
+	
+	public static FreenetURI generateURI(WoTIdentity identity, int index) {
+		return assembleURI(identity.getRequestURI(), index);
+	}
+	
+	public static FreenetURI assembleURI(FreenetURI baseURI, int index) {
 		baseURI = baseURI.setKeyType("USK");
 		baseURI = baseURI.setDocName(Freetalk.PLUGIN_TITLE + "|" + "MessageList");
-		baseURI = baseURI.setSuggestedEdition(mIndex);
+		baseURI = baseURI.setSuggestedEdition(index);
 		baseURI = baseURI.setMetaString(new String[] {"messages.xml"});
 		return baseURI;
 	}
