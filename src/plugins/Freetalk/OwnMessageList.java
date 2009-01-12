@@ -4,6 +4,9 @@
 package plugins.Freetalk;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+
+import plugins.Freetalk.MessageList.MessageReference;
 
 import freenet.keys.FreenetURI;
 
@@ -12,13 +15,27 @@ public abstract class OwnMessageList extends MessageList {
 	private boolean iAmBeingInserted = false;
 	
 	private boolean iWasInserted = false;
+	
+	public final class OwnMessageReference extends MessageReference {
+		
+		private final String mID;
+
+		public OwnMessageReference(OwnMessage message) {
+			super(message.getURI());
+			mID = message.getID();
+		}
+		
+		public String getID() {
+			return mID;
+		}
+	}
 
 	public OwnMessageList(FTOwnIdentity newAuthor, int newIndex) {
 		super(newAuthor, newIndex, new ArrayList<FreenetURI>(32)); // TODO: Figure out a reasonable value
 	}
 	
 	public FreenetURI getInsertURI() {
-		return generateURI(((FTOwnIdentity)mAuthor).getInsertURI());
+		return generateURI(((FTOwnIdentity)mAuthor).getInsertURI(), mIndex);
 	}
 	
 	/**
@@ -33,7 +50,7 @@ public abstract class OwnMessageList extends MessageList {
 			if(newMessage.getAuthor() != mAuthor)
 				throw new IllegalArgumentException("Trying to add a message with wrong author " + newMessage.getAuthor() + " to an own message list of " + mAuthor);
 			
-			mMessages.add(new MessageReference(newMessage.getRealURI()));
+			mMessages.add(new OwnMessageReference(newMessage));
 			newMessage.setMessageList(this);
 		}
 	}

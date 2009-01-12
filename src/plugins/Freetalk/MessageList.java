@@ -30,6 +30,13 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			mURI = newURI;
 		}
 		
+		/**
+		 * Returns null, implemented only in OwnMessageList.OwnMessageReference.
+		 */
+		public String getID() {
+			return null;
+		}
+		
 		public FreenetURI getURI() {
 			return mURI;
 		}
@@ -97,10 +104,10 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	}
 	
 	public FreenetURI getURI() {
-		return generateURI(mAuthor.getRequestURI());
+		return generateURI(mAuthor.getRequestURI(), mIndex);
 	}
 	
-	protected abstract FreenetURI generateURI(FreenetURI baseURI);
+	protected abstract FreenetURI generateURI(FreenetURI baseURI, int index);
 	
 	public FTIdentity getAuthor() {
 		return mAuthor;
