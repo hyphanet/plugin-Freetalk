@@ -69,6 +69,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		return null;
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.NORM_PRIORITY;
 	}

@@ -77,6 +77,7 @@ public final class WoTMessageInserter extends MessageInserter {
 		return new ArrayList<BaseClientPutter>(ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT);
 	}
 
+	@Override
 	public int getPriority() {
 		return NativeThread.NORM_PRIORITY;
 	}
