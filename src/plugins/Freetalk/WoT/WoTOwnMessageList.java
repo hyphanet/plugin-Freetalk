@@ -1,9 +1,8 @@
 package plugins.Freetalk.WoT;
 
-import freenet.keys.FreenetURI;
 import plugins.Freetalk.FTOwnIdentity;
-import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.OwnMessageList;
+import freenet.keys.FreenetURI;
 
 public final class WoTOwnMessageList extends OwnMessageList {
 
@@ -12,13 +11,10 @@ public final class WoTOwnMessageList extends OwnMessageList {
 		// TODO Auto-generated constructor stub
 	}
 
-	/* Attention: This code is duplicated in WoTMessageList */
-	protected FreenetURI generateURI(FreenetURI baseURI) {
-		baseURI = baseURI.setKeyType("USK");
-		baseURI = baseURI.setDocName(Freetalk.PLUGIN_TITLE + "|" + "MessageList");
-		baseURI = baseURI.setSuggestedEdition(mIndex);
-		baseURI = baseURI.setMetaString(new String[] {"messages.xml"});
-		return baseURI;
+	@Override
+	protected FreenetURI generateURI(FreenetURI baseURI, int index) {
+		return WoTMessageList.assembleURI(baseURI, index);
 	}
+
 
 }
