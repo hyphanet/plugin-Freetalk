@@ -67,8 +67,8 @@ public class QuotedPrintableEncoding extends TransferEncoding {
 		if (outputLineWidth >= 72)
 			putSoftBreak();
 		outputBuffer = appendByte(outputBuffer, (byte) '=');
-		outputBuffer = appendByte(outputBuffer, (byte) hexDigit((b >> 4) & 0xf));
-		outputBuffer = appendByte(outputBuffer, (byte) hexDigit((b & 0xf)));
+		outputBuffer = appendByte(outputBuffer, hexDigit((b >> 4) & 0xf));
+		outputBuffer = appendByte(outputBuffer, hexDigit((b & 0xf)));
 		outputLineWidth += 3;
 	}
 
@@ -120,6 +120,7 @@ public class QuotedPrintableEncoding extends TransferEncoding {
 			}
 		}
 
+		outputBuffer.flip();
 		return outputBuffer;
 	}
 
@@ -140,7 +141,9 @@ public class QuotedPrintableEncoding extends TransferEncoding {
 		while (input.hasRemaining()) {
 			byte b = input.get();
 
-			if (b != (byte) '=')
+			if (b == (byte) '_' && spaceAsUnderscore)
+				result = appendByte(result, (byte) ' ');
+			else if (b != (byte) '=')
 				result = appendByte(result, b);
 			else {
 				byte c, d;
