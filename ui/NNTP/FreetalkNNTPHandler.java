@@ -751,7 +751,7 @@ public class FreetalkNNTPHandler implements Runnable {
 	 * byte sequence.
 	 */
 	private ByteBuffer readLineBytes(InputStream is) throws IOException {
-		ByteBuffer buf = ByteBuffer.allocateDirect(100);
+		ByteBuffer buf = ByteBuffer.allocate(100);
 		int b;
 
 		do {
@@ -759,7 +759,7 @@ public class FreetalkNNTPHandler implements Runnable {
 			if (b >= 0) {
 				if (!buf.hasRemaining()) {
 					// resize input buffer
-					ByteBuffer newbuf = ByteBuffer.allocateDirect(buf.capacity() * 2);
+					ByteBuffer newbuf = ByteBuffer.allocate(buf.capacity() * 2);
 					buf.flip();
 					newbuf.put(buf);
 					buf = newbuf;
@@ -777,7 +777,7 @@ public class FreetalkNNTPHandler implements Runnable {
 	 * itself).
 	 */
 	private ByteBuffer readTextDataBytes(InputStream is) throws IOException {
-		ByteBuffer buf = ByteBuffer.allocateDirect(1024);
+		ByteBuffer buf = ByteBuffer.allocate(1024);
 		ByteBuffer line;
 
 		while (true) {
@@ -802,7 +802,7 @@ public class FreetalkNNTPHandler implements Runnable {
 
 			// append line to the end of the buffer
 			if (line.remaining() > buf.remaining()) {
-				ByteBuffer newbuf = ByteBuffer.allocateDirect((buf.position() + line.remaining()) * 2);
+				ByteBuffer newbuf = ByteBuffer.allocate((buf.position() + line.remaining()) * 2);
 				buf.flip();
 				newbuf.put(buf);
 				buf = newbuf;

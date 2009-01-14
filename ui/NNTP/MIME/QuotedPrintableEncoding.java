@@ -92,7 +92,7 @@ public class QuotedPrintableEncoding extends TransferEncoding {
 	public synchronized ByteBuffer encode(ByteBuffer input) {
 		boolean cr = false;
 
-		outputBuffer = ByteBuffer.allocateDirect(100);
+		outputBuffer = ByteBuffer.allocate(100);
 		outputLineWidth = 0;
 
 		while (input.hasRemaining()) {
@@ -136,7 +136,7 @@ public class QuotedPrintableEncoding extends TransferEncoding {
 	}
 
 	public ByteBuffer decode(ByteBuffer input) throws InvalidEncodedTextException {
-		ByteBuffer result = ByteBuffer.allocateDirect(100);
+		ByteBuffer result = ByteBuffer.allocate(100);
 
 		while (input.hasRemaining()) {
 			byte b = input.get();
