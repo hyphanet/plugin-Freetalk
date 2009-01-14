@@ -73,7 +73,7 @@ public abstract class TransferEncoding {
 			return buffer;
 		}
 		else {
-			ByteBuffer newbuf = ByteBuffer.allocateDirect(buffer.capacity() * 2);
+			ByteBuffer newbuf = ByteBuffer.allocate(buffer.capacity() * 2);
 			buffer.flip();
 			newbuf.put(buffer);
 			newbuf.put(b);

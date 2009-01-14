@@ -35,7 +35,7 @@ public class Base64Encoding extends TransferEncoding {
 	}
 
 	public ByteBuffer encode(ByteBuffer input) {
-		ByteBuffer result = ByteBuffer.allocateDirect(100);
+		ByteBuffer result = ByteBuffer.allocate(100);
 		int bits = 0;
 		int byteCount = 0;
 		int charCount = 0;
@@ -81,7 +81,7 @@ public class Base64Encoding extends TransferEncoding {
 	}
 
 	public ByteBuffer decode(ByteBuffer input) throws InvalidEncodedTextException {
-		ByteBuffer result = ByteBuffer.allocateDirect(100);
+		ByteBuffer result = ByteBuffer.allocate(100);
 		int bits = 0;
 		int bitCount = 0;
 		boolean atEOF = false;
