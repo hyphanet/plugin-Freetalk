@@ -87,7 +87,66 @@ public class FreetalkNNTPArticle {
 	}
 
 	/**
-	 * Get the contents of the given header.
+	 * Wrap header contents onto multiple lines.  Wrapping is done so
+	 * as to limit the number of bytes (of UTF-8) on a single line.
+	 */
+	private static String wrapHeader(String name, String text, int softLimit, int hardLimit) {
+		StringBuilder result = new StringBuilder();
+		int lineStart, wordPos, width, i;
+
+		lineStart = 0;
+		width = name.length() + 2;
+		while (lineStart < text.length()) {
+			wordPos = lineStart;
+
+			for (i = lineStart; i < text.length(); i++) {
+				int c = text.codePointAt(i);
+				int cwidth;
+
+				if (Character.isSpaceChar(c))
+					wordPos = i;
+
+				if (c < 0x80)
+					cwidth = 1;
+				else if (c < 0x800)
+					cwidth = 2;
+				else if (c < 0x10000)
+					cwidth = 3;
+				else {
+					cwidth = 4;
+					i++;
+				}
+
+				if (width + cwidth > softLimit && wordPos != lineStart)
+					break;
+				else if (width + cwidth > hardLimit)
+					break;
+				else
+					width += cwidth;
+			}
+
+
+			if (i == text.length() || wordPos == lineStart) {
+				result.append(text.substring(lineStart, i));
+				lineStart = i;
+			}
+			else {
+				result.append(text.substring(lineStart, wordPos));
+				lineStart = wordPos + 1;
+			}
+
+			if (lineStart < text.length())
+				result.append("\n ");
+			width = 1;
+		}
+
+		return result.toString();
+	}
+
+	/**
+	 * Get the contents of the given header.  The header is not
+	 * wrapped (it may be arbitrarily long, but will not contain any
+	 * line feeds, tabs, or other control characters.)
 	 */
 	public String getHeader(Header hdr) {
 		switch (hdr) {
@@ -95,8 +154,6 @@ public class FreetalkNNTPArticle {
 			return message.getAuthor().getFreetalkAddress();
 
 		case SUBJECT:
-			/* FIXME: The title is not cleaned up yet. Please give me (xor) the list of the control characters which the RFC forbids and I
-			 * will provide a function to return a cleaned up title */ 
 			return message.getTitle();
 
 		case NEWSGROUPS:
@@ -167,9 +224,7 @@ public class FreetalkNNTPArticle {
 				if (!text.equals("")) {
 					builder.append(hdr.getName());
 					builder.append(": ");
-					// FIXME: fold header onto multiple lines if
-					// necessary
-					builder.append(text);
+					builder.append(wrapHeader(hdr.getName(), text, 72, 998));
 					builder.append("\n");
 				}
 			}
