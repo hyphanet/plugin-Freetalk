@@ -37,6 +37,11 @@ public class Message implements Comparable<Message> {
 	protected FreenetURI mURI; /* Not final because for OwnMessages it is set after the MessageList was inserted */
 	
 	/**
+	 * The CHK URI of the message. Null until the message was inserted and the URI is known.
+	 */
+	protected FreenetURI mRealURI; /* Not final because for OwnMessages it is set after the Message was inserted */
+	
+	/**
 	 * The ID of the message. Format: Hex encoded author routing key + "@" + hex encoded random UUID. 
 	 */
 	protected final String mID;
@@ -131,18 +136,21 @@ public class Message implements Comparable<Message> {
 	/**
 	 * Constructor for received messages.
 	 */
-	public static Message construct(MessageList newMessageList, String newID, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+	public static Message construct(MessageList newMessageList, FreenetURI myRealURI, String newID, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		if (newMessageList == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
 		if (newMessageList.getAuthor() != newAuthor)
 			throw new InvalidParameterException("Trying to construct a message of " + newAuthor + " with a messagelist which belong to a different author: " + newMessageList.getAuthor());
 		
-		return new Message(calculateURI(newMessageList, newID), newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
+		return new Message(calculateURI(newMessageList, newID), myRealURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
 
-	protected Message(FreenetURI newURI, String newID, MessageList newMessageList, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+	protected Message(FreenetURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		assert(newURI == null || Arrays.equals(newURI.getRoutingKey(), newAuthor.getRequestURI().getRoutingKey()));
+		
+		/* FIXME: assert(newMessageList.getAuthor() == newAuthor); */
+		/* FIXME: assert(newRealURI == null || newMessageList.contains(newRealURI)); */
 		
 		verifyID(newAuthor, newID);
 		
@@ -164,6 +172,7 @@ public class Message implements Comparable<Message> {
 			throw new InvalidParameterException("Invalid message text in message " + newURI);
 	
 		mURI = newURI;
+		mRealURI = newRealURI;
 		mMessageList = newMessageList;
 		mAuthor = newAuthor;
 		mID = newID;
@@ -215,12 +224,13 @@ public class Message implements Comparable<Message> {
 	}
 	
 	/**
-	 * Get the URI of the message.
+	 * Get the URI of the message. This returns the SSK URI of the MessageList with the ID of the message attached.
+	 * @see Message.calculateURI()
 	 */
 	public FreenetURI getURI() { /* Not synchronized because only OwnMessage might change the URI */
 		return mURI;
 	}
-	
+
 	public String getID() { /* Not synchronized because only OwnMessage might change the ID */
 		return mID;
 	}
@@ -540,7 +550,10 @@ public class Message implements Comparable<Message> {
 		if(mAuthor == null)
 			throw new RuntimeException("Trying to store a message with mAuthor == null");
 		
-		db.store(mURI);
+		if(mURI != null)
+			db.store(mURI);
+		if(mRealURI != null)
+			db.store(mRealURI);
 		if(mThreadURI != null)
 			db.store(mThreadURI);
 		if(mParentURI != null)
