@@ -13,11 +13,6 @@ import freenet.keys.FreenetURI;
 
 public final class OwnMessage extends Message {
 	
-	/**
-	 * The CHK URI of the message. Null until the message was inserted and the URI is known.
-	 */
-	private FreenetURI mRealURI = null;
-	
 	public static OwnMessage construct(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor,
 			String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		return new OwnMessage(newParentThread, newParentMessage, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
@@ -25,7 +20,7 @@ public final class OwnMessage extends Message {
 
 	protected OwnMessage(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor,
 			String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		super(null, generateRandomID(newAuthor), null, (newParentThread == null ? null : newParentThread.getURI()),
+		super(null, null, generateRandomID(newAuthor), null, (newParentThread == null ? null : newParentThread.getURI()),
 			  (newParentMessage == null ? null : newParentMessage.getURI()),
 			  newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
