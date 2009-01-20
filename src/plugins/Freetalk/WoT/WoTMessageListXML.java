@@ -3,6 +3,9 @@ package plugins.Freetalk.WoT;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -18,15 +21,14 @@ import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import freenet.keys.FreenetURI;
-
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
-import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
-import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.OwnMessage;
+import plugins.Freetalk.XMLTree;
+import plugins.Freetalk.XMLTree.XMLElement;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import freenet.keys.FreenetURI;
 
 public final class WoTMessageListXML {
 	private static final int XML_FORMAT_VERSION = 1;
@@ -47,14 +49,14 @@ public final class WoTMessageListXML {
 			messageListTag.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
 			
 			for(MessageList.MessageReference ref : list) {
-				OwnMessage message = messageManager.getOwnMessage(ref.getID());
+				OwnMessage message = messageManager.getOwnMessage(ref.getMessageID());
 				if(message.wasInserted() == false)
 					throw new RuntimeException("Trying to convert a MessageList to XML which contains a not inserted message.");
 				
 				Element messageTag = xmlDoc.createElement("Message");
 				messageTag.setAttribute("ID", message.getID());
 				messageTag.setAttribute("URI", message.getRealURI().toString());
-				synchronized(mDateFormat) {
+				synchronized(mDateFormat) { /* TODO: The date is currently not used anywhere */
 					messageTag.setAttribute("Date", mDateFormat.format(message.getDate()));
 				}
 				
@@ -79,7 +81,34 @@ public final class WoTMessageListXML {
 		}
 	}
 	
-	public static WoTMessageList decode(InputStream inputStream) { 
-		return null;
+	/** Valid element names for MessageList XML version 1 */
+	private static final HashSet<String> messageListXMLElements1 = new HashSet<String>(Arrays.asList(
+		new String[] { Freetalk.PLUGIN_TITLE, "MessageList", "Message", "Board"}));
+	
+	public static WoTMessageList decode(WoTMessageManager messageManager, WoTIdentity author, FreenetURI uri, InputStream inputStream) throws Exception { 
+		XMLTree xmlTreeGenerator = new XMLTree(messageListXMLElements1, inputStream);		
+		XMLElement rootElement = xmlTreeGenerator.getRoot();
+		
+		rootElement = rootElement.children.get("MessageList");
+		
+		if(Integer.parseInt(rootElement.attrs.getValue("version")) > XML_FORMAT_VERSION)
+			throw new Exception("Version " + rootElement.attrs.getValue("version") + " > " + XML_FORMAT_VERSION);
+		
+		/* The message count is multiplied by 2 because if a message is posted to multiple boards, a MessageReference has to be created for each */
+		ArrayList<MessageList.MessageReference> messages = new ArrayList<MessageList.MessageReference>(rootElement.children.countAll("Message")*2 + 1);
+		
+		for(XMLElement messageTag : rootElement.children.iterateAll("Message")) {
+			String messageID = messageTag.attrs.getValue("ID");
+			FreenetURI messageURI = new FreenetURI(messageTag.attrs.getValue("URI"));
+			HashSet<Board> messageBoards = new HashSet<Board>(messageTag.children.countAll("Board") + 1);
+			
+			for(XMLElement boardTag : messageTag.children.iterateAll("Board"))
+				messageBoards.add(messageManager.getOrCreateBoard(boardTag.attrs.getValue("Name")));
+			
+			for(Board board : messageBoards)
+				messages.add(new MessageList.MessageReference(messageID, messageURI, board));
+		}
+		
+		return new WoTMessageList(author, uri, messages);
 	}
 }
