@@ -3,11 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
-import plugins.Freetalk.MessageList.MessageReference;
-
 import freenet.keys.FreenetURI;
 
 public abstract class OwnMessageList extends MessageList {
@@ -16,22 +11,22 @@ public abstract class OwnMessageList extends MessageList {
 	
 	private boolean iWasInserted = false;
 	
+	/**
+	 * In opposite to it's parent class, for each <code>OwnMessage</code> only one <code>OwnMessageReference</code> is stored, no matter to how
+	 * many boards the OwnMessage is posted.
+	 *  
+	 * @see MessageList.MessageReference
+	 */
 	public final class OwnMessageReference extends MessageReference {
 		
-		private final String mID;
+		public OwnMessageReference(OwnMessage myMessage) {
+			super(myMessage.getID(), myMessage.getURI(), null);
+		}
 
-		public OwnMessageReference(OwnMessage message) {
-			super(message.getURI());
-			mID = message.getID();
-		}
-		
-		public String getID() {
-			return mID;
-		}
 	}
 
 	public OwnMessageList(FTOwnIdentity newAuthor, int newIndex) {
-		super(newAuthor, newIndex, new ArrayList<FreenetURI>(32)); // TODO: Figure out a reasonable value
+		super(newAuthor, newIndex);
 	}
 	
 	public FreenetURI getInsertURI() {
@@ -45,13 +40,14 @@ public abstract class OwnMessageList extends MessageList {
 	public synchronized void addMessage(OwnMessage newMessage) {
 		synchronized(newMessage) {
 			if(iAmBeingInserted || iWasInserted)
-				throw new RuntimeException("Trying to add a message to a message list which is already being inserted.");
+				throw new IllegalArgumentException("Trying to add a message to a message list which is already being inserted.");
 			
 			if(newMessage.getAuthor() != mAuthor)
 				throw new IllegalArgumentException("Trying to add a message with wrong author " + newMessage.getAuthor() + " to an own message list of " + mAuthor);
 			
 			mMessages.add(new OwnMessageReference(newMessage));
 			newMessage.setMessageList(this);
+			store();
 		}
 	}
 
@@ -68,6 +64,7 @@ public abstract class OwnMessageList extends MessageList {
 	
 	public synchronized void beginOfInsert() {
 		iAmBeingInserted = true;
+		store();
 	}
 	
 	public synchronized boolean wasInserted() {
@@ -76,6 +73,7 @@ public abstract class OwnMessageList extends MessageList {
 
 	public synchronized void markAsInserted() {
 		iWasInserted = true;
+		store();
 	}
 
 }
