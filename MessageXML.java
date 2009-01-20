@@ -167,7 +167,7 @@ public final class MessageXML {
 		 * getValue() returns null even though debugging shows that the value IS there !?!?
 		 * Is this a bug in the parser?
 		if(Integer.parseInt(rootElement.attrs.getValue("version")) > XML_FORMAT_VERSION)
-			throw new Exception("Version > " + XML_FORMAT_VERSION);
+			throw new Exception("Version " + rootElement.attrs.getValue("version") + " > " + XML_FORMAT_VERSION);
 		*/
 		
 		String messageID = rootElement.children.get("MessageID").cdata;
@@ -215,7 +215,7 @@ public final class MessageXML {
 			}
 		}
 		
-		return Message.construct(messageList, messageID, parentThreadURI, parentMessageURI, messageBoards, messageReplyToBoard,
+		return Message.construct(messageList, uri, messageID, parentThreadURI, parentMessageURI, messageBoards, messageReplyToBoard,
 									messageList.getAuthor(), messageTitle, messageDate, messageBody, messageAttachments);
 	}
 }
