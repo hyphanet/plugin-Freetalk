@@ -17,6 +17,15 @@ public abstract class MessageListInserter extends TransferThread {
 		super(myNode, myClient, myName);
 		mIdentityManager = myIdentityManager;
 		mMessageManager = myMessageManager;
+		clearBeingInsertedFlags();
+	}
+	
+	/**
+	 * Each <code>OwnMessageList</code> has a flag which stores whether it is currently being inserted. The purpose of this function
+	 * is to clear those flags at startup.
+	 */
+	private final void clearBeingInsertedFlags() {
+		throw new UnsupportedOperationException("Implement me!");
 	}
 
 }
