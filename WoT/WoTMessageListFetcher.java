@@ -7,12 +7,7 @@ import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import plugins.Freetalk.FTIdentity;
-import plugins.Freetalk.IdentityManager;
-import plugins.Freetalk.Message;
-import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageListFetcher;
-import plugins.Freetalk.MessageManager;
-import plugins.Freetalk.MessageXML;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -47,6 +42,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	private static final int MAX_PARALLEL_MESSAGELIST_FETCH_COUNT = 64;
 	
 	private final WoTIdentityManager mIdentityManager;
+	private final WoTMessageManager mMessageManager;
 	
 	/* FIXME FIXME FIXME: Use LRUQueue instead. ArrayBlockingQueue does not use a Hashset for contains()! */
 	private final ArrayBlockingQueue<FTIdentity> mIdentities = new ArrayBlockingQueue<FTIdentity>(MAX_PARALLEL_MESSAGELIST_FETCH_COUNT * 10); /* FIXME: figure out a decent size */
@@ -55,9 +51,10 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	
 	private final Random mRandom;
 	
-	public WoTMessageListFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager, MessageManager myMessageManager) {
+	public WoTMessageListFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
 		mIdentityManager = myIdentityManager;
+		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
 		start();
 		Logger.debug(this, "MessageList fetcher started.");
@@ -173,10 +170,9 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		
 		WoTIdentity identity = null;
 		
-		
 		try {
 			identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI());
-			WoTMessageList list = WoTMessageListXML.decode(result.asBucket().getInputStream());
+			WoTMessageList list = WoTMessageListXML.decode(mMessageManager, identity, state.getURI(), result.asBucket().getInputStream());
 			mMessageManager.onMessageListReceived(list);
 		}
 		catch (Exception e) {

@@ -2,15 +2,18 @@ package plugins.Freetalk.WoT;
 
 import java.util.List;
 
-import freenet.keys.FreenetURI;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageList;
+import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
+import freenet.keys.FreenetURI;
 
 public class WoTMessageList extends MessageList {
-	
-	public WoTMessageList(FTIdentity newAuthor, int newIndex, List<FreenetURI> newMessages) {
-		super(newAuthor, newIndex, newMessages);
+
+	public WoTMessageList(FTIdentity myAuthor, FreenetURI myURI, List<MessageReference> newMessages) throws InvalidParameterException,
+			NoSuchIdentityException {
+		super(myAuthor, myURI, newMessages);
 		// TODO Auto-generated constructor stub
 	}
 
