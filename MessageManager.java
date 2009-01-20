@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import plugins.Freetalk.Message.Attachment;
+import plugins.Freetalk.MessageList.MessageReference;
 import plugins.Freetalk.WoT.WoTMessageList;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
@@ -106,11 +107,60 @@ public abstract class MessageManager implements Runnable {
 			Logger.debug(this, "Downloaded a message which we already have: " + message.getURI());
 		}
 		catch(NoSuchMessageException e) {
-			message.initializeTransient(db, this);
-			message.store();
-			for(Board board : message.getBoards())
-				board.addMessage(message);
+			try {
+				message.initializeTransient(db, this);
+				message.store();
+				for(Board board : message.getBoards())
+					board.addMessage(message);
+				
+				for(MessageReference ref : getAllReferencesToMessage(message.getID()))
+					ref.setMessageWasDownloadedFlag();
+			}
+			catch(Exception ex) {
+				/* FIXME: Delete the message if this happens. */
+				Logger.error(this, "Exception while storing a downloaded message", ex);
+			}
+
 		}
+	}
+	
+	/**
+	 * Get a list of all MessageReference objects to the given message ID. References to OwnMessage are not returned.
+	 * Used to mark the references to a message which was downloaded as downloaded.
+	 */
+	private Iterable<MessageList.MessageReference> getAllReferencesToMessage(final String id) {
+		return new Iterable<MessageList.MessageReference>() {
+			public Iterator<MessageList.MessageReference> iterator() {
+				return new Iterator<MessageList.MessageReference>() {
+					private Iterator<MessageList.MessageReference> iter;
+
+					{
+						Query query = db.query();
+						query.constrain(MessageList.MessageReference.class);
+						query.constrain(OwnMessageList.OwnMessageReference.class).not();
+						query.descend("mMessageID").constrain(id);
+						/* FIXME: This function should only return MessageReferences which are for a board which an OwnIdentity wants to read and from 
+						 * as specified above. This has to be implemented yet. */
+						/* FIXME: Order the message references randomly with some trick. */
+						iter = query.execute().iterator();
+					}
+
+					public boolean hasNext() {
+						return iter.hasNext();
+					}
+
+					public MessageList.MessageReference next() {
+						MessageList.MessageReference next = iter.next();
+						next.initializeTransient(db);
+						return next;
+					}
+
+					public void remove() {
+						throw new UnsupportedOperationException();
+					}
+				};
+			}
+		};
 	}
 	
 	public synchronized void onMessageListReceived(WoTMessageList list) {
@@ -395,16 +445,24 @@ public abstract class MessageManager implements Runnable {
 		};
 	}
 	
-	public synchronized Iterator<MessageList> notDownloadedMessageListIterator() {
-		return new Iterator<MessageList>() {
-			private Iterator<MessageList> iter;
+	/**
+	 * Get a list of not downloaded messages. This function only returns messages which are posted to a board which an OwnIdentity wants to
+	 * receive messages from. However, it might also return messages which are from an author which nobody wants to receive messages from.
+	 * Filtering out unwanted authors is done at MessageList-level: MessageLists are only downloaded from identities which we want to read
+	 * messages from.
+	 */
+	public synchronized Iterator<MessageList.MessageReference> notDownloadedMessageIterator() {
+		return new Iterator<MessageList.MessageReference>() {
+			private Iterator<MessageList.MessageReference> iter;
 
 			{
 				Query query = db.query();
-				query.constrain(MessageList.class);
-				query.constrain(OwnMessageList.class).not();
-				query.descend("mNumberOfNotDownloadedMessages").constrain(0).not();
-				/* FIXME: Order the message lists by something random */
+				query.constrain(MessageList.MessageReference.class);
+				query.constrain(OwnMessageList.OwnMessageReference.class).not();
+				query.descend("iWasDownloaded").constrain(false);
+				/* FIXME: This function should only return MessageReferences which are for a board which an OwnIdentity wants to read and from 
+				 * as specified above. This has to be implemented yet. */
+				/* FIXME: Order the message references randomly with some trick. */
 				iter = query.execute().iterator();
 			}
 
@@ -412,8 +470,8 @@ public abstract class MessageManager implements Runnable {
 				return iter.hasNext();
 			}
 
-			public MessageList next() {
-				MessageList next = iter.next();
+			public MessageList.MessageReference next() {
+				MessageList.MessageReference next = iter.next();
 				next.initializeTransient(db);
 				return next;
 			}
