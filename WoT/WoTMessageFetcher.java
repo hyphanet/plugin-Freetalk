@@ -89,10 +89,13 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		Logger.debug(this, "Message fetcher loop running ...");
 		abortAllTransfers();
 		
-		synchronized(MessageList.class) {
-			Iterator<MessageList> iter = mMessageManager.notDownloadedMessageListIterator();
+		/* FIXME: I think the counterpart of this synchronized() (which ensures that MessageLists are not created when this lock is help) 
+		 * might be missing. Check through the other code and add it where it's needed. */
+		synchronized(MessageList.class) { 
+			Iterator<MessageList.MessageReference> iter = mMessageManager.notDownloadedMessageIterator();
 			while(iter.hasNext()) {
-				fetchMessages(iter.next());
+				MessageList.MessageReference ref = iter.next();
+				fetchMessage(ref.getMessageList(), ref);
 				
 				/* FIXME: Investigate whether this is fair, i.e. whether it will not always try to download the same messages if downloading
 				 * of some of them stalls for so long that the thread re-iterates before onFailure is called which results in the messages
@@ -109,16 +112,12 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	/**
 	 * You have to synchronize on this <code>WoTMessageFetcher</code> when using this function.
 	 */
-	private void fetchMessages(MessageList list) {
-		for(MessageList.MessageReference ref : list) {
-			if(!ref.wasDownloaded()) {
-				try {
-					fetchMessage(list, ref.getURI());
-				}
-				catch(Exception e) {
-					Logger.error(this, "Error while trying to fetch message " + ref.getURI(), e);
-				}
-			}
+	private void fetchMessage(MessageList list, MessageList.MessageReference ref) {
+		try {
+			fetchMessage(list, ref.getURI());
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error while trying to fetch message " + ref.getURI(), e);
 		}
 	}
 
@@ -126,6 +125,12 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	 * You have to synchronize on this <code>WoTMessageFetcher</code> when using this function.
 	 */
 	private void fetchMessage(MessageList list, FreenetURI uri) throws FetchException {
+		/* TODO: If a single message is posted to multiple boards, a MessageList.MessageReference is stored for each boards.
+		 * Because we query the MessageManager for MessageReference objects, it might happen that this function is called twice
+		 * for a single message. On the one hand, because of this we should check whether we are already downloading the given URI.
+		 * On the other hand, most messages will be posted to only a single board so the overhead of creating a HashSet<FreenetURI>
+		 * might not be worthwhile. The MessageManager will ignore duplicates of already downloaded messages anyway. */
+		
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = 2;
 		fetchContext.maxNonSplitfileRetries = 2;
