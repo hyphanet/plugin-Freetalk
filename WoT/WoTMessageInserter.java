@@ -125,11 +125,10 @@ public final class WoTMessageInserter extends MessageInserter {
 			os.close(); os = null;
 			tempB.setReadOnly();
 
-			ClientMetadata cmd = new ClientMetadata("text/xml");
-			InsertBlock ib = new InsertBlock(tempB, cmd, m.getInsertURI());
+			/* We do not specifiy a ClientMetaData with mimetype because that would result in the insertion of an additional CHK */
+			InsertBlock ib = new InsertBlock(tempB, null, m.getInsertURI());
 			InsertContext ictx = mClient.getInsertContext(true);
 
-			/* FIXME: are these parameters correct? Especially, is the "getCHKonly" only necessary for SSK/USK? We are inserting as CHK anyway. */
 			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
 			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
 			addInsert(pu);
@@ -178,6 +177,7 @@ public final class WoTMessageInserter extends MessageInserter {
 	 */
 	@Override
 	protected void abortAllTransfers() {
+		super.abortAllTransfers();
 		mMessageIDs.clear();
 	}
 	
