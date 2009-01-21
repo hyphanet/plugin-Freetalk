@@ -20,7 +20,6 @@ import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.MessageXML;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
-import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;

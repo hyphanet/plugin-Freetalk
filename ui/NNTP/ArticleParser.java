@@ -3,20 +3,17 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.NNTP;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.ui.NNTP.MIME.TransferEncoding;
-
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.text.ParseException;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-
 import freenet.support.Logger;
 
 /**

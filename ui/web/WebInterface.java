@@ -24,6 +24,7 @@ public final class WebInterface implements FredPluginHTTP {
 	
 	private final PageMaker mPageMaker;
 
+	@SuppressWarnings("static-access")
 	public WebInterface(Freetalk myFreetalk) {
 		mFreetalk = myFreetalk;
 		
@@ -81,6 +82,7 @@ public final class WebInterface implements FredPluginHTTP {
 		throw new NotFoundPluginHTTPException("Resource not found in Freetalk plugin", page);
 	}
 
+	@SuppressWarnings("static-access")
 	public final String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
 		String pass = request.getPartAsString("formPassword", 32);
 		if (pass == null || (pass.length() == 0) || !pass.equals(mFreetalk.getPluginRespirator().getNode().clientCore.formPassword)) {
