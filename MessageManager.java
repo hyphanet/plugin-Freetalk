@@ -24,6 +24,7 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
+import freenet.keys.FreenetURI;
 import freenet.support.Executor;
 import freenet.support.Logger;
 
@@ -130,6 +131,7 @@ public abstract class MessageManager implements Runnable {
 	 */
 	private Iterable<MessageList.MessageReference> getAllReferencesToMessage(final String id) {
 		return new Iterable<MessageList.MessageReference>() {
+			@SuppressWarnings("unchecked")
 			public Iterator<MessageList.MessageReference> iterator() {
 				return new Iterator<MessageList.MessageReference>() {
 					private Iterator<MessageList.MessageReference> iter;
@@ -179,9 +181,10 @@ public abstract class MessageManager implements Runnable {
 	 * This will NOT return OwnMessage objects. Your own messages will be returned by this function as soon as they have been downloaded.
 	 * @throws NoSuchMessageException 
 	 */
-//	public Message get(FreenetURI uri) throws NoSuchMessageException {
-//		return get(Message.getIDFromURI(uri));
-//	}
+	public Message get(FreenetURI uri) throws NoSuchMessageException {
+		/* return get(Message.getIDFromURI(uri)); */
+		throw new UnsupportedOperationException("Getting a message by it's URI is inefficient compared to getting by ID. Please only repair this function if absolutely unavoidable.");
+	}
 	
 	/**
 	 * Get a message by its ID. The transient fields of the returned message will be initialized already.
@@ -189,6 +192,7 @@ public abstract class MessageManager implements Runnable {
 	 * if they were normal messages of someone else.
 	 * @throws NoSuchMessageException 
 	 */
+	@SuppressWarnings("unchecked")
 	public synchronized Message get(String id) throws NoSuchMessageException {
 		Query query = db.query();
 		query.constrain(Message.class);
@@ -213,6 +217,7 @@ public abstract class MessageManager implements Runnable {
 	 * been downloaded as if they were normal message  lists of someone else.
 	 * @throws NoSuchMessageListException 
 	 */
+	@SuppressWarnings("unchecked")
 	public synchronized MessageList getMessageList(String id) throws NoSuchMessageListException {
 		Query query = db.query();
 		query.constrain(MessageList.class);
@@ -231,6 +236,7 @@ public abstract class MessageManager implements Runnable {
 		return m;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public synchronized int getUnavailableNewMessageListIndex(FTIdentity identity) {
 		Query query = db.query();
 		query.constrain(MessageList.class);
@@ -244,6 +250,7 @@ public abstract class MessageManager implements Runnable {
 		return result.next().getIndex() + 1;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public synchronized int getUnavailableOldMessageListIndex(FTIdentity identity) {
 		Query query = db.query();
 		query.constrain(MessageList.class);
@@ -266,6 +273,7 @@ public abstract class MessageManager implements Runnable {
 		return freeIndex>0 ? freeIndex : latestAvailableIndex+1;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public synchronized OwnMessageList getOwnMessageList(String id) throws NoSuchMessageListException {
 		Query query = db.query();
 		query.constrain(OwnMessageList.class);
@@ -283,10 +291,12 @@ public abstract class MessageManager implements Runnable {
 		return m;
 	}
 	
-//	public OwnMessage getOwnMessage(FreenetURI uri) throws NoSuchMessageException {
-//		return getOwnMessage(Message.getIDFromURI(uri));
-//	}
+	public OwnMessage getOwnMessage(FreenetURI uri) throws NoSuchMessageException {
+		/* return getOwnMessage(Message.getIDFromURI(uri)); */
+		throw new UnsupportedOperationException("Getting a message by it's URI is inefficient compared to getting by ID. Please only repair this function if absolutely unavoidable.");
+	}
 	
+	@SuppressWarnings("unchecked")
 	public synchronized OwnMessage getOwnMessage(String id) throws NoSuchMessageException {
 		Query query = db.query();
 		query.constrain(OwnMessage.class);
@@ -308,6 +318,7 @@ public abstract class MessageManager implements Runnable {
 	 * Get a board by its name. The transient fields of the returned board will be initialized already.
 	 * @throws NoSuchBoardException 
 	 */
+	@SuppressWarnings("unchecked")
 	public synchronized Board getBoardByName(String name) throws NoSuchBoardException {
 		Query query = db.query();
 		query.constrain(Board.class);
@@ -418,6 +429,7 @@ public abstract class MessageManager implements Runnable {
 //		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 //	}
 	
+	@SuppressWarnings("unchecked")
 	public synchronized Iterator<OwnMessage> notInsertedMessageIterator() {
 		return new Iterator<OwnMessage>() {
 			private Iterator<OwnMessage> iter;
@@ -451,6 +463,7 @@ public abstract class MessageManager implements Runnable {
 	 * Filtering out unwanted authors is done at MessageList-level: MessageLists are only downloaded from identities which we want to read
 	 * messages from.
 	 */
+	@SuppressWarnings("unchecked")
 	public synchronized Iterator<MessageList.MessageReference> notDownloadedMessageIterator() {
 		return new Iterator<MessageList.MessageReference>() {
 			private Iterator<MessageList.MessageReference> iter;
