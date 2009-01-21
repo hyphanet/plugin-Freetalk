@@ -63,7 +63,7 @@ public class WoTIdentity implements FTIdentity {
 		mUID = myUID;
 		mRequestURI = myRequestURI;
 		mNickname = myNickname;
-		mLastReceivedFromWoT = System.currentTimeMillis();
+		mLastReceivedFromWoT = mCalendar.getTimeInMillis();
 		mIsNeeded = false;
 	}
 	
@@ -110,6 +110,10 @@ public class WoTIdentity implements FTIdentity {
 		return mLastReceivedFromWoT;
 	}
 	
+	/**
+	 * Set the time this identity was last received from the WoT plugin to the given UTC time in milliseconds
+	 * @param time
+	 */
 	public synchronized void setLastReceivedFromWoT(long time) {
 		mLastReceivedFromWoT = time;
 		store();
