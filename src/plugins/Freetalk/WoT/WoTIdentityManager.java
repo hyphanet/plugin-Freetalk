@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import java.net.MalformedURLException;
-
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
@@ -62,11 +60,12 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		super();
 	}
 
+	@SuppressWarnings("unchecked")
 	public synchronized WoTIdentity getIdentity(String uid) throws NoSuchIdentityException {
 		Query q = db.query();
 		q.constrain(WoTIdentity.class);
 		q.descend("mUID").constrain(uid);
-		ObjectSet<WoTOwnIdentity> result = q.execute();
+		ObjectSet<WoTIdentity> result = q.execute();
 		
 		if(result.size() > 1)
 			throw new DuplicateIdentityException();
@@ -81,6 +80,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		return getIdentity(WoTIdentity.getUIDFromURI(uri));
 	}
 	
+	@SuppressWarnings("unchecked")
 	public synchronized WoTOwnIdentity getOwnIdentity(String uid) throws NoSuchIdentityException {
 		Query q = db.query();
 		q.constrain(WoTOwnIdentity.class);
@@ -145,6 +145,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		mTalker.send(p2, null);
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void parseIdentities(SimpleFieldSet params, boolean bOwnIdentities) {
 		long time = System.currentTimeMillis();
 	
@@ -190,6 +191,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	private synchronized void garbageCollectIdentities() {
 		/* Executing the thread loop once will always take longer than THREAD_PERIOD. Therefore, if we set the limit to 3*THREAD_PERIOD,
 		 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */

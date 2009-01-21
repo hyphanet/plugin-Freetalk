@@ -3,18 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.NNTP;
 
-import plugins.Freetalk.Message;
-import plugins.Freetalk.Board;
-import plugins.Freetalk.Freetalk;
-import plugins.Freetalk.exceptions.NoSuchMessageException;
-
-import freenet.keys.FreenetURI;
-import freenet.support.Logger;
-
+import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.regex.Pattern;
-import java.io.UnsupportedEncodingException;
+
+import plugins.Freetalk.Board;
+import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.Message;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
+import freenet.support.Logger;
 
 /**
  * Object representing a single news article.

@@ -20,10 +20,8 @@ import com.db4o.config.Configuration;
 import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
-import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.l10n.L10n.LANGUAGE;
-import freenet.node.Node;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.FredPluginHTTP;
@@ -182,6 +180,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	/**
 	 * Debug function.
 	 */
+	@SuppressWarnings("unchecked")
 	private void deleteBrokenObjects() {
 		Query q = db.query();
 		q.constrain(Message.class);

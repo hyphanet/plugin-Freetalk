@@ -35,6 +35,7 @@ public abstract class IdentityManager implements PrioRunnable, Iterable<FTIdenti
 		mExecutor = null;
 	}
 
+	@SuppressWarnings("unchecked")
 	public synchronized Iterator<FTIdentity> iterator() {
 		return new Iterator<FTIdentity> () {
 			Iterator<FTIdentity> iter;
@@ -69,6 +70,7 @@ public abstract class IdentityManager implements PrioRunnable, Iterable<FTIdenti
 		return q.execute().size();
 	}
 
+	@SuppressWarnings("unchecked")
 	public synchronized Iterator<FTOwnIdentity> ownIdentityIterator() {
 		return new Iterator<FTOwnIdentity> () {
 			Iterator<FTOwnIdentity> iter;

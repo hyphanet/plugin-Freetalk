@@ -2,6 +2,9 @@ package plugins.Freetalk.WoT;
 
 import java.util.Collection;
 
+import plugins.Freetalk.IdentityManager;
+import plugins.Freetalk.MessageListInserter;
+import plugins.Freetalk.MessageManager;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -10,11 +13,6 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
-import freenet.support.Logger;
-import plugins.Freetalk.IdentityManager;
-import plugins.Freetalk.MessageListInserter;
-import plugins.Freetalk.MessageManager;
-import plugins.Freetalk.OwnMessage;
 
 public class WoTMessageListInserter extends MessageListInserter {
 
