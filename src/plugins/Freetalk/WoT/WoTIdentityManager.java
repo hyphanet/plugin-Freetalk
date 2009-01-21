@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import java.util.Calendar;
+import java.util.TimeZone;
+
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
@@ -44,6 +47,8 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	private final Object sfsLock = new Object();
 	private SimpleFieldSet sfsIdentities = null;
 	private SimpleFieldSet sfsOwnIdentities = null;
+	
+	private static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
 	/**
 	 * @param executor
@@ -147,7 +152,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	
 	@SuppressWarnings("unchecked")
 	private void parseIdentities(SimpleFieldSet params, boolean bOwnIdentities) {
-		long time = System.currentTimeMillis();
+		long time = mCalendar.getTimeInMillis();
 	
 		for(int idx = 1; ; idx++) {
 			String uid = params.get("Identity"+idx);
