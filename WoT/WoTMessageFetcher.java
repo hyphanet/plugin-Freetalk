@@ -56,7 +56,6 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
 		mRandom = mNode.fastWeakRandom;
 		start();
-		Logger.debug(this, "Message fetcher started.");
 	}
 
 	@Override
@@ -86,7 +85,6 @@ public final class WoTMessageFetcher extends MessageFetcher {
 
 	@Override
 	protected synchronized void iterate() {
-		Logger.debug(this, "Message fetcher loop running ...");
 		abortAllTransfers();
 		
 		/* FIXME: I think the counterpart of this synchronized() (which ensures that MessageLists are not created when this lock is help) 
@@ -105,8 +103,6 @@ public final class WoTMessageFetcher extends MessageFetcher {
 					break;
 			}
 		}
-
-		Logger.debug(this, "Message fetcher loop finished.");
 	}
 	
 	/**

@@ -57,7 +57,6 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
 		start();
-		Logger.debug(this, "MessageList fetcher started.");
 	}
 
 	@Override
@@ -87,7 +86,6 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 
 	@Override
 	protected synchronized void iterate() {
-		Logger.debug(this, "MessageList fetcher loop running ...");
 		abortAllTransfers();
 		
 		ArrayList<FTIdentity> identitiesToFetchFrom = new ArrayList<FTIdentity>(MAX_PARALLEL_MESSAGELIST_FETCH_COUNT + 1);
@@ -129,8 +127,6 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 				Logger.error(this, "Fetching of messages from " + identity.getNickname() + " failed.", e);
 			}
 		}
-		
-		Logger.debug(this, "MessageList fetcher loop finished.");
 	}
 
 	/**
