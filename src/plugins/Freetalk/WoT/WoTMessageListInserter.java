@@ -1,6 +1,8 @@
 package plugins.Freetalk.WoT;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Random;
 
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.MessageListInserter;
@@ -13,45 +15,48 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.support.io.NativeThread;
 
 public class WoTMessageListInserter extends MessageListInserter {
+	
+	private static final int STARTUP_DELAY = 1 * 60 * 1000;
+	private static final int THREAD_PERIOD = 5 * 60 * 1000; /* FIXME: tweak before release */
+	private static final int MAX_PARALLEL_MESSAGELIST_INSERT_COUNT = 8;
+
+	private final Random mRandom;
 
 	public WoTMessageListInserter(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager,
 			MessageManager myMessageManager) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
+		mRandom = mNode.fastWeakRandom;
 		start();
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
 	protected Collection<ClientGetter> createFetchStorage() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	protected Collection<BaseClientPutter> createInsertStorage() {
-		// TODO Auto-generated method stub
-		return null;
+		return new HashSet<BaseClientPutter>(MAX_PARALLEL_MESSAGELIST_INSERT_COUNT * 2);
 	}
 
 	@Override
 	public int getPriority() {
-		// TODO Auto-generated method stub
-		return 0;
+		return NativeThread.NORM_PRIORITY;
 	}
-
-	@Override
-	protected long getSleepTime() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
+	
 	@Override
 	protected long getStartupDelay() {
-		// TODO Auto-generated method stub
-		return 0;
+		return STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY);
 	}
+	
+	@Override
+	protected long getSleepTime() {
+		return THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
+	}
+
 
 	@Override
 	protected void iterate() {

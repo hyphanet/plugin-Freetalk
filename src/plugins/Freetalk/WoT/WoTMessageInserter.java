@@ -63,7 +63,6 @@ public final class WoTMessageInserter extends MessageInserter {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
 		mRandom = mNode.fastWeakRandom;
 		start();
-		Logger.debug(this, "Message inserter started.");
 	}
 
 	@Override
@@ -93,7 +92,6 @@ public final class WoTMessageInserter extends MessageInserter {
 
 	@Override
 	protected synchronized void iterate() {
-		Logger.debug(this, "Message inserter loop running ...");
 		abortAllTransfers();
 		
 		synchronized(mMessageManager) {
@@ -108,7 +106,6 @@ public final class WoTMessageInserter extends MessageInserter {
 				}
 			}
 		}
-		Logger.debug(this, "Message inserter loop finished.");
 	}
 	
 	/**
