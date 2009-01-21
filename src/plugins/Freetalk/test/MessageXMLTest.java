@@ -3,34 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
 
-import junit.framework.TestCase;
-import plugins.Freetalk.Board;
-import plugins.Freetalk.FTOwnIdentity;
-import plugins.Freetalk.Message;
-import plugins.Freetalk.MessageManager;
-import plugins.Freetalk.MessageXML;
-import plugins.Freetalk.OwnMessage;
-import plugins.Freetalk.Message.Attachment;
-import plugins.Freetalk.WoT.WoTMessageManager;
-import plugins.Freetalk.WoT.WoTOwnIdentity;
-
-import com.db4o.Db4o;
-import com.db4o.ObjectContainer;
-
-import freenet.keys.FreenetURI;
-
-public class MessageXMLTest extends TestCase {
+public class MessageXMLTest extends TestWithDatabase {
 
 	public void testXML() throws Exception {
 /*
-		ObjectContainer db = Db4o.openFile("test.db4o"); // FIXME: This HAS to be flushed 
 		MessageManager messageManager = new WoTMessageManager(db);
 		Board board = new Board("en.board");
 		HashSet<Board> boards = new HashSet<Board>();
