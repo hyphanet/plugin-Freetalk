@@ -22,7 +22,7 @@ import junit.framework.TestCase;
  * 
  * @author xor
  */
-public abstract class DatabaseBasedTest extends TestCase {
+public class DatabaseBasedTest extends TestCase {
 
 	/**
 	 * The database used by this test.
@@ -59,6 +59,13 @@ public abstract class DatabaseBasedTest extends TestCase {
 		db.close();
 		db = null;
 		new File(getDatabaseFilename()).delete();
+	}
+
+	/**
+	 * Does nothing. Just here because JUnit will complain if there are no tests.
+	 */
+	public void testSelf() {
+		
 	}
 
 }
