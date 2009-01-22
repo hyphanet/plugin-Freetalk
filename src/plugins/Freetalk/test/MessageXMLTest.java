@@ -4,7 +4,7 @@
 package plugins.Freetalk.test;
 
 
-public class MessageXMLTest extends TestWithDatabase {
+public class MessageXMLTest extends DatabaseBasedTest {
 
 	public void testXML() throws Exception {
 /*
