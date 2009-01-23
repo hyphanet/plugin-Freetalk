@@ -30,11 +30,11 @@ import freenet.support.Base64;
  */
 public abstract class MessageList implements Iterable<MessageList.MessageReference> {
 	
-	protected final String mID;
+	protected String mID; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
 	
 	protected final FTIdentity mAuthor;
 	
-	protected final int mIndex;
+	protected int mIndex; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
 	
 	
 	/**
@@ -180,9 +180,11 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	}
 	
 	protected transient ObjectContainer db;
+	protected transient MessageManager mMessageManager;
 
-	public void initializeTransient(ObjectContainer myDB) {
+	public void initializeTransient(ObjectContainer myDB, MessageManager myMessageManager) {
 		db = myDB;
+		mMessageManager = myMessageManager;
 	}
 	
 	public synchronized void store() {
@@ -202,6 +204,10 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	
 	public static String calculateID(FTIdentity author, int index) {
 		return index + "@" + Base64.encodeStandard(author.getRequestURI().getRoutingKey());
+	}
+	
+	public static String getIDFromURI(FreenetURI uri) {
+		return uri.getSuggestedEdition() + "@" + Base64.encodeStandard(uri.getRoutingKey());
 	}
 	
 	public String getID() {
