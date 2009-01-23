@@ -121,7 +121,6 @@ public abstract class MessageManager implements Runnable {
 				/* FIXME: Delete the message if this happens. */
 				Logger.error(this, "Exception while storing a downloaded message", ex);
 			}
-
 		}
 	}
 	
@@ -171,7 +170,7 @@ public abstract class MessageManager implements Runnable {
 			Logger.debug(this, "Downloaded a MessageList which we already have: " + list.getURI());
 		}
 		catch(NoSuchMessageListException e) {
-			list.initializeTransient(db);
+			list.initializeTransient(db, this);
 			list.store();
 		}
 	}
@@ -231,9 +230,9 @@ public abstract class MessageManager implements Runnable {
 		if(result.size() == 0)
 			throw new NoSuchMessageListException();
 
-		MessageList m = result.next();
-		m.initializeTransient(db);
-		return m;
+		MessageList list = result.next();
+		list.initializeTransient(db, this);
+		return list;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -286,9 +285,9 @@ public abstract class MessageManager implements Runnable {
 		if(result.size() == 0)
 			throw new NoSuchMessageListException();
 
-		OwnMessageList m = result.next();
-		m.initializeTransient(db);
-		return m;
+		OwnMessageList list = result.next();
+		list.initializeTransient(db, this);
+		return list;
 	}
 	
 	public OwnMessage getOwnMessage(FreenetURI uri) throws NoSuchMessageException {
@@ -402,18 +401,18 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 	/**
-	 * Get the next free index for an OwnMessage. Please synchronize on OwnMessage.class while creating a message, this method does not
-	 * provide synchronization.
+	 * Get the next free index for an OwnMessageList. You have to synchronize on OwnMessageList.class while creating an OwnMessageList, this
+	 * function does not provide synchronization.
 	 */
-//	public int getFreeMessageIndex(FTOwnIdentity messageAuthor)  {
-//		Query q = db.query();
-//		q.constrain(Message.class);
-//		q.descend("mAuthor").constrain(messageAuthor);
-//		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
-//		ObjectSet<Message> result = q.execute();
-//		
-//		return result.size() > 0 ? result.next().getIndex()+1 : 0;
-//	}
+	public int getFreeOwnMessageListIndex(FTOwnIdentity messageAuthor)  {
+		Query q = db.query();
+		q.constrain(OwnMessageList.class);
+		q.descend("mAuthor").constrain(messageAuthor);
+		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
+		ObjectSet<OwnMessageList> result = q.execute();
+		
+		return result.size() > 0 ? result.next().getIndex()+1 : 0;
+	}
 	
 	/**
 	 * Get the next index of which a message from the selected identity is not stored.
@@ -453,6 +452,43 @@ public abstract class MessageManager implements Runnable {
 
 			public void remove() {
 				throw new UnsupportedOperationException();
+			}
+		};
+	}
+	
+	/**
+	 * Returns <code>OwnMessageList</code> objects which are marked as not inserted. It will also return those which are marked as currently
+	 * being inserted, they are not filtered out because in the current implementation the WoTMessageListInserter will cancel all inserts
+	 * before using this function.
+	 */
+	public synchronized Iterable<OwnMessageList> getNotInsertedOwnMessageLists() {
+		return new Iterable<OwnMessageList>(){
+			@SuppressWarnings("unchecked")
+			public Iterator<OwnMessageList> iterator() {
+				return new Iterator<OwnMessageList>() {
+					private Iterator<OwnMessageList> iter;
+
+					{
+						Query query = db.query();
+						query.constrain(OwnMessageList.class);
+						query.descend("iWasInserted").constrain(false);
+						iter = query.execute().iterator();
+					}
+					
+					public boolean hasNext() {
+						return iter.hasNext();
+					}
+
+					public OwnMessageList next() {
+						OwnMessageList next = iter.next();
+						next.initializeTransient(db, self);
+						return next;
+					}
+
+					public void remove() {
+						throw new UnsupportedOperationException();
+					}
+				};
 			}
 		};
 	}

@@ -51,16 +51,14 @@ public abstract class OwnMessageList extends MessageList {
 		}
 	}
 
-	/* Old code from OwnMessage, might be needed here maybe.
 	public synchronized void incrementInsertIndex() {
-		synchronized(OwnMessage.class) {
-			int freeIndex = mMessageManager.getFreeMessageIndex((FTOwnIdentity)mAuthor);
+		synchronized(OwnMessageList.class) {
+			int freeIndex = mMessageManager.getFreeOwnMessageListIndex((FTOwnIdentity)mAuthor);
 			mIndex = Math.max(mIndex+1, freeIndex);
-			mID = generateID(mAuthor, mIndex);
+			mID = calculateID();
 			store();
 		}
 	}
-	*/
 	
 	public synchronized void beginOfInsert() {
 		iAmBeingInserted = true;
