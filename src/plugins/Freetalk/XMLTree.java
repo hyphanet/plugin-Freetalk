@@ -2,6 +2,7 @@ package plugins.Freetalk;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.EmptyStackException;
+import java.util.Hashtable;
 import java.util.Set;
 import java.util.Stack;
 
@@ -36,16 +37,24 @@ public class XMLTree extends DefaultHandler2 {
 
 	public class XMLElement {
 		public final String name;
-		public final Attributes attrs;
+		public final Hashtable<String, String> attrs;
 		public String cdata = null;
 		public MultiValueTable<String, XMLElement> children = new MultiValueTable<String, XMLElement>();
 
 		public XMLElement(String newName, Attributes newAttributes) throws Exception {
 			name = newName;
-			attrs = newAttributes;
-
 			if(!mAllowedElementNames.contains(name))
 				throw new Exception("Unknown element in Message: " + name);
+			
+			/* We have to create a copy of the attributes list because the SAXParser does not preserve the Attributes objects */
+			attrs = new Hashtable<String, String>();
+			for(int i = 0; ; ++i) {
+				String name = newAttributes.getLocalName(i);
+				if(name == null)
+					break;
+				
+				attrs.put(name, newAttributes.getValue(i));
+			}
 		}
 	}
 

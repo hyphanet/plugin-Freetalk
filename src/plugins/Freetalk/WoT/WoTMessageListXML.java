@@ -91,19 +91,19 @@ public final class WoTMessageListXML {
 		
 		rootElement = rootElement.children.get("MessageList");
 		
-		if(Integer.parseInt(rootElement.attrs.getValue("version")) > XML_FORMAT_VERSION)
-			throw new Exception("Version " + rootElement.attrs.getValue("version") + " > " + XML_FORMAT_VERSION);
+		if(Integer.parseInt(rootElement.attrs.get("Version")) > XML_FORMAT_VERSION)
+			throw new Exception("Version " + rootElement.attrs.get("version") + " > " + XML_FORMAT_VERSION);
 		
 		/* The message count is multiplied by 2 because if a message is posted to multiple boards, a MessageReference has to be created for each */
 		ArrayList<MessageList.MessageReference> messages = new ArrayList<MessageList.MessageReference>(rootElement.children.countAll("Message")*2 + 1);
 		
 		for(XMLElement messageTag : rootElement.children.iterateAll("Message")) {
-			String messageID = messageTag.attrs.getValue("ID");
-			FreenetURI messageURI = new FreenetURI(messageTag.attrs.getValue("URI"));
+			String messageID = messageTag.attrs.get("ID");
+			FreenetURI messageURI = new FreenetURI(messageTag.attrs.get("URI"));
 			HashSet<Board> messageBoards = new HashSet<Board>(messageTag.children.countAll("Board") + 1);
 			
 			for(XMLElement boardTag : messageTag.children.iterateAll("Board"))
-				messageBoards.add(messageManager.getOrCreateBoard(boardTag.attrs.getValue("Name")));
+				messageBoards.add(messageManager.getOrCreateBoard(boardTag.attrs.get("Name")));
 			
 			for(Board board : messageBoards)
 				messages.add(new MessageList.MessageReference(messageID, messageURI, board));
