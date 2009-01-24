@@ -92,20 +92,20 @@ public class WoTMessageManager extends MessageManager {
 		}
 		
 		try {
-		while(isRunning) {
-			Logger.debug(this, "Message manager loop running...");
+			while(isRunning) {
+				Logger.debug(this, "Message manager loop running...");
 
-			Logger.debug(this, "Message manager loop finished.");
+				Logger.debug(this, "Message manager loop finished.");
 
-			try {
-				Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
+				try {
+					Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
+				}
+				catch (InterruptedException e)
+				{
+					mThread.interrupt();
+					Logger.debug(this, "Message manager loop interrupted!");
+				}
 			}
-			catch (InterruptedException e)
-			{
-				mThread.interrupt();
-				Logger.debug(this, "Message manager loop interrupted!");
-			}
-		}
 		}
 		
 		finally {
