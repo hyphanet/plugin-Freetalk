@@ -44,6 +44,15 @@ public final class WoTMessageListInserter extends MessageListInserter {
 		mRandom = mNode.fastWeakRandom;
 		start();
 	}
+	
+	@Override
+	protected void clearBeingInsertedFlags() {
+		WoTMessageManager messageManager = (WoTMessageManager)super.mMessageManager;
+		synchronized(messageManager) {
+			for(WoTOwnMessageList list : messageManager.getBeingInsertedOwnMessageLists()) 
+				list.cancelInsert();
+		}
+	}
 
 	@Override
 	protected Collection<ClientGetter> createFetchStorage() {

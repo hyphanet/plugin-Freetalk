@@ -176,6 +176,14 @@ public class WoTMessageManager extends MessageManager {
 		query.descend("iWasInserted").constrain(false);
 		return generalGetOwnMessageListIterable(query);
 	}
+	
+	public synchronized Iterable<WoTOwnMessageList> getBeingInsertedOwnMessageLists() {
+		Query query = db.query();
+		query.constrain(WoTOwnMessageList.class);
+		query.descend("iWasInserted").constrain(false);
+		query.descend("iAmBeingInserted").constrain(true);
+		return generalGetOwnMessageListIterable(query);
+	}
 
 	@SuppressWarnings("unchecked")
 	public synchronized int getUnavailableNewMessageListIndex(FTIdentity identity) {
