@@ -65,6 +65,14 @@ public abstract class OwnMessageList extends MessageList {
 		iAmBeingInserted = true;
 		store();
 	}
+
+	public synchronized void cancelInsert() {
+		if(iWasInserted)
+			throw new RuntimeException("The OwnMessageList was already inserted.");
+		
+		iAmBeingInserted = false;
+		store();
+	}
 	
 	public synchronized boolean wasInserted() {
 		return iWasInserted;
