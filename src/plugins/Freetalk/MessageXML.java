@@ -24,6 +24,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import plugins.Freetalk.Message.Attachment;
+import plugins.Freetalk.WoT.WoTMessage;
 import plugins.Freetalk.WoT.WoTMessageList;
 import plugins.Freetalk.XMLTree.XMLElement;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -215,7 +216,7 @@ public final class MessageXML {
 			}
 		}
 		
-		return Message.construct(messageList, uri, messageID, parentThreadURI, parentMessageURI, messageBoards, messageReplyToBoard,
+		return WoTMessage.construct(messageList, uri, messageID, parentThreadURI, parentMessageURI, messageBoards, messageReplyToBoard,
 									messageList.getAuthor(), messageTitle, messageDate, messageBody, messageAttachments);
 	}
 }

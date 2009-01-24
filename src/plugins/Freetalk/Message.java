@@ -9,7 +9,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.UUID;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -26,7 +25,7 @@ import freenet.support.StringValidityChecker;
  * @author saces, xor
  *
  */
-public class Message implements Comparable<Message> {
+public abstract class Message implements Comparable<Message> {
 	
 	/* Attributes, stored in the database */
 	
@@ -132,21 +131,9 @@ public class Message implements Comparable<Message> {
 	public static String[] getIndexedFields() {
 		return new String[] { "mURI", "mID", "mParentID" };
 	}
-
-	/**
-	 * Constructor for received messages.
-	 */
-	public static Message construct(MessageList newMessageList, FreenetURI myRealURI, String newID, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		if (newMessageList == null || newBoards == null || newAuthor == null)
-			throw new IllegalArgumentException();
-		
-		if (newMessageList.getAuthor() != newAuthor)
-			throw new InvalidParameterException("Trying to construct a message of " + newAuthor + " with a messagelist which belong to a different author: " + newMessageList.getAuthor());
-		
-		return new Message(calculateURI(newMessageList, newID), myRealURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
-	}
-
+	
 	protected Message(FreenetURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+		/* We only assert() instead of throwing because the constructor is protected and the construct() function should verify this */
 		assert(newURI == null || Arrays.equals(newURI.getRoutingKey(), newAuthor.getRequestURI().getRoutingKey()));
 		
 		/* FIXME: assert(newMessageList.getAuthor() == newAuthor); */
@@ -199,16 +186,6 @@ public class Message implements Comparable<Message> {
 		mMessageManager = myMessageManager;
 	}
 	
-	public static String generateRandomID(FTIdentity author) {
-		return HexUtil.bytesToHex(author.getRequestURI().getRoutingKey()) + "@" + UUID.randomUUID();
-	}
-	
-	public static FreenetURI calculateURI(MessageList myMessageList, String myID) {
-		FreenetURI uri = myMessageList.getURI();
-		uri = uri.setDocName(uri.getDocName() + "#" + myID);
-		return uri;
-	}
-	
 	public static String getIDFromURI(FreenetURI uri) {
 		String uuid = uri.getDocName().split("[#]")[1];
 		return HexUtil.bytesToHex(uri.getRoutingKey()) + "@" + uuid;
@@ -224,8 +201,7 @@ public class Message implements Comparable<Message> {
 	}
 	
 	/**
-	 * Get the URI of the message. This returns the SSK URI of the MessageList with the ID of the message attached.
-	 * @see Message.calculateURI()
+	 * Get the URI of the message.
 	 */
 	public FreenetURI getURI() { /* Not synchronized because only OwnMessage might change the URI */
 		return mURI;
