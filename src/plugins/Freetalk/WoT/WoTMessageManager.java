@@ -16,7 +16,6 @@ import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.Message.Attachment;
-import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.ObjectContainer;
@@ -50,7 +49,7 @@ public class WoTMessageManager extends MessageManager {
 	}
 
 	public synchronized WoTOwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
-			String myTitle, String myText, List<Attachment> myAttachments) throws InvalidParameterException {
+			String myTitle, String myText, List<Attachment> myAttachments) throws Exception {
 		WoTOwnMessage m;
 		
 		synchronized(WoTOwnMessage.class) {	/* TODO: Investigate whether this lock is necessary. */
@@ -69,10 +68,10 @@ public class WoTMessageManager extends MessageManager {
 			}
 			
 			m = WoTOwnMessage.construct(parentThread, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
-			
 			m.initializeTransient(db, this);
-			
 			m.store();
+			
+			addMessageToMessageList(m);
 			
 			/* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
 			 * successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
@@ -81,6 +80,28 @@ public class WoTMessageManager extends MessageManager {
 		return m;
 	}
 	
+	public synchronized void addMessageToMessageList(WoTOwnMessage message) throws Exception {
+		Query query = db.query();
+		query.constrain(WoTOwnMessageList.class);
+		query.descend("iWasInserted").constrain(false);
+		query.descend("iAmBeingInserted").constrain(false);
+		
+		for(WoTOwnMessageList list : generalGetOwnMessageListIterable(query)) {
+			try {
+				list.addMessage(message);
+				return;
+			}
+			catch(Exception e) {
+				/* The list is full. */
+			}
+		}
+		
+		WoTOwnIdentity author = (WoTOwnIdentity)message.getAuthor();
+		WoTOwnMessageList list = new WoTOwnMessageList(author, getFreeOwnMessageListIndex(author));
+		list.addMessage(message);
+		list.store();
+	}
+
 	@SuppressWarnings("unchecked")
 	public synchronized Iterable<WoTOwnMessage> getNotInsertedOwnMessages() {
 		return new Iterable<WoTOwnMessage>() {
@@ -114,23 +135,17 @@ public class WoTMessageManager extends MessageManager {
 	}
 	
 	/**
-	 * Returns <code>OwnMessageList</code> objects which are marked as not inserted. It will also return those which are marked as currently
-	 * being inserted, they are not filtered out because in the current implementation the WoTMessageListInserter will cancel all inserts
-	 * before using this function.
+	 * For a database Query of result type <code>ObjectSet\<WoTOwnMessageList\></code>, this function provides an <code>Iterable</code>. The
+	 * iterator of the ObjectSet cannot be used instead because it will not call initializeTransient() on the objects. The iterator which is
+	 * returned by this function takes care of that.
+	 * Please synchronize on the <code>WoTMessageManager</code> when using this function, it is not synchronized itself.
 	 */
-	public synchronized Iterable<WoTOwnMessageList> getNotInsertedOwnMessageLists() {
+	protected Iterable<WoTOwnMessageList> generalGetOwnMessageListIterable(final Query query) {
 		return new Iterable<WoTOwnMessageList>(){
 			@SuppressWarnings("unchecked")
 			public Iterator<WoTOwnMessageList> iterator() {
 				return new Iterator<WoTOwnMessageList>() {
-					private Iterator<WoTOwnMessageList> iter;
-
-					{
-						Query query = db.query();
-						query.constrain(WoTOwnMessageList.class);
-						query.descend("iWasInserted").constrain(false);
-						iter = query.execute().iterator();
-					}
+					private Iterator<WoTOwnMessageList> iter = query.execute().iterator();
 					
 					public boolean hasNext() {
 						return iter.hasNext();
@@ -149,7 +164,19 @@ public class WoTMessageManager extends MessageManager {
 			}
 		};
 	}
-	
+
+	/**
+	 * Returns <code>OwnMessageList</code> objects which are marked as not inserted. It will also return those which are marked as currently
+	 * being inserted, they are not filtered out because in the current implementation the WoTMessageListInserter will cancel all inserts
+	 * before using this function.
+	 */
+	public synchronized Iterable<WoTOwnMessageList> getNotInsertedOwnMessageLists() {
+		Query query = db.query();
+		query.constrain(WoTOwnMessageList.class);
+		query.descend("iWasInserted").constrain(false);
+		return generalGetOwnMessageListIterable(query);
+	}
+
 	@SuppressWarnings("unchecked")
 	public synchronized int getUnavailableNewMessageListIndex(FTIdentity identity) {
 		Query query = db.query();
@@ -163,7 +190,7 @@ public class WoTMessageManager extends MessageManager {
 		
 		return result.next().getIndex() + 1;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public synchronized int getUnavailableOldMessageListIndex(FTIdentity identity) {
 		Query query = db.query();
@@ -186,7 +213,7 @@ public class WoTMessageManager extends MessageManager {
 		
 		return freeIndex>0 ? freeIndex : latestAvailableIndex+1;
 	}
-	
+
 	/**
 	 * Get the next free index for an WoTOwnMessageList. You have to synchronize on WoTOwnMessageList.class while creating an WoTOwnMessageList, this
 	 * function does not provide synchronization.
@@ -201,7 +228,7 @@ public class WoTMessageManager extends MessageManager {
 		
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
-	
+
 	public void run() {
 		Logger.debug(this, "Message manager running.");
 		mThread = Thread.currentThread();
@@ -240,7 +267,7 @@ public class WoTMessageManager extends MessageManager {
 			}
 		}
 	}
-	
+
 	public void terminate() {
 		Logger.debug(this, "Stopping the message manager..."); 
 		isRunning = false;

@@ -1,21 +1,30 @@
 package plugins.Freetalk.WoT;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Random;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageListInserter;
-import plugins.Freetalk.OwnMessageList;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.InsertBlock;
+import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
+import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
 
 public final class WoTMessageListInserter extends MessageListInserter {
@@ -67,14 +76,50 @@ public final class WoTMessageListInserter extends MessageListInserter {
 		abortAllTransfers();
 		
 		synchronized(mMessageManager) {
-			for(OwnMessageList list : mMessageManager.getNotInsertedOwnMessageLists()) {
-				
+			for(WoTOwnMessageList list : mMessageManager.getNotInsertedOwnMessageLists()) {
+				try {
+					/* FIXME: Ensure that after creation of a message list we wait for at least a few minutes so that if the author writes 
+					 * more messages they will be put in the same list */
+					insertMessageList(list);
+				}
+				catch(Exception e) {
+					Logger.error(this, "Insert of WoTMessageList failed", e);
+				}
 			}
 		}
 	}
 	
-	private void insertMessageList(WoTOwnMessageList list) {
+	/**
+	 * You have to synchronize on this <code>WoTMessageListInserter</code> when using this function.
+	 */
+	private void insertMessageList(WoTOwnMessageList list) throws TransformerException, ParserConfigurationException, NoSuchMessageException, IOException, InsertException {
+		Bucket tempB = mTBF.makeBucket(4096); /* TODO: set to a reasonable value */
+		OutputStream os = null;
 		
+		try {
+			os = tempB.getOutputStream();
+			list.beginOfInsert();
+			WoTMessageListXML.encode(mMessageManager, list, os);
+			os.close(); os = null;
+			tempB.setReadOnly();
+
+			/* We do not specifiy a ClientMetaData with mimetype because that would result in the insertion of an additional CHK */
+			InsertBlock ib = new InsertBlock(tempB, null, list.getInsertURI());
+			InsertContext ictx = mClient.getInsertContext(true);
+
+			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
+			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
+			addInsert(pu);
+			tempB = null;
+
+			Logger.debug(this, "Started insert of WoTMessageList from " + list.getAuthor().getNickname());
+		}
+		finally {
+			if(tempB != null)
+				tempB.free();
+			if(os != null)
+				os.close();
+		}
 	}
 
 	@Override
@@ -110,7 +155,6 @@ public final class WoTMessageListInserter extends MessageListInserter {
 		catch(Exception ex) {
 			Logger.error(this, "WoTOwnMessageList insert failed", ex);
 		}
-		
 		finally {
 			removeInsert(state);
 		}

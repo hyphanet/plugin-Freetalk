@@ -68,12 +68,13 @@ public abstract class MessageManager implements Runnable {
 	 * @param myAttachments The Attachments of the new Message. See <code>Message.Attachment</code>. Set to null if the message has none.
 	 * @return The new message.
 	 * @throws InvalidParameterException Invalid board names, invalid title, invalid body.
+	 * @throws Exception 
 	 */
 	public abstract OwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
-			String myTitle, String myText, List<Attachment> myAttachments) throws InvalidParameterException;
+			String myTitle, String myText, List<Attachment> myAttachments) throws InvalidParameterException, Exception;
 
 	public synchronized OwnMessage postMessage(Message myParentMessage, Set<String> myBoards, String myReplyToBoard, FTOwnIdentity myAuthor,
-			String myTitle, String myText, List<Attachment> myAttachments) throws InvalidParameterException {
+			String myTitle, String myText, List<Attachment> myAttachments) throws Exception {
 
 		/* FIXME: Instead of always creating the boards, notify the user that they do not exist and ask if he made a typo */
 		HashSet<Board> boardSet = new HashSet<Board>();
