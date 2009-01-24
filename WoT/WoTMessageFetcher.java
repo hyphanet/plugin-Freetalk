@@ -89,6 +89,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		/* FIXME: I think the counterpart of this synchronized() (which ensures that MessageLists are not created when this lock is help) 
 		 * might be missing. Check through the other code and add it where it's needed. */
 		synchronized(MessageList.class) { 
+			/* TODO: Obtain WoTMessageLists only, not all. */
 			Iterator<MessageList.MessageReference> iter = mMessageManager.notDownloadedMessageIterator();
 			while(iter.hasNext()) {
 				MessageList.MessageReference ref = iter.next();

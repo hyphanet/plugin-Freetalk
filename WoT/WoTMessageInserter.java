@@ -8,15 +8,12 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Random;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
-import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.MessageInserter;
-import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.client.FetchException;
@@ -49,6 +46,8 @@ public final class WoTMessageInserter extends MessageInserter {
 	private static final int THREAD_PERIOD = 5 * 60 * 1000; /* FIXME: tweak before release */
 	private static final int ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT = 10;
 	
+	private final WoTMessageManager mMessageManager;
+	
 	private final Random mRandom;
 	
 	/**
@@ -57,9 +56,10 @@ public final class WoTMessageInserter extends MessageInserter {
 	 */
 	private final Hashtable<BaseClientPutter, String> mMessageIDs = new Hashtable<BaseClientPutter, String>(2*ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT);
 	
-	public WoTMessageInserter(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager,
-			MessageManager myMessageManager) {
+	public WoTMessageInserter(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager,
+			WoTMessageManager myMessageManager) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
+		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
 		start();
 	}
@@ -94,11 +94,10 @@ public final class WoTMessageInserter extends MessageInserter {
 		abortAllTransfers();
 		
 		synchronized(mMessageManager) {
-			Iterator<OwnMessage> messages = mMessageManager.notInsertedMessageIterator();
-			while(messages.hasNext()) {
+			for(WoTOwnMessage message : mMessageManager.getNotInsertedOwnMessages()) {
 				try {
 					/* FIXME: Delay the messages!!!!! And set their date to reflect the delay */
-					insertMessage(messages.next());
+					insertMessage(message);
 				}
 				catch(Exception e) {
 					Logger.error(this, "Insert of message failed", e);

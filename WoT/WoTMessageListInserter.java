@@ -4,10 +4,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Random;
 
-import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageListInserter;
-import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.OwnMessageList;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -25,11 +24,14 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	private static final int THREAD_PERIOD = 5 * 60 * 1000; /* FIXME: tweak before release */
 	private static final int MAX_PARALLEL_MESSAGELIST_INSERT_COUNT = 8;
 
+	private final WoTMessageManager mMessageManager;
+	
 	private final Random mRandom;
 
-	public WoTMessageListInserter(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager,
-			MessageManager myMessageManager) {
+	public WoTMessageListInserter(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager,
+			WoTMessageManager myMessageManager) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
+		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
 		start();
 	}
@@ -61,9 +63,14 @@ public final class WoTMessageListInserter extends MessageListInserter {
 
 
 	@Override
-	protected void iterate() {
-		// TODO Auto-generated method stub
-
+	protected synchronized void iterate() {
+		abortAllTransfers();
+		
+		synchronized(mMessageManager) {
+			for(OwnMessageList list : mMessageManager.getNotInsertedOwnMessageLists()) {
+				
+			}
+		}
 	}
 	
 	private void insertMessageList(WoTOwnMessageList list) {
