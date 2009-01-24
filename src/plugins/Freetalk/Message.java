@@ -189,7 +189,7 @@ public abstract class Message implements Comparable<Message> {
 
 	public static String getIDFromURI(FreenetURI uri) {
 		String uuid = uri.getDocName().split("[#]")[1];
-		return uuid + "@" + Base64.encodeStandard(uri.getRoutingKey());
+		return uuid + "@" + Base64.encode(uri.getRoutingKey());
 	}
 	
 	/**
@@ -197,7 +197,7 @@ public abstract class Message implements Comparable<Message> {
 	 * @throws InvalidParameterException If the ID is not valid. 
 	 */
 	public static void verifyID(FTIdentity author, String id) throws InvalidParameterException {
-		if(id.endsWith(Base64.encodeStandard(author.getRequestURI().getRoutingKey())) == false)
+		if(id.endsWith(Base64.encode(author.getRequestURI().getRoutingKey())) == false)
 			throw new InvalidParameterException("Illegal id:" + id);
 	}
 	
