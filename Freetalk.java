@@ -7,6 +7,8 @@ import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTMessageFetcher;
 import plugins.Freetalk.WoT.WoTMessageInserter;
+import plugins.Freetalk.WoT.WoTMessageListFetcher;
+import plugins.Freetalk.WoT.WoTMessageListInserter;
 import plugins.Freetalk.WoT.WoTMessageManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.ui.FCP.FCPInterface;
@@ -76,6 +78,10 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	private WoTMessageFetcher mMessageFetcher;
 	
 	private WoTMessageInserter mMessageInserter;
+	
+	private WoTMessageListFetcher mMessageListFetcher;
+	
+	private WoTMessageListInserter mMessageListInserter;
 
 	private WebInterface mWebInterface;
 	
@@ -127,6 +133,12 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		
 		Logger.debug(this, "Creating message inserter...");
 		mMessageInserter = new WoTMessageInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT Message Inserter", mIdentityManager, mMessageManager);
+		
+		Logger.debug(this, "Creating message list fetcher...");
+		mMessageListFetcher = new WoTMessageListFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT MessageList Fetcher", mIdentityManager, mMessageManager);
+		
+		Logger.debug(this, "Creating message list inserter...");
+		mMessageListInserter = new WoTMessageListInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT MessageList Inserter", mIdentityManager, mMessageManager);
 
 		Logger.debug(this, "Creating webinterface ...");
 		mWebInterface = new WebInterface(this);
@@ -209,6 +221,20 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		/* TODO: Terminate FCPInterface if necessary */
 		
 		/* WebInterface is stateless and does not need to be terminated */
+		
+		try {
+			mMessageListInserter.terminate();
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
+		
+		try {
+			mMessageListFetcher.terminate();
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
 		
 		try {
 			mMessageInserter.terminate();
