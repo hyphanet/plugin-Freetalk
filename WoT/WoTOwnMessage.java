@@ -29,7 +29,7 @@ public class WoTOwnMessage extends OwnMessage {
 	}
 
 	protected static String generateRandomID(FTIdentity author) {
-		return UUID.randomUUID() + Base64.encodeStandard(author.getRequestURI().getRoutingKey());
+		return UUID.randomUUID() + Base64.encode(author.getRequestURI().getRoutingKey());
 	}
 
 	/**
