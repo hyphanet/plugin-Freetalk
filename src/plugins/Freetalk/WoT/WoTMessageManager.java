@@ -110,7 +110,7 @@ public class WoTMessageManager extends MessageManager {
 					{
 						Query query = db.query();
 						query.constrain(WoTOwnMessage.class);
-						query.descend("iWasInserted").constrain(false);
+						query.descend("mRealURI").constrain(null).identity();
 						iter = query.execute().iterator();
 					}
 

@@ -98,7 +98,7 @@ public abstract class MessageManager implements Runnable {
 		 * function synchronizes on the OwnMessage object. */
 		Query q = db.query();
 		q.constrain(OwnMessage.class);
-		q.descend("iWasInserted").constrain(false);
+		q.descend("mRealURI").constrain(null).identity();
 		return q.execute().size();
 	}
 	
@@ -385,7 +385,7 @@ public abstract class MessageManager implements Runnable {
 			{
 				Query query = db.query();
 				query.constrain(OwnMessage.class);
-				query.descend("iWasInserted").constrain(false);
+				query.descend("mRealURI").constrain(null).identity();
 				iter = query.execute().iterator();
 			}
 			
