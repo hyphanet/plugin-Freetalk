@@ -43,6 +43,7 @@ public abstract class OwnMessage extends Message {
 
 	public synchronized void setMessageList(OwnMessageList newMessageList) {
 		mMessageList = newMessageList;
+		store();
 	}
 
 	public synchronized boolean wasInserted() {
@@ -51,6 +52,7 @@ public abstract class OwnMessage extends Message {
 
 	public synchronized void markAsInserted(FreenetURI myRealURI) {
 		mRealURI = myRealURI;
+		store();
 	}
 
 }
