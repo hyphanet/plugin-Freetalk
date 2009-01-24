@@ -142,14 +142,14 @@ public final class WoTMessageInserter extends MessageInserter {
 	@Override
 	public synchronized void onSuccess(BaseClientPutter state) {
 		try {
-			OwnMessage m = mMessageManager.getOwnMessage(mMessageIDs.get(state));
+			WoTOwnMessage m = (WoTOwnMessage)mMessageManager.getOwnMessage(mMessageIDs.get(state));
 			m.markAsInserted(state.getURI());
+			mMessageManager.addMessageToMessageList(m);
 			Logger.debug(this, "Successful insert of " + m.getURI());
 		}
-		catch(NoSuchMessageException e) {
-			Logger.error(this, "Message insert finished but message was deleted: " + state.getURI());
+		catch(Exception e) {
+			Logger.error(this, "Message insert finished but onSuccess() failed", e);
 		}
-		
 		finally {
 			removeInsert(state);
 		}
