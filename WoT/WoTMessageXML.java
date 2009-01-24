@@ -167,12 +167,8 @@ public final class WoTMessageXML {
 		
 		rootElement = rootElement.children.get("Message");
 		
-		/* FIXME FIXME FIXME
-		 * getValue() returns null even though debugging shows that the value IS there !?!?
-		 * Is this a bug in the parser?
-		if(Integer.parseInt(rootElement.attrs.getValue("version")) > XML_FORMAT_VERSION)
-			throw new Exception("Version " + rootElement.attrs.getValue("version") + " > " + XML_FORMAT_VERSION);
-		*/
+		if(Integer.parseInt(rootElement.attrs.get("version")) > XML_FORMAT_VERSION)
+			throw new Exception("Version " + rootElement.attrs.get("version") + " > " + XML_FORMAT_VERSION);
 		
 		String messageID = rootElement.children.get("MessageID").cdata;
 		
