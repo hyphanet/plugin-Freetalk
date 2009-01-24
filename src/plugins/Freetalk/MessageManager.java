@@ -11,7 +11,6 @@ import java.util.Set;
 
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageList.MessageReference;
-import plugins.Freetalk.WoT.WoTMessageList;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.DuplicateMessageListException;
@@ -124,6 +123,17 @@ public abstract class MessageManager implements Runnable {
 		}
 	}
 	
+	public synchronized void onMessageListReceived(MessageList list) {
+		try {
+			getMessageList(list.getID());
+			Logger.debug(this, "Downloaded a MessageList which we already have: " + list.getURI());
+		}
+		catch(NoSuchMessageListException e) {
+			list.initializeTransient(db, this);
+			list.store();
+		}
+	}
+	
 	/**
 	 * Get a list of all MessageReference objects to the given message ID. References to OwnMessage are not returned.
 	 * Used to mark the references to a message which was downloaded as downloaded.
@@ -162,17 +172,6 @@ public abstract class MessageManager implements Runnable {
 				};
 			}
 		};
-	}
-	
-	public synchronized void onMessageListReceived(WoTMessageList list) {
-		try {
-			getMessageList(list.getID());
-			Logger.debug(this, "Downloaded a MessageList which we already have: " + list.getURI());
-		}
-		catch(NoSuchMessageListException e) {
-			list.initializeTransient(db, this);
-			list.store();
-		}
 	}
 
 	/**
@@ -233,43 +232,6 @@ public abstract class MessageManager implements Runnable {
 		MessageList list = result.next();
 		list.initializeTransient(db, this);
 		return list;
-	}
-	
-	@SuppressWarnings("unchecked")
-	public synchronized int getUnavailableNewMessageListIndex(FTIdentity identity) {
-		Query query = db.query();
-		query.constrain(MessageList.class);
-		query.constrain(OwnMessageList.class).not();
-		query.descend("mIndex").orderDescending(); /* FIXME: This is inefficient! Use a native query instead, we just need to find the maximum */
-		ObjectSet<MessageList> result = query.execute();
-		
-		if(result.size() == 0)
-			return 0;
-		
-		return result.next().getIndex() + 1;
-	}
-	
-	@SuppressWarnings("unchecked")
-	public synchronized int getUnavailableOldMessageListIndex(FTIdentity identity) {
-		Query query = db.query();
-		query.constrain(MessageList.class);
-		query.constrain(OwnMessageList.class).not();
-		query.descend("mIndex").orderDescending(); /* FIXME: This is inefficient! Use a native query instead */
-		ObjectSet<MessageList> result = query.execute();
-		
-		if(result.size() == 0)
-			return 0;
-		
-		int latestAvailableIndex = result.next().getIndex();
-		int freeIndex = latestAvailableIndex - 1;
-		for(; result.hasNext() && result.next().getIndex() == freeIndex; ) {
-			--freeIndex;
-		}
-		
-		/* FIXME: To avoid always checking ALL messagelists for a missing one, store somewhere in the FTIdentity what the latest index is up to
-		 * which all messagelists are available! */
-		
-		return freeIndex>0 ? freeIndex : latestAvailableIndex+1;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -401,20 +363,6 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 	/**
-	 * Get the next free index for an OwnMessageList. You have to synchronize on OwnMessageList.class while creating an OwnMessageList, this
-	 * function does not provide synchronization.
-	 */
-	public int getFreeOwnMessageListIndex(FTOwnIdentity messageAuthor)  {
-		Query q = db.query();
-		q.constrain(OwnMessageList.class);
-		q.descend("mAuthor").constrain(messageAuthor);
-		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
-		ObjectSet<OwnMessageList> result = q.execute();
-		
-		return result.size() > 0 ? result.next().getIndex()+1 : 0;
-	}
-	
-	/**
 	 * Get the next index of which a message from the selected identity is not stored.
 	 */
 //	public int getUnavailableMessageIndex(FTIdentity messageAuthor) {
@@ -452,43 +400,6 @@ public abstract class MessageManager implements Runnable {
 
 			public void remove() {
 				throw new UnsupportedOperationException();
-			}
-		};
-	}
-	
-	/**
-	 * Returns <code>OwnMessageList</code> objects which are marked as not inserted. It will also return those which are marked as currently
-	 * being inserted, they are not filtered out because in the current implementation the WoTMessageListInserter will cancel all inserts
-	 * before using this function.
-	 */
-	public synchronized Iterable<OwnMessageList> getNotInsertedOwnMessageLists() {
-		return new Iterable<OwnMessageList>(){
-			@SuppressWarnings("unchecked")
-			public Iterator<OwnMessageList> iterator() {
-				return new Iterator<OwnMessageList>() {
-					private Iterator<OwnMessageList> iter;
-
-					{
-						Query query = db.query();
-						query.constrain(OwnMessageList.class);
-						query.descend("iWasInserted").constrain(false);
-						iter = query.execute().iterator();
-					}
-					
-					public boolean hasNext() {
-						return iter.hasNext();
-					}
-
-					public OwnMessageList next() {
-						OwnMessageList next = iter.next();
-						next.initializeTransient(db, self);
-						return next;
-					}
-
-					public void remove() {
-						throw new UnsupportedOperationException();
-					}
-				};
 			}
 		};
 	}

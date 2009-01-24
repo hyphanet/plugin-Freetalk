@@ -5,20 +5,23 @@ package plugins.Freetalk.WoT;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
 import plugins.Freetalk.Board;
+import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageManager;
-import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+import com.db4o.query.Query;
 
 import freenet.support.Executor;
 import freenet.support.Logger;
@@ -76,6 +79,127 @@ public class WoTMessageManager extends MessageManager {
 		}
 		
 		return m;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public synchronized Iterable<WoTOwnMessage> getNotInsertedOwnMessages() {
+		return new Iterable<WoTOwnMessage>() {
+			public Iterator<WoTOwnMessage> iterator() {
+				return new Iterator<WoTOwnMessage>() {
+					private Iterator<WoTOwnMessage> iter;
+
+					{
+						Query query = db.query();
+						query.constrain(WoTOwnMessage.class);
+						query.descend("iWasInserted").constrain(false);
+						iter = query.execute().iterator();
+					}
+
+					public boolean hasNext() {
+						return iter.hasNext();
+					}
+
+					public WoTOwnMessage next() {
+						WoTOwnMessage next = iter.next();
+						next.initializeTransient(db, self);
+						return next;
+					}
+
+					public void remove() {
+						throw new UnsupportedOperationException();
+					}
+				};
+			}
+		};
+	}
+	
+	/**
+	 * Returns <code>OwnMessageList</code> objects which are marked as not inserted. It will also return those which are marked as currently
+	 * being inserted, they are not filtered out because in the current implementation the WoTMessageListInserter will cancel all inserts
+	 * before using this function.
+	 */
+	public synchronized Iterable<WoTOwnMessageList> getNotInsertedOwnMessageLists() {
+		return new Iterable<WoTOwnMessageList>(){
+			@SuppressWarnings("unchecked")
+			public Iterator<WoTOwnMessageList> iterator() {
+				return new Iterator<WoTOwnMessageList>() {
+					private Iterator<WoTOwnMessageList> iter;
+
+					{
+						Query query = db.query();
+						query.constrain(WoTOwnMessageList.class);
+						query.descend("iWasInserted").constrain(false);
+						iter = query.execute().iterator();
+					}
+					
+					public boolean hasNext() {
+						return iter.hasNext();
+					}
+
+					public WoTOwnMessageList next() {
+						WoTOwnMessageList next = iter.next();
+						next.initializeTransient(db, self);
+						return next;
+					}
+
+					public void remove() {
+						throw new UnsupportedOperationException();
+					}
+				};
+			}
+		};
+	}
+	
+	@SuppressWarnings("unchecked")
+	public synchronized int getUnavailableNewMessageListIndex(FTIdentity identity) {
+		Query query = db.query();
+		query.constrain(WoTMessageList.class);
+		query.constrain(WoTOwnMessageList.class).not();
+		query.descend("mIndex").orderDescending(); /* FIXME: This is inefficient! Use a native query instead, we just need to find the maximum */
+		ObjectSet<WoTMessageList> result = query.execute();
+		
+		if(result.size() == 0)
+			return 0;
+		
+		return result.next().getIndex() + 1;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public synchronized int getUnavailableOldMessageListIndex(FTIdentity identity) {
+		Query query = db.query();
+		query.constrain(WoTMessageList.class);
+		query.constrain(WoTOwnMessageList.class).not();
+		query.descend("mIndex").orderDescending(); /* FIXME: This is inefficient! Use a native query instead */
+		ObjectSet<WoTMessageList> result = query.execute();
+		
+		if(result.size() == 0)
+			return 0;
+		
+		int latestAvailableIndex = result.next().getIndex();
+		int freeIndex = latestAvailableIndex - 1;
+		for(; result.hasNext() && result.next().getIndex() == freeIndex; ) {
+			--freeIndex;
+		}
+		
+		/* FIXME: To avoid always checking ALL messagelists for a missing one, store somewhere in the FTIdentity what the latest index is up to
+		 * which all messagelists are available! */
+		
+		return freeIndex>0 ? freeIndex : latestAvailableIndex+1;
+	}
+	
+	/**
+	 * Get the next free index for an WoTOwnMessageList. You have to synchronize on WoTOwnMessageList.class while creating an WoTOwnMessageList, this
+	 * function does not provide synchronization.
+	 */
+	@SuppressWarnings("unchecked")
+	public int getFreeOwnMessageListIndex(WoTOwnIdentity messageAuthor)  {
+		Query q = db.query();
+		q.constrain(WoTOwnMessageList.class);
+		q.descend("mAuthor").constrain(messageAuthor);
+		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
+		ObjectSet<WoTOwnMessageList> result = q.execute();
+		
+		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
 	
 	public void run() {

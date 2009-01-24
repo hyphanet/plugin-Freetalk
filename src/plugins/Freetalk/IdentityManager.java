@@ -18,7 +18,7 @@ import freenet.support.Logger;
  * @author saces, xor
  * 
  */
-public abstract class IdentityManager implements PrioRunnable, Iterable<FTIdentity> {
+public abstract class IdentityManager implements PrioRunnable {
 	
 	protected final ObjectContainer db;
 
@@ -35,32 +35,7 @@ public abstract class IdentityManager implements PrioRunnable, Iterable<FTIdenti
 		mExecutor = null;
 	}
 
-	@SuppressWarnings("unchecked")
-	public synchronized Iterator<FTIdentity> iterator() {
-		return new Iterator<FTIdentity> () {
-			Iterator<FTIdentity> iter;
-			
-			{
-				 Query q = db.query();
-				 q.constrain(FTIdentity.class);
-				 iter = q.execute().iterator();
-			}
-			
-			public boolean hasNext() {
-				return iter.hasNext();
-			}
-
-			public FTIdentity next() {
-				FTIdentity i = iter.next();
-				i.initializeTransient(db, IdentityManager.this);
-				return i;
-			}
-
-			public void remove() {
-				throw new UnsupportedOperationException("Cannot delete identities.");
-			}
-		};
-	}
+	public abstract Iterable<? extends FTIdentity> getAllIdentities();
 	
 	public synchronized int countKnownIdentities() {
 		/* FIXME: This should probably take an FTOwnIdentity as param and count the identities seen by it */

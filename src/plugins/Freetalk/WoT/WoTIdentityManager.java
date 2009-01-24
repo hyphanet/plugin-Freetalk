@@ -4,6 +4,7 @@
 package plugins.Freetalk.WoT;
 
 import java.util.Calendar;
+import java.util.Iterator;
 import java.util.TimeZone;
 
 import plugins.Freetalk.FTIdentity;
@@ -63,6 +64,37 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	
 	public WoTIdentityManager() {
 		super();
+	}
+	
+	@SuppressWarnings("unchecked")
+	public synchronized Iterable<WoTIdentity> getAllIdentities() {
+		return new Iterable<WoTIdentity>() {
+			public Iterator<WoTIdentity> iterator() {
+				return new Iterator<WoTIdentity> () {
+					Iterator<WoTIdentity> iter;
+
+					{
+						Query q = db.query();
+						q.constrain(WoTIdentity.class);
+						iter = q.execute().iterator();
+					}
+
+					public boolean hasNext() {
+						return iter.hasNext();
+					}
+
+					public WoTIdentity next() {
+						WoTIdentity i = iter.next();
+						i.initializeTransient(db, WoTIdentityManager.this);
+						return i;
+					}
+
+					public void remove() {
+						throw new UnsupportedOperationException("Cannot delete identities.");
+					}
+				};
+			}
+		};
 	}
 
 	@SuppressWarnings("unchecked")

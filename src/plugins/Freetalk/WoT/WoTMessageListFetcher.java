@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.MessageListFetcher;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -45,7 +44,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	private final WoTMessageManager mMessageManager;
 	
 	/* FIXME FIXME FIXME: Use LRUQueue instead. ArrayBlockingQueue does not use a Hashset for contains()! */
-	private final ArrayBlockingQueue<FTIdentity> mIdentities = new ArrayBlockingQueue<FTIdentity>(MAX_PARALLEL_MESSAGELIST_FETCH_COUNT * 10); /* FIXME: figure out a decent size */
+	private final ArrayBlockingQueue<WoTIdentity> mIdentities = new ArrayBlockingQueue<WoTIdentity>(MAX_PARALLEL_MESSAGELIST_FETCH_COUNT * 10); /* FIXME: figure out a decent size */
 	
 	// private static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 	
@@ -88,9 +87,9 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	protected synchronized void iterate() {
 		abortAllTransfers();
 		
-		ArrayList<FTIdentity> identitiesToFetchFrom = new ArrayList<FTIdentity>(MAX_PARALLEL_MESSAGELIST_FETCH_COUNT + 1);
+		ArrayList<WoTIdentity> identitiesToFetchFrom = new ArrayList<WoTIdentity>(MAX_PARALLEL_MESSAGELIST_FETCH_COUNT + 1);
 		
-		for(FTIdentity identity : mIdentityManager) {
+		for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
 			synchronized(mIdentities) {
 				if(!mIdentities.contains(identity) && mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
 					identitiesToFetchFrom.add(identity);
@@ -106,7 +105,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		if(identitiesToFetchFrom.size() == 0) {
 			 mIdentities.clear();
 			
-			 for(FTIdentity identity : mIdentityManager) {
+			 for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
 				 synchronized(mIdentities) {
 					 if(mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
 						 identitiesToFetchFrom.add(identity);
@@ -119,7 +118,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 			 }
 		}
 		
-		for(FTIdentity identity : identitiesToFetchFrom) {
+		for(WoTIdentity identity : identitiesToFetchFrom) {
 			try {
 				fetchMessageLists((WoTIdentity)identity);
 			}

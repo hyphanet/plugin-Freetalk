@@ -16,5 +16,13 @@ public final class WoTOwnMessageList extends OwnMessageList {
 		return WoTMessageList.assembleURI(baseURI, index);
 	}
 
+	public synchronized void incrementInsertIndex() {
+		synchronized(WoTOwnMessageList.class) {
+			int freeIndex = ((WoTMessageManager)mMessageManager).getFreeOwnMessageListIndex((WoTOwnIdentity)mAuthor);
+			mIndex = Math.max(mIndex+1, freeIndex);
+			mID = calculateID();
+			store();
+		}
+	}
 
 }
