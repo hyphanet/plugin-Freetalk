@@ -12,7 +12,6 @@ import java.util.Random;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageFetcher;
 import plugins.Freetalk.MessageList;
-import plugins.Freetalk.MessageXML;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -143,7 +142,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		
 		try {
 			WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
-			Message message = MessageXML.decode(mMessageManager, result.asBucket().getInputStream(), list, state.getURI());
+			Message message = WoTMessageXML.decode(mMessageManager, result.asBucket().getInputStream(), list, state.getURI());
 			mMessageManager.onMessageReceived(message);
 		}
 		catch (Exception e) {

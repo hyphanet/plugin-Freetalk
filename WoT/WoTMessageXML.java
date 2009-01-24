@@ -1,4 +1,4 @@
-package plugins.Freetalk;
+package plugins.Freetalk.WoT;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -23,9 +23,12 @@ import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import plugins.Freetalk.Board;
+import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.Message;
+import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.XMLTree;
 import plugins.Freetalk.Message.Attachment;
-import plugins.Freetalk.WoT.WoTMessage;
-import plugins.Freetalk.WoT.WoTMessageList;
 import plugins.Freetalk.XMLTree.XMLElement;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
@@ -33,7 +36,7 @@ import freenet.keys.FreenetURI;
 /**
  * Generator & parsers of message XML. Compatible to the FMS message XML format.
  */
-public final class MessageXML {
+public final class WoTMessageXML {
 	private static final int XML_FORMAT_VERSION = 1;
 	
 	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
