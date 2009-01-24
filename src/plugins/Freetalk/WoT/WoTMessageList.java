@@ -33,7 +33,7 @@ public class WoTMessageList extends MessageList {
 		baseURI = baseURI.setKeyType("USK");
 		baseURI = baseURI.setDocName(Freetalk.PLUGIN_TITLE + "|" + "MessageList");
 		baseURI = baseURI.setSuggestedEdition(index);
-		baseURI = baseURI.setMetaString(new String[] {"messages.xml"});
+		baseURI = baseURI.setMetaString(null);
 		return baseURI;
 	}
 
