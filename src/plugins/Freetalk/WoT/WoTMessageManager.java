@@ -96,6 +96,7 @@ public class WoTMessageManager extends MessageManager {
 		
 		WoTOwnIdentity author = (WoTOwnIdentity)message.getAuthor();
 		WoTOwnMessageList list = new WoTOwnMessageList(author, getFreeOwnMessageListIndex(author));
+		list.initializeTransient(db, this);
 		list.addMessage(message);
 		list.store();
 	}
