@@ -21,7 +21,7 @@ public abstract class OwnMessageList extends MessageList {
 	public final class OwnMessageReference extends MessageReference {
 		
 		public OwnMessageReference(OwnMessage myMessage) {
-			super(myMessage.getID(), myMessage.getURI(), null);
+			super(myMessage.getID(), myMessage.getRealURI(), null);
 		}
 
 	}
@@ -48,6 +48,7 @@ public abstract class OwnMessageList extends MessageList {
 				throw new IllegalArgumentException("Trying to add a message with wrong author " + newMessage.getAuthor() + " to an own message list of " + mAuthor);
 			
 			OwnMessageReference ref = new OwnMessageReference(newMessage);
+			ref.initializeTransient(db);
 			mMessages.add(ref);
 			if(mMessages.size() > 1 && fitsIntoContainer() == false) {
 				mMessages.remove(ref);
