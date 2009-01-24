@@ -185,9 +185,10 @@ public abstract class Message implements Comparable<Message> {
 		db = myDB;
 		mMessageManager = myMessageManager;
 	}
-	
+
 	public static String getIDFromURI(FreenetURI uri) {
 		String uuid = uri.getDocName().split("[#]")[1];
+		/* FIXME: Use Base64 and put the author routing key after the @, that makes more sense */
 		return HexUtil.bytesToHex(uri.getRoutingKey()) + "@" + uuid;
 	}
 	
@@ -195,6 +196,7 @@ public abstract class Message implements Comparable<Message> {
 	 * Verifies that the given message ID begins with the routing key of the author.
 	 * @throws InvalidParameterException If the ID is not valid. 
 	 */
+	/* FIXME: Use Base64 and put the author routing key after the @, that makes more sense */
 	public static void verifyID(FTIdentity author, String id) throws InvalidParameterException {
 		if(id.startsWith(HexUtil.bytesToHex(author.getRequestURI().getRoutingKey())) == false)
 			throw new InvalidParameterException("Illegal id:" + id);
