@@ -33,12 +33,10 @@ public final class OwnMessage extends Message {
 	
 
 	/**
-	 * Generate the insert URI for a message. The URI is constructed as:
-	 * CHK@hash/Freetalk|Message|id.xml
-	 * where id is the message ID.
+	 * Generate the insert URI for a message.
 	 */
 	public synchronized FreenetURI getInsertURI() {
-		return new FreenetURI("CHK", Freetalk.PLUGIN_TITLE + "|" + "Message" + "|" + mID + ".xml");
+		return FreenetURI.EMPTY_CHK_URI;
 	}
 	
 	/**
