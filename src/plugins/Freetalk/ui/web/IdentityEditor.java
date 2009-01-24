@@ -74,7 +74,6 @@ public final class IdentityEditor extends WebPageImpl {
 
 		HTMLNode box = getContentBox("Known Identities");
 
-		Iterator<FTIdentity> identities = mFreetalk.getIdentityManager().iterator();
 
 		HTMLNode identitiesTable = box.addChild("table", "border", "0");
 		HTMLNode row = identitiesTable.addChild("tr");
@@ -82,10 +81,10 @@ public final class IdentityEditor extends WebPageImpl {
 		row.addChild("th", "Freetalk address");
 		//row.addChild("th");
 
-		while (identities.hasNext()) {
-			FTIdentity id = identities.next();
+		for(FTIdentity id : mFreetalk.getIdentityManager().getAllIdentities()) {
 			if (id instanceof FTOwnIdentity)
 				continue;
+
 			row = identitiesTable.addChild("tr");
 			row.addChild("td", id.getNickname());
 			row.addChild("td", id.getFreetalkAddress());
