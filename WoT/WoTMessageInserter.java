@@ -145,7 +145,7 @@ public final class WoTMessageInserter extends MessageInserter {
 			WoTOwnMessage m = (WoTOwnMessage)mMessageManager.getOwnMessage(mMessageIDs.get(state));
 			m.markAsInserted(state.getURI());
 			mMessageManager.addMessageToMessageList(m);
-			Logger.debug(this, "Successful insert of " + m.getURI());
+			Logger.debug(this, "Successful insert of " + m.getRealURI());
 		}
 		catch(Exception e) {
 			Logger.error(this, "Message insert finished but onSuccess() failed", e);
