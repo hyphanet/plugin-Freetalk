@@ -17,6 +17,7 @@ import com.db4o.ObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
+import freenet.support.Base64;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
@@ -188,17 +189,15 @@ public abstract class Message implements Comparable<Message> {
 
 	public static String getIDFromURI(FreenetURI uri) {
 		String uuid = uri.getDocName().split("[#]")[1];
-		/* FIXME: Use Base64 and put the author routing key after the @, that makes more sense */
-		return HexUtil.bytesToHex(uri.getRoutingKey()) + "@" + uuid;
+		return uuid + "@" + Base64.encodeStandard(uri.getRoutingKey());
 	}
 	
 	/**
 	 * Verifies that the given message ID begins with the routing key of the author.
 	 * @throws InvalidParameterException If the ID is not valid. 
 	 */
-	/* FIXME: Use Base64 and put the author routing key after the @, that makes more sense */
 	public static void verifyID(FTIdentity author, String id) throws InvalidParameterException {
-		if(id.startsWith(HexUtil.bytesToHex(author.getRequestURI().getRoutingKey())) == false)
+		if(id.endsWith(Base64.encodeStandard(author.getRequestURI().getRoutingKey())) == false)
 			throw new InvalidParameterException("Illegal id:" + id);
 	}
 	

@@ -12,7 +12,7 @@ import plugins.Freetalk.Message;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
-import freenet.support.HexUtil;
+import freenet.support.Base64;
 
 public class WoTOwnMessage extends OwnMessage {
 
@@ -28,9 +28,8 @@ public class WoTOwnMessage extends OwnMessage {
 			  newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
 
-	/* FIXME: Use Base64 and put the author routing key after the @, that makes more sense */
 	protected static String generateRandomID(FTIdentity author) {
-		return HexUtil.bytesToHex(author.getRequestURI().getRoutingKey()) + "@" + UUID.randomUUID();
+		return UUID.randomUUID() + Base64.encodeStandard(author.getRequestURI().getRoutingKey());
 	}
 
 	/**
