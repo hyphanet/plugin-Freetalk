@@ -17,7 +17,6 @@ import javax.xml.transform.TransformerException;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.MessageInserter;
 import plugins.Freetalk.MessageManager;
-import plugins.Freetalk.MessageXML;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.client.FetchException;
@@ -117,7 +116,7 @@ public final class WoTMessageInserter extends MessageInserter {
 		
 		try {
 			os = tempB.getOutputStream();
-			MessageXML.encode(m, os);
+			WoTMessageXML.encode(m, os);
 			os.close(); os = null;
 			tempB.setReadOnly();
 
