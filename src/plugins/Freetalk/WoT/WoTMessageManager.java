@@ -46,11 +46,11 @@ public class WoTMessageManager extends MessageManager {
 		super(myDB);
 	}
 
-	public synchronized OwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
+	public synchronized WoTOwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
 			String myTitle, String myText, List<Attachment> myAttachments) throws InvalidParameterException {
-		OwnMessage m;
+		WoTOwnMessage m;
 		
-		synchronized(OwnMessage.class) {	/* TODO: Investigate whether this lock is necessary. */
+		synchronized(WoTOwnMessage.class) {	/* TODO: Investigate whether this lock is necessary. */
 			Date date = mCalendar.getTime();
 			Message parentThread = null;
 			try {
