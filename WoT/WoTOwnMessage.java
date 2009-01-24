@@ -16,7 +16,7 @@ import freenet.support.HexUtil;
 
 public class WoTOwnMessage extends OwnMessage {
 
-	public static OwnMessage construct(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor,
+	public static WoTOwnMessage construct(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor,
 			String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		return new WoTOwnMessage(newParentThread, newParentMessage, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
