@@ -8,21 +8,15 @@ import java.util.List;
 import java.util.Set;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
-
 import freenet.keys.FreenetURI;
 
-public final class OwnMessage extends Message {
-	
-	public static OwnMessage construct(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor,
-			String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		return new OwnMessage(newParentThread, newParentMessage, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
-	}
+public abstract class OwnMessage extends Message {
 
-	protected OwnMessage(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor,
-			String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		super(null, null, generateRandomID(newAuthor), null, (newParentThread == null ? null : newParentThread.getURI()),
-			  (newParentMessage == null ? null : newParentMessage.getURI()),
-			  newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
+	protected OwnMessage(FreenetURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, FreenetURI newThreadURI,
+			FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate,
+			String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+		super(newURI, newRealURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText,
+				newAttachments);
 	}
 
 	/* Override for synchronization */
@@ -30,15 +24,12 @@ public final class OwnMessage extends Message {
 	public synchronized FreenetURI getURI() {
 		return mURI;
 	}
-	
 
 	/**
 	 * Generate the insert URI for a message.
 	 */
-	public synchronized FreenetURI getInsertURI() {
-		return FreenetURI.EMPTY_CHK_URI;
-	}
-	
+	public abstract FreenetURI getInsertURI();
+
 	/**
 	 * @throws RuntimeException If the message was not inserted yet and therefore the real URI is unknown.
 	 * @return The CHK URI of the message.
@@ -53,11 +44,11 @@ public final class OwnMessage extends Message {
 	public synchronized void setMessageList(OwnMessageList newMessageList) {
 		mMessageList = newMessageList;
 	}
-	
+
 	public synchronized boolean wasInserted() {
 		return (mRealURI != null);
 	}
-	
+
 	public synchronized void markAsInserted(FreenetURI myRealURI) {
 		mRealURI = myRealURI;
 	}

@@ -65,7 +65,7 @@ public class WoTMessageManager extends MessageManager {
 
 			}
 			
-			m = OwnMessage.construct(parentThread, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
+			m = WoTOwnMessage.construct(parentThread, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
 			
 			m.initializeTransient(db, this);
 			
