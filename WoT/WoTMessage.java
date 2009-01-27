@@ -11,6 +11,29 @@ import plugins.Freetalk.MessageList;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 
+/**
+ * This is the current implementation of the message class in Freetalk using the WoT plugin.
+ * 
+ * WoTMessages are inserted by Freetalk with a CHK URI as plaintext XML. The CHK URIs are published in message lists which are inserted under the
+ * SSK URI of the message author. It is important to know that CHK URIs are not signed and SSK URIs are signed. One would assume that it would
+ * make sense to insert messages as SSK so you can hand over the URI of a message to someone else and he can verify that they really come from
+ * the identity which is specified in the XML. But signed URIs of messages are provided by Freetalk by appending the message ID of the chosen
+ * message to the SSK URI of the message list in which it is published (separated by "#").
+ * 
+ * The reason why messages are inserted as CHK is the following: A single SSK block is limited to 1 KiB in size. This will be exceeded by most
+ * messages due to quoting. When inserting something as SSK which is more than 1 KiB, an additional CHK block will be inserted which is 32 KiB.
+ * Therefore, if messages were inserted as SSK, most of them would be a SSK block and a CHK block. So downloading a message would usually result
+ * in the lookup of two blocks instead of one and lookups are very expensive for the network.
+ * 
+ * Further, it does even more make sense to insert messages as CHK when it comes to message lists: Message lists tell the URIs of several messages
+ * and the board in which they were posted. Message lists are necessary because we need to provide the user of Freetalk with the ability to chose
+ * the board from which he wants to download messages. If that was not possible, everyone would download all messages which would generate too
+ * much load on the network. Because message lists are downloaded before the messages, they have to be inserted as SSK/USK anyway (we need to be
+ * able to guess the URIs of new message lists), so the message lists are signed already and there is no need anymore to sign the messages, 
+ * therefore messages can be inserted as CHK.
+ * 
+ * @author xor
+ */
 public final class WoTMessage extends Message {
 
 	/**

@@ -18,13 +18,16 @@ import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
-import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 
 /**
+ * A Freetalk message. This class is supposed to be used by the UI directly for reading messages. The UI can obtain message objects by querying
+ * them from a <code>MessageManager</code>. A message has the usual attributes (author, boards to which it is posted, etc.) one would assume.
+ * There are two unique ways to reference a message: It's URI and it's message ID. The URI is to be given to the user if he wants to tell other
+ * people about the message, the message ID is to be used for querying the database for a message in a fast way. 
+ * 
  * @author saces, xor
- *
  */
 public abstract class Message implements Comparable<Message> {
 	
@@ -33,12 +36,15 @@ public abstract class Message implements Comparable<Message> {
 	/**
 	 * The URI of this message. Format: SSK@author_ssk_uri/Freetalk|MessageList-index.xml#uuid
 	 * The "uuid" in the URI is the part after the "@" in the message ID.
+	 * The message list
 	 */
 	protected FreenetURI mURI; /* Not final because for OwnMessages it is set after the MessageList was inserted */
 	
 	/**
 	 * The CHK URI of the message. Null until the message was inserted and the URI is known.
 	 */
+	/* FIXME: Rename to "mUnsignedURI" so that we do not need to explain that messages are inserted as CHK in this class. We do not want to 
+	 * explain that here because this class is abstract and could be implemented with mRealURI being the same as mURI */
 	protected FreenetURI mRealURI; /* Not final because for OwnMessages it is set after the Message was inserted */
 	
 	/**
