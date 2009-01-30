@@ -461,21 +461,7 @@ public final class Board implements Comparable<Board> {
 	 */
 	/* FIXME: This function counts all replies, not only the ones which the viewer wants to see. */
 	public synchronized int threadReplyCount(FTOwnIdentity viewer, Message thread) {
-		Query q = db.query();
-		
-		/* FIXME: Check whether this query is fast. I think it should rather first query for objects of Message.class which have mThread == thread
-		 * and then check whether a BoardMessageLink to this board exists. */
-		q.constrain(BoardMessageLink.class);
-		q.descend("mBoard").constrain(this);
-		try {
-			Query sub = q.descend("mMessage");
-			sub.constrain(thread).not();
-			sub.descend("mThreadID").constrain(thread.isThread() ? thread.getID() : thread.getParentThreadID());
-		} catch (NoSuchMessageException e) {
-			Logger.error(this, "Message is no thread but parentThreadURI == null : " + thread.getURI());
-			return -1; /* To make the users report this bug */
-		}
-		return q.execute().size();
+		return getAllThreadReplies(thread).size();
 	}
 	
 	/**
@@ -492,8 +478,8 @@ public final class Board implements Comparable<Board> {
 		q.descend("mBoard").constrain(this);
 		try {
 			Query sub = q.descend("mMessage");
-			sub.constrain(thread).not();
 			sub.descend("mThreadID").constrain(thread.isThread() ? thread.getID() : thread.getParentThreadID());
+			sub.constrain(thread).identity().not();
 		} catch (NoSuchMessageException e) {
 			throw new RuntimeException( "Message is no thread but parentThreadURI == null : " + thread.getURI());
 		}
