@@ -58,6 +58,10 @@ public abstract class OwnMessageList extends MessageList {
 			store();
 		}
 	}
+	
+	public synchronized int getMessageCount() {
+		return mMessages.size();
+	}
 
 	protected abstract boolean fitsIntoContainer();
 	

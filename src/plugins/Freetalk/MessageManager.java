@@ -93,13 +93,23 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 
+	@SuppressWarnings("unchecked")
 	public synchronized int countUnsentMessages() {
 		/* FIXME: This is not fully synchronized: MessageInserter calls OwnMessage.wasInserted() to mark a message as inserted and that
 		 * function synchronizes on the OwnMessage object. */
 		Query q = db.query();
 		q.constrain(OwnMessage.class);
 		q.descend("mRealURI").constrain(null).identity();
-		return q.execute().size();
+		int unsentCount = q.execute().size();
+		
+		q = db.query();
+		q.constrain(OwnMessageList.class);
+		q.descend("iWasInserted").constrain(false);
+		ObjectSet<OwnMessageList> notInsertedLists = q.execute();
+		for(OwnMessageList list : notInsertedLists)
+			unsentCount += list.getMessageCount();
+		
+		return unsentCount;
 	}
 	
 	public synchronized void onMessageReceived(Message message) {
