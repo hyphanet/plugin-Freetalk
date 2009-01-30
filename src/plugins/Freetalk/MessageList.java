@@ -209,11 +209,11 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	}
 	
 	public static String calculateID(FTIdentity author, int index) {
-		return index + "@" + Base64.encodeStandard(author.getRequestURI().getRoutingKey());
+		return index + "@" + Base64.encode(author.getRequestURI().getRoutingKey());
 	}
 	
 	public static String getIDFromURI(FreenetURI uri) {
-		return uri.getSuggestedEdition() + "@" + Base64.encodeStandard(uri.getRoutingKey());
+		return uri.getSuggestedEdition() + "@" + Base64.encode(uri.getRoutingKey());
 	}
 	
 	public String getID() {
