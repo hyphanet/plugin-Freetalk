@@ -36,7 +36,7 @@ public final class WoTMessageURI extends MessageURI {
 		
 		mFreenetURI = new FreenetURI(tokens[0]);
 		String keyType = mFreenetURI.getKeyType();
-		if(!keyType.equalsIgnoreCase("SSK"))
+		if(!keyType.equalsIgnoreCase("SSK") && !keyType.equalsIgnoreCase("USK")) /* FIXME: USK is only allowed for legacy because there are broken message lists in the network. Remove */
 			throw new IllegalArgumentException("Trying to create a WoTMessageURI with illegal key type " + keyType);
 		
 		try {
