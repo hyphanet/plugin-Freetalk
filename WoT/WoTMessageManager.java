@@ -203,6 +203,7 @@ public class WoTMessageManager extends MessageManager {
 		Query query = db.query();
 		query.constrain(WoTMessageList.class);
 		query.constrain(WoTOwnMessageList.class).not();
+		query.descend("mAuthor").constrain(identity);
 		query.descend("mIndex").orderDescending(); /* FIXME: This is inefficient! Use a native query instead */
 		ObjectSet<WoTMessageList> result = query.execute();
 		
