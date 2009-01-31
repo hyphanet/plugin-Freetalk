@@ -20,7 +20,7 @@ public final class WoTMessageURI extends MessageURI {
 		if(!keyType.equals("USK") || keyType.equals("SSK"))
 			throw new IllegalArgumentException("Trying to create a WoTMessageURI with illegal key type " + keyType);
 		
-		mFreenetURI = myFreenetURI.setKeyType("SSK"); /* Just to make sure */
+		mFreenetURI = myFreenetURI.sskForUSK(); /* Just to make sure */
 		mMessageID = myMessageID;
 		if(mMessageID.endsWith(Base64.encode(mFreenetURI.getRoutingKey())) == false)
 			throw new IllegalArgumentException("Illegal id:" + mMessageID);
