@@ -173,7 +173,6 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 			identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI());
 			input = result.asBucket().getInputStream();
 			WoTMessageList list = WoTMessageListXML.decode(mMessageManager, identity, state.getURI(), input);
-			input.close(); input = null;
 			mMessageManager.onMessageListReceived(list);
 		}
 		catch (Exception e) {
