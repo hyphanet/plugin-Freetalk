@@ -102,6 +102,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		}
 
 		public MessageList getMessageList() {
+			db.activate(this, 3);
 			return mMessageList;
 		}
 		
