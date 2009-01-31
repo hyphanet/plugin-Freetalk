@@ -151,7 +151,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	private void fetchMessageList(WoTIdentity identity, int index, boolean followRedirectsToHigherIndex) throws FetchException {
 		FreenetURI uri = WoTMessageList.generateURI(identity, index);
 		if(!followRedirectsToHigherIndex)
-			uri.sskForUSK();
+			uri = uri.sskForUSK();
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
 		fetchContext.maxNonSplitfileRetries = 2;
