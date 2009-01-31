@@ -134,7 +134,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		if(myURI == null)
 			throw new IllegalArgumentException("Trying to construct a MessageList with null URI.");
 		
-		mIndex = (int) myURI.getSuggestedEdition();
+		mIndex = (int) myURI.getEdition();
 		if(mIndex < 0)
 			throw new IllegalArgumentException("Trying to construct a message list with invalid index " + mIndex);
 		
@@ -213,7 +213,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	}
 	
 	public static String getIDFromURI(FreenetURI uri) {
-		return uri.getSuggestedEdition() + "@" + Base64.encode(uri.getRoutingKey());
+		return uri.getEdition() + "@" + Base64.encode(uri.getRoutingKey());
 	}
 	
 	public String getID() {
