@@ -218,7 +218,7 @@ public class WoTMessageManager extends MessageManager {
 		/* FIXME: To avoid always checking ALL messagelists for a missing one, store somewhere in the FTIdentity what the latest index is up to
 		 * which all messagelists are available! */
 		
-		return freeIndex>0 ? freeIndex : latestAvailableIndex+1;
+		return freeIndex >= 0 ? freeIndex : latestAvailableIndex+1;
 	}
 
 	/**
