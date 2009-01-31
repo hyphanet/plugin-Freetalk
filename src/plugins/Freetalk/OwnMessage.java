@@ -12,8 +12,8 @@ import freenet.keys.FreenetURI;
 
 public abstract class OwnMessage extends Message {
 
-	protected OwnMessage(FreenetURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, FreenetURI newThreadURI,
-			FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate,
+	protected OwnMessage(MessageURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, MessageURI newThreadURI,
+			MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate,
 			String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		super(newURI, newRealURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText,
 				newAttachments);
@@ -21,7 +21,7 @@ public abstract class OwnMessage extends Message {
 
 	/* Override for synchronization */
 	@Override
-	public synchronized FreenetURI getURI() {
+	public synchronized MessageURI getURI() {
 		return mURI;
 	}
 
