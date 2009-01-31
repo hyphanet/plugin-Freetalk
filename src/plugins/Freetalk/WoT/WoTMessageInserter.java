@@ -15,7 +15,6 @@ import javax.xml.transform.TransformerException;
 
 import plugins.Freetalk.MessageInserter;
 import plugins.Freetalk.OwnMessage;
-import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
