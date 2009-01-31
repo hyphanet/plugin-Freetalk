@@ -145,12 +145,13 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 
 	/**
 	 * You have to synchronize on this <code>WoTMessageFetcher</code> when using this function.
-	 * @param followRedirects If true, the USK redirects will be used to download the latest instead of the specified index.
+	 * @param followRedirectsToHigherIndex If true, the USK redirects will be used to download the latest instead of the specified index.
 	 */
-	private void fetchMessageList(WoTIdentity identity, int index, boolean followRedirects) throws FetchException {
+	private void fetchMessageList(WoTIdentity identity, int index, boolean followRedirectsToHigherIndex) throws FetchException {
 		FreenetURI uri = WoTMessageList.generateURI(identity, index);
+		if(!followRedirectsToHigherIndex)
+			uri.setKeyType("SSK");
 		FetchContext fetchContext = mClient.getFetchContext();
-		fetchContext.followRedirects = followRedirects;
 		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
 		fetchContext.maxNonSplitfileRetries = 2;
 		ClientGetter g = mClient.fetch(uri, -1, this, this, fetchContext);
