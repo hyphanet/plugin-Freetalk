@@ -17,7 +17,7 @@ public final class WoTMessageURI extends MessageURI {
 			throw new IllegalArgumentException("Trying to create an empty WoTMessageURI");
 		
 		String keyType = myFreenetURI.getKeyType();
-		if(!keyType.equals("USK") || keyType.equals("SSK"))
+		if(!keyType.equalsIgnoreCase("USK") && !keyType.equalsIgnoreCase("SSK"))
 			throw new IllegalArgumentException("Trying to create a WoTMessageURI with illegal key type " + keyType);
 		
 		mFreenetURI = myFreenetURI.sskForUSK(); /* Just to make sure */
@@ -36,7 +36,7 @@ public final class WoTMessageURI extends MessageURI {
 		
 		mFreenetURI = new FreenetURI(tokens[0]);
 		String keyType = mFreenetURI.getKeyType();
-		if(!keyType.equals("SSK"))
+		if(!keyType.equalsIgnoreCase("SSK"))
 			throw new IllegalArgumentException("Trying to create a WoTMessageURI with illegal key type " + keyType);
 		
 		try {
