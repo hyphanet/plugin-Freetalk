@@ -34,11 +34,9 @@ public abstract class Message implements Comparable<Message> {
 	/* Attributes, stored in the database */
 	
 	/**
-	 * The URI of this message. Format: SSK@author_ssk_uri/Freetalk|MessageList-index.xml#uuid
-	 * The "uuid" in the URI is the part after the "@" in the message ID.
-	 * The message list
+	 * The URI of this message.
 	 */
-	protected FreenetURI mURI; /* Not final because for OwnMessages it is set after the MessageList was inserted */
+	protected MessageURI mURI; /* Not final because for OwnMessages it is set after the MessageList was inserted */
 	
 	/**
 	 * The CHK URI of the message. Null until the message was inserted and the URI is known.
@@ -62,14 +60,14 @@ public abstract class Message implements Comparable<Message> {
 	 * If we receive the parent messages of those messages, we will be able to find their orphan children faster if we only need to search in
 	 * the thread they belong to and not in the whole FTBoard - which may contain many thousands of messages.
 	 */
-	protected final FreenetURI mThreadURI;
+	protected final MessageURI mThreadURI;
 	
 	protected final String mThreadID;
 	
 	/**
 	 * The URI of the message to which this message is a reply. Null if it is a thread.
 	 */
-	protected final FreenetURI mParentURI;
+	protected final MessageURI mParentURI;
 	
 	protected final String mParentID;
 	
@@ -139,9 +137,9 @@ public abstract class Message implements Comparable<Message> {
 		return new String[] { "mURI", "mID", "mParentID" };
 	}
 	
-	protected Message(FreenetURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, FreenetURI newThreadURI, FreenetURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+	protected Message(MessageURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, MessageURI newThreadURI, MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		/* We only assert() instead of throwing because the constructor is protected and the construct() function should verify this */
-		assert(newURI == null || Arrays.equals(newURI.getRoutingKey(), newAuthor.getRequestURI().getRoutingKey()));
+		assert(newURI == null || Arrays.equals(newURI.getFreenetURI().getRoutingKey(), newAuthor.getRequestURI().getRoutingKey()));
 		
 		/* FIXME: assert(newMessageList.getAuthor() == newAuthor); */
 		/* FIXME: assert(newRealURI == null || newMessageList.contains(newRealURI)); */
@@ -171,9 +169,9 @@ public abstract class Message implements Comparable<Message> {
 		mAuthor = newAuthor;
 		mID = newID;
 		mThreadURI = newThreadURI;
-		mThreadID = mThreadURI != null ? getIDFromURI(mThreadURI) : null;
+		mThreadID = mThreadURI != null ? mThreadURI.getMessageID() : null;
 		mParentURI = newParentURI;
-		mParentID = mParentURI != null ? getIDFromURI(mParentURI) : null;
+		mParentID = mParentURI != null ? mParentURI.getMessageID() : null;
 		mBoards = newBoards.toArray(new Board[newBoards.size()]);
 		Arrays.sort(mBoards);		
 		mReplyToBoard = newReplyToBoard;
@@ -192,11 +190,6 @@ public abstract class Message implements Comparable<Message> {
 		db = myDB;
 		mMessageManager = myMessageManager;
 	}
-
-	public static String getIDFromURI(FreenetURI uri) {
-		String uuid = uri.getDocName().split("[#]")[1];
-		return uuid + "@" + Base64.encode(uri.getRoutingKey());
-	}
 	
 	/**
 	 * Verifies that the given message ID begins with the routing key of the author.
@@ -210,7 +203,7 @@ public abstract class Message implements Comparable<Message> {
 	/**
 	 * Get the URI of the message.
 	 */
-	public FreenetURI getURI() { /* Not synchronized because only OwnMessage might change the URI */
+	public MessageURI getURI() { /* Not synchronized because only OwnMessage might change the URI */
 		return mURI;
 	}
 
@@ -219,10 +212,10 @@ public abstract class Message implements Comparable<Message> {
 	}
 	
 	/**
-	 * Get the FreenetURI of the thread this message belongs to.
+	 * Get the MessageURI of the thread this message belongs to.
 	 * @throws NoSuchMessageException 
 	 */
-	public FreenetURI getParentThreadURI() throws NoSuchMessageException {
+	public MessageURI getParentThreadURI() throws NoSuchMessageException {
 		if(mThreadURI == null)
 			throw new NoSuchMessageException();
 		
@@ -233,14 +226,13 @@ public abstract class Message implements Comparable<Message> {
 		if(mThreadID == null)
 			throw new NoSuchMessageException();
 		
-		
 		return mThreadID;
 	}
 	
 	/**
-	 * Get the FreenetURI to which this message is a reply. Null if the message is a thread.
+	 * Get the MessageURI to which this message is a reply. Null if the message is a thread.
 	 */
-	public FreenetURI getParentURI() throws NoSuchMessageException {
+	public MessageURI getParentURI() throws NoSuchMessageException {
 		if(mParentURI == null)
 			throw new NoSuchMessageException();
 		

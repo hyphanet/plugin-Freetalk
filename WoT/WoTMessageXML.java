@@ -185,21 +185,21 @@ public final class WoTMessageXML {
 		XMLElement replyToBoardElement = rootElement.children.get("ReplyBoard");
 		Board messageReplyToBoard =  replyToBoardElement != null ? messageManager.getOrCreateBoard(replyToBoardElement.cdata) : null; 
 		
-		FreenetURI parentMessageURI = null;
-		FreenetURI parentThreadURI = null;
+		WoTMessageURI parentMessageURI = null;
+		WoTMessageURI parentThreadURI = null;
 		
 		XMLElement inReplyToElement = rootElement.children.get("InReplyTo");
 		if(inReplyToElement != null) {
 			if(inReplyToElement.children.containsKey("Message")) {
 				for(XMLElement inReplyToMessageElement : inReplyToElement.children.iterateAll("Message")) {
 					if(inReplyToMessageElement.children.get("Order").cdata.equals("0"))
-						parentMessageURI = new FreenetURI(inReplyToMessageElement.children.get("MessageURI").cdata);
+						parentMessageURI = new WoTMessageURI(inReplyToMessageElement.children.get("MessageURI").cdata);
 				}
 			}
 		
 			XMLElement threadElement = inReplyToElement.children.get("Thread");
 			if(threadElement != null)
-				parentThreadURI = new FreenetURI(threadElement.children.get("MessageURI").cdata);
+				parentThreadURI = new WoTMessageURI(threadElement.children.get("MessageURI").cdata);
 		}
 		
 		String messageBody = rootElement.children.get("Body").cdata;
