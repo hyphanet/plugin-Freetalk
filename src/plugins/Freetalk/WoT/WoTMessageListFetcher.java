@@ -203,18 +203,22 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	public synchronized void onFailure(FetchException e, ClientGetter state) {
 		try {
 			/* TODO: Handle DNF in some reasonable way. Mark the MessageLists as unavailable after a certain amount of retries maybe */
-			if(e.getMode() == FetchException.DATA_NOT_FOUND) {
-			
+			switch(e.getMode()) {
+				case FetchException.DATA_NOT_FOUND:
+					break;
+				
+				case FetchException.PERMANENT_REDIRECT:
+					try {
+						state.restart(e.newURI);
+					} catch (FetchException e1) {
+						Logger.error(this, "Request restart failed.", e1);
+					}
+					break;
+					
+				default:
+					Logger.error(this, "Downloading MessageList " + state.getURI() + " failed.", e);
+					break;
 			}
-			else if (e.mode == FetchException.PERMANENT_REDIRECT) {
-				try {
-					state.restart(e.newURI);
-				} catch (FetchException e1) {
-					Logger.error(this, "Request restart failed.", e1);
-				}
-			}
-			else 
-				Logger.error(this, "Downloading MessageList " + state.getURI() + " failed.", e);
 		}
 		
 		finally {
