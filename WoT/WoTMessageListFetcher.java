@@ -192,7 +192,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		
 		try {
 			int unavailableIndex = mMessageManager.getUnavailableOldMessageListIndex(identity);
-			boolean unavailableIsNewer = unavailableIndex > state.getURI().getSuggestedEdition(); /* Follow redirects then! */
+			boolean unavailableIsNewer = unavailableIndex > state.getURI().getEdition(); /* Follow redirects then! */
 			fetchMessageList(identity, unavailableIndex , unavailableIsNewer);
 		} catch(Exception e) {
 			Logger.error(this, "Fetching of next MessageList failed.", e);
