@@ -148,7 +148,6 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
 			input = result.asBucket().getInputStream();
 			Message message = WoTMessageXML.decode(mMessageManager, input, list, state.getURI());
-			input.close(); input = null;
 			mMessageManager.onMessageReceived(message);
 		}
 		catch (Exception e) {
