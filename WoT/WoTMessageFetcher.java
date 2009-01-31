@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -141,9 +142,13 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.debug(this, "Fetched message: " + state.getURI());
 		
+		InputStream input = null;
+		
 		try {
 			WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
-			Message message = WoTMessageXML.decode(mMessageManager, result.asBucket().getInputStream(), list, state.getURI());
+			input = result.asBucket().getInputStream();
+			Message message = WoTMessageXML.decode(mMessageManager, input, list, state.getURI());
+			input.close(); input = null;
 			mMessageManager.onMessageReceived(message);
 		}
 		catch (Exception e) {
@@ -151,6 +156,14 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			/* FIXME: Mark non-parseable messages (in the MessageList) so that they do not block the download queue */ 
 		}
 		finally {
+			if(input != null) {
+				try {
+					input.close();
+				} catch (Exception e) {
+					Logger.error(this, "Error while closing Bucket InputStream", e);
+				}
+			}
+			
 			removeFetch(state); /* FIXME: This was in the try{} block somewhere else in the FT/WoT code. Move it to finally{} there, too */
 			
 			if(fetchCount() < MIN_PARALLEL_MESSAGE_FETCH_COUNT)

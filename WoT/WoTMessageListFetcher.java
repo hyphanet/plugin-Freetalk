@@ -1,5 +1,7 @@
 package plugins.Freetalk.WoT;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -164,11 +166,14 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.debug(this, "Fetched MessageList: " + state.getURI());
 		
+		InputStream input = null;
 		WoTIdentity identity = null;
 		
 		try {
 			identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI());
-			WoTMessageList list = WoTMessageListXML.decode(mMessageManager, identity, state.getURI(), result.asBucket().getInputStream());
+			input = result.asBucket().getInputStream();
+			WoTMessageList list = WoTMessageListXML.decode(mMessageManager, identity, state.getURI(), input);
+			input.close(); input = null;
 			mMessageManager.onMessageListReceived(list);
 		}
 		catch (Exception e) {
@@ -176,6 +181,14 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 			/* FIXME: Mark non-parseable MessageLists so that they do not block the download queue */ 
 		}
 		finally {
+			if(input != null) {
+				try {
+					input.close();
+				} catch (Exception e) {
+					Logger.error(this, "Error while closing Bucket InputStream", e);
+				}
+			}
+				
 			removeFetch(state);
 		}
 		
