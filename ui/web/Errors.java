@@ -19,7 +19,7 @@ public final class Errors extends WebPageImpl {
 	}
 
 	public final void make() {
-		HTMLNode errorBox = getAlertBox(mErrorTitle);
+		HTMLNode errorBox = addAlertBox(mErrorTitle);
 		errorBox.addChild("#", mErrorMessage);
 	}
 }

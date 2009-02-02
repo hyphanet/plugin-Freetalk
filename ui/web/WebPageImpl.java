@@ -115,10 +115,10 @@ public abstract class WebPageImpl implements WebPage {
 	 * @return the contentNode of the newly created Infobox
 	 */
 	protected final HTMLNode getContentBox(String title) {
-		return mPM.getContentNode(mPM.getInfobox(title));
+		return mPM.getInfobox(title);
 	}
 	
-	protected final HTMLNode getAlertBox(String title) {
+	protected final HTMLNode addAlertBox(String title) {
 		HTMLNode box = mPM.getInfobox("infobox-alert", title);
 		mContentBoxes.add(box);
 		return mPM.getContentNode(box);
