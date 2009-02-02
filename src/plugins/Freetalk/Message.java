@@ -389,6 +389,7 @@ public abstract class Message implements Comparable<Message> {
 	
 	/**
 	 * Checks whether the title of the message is valid. Validity conditions:
+	 * - Not empty
 	 * - No line breaks, tabs, or any other control characters.
 	 * - No invalid characters.
 	 * - No invalid formatting (unpaired direction or annotation characters.)
