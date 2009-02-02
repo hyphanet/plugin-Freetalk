@@ -26,7 +26,7 @@ public final class NewBoardPage extends WebPageImpl {
 				makeNewBoardPage("en", "");
 			} catch (InvalidParameterException e) {
 				HTMLNode alertBox = addAlertBox("The board could not be created");
-				alertBox.addChild("p", e.getMessage());
+				alertBox.addChild("div", e.getMessage());
 				
 				makeNewBoardPage(boardLanguage, boardName);
 			}
