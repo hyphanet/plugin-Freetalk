@@ -137,7 +137,7 @@ public final class Board implements Comparable<Board> {
 			return false;
 
 		for (int i = 0; i < parts.length; i++) {
-			if (!StringValidityChecker.containsNoInvalidFormatting(parts[i]))
+			if (parts[i].length() == 0 || !StringValidityChecker.containsNoInvalidFormatting(parts[i]))
 				return false;
 		}
 
