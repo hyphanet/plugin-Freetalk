@@ -1,7 +1,5 @@
 package plugins.Freetalk.ui.web;
 
-import java.util.Locale;
-
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
 import freenet.support.HTMLNode;

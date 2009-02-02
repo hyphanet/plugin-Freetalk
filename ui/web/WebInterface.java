@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
@@ -95,15 +96,18 @@ public final class WebInterface implements FredPluginHTTP {
 			throw new NotFoundPluginHTTPException("Resource not found", page);
 		
 		try {
-			if(page.equals("/NewThread"))
-				return new NewThreadPage(this, mFreetalk.getIdentityManager().getOwnIdentity(request.getParam("OwnIdentityID")), request).toHTML();
+			FTOwnIdentity ownId = mFreetalk.getIdentityManager().getOwnIdentity(request.getPartAsString("OwnIdentityID", 64));
+			if(page.equals("/NewBoard"))
+				return new NewBoardPage(this, ownId, request).toHTML();
+			else if(page.equals("/NewThread"))
+				return new NewThreadPage(this, ownId, request).toHTML();
 		}
 		/* TODO: Make this exceptions store the specified non-existant element theirselves */
 		catch(NoSuchIdentityException e) {
-			throw new NotFoundPluginHTTPException("Unknown identity " + request.getParam("OwnIdentityID"), page);
+			throw new NotFoundPluginHTTPException("Unknown identity " + request.getPartAsString("OwnIdentityID", 64), page);
 		}
 		catch(NoSuchBoardException e) {
-			throw new NotFoundPluginHTTPException("Unknown board " + request.getParam("BoardName"), page);
+			throw new NotFoundPluginHTTPException("Unknown board " + request.getPartAsString("BoardName", 256), page);
 		}
 
 		/*

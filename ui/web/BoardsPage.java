@@ -28,6 +28,10 @@ public final class BoardsPage extends WebPageImpl {
 	private void makeBoardsList() {
 		HTMLNode boardsBox = addContentBox("Boards");
 		
+		HTMLNode newBoardForm = addFormChild(boardsBox, SELF_URI + "/NewBoard", "NewBoardPage");
+		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
+		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", "New board" });
+		
 		// Display the list of known identities
 		HTMLNode boardsTable = boardsBox.addChild("table", "border", "0");
 		HTMLNode row = boardsTable.addChild("tr");
