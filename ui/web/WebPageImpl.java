@@ -103,15 +103,28 @@ public abstract class WebPageImpl implements WebPage {
 	 * @param title The title of the desired InfoBox
 	 * @return the contentNode of the newly created InfoBox
 	 */
-	protected final HTMLNode getContentBox(String title) {
+	protected final HTMLNode addContentBox(String title) {
 		HTMLNode box = mPM.getInfobox(title);
 		mContentBoxes.add(box);
 		return mPM.getContentNode(box);
+	}
+	
+	/**
+	 * Get a new Infobox but do not add it to the page. Can be used for putting Infoboxes inside Infoboxes.
+	 * @param title The title of the desired Infobox
+	 * @return the contentNode of the newly created Infobox
+	 */
+	protected final HTMLNode getContentBox(String title) {
+		return mPM.getContentNode(mPM.getInfobox(title));
 	}
 	
 	protected final HTMLNode getAlertBox(String title) {
 		HTMLNode box = mPM.getInfobox("infobox-alert", title);
 		mContentBoxes.add(box);
 		return mPM.getContentNode(box);
+	}
+	
+	protected HTMLNode addFormChild(HTMLNode parentNode, String target, String name) {
+		return mFreetalk.getPluginRespirator().addFormChild(parentNode, target, name);
 	}
 }

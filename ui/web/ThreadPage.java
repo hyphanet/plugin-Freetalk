@@ -28,14 +28,14 @@ public final class ThreadPage extends WebPageImpl {
 	}
 	
 	public final void make() {
-		HTMLNode messageBox = getContentBox("Subject: " + mThread.getTitle());
+		HTMLNode messageBox = addContentBox("Subject: " + mThread.getTitle());
 		messageBox.addChild("p", "Author: " + mThread.getAuthor().getFreetalkAddress());
 		addDebugInfo(messageBox, mThread);
 		messageBox.addChild("pre", mThread.getText());
 		
 		for(MessageReference reference : mBoard.getAllThreadReplies(mThread)) {
 			Message message = reference.getMessage();
-			messageBox = getContentBox("Subject: " + message.getTitle());
+			messageBox = addContentBox("Subject: " + message.getTitle());
 			messageBox.addChild("p", "Author: " + message.getAuthor().getFreetalkAddress());
 			addDebugInfo(messageBox, message);
 			messageBox.addChild("pre", message.getText());

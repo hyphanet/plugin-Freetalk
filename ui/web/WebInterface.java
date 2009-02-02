@@ -93,6 +93,18 @@ public final class WebInterface implements FredPluginHTTP {
 
 		if (page.length() < 1)
 			throw new NotFoundPluginHTTPException("Resource not found", page);
+		
+		try {
+			if(page.equals("/NewThread"))
+				return new NewThreadPage(this, mFreetalk.getIdentityManager().getOwnIdentity(request.getParam("OwnIdentityID")), request).toHTML();
+		}
+		/* TODO: Make this exceptions store the specified non-existant element theirselves */
+		catch(NoSuchIdentityException e) {
+			throw new NotFoundPluginHTTPException("Unknown identity " + request.getParam("OwnIdentityID"), page);
+		}
+		catch(NoSuchBoardException e) {
+			throw new NotFoundPluginHTTPException("Unknown board " + request.getParam("BoardName"), page);
+		}
 
 		/*
 		if (page.equals("/exportDB")) {

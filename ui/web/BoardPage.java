@@ -10,6 +10,7 @@ import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Board.MessageReference;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
+import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -28,7 +29,13 @@ public final class BoardPage extends WebPageImpl {
 	}
 
 	public final void make() {
-		HTMLNode threadsBox = getContentBox("Threads in '" + mBoard.getName() + "'");
+		
+		HTMLNode threadsBox = addContentBox("Threads in '" + mBoard.getName() + "'");
+		
+		HTMLNode newThreadForm = addFormChild(threadsBox, "/NewThread", "NewThreadPage");
+		newThreadForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
+		newThreadForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
+		newThreadForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", "New thread" });
 		
 		// Display the list of known identities
 		HTMLNode threadsTable = threadsBox.addChild("table", new String[] {"border", "width"}, new String[] {"0", "100%"});
