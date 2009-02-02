@@ -24,14 +24,14 @@ public final class Welcome extends WebPageImpl {
 	}
 	
 	private final void makeWelcomeBox() {
-		HTMLNode welcomeBox = getContentBox("Welcome");
+		HTMLNode welcomeBox = addContentBox("Welcome");
 		welcomeBox.addChild("p", "IMPORTANT NOTE: All messages you post with the current Freetalk release are considered as testing messages and will NOT be readable by the first stable release. This is necessary so that we could change internal stuff completely if there is a need to do so.");
 		welcomeBox.addChild("p", "To use Freetalk, set up a connection with your newsreader to localhost port 1199.");
 		welcomeBox.addChild("p", "As the account name, specify the nickname of an own identity and as the e-mail address specify the Freetalk address. You can look it up on the own identities page. A password is not required.");
 	}
 
 	private final void makeOverviewBox() {
-		HTMLNode overviewBox = getContentBox("Overview");
+		HTMLNode overviewBox = addContentBox("Overview");
 		HTMLNode list = overviewBox.addChild("ul");
 		list.addChild(new HTMLNode("li", "Known Identities: " + mFreetalk.getIdentityManager().countKnownIdentities()));
 		list.addChild(new HTMLNode("li", "Messages waiting to be sent: " + mFreetalk.getMessageManager().countUnsentMessages()));

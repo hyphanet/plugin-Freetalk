@@ -26,7 +26,7 @@ public final class BoardsPage extends WebPageImpl {
 	}
 
 	private void makeBoardsList() {
-		HTMLNode boardsBox = getContentBox("Boards");
+		HTMLNode boardsBox = addContentBox("Boards");
 		
 		// Display the list of known identities
 		HTMLNode boardsTable = boardsBox.addChild("table", "border", "0");
