@@ -33,7 +33,7 @@ public final class Board implements Comparable<Board> {
 
 	/* Constants */
 	
-	private static transient final HashSet<String> ISOLanguages = new HashSet<String>(Arrays.asList(Locale.getISOLanguages()));
+	private static transient final HashSet<String> ISOLanguages = new HashSet<String>(Arrays.asList(getAllowedLanguageCodes()));
 
 	// Characters not allowed in board names:
 	//  ! , ? * [ \ ] (space)  not allowed by NNTP
@@ -65,6 +65,10 @@ public final class Board implements Comparable<Board> {
 	
 	public static String[] getBoardMessageLinkIndexedFields() { /* TODO: ugly! find a better way */
 		return new String[] {"mBoard", "mMessage"};
+	}
+	
+	public static String[] getAllowedLanguageCodes() {
+		return Locale.getISOLanguages();
 	}
 	
 	/**
