@@ -9,6 +9,8 @@ import java.util.Iterator;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import freenet.clients.http.PageMaker;
+import freenet.config.EnumerableOptionCallback;
+import freenet.config.SubConfig;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -126,5 +128,18 @@ public abstract class WebPageImpl implements WebPage {
 	
 	protected HTMLNode addFormChild(HTMLNode parentNode, String target, String name) {
 		return mFreetalk.getPluginRespirator().addFormChild(parentNode, target, name);
+	}
+	
+	protected HTMLNode getComboBox(String name, String[] options, String defaultOption) {
+		HTMLNode result = new HTMLNode("select", "name", name);
+		
+		for(String value : options) {
+			if(value.equals(defaultOption))
+				result.addChild("option", new String[] { "value", "selected" }, new String[] { value, "selected" }, value);
+			else
+				result.addChild("option", "value", value, value);
+		}
+		
+		return result;
 	}
 }
