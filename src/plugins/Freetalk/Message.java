@@ -394,7 +394,8 @@ public abstract class Message implements Comparable<Message> {
 	 * - No invalid formatting (unpaired direction or annotation characters.)
 	 */
 	static public boolean isTitleValid(String title) {
-		return (StringValidityChecker.containsNoInvalidCharacters(title)
+		return (!title.isEmpty()
+				&& StringValidityChecker.containsNoInvalidCharacters(title)
 				&& StringValidityChecker.containsNoLinebreaks(title)
 				&& StringValidityChecker.containsNoControlCharacters(title)
 				&& StringValidityChecker.containsNoInvalidFormatting(title));
