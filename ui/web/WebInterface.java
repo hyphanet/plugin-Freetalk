@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import java.util.Iterator;
+
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
@@ -24,6 +26,8 @@ public final class WebInterface implements FredPluginHTTP {
 	private final Freetalk mFreetalk;
 	
 	private final PageMaker mPageMaker;
+	
+	private final FTOwnIdentity mOwnIdentity;
 
 	@SuppressWarnings("static-access")
 	public WebInterface(Freetalk myFreetalk) {
@@ -34,6 +38,8 @@ public final class WebInterface implements FredPluginHTTP {
 		mPageMaker.addNavigationLink(mFreetalk.PLUGIN_URI + "/messages", "Messages", "View Messages", false, null);
 		mPageMaker.addNavigationLink(mFreetalk.PLUGIN_URI + "/identities", "Identities", "Manage your own and known identities", false, null);
 		mPageMaker.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);
+		
+		mOwnIdentity = null;
 	}
 
 	public final String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
@@ -262,5 +268,13 @@ public final class WebInterface implements FredPluginHTTP {
 
 	public final PageMaker getPageMaker() {
 		return mPageMaker;
+	}
+	
+	/**
+	 * @return The <code>FTOwnIdentity</code> which is currently logged in.
+	 */
+	public final FTOwnIdentity getOwnIdentity() {
+		Iterator<FTOwnIdentity> iter = mFreetalk.getIdentityManager().ownIdentityIterator();
+		return iter.hasNext() ? iter.next() : null;
 	}
 }
