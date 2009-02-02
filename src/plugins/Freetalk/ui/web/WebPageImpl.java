@@ -9,8 +9,6 @@ import java.util.Iterator;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import freenet.clients.http.PageMaker;
-import freenet.config.EnumerableOptionCallback;
-import freenet.config.SubConfig;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
