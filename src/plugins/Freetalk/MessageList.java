@@ -11,6 +11,7 @@ import java.util.List;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.ObjectContainer;
 
@@ -236,23 +237,10 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	 * @throws NoSuchIdentityException
 	 */
 	public MessageList(FTIdentity myAuthor, FreenetURI myURI, List<MessageReference> newMessages) throws InvalidParameterException, NoSuchIdentityException {
-		if(myURI == null)
-			throw new IllegalArgumentException("Trying to construct a MessageList with null URI.");
+		this(myAuthor, myURI, new ArrayList<MessageReference>(newMessages));
 		
-		mIndex = (int) myURI.getEdition();
-		if(mIndex < 0)
-			throw new IllegalArgumentException("Trying to construct a message list with invalid index " + mIndex);
-		
-		if(myAuthor == null || Arrays.equals(myAuthor.getRequestURI().getRoutingKey(), myURI.getRoutingKey()) == false)
-			throw new IllegalArgumentException("Trying to construct a message list with a wrong author " + myAuthor);
-		
-		if(newMessages == null || newMessages.size() < 1)
+		if(mMessages.size() < 1)
 			throw new IllegalArgumentException("Trying to construct a message list with no messages.");
-	
-		mAuthor = myAuthor;
-		mID = calculateID();
-		mMessages = new ArrayList<MessageReference>(newMessages);
-		mMessageCount = mMessages.size();
 		
 		Hashtable<String, FreenetURI> messageURIs = new Hashtable<String, FreenetURI>(newMessages.size());
 		
@@ -275,6 +263,35 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 				throw new IllegalArgumentException("Trying to create a MessageList which maps one message ID to multiple URIs");
 				
 		}
+	}
+	
+	/**
+	 * For constructing an empty dummy message list when the download of message list failed.
+	 * @param myAuthor
+	 * @param myURI
+	 */
+	public MessageList(FTIdentity myAuthor, FreenetURI myURI) {
+		this(myAuthor, myURI, new ArrayList<MessageReference>(0));
+	}
+	
+	/**
+	 * General constructor for being used by public constructors.
+	 */
+	protected MessageList(FTIdentity myAuthor, FreenetURI myURI, ArrayList<MessageReference> newMessages) {
+		if(myURI == null)
+			throw new IllegalArgumentException("Trying to construct a MessageList with null URI.");
+		
+		mIndex = (int) myURI.getEdition();
+		if(mIndex < 0)
+			throw new IllegalArgumentException("Trying to construct a message list with invalid index " + mIndex);
+		
+		if(myAuthor == null || Arrays.equals(myAuthor.getRequestURI().getRoutingKey(), myURI.getRoutingKey()) == false)
+			throw new IllegalArgumentException("Trying to construct a message list with a wrong author " + myAuthor);
+		
+		mAuthor = myAuthor;
+		mID = calculateID();
+		mMessages = newMessages;
+		mMessageCount = mMessages.size();
 	}
 	
 	protected MessageList(FTOwnIdentity myAuthor, int newIndex) {
@@ -344,6 +361,15 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	 */
 	public Iterator<MessageReference> iterator() {
 		return mMessages.iterator();
+	}
+	
+	public synchronized MessageReference getReference(FreenetURI messageURI) throws NoSuchMessageException {
+		for(MessageReference ref : this) {
+			if(ref.getURI().equals(messageURI))
+				return ref;
+		}
+		
+		throw new NoSuchMessageException();
 	}
 	
 	/*

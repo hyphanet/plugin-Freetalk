@@ -13,6 +13,7 @@ import java.util.Random;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageFetcher;
 import plugins.Freetalk.MessageList;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -143,16 +144,26 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		Logger.debug(this, "Fetched message: " + state.getURI());
 		
 		InputStream input = null;
+		WoTMessageList list = null;
 		
 		try {
-			WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
+			list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
 			input = result.asBucket().getInputStream();
 			Message message = WoTMessageXML.decode(mMessageManager, input, list, state.getURI());
 			mMessageManager.onMessageReceived(message);
 		}
 		catch (Exception e) {
 			Logger.error(this, "Parsing failed for message " + state.getURI(), e);
-			/* FIXME: Mark non-parseable messages (in the MessageList) so that they do not block the download queue */ 
+		
+			if(list != null) {
+				try {
+					mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), MessageList.MessageFetchFailedReference.Reason.ParsingFailed);
+				}
+				catch(NoSuchMessageException ex) {
+					assert(false);
+					Logger.error(this, "SHOULD NOT HAPPEN", ex);
+				}
+			}
 		}
 		finally {
 			if(input != null) {
@@ -173,13 +184,20 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	@Override
 	public synchronized void onFailure(FetchException e, ClientGetter state) {
 		try {
-			/* TODO: Handle DNF in some reasonable way. Mark the messages in the MessageList maybe.
 			if(e.getMode() == FetchException.DATA_NOT_FOUND) {
-			
+				try {
+					WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
+					mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), MessageList.MessageFetchFailedReference.Reason.DataNotFound);
+				} catch (Exception ex) { /* NoSuchMessageList / NoSuchMessage */
+					assert(false);
+					Logger.error(this, "SHOULD NOT HAPPEN", ex);
+				}
+				finally {
+					Logger.debug(this, "Downloading message " + state.getURI() + " failed.", e);
+				}
 			}
-			*/
-			
-			Logger.error(this, "Downloading message " + state.getURI() + " failed.", e);
+			else
+				Logger.error(this, "Downloading message " + state.getURI() + " failed.", e);
 		}
 		
 		finally {

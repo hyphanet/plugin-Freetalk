@@ -7,7 +7,9 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageListFetcher;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -176,7 +178,10 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		}
 		catch (Exception e) {
 			Logger.error(this, "Parsing failed for MessageList " + state.getURI(), e);
-			/* FIXME: Mark non-parseable MessageLists so that they do not block the download queue */ 
+
+			if(identity != null) {
+				mMessageManager.onMessageListFetchFailed(identity, state.getURI(), MessageList.MessageListFetchFailedReference.Reason.ParsingFailed);
+			}
 		}
 		finally {
 			if(input != null) {
@@ -205,6 +210,15 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 			/* TODO: Handle DNF in some reasonable way. Mark the MessageLists as unavailable after a certain amount of retries maybe */
 			switch(e.getMode()) {
 				case FetchException.DATA_NOT_FOUND:
+					WoTIdentity identity;
+					try {
+						identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI());
+						mMessageManager.onMessageListFetchFailed(identity, state.getURI(), MessageList.MessageListFetchFailedReference.Reason.ParsingFailed);
+					} catch (NoSuchIdentityException ex) {
+						Logger.error(this, "SHOULD NOT HAPPEN", ex);
+					}
+					
+					Logger.debug(this, "Downloading MessageList " + state.getURI() + " failed.", e);
 					break;
 				
 				case FetchException.PERMANENT_REDIRECT:

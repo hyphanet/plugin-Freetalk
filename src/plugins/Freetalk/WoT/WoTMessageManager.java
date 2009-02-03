@@ -14,14 +14,17 @@ import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.exceptions.NoSuchMessageListException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
+import freenet.keys.FreenetURI;
 import freenet.support.Executor;
 import freenet.support.Logger;
 
@@ -76,6 +79,28 @@ public class WoTMessageManager extends MessageManager {
 		}
 		
 		return m;
+	}
+	
+	public synchronized void onMessageListFetchFailed(FTIdentity author, FreenetURI uri, MessageList.MessageListFetchFailedReference.Reason reason) {
+		WoTMessageList list = new WoTMessageList(author, uri);
+		try {
+			getMessageList(list.getID());
+			Logger.debug(this, "Download failed of a MessageList which we already have: " + list.getURI());
+		}
+		catch(NoSuchMessageListException e) {
+			try {
+				list.initializeTransient(db, this);
+				list.store();
+				MessageList.MessageListFetchFailedReference ref = new MessageList.MessageListFetchFailedReference(list, reason);
+				ref.initializeTransient(db);
+				ref.store();
+			}
+			catch(Exception ex) {
+				Logger.error(this, "Error while marking a message list as 'download failed'", ex);
+				db.delete(list);
+				db.commit();
+			}
+		}
 	}
 	
 	public synchronized void addMessageToMessageList(WoTOwnMessage message) throws Exception {
