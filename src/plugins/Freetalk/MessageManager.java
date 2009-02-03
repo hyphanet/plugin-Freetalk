@@ -153,6 +153,9 @@ public abstract class MessageManager implements Runnable {
 	public abstract void onMessageListFetchFailed(FTIdentity author, FreenetURI uri, MessageList.MessageListFetchFailedReference.Reason reason);
 	
 	public synchronized void onMessageFetchFailed(MessageReference messageReference, MessageList.MessageFetchFailedReference.Reason reason) {
+		if(reason == MessageList.MessageFetchFailedReference.Reason.DataNotFound) {
+			/* TODO: Handle DNF in some reasonable way. Mark the Messages as unavailable after a certain amount of retries maybe */
+		} else {
 		try {
 			get(messageReference.getMessageID());
 			Logger.debug(this, "Trying to mark a message as 'downlod failed' which we actually have: " + messageReference.getURI());
@@ -168,6 +171,7 @@ public abstract class MessageManager implements Runnable {
 			catch(Exception ex) {
 				Logger.error(this, "Exception while marking a not-downloadable messge", ex);
 			}
+		}
 		}
 	}
 	
