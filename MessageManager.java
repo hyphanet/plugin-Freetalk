@@ -11,6 +11,7 @@ import java.util.Set;
 
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageList.MessageReference;
+import plugins.Freetalk.MessageList.MessageFetchFailedReference.Reason;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.DuplicateMessageListException;
@@ -142,6 +143,31 @@ public abstract class MessageManager implements Runnable {
 		catch(NoSuchMessageListException e) {
 			list.initializeTransient(db, this);
 			list.store();
+		}
+	}
+	
+	/**
+	 * Abstract because we need to store an object of a child class of MessageList which is chosen dependent on which implementation of the
+	 * messging system we are using.
+	 */
+	public abstract void onMessageListFetchFailed(FTIdentity author, FreenetURI uri, MessageList.MessageListFetchFailedReference.Reason reason);
+	
+	public synchronized void onMessageFetchFailed(MessageReference messageReference, MessageList.MessageFetchFailedReference.Reason reason) {
+		try {
+			get(messageReference.getMessageID());
+			Logger.debug(this, "Trying to mark a message as 'downlod failed' which we actually have: " + messageReference.getURI());
+		}
+		catch(NoSuchMessageException e) {
+			try {
+				MessageList.MessageFetchFailedReference failedMarker = new MessageList.MessageFetchFailedReference(messageReference, reason);
+				failedMarker.initializeTransient(db);
+				failedMarker.store();
+				for(MessageReference r : getAllReferencesToMessage(messageReference.getMessageID()))
+					r.setMessageWasDownloadedFlag();
+			}
+			catch(Exception ex) {
+				Logger.error(this, "Exception while marking a not-downloadable messge", ex);
+			}
 		}
 	}
 	

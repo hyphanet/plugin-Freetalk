@@ -17,6 +17,10 @@ public class WoTMessageList extends MessageList {
 		// TODO Auto-generated constructor stub
 	}
 
+	public WoTMessageList(FTIdentity myAuthor, FreenetURI myURI) {
+		super(myAuthor, myURI);
+	}
+
 	public FreenetURI getURI() {
 		return assembleURI(mAuthor.getRequestURI(), mIndex);
 	}
