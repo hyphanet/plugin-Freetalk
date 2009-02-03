@@ -217,7 +217,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 						Logger.error(this, "SHOULD NOT HAPPEN", ex);
 					}
 					
-					Logger.debug(this, "Downloading MessageList " + state.getURI() + " failed.", e);
+					Logger.debug(this, "DNF for MessageList " + state.getURI());
 					break;
 				
 				case FetchException.PERMANENT_REDIRECT:
