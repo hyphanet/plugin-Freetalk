@@ -193,7 +193,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 					Logger.error(this, "SHOULD NOT HAPPEN", ex);
 				}
 				finally {
-					Logger.debug(this, "Downloading message " + state.getURI() + " failed.", e);
+					Logger.error(this, "DNF for message " + state.getURI());
 				}
 			}
 			else
