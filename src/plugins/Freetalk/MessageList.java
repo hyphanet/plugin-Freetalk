@@ -114,6 +114,110 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		}
 		
 	}
+	
+	/**
+	 * When a message list fetch fails we need to mark the message list as fetched to prevent the failed message list from getting into the
+	 * fetch queue over and over again. An attacker could insert many message list which have unparseable XML to fill up everyone's fetch queue
+	 * otherwise, this would be a denial of service.
+	 * 
+	 * When marking a message list as fetched even though the fetch failed, we store a MessageListFetchFailedReference so that we can try to 
+	 * fetch the message list again in the future. For example when the user installs a new version of the plugin we can fetch all messages list
+	 * again with failed XML parsing if the new version has fixed a bug in the XML parser.
+	 */
+	public static class MessageListFetchFailedReference {
+
+		private final MessageList mMessageList;
+
+		public static enum Reason {
+			Unknown,
+			DataNotFound,
+			ParsingFailed
+		}
+
+		private final Reason mReason;
+		
+		public MessageListFetchFailedReference(MessageList myMessageList, Reason myReason) {
+			if(myMessageList == null || myReason == null)
+				throw new IllegalArgumentException();
+			
+			mMessageList = myMessageList;
+			mReason = myReason;
+		}
+	
+		private transient ObjectContainer db;
+
+		public void initializeTransient(ObjectContainer myDB) {
+			db = myDB;
+		}
+
+		/**
+		 * Not synchronized because this class only has final members.
+		 */
+		public void store() {
+			db.store(this);
+		}
+		
+		public MessageList getMessageList() {
+			return mMessageList;
+		}
+	
+		public Reason getReason() {
+			return mReason;
+		}
+
+	}
+	
+	/**
+	 * When a message fetch fails we need to mark the message reference as fetched to prevent the failed message from getting into the
+	 * fetch queue over and over again. An attacker could insert many messages which have unparseable XML to fill up everyone's fetch queue
+	 * otherwise, this would be a denial of service.
+	 * 
+	 * When marking a message as fetched even though the fetch failed, we store a MessageFetchFailedReference so that we can try to 
+	 * fetch the message again in the future. For example when the user installs a new version of the plugin we can fetch all messages
+	 * again with failed XML parsing if the new version has fixed a bug in the XML parser.
+	 */
+	public static class MessageFetchFailedReference {
+
+		private final MessageReference mMessageReference;
+
+		public static enum Reason {
+			Unknown,
+			DataNotFound,
+			ParsingFailed
+		}
+
+		private final Reason mReason;
+		
+		public MessageFetchFailedReference(MessageReference myMessageReference, Reason myReason) {
+			if(myMessageReference == null || myReason == null)
+				throw new IllegalArgumentException();
+			
+			mMessageReference = myMessageReference;
+			mReason = myReason;
+		}
+	
+		private transient ObjectContainer db;
+
+		public void initializeTransient(ObjectContainer myDB) {
+			db = myDB;
+		}
+
+		/**
+		 * Not synchronized because this class only has final members.
+		 */
+		public void store() {
+			db.store(this);
+		}
+		
+		public MessageReference getMessageReference() {
+			return mMessageReference;
+		}
+	
+		public Reason getReason() {
+			return mReason;
+		}
+
+	}
 
 	
 	protected final ArrayList<MessageReference> mMessages;
