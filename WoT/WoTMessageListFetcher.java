@@ -207,13 +207,12 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	@Override
 	public synchronized void onFailure(FetchException e, ClientGetter state) {
 		try {
-			/* TODO: Handle DNF in some reasonable way. Mark the MessageLists as unavailable after a certain amount of retries maybe */
 			switch(e.getMode()) {
 				case FetchException.DATA_NOT_FOUND:
 					WoTIdentity identity;
 					try {
 						identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI());
-						mMessageManager.onMessageListFetchFailed(identity, state.getURI(), MessageList.MessageListFetchFailedReference.Reason.ParsingFailed);
+						mMessageManager.onMessageListFetchFailed(identity, state.getURI(), MessageList.MessageListFetchFailedReference.Reason.DataNotFound);
 					} catch (NoSuchIdentityException ex) {
 						Logger.error(this, "SHOULD NOT HAPPEN", ex);
 					}
