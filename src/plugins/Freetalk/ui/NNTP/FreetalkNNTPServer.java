@@ -90,17 +90,15 @@ public class FreetalkNNTPServer implements Runnable {
 			 * we have to use a low timeout. */
 			iface.setSoTimeout(1000);
 			while (!shutdown) {
+				Socket clientSocket = iface.accept();
+				if(clientSocket != null) { /* null is returned on timeout */
+					Logger.debug(this, "Accepted an NNTP connection from " + clientSocket.getInetAddress());
 
-					Socket clientSocket = iface.accept();
-					if(clientSocket != null) { /* null is returned on timeout */
-						Logger.debug(this, "Accepted an NNTP connection from " + clientSocket.getInetAddress());
-	
-						FreetalkNNTPHandler handler = new FreetalkNNTPHandler(freetalk, clientSocket);
-						node.executor.execute(handler, "Freetalk NNTP Client " + clientSocket.getInetAddress());
-	
-						clientHandlers.add(handler);
-					}
+					FreetalkNNTPHandler handler = new FreetalkNNTPHandler(freetalk, clientSocket);
+					node.executor.execute(handler, "Freetalk NNTP Client " + clientSocket.getInetAddress());
 
+					clientHandlers.add(handler);
+				}
 				
 				// Remove disconnected clients from the list
 				for (Iterator<FreetalkNNTPHandler> i = clientHandlers.iterator(); i.hasNext(); ) {
