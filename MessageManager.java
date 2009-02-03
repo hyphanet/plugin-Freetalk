@@ -268,7 +268,7 @@ public abstract class MessageManager implements Runnable {
 			throw new DuplicateMessageListException();
 		
 		if(result.size() == 0)
-			throw new NoSuchMessageListException();
+			throw new NoSuchMessageListException(id);
 
 		MessageList list = result.next();
 		list.initializeTransient(db, this);
@@ -286,7 +286,7 @@ public abstract class MessageManager implements Runnable {
 			throw new DuplicateMessageListException();
 		
 		if(result.size() == 0)
-			throw new NoSuchMessageListException();
+			throw new NoSuchMessageListException(id);
 
 		OwnMessageList list = result.next();
 		list.initializeTransient(db, this);
