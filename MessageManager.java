@@ -156,22 +156,22 @@ public abstract class MessageManager implements Runnable {
 		if(reason == MessageList.MessageFetchFailedReference.Reason.DataNotFound) {
 			/* TODO: Handle DNF in some reasonable way. Mark the Messages as unavailable after a certain amount of retries maybe */
 		} else {
-		try {
-			get(messageReference.getMessageID());
-			Logger.debug(this, "Trying to mark a message as 'downlod failed' which we actually have: " + messageReference.getURI());
-		}
-		catch(NoSuchMessageException e) {
 			try {
-				MessageList.MessageFetchFailedReference failedMarker = new MessageList.MessageFetchFailedReference(messageReference, reason);
-				failedMarker.initializeTransient(db);
-				failedMarker.store();
-				for(MessageReference r : getAllReferencesToMessage(messageReference.getMessageID()))
-					r.setMessageWasDownloadedFlag();
+				get(messageReference.getMessageID());
+				Logger.debug(this, "Trying to mark a message as 'downlod failed' which we actually have: " + messageReference.getURI());
 			}
-			catch(Exception ex) {
-				Logger.error(this, "Exception while marking a not-downloadable messge", ex);
+			catch(NoSuchMessageException e) {
+				try {
+					MessageList.MessageFetchFailedReference failedMarker = new MessageList.MessageFetchFailedReference(messageReference, reason);
+					failedMarker.initializeTransient(db);
+					failedMarker.store();
+					for(MessageReference r : getAllReferencesToMessage(messageReference.getMessageID()))
+						r.setMessageWasDownloadedFlag();
+				}
+				catch(Exception ex) {
+					Logger.error(this, "Exception while marking a not-downloadable messge", ex);
+				}
 			}
-		}
 		}
 	}
 	
