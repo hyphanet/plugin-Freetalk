@@ -85,25 +85,25 @@ public class WoTMessageManager extends MessageManager {
 		if(reason == MessageList.MessageListFetchFailedReference.Reason.DataNotFound) {
 			/* TODO: Handle DNF in some reasonable way. Mark the MessageLists as unavailable after a certain amount of retries maybe */
 		} else {
-		WoTMessageList list = new WoTMessageList(author, uri);
-		try {
-			getMessageList(list.getID());
-			Logger.debug(this, "Download failed of a MessageList which we already have: " + list.getURI());
-		}
-		catch(NoSuchMessageListException e) {
+			WoTMessageList list = new WoTMessageList(author, uri);
 			try {
-				list.initializeTransient(db, this);
-				list.store();
-				MessageList.MessageListFetchFailedReference ref = new MessageList.MessageListFetchFailedReference(list, reason);
-				ref.initializeTransient(db);
-				ref.store();
+				getMessageList(list.getID());
+				Logger.debug(this, "Download failed of a MessageList which we already have: " + list.getURI());
 			}
-			catch(Exception ex) {
-				Logger.error(this, "Error while marking a message list as 'download failed'", ex);
-				db.delete(list);
-				db.commit();
+			catch(NoSuchMessageListException e) {
+				try {
+					list.initializeTransient(db, this);
+					list.store();
+					MessageList.MessageListFetchFailedReference ref = new MessageList.MessageListFetchFailedReference(list, reason);
+					ref.initializeTransient(db);
+					ref.store();
+				}
+				catch(Exception ex) {
+					Logger.error(this, "Error while marking a message list as 'download failed'", ex);
+					db.delete(list);
+					db.commit();
+				}
 			}
-		}
 		}
 	}
 	
