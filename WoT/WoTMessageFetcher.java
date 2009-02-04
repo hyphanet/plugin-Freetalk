@@ -185,26 +185,26 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	public synchronized void onFailure(FetchException e, ClientGetter state) {
 		try {
 			switch(e.getMode()) {
-			case FetchException.DATA_NOT_FOUND:
-				try {
-					WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
-					mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), MessageList.MessageFetchFailedReference.Reason.DataNotFound);
-				} catch (Exception ex) { /* NoSuchMessageList / NoSuchMessage */
-					assert(false);
-					Logger.error(this, "SHOULD NOT HAPPEN", ex);
-				}
-				finally {
-					Logger.error(this, "DNF for message " + state.getURI());
-				}
-				break;
-				
-			case FetchException.CANCELLED:
-				Logger.debug(this, "Cancelled downloading Message " + state.getURI());
-				break;
-				
-			default:
-				Logger.error(this, "Downloading message " + state.getURI() + " failed.", e);
-				break;
+				case FetchException.DATA_NOT_FOUND:
+					try {
+						WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
+						mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), MessageList.MessageFetchFailedReference.Reason.DataNotFound);
+					} catch (Exception ex) { /* NoSuchMessageList / NoSuchMessage */
+						assert(false);
+						Logger.error(this, "SHOULD NOT HAPPEN", ex);
+					}
+					finally {
+						Logger.error(this, "DNF for message " + state.getURI());
+					}
+					break;
+					
+				case FetchException.CANCELLED:
+					Logger.debug(this, "Cancelled downloading Message " + state.getURI());
+					break;
+					
+				default:
+					Logger.error(this, "Downloading message " + state.getURI() + " failed.", e);
+					break;
 			}
 		}
 		
