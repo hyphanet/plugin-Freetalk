@@ -184,7 +184,8 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	@Override
 	public synchronized void onFailure(FetchException e, ClientGetter state) {
 		try {
-			if(e.getMode() == FetchException.DATA_NOT_FOUND) {
+			switch(e.getMode()) {
+			case FetchException.DATA_NOT_FOUND:
 				try {
 					WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
 					mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), MessageList.MessageFetchFailedReference.Reason.DataNotFound);
@@ -195,9 +196,16 @@ public final class WoTMessageFetcher extends MessageFetcher {
 				finally {
 					Logger.error(this, "DNF for message " + state.getURI());
 				}
-			}
-			else
+				break;
+				
+			case FetchException.CANCELLED:
+				Logger.debug(this, "Cancelled downloading Message " + state.getURI());
+				break;
+				
+			default:
 				Logger.error(this, "Downloading message " + state.getURI() + " failed.", e);
+				break;
+			}
 		}
 		
 		finally {
