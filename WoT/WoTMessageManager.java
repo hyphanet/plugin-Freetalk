@@ -112,6 +112,7 @@ public class WoTMessageManager extends MessageManager {
 	public synchronized void addMessageToMessageList(WoTOwnMessage message) throws Exception {
 		Query query = db.query();
 		query.constrain(WoTOwnMessageList.class);
+		query.descend("mAuthor").constrain(message.getAuthor());
 		query.descend("iWasInserted").constrain(false);
 		query.descend("iAmBeingInserted").constrain(false);
 		
