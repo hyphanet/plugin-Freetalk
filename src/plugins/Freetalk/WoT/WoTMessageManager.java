@@ -84,7 +84,9 @@ public class WoTMessageManager extends MessageManager {
 	public synchronized void onMessageListFetchFailed(FTIdentity author, FreenetURI uri, MessageList.MessageListFetchFailedReference.Reason reason) {
 		if(reason == MessageList.MessageListFetchFailedReference.Reason.DataNotFound) {
 			/* TODO: Handle DNF in some reasonable way. Mark the MessageLists as unavailable after a certain amount of retries maybe */
-		} else {
+			return;
+		} 
+		
 			WoTMessageList list = new WoTMessageList(author, uri);
 			try {
 				getMessageList(list.getID());
@@ -97,6 +99,7 @@ public class WoTMessageManager extends MessageManager {
 					MessageList.MessageListFetchFailedReference ref = new MessageList.MessageListFetchFailedReference(list, reason);
 					ref.initializeTransient(db);
 					ref.store();
+					Logger.debug(this, "Marked message list as download failed with reason " + reason + ": " +  uri);
 				}
 				catch(Exception ex) {
 					Logger.error(this, "Error while marking a message list as 'download failed'", ex);
@@ -104,7 +107,6 @@ public class WoTMessageManager extends MessageManager {
 					db.commit();
 				}
 			}
-		}
 	}
 	
 	public synchronized void addMessageToMessageList(WoTOwnMessage message) throws Exception {

@@ -155,7 +155,10 @@ public abstract class MessageManager implements Runnable {
 	public synchronized void onMessageFetchFailed(MessageReference messageReference, MessageList.MessageFetchFailedReference.Reason reason) {
 		if(reason == MessageList.MessageFetchFailedReference.Reason.DataNotFound) {
 			/* TODO: Handle DNF in some reasonable way. Mark the Messages as unavailable after a certain amount of retries maybe */
-		} else {
+			return;
+		}
+		
+		
 			try {
 				get(messageReference.getMessageID());
 				Logger.debug(this, "Trying to mark a message as 'downlod failed' which we actually have: " + messageReference.getURI());
@@ -167,12 +170,13 @@ public abstract class MessageManager implements Runnable {
 					failedMarker.store();
 					for(MessageReference r : getAllReferencesToMessage(messageReference.getMessageID()))
 						r.setMessageWasDownloadedFlag();
+					Logger.debug(this, "Marked message as download failed with reason " + reason + ": " +  messageReference.getURI());
 				}
 				catch(Exception ex) {
 					Logger.error(this, "Exception while marking a not-downloadable messge", ex);
 				}
 			}
-		}
+
 	}
 	
 	/**
