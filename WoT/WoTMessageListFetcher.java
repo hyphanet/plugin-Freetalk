@@ -228,6 +228,10 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 					}
 					break;
 					
+				case FetchException.CANCELLED:
+					Logger.debug(this, "Cancelled downloading MessageList " + state.getURI());
+					break;
+					
 				default:
 					Logger.error(this, "Downloading MessageList " + state.getURI() + " failed.", e);
 					break;
