@@ -87,26 +87,26 @@ public class WoTMessageManager extends MessageManager {
 			return;
 		} 
 		
-			WoTMessageList list = new WoTMessageList(author, uri);
+		WoTMessageList list = new WoTMessageList(author, uri);
+		try {
+			getMessageList(list.getID());
+			Logger.debug(this, "Download failed of a MessageList which we already have: " + list.getURI());
+		}
+		catch(NoSuchMessageListException e) {
 			try {
-				getMessageList(list.getID());
-				Logger.debug(this, "Download failed of a MessageList which we already have: " + list.getURI());
+				list.initializeTransient(db, this);
+				list.store();
+				MessageList.MessageListFetchFailedReference ref = new MessageList.MessageListFetchFailedReference(list, reason);
+				ref.initializeTransient(db);
+				ref.store();
+				Logger.debug(this, "Marked message list as download failed with reason " + reason + ": " +  uri);
 			}
-			catch(NoSuchMessageListException e) {
-				try {
-					list.initializeTransient(db, this);
-					list.store();
-					MessageList.MessageListFetchFailedReference ref = new MessageList.MessageListFetchFailedReference(list, reason);
-					ref.initializeTransient(db);
-					ref.store();
-					Logger.debug(this, "Marked message list as download failed with reason " + reason + ": " +  uri);
-				}
-				catch(Exception ex) {
-					Logger.error(this, "Error while marking a message list as 'download failed'", ex);
-					db.delete(list);
-					db.commit();
-				}
+			catch(Exception ex) {
+				Logger.error(this, "Error while marking a message list as 'download failed'", ex);
+				db.delete(list);
+				db.commit();
 			}
+		}
 	}
 	
 	public synchronized void addMessageToMessageList(WoTOwnMessage message) throws Exception {
