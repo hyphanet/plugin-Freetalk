@@ -221,6 +221,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	 */
 	@Override
 	protected void abortAllTransfers() {
+		super.abortAllTransfers();
 		mMessageLists.clear();
 	}
 	
