@@ -176,8 +176,11 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			
 			removeFetch(state); /* FIXME: This was in the try{} block somewhere else in the FT/WoT code. Move it to finally{} there, too */
 			
+			/* FIXME: this will wake up the loop over and over again. we need to store the previous parallel fetch count and if waking
+			 * up does not increase the fetch count do not wake up again 
 			if(fetchCount() < MIN_PARALLEL_MESSAGE_FETCH_COUNT)
 				nextIteration();
+			*/
 		}
 	}
 	
@@ -211,8 +214,11 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		finally {
 			removeFetch(state);
 		
+			/* FIXME: this will wake up the loop over and over again. we need to store the previous parallel fetch count and if waking
+			 * up does not increase the fetch count do not wake up again
 			if(fetchCount() < MIN_PARALLEL_MESSAGE_FETCH_COUNT)
 				nextIteration();
+			*/
 		}
 	}
 	
