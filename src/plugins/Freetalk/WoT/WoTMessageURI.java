@@ -31,7 +31,7 @@ public final class WoTMessageURI extends MessageURI {
 	 * @throws MalformedURLException The URI does not start with a valid SSK FreenetURI or there is no valid UUID attached after the "#".
 	 */
 	public WoTMessageURI(String uri) throws MalformedURLException {
-		String[] tokens = uri.split("[#]", 1);
+		String[] tokens = uri.split("[#]", 2);
 		
 		mFreenetURI = new FreenetURI(tokens[0]);
 		if(!mFreenetURI.isSSK() && !mFreenetURI.isUSK()) /* FIXME: USK is only allowed for legacy because there are broken message lists in the network. Remove */
@@ -69,7 +69,7 @@ public final class WoTMessageURI extends MessageURI {
 	 */
 	@Override
 	public String toString() {
-		return mFreenetURI.toString() + "#" + mMessageID.split("[@]", 1)[0];
+		return mFreenetURI.toString() + "#" + mMessageID.split("[@]", 2)[0];
 	}
 
 
