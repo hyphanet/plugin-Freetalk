@@ -41,7 +41,7 @@ public final class WoTMessageURI extends MessageURI {
 			mMessageID = UUID.fromString(tokens[1]) + "@" + Base64.encode(mFreenetURI.getRoutingKey());
 		}
 		catch(IllegalArgumentException e) {
-			throw new MalformedURLException(e.getMessage());
+			throw new MalformedURLException("Invalid UUID: " + tokens[1]);
 		}
 	}
 
