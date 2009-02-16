@@ -1,0 +1,99 @@
+<?xml version="1.0"?>
+<!-- ant build file for Freetalk -->
+
+<project name="Freetalk" default="dist" basedir=".">
+	<property name="lib" location="../../../lib"/>
+	<property name="freenet-cvs-snapshot.location" location="${lib}/freenet-cvs-snapshot.jar"/>
+	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
+	<property name="freetalk-plugin.location" location="../../../plugins/freetalk.jar"/>
+	<property name="junit.location" value="/usr/share/java/junit.jar"/>
+	<property name="source-version" value="1.5"/>
+	<property name="build" location="build/"/>
+	<property name="build-test" location="build-test"/>
+	<property name="dist" location="dist/"/>
+
+	<target name="mkdir">
+		<mkdir dir="${build}"/>
+		<mkdir dir="${dist}"/>
+	</target>
+	
+	<target name="env" depends="mkdir"   description="Learn about the environment">
+		<available file="${junit.location}" property="junit.present"/>
+	</target>
+	
+	<target name="compile" depends="env" >
+		<javac srcdir="." destdir="${build}" debug="on" optimize="on" source="1.5" target="1.5">
+			<classpath>
+				<pathelement location="${freenet-ext.location}"/>
+				<pathelement location="${freenet-cvs-snapshot.location}"/>
+			</classpath>
+			<include name="**/*.java"/>
+			<exclude name="**/test/*.java"/>
+		</javac>
+	</target>
+	
+	<!-- ================================================== -->
+	
+	<target name="unit-build" depends="compile" if="junit.present" unless="skip_tests">
+		<delete dir="${build-test}"/>
+		<mkdir dir="${build-test}"/>
+
+		<javac srcdir="." destdir="${build-test}" debug="on" optimize="on" source="1.5" target="1.5">
+			<classpath>
+				<pathelement path="${build}"/>
+				<pathelement location="${freenet-ext.location}"/>
+				<pathelement location="${freenet-cvs-snapshot.location}"/>
+				<pathelement location="${junit.location}"/>
+			</classpath>
+			<compilerarg value="-Xlint"/>
+			<include name="**/test/*.java"/>
+			<exclude name="*.java"/>
+		</javac>
+	</target>
+	
+
+	<target name="unit" depends="unit-build" if="junit.present" unless="skip_tests">
+		<junit printsummary="yes" fork="yes" haltonfailure="yes">
+			<classpath>
+				<pathelement path="${build}"/>
+				<pathelement path="${build-test}"/>
+				<pathelement location="${junit.location}"/>
+				<pathelement location="${freenet-ext.location}"/>
+				<pathelement location="${freenet-cvs-snapshot.location}"/>
+			</classpath>
+
+			<formatter type="plain" usefile="false"/>
+
+			<batchtest fork="yes">
+				<fileset dir="${build-test}">
+					<include name="**/test/*Test.class"/>
+				</fileset>
+			</batchtest>
+			<sysproperty key="benchmark" value="${benchmark}" />
+			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
+		</junit>
+	</target>
+	
+	<!-- ================================================== -->
+	
+	<target name="dist" depends="clean,compile,unit"
+		description="generate the distribution" >
+		<jar jarfile="${dist}/freetalk.jar" duplicate="fail">
+			<manifest>
+				<attribute name="Plugin-Main-Class" value="plugins.Freetalk.Freetalk"/>
+			</manifest>
+			<fileset dir="." casesensitive="no">
+				<include name="*.txt"/>
+			</fileset>
+			<fileset dir="${build}/"/>
+		</jar>
+	</target>
+
+	<!-- ================================================== -->
+	<target name="clean" description="Delete class files and docs dir.">
+		<delete dir="${build}"/>
+		<delete dir="${build-test}"/>
+		<delete dir="${dist}"/>
+		<delete file="${freetalk-plugin.location}"/>
+	</target>
+</project>
