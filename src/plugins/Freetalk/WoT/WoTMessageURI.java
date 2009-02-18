@@ -43,6 +43,9 @@ public final class WoTMessageURI extends MessageURI {
 		catch(IllegalArgumentException e) {
 			throw new MalformedURLException("Invalid UUID: " + tokens[1]);
 		}
+		catch(ArrayIndexOutOfBoundsException e) {
+			throw new MalformedURLException("Invalid Message URI: Message list specified but no UUID given: " + uri);
+		}
 	}
 
 	@Override
