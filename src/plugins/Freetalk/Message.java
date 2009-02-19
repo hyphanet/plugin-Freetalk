@@ -312,6 +312,8 @@ public abstract class Message implements Comparable<Message> {
 	 * downloaded yet.
 	 */
 	public synchronized Message getThread() throws NoSuchMessageException {
+		/* TODO: Find all usages of this function and check whether we should put the activate() here and what the fitting depth is */
+		db.activate(this, 3);
 		if(mThread == null)
 			throw new NoSuchMessageException();
 		mThread.initializeTransient(db, mMessageManager);
