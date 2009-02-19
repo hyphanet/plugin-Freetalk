@@ -16,10 +16,10 @@ public final class WoTMessageURI extends MessageURI {
 		if(myFreenetURI == null)
 			throw new IllegalArgumentException("Trying to create an empty WoTMessageURI");
 		
-		if(!myFreenetURI.isUSK() && !myFreenetURI.isSSK())
+		mFreenetURI = myFreenetURI.isUSK() ? myFreenetURI.sskForUSK() : myFreenetURI;
+		if(!mFreenetURI.isSSK())
 			throw new IllegalArgumentException("Trying to create a WoTMessageURI with illegal key type " + myFreenetURI.getKeyType());
-		
-		mFreenetURI = myFreenetURI.sskForUSK(); /* Just to make sure */
+		 		
 		mMessageID = myMessageID;
 		if(mMessageID.endsWith(Base64.encode(mFreenetURI.getRoutingKey())) == false)
 			throw new IllegalArgumentException("Illegal id:" + mMessageID);
@@ -36,8 +36,9 @@ public final class WoTMessageURI extends MessageURI {
 		if(tokens.length < 2)
 			throw new MalformedURLException("Invalid Message URI: Message list specified but no UUID given: " + uri);
 		
-		mFreenetURI = new FreenetURI(tokens[0]);
-		if(!mFreenetURI.isSSK() && !mFreenetURI.isUSK()) /* FIXME: USK is only allowed for legacy because there are broken message lists in the network. Remove */
+		FreenetURI tempURI = new FreenetURI(tokens[0]);
+		mFreenetURI = tempURI.isUSK() ? tempURI.sskForUSK() : tempURI;
+		if(!mFreenetURI.isSSK()) /* FIXME: USK is only allowed for legacy because there are broken message lists in the network. Remove */
 			throw new IllegalArgumentException("Trying to create a WoTMessageURI with illegal key type " + mFreenetURI.getKeyType());
 		
 		try {
