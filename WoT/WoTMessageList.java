@@ -22,13 +22,19 @@ public class WoTMessageList extends MessageList {
 	}
 
 	public FreenetURI getURI() {
-		return assembleURI(mAuthor.getRequestURI(), mIndex);
+		return assembleURI(mAuthor.getRequestURI(), mIndex).sskForUSK();
 	}
 	
 	protected FreenetURI generateURI(FreenetURI baseURI, int index) {
 		return assembleURI(baseURI, index);
 	}
 	
+	/**
+	 * Get the USK URI of a message list with the given identity and index.
+	 * @param identity
+	 * @param index
+	 * @return
+	 */
 	public static FreenetURI generateURI(WoTIdentity identity, int index) {
 		return assembleURI(identity.getRequestURI(), index);
 	}
