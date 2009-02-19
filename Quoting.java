@@ -1,7 +1,5 @@
 package plugins.Freetalk;
 
-import java.text.BreakIterator;
-import java.util.Locale;
 
 public class Quoting {
 
@@ -9,22 +7,16 @@ public class Quoting {
 		return message.getAuthor().getFreetalkAddress() + " wrote:\n" + quoteLines(message.getText());
 	}
 
+	/* FIXME: Find an intelligent (email) wrapping code to limit the line length to 80.
+	 * Maybe Frost has code for that which can be used here? */
 	private static String quoteLines(String text) {
-		StringBuffer result = new StringBuffer(2*text.length());
+		String[] lines = text.split("\r\n|\n");
+		StringBuffer result = new StringBuffer(text.length() + lines.length * 2 + 16);
 		
-		BreakIterator breaker = BreakIterator.getLineInstance(Locale.ENGLISH);
-		breaker.setText(text);
-		int beginIndex = breaker.first();
-		int endIndex = breaker.next();
-
-		while(endIndex != BreakIterator.DONE) {
-			String line = text.substring(beginIndex, endIndex);
-			
+		for(String line : lines) {
 			result.append("> ");
 			result.append(line);
-			
-			beginIndex = endIndex + 1;
-			endIndex = breaker.next();
+			result.append("\n");
 		}
 		
 		return result.toString();
