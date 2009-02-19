@@ -41,15 +41,16 @@ public class NewReplyPage extends WebPageImpl {
 				try {
 					/* We use getThread().getID() instead of getParentThreadID() because the message's thread might not have been downloaded yet */
 					successBox.addChild(new HTMLNode("a", "href", SELF_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
-							"&board=" + mBoard.getName() + "&id=" + mParentMessage.getThread().getID(), 
-							"Go back to parent thread"));
+							"&board=" + mBoard.getName() + "&id=" + (mParentMessage.isThread() ? mParentMessage.getID() : mParentMessage.getThread().getID()), 
+					"Go back to parent thread"));
+					successBox.addChild("br");
 				}
 				catch(NoSuchMessageException e) {
 					Logger.error(this, "Should not happen", e);
 				}
 				
 				successBox.addChild(new HTMLNode("a", "href", SELF_URI + "/showBoard?identity=" + mOwnIdentity.getUID() + "&name=" + mBoard.getName(),
-								"Go back to " + mBoard.getName()));
+						"Go back to " + mBoard.getName()));
 			} catch (Exception e) {
 				HTMLNode alertBox = addAlertBox("The reply could not be created.");
 				alertBox.addChild("div", e.getMessage());
