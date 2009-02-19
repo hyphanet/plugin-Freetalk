@@ -8,4 +8,11 @@ public class NoSuchIdentityException extends Exception {
 
 	private static final long serialVersionUID = 1L;
 
+	public NoSuchIdentityException() {
+		super();
+	}
+	
+	public NoSuchIdentityException(String id) {
+		super("Unknown identity ID: " + id);
+	}
 }

@@ -8,4 +8,11 @@ public class NoSuchBoardException extends Exception {
 
 	private static final long serialVersionUID = 1L;
 
+	public NoSuchBoardException() {
+		super();
+	}
+	
+	public NoSuchBoardException(String name) {
+		super("Unknown board: " + name);
+	}
 }

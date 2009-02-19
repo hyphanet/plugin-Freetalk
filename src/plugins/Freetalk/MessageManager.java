@@ -11,7 +11,6 @@ import java.util.Set;
 
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageList.MessageReference;
-import plugins.Freetalk.MessageList.MessageFetchFailedReference.Reason;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.DuplicateMessageListException;
@@ -245,7 +244,7 @@ public abstract class MessageManager implements Runnable {
 			throw new DuplicateMessageException();
 		
 		if(result.size() == 0)
-			throw new NoSuchMessageException();
+			throw new NoSuchMessageException(id);
 
 		Message m = result.next();
 		m.initializeTransient(db, this);
@@ -311,7 +310,7 @@ public abstract class MessageManager implements Runnable {
 			throw new DuplicateMessageException();
 		
 		if(result.size() == 0)
-			throw new NoSuchMessageException();
+			throw new NoSuchMessageException(id);
 
 		OwnMessage m = result.next();
 		m.initializeTransient(db, this);
@@ -333,7 +332,7 @@ public abstract class MessageManager implements Runnable {
 			throw new DuplicateBoardException();
 
 		if(result.size() == 0)
-			throw new NoSuchBoardException();
+			throw new NoSuchBoardException(name);
 		
 		Board b = result.next();
 		b.initializeTransient(db, this);
