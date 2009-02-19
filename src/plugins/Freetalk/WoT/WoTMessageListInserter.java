@@ -92,7 +92,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 					insertMessageList(list);
 				}
 				catch(Exception e) {
-					Logger.error(this, "Insert of WoTMessageList failed", e);
+					Logger.error(this, "Insert of WoTOwnMessageList failed", e);
 				}
 			}
 		}
@@ -121,7 +121,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 			addInsert(pu);
 			tempB = null;
 
-			Logger.debug(this, "Started insert of WoTMessageList at " + list.getInsertURI());
+			Logger.debug(this, "Started insert of WoTOwnMessageList at request URI " + list.getURI());
 		}
 		finally {
 			if(tempB != null)
@@ -149,14 +149,14 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	public synchronized void onFailure(InsertException e, BaseClientPutter state) {
 		try {
 			if(e.getMode() == InsertException.COLLISION) {
-				Logger.error(this, "WoTMessageList insert collided, trying to insert with higher index ...");
+				Logger.error(this, "WoTOwnMessageList insert collided, trying to insert with higher index ...");
 				try {
 					WoTOwnMessageList list = (WoTOwnMessageList)mMessageManager.getOwnMessageList(MessageList.getIDFromURI(state.getURI()));
 					list.incrementInsertIndex();
 					insertMessageList(list);
 				}
 				catch(Exception ex) {
-					Logger.error(this, "Inserting with higher index failed", ex);
+					Logger.error(this, "Inserting WoTOwnMessageList with higher index failed", ex);
 				}
 			} else
 				throw e;
