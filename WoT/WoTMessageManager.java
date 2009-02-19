@@ -264,10 +264,11 @@ public class WoTMessageManager extends MessageManager {
 	@SuppressWarnings("unchecked")
 	public int getFreeOwnMessageListIndex(WoTOwnIdentity messageAuthor)  {
 		Query q = db.query();
-		q.constrain(WoTOwnMessageList.class);
+		/* We query for WoTMessageList and not WoTOwnMessageList because the user might have deleted his own messages or lost his database */
+		q.constrain(WoTMessageList.class);
 		q.descend("mAuthor").constrain(messageAuthor);
 		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
-		ObjectSet<WoTOwnMessageList> result = q.execute();
+		ObjectSet<WoTMessageList> result = q.execute();
 		
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
