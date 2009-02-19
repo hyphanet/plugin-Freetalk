@@ -304,7 +304,7 @@ public final class Board implements Comparable<Board> {
 		assert(parents.size() <= 1);
 		
 		if(parents.size() == 0)
-			throw new NoSuchMessageException();
+			throw new NoSuchMessageException(m.getParentThreadID());
 		else
 			return parents.next();
 	}
@@ -412,7 +412,7 @@ public final class Board implements Comparable<Board> {
 		ObjectSet<BoardMessageLink> result = q.execute();
 		
 		if(result.size() == 0)
-			throw new NoSuchMessageException();
+			throw new NoSuchMessageException(message.getID());
 		
 		return result.next().getIndex();
 	}

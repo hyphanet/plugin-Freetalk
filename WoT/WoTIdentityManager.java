@@ -108,7 +108,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 			throw new DuplicateIdentityException();
 	
 		if(result.size() == 0)
-			throw new NoSuchIdentityException();
+			throw new NoSuchIdentityException(uid);
 		
 		return result.next();
 	}
@@ -128,7 +128,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 			throw new DuplicateIdentityException();
 	
 		if(result.size() == 0)
-			throw new NoSuchIdentityException();
+			throw new NoSuchIdentityException(uid);
 		
 		return result.next();
 	}
