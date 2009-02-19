@@ -342,10 +342,20 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		return mID;
 	}
 	
+	/**
+	 * Get the SSK URI of this message list.
+	 * @return
+	 */
 	public FreenetURI getURI() {
-		return generateURI(mAuthor.getRequestURI(), mIndex);
+		return generateURI(mAuthor.getRequestURI(), mIndex).sskForUSK();
 	}
 	
+	/**
+	 * Get the USK URI of a message list with the given base URI and index.
+	 * @param baseURI
+	 * @param index
+	 * @return
+	 */
 	protected abstract FreenetURI generateURI(FreenetURI baseURI, int index);
 	
 	public FTIdentity getAuthor() {

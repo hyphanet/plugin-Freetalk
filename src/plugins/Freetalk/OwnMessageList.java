@@ -30,8 +30,12 @@ public abstract class OwnMessageList extends MessageList {
 		super(newAuthor, newIndex);
 	}
 
+	/**
+	 * Get the SSK insert URI of this message list.
+	 * @return
+	 */
 	public FreenetURI getInsertURI() {
-		return generateURI(((FTOwnIdentity)mAuthor).getInsertURI(), mIndex);
+		return generateURI(((FTOwnIdentity)mAuthor).getInsertURI(), mIndex).sskForUSK();
 	}
 
 	/**
