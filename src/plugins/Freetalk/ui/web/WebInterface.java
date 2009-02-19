@@ -29,14 +29,13 @@ public final class WebInterface implements FredPluginHTTP {
 	
 	private final FTOwnIdentity mOwnIdentity;
 
-	@SuppressWarnings("static-access")
 	public WebInterface(Freetalk myFreetalk) {
 		mFreetalk = myFreetalk;
 		
 		mPageMaker = mFreetalk.getPluginRespirator().getPageMaker();
-		mPageMaker.addNavigationLink(mFreetalk.PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
-		mPageMaker.addNavigationLink(mFreetalk.PLUGIN_URI + "/messages", "Messages", "View Messages", false, null);
-		mPageMaker.addNavigationLink(mFreetalk.PLUGIN_URI + "/identities", "Identities", "Manage your own and known identities", false, null);
+		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
+		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/messages", "Messages", "View Messages", false, null);
+		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/identities", "Identities", "Manage your own and known identities", false, null);
 		mPageMaker.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);
 		
 		mOwnIdentity = null;
@@ -53,7 +52,7 @@ public final class WebInterface implements FredPluginHTTP {
 		*/
 
 		/* FIXME: ugly hack! remove! */
-		String page = request.getPath().substring(mFreetalk.PLUGIN_URI.length());
+		String page = request.getPath().substring(Freetalk.PLUGIN_URI.length());
 		int endIndex = request.getPath().indexOf('?');
 		if(endIndex > 0)
 			page = page.substring(0, endIndex);
@@ -89,14 +88,13 @@ public final class WebInterface implements FredPluginHTTP {
 		throw new NotFoundPluginHTTPException("Resource not found in Freetalk plugin", page);
 	}
 
-	@SuppressWarnings("static-access")
 	public final String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
 		String pass = request.getPartAsString("formPassword", 32);
 		if (pass == null || (pass.length() == 0) || !pass.equals(mFreetalk.getPluginRespirator().getNode().clientCore.formPassword)) {
 			return new Errors(this, null, request, "Error", "Invalid form password.").toHTML();
 		}
 
-		String page = request.getPath().substring(mFreetalk.PLUGIN_URI.length());
+		String page = request.getPath().substring(Freetalk.PLUGIN_URI.length());
 
 		if (page.length() < 1)
 			throw new NotFoundPluginHTTPException("Resource not found", page);
@@ -107,13 +105,17 @@ public final class WebInterface implements FredPluginHTTP {
 				return new NewBoardPage(this, ownId, request).toHTML();
 			else if(page.equals("/NewThread"))
 				return new NewThreadPage(this, ownId, request).toHTML();
+			else if(page.equals("/NewReply")) 
+				return new NewReplyPage(this, ownId, request).toHTML();
 		}
-		/* TODO: Make this exceptions store the specified non-existant element theirselves */
 		catch(NoSuchIdentityException e) {
-			throw new NotFoundPluginHTTPException("Unknown identity " + request.getPartAsString("OwnIdentityID", 64), page);
+			throw new NotFoundPluginHTTPException(e.getMessage(), page);
 		}
 		catch(NoSuchBoardException e) {
-			throw new NotFoundPluginHTTPException("Unknown board " + request.getPartAsString("BoardName", 256), page);
+			throw new NotFoundPluginHTTPException(e.getMessage(), page);
+		}
+		catch (NoSuchMessageException e) {
+			throw new NotFoundPluginHTTPException(e.getMessage(), page);
 		}
 
 		/*
