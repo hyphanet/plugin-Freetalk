@@ -222,6 +222,12 @@ public abstract class Message implements Comparable<Message> {
 		return mThreadURI;
 	}
 	
+	/**
+	 * Get the ID of the thread this message belongs to. Should not be used by the user interface for querying the database as the parent
+	 * thread might not have been downloaded yet. Use getThread().getID() instead.
+	 * @return The ID of the message's parent thread.
+	 * @throws NoSuchMessageException If the message is a thread itself.
+	 */
 	public String getParentThreadID() throws NoSuchMessageException {
 		if(mThreadID == null)
 			throw new NoSuchMessageException();
@@ -302,6 +308,8 @@ public abstract class Message implements Comparable<Message> {
 	
 	/**
 	 * Get the thread to which this message belongs. The transient fields of the returned message will be initialized already.
+	 * This might not always return the real parent thread, it will return the topmost parent message if the parent thread has not been
+	 * downloaded yet.
 	 */
 	public synchronized Message getThread() throws NoSuchMessageException {
 		if(mThread == null)
