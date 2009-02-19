@@ -33,6 +33,9 @@ public final class WoTMessageURI extends MessageURI {
 	public WoTMessageURI(String uri) throws MalformedURLException {
 		String[] tokens = uri.split("[#]", 2);
 		
+		if(tokens.length < 2)
+			throw new MalformedURLException("Invalid Message URI: Message list specified but no UUID given: " + uri);
+		
 		mFreenetURI = new FreenetURI(tokens[0]);
 		if(!mFreenetURI.isSSK() && !mFreenetURI.isUSK()) /* FIXME: USK is only allowed for legacy because there are broken message lists in the network. Remove */
 			throw new IllegalArgumentException("Trying to create a WoTMessageURI with illegal key type " + mFreenetURI.getKeyType());
@@ -42,9 +45,6 @@ public final class WoTMessageURI extends MessageURI {
 		}
 		catch(IllegalArgumentException e) {
 			throw new MalformedURLException("Invalid UUID: " + tokens[1]);
-		}
-		catch(ArrayIndexOutOfBoundsException e) {
-			throw new MalformedURLException("Invalid Message URI: Message list specified but no UUID given: " + uri);
 		}
 	}
 
