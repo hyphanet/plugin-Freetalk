@@ -121,7 +121,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 			addInsert(pu);
 			tempB = null;
 
-			Logger.debug(this, "Started insert of WoTMessageList from " + list.getAuthor().getNickname());
+			Logger.debug(this, "Started insert of WoTMessageList at " + list.getInsertURI());
 		}
 		finally {
 			if(tempB != null)
