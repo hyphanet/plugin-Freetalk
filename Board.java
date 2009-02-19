@@ -305,8 +305,11 @@ public final class Board implements Comparable<Board> {
 		
 		if(parents.size() == 0)
 			throw new NoSuchMessageException(m.getParentThreadID());
-		else
-			return parents.next();
+		else {
+			MessageReference parentThread = parents.next();
+			assert(parentThread.getMessage().getID().equals(m.getParentThreadID())); /* The query works */
+			return parentThread;
+		}
 	}
 	
 
