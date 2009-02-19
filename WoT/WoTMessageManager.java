@@ -123,6 +123,7 @@ public class WoTMessageManager extends MessageManager {
 			}
 			catch(Exception e) {
 				/* The list is full. */
+				Logger.debug(this, "Not adding message " + message.getID() + " to message list " + list.getID(), e);
 			}
 		}
 		
@@ -131,6 +132,7 @@ public class WoTMessageManager extends MessageManager {
 		list.initializeTransient(db, this);
 		list.addMessage(message);
 		list.store();
+		Logger.debug(this, "Created the new list " + list.getID() + " for message " + message.getID());
 	}
 
 	@SuppressWarnings("unchecked")
