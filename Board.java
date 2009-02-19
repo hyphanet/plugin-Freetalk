@@ -476,14 +476,14 @@ public final class Board implements Comparable<Board> {
 	@SuppressWarnings("unchecked")
 	public synchronized List<MessageReference> getAllThreadReplies(Message thread) {
 		Query q = db.query();
-		/* FIXME: Check whether this query is fast. I think it should rather first query for objects of Message.class which have mThread == thread
+		/* FIXME: This query is inefficient. It should rather first query for objects of Message.class which have mThreadID == thread.getID()
 		 * and then check whether a BoardMessageLink to this board exists. */
 		q.constrain(BoardMessageLink.class);
 		q.descend("mBoard").constrain(this);
 		try {
 			Query sub = q.descend("mMessage");
-			sub.descend("mThreadID").constrain(thread.isThread() ? thread.getID() : thread.getParentThreadID());
 			sub.constrain(thread).identity().not();
+			sub.descend("mThreadID").constrain(thread.isThread() ? thread.getID() : thread.getParentThreadID());
 		} catch (NoSuchMessageException e) {
 			throw new RuntimeException( "Message is no thread but parentThreadURI == null : " + thread.getURI());
 		}
