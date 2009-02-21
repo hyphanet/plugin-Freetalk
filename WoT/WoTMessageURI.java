@@ -51,7 +51,7 @@ public final class WoTMessageURI extends MessageURI {
 		FreenetURI tempURI = new FreenetURI(tokens[0]);
 		mFreenetURI = tempURI.isUSK() ? tempURI.sskForUSK() : tempURI;
 		if(!mFreenetURI.isSSK()) /* FIXME: USK is only allowed for legacy because there are broken message lists in the network. Remove */
-			throw new IllegalArgumentException("Trying to create a WoTMessageURI with illegal key type " + mFreenetURI.getKeyType());
+			throw new MalformedURLException("Trying to create a WoTMessageURI with illegal key type " + mFreenetURI.getKeyType());
 		
 		try {
 			mMessageID = UUID.fromString(tokens[1]) + "@" + Base64.encode(mFreenetURI.getRoutingKey());
