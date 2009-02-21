@@ -13,7 +13,7 @@ public final class WoTMessageURI extends MessageURI {
 	private final String mMessageID;
 
 	public WoTMessageURI(FreenetURI myFreenetURI, String myMessageID) {
-		if(myFreenetURI == null)
+		if(myFreenetURI == null || myMessageID == null)
 			throw new IllegalArgumentException("Trying to create an empty WoTMessageURI");
 		
 		mFreenetURI = myFreenetURI.isUSK() ? myFreenetURI.sskForUSK() : myFreenetURI;
@@ -21,7 +21,16 @@ public final class WoTMessageURI extends MessageURI {
 			throw new IllegalArgumentException("Trying to create a WoTMessageURI with illegal key type " + myFreenetURI.getKeyType());
 		 		
 		mMessageID = myMessageID;
-		if(mMessageID.endsWith(Base64.encode(mFreenetURI.getRoutingKey())) == false)
+		String[] tokens = mMessageID.split("[@]", 2);
+		
+		try {
+			UUID.fromString(tokens[0]);
+		}
+		catch(IllegalArgumentException e) {
+			throw new IllegalArgumentException("Illegal id:" + mMessageID);
+		}
+		
+		if(tokens[1].equals(Base64.encode(mFreenetURI.getRoutingKey())) == false)
 			throw new IllegalArgumentException("Illegal id:" + mMessageID);
 	}
 
@@ -31,6 +40,9 @@ public final class WoTMessageURI extends MessageURI {
 	 * @throws MalformedURLException The URI does not start with a valid SSK FreenetURI or there is no valid UUID attached after the "#".
 	 */
 	public WoTMessageURI(String uri) throws MalformedURLException {
+		if(uri == null)
+			throw new IllegalArgumentException("Trying to create an empty WoTMessageURI");
+		
 		String[] tokens = uri.split("[#]", 2);
 		
 		if(tokens.length < 2)
