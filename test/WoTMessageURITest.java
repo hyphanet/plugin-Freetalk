@@ -1,13 +1,9 @@
 package plugins.Freetalk.test;
 
-import static org.junit.Assert.*;
+import junit.framework.TestCase;
 
 import java.net.MalformedURLException;
 import java.util.UUID;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 import freenet.support.Base64;
 
@@ -21,7 +17,7 @@ import freenet.keys.FreenetURI;
  * 
  * @author xor
  */
-public class WoTMessageURITest {
+public class WoTMessageURITest extends TestCase {
 	
 	/* Attributes of first testing WoTMessageURI */
 	private FreenetURI mSSK;
@@ -40,8 +36,7 @@ public class WoTMessageURITest {
 	private String mInvalidUUID;
 	private String mInvalidMessageID;
 	
-	
-	@Before
+
 	public void setUp() throws Exception {
 		mSSK = new FreenetURI("SSK@SZmdqGtog7v1wN3buILoMpucyD6V5krsYrVqFUfHosg,SLsRq9Q9ZlrmUS9KeyK2pmheJ4wbtW602UwX0o0E~w0,AQACAAE/Freetalk|MessageList-1");
 		mUUID = UUID.fromString("d5b0dcc4-91cb-4870-8ab9-8588e895fa5d");
@@ -59,11 +54,9 @@ public class WoTMessageURITest {
 		mInvalidMessageID = mInvalidUUID + "@" + Base64.encode(mSSK.getRoutingKey());
 	}
 
-	@After
 	public void tearDown() throws Exception {
 	}
 
-	@Test
 	public void testWoTMessageURIFreenetURIString() {
 		/* Test construction of invalid URIs */
 		
@@ -116,7 +109,6 @@ public class WoTMessageURITest {
 		assertEquals(mSSK, uri.getFreenetURI());
 	}
 	
-	@Test
 	public void testWoTMessageURIString() throws MalformedURLException {
 		/* Test construction of invalid URIs */
 		
@@ -166,19 +158,16 @@ public class WoTMessageURITest {
 		assertEquals(mSSK, uri.getFreenetURI());
 	}
 	
-	@Test
 	public void testGetFreenetURI() throws MalformedURLException {
 		WoTMessageURI uri = new WoTMessageURI(mSSK.toASCIIString() + "#" + mUUID);
 		assertEquals(mSSK, uri.getFreenetURI());
 	}
 	
-	@Test
 	public void testGetMessageID() throws MalformedURLException {
 		WoTMessageURI uri = new WoTMessageURI(mSSK.toASCIIString() + "#" + mUUID);
 		assertEquals(mMessageID, uri.getMessageID());
 	}
 
-	@Test
 	public void testEquals() {
 		WoTMessageURI uri1a = new WoTMessageURI(mSSK, mMessageID);
 		WoTMessageURI uri1b = new WoTMessageURI(mSSK, mMessageID);
@@ -192,7 +181,6 @@ public class WoTMessageURITest {
 		assertFalse(uri1a.equals(uri3)); assertFalse(uri3.equals(uri1a));
 	}
 
-	@Test
 	public void testToString() {
 		WoTMessageURI uri = new WoTMessageURI(mSSK, mMessageID);
 		assertEquals(mSSK.toString() + "#" + mUUID, uri.toString());
