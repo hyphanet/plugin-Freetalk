@@ -55,11 +55,10 @@ public class WoTMessageManager extends MessageManager {
 	}
 
 	public synchronized WoTOwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
-			String myTitle, String myText, List<Attachment> myAttachments) throws Exception {
+			String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
 		WoTOwnMessage m;
 		
 		synchronized(WoTOwnMessage.class) {	/* TODO: Investigate whether this lock is necessary. */
-			Date date = mCalendar.getTime();
 			Message parentThread = null;
 			try {
 				if(myParentMessage != null) {
@@ -73,6 +72,7 @@ public class WoTMessageManager extends MessageManager {
 
 			}
 			
+			Date date = myDate!=null ? myDate : mCalendar.getTime();
 			m = WoTOwnMessage.construct(parentThread, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
 			m.initializeTransient(db, this);
 			m.store();
