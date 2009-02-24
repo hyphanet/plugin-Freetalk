@@ -147,11 +147,6 @@ public final class WoTMessageXML {
 		}
 	}
 	
-	/** Valid element names for message XML version 1 */
-	private static final HashSet<String> messageXMLElements1 = new HashSet<String>(Arrays.asList(
-		new String[] { Freetalk.PLUGIN_TITLE, "Message", "MessageID", "Subject", "Date", "Time", "Boards", "Board", "ReplyBoard", "InReplyTo",
-					  	"Order", "MessageURI", "Thread", "Body", "Attachments", "File", "Key", "Size"}));
-	
 	/**
 	 * 
 	 * @param db
