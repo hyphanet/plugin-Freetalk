@@ -20,6 +20,11 @@ public class WoTMessageList extends MessageList {
 	public WoTMessageList(FTIdentity myAuthor, FreenetURI myURI) {
 		super(myAuthor, myURI);
 	}
+	
+	
+	public WoTIdentity getAuthor() {
+		return (WoTIdentity)mAuthor;
+	}
 
 	public FreenetURI getURI() {
 		return assembleURI(mAuthor.getRequestURI(), mIndex).sskForUSK();
