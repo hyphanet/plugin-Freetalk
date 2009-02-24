@@ -168,9 +168,6 @@ public final class WoTMessageXML {
 		
 		rootElement = rootElement.children.get("Message");
 		
-		if(rootElement == null)
-			throw new Exception(rootElement.children.toString());
-		
 		if(Integer.parseInt(rootElement.attrs.get("version")) > XML_FORMAT_VERSION)
 			throw new Exception("Version " + rootElement.attrs.get("version") + " > " + XML_FORMAT_VERSION);
 		
