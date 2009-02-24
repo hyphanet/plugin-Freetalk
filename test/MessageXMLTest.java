@@ -119,12 +119,12 @@ public class MessageXMLTest extends DatabaseBasedTest {
 		ByteArrayOutputStream encodedMessage = new ByteArrayOutputStream(4096);
 		WoTMessageXML.encode(mMessage, encodedMessage);
 		
-		assertEquals(mHardcodedEncodedMessage, encodedMessage.toString().replaceAll("\r|\n", ""));
+		assertEquals(mHardcodedEncodedMessage, encodedMessage.toString().replaceAll("[\r\n]", ""));
 		
 		ByteArrayInputStream is = new ByteArrayInputStream(encodedMessage.toByteArray());
 		ByteArrayOutputStream encodedDecodedEncodedMessage = new ByteArrayOutputStream(4096);
 		WoTMessageXML.encode(WoTMessageXML.decode(mMessageManager, is, mMessageList, mMessageRealURI), encodedDecodedEncodedMessage);		
 		
-		assertEquals(mHardcodedEncodedMessage, encodedDecodedEncodedMessage.toString().replaceAll("\r|\n", ""));
+		assertEquals(mHardcodedEncodedMessage, encodedDecodedEncodedMessage.toString().replaceAll("[\r\n]", ""));
 	}
 }
