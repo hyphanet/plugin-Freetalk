@@ -109,20 +109,22 @@ public class MessageXMLTest extends DatabaseBasedTest {
 			);
 	}
 
-	public void testXML() throws Exception {
+	public void testEncoding() throws Exception {
 		ByteArrayOutputStream encodedMessage = new ByteArrayOutputStream(4096);
 		WoTMessageXML.encode(mMessage, encodedMessage);
 		
-		assertEquals(encodedMessage.toString().replaceAll("[\r\n]", ""), mHardcodedEncodedMessage, encodedMessage.toString().replaceAll("[\r\n]", ""));
-		
-		/* FIXME: The following code is the XML decoding test. It works on a recent java VM, but on java 1.5 and therefor on Emu a NPE is thrown. I suppose
-		 * this is due to a bug in the SAXParser of java 1.5. */
-		/*
-		ByteArrayInputStream is = new ByteArrayInputStream(encodedMessage.toByteArray());
-		ByteArrayOutputStream encodedDecodedEncodedMessage = new ByteArrayOutputStream(4096);
-		WoTMessageXML.encode(WoTMessageXML.decode(mMessageManager, is, mMessageList, mMessageRealURI), encodedDecodedEncodedMessage);		
-		
-		assertEquals(mHardcodedEncodedMessage, encodedDecodedEncodedMessage.toString().replaceAll("[\r\n]", ""));
-		*/
+		assertEquals(mHardcodedEncodedMessage, encodedMessage.toString().replaceAll("[\r\n]", ""));
 	}
+	
+	/* FIXME: The following code is the XML decoding test. It works on a recent java VM, but on java 1.5 and therefore on Emu a NPE is thrown. I suppose
+	 * this is due to a bug in the SAXParser of java 1.5. */
+	/*
+	public void testDecoding() throws Exception {
+		ByteArrayInputStream is = new ByteArrayInputStream(mHardcodedEncodedMessage.getBytes());
+		ByteArrayOutputStream decodedAndEncodedMessage = new ByteArrayOutputStream(4096);
+		WoTMessageXML.encode(WoTMessageXML.decode(mMessageManager, is, mMessageList, mMessageRealURI), decodedAndEncodedMessage);		
+		
+		assertEquals(mHardcodedEncodedMessage, decodedAndEncodedMessage.toString().replaceAll("[\r\n]", ""));
+	}
+	*/
 }
