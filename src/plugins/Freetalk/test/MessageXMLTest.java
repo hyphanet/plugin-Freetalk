@@ -75,7 +75,7 @@ public class MessageXMLTest extends DatabaseBasedTest {
 				"Message title", new Date(109, 4, 3, 16, 15, 14), "Message body\nNew line", attachments);
 
 		mHardcodedEncodedMessage = new String(
-			"<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+			"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
 			"<Freetalk-testing>" +
 			"<Message version=\"1\">" +
 			"<MessageID><![CDATA[2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>" + 
