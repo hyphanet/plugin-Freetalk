@@ -24,7 +24,7 @@ import plugins.Freetalk.WoT.WoTOwnIdentity;
 import freenet.keys.FreenetURI;
 
 
-public class MessageXMLTest extends DatabaseBasedTest {
+public class WoTMessageXMLTest extends DatabaseBasedTest {
 	
 	private MessageManager mMessageManager;
 	private FreenetURI mMessageRealURI;
