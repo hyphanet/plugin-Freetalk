@@ -50,10 +50,13 @@ public abstract class MessageManager implements Runnable {
 		mIdentityManager = myIdentityManager;
 	}
 	
-	public MessageManager(ObjectContainer myDB) {
+	/**
+	 * For being used in JUnit tests to run without a node.
+	 */
+	public MessageManager(ObjectContainer myDB, IdentityManager myIdentityManager) {
 		db = myDB;
 		mExecutor = null;
-		mIdentityManager = null;
+		mIdentityManager = myIdentityManager;
 	}
 	
 	/**

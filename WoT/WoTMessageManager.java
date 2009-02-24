@@ -47,8 +47,11 @@ public class WoTMessageManager extends MessageManager {
 		Logger.debug(this, "Message manager started.");
 	}
 	
-	public WoTMessageManager(ObjectContainer myDB) {
-		super(myDB);
+	/**
+	 * For being used in JUnit tests to run without a node.
+	 */
+	public WoTMessageManager(ObjectContainer myDB, WoTIdentityManager myIdentityManager) {
+		super(myDB, myIdentityManager);
 	}
 
 	public synchronized WoTOwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,

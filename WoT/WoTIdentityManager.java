@@ -62,8 +62,11 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		Logger.debug(this, "Identity manager started.");
 	}
 	
-	public WoTIdentityManager() {
-		super();
+	/**
+	 * For being used in JUnit tests to run without a node.
+	 */
+	public WoTIdentityManager(ObjectContainer myDB) {
+		super(myDB);
 	}
 	
 	@SuppressWarnings("unchecked")
