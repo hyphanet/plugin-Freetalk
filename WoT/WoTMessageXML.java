@@ -22,14 +22,14 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageManager;
-import plugins.Freetalk.XMLTree;
 import plugins.Freetalk.Message.Attachment;
-import plugins.Freetalk.XMLTree.XMLElement;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
 
@@ -164,56 +164,63 @@ public final class WoTMessageXML {
 	 */
 	@SuppressWarnings("deprecation")
 	public static Message decode(MessageManager messageManager, InputStream inputStream, WoTMessageList messageList, FreenetURI uri) throws Exception {
-		XMLTree xmlTreeGenerator = new XMLTree(messageXMLElements1, inputStream);		
-		XMLElement rootElement = xmlTreeGenerator.getRoot();
+		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
+		Document xml = xmlBuilder.parse(inputStream);
 		
-		rootElement = rootElement.children.get("Message");
+		Element messageElement = (Element)xml.getElementsByTagName("Message").item(0);
 		
-		if(Integer.parseInt(rootElement.attrs.get("version")) > XML_FORMAT_VERSION)
-			throw new Exception("Version " + rootElement.attrs.get("version") + " > " + XML_FORMAT_VERSION);
+		if(Integer.parseInt(messageElement.getAttribute("version")) > XML_FORMAT_VERSION)
+			throw new Exception("Version " + messageElement.getAttribute("version") + " > " + XML_FORMAT_VERSION);
 		
-		String messageID = rootElement.children.get("MessageID").cdata;
+		String messageID = messageElement.getElementsByTagName("MessageID").item(0).getTextContent();
 		
-		String messageTitle = rootElement.children.get("Subject").cdata;
-		Date messageDate = mDateFormat.parse(rootElement.children.get("Date").cdata);
-		Date messageTime = mTimeFormat.parse(rootElement.children.get("Time").cdata);
+		String messageTitle = messageElement.getElementsByTagName("Subject").item(0).getTextContent();
+
+		Date messageDate = mDateFormat.parse(messageElement.getElementsByTagName("Date").item(0).getTextContent());
+		Date messageTime = mTimeFormat.parse(messageElement.getElementsByTagName("Time").item(0).getTextContent());
 		messageDate.setHours(messageTime.getHours()); messageDate.setMinutes(messageTime.getMinutes()); messageDate.setSeconds(messageTime.getSeconds());
 		
 		Set<Board> messageBoards = new HashSet<Board>();
-		for(XMLElement board : rootElement.children.get("Boards").children.iterateAll("Board")) {
-			messageBoards.add(messageManager.getOrCreateBoard(board.cdata));
-		}
+		Element boardsElement = (Element)messageElement.getElementsByTagName("Boards").item(0);
+		NodeList boardList = boardsElement.getElementsByTagName("Board");
+		for(int i = 0; i < boardList.getLength(); ++i)
+			messageBoards.add(messageManager.getOrCreateBoard(boardList.item(i).getTextContent()));
 		
-		XMLElement replyToBoardElement = rootElement.children.get("ReplyBoard");
-		Board messageReplyToBoard =  replyToBoardElement != null ? messageManager.getOrCreateBoard(replyToBoardElement.cdata) : null; 
+		Node replyToBoardElement = messageElement.getElementsByTagName("ReplyBoard").item(0);
+		Board messageReplyToBoard =  replyToBoardElement != null ? messageManager.getOrCreateBoard(replyToBoardElement.getTextContent()) : null; 
 		
 		WoTMessageURI parentMessageURI = null;
 		WoTMessageURI parentThreadURI = null;
 		
-		XMLElement inReplyToElement = rootElement.children.get("InReplyTo");
+		Element inReplyToElement = (Element)messageElement.getElementsByTagName("InReplyTo").item(0);
 		if(inReplyToElement != null) {
-			if(inReplyToElement.children.containsKey("Message")) {
-				for(XMLElement inReplyToMessageElement : inReplyToElement.children.iterateAll("Message")) {
-					if(inReplyToMessageElement.children.get("Order").cdata.equals("0"))
-						parentMessageURI = new WoTMessageURI(inReplyToMessageElement.children.get("MessageURI").cdata);
-				}
+			NodeList parentMessages = inReplyToElement.getElementsByTagName("Message");
+			for(int i = 0; i < parentMessages.getLength(); ++i) {
+				Element parentMessage = (Element)parentMessages.item(i);
+				if(parentMessage.getElementsByTagName("Order").item(0).getTextContent().equals("0"))
+					parentMessageURI = new WoTMessageURI(parentMessage.getElementsByTagName("MessageURI").item(0).getTextContent());
 			}
 		
-			XMLElement threadElement = inReplyToElement.children.get("Thread");
+			Element threadElement = (Element)inReplyToElement.getElementsByTagName("Thread").item(0);
 			if(threadElement != null)
-				parentThreadURI = new WoTMessageURI(threadElement.children.get("MessageURI").cdata);
+				parentThreadURI = new WoTMessageURI(threadElement.getElementsByTagName("MessageURI").item(0).getTextContent());
 		}
 		
-		String messageBody = rootElement.children.get("Body").cdata;
+		String messageBody = messageElement.getElementsByTagName("Body").item(0).getTextContent();
 		
-		ArrayList<Message.Attachment> messageAttachments = new ArrayList<Message.Attachment>(10);
-		
-		XMLElement attachmentsElement = rootElement.children.get("Attachments");
+		ArrayList<Message.Attachment> messageAttachments = null;
+		Element attachmentsElement = (Element)messageElement.getElementsByTagName("Attachments").item(0);
 		if(attachmentsElement != null) {
-			for(XMLElement fileElement : attachmentsElement.children.iterateAll("File")) {
-				XMLElement sizeElement = fileElement.children.get("Size");
-				messageAttachments.add(new Message.Attachment(	new FreenetURI(fileElement.children.get("Key").cdata),
-																sizeElement != null ? Integer.parseInt(sizeElement.cdata) : -1));
+			NodeList fileElements = attachmentsElement.getElementsByTagName("File");
+			messageAttachments = new ArrayList<Message.Attachment>(fileElements.getLength());
+			
+			for(int i = 0; i < fileElements.getLength(); ++i) {
+				Element fileElement = (Element)fileElements.item(i);
+				Node keyElement = fileElement.getElementsByTagName("Key").item(0);
+				Node sizeElement = fileElement.getElementsByTagName("Size").item(0);
+				messageAttachments.add(new Message.Attachment(	new FreenetURI(keyElement.getTextContent()),
+																sizeElement != null ? Integer.parseInt(sizeElement.getTextContent()) : -1));
 			}
 		}
 		

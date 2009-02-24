@@ -118,7 +118,6 @@ public class MessageXMLTest extends DatabaseBasedTest {
 	
 	/* FIXME: The following code is the XML decoding test. It works on a recent java VM, but on java 1.5 and therefore on Emu a NPE is thrown. I suppose
 	 * this is due to a bug in the SAXParser of java 1.5. */
-	/*
 	public void testDecoding() throws Exception {
 		ByteArrayInputStream is = new ByteArrayInputStream(mHardcodedEncodedMessage.getBytes());
 		ByteArrayOutputStream decodedAndEncodedMessage = new ByteArrayOutputStream(4096);
@@ -126,5 +125,4 @@ public class MessageXMLTest extends DatabaseBasedTest {
 		
 		assertEquals(mHardcodedEncodedMessage, decodedAndEncodedMessage.toString().replaceAll("[\r\n]", ""));
 	}
-	*/
 }
