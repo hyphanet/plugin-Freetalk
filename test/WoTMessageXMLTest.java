@@ -115,9 +115,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		
 		assertEquals(mHardcodedEncodedMessage, encodedMessage.toString().replaceAll("[\r\n]", ""));
 	}
-	
-	/* FIXME: The following code is the XML decoding test. It works on a recent java VM, but on java 1.5 and therefore on Emu a NPE is thrown. I suppose
-	 * this is due to a bug in the SAXParser of java 1.5. */
+
 	public void testDecode() throws Exception {
 		ByteArrayInputStream is = new ByteArrayInputStream(mHardcodedEncodedMessage.getBytes());
 		ByteArrayOutputStream decodedAndEncodedMessage = new ByteArrayOutputStream(4096);
