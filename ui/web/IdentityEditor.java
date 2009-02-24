@@ -72,7 +72,7 @@ public final class IdentityEditor extends WebPageImpl {
 
 	private final void makeKnownIdentitiesBox() {
 
-		HTMLNode box = getContentBox("Known Identities");
+		HTMLNode box = addContentBox("Known Identities");
 
 
 		HTMLNode identitiesTable = box.addChild("table", "border", "0");
