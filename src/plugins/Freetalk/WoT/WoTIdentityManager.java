@@ -220,9 +220,11 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 					id.initializeTransient(db, this);
 				}
 
+				if(id != null) {
 				if(bOwnIdentities)	/* FIXME: Only add the context if the user actually uses the identity with Freetalk */
 					addFreetalkContext(id);
 				id.setLastReceivedFromWoT(time);
+				}
 			}
 			Thread.yield();
 		}
