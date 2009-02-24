@@ -75,43 +75,43 @@ public class MessageXMLTest extends DatabaseBasedTest {
 				"Message title", new Date(109, 4, 3, 16, 15, 14), "Message body\nNew line", attachments);
 
 		mHardcodedEncodedMessage = new String(
-			"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n" +
-			"<Freetalk-testing>\r\n" +
-			"<Message version=\"1\">\r\n" +
-			"<MessageID><![CDATA[2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>\r\n" + 
-			"<Subject><![CDATA[Message title]]></Subject>\r\n" +
-			"<Date>2009-05-03</Date>\r\n" +
-			"<Time>16:15:14</Time>\r\n" +
-			"<Boards>\r\n" +
-			"<Board><![CDATA[en.board1]]></Board>\r\n" +
-			"<Board><![CDATA[en.board2]]></Board>\r\n" +
-			"</Boards>\r\n" +
-			"<ReplyBoard><![CDATA[en.board1]]></ReplyBoard>\r\n" +
-			"<InReplyTo>\r\n" +
-			"<Message>\r\n" +
-			"<Order>0</Order>\r\n" +
-			"<MessageID><![CDATA[afe6519b-7fb2-4533-b172-1f966e79d127@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>\r\n" +
-			"<MessageURI><![CDATA[SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#afe6519b-7fb2-4533-b172-1f966e79d127]]></MessageURI>\r\n" +
-			"</Message>\r\n" +
-			"<Thread>\r\n" +
-			"<MessageID><![CDATA[2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>\r\n" +
-			"<MessageURI><![CDATA[SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#2a3a8e7e-9e53-4978-a8fd-17b2d92d949c]]></MessageURI>\r\n" +
-			"</Thread>\r\n" +
-			"</InReplyTo>\r\n" +
-			"<Body><![CDATA[Message body\r\n" +
-			"New line]]></Body>\r\n" +
-			"<Attachments>\r\n" +
-			"<File>\r\n" +
-			"<Key><![CDATA[KSK@attachment1]]></Key>\r\n" +
-			"<Size><![CDATA[10001]]></Size>\r\n" +
-			"</File>\r\n" +
-			"<File>\r\n" +
-			"<Key><![CDATA[KSK@attachment2]]></Key>\r\n" +
-			"<Size><![CDATA[10002]]></Size>\r\n" +
-			"</File>\r\n" +
-			"</Attachments>\r\n" +
-			"</Message>\r\n" +
-			"</Freetalk-testing>\r\n" 
+			"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+			"<Freetalk-testing>" +
+			"<Message version=\"1\">" +
+			"<MessageID><![CDATA[2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>" + 
+			"<Subject><![CDATA[Message title]]></Subject>" +
+			"<Date>2009-05-03</Date>" +
+			"<Time>16:15:14</Time>" +
+			"<Boards>" +
+			"<Board><![CDATA[en.board1]]></Board>" +
+			"<Board><![CDATA[en.board2]]></Board>" +
+			"</Boards>" +
+			"<ReplyBoard><![CDATA[en.board1]]></ReplyBoard>" +
+			"<InReplyTo>" +
+			"<Message>" +
+			"<Order>0</Order>" +
+			"<MessageID><![CDATA[afe6519b-7fb2-4533-b172-1f966e79d127@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>" +
+			"<MessageURI><![CDATA[SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#afe6519b-7fb2-4533-b172-1f966e79d127]]></MessageURI>" +
+			"</Message>" +
+			"<Thread>" +
+			"<MessageID><![CDATA[2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>" +
+			"<MessageURI><![CDATA[SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#2a3a8e7e-9e53-4978-a8fd-17b2d92d949c]]></MessageURI>" +
+			"</Thread>" +
+			"</InReplyTo>" +
+			"<Body><![CDATA[Message body" +
+			"New line]]></Body>" +
+			"<Attachments>" +
+			"<File>" +
+			"<Key><![CDATA[KSK@attachment1]]></Key>" +
+			"<Size><![CDATA[10001]]></Size>" +
+			"</File>" +
+			"<File>" +
+			"<Key><![CDATA[KSK@attachment2]]></Key>" +
+			"<Size><![CDATA[10002]]></Size>" +
+			"</File>" +
+			"</Attachments>" +
+			"</Message>" +
+			"</Freetalk-testing>" 
 			);
 	}
 
@@ -119,13 +119,12 @@ public class MessageXMLTest extends DatabaseBasedTest {
 		ByteArrayOutputStream encodedMessage = new ByteArrayOutputStream(4096);
 		WoTMessageXML.encode(mMessage, encodedMessage);
 		
-		assertEquals(mHardcodedEncodedMessage, encodedMessage.toString());
+		assertEquals(mHardcodedEncodedMessage, encodedMessage.toString().replaceAll("\r|\n", ""));
 		
 		ByteArrayInputStream is = new ByteArrayInputStream(encodedMessage.toByteArray());
 		ByteArrayOutputStream encodedDecodedEncodedMessage = new ByteArrayOutputStream(4096);
 		WoTMessageXML.encode(WoTMessageXML.decode(mMessageManager, is, mMessageList, mMessageRealURI), encodedDecodedEncodedMessage);		
 		
-		assertTrue("Message XML mismatch: Encoded:\n" + encodedMessage.toString() + "\nDecoded:\n" + encodedDecodedEncodedMessage.toString(),
-				Arrays.equals(encodedMessage.toByteArray(), encodedDecodedEncodedMessage.toByteArray()));
+		assertEquals(mHardcodedEncodedMessage, encodedDecodedEncodedMessage.toString().replaceAll("\r|\n", ""));
 	}
 }
