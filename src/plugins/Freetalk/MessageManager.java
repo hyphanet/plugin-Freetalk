@@ -67,6 +67,7 @@ public abstract class MessageManager implements Runnable {
 	 * @param myReplyToBoard The board to which replies to this message should be sent. This is just a recommendation. Notice that it should be contained in myBoards. Can be null.
 	 * @param myAuthor The author of the new message. Cannot be null.
 	 * @param myTitle The subject of the new message. Cannot be null or empty.
+	 * @param myDate The UTC time of the message. Null to use the current time.
 	 * @param myText The body of the new message. Cannot be null.
 	 * @param myAttachments The Attachments of the new Message. See <code>Message.Attachment</code>. Set to null if the message has none.
 	 * @return The new message.
@@ -74,10 +75,10 @@ public abstract class MessageManager implements Runnable {
 	 * @throws Exception 
 	 */
 	public abstract OwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
-			String myTitle, String myText, List<Attachment> myAttachments) throws InvalidParameterException, Exception;
+			String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws InvalidParameterException, Exception;
 
 	public synchronized OwnMessage postMessage(Message myParentMessage, Set<String> myBoards, String myReplyToBoard, FTOwnIdentity myAuthor,
-			String myTitle, String myText, List<Attachment> myAttachments) throws Exception {
+			String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
 
 		/* FIXME: Instead of always creating the boards, notify the user that they do not exist and ask if he made a typo */
 		HashSet<Board> boardSet = new HashSet<Board>();
@@ -92,10 +93,9 @@ public abstract class MessageManager implements Runnable {
 			replyToBoard = getOrCreateBoard(myReplyToBoard);
 		}
 
-		return postMessage(myParentMessage, boardSet, replyToBoard, myAuthor, myTitle, myText, myAttachments);
+		return postMessage(myParentMessage, boardSet, replyToBoard, myAuthor, myTitle, myDate, myText, myAttachments);
 	}
 	
-
 	@SuppressWarnings("unchecked")
 	public synchronized int countUnsentMessages() {
 		/* FIXME: This is not fully synchronized: MessageInserter calls OwnMessage.wasInserted() to mark a message as inserted and that

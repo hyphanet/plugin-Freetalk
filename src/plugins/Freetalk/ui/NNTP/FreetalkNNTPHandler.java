@@ -734,7 +734,7 @@ public class FreetalkNNTPHandler implements Runnable {
 					}
 
 					HashSet<String> boardSet = new HashSet<String>(parser.getBoards());
-					OwnMessage message = mMessageManager.postMessage(parentMessage, boardSet, parser.getReplyToBoard(), myIdentity, parser.getTitle(), parser.getText(), null);
+					OwnMessage message = mMessageManager.postMessage(parentMessage, boardSet, parser.getReplyToBoard(), myIdentity, parser.getTitle(), null, parser.getText(), null);
 					printStatusLine("240 Message posted; ID is <" + message.getID() + ">");
 				}
 				catch (Exception e) {

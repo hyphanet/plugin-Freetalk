@@ -33,7 +33,7 @@ public class NewReplyPage extends WebPageImpl {
 			String replyText = mRequest.getPartAsString("ReplyText", 64*1024);
 
 			try {
-				mFreetalk.getMessageManager().postMessage(mParentMessage, boards, mBoard, mOwnIdentity, replySubject, replyText, null);
+				mFreetalk.getMessageManager().postMessage(mParentMessage, boards, mBoard, mOwnIdentity, replySubject, null, replyText, null);
 
 				HTMLNode successBox = addContentBox("Reply created");
 				successBox.addChild("p", "The reply was put into your outbox. Freetalk will upload it after some time."); 
