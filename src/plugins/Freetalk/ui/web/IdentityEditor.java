@@ -27,7 +27,7 @@ public final class IdentityEditor extends WebPageImpl {
 	}
 	
 	private final void makeOwnIdentitiesBox() {
-		HTMLNode box = getContentBox("Own Identities");
+		HTMLNode box = addContentBox("Own Identities");
 
 		Iterator<FTOwnIdentity> ownIdentities = mFreetalk.getIdentityManager().ownIdentityIterator();
 		if (ownIdentities.hasNext() == false) {
