@@ -57,8 +57,11 @@ public class WoTIdentity implements FTIdentity {
 	}
 
 	public WoTIdentity(String myUID, FreenetURI myRequestURI, String myNickname) {
-		if(myUID == null || myUID.length() == 0 || myRequestURI == null || myNickname == null || myNickname.length() == 0)
-			throw new IllegalArgumentException();
+		if(myUID == null) throw new IllegalArgumentException("UID == null");
+		if(myUID.length() == 0) throw new IllegalArgumentException("UID.length() == 0");
+		if(myRequestURI == null) throw new IllegalArgumentException("RequestURI == null");
+		if(myNickname == null) throw new IllegalArgumentException("Nickname == null");
+		if(myNickname.length() == 0) throw new IllegalArgumentException("Nickname.length() == 0");
 		
 		mUID = myUID;
 		mRequestURI = myRequestURI;
