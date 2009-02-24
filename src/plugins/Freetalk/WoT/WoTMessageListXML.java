@@ -23,13 +23,12 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.OwnMessage;
-import plugins.Freetalk.XMLTree;
-import plugins.Freetalk.XMLTree.XMLElement;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
 
@@ -94,24 +93,29 @@ public final class WoTMessageListXML {
 		new String[] { Freetalk.PLUGIN_TITLE, "MessageList", "Message", "Board"}));
 	
 	public static WoTMessageList decode(WoTMessageManager messageManager, WoTIdentity author, FreenetURI uri, InputStream inputStream) throws Exception { 
-		XMLTree xmlTreeGenerator = new XMLTree(messageListXMLElements1, inputStream);		
-		XMLElement rootElement = xmlTreeGenerator.getRoot();
+		Document xml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(inputStream);
+		Element listElement = (Element)xml.getElementsByTagName("MessageList").item(0);
 		
-		rootElement = rootElement.children.get("MessageList");
-		
-		if(Integer.parseInt(rootElement.attrs.get("Version")) > XML_FORMAT_VERSION)
-			throw new Exception("Version " + rootElement.attrs.get("version") + " > " + XML_FORMAT_VERSION);
-		
+		if(Integer.parseInt(listElement.getAttribute("Version")) > XML_FORMAT_VERSION)
+			throw new Exception("Version " + listElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);
+				
+		NodeList messageElements = listElement.getElementsByTagName("Message");
 		/* The message count is multiplied by 2 because if a message is posted to multiple boards, a MessageReference has to be created for each */
-		ArrayList<MessageList.MessageReference> messages = new ArrayList<MessageList.MessageReference>(rootElement.children.countAll("Message")*2 + 1);
+		ArrayList<MessageList.MessageReference> messages = new ArrayList<MessageList.MessageReference>(messageElements.getLength() * 2);
 		
-		for(XMLElement messageTag : rootElement.children.iterateAll("Message")) {
-			String messageID = messageTag.attrs.get("ID");
-			FreenetURI messageURI = new FreenetURI(messageTag.attrs.get("URI"));
-			HashSet<Board> messageBoards = new HashSet<Board>(messageTag.children.countAll("Board") + 1);
+		for(int messageIndex = 0; messageIndex < messageElements.getLength(); ++messageIndex) {
+			Element messageElement = (Element)messageElements.item(messageIndex);
 			
-			for(XMLElement boardTag : messageTag.children.iterateAll("Board"))
-				messageBoards.add(messageManager.getOrCreateBoard(boardTag.attrs.get("Name")));
+			String messageID = messageElement.getAttribute("ID");
+			FreenetURI messageURI = new FreenetURI(messageElement.getAttribute("URI"));
+		
+			NodeList boardElements = messageElement.getElementsByTagName("Board");
+			HashSet<Board> messageBoards = new HashSet<Board>(boardElements.getLength() * 2);
+			
+			for(int boardIndex = 0; boardIndex < boardElements.getLength(); ++boardIndex) {
+				Element boardElement = (Element)boardElements.item(boardIndex);
+				messageBoards.add(messageManager.getOrCreateBoard(boardElement.getAttribute("Name")));
+			}
 			
 			for(Board board : messageBoards)
 				messages.add(new MessageList.MessageReference(messageID, messageURI, board));
