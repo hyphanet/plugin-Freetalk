@@ -30,8 +30,11 @@ public abstract class IdentityManager implements PrioRunnable {
 		mExecutor = myExecutor;
 	}
 
-	public IdentityManager() {
-		db = null;
+	/**
+	 * For being used in JUnit tests to run without a node.
+	 */
+	public IdentityManager(ObjectContainer myDB) {
+		db = myDB;
 		mExecutor = null;
 	}
 
