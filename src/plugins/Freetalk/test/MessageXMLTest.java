@@ -75,43 +75,43 @@ public class MessageXMLTest extends DatabaseBasedTest {
 				"Message title", new Date(109, 4, 3, 16, 15, 14), "Message body\nNew line", attachments);
 
 		mHardcodedEncodedMessage = new String(
-			"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
-			"<Freetalk-testing>\n" +
-			"<Message version=\"1\">\n" +
-			"<MessageID><![CDATA[2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>\n" + 
-			"<Subject><![CDATA[Message title]]></Subject>\n" +
-			"<Date>2009-05-03</Date>\n" +
-			"<Time>16:15:14</Time>\n" +
-			"<Boards>\n" +
-			"<Board><![CDATA[en.board1]]></Board>\n" +
-			"<Board><![CDATA[en.board2]]></Board>\n" +
-			"</Boards>\n" +
-			"<ReplyBoard><![CDATA[en.board1]]></ReplyBoard>\n" +
-			"<InReplyTo>\n" +
-			"<Message>\n" +
-			"<Order>0</Order>\n" +
-			"<MessageID><![CDATA[afe6519b-7fb2-4533-b172-1f966e79d127@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>\n" +
-			"<MessageURI><![CDATA[SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#afe6519b-7fb2-4533-b172-1f966e79d127]]></MessageURI>\n" +
-			"</Message>\n" +
-			"<Thread>\n" +
-			"<MessageID><![CDATA[2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>\n" +
-			"<MessageURI><![CDATA[SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#2a3a8e7e-9e53-4978-a8fd-17b2d92d949c]]></MessageURI>\n" +
-			"</Thread>\n" +
-			"</InReplyTo>\n" +
-			"<Body><![CDATA[Message body\n" +
-			"New line]]></Body>\n" +
-			"<Attachments>\n" +
-			"<File>\n" +
-			"<Key><![CDATA[KSK@attachment1]]></Key>\n" +
-			"<Size><![CDATA[10001]]></Size>\n" +
-			"</File>\n" +
-			"<File>\n" +
-			"<Key><![CDATA[KSK@attachment2]]></Key>\n" +
-			"<Size><![CDATA[10002]]></Size>\n" +
-			"</File>\n" +
-			"</Attachments>\n" +
-			"</Message>\n" +
-			"</Freetalk-testing>\n" 
+			"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\r\n" +
+			"<Freetalk-testing>\r\n" +
+			"<Message version=\"1\">\r\n" +
+			"<MessageID><![CDATA[2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>\r\n" + 
+			"<Subject><![CDATA[Message title]]></Subject>\r\n" +
+			"<Date>2009-05-03</Date>\r\n" +
+			"<Time>16:15:14</Time>\r\n" +
+			"<Boards>\r\n" +
+			"<Board><![CDATA[en.board1]]></Board>\r\n" +
+			"<Board><![CDATA[en.board2]]></Board>\r\n" +
+			"</Boards>\r\n" +
+			"<ReplyBoard><![CDATA[en.board1]]></ReplyBoard>\r\n" +
+			"<InReplyTo>\r\n" +
+			"<Message>\r\n" +
+			"<Order>0</Order>\r\n" +
+			"<MessageID><![CDATA[afe6519b-7fb2-4533-b172-1f966e79d127@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>\r\n" +
+			"<MessageURI><![CDATA[SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#afe6519b-7fb2-4533-b172-1f966e79d127]]></MessageURI>\r\n" +
+			"</Message>\r\n" +
+			"<Thread>\r\n" +
+			"<MessageID><![CDATA[2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>\r\n" +
+			"<MessageURI><![CDATA[SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#2a3a8e7e-9e53-4978-a8fd-17b2d92d949c]]></MessageURI>\r\n" +
+			"</Thread>\r\n" +
+			"</InReplyTo>\r\n" +
+			"<Body><![CDATA[Message body\r\n" +
+			"New line]]></Body>\r\n" +
+			"<Attachments>\r\n" +
+			"<File>\r\n" +
+			"<Key><![CDATA[KSK@attachment1]]></Key>\r\n" +
+			"<Size><![CDATA[10001]]></Size>\r\n" +
+			"</File>\r\n" +
+			"<File>\r\n" +
+			"<Key><![CDATA[KSK@attachment2]]></Key>\r\n" +
+			"<Size><![CDATA[10002]]></Size>\r\n" +
+			"</File>\r\n" +
+			"</Attachments>\r\n" +
+			"</Message>\r\n" +
+			"</Freetalk-testing>\r\n" 
 			);
 	}
 
