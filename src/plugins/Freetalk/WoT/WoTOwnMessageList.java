@@ -24,6 +24,10 @@ public final class WoTOwnMessageList extends OwnMessageList {
 			store();
 		}
 	}
+	
+	public WoTOwnIdentity getAuthor() {
+		return (WoTOwnIdentity)mAuthor;
+	}
 
 	/**
 	 * Returns true if the XML of this message list fits into a single SSK block.
