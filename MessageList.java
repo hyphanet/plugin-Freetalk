@@ -89,6 +89,10 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			return mURI;
 		}
 		
+		public Board getBoard() {
+			return mBoard;
+		}
+		
 		public synchronized boolean wasMessageDownloaded() {
 			return iWasDownloaded;
 		}

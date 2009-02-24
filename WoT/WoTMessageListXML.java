@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
 import java.io.InputStream;
@@ -48,6 +51,10 @@ public final class WoTMessageListXML {
 			Element messageListTag = xmlDoc.createElement("MessageList");
 			messageListTag.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
 			
+			/* Important: A OwnMessageList contains a single reference for each message. A MessageList however contains a message reference
+			 * for each board a message is posted to. If this function is changed to be able to encode non-own MessageLists then you need
+			 * to ensure that each message is only listed once, the for(each MessageReference) will return duplicates if a message is posted
+			 * to multiple boards.*/
 			for(MessageList.MessageReference ref : list) {
 				OwnMessage message = messageManager.getOwnMessage(ref.getMessageID());
 				if(message.wasInserted() == false)
