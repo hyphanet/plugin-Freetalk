@@ -162,6 +162,7 @@ public final class WoTMessageXML {
 	 * @return
 	 * @throws Exception
 	 */
+	@SuppressWarnings("deprecation")
 	public static Message decode(MessageManager messageManager, InputStream inputStream, WoTMessageList messageList, FreenetURI uri) throws Exception {
 		XMLTree xmlTreeGenerator = new XMLTree(messageXMLElements1, inputStream);		
 		XMLElement rootElement = xmlTreeGenerator.getRoot();
