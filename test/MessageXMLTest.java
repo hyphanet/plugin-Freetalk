@@ -109,7 +109,7 @@ public class MessageXMLTest extends DatabaseBasedTest {
 			);
 	}
 
-	public void testEncoding() throws Exception {
+	public void testEncode() throws Exception {
 		ByteArrayOutputStream encodedMessage = new ByteArrayOutputStream(4096);
 		WoTMessageXML.encode(mMessage, encodedMessage);
 		
@@ -118,7 +118,7 @@ public class MessageXMLTest extends DatabaseBasedTest {
 	
 	/* FIXME: The following code is the XML decoding test. It works on a recent java VM, but on java 1.5 and therefore on Emu a NPE is thrown. I suppose
 	 * this is due to a bug in the SAXParser of java 1.5. */
-	public void testDecoding() throws Exception {
+	public void testDecode() throws Exception {
 		ByteArrayInputStream is = new ByteArrayInputStream(mHardcodedEncodedMessage.getBytes());
 		ByteArrayOutputStream decodedAndEncodedMessage = new ByteArrayOutputStream(4096);
 		WoTMessageXML.encode(WoTMessageXML.decode(mMessageManager, is, mMessageList, mMessageRealURI), decodedAndEncodedMessage);		
