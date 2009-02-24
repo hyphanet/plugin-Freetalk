@@ -142,6 +142,7 @@ public final class WoTMessageXML {
 			
 			serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 			serializer.setOutputProperty(OutputKeys.INDENT, "yes"); /* FIXME: Set to no before release. */
+			serializer.setOutputProperty(OutputKeys.STANDALONE, "no");
 			serializer.transform(domSource, resultStream);
 		}
 	}
