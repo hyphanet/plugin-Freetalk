@@ -377,7 +377,7 @@ public final class Board implements Comparable<Board> {
 				 * to keep a separate list of those. */
 				Query q = db.query();
 				q.constrain(BoardMessageLink.class);
-				q.descend("mBoard").constrain(Board.this); /* FIXME: mBoards is an array. Does constrain() check whether it contains the element mName? */
+				q.descend("mBoard").constrain(Board.this);
 				q.descend("mMessage").descend("mThreadID").constrain(threadID);
 				q.descend("mMessage").descend("mThread").constrain(null).identity();
 				iter = q.execute().iterator();
