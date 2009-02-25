@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -159,6 +160,8 @@ public final class WoTMessageXML {
 	@SuppressWarnings("deprecation")
 	public static Message decode(MessageManager messageManager, InputStream inputStream, WoTMessageList messageList, FreenetURI uri) throws Exception {
 		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
+		xmlFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+		xmlFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
 		DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
 		Document xml = xmlBuilder.parse(inputStream);
 		

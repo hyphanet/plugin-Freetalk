@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -92,8 +93,11 @@ public final class WoTMessageListXML {
 	private static final HashSet<String> messageListXMLElements1 = new HashSet<String>(Arrays.asList(
 		new String[] { Freetalk.PLUGIN_TITLE, "MessageList", "Message", "Board"}));
 	
-	public static WoTMessageList decode(WoTMessageManager messageManager, WoTIdentity author, FreenetURI uri, InputStream inputStream) throws Exception { 
-		Document xml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(inputStream);
+	public static WoTMessageList decode(WoTMessageManager messageManager, WoTIdentity author, FreenetURI uri, InputStream inputStream) throws Exception {
+		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
+		xmlFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+		xmlFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		Document xml = xmlFactory.newDocumentBuilder().parse(inputStream);
 		Element listElement = (Element)xml.getElementsByTagName("MessageList").item(0);
 		
 		if(Integer.parseInt(listElement.getAttribute("Version")) > XML_FORMAT_VERSION)
