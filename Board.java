@@ -296,7 +296,7 @@ public final class Board implements Comparable<Board> {
 		q.constrain(BoardMessageLink.class);
 		/* FIXME: This query has to be optimized. Maybe we should store the thread ID in the BoardMessageLink ? */
 		q.descend("mBoard").constrain(this); 
-		q.descend("mMessage").descend("mThreadID").constrain(m.getParentThreadID());
+		q.descend("mMessage").descend("mID").constrain(m.getParentThreadID());
 		ObjectSet<MessageReference> parents = q.execute();
 		
 		assert(parents.size() <= 1);
