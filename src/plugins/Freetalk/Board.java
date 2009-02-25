@@ -294,7 +294,10 @@ public final class Board implements Comparable<Board> {
 	private synchronized MessageReference findParentThread(Message m) throws NoSuchMessageException {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
-		/* FIXME: This query has to be optimized. Maybe we should store the thread ID in the BoardMessageLink ? */
+		/* FIXME: This query has to be optimized. Maybe we should store the thread ID in the BoardMessageLink ?
+		 * Or we could first just query for message objects with the given ID (ignoring BoardMessageLinks!) and then query for a BoardMessageLink
+		 * which links the resulting message to the target board? - This could be sufficiently fast as the number of messages which are
+		 * posted to multiple boards will be very small. */
 		q.descend("mBoard").constrain(this); 
 		q.descend("mMessage").descend("mID").constrain(m.getParentThreadID());
 		ObjectSet<MessageReference> parents = q.execute();
