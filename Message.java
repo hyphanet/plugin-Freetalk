@@ -323,7 +323,7 @@ public abstract class Message implements Comparable<Message> {
 	public synchronized void setThread(Message newParentThread) {
 		assert(mThread == null);
 		assert(mThreadURI != null);
-		assert(newParentThread.getURI().equals(mThreadURI));
+		assert(newParentThread.getID().equals(mThreadID));
 		mThread = newParentThread;
 		store();
 	}
@@ -339,7 +339,7 @@ public abstract class Message implements Comparable<Message> {
 	}
 
 	public synchronized void setParent(Message newParent)  {
-		assert(newParent.getURI().equals(mParentURI));
+		assert(newParent.getID().equals(mParentID));
 		/* TODO: assert(newParent contains at least one board which mBoards contains) */
 		mParent = newParent;
 		store();
