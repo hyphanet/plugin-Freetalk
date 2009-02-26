@@ -96,7 +96,7 @@ public final class WoTMessageListXML {
 	public static WoTMessageList decode(WoTMessageManager messageManager, WoTIdentity author, FreenetURI uri, InputStream inputStream) throws Exception {
 		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
 		xmlFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-		xmlFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		xmlFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 		Document xml = xmlFactory.newDocumentBuilder().parse(inputStream);
 		Element listElement = (Element)xml.getElementsByTagName("MessageList").item(0);
 		
