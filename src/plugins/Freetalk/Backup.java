@@ -94,7 +94,7 @@ public class Backup {
 	private static SAXParser getSaxParser() throws ParserConfigurationException, SAXException {
 		if (saxParser == null) {
 			SAXParserFactory factory = SAXParserFactory.newInstance();
-			factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 			saxParser = factory.newSAXParser();
 		}
 		return saxParser;
