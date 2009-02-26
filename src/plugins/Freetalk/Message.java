@@ -215,7 +215,7 @@ public abstract class Message implements Comparable<Message> {
 	 * Get the MessageURI of the thread this message belongs to.
 	 * @throws NoSuchMessageException 
 	 */
-	public MessageURI getParentThreadURI() throws NoSuchMessageException {
+	public MessageURI getThreadURI() throws NoSuchMessageException {
 		if(mThreadURI == null)
 			throw new NoSuchMessageException();
 		
@@ -228,7 +228,7 @@ public abstract class Message implements Comparable<Message> {
 	 * @return The ID of the message's parent thread.
 	 * @throws NoSuchMessageException If the message is a thread itself.
 	 */
-	public String getParentThreadID() throws NoSuchMessageException {
+	public String getThreadID() throws NoSuchMessageException {
 		if(mThreadID == null)
 			throw new NoSuchMessageException();
 		

@@ -299,16 +299,16 @@ public final class Board implements Comparable<Board> {
 		 * which links the resulting message to the target board? - This could be sufficiently fast as the number of messages which are
 		 * posted to multiple boards will be very small. */
 		q.descend("mBoard").constrain(this); 
-		q.descend("mMessage").descend("mID").constrain(m.getParentThreadID());
+		q.descend("mMessage").descend("mID").constrain(m.getThreadID());
 		ObjectSet<MessageReference> parents = q.execute();
 		
 		assert(parents.size() <= 1);
 		
 		if(parents.size() == 0)
-			throw new NoSuchMessageException(m.getParentThreadID());
+			throw new NoSuchMessageException(m.getThreadID());
 		else {
 			MessageReference parentThread = parents.next();
-			assert(parentThread.getMessage().getID().equals(m.getParentThreadID())); /* The query works */
+			assert(parentThread.getMessage().getID().equals(m.getThreadID())); /* The query works */
 			
 			/* Important: It is possible that we receive a message which has a parent thread URI specified, but the message at that URI is not
 			 * really a thread but just a reply to a thread. We MUST NOT return the thread which is specified as thread in the referred URI
@@ -503,7 +503,7 @@ public final class Board implements Comparable<Board> {
 		q.descend("mBoard").constrain(this);
 		q.descend("mMessage").constrain(thread).identity().not();
 		try {
-			q.descend("mMessage").descend("mThreadID").constrain(thread.isThread() ? thread.getID() : thread.getParentThreadID());
+			q.descend("mMessage").descend("mThreadID").constrain(thread.isThread() ? thread.getID() : thread.getThreadID());
 		} catch (NoSuchMessageException e) {
 			throw new RuntimeException( "Message is no thread but parentThreadURI == null : " + thread.getURI());
 		}
