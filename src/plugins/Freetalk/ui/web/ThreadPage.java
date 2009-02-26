@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import java.text.DateFormat;
+
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Message;
@@ -20,6 +22,8 @@ public final class ThreadPage extends WebPageImpl {
 	
 	private final Board mBoard;
 	private final Message mThread;
+	
+	private static final DateFormat mLocalDateFormat = DateFormat.getDateInstance();
 
 	public ThreadPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchMessageException, NoSuchBoardException {
 		super(myWebInterface, viewer, request);
@@ -28,21 +32,34 @@ public final class ThreadPage extends WebPageImpl {
 	}
 	
 	public final void make() {
-		HTMLNode messageBox = addContentBox("Subject: " + mThread.getTitle());
-		messageBox.addChild("p", "Author: " + mThread.getAuthor().getFreetalkAddress());
-		addDebugInfo(messageBox, mThread);
-		messageBox.addChild("pre", mThread.getText());
-	
-		addReplyButton(messageBox, mThread);
-		
-		for(MessageReference reference : mBoard.getAllThreadReplies(mThread)) {
-			Message message = reference.getMessage();
-			messageBox = addContentBox("Subject: " + message.getTitle());
-			messageBox.addChild("p", "Author: " + message.getAuthor().getFreetalkAddress());
-			addDebugInfo(messageBox, message);
-			messageBox.addChild("pre", message.getText());
-			addReplyButton(messageBox, message);
+		synchronized (mLocalDateFormat) {
+			addMessageBox(mThread);
+			
+			for(MessageReference reference : mBoard.getAllThreadReplies(mThread))
+				addMessageBox(reference.getMessage());
 		}
+	}
+	
+	/* You have to synchronize on mLocalDateFormat when using this function */
+	private void addMessageBox(Message message) {
+		HTMLNode messageBox = addContentBox("Subject: " + message.getTitle());
+		
+		HTMLNode table = messageBox.addChild("table", "border", "0");
+		
+		HTMLNode row = table.addChild("tr");
+			row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Author:");
+			row.addChild("td", new String[] { "align" }, new String[] { "left" }, message.getAuthor().getFreetalkAddress());
+
+		row = table.addChild("tr");
+			row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Date:");
+			row.addChild("td", new String[] { "align" }, new String[] { "left" }, mLocalDateFormat.format(message.getDate()));
+
+		row = table.addChild("tr");
+			row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Debug:");
+			addDebugInfo(row.addChild("td", new String[] { "align" }, new String[] { "left" }), message);
+		
+		row = table.addChild("tr");
+			addReplyButton(row.addChild("td", new String[] { "align" }, new String[] { "left" }).addChild("pre", message.getText()), message);
 	}
 	
 	private void addReplyButton(HTMLNode parent, Message parentMessage) {
@@ -63,17 +80,10 @@ public final class ThreadPage extends WebPageImpl {
 		} catch (NoSuchMessageException e) { }
 		
 		try {
-			debugParagraph.addChild("br", "parentURI: " + message.getParentURI());
+			debugParagraph.addChild("br", "parentID: " + message.getParentID());
 		}
 		catch(NoSuchMessageException e) {
 			debugParagraph.addChild("br", "parentURI: null");
-		}
-		
-		try {
-			debugParagraph.addChild("br", "threadURI: " + message.getThreadURI());
-		}
-		catch(NoSuchMessageException e) {
-			debugParagraph.addChild("br", "threadURI: null");
 		}
 	}
 
