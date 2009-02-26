@@ -161,8 +161,8 @@ public final class WoTMessageXML {
 	public static Message decode(MessageManager messageManager, InputStream inputStream, WoTMessageList messageList, FreenetURI uri) throws Exception {
 		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
 		xmlFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-		// XXX  DOM parser does not support this, only SAX do this.
-		// xmlFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+		// DOM parser use .setAttribute() to pass to underlying Xerces
+		xmlFactory.setAttribute("http://apache.org/xml/features/disallow-doctype-decl", true);
 		DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
 		Document xml = xmlBuilder.parse(inputStream);
 		
