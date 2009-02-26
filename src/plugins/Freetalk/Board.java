@@ -353,6 +353,7 @@ public final class Board implements Comparable<Board> {
 				q.constrain(BoardMessageLink.class);
 				q.descend("mBoard").constrain(Board.this);
 				q.descend("mMessage").descend("mThread").constrain(null).identity();
+				q.descend("mMessage").descend("mParent").constrain(null).identity();
 				q.descend("mMessage").descend("mDate").orderDescending();
 				iter = q.execute().iterator();
 				next = iter.hasNext() ? iter.next() : null;
@@ -507,6 +508,7 @@ public final class Board implements Comparable<Board> {
 		} catch (NoSuchMessageException e) {
 			throw new RuntimeException( "Message is no thread but parentThreadURI == null : " + thread.getURI());
 		}
+		q.descend("mMessage").descend("mDate").orderAscending();
 		
 		return q.execute();
 	}
