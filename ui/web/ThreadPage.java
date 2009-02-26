@@ -59,7 +59,7 @@ public final class ThreadPage extends WebPageImpl {
 		debugParagraph.addChild("#", "uri: " + message.getURI());
 		debugParagraph.addChild("br", "ID: " + message.getID());
 		try {
-			debugParagraph.addChild("br", "threadID: " + message.getParentThreadID());
+			debugParagraph.addChild("br", "threadID: " + message.getThreadID());
 		} catch (NoSuchMessageException e) { }
 		
 		try {
@@ -70,7 +70,7 @@ public final class ThreadPage extends WebPageImpl {
 		}
 		
 		try {
-			debugParagraph.addChild("br", "threadURI: " + message.getParentThreadURI());
+			debugParagraph.addChild("br", "threadURI: " + message.getThreadURI());
 		}
 		catch(NoSuchMessageException e) {
 			debugParagraph.addChild("br", "threadURI: null");

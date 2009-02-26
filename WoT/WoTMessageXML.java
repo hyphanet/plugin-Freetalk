@@ -105,8 +105,8 @@ public final class WoTMessageXML {
 					
 				try {
 					Element inReplyToThread = xmlDoc.createElement("Thread");
-						Element inReplyToID = xmlDoc.createElement("MessageID"); inReplyToID.appendChild(xmlDoc.createCDATASection(m.getParentThreadID()));
-						Element inReplyToURI = xmlDoc.createElement("MessageURI"); inReplyToURI.appendChild(xmlDoc.createCDATASection(m.getParentThreadURI().toString()));
+						Element inReplyToID = xmlDoc.createElement("MessageID"); inReplyToID.appendChild(xmlDoc.createCDATASection(m.getThreadID()));
+						Element inReplyToURI = xmlDoc.createElement("MessageURI"); inReplyToURI.appendChild(xmlDoc.createCDATASection(m.getThreadURI().toString()));
 					inReplyToThread.appendChild(inReplyToID);
 					inReplyToThread.appendChild(inReplyToURI);
 					inReplyToTag.appendChild(inReplyToThread);
