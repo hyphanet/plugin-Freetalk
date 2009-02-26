@@ -309,6 +309,23 @@ public final class Board implements Comparable<Board> {
 		else {
 			MessageReference parentThread = parents.next();
 			assert(parentThread.getMessage().getID().equals(m.getParentThreadID())); /* The query works */
+			
+			/* Important: It is possible that we receive a message which has a parent thread URI specified, but the message at that URI is not
+			 * really a thread but just a reply to a thread. We MUST NOT return the thread which is specified as thread in the referred URI
+			 * instead because the thread ID of that one is different to the thread ID which is calculated from the false thread URI!
+			 * To explain it in other words: The given message has a wrong thread URI stored (caused by a malfunction in the client which
+			 * inserted the message), and the thread ID which is stored in that message is calculated from the URI, therefore it is also wrong.
+			 * If this function did return the "real" thread for the given message, then it would return false information, because the ID of the
+			 * returned thread would not match the ID which is stored in the given message. Further, we also cannot return the message which
+			 * is referred by the false URI because it is NOT a thread - other functions in Freetalk rely on the fact that messages which
+			 * are said to be threads are really threads.
+			 * - so that is the reason why the following if()-statement is necessary.
+			 * Notice that this comment was written after I figured out that messages are NOT being displayed if the if() is left out, so
+			 * please do not remove it in the future.
+			 */
+			if(parentThread.getMessage().isThread() == false)
+				throw new NoSuchMessageException();
+			
 			return parentThread;
 		}
 	}
@@ -484,10 +501,9 @@ public final class Board implements Comparable<Board> {
 		 * and then check whether a BoardMessageLink to this board exists. */
 		q.constrain(BoardMessageLink.class);
 		q.descend("mBoard").constrain(this);
+		q.descend("mMessage").constrain(thread).identity().not();
 		try {
-			Query sub = q.descend("mMessage");
-			sub.constrain(thread).identity().not();
-			sub.descend("mThreadID").constrain(thread.isThread() ? thread.getID() : thread.getParentThreadID());
+			q.descend("mMessage").descend("mThreadID").constrain(thread.isThread() ? thread.getID() : thread.getParentThreadID());
 		} catch (NoSuchMessageException e) {
 			throw new RuntimeException( "Message is no thread but parentThreadURI == null : " + thread.getURI());
 		}
