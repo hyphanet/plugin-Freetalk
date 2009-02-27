@@ -49,8 +49,6 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	/* FIXME FIXME FIXME: Use LRUQueue instead. ArrayBlockingQueue does not use a Hashset for contains()! */
 	private final ArrayBlockingQueue<WoTIdentity> mIdentities = new ArrayBlockingQueue<WoTIdentity>(MAX_PARALLEL_MESSAGELIST_FETCH_COUNT * 10); /* FIXME: figure out a decent size */
 	
-	// private static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-	
 	private final Random mRandom;
 	
 	public WoTMessageListFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager) {
