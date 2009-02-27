@@ -3,12 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import java.util.Calendar;
-import java.util.TimeZone;
-
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
+import plugins.Freetalk.CurrentTimeUTC;
 
 import com.db4o.ObjectContainer;
 
@@ -49,8 +47,6 @@ public class WoTIdentity implements FTIdentity {
 	
 	protected transient WoTIdentityManager mIdentityManager;
 	
-	private transient static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-	
 	/** Get a list of fields which the database should create an index on. */
 	public static String[] getIndexedFields() {
 		return new String[] { "mUID", "mRequestURI" };
@@ -66,7 +62,7 @@ public class WoTIdentity implements FTIdentity {
 		mUID = myUID;
 		mRequestURI = myRequestURI;
 		mNickname = myNickname;
-		mLastReceivedFromWoT = mCalendar.getTimeInMillis();
+		mLastReceivedFromWoT = CurrentTimeUTC.getInMillis();
 		mIsNeeded = false;
 	}
 	

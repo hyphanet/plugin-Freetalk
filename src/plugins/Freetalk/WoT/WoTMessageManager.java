@@ -3,13 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
+import plugins.Freetalk.CurrentTimeUTC;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
@@ -36,8 +36,7 @@ public class WoTMessageManager extends MessageManager {
 	private volatile boolean isRunning = false;
 	private volatile boolean shutdownFinished = false;
 	private Thread mThread;
-	
-	private static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
 
 	public WoTMessageManager(ObjectContainer myDB, Executor myExecutor, WoTIdentityManager myIdentityManager) {
 		super(myDB, myExecutor, myIdentityManager);
@@ -72,7 +71,7 @@ public class WoTMessageManager extends MessageManager {
 
 			}
 			
-			Date date = myDate!=null ? myDate : mCalendar.getTime();
+			Date date = myDate!=null ? myDate : CurrentTimeUTC.get();
 			m = WoTOwnMessage.construct(parentThread, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
 			m.initializeTransient(db, this);
 			m.store();

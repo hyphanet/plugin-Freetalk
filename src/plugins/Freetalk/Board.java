@@ -4,7 +4,6 @@
 package plugins.Freetalk;
 
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -12,6 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import plugins.Freetalk.CurrentTimeUTC;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
@@ -53,8 +53,7 @@ public final class Board implements Comparable<Board> {
 	
 	private transient ObjectContainer db;
 	private transient MessageManager mMessageManager;
-	
-	private static final Calendar mCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
 
 	/**
 	 * Get a list of fields which the database should create an index on.
@@ -84,7 +83,7 @@ public final class Board implements Comparable<Board> {
 		
 		// FIXME: Validate name and description.
 		mName = newName;
-		mFirstSeenDate = mCalendar.getTime();
+		mFirstSeenDate = CurrentTimeUTC.get();
 	}
 	
 	/**
@@ -352,8 +351,10 @@ public final class Board implements Comparable<Board> {
 				Query q = db.query();
 				q.constrain(BoardMessageLink.class);
 				q.descend("mBoard").constrain(Board.this);
-				q.descend("mMessage").descend("mThread").constrain(null).identity();
-				q.descend("mMessage").descend("mParent").constrain(null).identity();
+//				q.descend("mMessage").descend("mThread").constrain(null).identity();
+//				/* We require mParent to be null because this allows discussions where only the head message is missing to be displayed as
+//				 * a single thread instead of displaying a bunch of single messages where each would appear to be a thread. */
+//				q.descend("mMessage").descend("mParent").constrain(null).identity();
 				q.descend("mMessage").descend("mDate").orderDescending();
 				iter = q.execute().iterator();
 				next = iter.hasNext() ? iter.next() : null;
