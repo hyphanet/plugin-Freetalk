@@ -443,11 +443,13 @@ public abstract class Message implements Comparable<Message> {
 
 			public boolean hasNext() {
 				if(board == null)
-					return true;
+					return next != null;
 				
 				while(next != null) {
 					if(Arrays.binarySearch(next.getBoards(), board) >= 0)
 						return true;
+					
+					next = iter.hasNext() ? iter.next() : null;
 				}
 				
 				return false;
