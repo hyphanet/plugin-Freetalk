@@ -60,9 +60,9 @@ public abstract class Message implements Comparable<Message> {
 	 * If we receive the parent messages of those messages, we will be able to find their orphan children faster if we only need to search in
 	 * the thread they belong to and not in the whole FTBoard - which may contain many thousands of messages.
 	 */
-	protected final MessageURI mThreadURI;
+	protected MessageURI mThreadURI;
 	
-	protected final String mThreadID;
+	protected String mThreadID;
 	
 	/**
 	 * The URI of the message to which this message is a reply. Null if it is a thread.
@@ -215,24 +215,33 @@ public abstract class Message implements Comparable<Message> {
 	 * Get the MessageURI of the thread this message belongs to.
 	 * @throws NoSuchMessageException 
 	 */
-	public MessageURI getThreadURI() throws NoSuchMessageException {
+	public synchronized MessageURI getThreadURI() throws NoSuchMessageException {
 		if(mThreadURI == null)
 			throw new NoSuchMessageException();
 		
 		return mThreadURI;
 	}
-	
+
 	/**
 	 * Get the ID of the thread this message belongs to. Should not be used by the user interface for querying the database as the parent
 	 * thread might not have been downloaded yet. Use getThread().getID() instead.
 	 * @return The ID of the message's parent thread.
 	 * @throws NoSuchMessageException If the message is a thread itself.
 	 */
-	public String getThreadID() throws NoSuchMessageException {
+	public synchronized String getThreadID() throws NoSuchMessageException {
 		if(mThreadID == null)
 			throw new NoSuchMessageException();
 		
 		return mThreadID;
+	}
+	
+	/**
+	 * Used internally for correcting the thread URIs of messages which have specified them wrong in the XML.
+	 */
+	protected synchronized void setThreadURIAndID(MessageURI newThreadURI) {
+		mThreadURI = newThreadURI;
+		mThreadID = mThreadURI.getMessageID();
+		store();
 	}
 	
 	/**
@@ -322,8 +331,13 @@ public abstract class Message implements Comparable<Message> {
 	
 	public synchronized void setThread(Message newParentThread) {
 		assert(mThread == null);
-		assert(mThreadURI != null);
-		assert(newParentThread.getID().equals(mThreadID));
+		
+		if(!newParentThread.getID().equals(mThreadID))
+			throw new IllegalArgumentException("Trying to set a message as thread which has the wrong ID: " + newParentThread.getID());
+		
+		if(!newParentThread.isThread())
+			throw new IllegalArgumentException("Trying to setThread(not a thread).");
+		
 		mThread = newParentThread;
 		store();
 	}
@@ -332,6 +346,8 @@ public abstract class Message implements Comparable<Message> {
 	 * Get the message to which this message is a reply. The transient fields of the returned message will be initialized already.
 	 */
 	public synchronized Message getParent() throws NoSuchMessageException {
+		/* TODO: Find all usages of this function and check whether we should put the activate() here and what the fitting depth is */
+		db.activate(this, 3);
 		if(mParent == null)
 			throw new NoSuchMessageException();
 		mParent.initializeTransient(db, mMessageManager);
@@ -339,9 +355,62 @@ public abstract class Message implements Comparable<Message> {
 	}
 
 	public synchronized void setParent(Message newParent)  {
-		assert(newParent.getID().equals(mParentID));
+		if(!newParent.getID().equals(mParentID))
+			throw new IllegalArgumentException("Trying to set a message as parent which has the wrong ID: " + newParent.getID());
+		
 		/* TODO: assert(newParent contains at least one board which mBoards contains) */
 		mParent = newParent;
+		
+		/* Check whether mThreadURI/ID is correct. If it is not, adopt the thread URI/ID of the parent message and also set this on
+		 * all our children and their children. I thought about how to handle incorrect thread URI/ID for about 3 hours and it seems to me
+		 * like this is the way to go... requires lots of brainwork to imagine what side effects can happen due to incorrect thread URI/ID
+		 * and the conclusion is that they MUST be corrected, otherwise those messages will disappear in getAllThreadReplies() */
+		
+		synchronized(mParent) {
+			String realThreadID = newParent.isThread() ? newParent.getID() : mParent.mThreadID;
+			if(!realThreadID.equals(mThreadID)) {
+				Logger.error(this, "Correcting thread URI/ID of " + getURI());
+				
+				/* It is unpredictable what messages will be affected by this code because we modify all children, so unfortunately we should
+				 * probably lock all changes to messages here :| */
+				synchronized(Message.class) { 
+					if(mParent.isThread()) {
+						setThreadURIAndID(mParent.getURI());
+						setThread(mParent);
+					} else
+						setThreadURIAndID(mParent.mThreadURI);
+					
+					/* Use depth-first-search for setting the URI/ID on the children
+					 * This is dangerous: An attacker might cause very high memory usage if we do not ensure that we use DFS properly so 
+					 * that only 1 message must be in memory at once */
+					
+					Message child = this;
+					boolean foundChild;
+					do {
+						foundChild = false;
+						for(Message c : child.getChildren(null)) {
+							if(!mThreadID.equals(c.mThreadID)) {
+								db.deactivate(child, 1);
+								child = c;
+								child.setThreadURIAndID(mThreadURI);
+								foundChild = true; break;
+							}
+						}
+						
+						if(!foundChild && child != this) {
+							try {
+								child = child.getParent();
+								foundChild = true;
+							} catch (NoSuchMessageException e) {
+								Logger.error(this, "Should never happen!");
+							}							
+						}
+					} while(foundChild);
+				}
+			}
+		}
+		
+		
 		store();
 	}
 	
@@ -350,7 +419,9 @@ public abstract class Message implements Comparable<Message> {
 	 * The transient fields of the children will be initialized already.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized Iterator<Message> childrenIterator(final Board targetBoard) {
+	public synchronized Iterable<Message> getChildren(final Board targetBoard) {
+		return new Iterable<Message>() {
+		public Iterator<Message> iterator() {
 		return new Iterator<Message>() {
 			private Iterator<Message> iter;
 			private Board board;
@@ -371,6 +442,9 @@ public abstract class Message implements Comparable<Message> {
 			}
 
 			public boolean hasNext() {
+				if(board == null)
+					return true;
+				
 				while(next != null) {
 					if(Arrays.binarySearch(next.getBoards(), board) >= 0)
 						return true;
@@ -394,6 +468,8 @@ public abstract class Message implements Comparable<Message> {
 			public void remove() {
 				throw new UnsupportedOperationException("Use child.setParent(null) instead.");
 			}
+		};
+		}
 		};
 	}
 	
@@ -528,7 +604,7 @@ public abstract class Message implements Comparable<Message> {
 		return text;
 	}
 	
-	public void store() {
+	public synchronized void store() {
 		/* FIXME: Check for duplicates. Also notice that an OwnMessage which is equal might exist */
 		
 		if(db.ext().isStored(this) && !db.ext().isActive(this))
