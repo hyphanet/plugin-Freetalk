@@ -23,7 +23,7 @@ public final class ThreadPage extends WebPageImpl {
 	private final Board mBoard;
 	private final Message mThread;
 	
-	private static final DateFormat mLocalDateFormat = DateFormat.getDateInstance();
+	private static final DateFormat mLocalDateFormat = DateFormat.getDateTimeInstance();
 
 	public ThreadPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchMessageException, NoSuchBoardException {
 		super(myWebInterface, viewer, request);
@@ -44,25 +44,26 @@ public final class ThreadPage extends WebPageImpl {
 	private void addMessageBox(Message message) {
 		HTMLNode messageBox = addContentBox("Subject: " + message.getTitle());
 		
-		HTMLNode table = messageBox.addChild("table", "border", "0");
+		HTMLNode table = messageBox.addChild("table", new String[] {"border", "width" }, new String[] { "0", "100%" });
 		
 		HTMLNode row = table.addChild("tr");
 			row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Author:");
 			row.addChild("td", new String[] { "align" }, new String[] { "left" }, message.getAuthor().getFreetalkAddress());
-
-		row = table.addChild("tr");
 			row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Date:");
 			row.addChild("td", new String[] { "align" }, new String[] { "left" }, mLocalDateFormat.format(message.getDate()));
 
 		row = table.addChild("tr");
 			row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Debug:");
-			addDebugInfo(row.addChild("td", new String[] { "align" }, new String[] { "left" }), message);
+			addDebugInfo(row.addChild("td", new String[] { "align", "colspan"}, new String[] { "left", "3" }), message);
 		
 		row = table.addChild("tr");
-			addReplyButton(row.addChild("td", new String[] { "align" }, new String[] { "left" }).addChild("pre", message.getText()), message);
+		HTMLNode cell = row.addChild("td", new String[] { "align", "colspan" }, new String[] { "left", "4" });
+		cell.addChild("pre", message.getText());
+		addReplyButton(cell, message);
 	}
 	
 	private void addReplyButton(HTMLNode parent, Message parentMessage) {
+		parent = parent.addChild("div", "align", "right");
 		HTMLNode newReplyForm = addFormChild(parent, SELF_URI + "/NewReply", "NewReplyPage");
 		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
 		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
@@ -71,19 +72,22 @@ public final class ThreadPage extends WebPageImpl {
 	}
 	
 	private void addDebugInfo(HTMLNode messageBox, Message message) {
-		HTMLNode debugParagraph = messageBox.addChild("p");
+		messageBox = messageBox.addChild("font", new String[] { "size" }, new String[] { "-2" });
 		
-		debugParagraph.addChild("#", "uri: " + message.getURI());
-		debugParagraph.addChild("br", "ID: " + message.getID());
+		messageBox.addChild("#", "uri: " + message.getURI());
+		messageBox.addChild("br", "ID: " + message.getID());
 		try {
-			debugParagraph.addChild("br", "threadID: " + message.getThreadID());
-		} catch (NoSuchMessageException e) { }
+			messageBox.addChild("br", "threadID: " + message.getThreadID());
+		}
+		catch (NoSuchMessageException e) {
+			messageBox.addChild("br", "threadID: null");
+		}
 		
 		try {
-			debugParagraph.addChild("br", "parentID: " + message.getParentID());
+			messageBox.addChild("br", "parentID: " + message.getParentID());
 		}
 		catch(NoSuchMessageException e) {
-			debugParagraph.addChild("br", "parentURI: null");
+			messageBox.addChild("br", "parentID: null");
 		}
 	}
 
