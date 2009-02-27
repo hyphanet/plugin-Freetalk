@@ -251,10 +251,7 @@ public final class Board implements Comparable<Board> {
 			try {
 				Message parentThread = newMessage.getThread();
 				/* Search in its parent thread for its children */
-				Iterator<Message> iter = parentThread.childrenIterator(this);
-				while(iter.hasNext()) {
-					Message parentThreadChild = iter.next();
-					
+				for(Message parentThreadChild : parentThread.getChildren(this)) {
 					try {
 						if(parentThreadChild.getParentURI().equals(newMessage.getURI())) /* We found its parent, yeah! */
 							parentThreadChild.setParent(newMessage); /* It's a child of the newMessage, not of the parentThread */
@@ -351,10 +348,10 @@ public final class Board implements Comparable<Board> {
 				Query q = db.query();
 				q.constrain(BoardMessageLink.class);
 				q.descend("mBoard").constrain(Board.this);
-//				q.descend("mMessage").descend("mThread").constrain(null).identity();
-//				/* We require mParent to be null because this allows discussions where only the head message is missing to be displayed as
-//				 * a single thread instead of displaying a bunch of single messages where each would appear to be a thread. */
-//				q.descend("mMessage").descend("mParent").constrain(null).identity();
+				q.descend("mMessage").descend("mThread").constrain(null).identity();
+				/* We require mParent to be null because this allows discussions where only the head message is missing to be displayed as
+				 * a single thread instead of displaying a bunch of single messages where each would appear to be a thread. */
+				q.descend("mMessage").descend("mParent").constrain(null).identity();
 				q.descend("mMessage").descend("mDate").orderDescending();
 				iter = q.execute().iterator();
 				next = iter.hasNext() ? iter.next() : null;
