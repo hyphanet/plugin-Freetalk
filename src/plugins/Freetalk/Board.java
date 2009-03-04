@@ -501,6 +501,7 @@ public final class Board implements Comparable<Board> {
 		q.descend("mMessage").constrain(thread).identity().not();
 		try {
 			q.descend("mMessage").descend("mThreadID").constrain(thread.isThread() ? thread.getID() : thread.getThreadID());
+			q.descend("mMessage").descend("mParent").constrain(null).identity().not();
 		} catch (NoSuchMessageException e) {
 			throw new RuntimeException( "Message is no thread but parentThreadURI == null : " + thread.getURI());
 		}
