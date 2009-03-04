@@ -58,7 +58,13 @@ public final class ThreadPage extends WebPageImpl {
 		
 		row = table.addChild("tr");
 		HTMLNode cell = row.addChild("td", new String[] { "align", "colspan" }, new String[] { "left", "4" });
-		cell.addChild("pre", message.getText());
+		
+		String[] lines = message.getText().split("\r\n|\n");
+		for(String line : lines) {
+			cell.addChild("#", line);
+			cell.addChild("br");
+		}
+		
 		addReplyButton(cell, message);
 	}
 	
