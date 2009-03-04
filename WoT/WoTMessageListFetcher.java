@@ -20,6 +20,7 @@ import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.Logger;
+import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 
 /**
@@ -182,14 +183,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 			}
 		}
 		finally {
-			if(input != null) {
-				try {
-					input.close();
-				} catch (Exception e) {
-					Logger.error(this, "Error while closing Bucket InputStream", e);
-				}
-			}
-				
+			Closer.close(input);
 			removeFetch(state);
 		}
 		

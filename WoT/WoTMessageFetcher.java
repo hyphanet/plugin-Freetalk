@@ -24,6 +24,7 @@ import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.Logger;
+import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 
 /**
@@ -166,14 +167,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			}
 		}
 		finally {
-			if(input != null) {
-				try {
-					input.close();
-				} catch (Exception e) {
-					Logger.error(this, "Error while closing Bucket InputStream", e);
-				}
-			}
-			
+			Closer.close(input);
 			removeFetch(state); /* FIXME: This was in the try{} block somewhere else in the FT/WoT code. Move it to finally{} there, too */
 			
 			/* FIXME: this will wake up the loop over and over again. we need to store the previous parallel fetch count and if waking
