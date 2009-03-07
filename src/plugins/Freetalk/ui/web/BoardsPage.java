@@ -22,7 +22,10 @@ public final class BoardsPage extends WebPageImpl {
 	}
 
 	public final void make() {
-		makeBoardsList();
+		if(mOwnIdentity != null)
+			makeBoardsList();
+		else
+			addContentBox("No own identity received yet").addChild("#", "Freetalk has not downloaded your own identities yet from the WoT plugin. Please wait a few minutes.");
 	}
 
 	private void makeBoardsList() {
