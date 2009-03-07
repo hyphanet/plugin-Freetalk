@@ -45,30 +45,30 @@ public final class BoardPage extends WebPageImpl {
 		row.addChild("th", "Replies");
 		
 		synchronized(mBoard) { /* FIXME: Is this enough synchronization or should we lock the message manager? */
-		Iterator<MessageReference> threads = mBoard.threadIterator(mOwnIdentity);
-		while(threads.hasNext()) {
-			Message thread = threads.next().getMessage();
-			
-			row = threadsTable.addChild("tr");
-			
-			HTMLNode titleCell = row.addChild("td", new String[] { "align" }, new String[] { "left" });
-			titleCell.addChild(new HTMLNode("a", "href", SELF_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
-					"&board=" + mBoard.getName() + "&id=" + thread.getID(), thread.getTitle()));
+			Iterator<MessageReference> threads = mBoard.threadIterator(mOwnIdentity);
+			while(threads.hasNext()) {
+				Message thread = threads.next().getMessage();
 
-			/* Author */
-			String authorText = thread.getAuthor().getFreetalkAddress();
-			/* FIXME: Use the following algorithm for selecting how many characters after the '@' to show:
-			 * characterCount = 0
-			 * while(two or more identities exist with authorText being the same with given characterCount) characterCount++; */
-			authorText = authorText.substring(0, authorText.indexOf('@') + 5);
-			row.addChild("td", new String[] { "align" }, new String[] { "left" }, authorText);
-			
-			/* Date */
-			row.addChild("td", new String[] { "align" }, new String[] { "center" }, thread.getDate().toLocaleString()); /* FIXME: Use Calendar */
-	
-			/* Reply count */
-			row.addChild("td", new String[] { "align" }, new String[] { "right" }, Integer.toString(mBoard.threadReplyCount(mOwnIdentity, thread)));
-		}
+				row = threadsTable.addChild("tr");
+
+				HTMLNode titleCell = row.addChild("td", new String[] { "align" }, new String[] { "left" });
+				titleCell.addChild(new HTMLNode("a", "href", SELF_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
+						"&board=" + mBoard.getName() + "&id=" + thread.getID(), thread.getTitle()));
+
+				/* Author */
+				String authorText = thread.getAuthor().getFreetalkAddress();
+				/* FIXME: Use the following algorithm for selecting how many characters after the '@' to show:
+				 * characterCount = 0
+				 * while(two or more identities exist with authorText being the same with given characterCount) characterCount++; */
+				authorText = authorText.substring(0, authorText.indexOf('@') + 5);
+				row.addChild("td", new String[] { "align" }, new String[] { "left" }, authorText);
+
+				/* Date */
+				row.addChild("td", new String[] { "align" }, new String[] { "center" }, thread.getDate().toLocaleString()); /* FIXME: Use Calendar */
+
+				/* Reply count */
+				row.addChild("td", new String[] { "align" }, new String[] { "right" }, Integer.toString(mBoard.threadReplyCount(mOwnIdentity, thread)));
+			}
 		}
 	}
 
