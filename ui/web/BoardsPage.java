@@ -44,20 +44,21 @@ public final class BoardsPage extends WebPageImpl {
 		
 		/* FIXME: Currently we show all boards. We should rather show the boards which the identity has selected */
 		synchronized(mFreetalk.getMessageManager()) {
-		Iterator<Board> boards = mFreetalk.getMessageManager().boardIterator();
-		while(boards.hasNext()) {
-			Board board = boards.next();
-			row = boardsTable.addChild("tr");
-			
-			HTMLNode nameCell = row.addChild("th", new String[] { "align" }, new String[] { "left" });
-			nameCell.addChild(new HTMLNode("a", "href", SELF_URI + "/showBoard?identity=" + mOwnIdentity.getUID() + "&name=" + board.getName(), board.getName()));
+			Iterator<Board> boards = mFreetalk.getMessageManager().boardIterator();
+			while(boards.hasNext()) {
+				Board board = boards.next();
+				row = boardsTable.addChild("tr");
 
-			/* Description */
-			row.addChild("td", new String[] { "align" }, new String[] { "center" }, "not implemented yet");
-	
-			/* Message count */
-			row.addChild("td", new String[] { "align" }, new String[] { "center" }, Integer.toString(board.messageCount()));
-		}
+				HTMLNode nameCell = row.addChild("th", new String[] { "align" }, new String[] { "left" });
+				nameCell.addChild(new HTMLNode("a", "href", SELF_URI + "/showBoard?identity=" + mOwnIdentity.getUID() + "&name=" + board.getName(),
+						board.getName()));
+
+				/* Description */
+				row.addChild("td", new String[] { "align" }, new String[] { "center" }, "not implemented yet");
+
+				/* Message count */
+				row.addChild("td", new String[] { "align" }, new String[] { "center" }, Integer.toString(board.messageCount()));
+			}
 		}
 	}
 
