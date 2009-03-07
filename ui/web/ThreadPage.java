@@ -33,12 +33,11 @@ public final class ThreadPage extends WebPageImpl {
 	
 	public final void make() {
 		synchronized (mLocalDateFormat) {
-			synchronized(mBoard) { { /* FIXME: Is this enough synchronization or should we lock the message manager? */
+			synchronized(mBoard) {	/* FIXME: Is this enough synchronization or should we lock the message manager? */
 				addMessageBox(mThread);
 				
 				for(MessageReference reference : mBoard.getAllThreadReplies(mThread))
 					addMessageBox(reference.getMessage());
-			}
 			}
 		}
 	}
