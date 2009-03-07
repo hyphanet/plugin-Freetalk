@@ -40,6 +40,11 @@ public final class WebInterface implements FredPluginHTTP {
 		
 		mOwnIdentity = null;
 	}
+	
+	private FTOwnIdentity getLoggedInOwnIdentity() {
+		Iterator<FTOwnIdentity> iter = mFreetalk.getIdentityManager().ownIdentityIterator();
+		return iter.hasNext() ? iter.next() : null;
+	}
 
 	public final String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
 
@@ -65,7 +70,7 @@ public final class WebInterface implements FredPluginHTTP {
 
 
 		if ("/messages".equals(page))
-			return new BoardsPage(this, mFreetalk.getIdentityManager().ownIdentityIterator().next(), request).toHTML();
+			return new BoardsPage(this, getLoggedInOwnIdentity(), request).toHTML();
 		
 		try {
 			if(page.equals("/showBoard"))
