@@ -43,6 +43,7 @@ public final class BoardsPage extends WebPageImpl {
 		row.addChild("th", "Messages");
 		
 		/* FIXME: Currently we show all boards. We should rather show the boards which the identity has selected */
+		synchronized(mFreetalk.getMessageManager()) {
 		Iterator<Board> boards = mFreetalk.getMessageManager().boardIterator();
 		while(boards.hasNext()) {
 			Board board = boards.next();
@@ -56,6 +57,7 @@ public final class BoardsPage extends WebPageImpl {
 	
 			/* Message count */
 			row.addChild("td", new String[] { "align" }, new String[] { "center" }, Integer.toString(board.messageCount()));
+		}
 		}
 	}
 

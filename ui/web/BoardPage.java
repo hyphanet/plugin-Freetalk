@@ -44,6 +44,7 @@ public final class BoardPage extends WebPageImpl {
 		row.addChild("th", "Date");
 		row.addChild("th", "Replies");
 		
+		synchronized(mBoard) { /* FIXME: Is this enough synchronization or should we lock the message manager? */
 		Iterator<MessageReference> threads = mBoard.threadIterator(mOwnIdentity);
 		while(threads.hasNext()) {
 			Message thread = threads.next().getMessage();
@@ -67,6 +68,7 @@ public final class BoardPage extends WebPageImpl {
 	
 			/* Reply count */
 			row.addChild("td", new String[] { "align" }, new String[] { "right" }, Integer.toString(mBoard.threadReplyCount(mOwnIdentity, thread)));
+		}
 		}
 	}
 
