@@ -27,27 +27,38 @@ public final class WebInterface implements FredPluginHTTP {
 	
 	private final PageMaker mPageMaker;
 	
-	private final FTOwnIdentity mOwnIdentity;
+	private FTOwnIdentity mOwnIdentity;
 
 	public WebInterface(Freetalk myFreetalk) {
 		mFreetalk = myFreetalk;
-		
 		mPageMaker = mFreetalk.getPluginRespirator().getPageMaker();
-		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
-		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/messages", "Messages", "View Messages", false, null);
-		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/identities", "Identities", "Manage your own and known identities", false, null);
-		mPageMaker.addNavigationLink("/", "Fproxy", "Back to nodes home", false, null);
-		
 		mOwnIdentity = null;
 	}
 	
+	private void setUpMenu() {
+		mPageMaker.removeNavigationLink("Home");
+		mPageMaker.removeNavigationLink("Messages");
+		mPageMaker.removeNavigationLink("Identities");
+		mPageMaker.removeNavigationLink("Log out");
+		mPageMaker.removeNavigationLink("Back to Freenet");
+		
+		if(mOwnIdentity == null) {
+			mPageMaker.addNavigationLink("/", "Back to Freenet", "Back to nodes home", false, null);
+			return;
+		}
+		
+		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
+		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/messages", "Messages", "View Messages", false, null);
+		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/identities", "Identities", "Manage your own and known identities", false, null);
+		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/LogOut", "Log out", "Log out", false, null);
+		mPageMaker.addNavigationLink("/", "Back to Freenet", "Back to nodes home", false, null);
+	}
+	
 	private FTOwnIdentity getLoggedInOwnIdentity() {
-		Iterator<FTOwnIdentity> iter = mFreetalk.getIdentityManager().ownIdentityIterator();
-		return iter.hasNext() ? iter.next() : null;
+		return mOwnIdentity;
 	}
 
 	public final String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
-
 		/* FIXME 
 		String pass = request.getParam("formPassword");
 		if(pass != null) {	// FIXME: is this correct? what if the client just does not specify the password so that its null? 
@@ -62,17 +73,26 @@ public final class WebInterface implements FredPluginHTTP {
 		if(endIndex > 0)
 			page = page.substring(0, endIndex);
 		
+		if(page.equals("/LogOut"))
+			mOwnIdentity = null;
+		
+		setUpMenu();
+		
+		if(getLoggedInOwnIdentity() == null)
+			return new LogInPage(this, null, request).toHTML();
+		
 		if ((page.length() < 1) || ("/".equals(page)))
-			return new Welcome(this, null, request).toHTML();
+			return new Welcome(this, mOwnIdentity, request).toHTML();
 		
 		if ("/identities".equals(page))
-			return new IdentityEditor(this, null, request).toHTML();
+			return new IdentityEditor(this, getLoggedInOwnIdentity(), request).toHTML();
 
 
 		if ("/messages".equals(page))
 			return new BoardsPage(this, getLoggedInOwnIdentity(), request).toHTML();
 		
 		try {
+			/* FIXME: Also use getLoggedInOwnIdentity() here? */
 			if(page.equals("/showBoard"))
 				return new BoardPage(this, mFreetalk.getIdentityManager().getOwnIdentity(request.getParam("identity")), request).toHTML();
 			
@@ -89,6 +109,7 @@ public final class WebInterface implements FredPluginHTTP {
 		catch(NoSuchMessageException e) {
 			throw new NotFoundPluginHTTPException("Unknown message " + request.getParam("id"), page);
 		}
+	
 
 		throw new NotFoundPluginHTTPException("Resource not found in Freetalk plugin", page);
 	}
@@ -106,11 +127,21 @@ public final class WebInterface implements FredPluginHTTP {
 		
 		try {
 			FTOwnIdentity ownId = mFreetalk.getIdentityManager().getOwnIdentity(request.getPartAsString("OwnIdentityID", 64));
+			if(page.equals("/LogIn")) {
+				mOwnIdentity = ownId;
+				setUpMenu();
+				return new Welcome(this, ownId, request).toHTML();
+			}
+			
+			setUpMenu();
+			
 			if(page.equals("/NewBoard"))
 				return new NewBoardPage(this, ownId, request).toHTML();
-			else if(page.equals("/NewThread"))
+			
+			if(page.equals("/NewThread"))
 				return new NewThreadPage(this, ownId, request).toHTML();
-			else if(page.equals("/NewReply")) 
+			
+			if(page.equals("/NewReply")) 
 				return new NewReplyPage(this, ownId, request).toHTML();
 		}
 		catch(NoSuchIdentityException e) {
