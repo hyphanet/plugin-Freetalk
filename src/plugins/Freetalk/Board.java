@@ -80,7 +80,7 @@ public final class Board implements Comparable<Board> {
 			throw new InvalidParameterException("Board names have to be either in English or have an ISO language code at the beginning followed by a dot.");
 		
 		// FIXME: Validate name and description.
-		mName = newName;
+		mName = newName.toLowerCase();
 		mFirstSeenDate = CurrentTimeUTC.get();
 	}
 	

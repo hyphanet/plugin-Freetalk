@@ -326,6 +326,8 @@ public abstract class MessageManager implements Runnable {
 	 */
 	@SuppressWarnings("unchecked")
 	public synchronized Board getBoardByName(String name) throws NoSuchBoardException {
+		name = name.toLowerCase();
+		
 		Query query = db.query();
 		query.constrain(Board.class);
 		query.descend("mName").constrain(name);
@@ -343,6 +345,8 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 	public synchronized Board getOrCreateBoard(String name) throws InvalidParameterException {
+		name = name.toLowerCase();
+		
 		Board board;
 
 		try {		
