@@ -141,7 +141,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	private void addFreetalkContext(WoTIdentity oid) {
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "AddContext");
-		params.putOverwrite("Identity", oid.getRequestURI().toString());
+		params.putOverwrite("Identity", oid.getUID());
 		params.putOverwrite("Context", Freetalk.WOT_CONTEXT);
 		mTalker.send(params, null);
 	}
