@@ -37,7 +37,7 @@ public final class WebInterface implements FredPluginHTTP {
 	
 	private void setUpMenu() {
 		mPageMaker.removeNavigationLink("Home");
-		mPageMaker.removeNavigationLink("Messages");
+		mPageMaker.removeNavigationLink("Boards");
 		mPageMaker.removeNavigationLink("Identities");
 		mPageMaker.removeNavigationLink("Log out");
 		mPageMaker.removeNavigationLink("Back to Freenet");
@@ -48,7 +48,7 @@ public final class WebInterface implements FredPluginHTTP {
 		}
 		
 		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
-		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/messages", "Messages", "View Messages", false, null);
+		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/messages", "Boards", "View all boards", false, null);
 		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/identities", "Identities", "Manage your own and known identities", false, null);
 		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/LogOut", "Log out", "Log out", false, null);
 		mPageMaker.addNavigationLink("/", "Back to Freenet", "Back to nodes home", false, null);
