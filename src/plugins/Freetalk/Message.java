@@ -168,10 +168,14 @@ public abstract class Message implements Comparable<Message> {
 		mMessageList = newMessageList;
 		mAuthor = newAuthor;
 		mID = newID;
-		mThreadURI = newThreadURI;
-		mThreadID = mThreadURI != null ? mThreadURI.getMessageID() : null;
+		
 		mParentURI = newParentURI;
 		mParentID = mParentURI != null ? mParentURI.getMessageID() : null;
+		/* If a message has no thread URI specified (this is a bug in the client which inserted it) we store the parent URI as thread URI instead.
+		 * This will be corrected later by setParent(). */
+		mThreadURI = newThreadURI != null ? newThreadURI : mParentURI;
+		mThreadID = mThreadURI != null ? mThreadURI.getMessageID() : mParentID;
+		
 		mBoards = newBoards.toArray(new Board[newBoards.size()]);
 		Arrays.sort(mBoards);		
 		mReplyToBoard = newReplyToBoard;
