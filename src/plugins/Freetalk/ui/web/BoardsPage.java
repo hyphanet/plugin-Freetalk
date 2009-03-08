@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import java.text.DateFormat;
 import java.util.Iterator;
 
 import plugins.Freetalk.Board;
@@ -38,6 +39,9 @@ public final class BoardsPage extends WebPageImpl {
 		row.addChild("th", "Name");
 		row.addChild("th", "Description");
 		row.addChild("th", "Messages");
+		row.addChild("th", "Latest message");
+		
+		DateFormat dateFormat = DateFormat.getInstance();
 		
 		/* FIXME: Currently we show all boards. We should rather show the boards which the identity has selected */
 		synchronized(mFreetalk.getMessageManager()) {
@@ -55,6 +59,9 @@ public final class BoardsPage extends WebPageImpl {
 
 				/* Message count */
 				row.addChild("td", new String[] { "align" }, new String[] { "center" }, Integer.toString(board.messageCount()));
+				
+				/* Message count */
+				row.addChild("td", new String[] { "align" }, new String[] { "center" }, dateFormat.format(board.getLatestMessageDate()));
 			}
 		}
 	}

@@ -46,6 +46,8 @@ public final class Board implements Comparable<Board> {
 	
 	private final Date mFirstSeenDate;
 	
+	private Date mLatestMessageDate;
+	
 	
 	/* References to objects of the plugin, not stored in the database. */
 	
@@ -81,7 +83,7 @@ public final class Board implements Comparable<Board> {
 		
 		// FIXME: Validate name and description.
 		mName = newName.toLowerCase();
-		mFirstSeenDate = CurrentTimeUTC.get();
+		mLatestMessageDate = mFirstSeenDate = CurrentTimeUTC.get();
 	}
 	
 	/**
@@ -155,6 +157,10 @@ public final class Board implements Comparable<Board> {
 		return mFirstSeenDate;
 	}
 	
+	public synchronized Date getLatestMessageDate() {
+		return mLatestMessageDate;
+	}
+	
 	public synchronized String getDescription(FTOwnIdentity viewer) {
 		/* FIXME: Implement */
 		return "";
@@ -225,6 +231,7 @@ public final class Board implements Comparable<Board> {
 			}
 	
 			linkOrphansToNewParent(newMessage);
+			mLatestMessageDate = newMessage.getDate();
 		}
 	}
 

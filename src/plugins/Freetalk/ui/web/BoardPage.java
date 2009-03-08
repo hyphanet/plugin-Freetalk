@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import java.text.DateFormat;
 import java.util.Iterator;
 
 import plugins.Freetalk.Board;
@@ -44,6 +45,8 @@ public final class BoardPage extends WebPageImpl {
 		row.addChild("th", "Date");
 		row.addChild("th", "Replies");
 		
+		DateFormat dateFormat = DateFormat.getInstance();
+		
 		synchronized(mBoard) { /* FIXME: Is this enough synchronization or should we lock the message manager? */
 			Iterator<MessageReference> threads = mBoard.threadIterator(mOwnIdentity);
 			while(threads.hasNext()) {
@@ -64,7 +67,7 @@ public final class BoardPage extends WebPageImpl {
 				row.addChild("td", new String[] { "align" }, new String[] { "left" }, authorText);
 
 				/* Date */
-				row.addChild("td", new String[] { "align" }, new String[] { "center" }, thread.getDate().toLocaleString()); /* FIXME: Use Calendar */
+				row.addChild("td", new String[] { "align" }, new String[] { "center" }, dateFormat.format(thread.getDate()));
 
 				/* Reply count */
 				row.addChild("td", new String[] { "align" }, new String[] { "right" }, Integer.toString(mBoard.threadReplyCount(mOwnIdentity, thread)));
