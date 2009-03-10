@@ -231,7 +231,8 @@ public final class Board implements Comparable<Board> {
 			}
 	
 			linkOrphansToNewParent(newMessage);
-			mLatestMessageDate = newMessage.getDate();
+			if(newMessage.getDate().after(mLatestMessageDate))
+				mLatestMessageDate = newMessage.getDate();
 		}
 	}
 
