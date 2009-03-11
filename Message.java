@@ -157,12 +157,6 @@ public abstract class Message implements Comparable<Message> {
 			newBoards.add(newReplyToBoard);
 		}
 
-		if (!isTitleValid(newTitle))
-			throw new InvalidParameterException("Invalid message title in message " + newURI);
-		
-		if (!isTextValid(newText))
-			throw new InvalidParameterException("Invalid message text in message " + newURI);
-	
 		mURI = newURI;
 		mRealURI = newRealURI;
 		mMessageList = newMessageList;
@@ -179,9 +173,16 @@ public abstract class Message implements Comparable<Message> {
 		mBoards = newBoards.toArray(new Board[newBoards.size()]);
 		Arrays.sort(mBoards);		
 		mReplyToBoard = newReplyToBoard;
-		mTitle = newTitle;
+		mTitle = makeTitleValid(newTitle);
 		mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
-		mText = newText;
+		mText = makeTextValid(newText);
+		
+		if (!isTitleValid(mTitle))
+			throw new InvalidParameterException("Invalid message title in message " + newURI);
+		
+		if (!isTextValid(mText))
+			throw new InvalidParameterException("Invalid message text in message " + newURI);
+		
 		mAttachments = newAttachments == null ? null : newAttachments.toArray(new Attachment[newAttachments.size()]);
 	}
 	
@@ -606,8 +607,7 @@ public abstract class Message implements Comparable<Message> {
 	 * @see isTextValid
 	 */
 	static public String makeTextValid(String text) {
-		// FIXME: Implement.
-		return text;
+		return text.replace("\r\n", "\n");
 	}
 	
 	public synchronized void store() {
