@@ -83,7 +83,8 @@ public final class Board implements Comparable<Board> {
 		
 		// FIXME: Validate name and description.
 		mName = newName.toLowerCase();
-		mLatestMessageDate = mFirstSeenDate = CurrentTimeUTC.get();
+		mFirstSeenDate = CurrentTimeUTC.get();
+		mLatestMessageDate = null;
 	}
 	
 	/**
