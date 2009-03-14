@@ -61,7 +61,7 @@ public final class BoardsPage extends WebPageImpl {
 				row.addChild("td", new String[] { "align" }, new String[] { "center" }, Integer.toString(board.messageCount()));
 				
 				/* Date of latest message */
-				row.addChild("td", new String[] { "align" }, new String[] { "center" }, dateFormat.format(board.getLatestMessageDate()));
+				row.addChild("td", new String[] { "align" }, new String[] { "center" }, board.getLatestMessageDate() == null ? "-" : dateFormat.format(board.getLatestMessageDate()));
 			}
 		}
 	}
