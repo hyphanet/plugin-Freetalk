@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import java.net.MalformedURLException;
 import java.util.Iterator;
 
 import plugins.Freetalk.CurrentTimeUTC;
@@ -22,6 +23,7 @@ import freenet.pluginmanager.FredPluginTalker;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.pluginmanager.PluginTalker;
+import freenet.pluginmanager.PluginTalkerBlocking;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -42,7 +44,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	private volatile boolean shutdownFinished = false;
 	private Thread mThread = null;
 
-	private PluginTalker mTalker;
+	private PluginTalkerBlocking mTalker;
 	
 	private final Object sfsLock = new Object();
 	private SimpleFieldSet sfsIdentities = null;
@@ -53,7 +55,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	 */
 	public WoTIdentityManager(ObjectContainer myDB, PluginRespirator pr) throws PluginNotFoundException {
 		super(myDB, pr.getNode().executor);
-		mTalker = pr.getPluginTalker(this, Freetalk.WOT_NAME, Freetalk.PLUGIN_TITLE);
+		mTalker = pr.getPluginTalkerBlocking(this, Freetalk.WOT_NAME, Freetalk.PLUGIN_TITLE);
 		isRunning = true;
 		mExecutor.execute(this, "FT Identity Manager");
 		Logger.debug(this, "Identity manager started.");
@@ -64,6 +66,73 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	 */
 	public WoTIdentityManager(ObjectContainer myDB) {
 		super(myDB);
+	}
+	
+	
+	/**
+	 * Sends a blocking FCP message to the WoT plugin, checks whether the reply is really the expected reply message and throws an exception
+	 * if not. Also checks whether the reply is an error message and throws an exception if it is. Therefore, the purpose of this function
+	 * is that the callee can assume that no errors occurred if no exception is thrown.
+	 * 
+	 * @param params The params of the FCP message.
+	 * @param expectedReplyMessage The excepted content of the "Message" field of the SimpleFieldSet of the reply message.
+	 * @return The unmodified Result object which was returned by the PluginTalker.
+	 * @throws Exception If the WoT plugin replied with an error message or not with the expected message.
+	 */
+	private PluginTalkerBlocking.Result sendFCPMessageBlocking(SimpleFieldSet params, String expectedReplyMessage) throws Exception {
+		PluginTalkerBlocking.Result result = mTalker.sendBlocking(params, null);
+		
+		if(result.params.get("Message").equals("Error"))
+			throw new Exception("FCP message " + result.params.get("OriginalMessage") + " failed: " + result.params.get("Description"));
+		
+		if(result.params.get("Message").equals(expectedReplyMessage) == false)
+			throw new Exception("FCP message " + params.get("Message") + " received unexpected reply: " + result.params.get("Message"));
+		
+		return result;
+	}
+	
+	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles) throws Exception  {
+		SimpleFieldSet params = new SimpleFieldSet(true);
+		params.putOverwrite("Message", "CreateIdentity");
+		params.putOverwrite("PublishTrustList", publishesTrustList ? "true" : "false");
+		params.putOverwrite("PublishIntroductionPuzzles", publishesIntroductionPuzzles ? "true" : "false");
+		params.putOverwrite("Context", Freetalk.WOT_CONTEXT);
+		PluginTalkerBlocking.Result result = sendFCPMessageBlocking(params, "IdentityCreated");
+		
+		WoTOwnIdentity identity = new WoTOwnIdentity(result.params.get("ID"),
+				new FreenetURI(result.params.get("RequestURI")),
+				new FreenetURI(result.params.get("InsertURI")),
+				newNickname);
+		
+		db.store(identity);
+		db.commit();
+		
+		return identity;
+	}
+	
+	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles,
+			FreenetURI newRequestURI, FreenetURI newInsertURI) throws Exception {
+		SimpleFieldSet params = new SimpleFieldSet(true);
+		params.putOverwrite("Message", "CreateIdentity");
+		params.putOverwrite("PublishTrustList", publishesTrustList ? "true" : "false");
+		params.putOverwrite("PublishIntroductionPuzzles", publishesIntroductionPuzzles ? "true" : "false");
+		params.putOverwrite("Context", Freetalk.WOT_CONTEXT);
+		params.putOverwrite("RequestURI", newRequestURI.toString());
+		params.putOverwrite("InsertURI", newInsertURI.toString());
+		PluginTalkerBlocking.Result result = sendFCPMessageBlocking(params, "IdentityCreated");
+		
+		/* We take the URIs which were returned by the WoT plugin instead of the requested ones because this allows the identity to work
+		 * even if the WoT plugin ignores our requested URIs: If we just stored the URIs we requested, we would store an identity with
+		 * wrong URIs which would result in the identity not being useable. */
+		WoTOwnIdentity identity = new WoTOwnIdentity(result.params.get("ID"),
+				new FreenetURI(result.params.get("RequestURI")),
+				new FreenetURI(result.params.get("InsertURI")),
+				newNickname);
+		
+		db.store(identity);
+		db.commit();
+		
+		return identity;
 	}
 	
 	@SuppressWarnings("unchecked")
