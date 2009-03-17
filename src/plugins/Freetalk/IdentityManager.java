@@ -10,6 +10,7 @@ import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import com.db4o.ObjectContainer;
 import com.db4o.query.Query;
 
+import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.Logger;
@@ -37,6 +38,11 @@ public abstract class IdentityManager implements PrioRunnable {
 		db = myDB;
 		mExecutor = null;
 	}
+	
+	public abstract FTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles) throws Exception;
+	
+	public abstract FTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles,
+			FreenetURI requestURI, FreenetURI insertURI) throws Exception;
 
 	public abstract Iterable<? extends FTIdentity> getAllIdentities();
 	
@@ -91,15 +97,6 @@ public abstract class IdentityManager implements PrioRunnable {
 		}
 
 		return noOwnIdentities ? true : false;
-	}
-	
-	public synchronized void addNewIdentity(FTIdentity identity) {
-		/* FIXME: implement */
-	}
-	
-	public synchronized void addNewOwnIdentity(FTOwnIdentity identity) {
-		/* FIXME: implement. */
-		
 	}
 	
 	public abstract void terminate();
