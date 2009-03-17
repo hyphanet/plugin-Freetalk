@@ -68,6 +68,9 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	
 	public void store() {
 		/* FIXME: check for duplicates */
+		if(db.ext().isStored(this) && !db.ext().isActive(this))
+			throw new RuntimeException("Trying to store a non-active WoTOwnIdentity object");
+		
 		db.store(mSubscribedBoards);
 		db.store(mInsertURI);
 		super.store();
