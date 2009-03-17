@@ -129,6 +129,10 @@ public class WoTIdentity implements FTIdentity {
 
 	public void store() {
 		/* FIXME: check for duplicates */
+		
+		if(db.ext().isStored(this) && !db.ext().isActive(this))
+			throw new RuntimeException("Trying to store a non-active WoTIdentity object");
+		
 		db.store(mRequestURI);
 		db.store(this);
 		db.commit();

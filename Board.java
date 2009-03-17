@@ -102,6 +102,10 @@ public final class Board implements Comparable<Board> {
 	 */
 	public synchronized void store() {
 		/* FIXME: check for duplicates */
+
+		if(db.ext().isStored(this) && !db.ext().isActive(this))
+			throw new RuntimeException("Trying to store a non-active Board object");
+
 		db.store(this);
 		db.commit();
 	}
@@ -545,6 +549,9 @@ public final class Board implements Comparable<Board> {
 		}
 		
 		public void store(ObjectContainer db) {
+			if(db.ext().isStored(this) && !db.ext().isActive(this))
+				throw new RuntimeException("Trying to store a non-active BoardMessageLink object");
+			
 			db.store(this);
 			db.commit();
 		}

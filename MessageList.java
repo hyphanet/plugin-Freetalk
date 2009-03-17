@@ -73,6 +73,9 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		}
 		
 		public synchronized void store() {
+			if(db.ext().isStored(this) && !db.ext().isActive(this))
+				throw new RuntimeException("Trying to store a non-active MessageList object");
+			
 			db.store(mURI);
 			db.store(this);
 			db.commit();
