@@ -10,6 +10,7 @@ import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.PluginTalkerBlocking;
 import plugins.Freetalk.exceptions.DuplicateIdentityException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 
@@ -42,7 +43,8 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	private volatile boolean shutdownFinished = false;
 	private Thread mThread = null;
 
-	private PluginTalker mTalker;
+	private PluginTalker mTalker; /* FIXME: Use a blocking talker here for everything */
+	private PluginTalkerBlocking mBlockingTalker;
 	
 	private final Object sfsLock = new Object();
 	private SimpleFieldSet sfsIdentities = null;
@@ -54,6 +56,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	public WoTIdentityManager(ObjectContainer myDB, PluginRespirator pr) throws PluginNotFoundException {
 		super(myDB, pr.getNode().executor);
 		mTalker = pr.getPluginTalker(this, Freetalk.WOT_NAME, Freetalk.PLUGIN_TITLE);
+		mBlockingTalker = new PluginTalkerBlocking(pr);
 		isRunning = true;
 		mExecutor.execute(this, "FT Identity Manager");
 		Logger.debug(this, "Identity manager started.");
@@ -77,8 +80,8 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	 * @return The unmodified Result object which was returned by the PluginTalker.
 	 * @throws Exception If the WoT plugin replied with an error message or not with the expected message.
 	 */
-	private PluginTalker.Result sendFCPMessageBlocking(SimpleFieldSet params, String expectedReplyMessage) throws Exception {
-		PluginTalker.Result result = mTalker.sendBlocking(params, null);
+	private PluginTalkerBlocking.Result sendFCPMessageBlocking(SimpleFieldSet params, Bucket data, String expectedReplyMessage) throws Exception {
+		PluginTalkerBlocking.Result result = mBlockingTalker.sendBlocking(params, data);
 		
 		if(result.params.get("Message").equals("Error"))
 			throw new Exception("FCP message " + result.params.get("OriginalMessage") + " failed: " + result.params.get("Description"));
@@ -95,7 +98,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		params.putOverwrite("PublishTrustList", publishesTrustList ? "true" : "false");
 		params.putOverwrite("PublishIntroductionPuzzles", publishesIntroductionPuzzles ? "true" : "false");
 		params.putOverwrite("Context", Freetalk.WOT_CONTEXT);
-		PluginTalker.Result result = sendFCPMessageBlocking(params, "IdentityCreated");
+		PluginTalkerBlocking.Result result = sendFCPMessageBlocking(params, null, "IdentityCreated");
 		
 		WoTOwnIdentity identity = new WoTOwnIdentity(result.params.get("ID"),
 				new FreenetURI(result.params.get("RequestURI")),
@@ -117,7 +120,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		params.putOverwrite("Context", Freetalk.WOT_CONTEXT);
 		params.putOverwrite("RequestURI", newRequestURI.toString());
 		params.putOverwrite("InsertURI", newInsertURI.toString());
-		PluginTalker.Result result = sendFCPMessageBlocking(params, "IdentityCreated");
+		PluginTalkerBlocking.Result result = sendFCPMessageBlocking(params, null, "IdentityCreated");
 		
 		/* We take the URIs which were returned by the WoT plugin instead of the requested ones because this allows the identity to work
 		 * even if the WoT plugin ignores our requested URIs: If we just stored the URIs we requested, we would store an identity with
