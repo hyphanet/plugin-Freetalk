@@ -18,9 +18,14 @@ public final class LogInPage extends WebPageImpl {
 
 	public void make() {
 		makeWelcomeBox();
-		makeLoginBox();
+		if(mFreetalk.getIdentityManager().ownIdentityIterator().hasNext()) {
+			makeLoginBox();
+			makeCreateIdentityBox();
+		} else {
+			new CreateIdentityWizard(mWebInterface, mOwnIdentity, mRequest).addToPage(mContentNode);
+		}
 	}
-	
+
 	private final void makeWelcomeBox() {
 		/* TODO: Make double-sure that the following text is short and yet makes very clear what Freetalk is about. It will be the first
 		 * text which people read when they access Freetalk from FProxy. */
@@ -39,6 +44,7 @@ public final class LogInPage extends WebPageImpl {
 		HTMLNode loginBox = addContentBox("Log in");
 	
 		Iterator<FTOwnIdentity> iter = mFreetalk.getIdentityManager().ownIdentityIterator();
+		/*
 		if(!iter.hasNext()) {
 			loginBox.addChild("p", "Sorry, Freetalk has not yet downloaded your own identities from the WoT plugin. Please wait 1-2 minutes.");
 			HTMLNode p = loginBox.addChild("p", "If you have not created an own identity yet, please go to the ");
@@ -46,6 +52,7 @@ public final class LogInPage extends WebPageImpl {
 			p.addChild("#", " and create an own identity there. Do not forget to introduce it to others by solving introduction puzzles.");
 			return;
 		}
+		*/
 		
 		HTMLNode selectForm = addFormChild(loginBox, SELF_URI + "/LogIn", "LogIn");
 		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnIdentityID");
@@ -56,5 +63,8 @@ public final class LogInPage extends WebPageImpl {
 		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Log in" });
 	}
 	
-
+	private void makeCreateIdentityBox() {
+		HTMLNode createIdentityBox = addContentBox("Create an own identity");
+		createIdentityBox.addChild("a", "href", SELF_URI + "/CreateIdentity", "You can create another own identity here");
+	}
 }
