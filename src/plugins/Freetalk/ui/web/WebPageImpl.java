@@ -34,13 +34,12 @@ public abstract class WebPageImpl implements WebPage {
 	/** The request performed by the user */
 	protected final HTTPRequest mRequest;
 	
-	/** List of all content boxes */
-	protected final ArrayList<HTMLNode> mContentBoxes;
-	
 	/**
 	 * The FTOwnIdentity which is viewing this page.
 	 */
 	protected final FTOwnIdentity mOwnIdentity;
+	
+	protected HTMLNode mContentNode;
 
 	/**
 	 * Creates a new WebPageImpl. It is abstract because only a subclass can run
@@ -64,8 +63,6 @@ public abstract class WebPageImpl implements WebPage {
 		mOwnIdentity = viewer;
 
 		mRequest = request;
-
-		mContentBoxes = new ArrayList<HTMLNode>(32); /* FIXME: Figure out a reasonable value */
 	}
 
 	/**
@@ -79,22 +76,17 @@ public abstract class WebPageImpl implements WebPage {
 			pageNode = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getFreetalkAddress(), null);
 		else
 			pageNode = mPM.getPageNode(Freetalk.PLUGIN_TITLE, null);
-		addToPage(pageNode);
+
+		addToPage(mPM.getContentNode(pageNode));
 		return pageNode.generate();
 	}
 	
 	/**
 	 * Adds this WebPage to the given page as a HTMLNode.
 	 */
-	public final void addToPage(HTMLNode pageNode) {
+	public final void addToPage(HTMLNode contentNode) {
+		mContentNode = contentNode;
 		make();
-		
-		HTMLNode contentNode = mPM.getContentNode(pageNode);
-
-		// We add every ContentBoxes
-		Iterator<HTMLNode> contentBox = mContentBoxes.iterator();
-		while (contentBox.hasNext())
-			contentNode.addChild(contentBox.next());
 	}
 
 	/**
@@ -105,7 +97,7 @@ public abstract class WebPageImpl implements WebPage {
 	 */
 	protected final HTMLNode addContentBox(String title) {
 		HTMLNode box = mPM.getInfobox(title);
-		mContentBoxes.add(box);
+		mContentNode.addChild(box);
 		return mPM.getContentNode(box);
 	}
 	
@@ -120,7 +112,7 @@ public abstract class WebPageImpl implements WebPage {
 	
 	protected final HTMLNode addAlertBox(String title) {
 		HTMLNode box = mPM.getInfobox("infobox-alert", title);
-		mContentBoxes.add(box);
+		mContentNode.addChild(box);
 		return mPM.getContentNode(box);
 	}
 	
