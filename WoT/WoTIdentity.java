@@ -3,15 +3,17 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import plugins.Freetalk.CurrentTimeUTC;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
-import plugins.Freetalk.CurrentTimeUTC;
+import plugins.Freetalk.exceptions.InvalidParameterException;
 
 import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
+import freenet.support.StringValidityChecker;
 
 
 /**
@@ -125,6 +127,23 @@ public class WoTIdentity implements FTIdentity {
 	public synchronized void setIsNeeded(boolean newValue) {
 		mIsNeeded = newValue;
 		store();
+	}
+	
+
+	/**
+	 * Validates the nickname. If it is valid, nothing happens. If it is invalid, an exception is thrown which exactly describes what is
+	 * wrong about the nickname.
+	 * 
+	 * @throws InvalidParameterException If the nickname is invalid, the exception contains a description of the problem as message. 
+	 */
+	/* IMPORTANT: This code is duplicated in plugins.WoT.Identity.isNicknameValid().
+	 * Please also modify it there if you modify it here */
+	public static void validateNickname(String newNickname) throws InvalidParameterException {
+		if(!StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname))
+			throw new InvalidParameterException("Nickname contains invalid characters"); /* FIXME: Tell the user which ones are invalid!!! */
+		
+		if(newNickname.length() == 0) throw new InvalidParameterException("Blank nickname.");
+		if(newNickname.length() > 50) throw new InvalidParameterException("Nickname is too long, the limit is 50 characters.");
 	}
 
 	public void store() {
