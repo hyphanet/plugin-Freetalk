@@ -7,6 +7,7 @@ import plugins.Freetalk.Freetalk;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
@@ -38,22 +39,21 @@ public final class FCPInterface implements FredPluginFCP {
      * @param params parameters passed in, can be null
      * @param data a bucket of data passed in, can be null
      * @param access 0: direct call (plugin to plugin), 1: FCP restricted access,  2: FCP full access  
-     * @throws PluginNotFoundException If the plugin has been unregistered.
      */
-	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) throws PluginNotFoundException {
+	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
 	    if (params == null) {
-            sendError(replysender, ERROR_EMPTY_MESSAGE);
+            trySendError(replysender, ERROR_EMPTY_MESSAGE);
             return;
         }
 
         final String command = params.get("Command");
 
         if (command == null || command.trim().length() == 0) {
-            sendError(replysender, ERROR_COMMAND_NAME_MISSING);
+            trySendError(replysender, ERROR_COMMAND_NAME_MISSING);
             return;
         }
 
-        sendError(replysender, ERROR_COMMAND_NAME_UNKNOWN);
+        trySendError(replysender, ERROR_COMMAND_NAME_UNKNOWN);
 	}
 
    /**
@@ -61,10 +61,9 @@ public final class FCPInterface implements FredPluginFCP {
      * 
      * @param replysender  the reply sender
      * @param code         error code
- * @throws PluginNotFoundException 
      */
-    private void sendError(PluginReplySender replysender, int code) throws PluginNotFoundException {
-        sendError(replysender, code, ERROR_DESCRIPTIONS[code]);
+    private void trySendError(PluginReplySender replysender, int code) {
+        trySendError(replysender, code, ERROR_DESCRIPTIONS[code]);
     }
 
 	/**
@@ -78,13 +77,16 @@ public final class FCPInterface implements FredPluginFCP {
 	 * @param replysender  the reply sender
 	 * @param code         error code
 	 * @param description  error description
-	 * @throws PluginNotFoundException 
 	 */
-	private void sendError(PluginReplySender replysender, int code, String description) throws PluginNotFoundException {
+	private void trySendError(PluginReplySender replysender, int code, String description) {
 	    SimpleFieldSet sfs = new SimpleFieldSet(true);
         sfs.putOverwrite("Status", "Error");
         sfs.put("Code", code);
         sfs.putOverwrite("Description", description);
-        replysender.send(sfs);
+        try {
+			replysender.send(sfs);
+		} catch (PluginNotFoundException e) {
+			Logger.normal(this, "Connection to request sender lost");
+		}
     }
 }
