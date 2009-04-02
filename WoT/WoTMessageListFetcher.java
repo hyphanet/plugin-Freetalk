@@ -260,13 +260,4 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	@Override
 	public void onMajorProgress(ObjectContainer container) { }
 
-	public boolean persistent() {
-		return false;
-	}
-
-	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-
-
 }
