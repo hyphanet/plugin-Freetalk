@@ -78,15 +78,19 @@ public final class WebInterface implements FredPluginHTTP {
 		
 		setUpMenu();
 		
+		if(page.equals("/CreateIdentity"))
+			return new CreateIdentityWizard(this, request).toHTML();
+		
 		if(getLoggedInOwnIdentity() == null)
 			return new LogInPage(this, null, request).toHTML();
 		
+		/* Anything below this line assumes that we have a logged in own identity */
+		
 		if ((page.length() < 1) || ("/".equals(page)))
-			return new Welcome(this, mOwnIdentity, request).toHTML();
+			return new Welcome(this, getLoggedInOwnIdentity(), request).toHTML();
 		
 		if ("/identities".equals(page))
 			return new IdentityEditor(this, getLoggedInOwnIdentity(), request).toHTML();
-
 
 		if ("/messages".equals(page))
 			return new BoardsPage(this, getLoggedInOwnIdentity(), request).toHTML();
@@ -94,15 +98,12 @@ public final class WebInterface implements FredPluginHTTP {
 		try {
 			/* FIXME: Also use getLoggedInOwnIdentity() here? */
 			if(page.equals("/showBoard"))
-				return new BoardPage(this, mFreetalk.getIdentityManager().getOwnIdentity(request.getParam("identity")), request).toHTML();
+				return new BoardPage(this, getLoggedInOwnIdentity(), request).toHTML();
 			
-			else if(page.equals("/showThread"))
-				return new ThreadPage(this, mFreetalk.getIdentityManager().getOwnIdentity(request.getParam("identity")), request).toHTML();
+			if(page.equals("/showThread"))
+				return new ThreadPage(this, getLoggedInOwnIdentity(), request).toHTML();
 		}
 		/* TODO: Make this exceptions store the specified non-existant element theirselves */
-		catch(NoSuchIdentityException e) {
-			throw new NotFoundPluginHTTPException("Unknown identity " + request.getParam("identity"), page);
-		}
 		catch(NoSuchBoardException e) {
 			throw new NotFoundPluginHTTPException("Unknown board " + request.getParam("name"), page);
 		}
@@ -126,6 +127,13 @@ public final class WebInterface implements FredPluginHTTP {
 			throw new NotFoundPluginHTTPException("Resource not found", page);
 		
 		try {
+			if(page.equals("/CreateIdentity")) {
+				setUpMenu();
+				return new CreateIdentityWizard(this, request).toHTML();
+			}
+			
+			/* Anything below this line requires the user to be logged in with a certain own identity */
+			
 			FTOwnIdentity ownId = mFreetalk.getIdentityManager().getOwnIdentity(request.getPartAsString("OwnIdentityID", 64));
 			if(page.equals("/LogIn")) {
 				mOwnIdentity = ownId;

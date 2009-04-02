@@ -22,7 +22,7 @@ public final class LogInPage extends WebPageImpl {
 			makeLoginBox();
 			makeCreateIdentityBox();
 		} else {
-			new CreateIdentityWizard(mWebInterface, mOwnIdentity, mRequest).addToPage(mContentNode);
+			new CreateIdentityWizard(mWebInterface, mRequest).addToPage(mContentNode);
 		}
 	}
 
