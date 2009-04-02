@@ -283,7 +283,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		return mWebInterface.handleHTTPPost(request);
 	}
 	
-	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) throws PluginNotFoundException {
+	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
 		mFCPInterface.handle(replysender, params, data, accesstype);
 	}
 	
