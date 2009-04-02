@@ -9,6 +9,8 @@ import java.util.Random;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import com.db4o.ObjectContainer;
+
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageListInserter;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -132,7 +134,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	}
 
 	@Override
-	public synchronized void onSuccess(BaseClientPutter state) {
+	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		try {
 			Logger.debug(this, "Successfully inserted WoTOwnMessageList at " + state.getURI());
 			WoTOwnMessageList list = (WoTOwnMessageList)mMessageManager.getOwnMessageList(MessageList.getIDFromURI(state.getURI()));
@@ -147,7 +149,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	}
 
 	@Override
-	public synchronized void onFailure(InsertException e, BaseClientPutter state) {
+	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		try {
 			if(e.getMode() == InsertException.COLLISION) {
 				Logger.error(this, "WoTOwnMessageList insert collided, trying to insert with higher index ...");
@@ -173,18 +175,18 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	/* Not needed functions*/
 	
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state) { }
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) { }
 	
 	@Override
-	public void onFailure(FetchException e, ClientGetter state) { }
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) { }
 	
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
 	
 	@Override
-	public void onFetchable(BaseClientPutter state) { }
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }
 
 	@Override
-	public void onMajorProgress() { }
+	public void onMajorProgress(ObjectContainer container) { }
 
 }

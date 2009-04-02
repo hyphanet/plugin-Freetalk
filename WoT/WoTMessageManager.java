@@ -25,6 +25,7 @@ import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.support.Executor;
 import freenet.support.Logger;
 
@@ -37,12 +38,26 @@ public class WoTMessageManager extends MessageManager {
 	private volatile boolean shutdownFinished = false;
 	private Thread mThread;
 
+	/** One for all requests for WoTMessage*, for fairness. */
+	public RequestClient requestClient;
+
 
 	public WoTMessageManager(ObjectContainer myDB, Executor myExecutor, WoTIdentityManager myIdentityManager) {
 		super(myDB, myExecutor, myIdentityManager);
 		mIdentityManager = myIdentityManager;
 		isRunning = true;
 		mExecutor.execute(this, "FT Message Manager");
+		requestClient = new RequestClient() {
+
+			public boolean persistent() {
+				return false;
+			}
+
+			public void removeFrom(ObjectContainer container) {
+				throw new UnsupportedOperationException();
+			}
+			
+		};
 		Logger.debug(this, "Message manager started.");
 	}
 	
