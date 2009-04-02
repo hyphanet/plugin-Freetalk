@@ -13,6 +13,8 @@ import java.util.Random;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import com.db4o.ObjectContainer;
+
 import plugins.Freetalk.MessageInserter;
 import plugins.Freetalk.OwnMessage;
 import freenet.client.FetchException;
@@ -26,6 +28,7 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
@@ -50,6 +53,8 @@ public final class WoTMessageInserter extends MessageInserter {
 	
 	private final Random mRandom;
 	
+	private final RequestClient mRequestClient;
+	
 	/**
 	 * For each <code>BaseClientPutter</code> (= an object associated with an insert) this hashtable stores the ID of the message which is being
 	 * inserted by the <code>BaseClientPutter</code>.
@@ -61,6 +66,7 @@ public final class WoTMessageInserter extends MessageInserter {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
 		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
+		mRequestClient = mMessageManager.requestClient;
 		start();
 	}
 
@@ -139,7 +145,7 @@ public final class WoTMessageInserter extends MessageInserter {
 	}
 
 	@Override
-	public synchronized void onSuccess(BaseClientPutter state) {
+	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		try {
 			WoTOwnMessage m = (WoTOwnMessage)mMessageManager.getOwnMessage(mMessageIDs.get(state));
 			m.markAsInserted(state.getURI());
@@ -155,7 +161,7 @@ public final class WoTMessageInserter extends MessageInserter {
 	}
 	
 	@Override
-	public synchronized void onFailure(InsertException e, BaseClientPutter state) {
+	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		try {
 			Logger.error(this, "Message insert failed", e);
 		}
@@ -187,18 +193,18 @@ public final class WoTMessageInserter extends MessageInserter {
 	/* Not needed functions*/
 	
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state) { }
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) { }
 	
 	@Override
-	public void onFailure(FetchException e, ClientGetter state) { }
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) { }
 	
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
 	
 	@Override
-	public void onFetchable(BaseClientPutter state) { }
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }
 
 	@Override
-	public void onMajorProgress() { }
+	public void onMajorProgress(ObjectContainer container) { }
 	
 }

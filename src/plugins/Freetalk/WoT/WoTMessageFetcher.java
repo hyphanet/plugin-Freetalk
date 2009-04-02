@@ -10,6 +10,8 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Random;
 
+import com.db4o.ObjectContainer;
+
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageFetcher;
 import plugins.Freetalk.MessageList;
@@ -23,6 +25,7 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
@@ -48,6 +51,8 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	
 	private final Random mRandom;
 	
+	private final RequestClient requestClient;
+	
 	/**
 	 * For each <code>ClientGetter</code> (= an object associated with a fetch) this hashtable stores the ID of the MessageList to which the
 	 * message which is being fetched belongs.
@@ -57,6 +62,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
 		mRandom = mNode.fastWeakRandom;
+		requestClient = myMessageManager.requestClient;
 		start();
 	}
 
@@ -133,7 +139,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = 2;
 		fetchContext.maxNonSplitfileRetries = 2;
-		ClientGetter g = mClient.fetch(uri, -1, this, this, fetchContext);
+		ClientGetter g = mClient.fetch(uri, -1, requestClient, this, fetchContext);
 		//g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
 		addFetch(g);
 		mMessageLists.put(g, list.getID());
@@ -141,7 +147,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	}
 
 	@Override
-	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
+	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched message: " + state.getURI());
 		
 		InputStream input = null;
@@ -179,7 +185,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	}
 	
 	@Override
-	public synchronized void onFailure(FetchException e, ClientGetter state) {
+	public synchronized void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		try {
 			switch(e.getMode()) {
 				case FetchException.DATA_NOT_FOUND:
@@ -238,18 +244,18 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	/* Not needed functions, called for inserts */
 
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
 	
 	@Override
-	public void onSuccess(BaseClientPutter state) { }
+	public void onSuccess(BaseClientPutter state, ObjectContainer container) { }
 	
 	@Override
-	public void onFailure(InsertException e, BaseClientPutter state) { }
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) { }
 	
 	@Override
-	public void onFetchable(BaseClientPutter state) { }
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }
 
 	@Override
-	public void onMajorProgress() { }
+	public void onMajorProgress(ObjectContainer container) { }
 
 }

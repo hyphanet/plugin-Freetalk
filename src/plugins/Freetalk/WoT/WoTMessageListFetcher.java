@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import com.db4o.ObjectContainer;
+
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageListFetcher;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
@@ -16,9 +18,11 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
@@ -46,6 +50,8 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	
 	private final WoTIdentityManager mIdentityManager;
 	private final WoTMessageManager mMessageManager;
+	private final ClientContext clientContext;
+	private final RequestClient mRequestClient;
 	
 	/* FIXME FIXME FIXME: Use LRUQueue instead. ArrayBlockingQueue does not use a Hashset for contains()! */
 	private final ArrayBlockingQueue<WoTIdentity> mIdentities = new ArrayBlockingQueue<WoTIdentity>(MAX_PARALLEL_MESSAGELIST_FETCH_COUNT * 10); /* FIXME: figure out a decent size */
@@ -57,6 +63,8 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		mIdentityManager = myIdentityManager;
 		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
+		clientContext = mNode.clientCore.clientContext;
+		mRequestClient = mMessageManager.requestClient;
 		start();
 	}
 
@@ -156,14 +164,14 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
 		fetchContext.maxNonSplitfileRetries = 2;
-		ClientGetter g = mClient.fetch(uri, -1, this, this, fetchContext);
+		ClientGetter g = mClient.fetch(uri, -1, mRequestClient, this, fetchContext);
 		//g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
 		addFetch(g);
 		Logger.debug(this, "Trying to fetch MessageList from " + uri);
 	}
 
 	@Override
-	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
+	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched MessageList: " + state.getURI());
 		
 		InputStream input = null;
@@ -197,7 +205,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	}
 
 	@Override
-	public synchronized void onFailure(FetchException e, ClientGetter state) {
+	public synchronized void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		try {
 			switch(e.getMode()) {
 				case FetchException.DATA_NOT_FOUND:
@@ -214,7 +222,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 				
 				case FetchException.PERMANENT_REDIRECT:
 					try {
-						state.restart(e.newURI);
+						state.restart(e.newURI, null, clientContext);
 					} catch (FetchException e1) {
 						Logger.error(this, "Request restart failed.", e1);
 					}
@@ -238,19 +246,27 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	/* Not needed functions, called for inserts */
 
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
 	
 	@Override
-	public void onSuccess(BaseClientPutter state) { }
+	public void onSuccess(BaseClientPutter state, ObjectContainer container) { }
 	
 	@Override
-	public void onFailure(InsertException e, BaseClientPutter state) { }
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) { }
 	
 	@Override
-	public void onFetchable(BaseClientPutter state) { }
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }
 
 	@Override
-	public void onMajorProgress() { }
+	public void onMajorProgress(ObjectContainer container) { }
+
+	public boolean persistent() {
+		return false;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
+	}
 
 
 }
