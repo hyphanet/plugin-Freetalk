@@ -95,6 +95,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles) throws Exception  {
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "CreateIdentity");
+		params.putOverwrite("NickName", newNickname);
 		params.putOverwrite("PublishTrustList", publishesTrustList ? "true" : "false");
 		params.putOverwrite("PublishIntroductionPuzzles", publishesIntroductionPuzzles ? "true" : "false");
 		params.putOverwrite("Context", Freetalk.WOT_CONTEXT);
@@ -115,6 +116,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 			FreenetURI newRequestURI, FreenetURI newInsertURI) throws Exception {
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "CreateIdentity");
+		params.putOverwrite("NickName", newNickname);
 		params.putOverwrite("PublishTrustList", publishesTrustList ? "true" : "false");
 		params.putOverwrite("PublishIntroductionPuzzles", publishesIntroductionPuzzles ? "true" : "false");
 		params.putOverwrite("Context", Freetalk.WOT_CONTEXT);
