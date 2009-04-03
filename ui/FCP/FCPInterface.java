@@ -6,6 +6,8 @@ package plugins.Freetalk.ui.FCP;
 import java.util.Iterator;
 
 import plugins.Freetalk.Board;
+import plugins.Freetalk.FTIdentity;
+import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginNotFoundException;
@@ -15,6 +17,10 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 /**
+ * FCP interface implementation for Freetalk.
+ *
+ *  NOTE: The interface is currently UNSTABLE, use it only for development purposes!
+ *
  * FCP message format:
  *   Command=name
  *   ...
@@ -48,6 +54,10 @@ public final class FCPInterface implements FredPluginFCP {
                 handlePing(replysender, params);
             } else if (message.equals("ListBoards")) {
                 handleListBoards(replysender, params);
+            } else if (message.equals("ListOwnIdentities")) {
+                handleListOwnIdentities(replysender, params);
+            } else if (message.equals("ListKnownIdentities")) {
+                handleListKnownIdentities(replysender, params);
             } else {
                 throw new Exception("Unknown message (" + message + ")");
             }
@@ -96,9 +106,62 @@ public final class FCPInterface implements FredPluginFCP {
             }
         }
 
-        // EndListBoards message
         SimpleFieldSet sfs = new SimpleFieldSet(true);
         sfs.putOverwrite("Message", "EndListBoards");
+        replysender.send(sfs);
+    }
+
+    /**
+     * Handle ListKnownIdentities command.
+     * Send a number of KnownIdentity messages and finally an EndListKnownIdentities message.
+     * Format:
+     *   Message=KnownIdentity
+     *   Nickname=name
+     *   FreetalkAddress=addr
+     */
+    private void handleListKnownIdentities(PluginReplySender replysender, SimpleFieldSet params)
+    throws PluginNotFoundException
+    {
+        for(FTIdentity id : mFreetalk.getIdentityManager().getAllIdentities()) {
+            if (id instanceof FTOwnIdentity) {
+                continue;
+            }
+            SimpleFieldSet sfs = new SimpleFieldSet(true);
+            sfs.putOverwrite("Message", "KnownIdentity");
+            sfs.putOverwrite("Nickname", id.getNickname());
+            sfs.putOverwrite("FreetalkAddress", id.getFreetalkAddress());
+            replysender.send(sfs);
+        }
+
+        SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "EndListKnownIdentities");
+        replysender.send(sfs);
+    }
+
+    /**
+     * Handle ListOwnIdentities command.
+     * Send a number of OwnIdentity messages and finally an EndListOwnIdentities message.
+     * Format:
+     *   Message=OwnIdentity
+     *   Nickname=name
+     *   FreetalkAddress=addr
+     */
+    private void handleListOwnIdentities(PluginReplySender replysender, SimpleFieldSet params)
+    throws PluginNotFoundException
+    {
+        Iterator<FTOwnIdentity> ownIdentities = mFreetalk.getIdentityManager().ownIdentityIterator();
+        while (ownIdentities.hasNext()) {
+            FTOwnIdentity id = ownIdentities.next();
+
+            SimpleFieldSet sfs = new SimpleFieldSet(true);
+            sfs.putOverwrite("Message", "OwnIdentity");
+            sfs.putOverwrite("Nickname", id.getNickname());
+            sfs.putOverwrite("FreetalkAddress", id.getFreetalkAddress());
+            replysender.send(sfs);
+        }
+
+        SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "EndListOwnIdentities");
         replysender.send(sfs);
     }
 
