@@ -110,6 +110,10 @@ public abstract class WebPageImpl implements WebPage {
 		return mPM.getInfobox(title);
 	}
 	
+	protected final HTMLNode getAlertBox(String title) {
+		return mPM.getInfobox("infobox-alert", title);
+	}
+	
 	protected final HTMLNode addAlertBox(String title) {
 		HTMLNode box = mPM.getInfobox("infobox-alert", title);
 		mContentNode.addChild(box);
