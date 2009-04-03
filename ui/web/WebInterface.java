@@ -54,10 +54,15 @@ public final class WebInterface implements FredPluginHTTP {
 		mPageMaker.addNavigationLink("/", "Back to Freenet", "Back to nodes home", false, null);
 	}
 	
+	private void setLoggedInOwnIdentity(FTOwnIdentity user) {
+		mOwnIdentity = user;
+	}
+	
 	private FTOwnIdentity getLoggedInOwnIdentity() {
 		return mOwnIdentity;
 	}
 
+	/* TODO: This function is ugly clean it up */
 	public final String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
 		/* FIXME 
 		String pass = request.getParam("formPassword");
@@ -74,16 +79,27 @@ public final class WebInterface implements FredPluginHTTP {
 			page = page.substring(0, endIndex);
 		
 		if(page.equals("/LogOut"))
-			mOwnIdentity = null;
+			setLoggedInOwnIdentity(null);
 		
 		setUpMenu();
 		
 		if(page.equals("/CreateIdentity"))
 			return new CreateIdentityWizard(this, request).toHTML();
 		
+		if(page.equals("/LogIn")) {
+			try {
+				setLoggedInOwnIdentity(mFreetalk.getIdentityManager().getOwnIdentity(request.getParam("OwnIdentityID")));
+				setUpMenu();
+				return new Welcome(this, getLoggedInOwnIdentity(), request).toHTML();
+			}
+			catch(NoSuchIdentityException e) {
+				/* Ignore and continue as if the user did not specify an identity, he will end up with a LogInPage */
+			}
+		}
+		
 		if(getLoggedInOwnIdentity() == null)
 			return new LogInPage(this, null, request).toHTML();
-		
+
 		/* Anything below this line assumes that we have a logged in own identity */
 		
 		if ((page.length() < 1) || ("/".equals(page)))
@@ -115,6 +131,7 @@ public final class WebInterface implements FredPluginHTTP {
 		throw new NotFoundPluginHTTPException("Resource not found in Freetalk plugin", page);
 	}
 
+	/* TODO: This function is ugly clean it up */
 	public final String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
 		String pass = request.getPartAsString("formPassword", 32);
 		if (pass == null || (pass.length() == 0) || !pass.equals(mFreetalk.getPluginRespirator().getNode().clientCore.formPassword)) {
@@ -135,8 +152,9 @@ public final class WebInterface implements FredPluginHTTP {
 			/* Anything below this line requires the user to be logged in with a certain own identity */
 			
 			FTOwnIdentity ownId = mFreetalk.getIdentityManager().getOwnIdentity(request.getPartAsString("OwnIdentityID", 64));
+			
 			if(page.equals("/LogIn")) {
-				mOwnIdentity = ownId;
+				setLoggedInOwnIdentity(ownId);
 				setUpMenu();
 				return new Welcome(this, ownId, request).toHTML();
 			}
