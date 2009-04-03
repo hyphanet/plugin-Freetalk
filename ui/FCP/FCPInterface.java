@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.FCP;
 
+import java.util.Iterator;
+
+import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginNotFoundException;
@@ -14,12 +17,12 @@ import freenet.support.api.Bucket;
 /**
  * FCP message format:
  *   Command=name
- *   ... 
+ *   ...
  */
 public final class FCPInterface implements FredPluginFCP {
-    
+
 	private final Freetalk mFreetalk;
-	
+
 	public FCPInterface(Freetalk myFreetalk) {
 		mFreetalk = myFreetalk;
 	}
@@ -28,7 +31,7 @@ public final class FCPInterface implements FredPluginFCP {
      * @param replysender interface to send a reply
      * @param params parameters passed in, can be null
      * @param data a bucket of data passed in, can be null
-     * @param access 0: direct call (plugin to plugin), 1: FCP restricted access,  2: FCP full access  
+     * @param access 0: direct call (plugin to plugin), 1: FCP restricted access,  2: FCP full access
      */
 	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
 	    try {
@@ -41,40 +44,92 @@ public final class FCPInterface implements FredPluginFCP {
                 throw new Exception("Specified message is empty");
             }
 
-            if(message.equals("Ping")) {
-                replysender.send(handlePing(params), data);
+            if (message.equals("Ping")) {
+                handlePing(replysender, params);
+            } else if (message.equals("ListBoards")) {
+                handleListBoards(replysender, params);
             } else {
                 throw new Exception("Unknown message (" + message + ")");
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             Logger.error(this, e.toString());
             try {
-                replysender.send(errorMessageFCP(params.get("Message"), e), data);
+                if (!(e instanceof PluginNotFoundException)) {
+                    replysender.send(errorMessageFCP(params.get("Message"), e), data);
+                }
             } catch (PluginNotFoundException e1) {
                 Logger.normal(this, "Connection to request sender lost", e1);
             }
         }
 	}
 
-	/**
-	 * Simple Ping command handler. Returns a Pong.
-	 */
-    private SimpleFieldSet handlePing(SimpleFieldSet params) {
+    /**
+     * Handle ListBoards command.
+     * Send a number of Board messages and finally an EndListBoards message.
+     * Format:
+     *   Message=Board
+     *   Name=name
+     *   MessageCount=123
+     *   FirstSeenDate=utcMillis      (optional)
+     *   LatestMessageDate=utcMillis  (optional)
+     */
+    private void handleListBoards(PluginReplySender replysender, SimpleFieldSet params)
+    throws PluginNotFoundException
+    {
+        synchronized(mFreetalk.getMessageManager()) {
+            Iterator<Board> boards = mFreetalk.getMessageManager().boardIterator();
+            while(boards.hasNext()) {
+                Board board = boards.next();
+
+                SimpleFieldSet sfs = new SimpleFieldSet(true);
+                sfs.putOverwrite("Message", "Board");
+                sfs.putOverwrite("Name", board.getName());
+                sfs.put("MessageCount", board.messageCount());
+                if (board.getFirstSeenDate() != null) {
+                    sfs.put("FirstSeenDate", board.getFirstSeenDate().getTime());
+                }
+                if (board.getLatestMessageDate() != null) {
+                    sfs.put("LatestMessageDate", board.getLatestMessageDate().getTime());
+                }
+
+                replysender.send(sfs);
+            }
+        }
+
+        // EndListBoards message
         SimpleFieldSet sfs = new SimpleFieldSet(true);
-
-        sfs.putAppend("Message", "Pong");
-        sfs.put("utcMillis", System.currentTimeMillis());
-
-        return sfs;
+        sfs.putOverwrite("Message", "EndListBoards");
+        replysender.send(sfs);
     }
 
-    private SimpleFieldSet errorMessageFCP(String originalMessage, Exception e) {
-        
+	/**
+	 * Simple Ping command handler. Returns a Pong.
+	 * Format:
+	 *   Message=Pong
+	 *   UTCMillis=utcMillis
+	 */
+    private void handlePing(PluginReplySender replysender, SimpleFieldSet params)
+    throws PluginNotFoundException
+    {
         SimpleFieldSet sfs = new SimpleFieldSet(true);
-        sfs.putAppend("Message", "Error");
-        sfs.putAppend("OriginalMessage", (originalMessage == null) ? "null" : originalMessage);
-        sfs.putAppend("Description", (e.getLocalizedMessage() == null) ? "null" : e.getLocalizedMessage());
+        sfs.putOverwrite("Message", "Pong");
+        sfs.put("UTCMillis", System.currentTimeMillis());
+        replysender.send(sfs);
+    }
+
+    /**
+     * Sends an error message to the client.
+     * Format:
+     *   Message=Error
+     *   OriginalMessage=msg or null
+     *   Description=msg or null
+     */
+    private SimpleFieldSet errorMessageFCP(String originalMessage, Exception e) {
+
+        SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "Error");
+        sfs.putOverwrite("OriginalMessage", (originalMessage == null) ? "null" : originalMessage);
+        sfs.putOverwrite("Description", (e.getLocalizedMessage() == null) ? "null" : e.getLocalizedMessage());
         e.printStackTrace();
         return sfs;
     }
