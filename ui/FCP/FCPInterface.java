@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.FCP;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 
 import plugins.Freetalk.Board;
@@ -14,6 +15,7 @@ import plugins.Freetalk.Board.MessageReference;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
@@ -65,6 +67,8 @@ public final class FCPInterface implements FredPluginFCP {
                 handleListKnownIdentities(replysender, params);
             } else if (message.equals("ListThreads")) {
                 handleListThreads(replysender, params);
+            } else if (message.equals("ListMessages")) {
+                handleListMessages(replysender, params);
             } else {
                 throw new Exception("Unknown message (" + message + ")");
             }
@@ -122,6 +126,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Handle ListThreads command.
      * Send a number of KnownIdentity messages and finally an EndListKnownIdentities message.
      * Format of request:
+     *   Message=ListThreads
      *   BoardName=abc
      *   OwnIdentityUID=UID
      * Format of reply:
@@ -166,6 +171,75 @@ public final class FCPInterface implements FredPluginFCP {
         SimpleFieldSet sfs = new SimpleFieldSet(true);
         sfs.putOverwrite("Message", "EndListThreads");
         replysender.send(sfs);
+    }
+
+    /**
+     * Handle ListMessages command.
+     * Send a number of Message messages and finally an EndListMessages message.
+     * Format of request:
+     *   Message=ListMessages
+     *   BoardName=abc
+     *   ThreadUID=UID
+     * Format of reply:
+     *   Message=Message
+     *   ID=id
+     *   Title=title
+     *   Author=freetalkAddr
+     *   Date=utcMillis
+     *   ParentID=id         (optional)
+     *   DataLength=123      (NOTE: no leading 'Replies.'!)
+     *   Data                (NOTE: no leading 'Replies.'!)
+     *   <123 bytes of utf8 text>
+     *   (no EndMessage!)
+     */
+    private void handleListMessages(PluginReplySender replysender, SimpleFieldSet params)
+    throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchMessageException,
+           UnsupportedEncodingException
+    {
+        String boardName = params.get("BoardName");
+        if (boardName == null) {
+            throw new InvalidParameterException("Boardname parameter not specified");
+        }
+        String threadID = params.get("ThreadID");
+        if (threadID == null) {
+            throw new InvalidParameterException("ThreadID parameter not specified");
+        }
+
+        Board board = mFreetalk.getMessageManager().getBoardByName(boardName); // throws exception when not found
+        Message thread = mFreetalk.getMessageManager().get(threadID); // throws exception when not found
+
+        synchronized(board) {  /* FIXME: Is this enough synchronization or should we lock the message manager? */
+            sendSingleMessage(replysender, thread);
+
+            for(MessageReference reference : board.getAllThreadReplies(thread)) {
+                sendSingleMessage(replysender, reference.getMessage());
+            }
+        }
+
+        SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "EndListMessages");
+        replysender.send(sfs);
+    }
+
+    private void sendSingleMessage(PluginReplySender replysender, Message message)
+    throws PluginNotFoundException, UnsupportedEncodingException
+    {
+        SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "Message");
+        sfs.putOverwrite("ID", message.getID());
+        sfs.putOverwrite("Title", message.getTitle());
+        sfs.putOverwrite("Author", message.getAuthor().getFreetalkAddress());
+        sfs.put("Date", message.getDate().getTime());
+        try {
+            sfs.putOverwrite("ParentID", message.getParentID());
+        } catch(NoSuchMessageException e) {
+        }
+        if (message.getText() != null && message.getText().length() > 0) {
+            // sending data sets 'DataLength' and 'Data' without preceeding 'Replies.'
+            replysender.send(sfs, message.getText().getBytes("UTF-8"));
+        } else {
+            replysender.send(sfs);
+        }
     }
 
     /**
