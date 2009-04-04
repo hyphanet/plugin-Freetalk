@@ -354,14 +354,14 @@ public final class FCPInterface implements FredPluginFCP {
 	 * Simple Ping command handler. Returns a Pong.
 	 * Format:
 	 *   Message=Pong
-	 *   UTCMillis=utcMillis
+	 *   CurrentTime=utcMillis
 	 */
     private void handlePing(PluginReplySender replysender, SimpleFieldSet params)
     throws PluginNotFoundException
     {
         SimpleFieldSet sfs = new SimpleFieldSet(true);
         sfs.putOverwrite("Message", "Pong");
-        sfs.put("UTCMillis", System.currentTimeMillis());
+        sfs.put("CurrentTime", System.currentTimeMillis());
         replysender.send(sfs);
     }
 
