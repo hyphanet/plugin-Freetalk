@@ -9,6 +9,11 @@ import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.Message;
+import plugins.Freetalk.Board.MessageReference;
+import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.NoSuchBoardException;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
@@ -58,6 +63,8 @@ public final class FCPInterface implements FredPluginFCP {
                 handleListOwnIdentities(replysender, params);
             } else if (message.equals("ListKnownIdentities")) {
                 handleListKnownIdentities(replysender, params);
+            } else if (message.equals("ListThreads")) {
+                handleListThreads(replysender, params);
             } else {
                 throw new Exception("Unknown message (" + message + ")");
             }
@@ -112,12 +119,63 @@ public final class FCPInterface implements FredPluginFCP {
     }
 
     /**
+     * Handle ListThreads command.
+     * Send a number of KnownIdentity messages and finally an EndListKnownIdentities message.
+     * Format of request:
+     *   BoardName=abc
+     *   OwnIdentityUID=UID
+     * Format of reply:
+     *   Message=MessageThread
+     *   ID=id
+     *   Title=title
+     *   Author=freetalkAddr
+     *   Date=utcMillis
+     *   ReplyCount=123
+     */
+    private void handleListThreads(PluginReplySender replysender, SimpleFieldSet params)
+    throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchIdentityException
+    {
+        String boardName = params.get("BoardName");
+        if (boardName == null) {
+            throw new InvalidParameterException("Boardname parameter not specified");
+        }
+        String ownIdentityUID = params.get("OwnIdentityUID");
+        if (ownIdentityUID == null) {
+            throw new InvalidParameterException("OwnIdentityUID parameter not specified");
+        }
+
+        FTOwnIdentity ownIdentity = mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityUID); // throws exception when not found
+        Board board = mFreetalk.getMessageManager().getBoardByName(boardName); // throws exception when not found
+
+        synchronized(board) { /* FIXME: Is this enough synchronization or should we lock the message manager? */
+            Iterator<MessageReference> threads = board.threadIterator(ownIdentity);
+            while(threads.hasNext()) {
+                Message thread = threads.next().getMessage();
+
+                SimpleFieldSet sfs = new SimpleFieldSet(true);
+                sfs.putOverwrite("Message", "MessageThread");
+                sfs.putOverwrite("ID", thread.getID());
+                sfs.putOverwrite("Title", thread.getTitle());
+                sfs.putOverwrite("Author", thread.getAuthor().getFreetalkAddress());
+                sfs.put("Date", thread.getDate().getTime());
+                sfs.put("ReplyCount", board.threadReplyCount(ownIdentity, thread));
+                replysender.send(sfs);
+            }
+        }
+
+        SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "EndListThreads");
+        replysender.send(sfs);
+    }
+
+    /**
      * Handle ListKnownIdentities command.
      * Send a number of KnownIdentity messages and finally an EndListKnownIdentities message.
      * Format:
      *   Message=KnownIdentity
+     *   UID=uid
      *   Nickname=name
-     *   FreetalkAddress=addr
+     *   FreetalkAddress=freetalkAddr
      */
     private void handleListKnownIdentities(PluginReplySender replysender, SimpleFieldSet params)
     throws PluginNotFoundException
@@ -128,6 +186,7 @@ public final class FCPInterface implements FredPluginFCP {
             }
             SimpleFieldSet sfs = new SimpleFieldSet(true);
             sfs.putOverwrite("Message", "KnownIdentity");
+            sfs.putOverwrite("UID", id.getUID());
             sfs.putOverwrite("Nickname", id.getNickname());
             sfs.putOverwrite("FreetalkAddress", id.getFreetalkAddress());
             replysender.send(sfs);
@@ -143,8 +202,9 @@ public final class FCPInterface implements FredPluginFCP {
      * Send a number of OwnIdentity messages and finally an EndListOwnIdentities message.
      * Format:
      *   Message=OwnIdentity
+     *   UID=uid
      *   Nickname=name
-     *   FreetalkAddress=addr
+     *   FreetalkAddress=freetalkAddr
      */
     private void handleListOwnIdentities(PluginReplySender replysender, SimpleFieldSet params)
     throws PluginNotFoundException
@@ -155,6 +215,7 @@ public final class FCPInterface implements FredPluginFCP {
 
             SimpleFieldSet sfs = new SimpleFieldSet(true);
             sfs.putOverwrite("Message", "OwnIdentity");
+            sfs.putOverwrite("UID", id.getUID());
             sfs.putOverwrite("Nickname", id.getNickname());
             sfs.putOverwrite("FreetalkAddress", id.getFreetalkAddress());
             replysender.send(sfs);
