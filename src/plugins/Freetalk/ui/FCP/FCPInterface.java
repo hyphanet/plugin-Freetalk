@@ -69,6 +69,8 @@ public final class FCPInterface implements FredPluginFCP {
                 handleListThreads(replysender, params);
             } else if (message.equals("ListMessages")) {
                 handleListMessages(replysender, params);
+            } else if (message.equals("GetMessage")) {
+                handleGetMessage(replysender, params);
             } else {
                 throw new Exception("Unknown message (" + message + ")");
             }
@@ -140,6 +142,8 @@ public final class FCPInterface implements FredPluginFCP {
     private void handleListThreads(PluginReplySender replysender, SimpleFieldSet params)
     throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchIdentityException
     {
+        // TODO: allow to request threads with all thread messages, with or without message text
+
         String boardName = params.get("BoardName");
         if (boardName == null) {
             throw new InvalidParameterException("Boardname parameter not specified");
@@ -179,7 +183,8 @@ public final class FCPInterface implements FredPluginFCP {
      * Format of request:
      *   Message=ListMessages
      *   BoardName=abc
-     *   ThreadUID=UID
+     *   ThreadID=ID
+     *   IncludeMessageText=true|false   (optional, default is false)
      * Format of reply:
      *   Message=Message
      *   ID=id
@@ -187,6 +192,7 @@ public final class FCPInterface implements FredPluginFCP {
      *   Author=freetalkAddr
      *   Date=utcMillis
      *   ParentID=id         (optional)
+     *   (following is only sent when IncludeMessageText=true)
      *   DataLength=123      (NOTE: no leading 'Replies.'!)
      *   Data                (NOTE: no leading 'Replies.'!)
      *   <123 bytes of utf8 text>
@@ -204,15 +210,16 @@ public final class FCPInterface implements FredPluginFCP {
         if (threadID == null) {
             throw new InvalidParameterException("ThreadID parameter not specified");
         }
+        boolean includeMessageText = Boolean.parseBoolean(params.get("IncludeMessageText"));
 
         Board board = mFreetalk.getMessageManager().getBoardByName(boardName); // throws exception when not found
         Message thread = mFreetalk.getMessageManager().get(threadID); // throws exception when not found
 
         synchronized(board) {  /* FIXME: Is this enough synchronization or should we lock the message manager? */
-            sendSingleMessage(replysender, thread);
+            sendSingleMessage(replysender, thread, includeMessageText);
 
             for(MessageReference reference : board.getAllThreadReplies(thread)) {
-                sendSingleMessage(replysender, reference.getMessage());
+                sendSingleMessage(replysender, reference.getMessage(), includeMessageText);
             }
         }
 
@@ -221,7 +228,47 @@ public final class FCPInterface implements FredPluginFCP {
         replysender.send(sfs);
     }
 
-    private void sendSingleMessage(PluginReplySender replysender, Message message)
+    /**
+     * Handle GetMessage command.
+     * Send a number of Message messages and finally an EndListMessages message.
+     * Format of request:
+     *   Message=ListMessages
+     *   BoardName=abc
+     *   MessageID=ID
+     *   IncludeMessageText=true|false   (optional, default is false)
+     * Format of reply:
+     *   Message=Message
+     *   ID=id
+     *   Title=title
+     *   Author=freetalkAddr
+     *   Date=utcMillis
+     *   ParentID=id         (optional)
+     *   (following is only sent when IncludeMessageText=true)
+     *   DataLength=123      (NOTE: no leading 'Replies.'!)
+     *   Data                (NOTE: no leading 'Replies.'!)
+     *   <123 bytes of utf8 text>
+     *   (no EndMessage!)
+     */
+    private void handleGetMessage(PluginReplySender replysender, SimpleFieldSet params)
+    throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchMessageException,
+           UnsupportedEncodingException
+    {
+        String boardName = params.get("BoardName");
+        if (boardName == null) {
+            throw new InvalidParameterException("Boardname parameter not specified");
+        }
+        String messageID = params.get("MessageID");
+        if (messageID == null) {
+            throw new InvalidParameterException("MessageID parameter not specified");
+        }
+        boolean includeMessageText = Boolean.parseBoolean(params.get("IncludeMessageText"));
+
+        Message message = mFreetalk.getMessageManager().get(messageID); // throws exception when not found
+
+        sendSingleMessage(replysender, message, includeMessageText);
+    }
+
+    private void sendSingleMessage(PluginReplySender replysender, Message message, boolean includeMessageText)
     throws PluginNotFoundException, UnsupportedEncodingException
     {
         SimpleFieldSet sfs = new SimpleFieldSet(true);
@@ -234,7 +281,10 @@ public final class FCPInterface implements FredPluginFCP {
             sfs.putOverwrite("ParentID", message.getParentID());
         } catch(NoSuchMessageException e) {
         }
-        if (message.getText() != null && message.getText().length() > 0) {
+        if (includeMessageText
+                && message.getText() != null
+                && message.getText().length() > 0)
+        {
             // sending data sets 'DataLength' and 'Data' without preceeding 'Replies.'
             replysender.send(sfs, message.getText().getBytes("UTF-8"));
         } else {
