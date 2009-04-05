@@ -379,6 +379,8 @@ public final class FCPInterface implements FredPluginFCP {
      *   Message=Error
      *   OriginalMessage=msg or null
      *   Description=msg or null
+     *
+     * FIXME: provide numerical return codes for all possible error messages (Board not found,...)
      */
     private SimpleFieldSet errorMessageFCP(String originalMessage, Exception e) {
 
