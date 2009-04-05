@@ -138,6 +138,8 @@ public final class FCPInterface implements FredPluginFCP {
      *   Author=freetalkAddr
      *   Date=utcMillis
      *   ReplyCount=123
+     *   FetchDate=utcMillis
+     *   IsThread=true     (all returned messages are thread root messages)
      */
     private void handleListThreads(PluginReplySender replysender, SimpleFieldSet params)
     throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchIdentityException
@@ -168,6 +170,8 @@ public final class FCPInterface implements FredPluginFCP {
                 sfs.putOverwrite("Author", thread.getAuthor().getFreetalkAddress());
                 sfs.put("Date", thread.getDate().getTime());
                 sfs.put("ReplyCount", board.threadReplyCount(ownIdentity, thread));
+                sfs.put("FetchDate", thread.getFetchDate().getTime());
+                sfs.putOverwrite("IsThread", "true");
                 replysender.send(sfs);
             }
         }
@@ -185,18 +189,7 @@ public final class FCPInterface implements FredPluginFCP {
      *   BoardName=abc
      *   ThreadID=ID
      *   IncludeMessageText=true|false   (optional, default is false)
-     * Format of reply:
-     *   Message=Message
-     *   ID=id
-     *   Title=title
-     *   Author=freetalkAddr
-     *   Date=utcMillis
-     *   ParentID=id         (optional)
-     *   (following is only sent when IncludeMessageText=true)
-     *   DataLength=123      (NOTE: no leading 'Replies.'!)
-     *   Data                (NOTE: no leading 'Replies.'!)
-     *   <123 bytes of utf8 text>
-     *   (no EndMessage!)
+     * Format of reply: see sendSingleMessage()
      */
     private void handleListMessages(PluginReplySender replysender, SimpleFieldSet params)
     throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchMessageException,
@@ -230,24 +223,19 @@ public final class FCPInterface implements FredPluginFCP {
 
     /**
      * Handle GetMessage command.
-     * Send a number of Message messages and finally an EndListMessages message.
+     * Send the requested Message.
      * Format of request:
-     *   Message=ListMessages
+     *   Message=GetMessage
      *   BoardName=abc
      *   MessageID=ID
      *   IncludeMessageText=true|false   (optional, default is false)
-     * Format of reply:
-     *   Message=Message
-     *   ID=id
-     *   Title=title
-     *   Author=freetalkAddr
-     *   Date=utcMillis
-     *   ParentID=id         (optional)
-     *   (following is only sent when IncludeMessageText=true)
-     *   DataLength=123      (NOTE: no leading 'Replies.'!)
-     *   Data                (NOTE: no leading 'Replies.'!)
-     *   <123 bytes of utf8 text>
-     *   (no EndMessage!)
+     * Format of reply: see sendSingleMessage()
+     * Reply when messageID or boardName is not found:
+     *   Message=Error
+     *   OriginalMessage=GetMessage
+     *   Description=Unknown message ID abc
+     *   OR
+     *   Description=Unknown board: abc
      */
     private void handleGetMessage(PluginReplySender replysender, SimpleFieldSet params)
     throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchMessageException,
@@ -268,6 +256,24 @@ public final class FCPInterface implements FredPluginFCP {
         sendSingleMessage(replysender, message, includeMessageText);
     }
 
+    /**
+     * Sends a single message.
+     *
+     * Format of reply:
+     *   Message=Message
+     *   ID=id
+     *   Title=title
+     *   Author=freetalkAddr
+     *   Date=utcMillis
+     *   FetchDate=utcMillis
+     *   IsThread=true|false
+     *   ParentID=id         (optional)
+     *   (following is only sent when IncludeMessageText=true)
+     *   DataLength=123      (NOTE: no leading 'Replies.'!)
+     *   Data                (NOTE: no leading 'Replies.'!)
+     *   <123 bytes of utf8 text>
+     *   (no EndMessage!)
+     */
     private void sendSingleMessage(PluginReplySender replysender, Message message, boolean includeMessageText)
     throws PluginNotFoundException, UnsupportedEncodingException
     {
@@ -277,6 +283,8 @@ public final class FCPInterface implements FredPluginFCP {
         sfs.putOverwrite("Title", message.getTitle());
         sfs.putOverwrite("Author", message.getAuthor().getFreetalkAddress());
         sfs.put("Date", message.getDate().getTime());
+        sfs.put("FetchDate", message.getFetchDate().getTime());
+        sfs.put("IsThread", message.isThread());
         try {
             sfs.putOverwrite("ParentID", message.getParentID());
         } catch(NoSuchMessageException e) {
