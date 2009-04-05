@@ -87,6 +87,11 @@ public abstract class Message implements Comparable<Message> {
 	 */
 	protected final Date mDate;
 	
+	/**
+	 * The date when the message was downloaded.
+	 */
+	protected final Date mFetchDate;
+	
 	protected final String mText;
 	
 	/**
@@ -134,7 +139,12 @@ public abstract class Message implements Comparable<Message> {
 	 * Get a list of fields which the database should create an index on.
 	 */
 	public static String[] getIndexedFields() {
-		return new String[] { "mURI", "mID", "mParentID" };
+		return new String[] {
+								"mID", /* Indexed because it is our primary key */
+								"mThreadID", /* Indexed for being able to query all messages of a thread */
+								"mParentID", /* Indexed for being able to get all replies to a message */
+								"mFetchDate", /* Indexed because Frost needs to query for all messages after the time it has last done so */ 
+							};
 	}
 	
 	protected Message(MessageURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, MessageURI newThreadURI, MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
@@ -175,6 +185,7 @@ public abstract class Message implements Comparable<Message> {
 		mReplyToBoard = newReplyToBoard;
 		mTitle = makeTitleValid(newTitle);
 		mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
+		mFetchDate = CurrentTimeUTC.get();
 		mText = makeTextValid(newText);
 		
 		if (!isTitleValid(mTitle))
@@ -304,6 +315,13 @@ public abstract class Message implements Comparable<Message> {
 	 */
 	public Date getDate() {
 		return mDate;
+	}
+	
+	/**
+	 * Get the date when the message was fetched by Freetalk.
+	 */
+	public Date getFetchDate() {
+		return mFetchDate;
 	}
 
 	/**
