@@ -188,6 +188,7 @@ public final class FCPInterface implements FredPluginFCP {
      *   Message=ListMessages
      *   BoardName=abc
      *   ThreadID=ID
+     *   EarliestFetchDate=utcMillis     (optional, default is 0)
      *   IncludeMessageText=true|false   (optional, default is false)
      * Format of reply: see sendSingleMessage()
      */
@@ -203,16 +204,27 @@ public final class FCPInterface implements FredPluginFCP {
         if (threadID == null) {
             throw new InvalidParameterException("ThreadID parameter not specified");
         }
+        long earliestFetchDate;
+        try {
+            earliestFetchDate = Long.parseLong(params.get("EarliestFetchDate"));
+        } catch(NumberFormatException e) {
+            earliestFetchDate = 0;
+        }
         boolean includeMessageText = Boolean.parseBoolean(params.get("IncludeMessageText"));
 
         Board board = mFreetalk.getMessageManager().getBoardByName(boardName); // throws exception when not found
         Message thread = mFreetalk.getMessageManager().get(threadID); // throws exception when not found
 
         synchronized(board) {  /* FIXME: Is this enough synchronization or should we lock the message manager? */
-            sendSingleMessage(replysender, thread, includeMessageText);
+            if (thread.getFetchDate().getTime() >= earliestFetchDate) {
+                sendSingleMessage(replysender, thread, includeMessageText);
+            }
 
             for(MessageReference reference : board.getAllThreadReplies(thread)) {
-                sendSingleMessage(replysender, reference.getMessage(), includeMessageText);
+                Message msg = reference.getMessage();
+                if (msg.getFetchDate().getTime() >= earliestFetchDate) {
+                    sendSingleMessage(replysender, msg, includeMessageText);
+                }
             }
         }
 
