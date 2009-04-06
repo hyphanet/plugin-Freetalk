@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
@@ -30,6 +31,11 @@ import freenet.support.StringValidityChecker;
  * @author saces, xor
  */
 public abstract class Message implements Comparable<Message> {
+    
+    /* Public constants */
+    
+    public final static int MAX_MESSAGE_TITLE_TEXT_LENGTH = 256;     // String.length()
+    public final static int MAX_MESSAGE_TEXT_BYTE_LENGTH  = 64*1024; // byte[].length
 	
 	/* Attributes, stored in the database */
 	
@@ -519,7 +525,19 @@ public abstract class Message implements Comparable<Message> {
 	 * - ...
 	 */
 	static public boolean isTextValid(String text) {
-		// FIXME: Implement.
+        if (text == null) {
+            return false;
+        }
+	    if (text.length() > MAX_MESSAGE_TITLE_TEXT_LENGTH) {
+	        return false;
+	    }
+	    try {
+    	    if (text.getBytes("UTF-8").length > MAX_MESSAGE_TITLE_TEXT_LENGTH) {
+    	        return false;
+    	    }
+	    } catch(UnsupportedEncodingException e) {
+	        return false;
+	    }
 		return true;
 	}
 	
