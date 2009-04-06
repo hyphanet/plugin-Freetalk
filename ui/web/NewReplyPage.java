@@ -22,7 +22,7 @@ public class NewReplyPage extends WebPageImpl {
 
 	public NewReplyPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchBoardException, NoSuchMessageException {
 		super(myWebInterface, viewer, request);
-		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getPartAsString("BoardName", 256)); /* FIXME: adapt to maximal board name length when it has been decided */
+		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getPartAsString("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
 		mParentMessage = mFreetalk.getMessageManager().get(request.getPartAsString("ParentMessageID", 128)); /* TODO: adapt to maximal ID length when it has been decided */
 	}
 
@@ -30,10 +30,8 @@ public class NewReplyPage extends WebPageImpl {
 		if(mRequest.isPartSet("CreateReply")) {
 			HashSet<Board> boards = new HashSet<Board>();
 			boards.add(mBoard);
-			/* FIXME: As soon as we have decided about a maximal subject length, specify here */
-			String replySubject = mRequest.getPartAsString("ReplySubject", 256);
-			/* FIXME: As soon as we have decided about a maximal text length, specify here */
-			String replyText = mRequest.getPartAsString("ReplyText", 64*1024);
+			String replySubject = mRequest.getPartAsString("ReplySubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH);
+			String replyText = mRequest.getPartAsString("ReplyText", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH);
 
 			try {
 				mFreetalk.getMessageManager().postMessage(mParentMessage, boards, mBoard, mOwnIdentity, replySubject, null, replyText, null);

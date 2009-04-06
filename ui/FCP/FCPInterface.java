@@ -155,8 +155,6 @@ public final class FCPInterface implements FredPluginFCP {
     private void handleListThreads(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchIdentityException
     {
-        // TODO: allow to request threads with all thread messages, with or without message text
-
         final String boardName = params.get("BoardName");
         if (boardName == null) {
             throw new InvalidParameterException("Boardname parameter not specified");
@@ -414,49 +412,46 @@ public final class FCPInterface implements FredPluginFCP {
     private void handleCreateBoard(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException, InvalidParameterException
     {
-        final String boardName = params.get("BoardName");
-        if (boardName == null) {
-            throw new InvalidParameterException("Boardname parameter not specified");
-        }
-
-        // FIXME: add check for maximum board length
-
         Board board;
-        synchronized(mFreetalk.getMessageManager()) {
-
-            try {
-                board = mFreetalk.getMessageManager().getBoardByName(boardName);
-            } catch (final NoSuchBoardException e) {
-                board = null;
+        try {
+            final String boardName = params.get("BoardName");
+            if (boardName == null || boardName.length() == 0) {
+                throw new InvalidParameterException("Boardname parameter not specified");
             }
-
-            if (board != null) {
-                final SimpleFieldSet sfs = new SimpleFieldSet(true);
-                sfs.putOverwrite("Message", "CreateBoardReply");
-                sfs.putOverwrite("BoardCreated", "false");
-                sfs.putOverwrite("ErrorDescription", "Board with same name already exists.");
-                replysender.send(sfs);
-                return;
+            if (!Board.isNameValid(boardName)) {
+                throw new InvalidParameterException("Boardname parameter is not valid");
             }
-
-            try {
+    
+            synchronized(mFreetalk.getMessageManager()) {
+    
+                try {
+                    board = mFreetalk.getMessageManager().getBoardByName(boardName);
+                } catch (final NoSuchBoardException e) {
+                    board = null;
+                }
+    
+                if (board != null) {
+                    throw new InvalidParameterException("Board with same name already exists");
+                }
+    
                 board = mFreetalk.getMessageManager().getOrCreateBoard(boardName);
-            } catch (final InvalidParameterException e) {
-                final SimpleFieldSet sfs = new SimpleFieldSet(true);
-                sfs.putOverwrite("Message", "CreateBoardReply");
-                sfs.putOverwrite("BoardCreated", "false");
-                sfs.putOverwrite("ErrorDescription", e.getLocalizedMessage());
-                replysender.send(sfs);
-                return;
             }
-        }
+            
+            // board can't be null when we come here
+            final SimpleFieldSet sfs = new SimpleFieldSet(true);
+            sfs.putOverwrite("Message", "CreateBoardReply");
+            sfs.putOverwrite("BoardCreated", "true");
+            sfs.putOverwrite("StoredBoardName", board.getName());
+            replysender.send(sfs);
 
-        // board can't be null when we come here
-        final SimpleFieldSet sfs = new SimpleFieldSet(true);
-        sfs.putOverwrite("Message", "CreateBoardReply");
-        sfs.putOverwrite("BoardCreated", "true");
-        sfs.putOverwrite("StoredBoardName", board.getName());
-        replysender.send(sfs);
+        } catch(Exception e) {
+            final SimpleFieldSet sfs = new SimpleFieldSet(true);
+            sfs.putOverwrite("Message", "CreateBoardReply");
+            sfs.putOverwrite("BoardCreated", "false");
+            sfs.putOverwrite("ErrorDescription", e.getLocalizedMessage());
+            replysender.send(sfs);
+            return;
+        }
     }
 
     /**
@@ -576,8 +571,7 @@ public final class FCPInterface implements FredPluginFCP {
                 if (messageTitle == null) {
                     throw new InvalidParameterException("Title parameter not specified");
                 }
-                // FIXME: get this limit from somewhere else ...
-                if (messageTitle.length() > 256) {
+                if (messageTitle.length() > Message.MAX_MESSAGE_TITLE_TEXT_LENGTH) {
                     throw new InvalidParameterException("Message title is longer than 256 characters");
                 }
 
@@ -586,8 +580,7 @@ public final class FCPInterface implements FredPluginFCP {
                 if (data == null) {
                     throw new InvalidParameterException("No Message text sent");
                 }
-                // FIXME: get this limit from somewhere else ...
-                if (data.size() > 64L*1024L) {
+                if (data.size() > Message.MAX_MESSAGE_TEXT_BYTE_LENGTH) {
                     throw new InvalidParameterException("Message text is longer than 64KB");
                 }
 
@@ -615,6 +608,11 @@ public final class FCPInterface implements FredPluginFCP {
                         messageText,
                         attachments);
 
+                final SimpleFieldSet sfs = new SimpleFieldSet(true);
+                sfs.putOverwrite("Message", "PutMessageReply");
+                sfs.putOverwrite("MessageEnqueued", "true");
+                replysender.send(sfs);
+
             } catch(final Exception e) {
                 final SimpleFieldSet sfs = new SimpleFieldSet(true);
                 sfs.putOverwrite("Message", "PutMessageReply");
@@ -622,12 +620,6 @@ public final class FCPInterface implements FredPluginFCP {
                 sfs.putOverwrite("ErrorDescription", e.getLocalizedMessage());
                 replysender.send(sfs);
             }
-
-            final SimpleFieldSet sfs = new SimpleFieldSet(true);
-            sfs.putOverwrite("Message", "PutMessageReply");
-            sfs.putOverwrite("MessageEnqueued", "true");
-            replysender.send(sfs);
-
         } // synchronized(mFreetalk.getMessageManager())
     }
 

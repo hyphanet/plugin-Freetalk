@@ -17,8 +17,10 @@ public final class NewBoardPage extends WebPageImpl {
 
 	public void make() {
 		if(mRequest.isPartSet("CreateBoard")) {
-			String boardLanguage = mRequest.getPartAsString("BoardLanguage", 8);
-			String boardName = mRequest.getPartAsString("BoardName", 256); /* FIXME: as soon as we have a max board name length specify it here */
+		    final int boardLanguageLength = 8;
+		    final int maxBoardNameLength = Board.MAX_BOARDNAME_TEXT_LENGTH - boardLanguageLength - 1; // +1 for the '.'
+		    String boardLanguage = mRequest.getPartAsString("BoardLanguage", boardLanguageLength);
+			String boardName = mRequest.getPartAsString("BoardName", maxBoardNameLength);
 			
 			try {
 				Board board = mFreetalk.getMessageManager().getOrCreateBoard(boardLanguage + "." + boardName);

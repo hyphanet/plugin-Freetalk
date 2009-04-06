@@ -39,6 +39,8 @@ public final class Board implements Comparable<Board> {
 	//                         (a problem for some newsreaders)
 	private static final String DISALLOWED_NAME_CHARACTERS = "!,?*[\\] /:<>|\"";
 
+	public static final int MAX_BOARDNAME_TEXT_LENGTH = 256; 
+	
 
 	/* Attributes, stored in the database */
 
@@ -120,6 +122,18 @@ public final class Board implements Comparable<Board> {
 	 * Arabic or Hebrew group names to be displayed properly.)
 	 */
 	public static boolean isNameValid(String name) {
+	    // paranoia checks
+	    
+	    if (name == null || name.length() == 0) {
+	        return false;
+	    }
+	    
+	    // check maximum length
+	    
+	    if (name.length() > MAX_BOARDNAME_TEXT_LENGTH) {
+	        return false;
+	    }
+	    
 		// check for illegal characters
 
 		if (!StringValidityChecker.containsNoLinebreaks(name)
@@ -548,12 +562,12 @@ public final class Board implements Comparable<Board> {
 			mMessageIndex = myIndex;
 		}
 		
-		public void store(ObjectContainer db) {
-			if(db.ext().isStored(this) && !db.ext().isActive(this))
+		public void store(ObjectContainer localDb) {
+			if(localDb.ext().isStored(this) && !localDb.ext().isActive(this))
 				throw new RuntimeException("Trying to store a non-active BoardMessageLink object");
 			
-			db.store(this);
-			db.commit();
+			localDb.store(this);
+			localDb.commit();
 		}
 
 		public int getIndex() {

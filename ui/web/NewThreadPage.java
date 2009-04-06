@@ -7,6 +7,7 @@ import java.util.HashSet;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Message;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -17,17 +18,15 @@ public final class NewThreadPage extends WebPageImpl {
 	
 	public NewThreadPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchBoardException {
 		super(myWebInterface, viewer, request);
-		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getPartAsString("BoardName", 256)); /* FIXME: adapt to maximal board name length when it has been decided */
+		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getPartAsString("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
 	}
 	
 	public void make() {
 		if(mRequest.isPartSet("CreateThread")) { 
 			HashSet<Board> boards = new HashSet<Board>();
 			boards.add(mBoard);
-			/* FIXME: As soon as we have decided about a maximal subject length, specify here */
-			String threadSubject = mRequest.getPartAsString("ThreadSubject", 256);
-			/* FIXME: As soon as we have decided about a maximal text length, specify here */
-			String threadText = mRequest.getPartAsString("ThreadText", 64*1024);
+			String threadSubject = mRequest.getPartAsString("ThreadSubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH);
+			String threadText = mRequest.getPartAsString("ThreadText", Message.MAX_MESSAGE_TEXT_BYTE_LENGTH);
 
 			try {
 				mFreetalk.getMessageManager().postMessage(null, boards, mBoard, mOwnIdentity, threadSubject, null, threadText, null);
