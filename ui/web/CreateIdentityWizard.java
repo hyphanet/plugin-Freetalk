@@ -185,7 +185,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 			
 			HTMLNode p = tlBox.addChild("p", "Trust lists are the "); p.addChild("b", "fundament of Freetalk");
 			p.addChild("#", ": You can publish a "); p.addChild("b", "trust value"); p.addChild("#", " for every identity in your trust list. " +
-					"The trust value can be between -100 and +100 inclusive and is a measurment for how valueable you rate the messages of an " +
+					"The trust value can be between -100 and +100 inclusive and is a measurment for how valuable you rate the messages of an " +
 					"identity. If someone posts spam, you can give a negative trust value, if he writes useful posts, you can assign a " +
 					" positive one.");
 			
