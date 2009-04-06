@@ -3,9 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.FCP;
 
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
@@ -13,10 +17,12 @@ import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Board.MessageReference;
+import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import freenet.keys.FreenetURI;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
@@ -74,6 +80,8 @@ public final class FCPInterface implements FredPluginFCP {
                 handleGetMessage(replysender, params);
             } else if (message.equals("CreateBoard")) {
                 handleCreateBoard(replysender, params);
+            } else if (message.equals("PutMessage")) {
+                handlePutMessage(replysender, params, data);
             } else {
                 throw new Exception("Unknown message (" + message + ")");
             }
@@ -287,7 +295,12 @@ public final class FCPInterface implements FredPluginFCP {
      *   Date=utcMillis
      *   FetchDate=utcMillis
      *   IsThread=true|false
-     *   ParentID=id         (optional)
+     *   ParentID=id              (optional)
+     *   FileAttachmentCount=2    (optional, not send if value is 0)
+     *   FileAttachmentURI.1=CHK@abc
+     *   FileAttachmentSize.1=123 (datatype long)
+     *   FileAttachmentURI.2=CHK@def
+     *   FileAttachmentSize.2=456
      *   (following is only sent when IncludeMessageText=true)
      *   DataLength=123      (NOTE: no leading 'Replies.'!)
      *   Data                (NOTE: no leading 'Replies.'!)
@@ -308,6 +321,14 @@ public final class FCPInterface implements FredPluginFCP {
         try {
             sfs.putOverwrite("ParentID", message.getParentID());
         } catch(final NoSuchMessageException e) {
+        }
+        final Attachment[] attachments = message.getAttachments();
+        if (attachments != null && attachments.length > 0) {
+            sfs.put("FileAttachmentCount", attachments.length);
+            for(int x=0; x<attachments.length; x++) {
+                sfs.putOverwrite("FileAttachmentURI", attachments[x].getURI().toString());
+                sfs.put("FileAttachmentSize", attachments[x].getSize());
+            }
         }
         if (includeMessageText
                 && message.getText() != null
@@ -398,7 +419,7 @@ public final class FCPInterface implements FredPluginFCP {
             throw new InvalidParameterException("Boardname parameter not specified");
         }
 
-        // FIXME: check for maximum board length must be done by MessageManager!
+        // FIXME: add check for maximum board length
 
         Board board;
         synchronized(mFreetalk.getMessageManager()) {
@@ -436,6 +457,178 @@ public final class FCPInterface implements FredPluginFCP {
         sfs.putOverwrite("BoardCreated", "true");
         sfs.putOverwrite("StoredBoardName", board.getName());
         replysender.send(sfs);
+    }
+
+    /**
+     * Handle PutMessage command.
+     * Sends a message.
+     * Format of request:
+     *   Message=PutMessage
+     *   ParentID=ID             (optional, when set the msg is a reply)
+     *   TargetBoards=abc,def    (comma separated list of target boards. one is required.)
+     *   ReplyToBoard=abc        (optional, must be in TargetBoards)
+     *   AuthorIdentityUID=UID   (UID of an own identity)
+     *   FileAttachmentCount=2    (optional, not send if value is 0)
+     *   FileAttachmentURI.1=CHK@abc
+     *   FileAttachmentSize.1=123 (datatype long)
+     *   FileAttachmentURI.2=CHK@def
+     *   FileAttachmentSize.2=456
+     *   Title=abc def           (message title)
+     * 
+     * Format of reply:
+     *   Message=PutMessageReply
+     *   MessageEnqueued=true|false
+     *   ErrorDescription=abc    (set when MessageEnqueued=false)
+     */
+    private void handlePutMessage(final PluginReplySender replysender, final SimpleFieldSet params, final Bucket data)
+    throws PluginNotFoundException, InvalidParameterException
+    {
+        synchronized(mFreetalk.getMessageManager()) {
+
+            try {
+                // evaluate parentMessage
+                final String parentMsgId = params.get("ParentID"); // may be null
+                Message parentMessage = null;
+                if (parentMsgId != null) {
+                    try {
+                        parentMessage = mFreetalk.getMessageManager().get(parentMsgId);
+                    } catch(final NoSuchMessageException e) {
+                        throw new InvalidParameterException("Message specified by ParentID was not found");
+                    }
+                }
+
+                // evaluate targetBoards
+                final String targetBoardsString = params.get("TargetBoards");
+                if (targetBoardsString == null) {
+                    throw new InvalidParameterException("TargetBoards parameter not specified");
+                }
+                final String[] targetBoardsArray = targetBoardsString.split(",");
+                if (targetBoardsArray.length == 0) {
+                    throw new InvalidParameterException("Invalid TargetBoards parameter specified");
+                }
+                final Set<Board> targetBoards = new HashSet<Board>();
+                for(String targetBoardName : targetBoardsArray) {
+                    targetBoardName = targetBoardName.trim();
+                    if (targetBoardName.length() == 0) {
+                        throw new InvalidParameterException("Invalid TargetBoards parameter specified");
+                    }
+                    try {
+                        final Board board = mFreetalk.getMessageManager().getBoardByName(targetBoardName);
+                        targetBoards.add(board);
+                    } catch(final NoSuchBoardException e) {
+                        throw new InvalidParameterException("TargetBoard '"+targetBoardName+"' does not exist");
+                    }
+                }
+
+                // evaluate replyToBoard
+                final String replyToBoardName = params.get("ReplyToBoard"); // may be null
+                Board replyToBoard = null;
+                if (replyToBoardName != null ) {
+                    try {
+                        replyToBoard = mFreetalk.getMessageManager().getBoardByName(replyToBoardName);
+                    } catch(final NoSuchBoardException e) {
+                        throw new InvalidParameterException("ReplyToBoard '"+replyToBoardName+"' does not exist");
+                    }
+                    if (!targetBoards.contains(replyToBoard)) {
+                        throw new InvalidParameterException("ReplyToBoard is not contained in TargetBoards");
+                    }
+                }
+
+                // evaluate authorIdentity
+                final String authorIdentityUidString = params.get("AuthorIdentityUID");
+                if (authorIdentityUidString == null) {
+                    throw new InvalidParameterException("AuthorIdentityUID parameter not specified");
+                }
+                final FTOwnIdentity authorIdentity;
+                try {
+                    authorIdentity = mFreetalk.getIdentityManager().getOwnIdentity(authorIdentityUidString);
+                } catch(final NoSuchIdentityException e) {
+                    throw new InvalidParameterException("No own identity found for AuthorIdentityUID");
+                }
+
+                // evaluate attachments
+                int attachmentCount;
+                try {
+                    attachmentCount = Integer.parseInt(params.get("FileAttachmentCount"));
+                } catch(final Exception e) {
+                    attachmentCount = 0;
+                }
+                final List<Attachment> attachments = new ArrayList<Attachment>(attachmentCount);
+                for (int x=0; x < attachmentCount; x++) {
+                    final String uriString = params.get("FileAttachmentURI."+x);
+                    final String sizeString = params.get("FileAttachmentSize."+x);
+                    if (uriString == null || sizeString == null) {
+                        throw new InvalidParameterException("Invalid FileAttachment specified ("+x+")");
+                    }
+                    long fileSize;
+                    FreenetURI freenetUri;
+                    try {
+                        freenetUri = new FreenetURI(uriString);
+                        fileSize = Long.parseLong(sizeString);
+                    } catch(final Exception e) {
+                        throw new InvalidParameterException("Invalid FileAttachment specified ("+x+")");
+                    }
+                    attachments.add(new Attachment(freenetUri, fileSize));
+                }
+
+                // evaluate messageTitle
+                final String messageTitle = params.get("Title");
+                if (messageTitle == null) {
+                    throw new InvalidParameterException("Title parameter not specified");
+                }
+                // FIXME: get this limit from somewhere else ...
+                if (messageTitle.length() > 256) {
+                    throw new InvalidParameterException("Message title is longer than 256 characters");
+                }
+
+                // evaluate messageText
+                // we expect Data containing the message text
+                if (data == null) {
+                    throw new InvalidParameterException("No Message text sent");
+                }
+                // FIXME: get this limit from somewhere else ...
+                if (data.size() > 64L*1024L) {
+                    throw new InvalidParameterException("Message text is longer than 64KB");
+                }
+
+                // convert to UTF-8
+                final byte[] utf8Bytes = new byte[(int)data.size()];
+                final InputStream is = data.getInputStream();
+                try {
+                    if (is.read(utf8Bytes) != utf8Bytes.length) {
+                        throw new InvalidParameterException("Internal error reading data from Bucket");
+                    }
+                } finally {
+                    is.close();
+                }
+
+                final String messageText = new String(utf8Bytes, "UTF-8");
+
+                // post new message
+                mFreetalk.getMessageManager().postMessage(
+                        parentMessage,
+                        targetBoards,
+                        replyToBoard,
+                        authorIdentity,
+                        messageTitle,
+                        null,           // date, use current
+                        messageText,
+                        attachments);
+
+            } catch(final Exception e) {
+                final SimpleFieldSet sfs = new SimpleFieldSet(true);
+                sfs.putOverwrite("Message", "PutMessageReply");
+                sfs.putOverwrite("MessageEnqueued", "false");
+                sfs.putOverwrite("ErrorDescription", e.getLocalizedMessage());
+                replysender.send(sfs);
+            }
+
+            final SimpleFieldSet sfs = new SimpleFieldSet(true);
+            sfs.putOverwrite("Message", "PutMessageReply");
+            sfs.putOverwrite("MessageEnqueued", "true");
+            replysender.send(sfs);
+
+        } // synchronized(mFreetalk.getMessageManager())
     }
 
     /**
