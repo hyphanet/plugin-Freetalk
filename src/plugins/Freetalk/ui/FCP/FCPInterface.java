@@ -65,7 +65,7 @@ public final class FCPInterface implements FredPluginFCP {
         
         try {
             if (isTerminated) {
-                replysender.send(errorMessageFCP(params.get("Message"), new Exception("Plugin is terminated")), data);
+                replysender.send(errorMessageFCP(params.get("Message"), new Exception("Plugin is terminated")));
             }
             
             if (params == null) {
@@ -102,7 +102,7 @@ public final class FCPInterface implements FredPluginFCP {
             Logger.error(this, e.toString());
             try {
                 if (!(e instanceof PluginNotFoundException)) {
-                    replysender.send(errorMessageFCP(params.get("Message"), e), data);
+                    replysender.send(errorMessageFCP(params.get("Message"), e));
                 }
             } catch (final PluginNotFoundException e1) {
                 Logger.normal(this, "Connection to request sender lost", e1);
