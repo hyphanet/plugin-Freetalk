@@ -85,10 +85,27 @@ public class Backup {
 	*/
 	}
 
+	/**
+	 * 
+	 * @param config_db
+	 * @param is The input stream to read the config database from. It is ensured that the input stream is closed even when an Exception is thrown.
+	 * @throws IOException
+	 * @throws ParserConfigurationException
+	 * @throws SAXException
+	 */
 	public final static void importConfigDb(ObjectContainer config_db, InputStream is) throws IOException, ParserConfigurationException, SAXException {
-		InputStream i = new BufferedInputStream(is);
+		InputStream i = null;
+		try {
+		i = new BufferedInputStream(is);
 		SAXParser parser = getSaxParser();
 		parser.parse(i, new ImportHandler(config_db));
+		}
+		finally {
+			if(i != null)
+				i.close();
+			else
+				is.close();
+		}
 	}
 
 	private static SAXParser getSaxParser() throws ParserConfigurationException, SAXException {

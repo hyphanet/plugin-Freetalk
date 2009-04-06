@@ -189,7 +189,7 @@ public final class WebInterface implements FredPluginHTTP {
 				Logger.error(this, "Error While exporting database!", e);
 				return Errors.makeErrorPage(this, "Server BuhBuh! " + e.getMessage());
 			}
-			throw new DownloadPluginHTTPException(sw.toString().getBytes(), "fms-kidding.xml", "fms-clone/db-backup");
+			throw new DownloadPluginHTTPException(sw.toString().getBytes("UTF-8"), "fms-kidding.xml", "fms-clone/db-backup");
 		}
 		*/
 		
