@@ -220,7 +220,12 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			Logger.error(this, "Error during termination.", e);
 		}
 		
-		/* TODO: Terminate FCPInterface if necessary */
+        try {
+            mFCPInterface.terminate();
+        }
+        catch(Exception e) {
+            Logger.error(this, "Error during termination.", e);
+        }
 		
 		/* WebInterface is stateless and does not need to be terminated */
 		

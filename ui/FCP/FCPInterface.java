@@ -38,13 +38,21 @@ import freenet.support.api.Bucket;
  * FCP message format:
  *   Command=name
  *   ...
+ *   
+ * @author bback
  */
 public final class FCPInterface implements FredPluginFCP {
 
     private final Freetalk mFreetalk;
+    private boolean isTerminated;
 
     public FCPInterface(final Freetalk myFreetalk) {
         mFreetalk = myFreetalk;
+        isTerminated = false;
+    }
+    
+    public void terminate() {
+        isTerminated = true;
     }
 
     /**
@@ -54,7 +62,12 @@ public final class FCPInterface implements FredPluginFCP {
      * @param access 0: direct call (plugin to plugin), 1: FCP restricted access,  2: FCP full access
      */
     public void handle(final PluginReplySender replysender, final SimpleFieldSet params, final Bucket data, final int accesstype) {
+        
         try {
+            if (isTerminated) {
+                replysender.send(errorMessageFCP(params.get("Message"), new Exception("Plugin is terminated")), data);
+            }
+            
             if (params == null) {
                 throw new Exception("Empty message received");
             }
@@ -64,9 +77,7 @@ public final class FCPInterface implements FredPluginFCP {
                 throw new Exception("Specified message is empty");
             }
 
-            if (message.equals("Ping")) {
-                handlePing(replysender, params);
-            } else if (message.equals("ListBoards")) {
+            if (message.equals("ListBoards")) {
                 handleListBoards(replysender, params);
             } else if (message.equals("ListOwnIdentities")) {
                 handleListOwnIdentities(replysender, params);
@@ -82,6 +93,8 @@ public final class FCPInterface implements FredPluginFCP {
                 handleCreateBoard(replysender, params);
             } else if (message.equals("PutMessage")) {
                 handlePutMessage(replysender, params, data);
+            } else if (message.equals("Ping")) {
+                handlePing(replysender, params);
             } else {
                 throw new Exception("Unknown message (" + message + ")");
             }
