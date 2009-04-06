@@ -126,7 +126,7 @@ public final class WoTMessageXML {
 				for(Attachment a : attachments) {
 					Element fileTag = xmlDoc.createElement("File"); 
 						Element keyTag = xmlDoc.createElement("Key"); keyTag.appendChild(xmlDoc.createCDATASection(a.getURI().toString()));
-						Element sizeTag = xmlDoc.createElement("Size"); sizeTag.appendChild(xmlDoc.createCDATASection(Integer.toString(a.getSize())));
+						Element sizeTag = xmlDoc.createElement("Size"); sizeTag.appendChild(xmlDoc.createCDATASection(Long.toString(a.getSize())));
 					fileTag.appendChild(keyTag);
 					fileTag.appendChild(sizeTag);
 					attachmentsTag.appendChild(fileTag);
@@ -218,7 +218,7 @@ public final class WoTMessageXML {
 				Node keyElement = fileElement.getElementsByTagName("Key").item(0);
 				Node sizeElement = fileElement.getElementsByTagName("Size").item(0);
 				messageAttachments.add(new Message.Attachment(	new FreenetURI(keyElement.getTextContent()),
-																sizeElement != null ? Integer.parseInt(sizeElement.getTextContent()) : -1));
+																sizeElement != null ? Long.parseLong(sizeElement.getTextContent()) : -1));
 			}
 		}
 		
