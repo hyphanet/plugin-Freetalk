@@ -101,9 +101,9 @@ public abstract class Message implements Comparable<Message> {
 	
 	public static class Attachment {
 		private final FreenetURI mURI;
-		private final int mSize; /* Size in bytes */
+		private final long mSize; /* Size in bytes */
 		
-		public Attachment(FreenetURI myURI, int mySize) {
+		public Attachment(FreenetURI myURI, long mySize) {
 			mURI = myURI;
 			mSize = mySize;
 		}
@@ -112,7 +112,7 @@ public abstract class Message implements Comparable<Message> {
 			return mURI;
 		}
 		
-		public int getSize() {
+		public long getSize() {
 			return mSize;
 		}
 	}
