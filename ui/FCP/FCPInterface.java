@@ -398,6 +398,8 @@ public final class FCPInterface implements FredPluginFCP {
             throw new InvalidParameterException("Boardname parameter not specified");
         }
 
+        // FIXME: check for maximum board length must be done by MessageManager!
+
         Board board;
         synchronized(mFreetalk.getMessageManager()) {
 
