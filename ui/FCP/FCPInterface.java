@@ -72,6 +72,8 @@ public final class FCPInterface implements FredPluginFCP {
                 handleListMessages(replysender, params);
             } else if (message.equals("GetMessage")) {
                 handleGetMessage(replysender, params);
+            } else if (message.equals("CreateBoard")) {
+                handleCreateBoard(replysender, params);
             } else {
                 throw new Exception("Unknown message (" + message + ")");
             }
@@ -373,6 +375,64 @@ public final class FCPInterface implements FredPluginFCP {
 
         final SimpleFieldSet sfs = new SimpleFieldSet(true);
         sfs.putOverwrite("Message", "EndListOwnIdentities");
+        replysender.send(sfs);
+    }
+
+    /**
+     * Handle CreateBoard command.
+     * Creates a new board with name. The name must be valid, see Board() constructor.
+     * Format of request:
+     *   Message=CreateBoard
+     *   BoardName=abc
+     * Format of reply:
+     *   Message=CreateBoardReply
+     *   BoardCreated=true|false
+     *   ErrorDescription=abc    (set when BoardCreated=false)
+     *   StoredBoardName=abc     (set when BoardCreated=true)
+     */
+    private void handleCreateBoard(final PluginReplySender replysender, final SimpleFieldSet params)
+    throws PluginNotFoundException, InvalidParameterException
+    {
+        final String boardName = params.get("BoardName");
+        if (boardName == null) {
+            throw new InvalidParameterException("Boardname parameter not specified");
+        }
+
+        Board board;
+        synchronized(mFreetalk.getMessageManager()) {
+
+            try {
+                board = mFreetalk.getMessageManager().getBoardByName(boardName);
+            } catch (final NoSuchBoardException e) {
+                board = null;
+            }
+
+            if (board != null) {
+                final SimpleFieldSet sfs = new SimpleFieldSet(true);
+                sfs.putOverwrite("Message", "CreateBoardReply");
+                sfs.putOverwrite("BoardCreated", "false");
+                sfs.putOverwrite("ErrorDescription", "Board with same name already exists.");
+                replysender.send(sfs);
+                return;
+            }
+
+            try {
+                board = mFreetalk.getMessageManager().getOrCreateBoard(boardName);
+            } catch (final InvalidParameterException e) {
+                final SimpleFieldSet sfs = new SimpleFieldSet(true);
+                sfs.putOverwrite("Message", "CreateBoardReply");
+                sfs.putOverwrite("BoardCreated", "false");
+                sfs.putOverwrite("ErrorDescription", e.getLocalizedMessage());
+                replysender.send(sfs);
+                return;
+            }
+        }
+
+        // board can't be null when we come here
+        final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "CreateBoardReply");
+        sfs.putOverwrite("BoardCreated", "true");
+        sfs.putOverwrite("StoredBoardName", board.getName());
         replysender.send(sfs);
     }
 
