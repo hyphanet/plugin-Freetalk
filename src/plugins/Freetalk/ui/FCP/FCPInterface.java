@@ -139,7 +139,7 @@ public final class FCPInterface implements FredPluginFCP {
      *   Date=utcMillis
      *   ReplyCount=123
      *   FetchDate=utcMillis
-     *   IsThread=true     (all returned messages are thread root messages)
+     *   IsThread=true|false  (all returned messages should be thread root messages)
      */
     private void handleListThreads(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchIdentityException
@@ -171,7 +171,7 @@ public final class FCPInterface implements FredPluginFCP {
                 sfs.put("Date", thread.getDate().getTime());
                 sfs.put("ReplyCount", board.threadReplyCount(ownIdentity, thread));
                 sfs.put("FetchDate", thread.getFetchDate().getTime());
-                sfs.putOverwrite("IsThread", "true");
+                sfs.put("IsThread", thread.isThread());
                 replysender.send(sfs);
             }
         }
