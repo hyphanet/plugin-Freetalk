@@ -5,6 +5,7 @@ package plugins.Freetalk.ui.FCP;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
+import java.util.List;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
@@ -187,7 +188,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Format of request:
      *   Message=ListMessages
      *   BoardName=abc
-     *   ThreadID=ID
+     *   ThreadID=ID                     (optional, if not specified retrieves all Messages of Board)
      *   EarliestFetchDate=utcMillis     (optional, default is 0)
      *   IncludeMessageText=true|false   (optional, default is false)
      * Format of reply: see sendSingleMessage()
@@ -201,9 +202,7 @@ public final class FCPInterface implements FredPluginFCP {
             throw new InvalidParameterException("Boardname parameter not specified");
         }
         final String threadID = params.get("ThreadID");
-        if (threadID == null) {
-            throw new InvalidParameterException("ThreadID parameter not specified");
-        }
+
         long earliestFetchDate;
         try {
             earliestFetchDate = Long.parseLong(params.get("EarliestFetchDate"));
@@ -213,14 +212,21 @@ public final class FCPInterface implements FredPluginFCP {
         final boolean includeMessageText = Boolean.parseBoolean(params.get("IncludeMessageText"));
 
         final Board board = mFreetalk.getMessageManager().getBoardByName(boardName); // throws exception when not found
-        final Message thread = mFreetalk.getMessageManager().get(threadID); // throws exception when not found
 
         synchronized(board) {  /* FIXME: Is this enough synchronization or should we lock the message manager? */
-            if (thread.getFetchDate().getTime() >= earliestFetchDate) {
-                sendSingleMessage(replysender, thread, includeMessageText);
+
+            final List<MessageReference> messageRefList;
+            if (threadID == null) {
+                messageRefList = board.getAllMessages();
+            } else {
+                final Message thread = mFreetalk.getMessageManager().get(threadID); // throws exception when not found
+                if (thread.getFetchDate().getTime() >= earliestFetchDate) {
+                    sendSingleMessage(replysender, thread, includeMessageText);
+                }
+                messageRefList = board.getAllThreadReplies(thread);
             }
 
-            for(final MessageReference reference : board.getAllThreadReplies(thread)) {
+            for(final MessageReference reference : messageRefList) {
                 final Message msg = reference.getMessage();
                 if (msg.getFetchDate().getTime() >= earliestFetchDate) {
                     sendSingleMessage(replysender, msg, includeMessageText);
