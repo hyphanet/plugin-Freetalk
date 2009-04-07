@@ -18,6 +18,8 @@ import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Board.MessageReference;
 import plugins.Freetalk.Message.Attachment;
+import plugins.Freetalk.WoT.WoTIdentity;
+import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
@@ -38,7 +40,7 @@ import freenet.support.api.Bucket;
  * FCP message format:
  *   Command=name
  *   ...
- *   
+ * 
  * @author bback
  */
 public final class FCPInterface implements FredPluginFCP {
@@ -50,7 +52,7 @@ public final class FCPInterface implements FredPluginFCP {
         mFreetalk = myFreetalk;
         isTerminated = false;
     }
-    
+
     public void terminate() {
         isTerminated = true;
     }
@@ -62,12 +64,12 @@ public final class FCPInterface implements FredPluginFCP {
      * @param access 0: direct call (plugin to plugin), 1: FCP restricted access,  2: FCP full access
      */
     public void handle(final PluginReplySender replysender, final SimpleFieldSet params, final Bucket data, final int accesstype) {
-        
+
         try {
             if (isTerminated) {
                 replysender.send(errorMessageFCP(params.get("Message"), new Exception("Plugin is terminated")));
             }
-            
+
             if (params == null) {
                 throw new Exception("Empty message received");
             }
@@ -87,12 +89,17 @@ public final class FCPInterface implements FredPluginFCP {
                 handleListThreads(replysender, params);
             } else if (message.equals("ListMessages")) {
                 handleListMessages(replysender, params);
+
             } else if (message.equals("GetMessage")) {
                 handleGetMessage(replysender, params);
-            } else if (message.equals("CreateBoard")) {
-                handleCreateBoard(replysender, params);
             } else if (message.equals("PutMessage")) {
                 handlePutMessage(replysender, params, data);
+
+            } else if (message.equals("CreateBoard")) {
+                handleCreateBoard(replysender, params);
+            } else if (message.equals("CreateOwnIdentity")) {
+                handleCreateOwnIdentity(replysender, params);
+
             } else if (message.equals("Ping")) {
                 handlePing(replysender, params);
             } else {
@@ -411,6 +418,96 @@ public final class FCPInterface implements FredPluginFCP {
     }
 
     /**
+     * Handle CreateOwnIdentity command.
+     * Format of request:
+     *   Message=CreateOwnIdentity
+     *   Nickname=name
+     *   PublishTrustList=true|false            (optional, default is true)
+     *   PublishIntroductionPuzzles=true|false  (optional, default is true)
+     *   RequestURI=...                         (optional)
+     *   InsertURI=...                          (optional)
+     * Format of reply:
+     *   Message=CreateOwnIdentityReply
+     *   OwnIdentityCreated=true|false
+     *   UID=uid
+     *   FreetalkAddress=addr
+     *   InsertURI=...
+     *   RequestURI=...
+     *   ErrorDescription=abc             (set if OwnIdentityCreated=false)
+     */
+    private void handleCreateOwnIdentity(final PluginReplySender replysender, final SimpleFieldSet params)
+    throws PluginNotFoundException
+    {
+        try {
+            final String nickName = params.get("Nickname");
+            if (nickName == null || nickName.length() == 0) {
+                throw new InvalidParameterException("Nickname parameter not specified");
+            }
+            WoTIdentity.validateNickname(nickName); // throws Exception if invalid
+
+            boolean publishTrustList = true;
+            {
+                final String publishTrustListString = params.get("PublishTrustList");
+                if (publishTrustListString != null) {
+                    publishTrustList = Boolean.parseBoolean(publishTrustListString);
+                }
+            }
+
+            boolean publishIntroductionPuzzles = true;
+            {
+                final String publishIntroductionPuzzlesString = params.get("PublishIntroductionPuzzles");
+                if (publishIntroductionPuzzlesString != null) {
+                    publishIntroductionPuzzles = Boolean.parseBoolean(publishIntroductionPuzzlesString);
+                }
+            }
+
+            final String requestUriString = params.get("RequestURI");
+            final String insertUriString = params.get("InsertURI");
+            if ((requestUriString == null || insertUriString == null)
+                    && requestUriString != insertUriString)
+            {
+                throw new InvalidParameterException("RequestURI and InsertURI must be set together");
+            }
+
+            final WoTOwnIdentity id;
+            if (requestUriString != null) {
+                final FreenetURI requestUri = new FreenetURI(requestUriString); // throws Exception if malformed
+                final FreenetURI insertUri = new FreenetURI(insertUriString);   // throws Exception if malformed
+
+                id = (WoTOwnIdentity)mFreetalk.getIdentityManager().createOwnIdentity(
+                        nickName,
+                        publishTrustList,
+                        publishIntroductionPuzzles,
+                        requestUri,
+                        insertUri);
+            } else {
+                id = (WoTOwnIdentity)mFreetalk.getIdentityManager().createOwnIdentity(
+                        nickName,
+                        publishTrustList,
+                        publishIntroductionPuzzles);
+            }
+
+            // id can't be null when we come here
+            final SimpleFieldSet sfs = new SimpleFieldSet(true);
+            sfs.putOverwrite("Message", "CreateOwnIdentityReply");
+            sfs.putOverwrite("OwnIdentityCreated", "true");
+            sfs.putOverwrite("UID", id.getUID());
+            sfs.putOverwrite("FreetalkAddress", id.getFreetalkAddress());
+            sfs.putOverwrite("InsertURI", id.getInsertURI().toString());
+            sfs.putOverwrite("RequestURI", id.getRequestURI().toString());
+            replysender.send(sfs);
+
+        } catch(final Exception e) {
+            final SimpleFieldSet sfs = new SimpleFieldSet(true);
+            sfs.putOverwrite("Message", "CreateOwnIdentityReply");
+            sfs.putOverwrite("OwnIdentityCreated", "false");
+            sfs.putOverwrite("ErrorDescription", e.getLocalizedMessage());
+            replysender.send(sfs);
+            return;
+        }
+    }
+
+    /**
      * Handle CreateBoard command.
      * Creates a new board with name. The name must be valid, see Board() constructor.
      * Format of request:
@@ -425,31 +522,31 @@ public final class FCPInterface implements FredPluginFCP {
     private void handleCreateBoard(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException, InvalidParameterException
     {
-        Board board;
         try {
             final String boardName = params.get("BoardName");
             if (boardName == null || boardName.length() == 0) {
-                throw new InvalidParameterException("Boardname parameter not specified");
+                throw new InvalidParameterException("BoardName parameter not specified");
             }
             if (!Board.isNameValid(boardName)) {
-                throw new InvalidParameterException("Boardname parameter is not valid");
+                throw new InvalidParameterException("BoardName parameter is not valid");
             }
-    
+
+            Board board;
             synchronized(mFreetalk.getMessageManager()) {
-    
+
                 try {
                     board = mFreetalk.getMessageManager().getBoardByName(boardName);
                 } catch (final NoSuchBoardException e) {
                     board = null;
                 }
-    
+
                 if (board != null) {
                     throw new InvalidParameterException("Board with same name already exists");
                 }
-    
+
                 board = mFreetalk.getMessageManager().getOrCreateBoard(boardName);
             }
-            
+
             // board can't be null when we come here
             final SimpleFieldSet sfs = new SimpleFieldSet(true);
             sfs.putOverwrite("Message", "CreateBoardReply");
@@ -457,7 +554,7 @@ public final class FCPInterface implements FredPluginFCP {
             sfs.putOverwrite("StoredBoardName", board.getName());
             replysender.send(sfs);
 
-        } catch(Exception e) {
+        } catch(final Exception e) {
             final SimpleFieldSet sfs = new SimpleFieldSet(true);
             sfs.putOverwrite("Message", "CreateBoardReply");
             sfs.putOverwrite("BoardCreated", "false");
