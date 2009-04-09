@@ -28,6 +28,7 @@ import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.FredPluginHTTP;
 import freenet.pluginmanager.FredPluginL10n;
+import freenet.pluginmanager.FredPluginRealVersioned;
 import freenet.pluginmanager.FredPluginThemed;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
@@ -46,7 +47,7 @@ import freenet.support.api.HTTPRequest;
  *
  */
 public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginThreadless,
-	FredPluginVersioned, FredPluginWithClassLoader {
+	FredPluginVersioned, FredPluginRealVersioned, FredPluginWithClassLoader {
 
 	/* Constants */
 	
@@ -308,6 +309,10 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		return "r" + Version.svnRevision;
 	}
 	
+	public long getRealVersion() {
+		return Version.version;
+	}
+
 	public String getString(String key) {
 		// Logger.error(this, "Request translation for "+key);
 		return key;
