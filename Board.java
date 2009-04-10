@@ -482,10 +482,10 @@ public final class Board implements Comparable<Board> {
 	
 	/**
 	 * Get the next free NNTP index for a message. Please synchronize on BoardMessageLink.class when creating a message, this method
-	 * does not provide synchronization.
+	 * does not and cannot provide synchronization as creating a message is no atomic operation.
 	 */
 	@SuppressWarnings("unchecked")
-	public int getFreeMessageIndex() {
+	private int getFreeMessageIndex() {
 		Query q = db.query();
 		q.constrain(BoardMessageLink.class);
 		q.descend("mBoard").constrain(this);
