@@ -3,12 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.NNTP;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
-
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 
 /**
  * Object representing a newsgroup, as seen from the NNTP client's
@@ -17,131 +17,131 @@ import java.util.NoSuchElementException;
  * @author Benjamin Moody
  */
 public class FreetalkNNTPGroup {
-	private final Board board;
+    private final Board board;
 
-	public FreetalkNNTPGroup(Board board) {
-		this.board = board;
-	}
+    public FreetalkNNTPGroup(Board board) {
+        this.board = board;
+    }
 
-	/**
-	 * Convert NNTP group name into a Freetalk board name.
-	 */
-	public static String groupToBoardName(String name) {
-		// FIXME: This does nothing at the moment.  In the future it
-		// could be used to quote names in ASCII, for older
-		// newsreaders that only allow ASCII group names
-		return name;
-	}
+    /**
+     * Convert NNTP group name into a Freetalk board name.
+     */
+    public static String groupToBoardName(String name) {
+        // FIXME: This does nothing at the moment.  In the future it
+        // could be used to quote names in ASCII, for older
+        // newsreaders that only allow ASCII group names
+        return name;
+    }
 
-	/**
-	 * Convert a Freetalk board name into an NNTP group name.
-	 */
-	public static String boardToGroupName(String name) {
-		return name;
-	}
+    /**
+     * Convert a Freetalk board name into an NNTP group name.
+     */
+    public static String boardToGroupName(String name) {
+        return name;
+    }
 
-	/**
-	 * Get the FTBoard object associated with this group.
-	 */
-	public Board getBoard() {
-		return board;
-	}
+    /**
+     * Get the FTBoard object associated with this group.
+     */
+    public Board getBoard() {
+        return board;
+    }
 
-	/**
-	 * Get the group name
-	 */
-	public String getName() {
-		return boardToGroupName(board.getName());
-	}
+    /**
+     * Get the group name
+     */
+    public String getName() {
+        return boardToGroupName(board.getName());
+    }
 
-	/**
-	 * Estimate number of messages that have been posted.
-	 */
-	public long messageCount() {
-		return board.getAllMessages().size();
-	}
+    /**
+     * Estimate number of messages that have been posted.
+     */
+    public long messageCount() {
+        return board.getAllMessages(false).size();
+    }
 
-	/**
-	 * Get the first valid message number.
-	 */
-	public int firstMessage() {
-		return 1;
-	}
+    /**
+     * Get the first valid message number.
+     */
+    public int firstMessage() {
+        return 1;
+    }
 
-	/**
-	 * Get the last valid message number.
-	 */
-	public int lastMessage() {
-		return board.getLastMessageIndex();
-	}
+    /**
+     * Get the last valid message number.
+     */
+    public int lastMessage() {
+        return board.getLastMessageIndex();
+    }
 
-	/**
-	 * Get an iterator for articles in the given range.
-	 */
-	public Iterator<FreetalkNNTPArticle> getMessageIterator(int start, int end) throws NoSuchMessageException {
-		synchronized (board) {
-			if (start < firstMessage())
-				start = firstMessage();
+    /**
+     * Get an iterator for articles in the given range.
+     */
+    public Iterator<FreetalkNNTPArticle> getMessageIterator(int start, int end) throws NoSuchMessageException {
+        synchronized (board) {
+            if (start < firstMessage())
+                start = firstMessage();
 
-			if (end == -1 || end > lastMessage())
-				end = lastMessage();
+            if (end == -1 || end > lastMessage())
+                end = lastMessage();
 
-			Iterator<FreetalkNNTPArticle> iter;
+            Iterator<FreetalkNNTPArticle> iter;
 
-			final int startIndex = start;
-			final int endIndex = end;
+            final int startIndex = start;
+            final int endIndex = end;
 
-			iter = new Iterator<FreetalkNNTPArticle>() {
-				private int currentIndex = startIndex;
-				private Message currentMessage = null;
+            iter = new Iterator<FreetalkNNTPArticle>() {
+                private int currentIndex = startIndex;
+                private Message currentMessage = null;
 
-				public boolean hasNext() {
-					if (currentMessage != null)
-						return true;
+                public boolean hasNext() {
+                    if (currentMessage != null)
+                        return true;
 
-					while (currentIndex <= endIndex) {
-						try {
-							currentMessage = board.getMessageByIndex(currentIndex);
-							return true;
-						}
-						catch (NoSuchMessageException e) {
-							// ignore
-						}
-						currentIndex++;
-					}
-					return false;
-				}
+                    while (currentIndex <= endIndex) {
+                        try {
+                            currentMessage = board.getMessageByIndex(currentIndex);
+                            return true;
+                        }
+                        catch (NoSuchMessageException e) {
+                            // ignore
+                        }
+                        currentIndex++;
+                    }
+                    return false;
+                }
 
-				public FreetalkNNTPArticle next() {
-					if (!hasNext())
-						throw new NoSuchElementException();
-					else {
-						Message msg = currentMessage;
-						currentMessage = null;
-						return new FreetalkNNTPArticle(msg, currentIndex++);
-					}
-				}
+                public FreetalkNNTPArticle next() {
+                    if (!hasNext())
+                        throw new NoSuchElementException();
+                    else {
+                        Message msg = currentMessage;
+                        currentMessage = null;
+                        return new FreetalkNNTPArticle(msg, currentIndex++);
+                    }
+                }
 
-				public void remove() {
-					throw new UnsupportedOperationException();
-				}
-			};
+                public void remove() {
+                    throw new UnsupportedOperationException();
+                }
+            };
 
-			if (!iter.hasNext())
-				throw new NoSuchMessageException();
+            if (!iter.hasNext())
+                throw new NoSuchMessageException();
 
-			return iter;
-		}
-	}
+            return iter;
+        }
+    }
 
-	/**
-	 * Get the board posting status.  This is normally either "y"
-	 * (posting is allowed), "n" (posting is not allowed), or "m"
-	 * (group is moderated.)  It is a hint to the reader and doesn't
-	 * necessarily indicate whether the client will be allowed to
-	 * post, or whether any given message will be accepted.
-	 */
-	public String postingStatus() {
-		return "y";
-	}
+    /**
+     * Get the board posting status.  This is normally either "y"
+     * (posting is allowed), "n" (posting is not allowed), or "m"
+     * (group is moderated.)  It is a hint to the reader and doesn't
+     * necessarily indicate whether the client will be allowed to
+     * post, or whether any given message will be accepted.
+     */
+    public String postingStatus() {
+        return "y";
+    }
 }
