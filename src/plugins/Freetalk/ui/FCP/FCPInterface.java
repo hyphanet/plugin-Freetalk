@@ -217,6 +217,7 @@ public final class FCPInterface implements FredPluginFCP {
      *   Message=ListMessages
      *   BoardName=abc
      *   ThreadID=ID                     (optional, if not specified retrieves all Messages of Board)
+     *   SortByMessageIndexAscending=true|false   (Optional, default is false)
      *   EarliestFetchDate=utcMillis     (optional, default is 0)
      *   IncludeMessageText=true|false   (optional, default is false)
      * Format of reply: see sendSingleMessage()
@@ -230,6 +231,7 @@ public final class FCPInterface implements FredPluginFCP {
             throw new InvalidParameterException("Boardname parameter not specified");
         }
         final String threadID = params.get("ThreadID");
+        final boolean sortByMessageIndexAscending = Boolean.parseBoolean(params.get("SortByMessageIndexAscending"));
 
         long earliestFetchDate;
         try {
@@ -245,13 +247,13 @@ public final class FCPInterface implements FredPluginFCP {
 
             final List<MessageReference> messageRefList;
             if (threadID == null) {
-                messageRefList = board.getAllMessages();
+                messageRefList = board.getAllMessages(sortByMessageIndexAscending);
             } else {
                 final Message thread = mFreetalk.getMessageManager().get(threadID); // throws exception when not found
                 if (thread.getFetchDate().getTime() >= earliestFetchDate) {
                     sendSingleMessage(replysender, thread, includeMessageText);
                 }
-                messageRefList = board.getAllThreadReplies(thread);
+                messageRefList = board.getAllThreadReplies(thread, sortByMessageIndexAscending);
             }
 
             for(final MessageReference reference : messageRefList) {
