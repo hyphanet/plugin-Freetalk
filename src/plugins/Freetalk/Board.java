@@ -65,7 +65,7 @@ public final class Board implements Comparable<Board> {
 	}
 	
 	public static String[] getBoardMessageLinkIndexedFields() { /* TODO: ugly! find a better way */
-		return new String[] {"mBoard", "mMessage"};
+		return new String[] { "mBoard", "mMessage", "mMessageIndex" };
 	}
 	
 	public static String[] getAllowedLanguageCodes() {
