@@ -483,11 +483,12 @@ public final class Board implements Comparable<Board> {
     }
 
     @SuppressWarnings("unchecked")
-    public synchronized List<MessageReference> getMessagesWithGreaterIndex(final int index, final boolean sortByMessageIndexAscending) {
+    public synchronized List<MessageReference> getMessagesByMinimumIndex(int minimumIndex, final boolean sortByMessageIndexAscending) {
         final Query q = db.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this);
-        q.descend("mMessageIndex").constrain(index).greater();
+        minimumIndex--; // db4o provides no greaterEqual(), so we do it this way
+        q.descend("mMessageIndex").constrain(minimumIndex).greater();
         if (sortByMessageIndexAscending) {
             q.descend("mMessageIndex").orderAscending();
         }
@@ -528,7 +529,7 @@ public final class Board implements Comparable<Board> {
     }
 
     /**
-     * Get all replies to the given thread, sorted ascending by date
+     * Get all replies to the given thread, sorted ascending by date if requested
      */
     /* FIXME: This function returns all replies, not only the ones which the viewer wants to see. Convert the function to an iterator
      * which picks threads chosen by the viewer, see threadIterator() for how to do this */

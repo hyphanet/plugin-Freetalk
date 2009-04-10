@@ -218,7 +218,7 @@ public final class FCPInterface implements FredPluginFCP {
      *   BoardName=abc
      *   ThreadID=ID                     (optional, if not specified retrieves all Messages of Board)
      *   SortByMessageIndexAscending=true|false   (Optional, default is false)
-     *   EarliestFetchDate=utcMillis     (optional, default is 0)
+     *   MinimumMessageIndex=123         (optional, datatype int, default is 0)
      *   IncludeMessageText=true|false   (optional, default is false)
      * Format of reply: see sendSingleMessage()
      */
@@ -233,11 +233,11 @@ public final class FCPInterface implements FredPluginFCP {
         final String threadID = params.get("ThreadID");
         final boolean sortByMessageIndexAscending = Boolean.parseBoolean(params.get("SortByMessageIndexAscending"));
 
-        long earliestFetchDate;
+        int minimumMessageIndex;
         try {
-            earliestFetchDate = Long.parseLong(params.get("EarliestFetchDate"));
+            minimumMessageIndex = Integer.parseInt(params.get("MinimumMessageIndex"));
         } catch(final NumberFormatException e) {
-            earliestFetchDate = 0;
+            minimumMessageIndex = 0;
         }
         final boolean includeMessageText = Boolean.parseBoolean(params.get("IncludeMessageText"));
 
@@ -247,19 +247,21 @@ public final class FCPInterface implements FredPluginFCP {
 
             final List<MessageReference> messageRefList;
             if (threadID == null) {
-                messageRefList = board.getAllMessages(sortByMessageIndexAscending);
+                messageRefList = board.getMessagesByMinimumIndex(minimumMessageIndex, sortByMessageIndexAscending);
             } else {
                 final Message thread = mFreetalk.getMessageManager().get(threadID); // throws exception when not found
-                if (thread.getFetchDate().getTime() >= earliestFetchDate) {
-                    sendSingleMessage(replysender, thread, includeMessageText);
+                final int messageIndex = board.getMessageIndex(thread); // throws exception when not found
+                if (messageIndex >= minimumMessageIndex) {
+                    sendSingleMessage(replysender, thread, messageIndex, includeMessageText);
                 }
                 messageRefList = board.getAllThreadReplies(thread, sortByMessageIndexAscending);
             }
 
             for(final MessageReference reference : messageRefList) {
                 final Message msg = reference.getMessage();
-                if (msg.getFetchDate().getTime() >= earliestFetchDate) {
-                    sendSingleMessage(replysender, msg, includeMessageText);
+                final int messageIndex = board.getMessageIndex(msg); // throws exception when not found
+                if (messageIndex >= minimumMessageIndex) {
+                    sendSingleMessage(replysender, msg, messageIndex, includeMessageText);
                 }
             }
         }
@@ -275,7 +277,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Format of request:
      *   Message=GetMessage
      *   BoardName=abc
-     *   MessageID=ID
+     *   MessageIndex=123                (message index in board)
      *   IncludeMessageText=true|false   (optional, default is false)
      * Format of reply: see sendSingleMessage()
      * Reply when messageID or boardName is not found:
@@ -293,15 +295,30 @@ public final class FCPInterface implements FredPluginFCP {
         if (boardName == null) {
             throw new InvalidParameterException("Boardname parameter not specified");
         }
-        final String messageID = params.get("MessageID");
-        if (messageID == null) {
-            throw new InvalidParameterException("MessageID parameter not specified");
+
+        final Board specifiedBoard;
+        try {
+            specifiedBoard = mFreetalk.getMessageManager().getBoardByName(boardName);
+        } catch(final NoSuchBoardException e) {
+            throw new InvalidParameterException("Board '"+boardName+"' does not exist");
         }
+
+        final String messageIndexString = params.get("MessageIndex");
+        if (messageIndexString == null) {
+            throw new InvalidParameterException("MessageIndex parameter not specified");
+        }
+        final int messageIndex;
+        try {
+            messageIndex = Integer.parseInt(messageIndexString);
+        } catch(final NumberFormatException e) {
+            throw new InvalidParameterException("MessageIndex ist not a number");
+        }
+
         final boolean includeMessageText = Boolean.parseBoolean(params.get("IncludeMessageText"));
 
-        final Message message = mFreetalk.getMessageManager().get(messageID); // throws exception when not found
+        final Message message = specifiedBoard.getMessageByIndex(messageIndex); // throws exception when not found
 
-        sendSingleMessage(replysender, message, includeMessageText);
+        sendSingleMessage(replysender, message, messageIndex, includeMessageText);
     }
 
     /**
@@ -310,6 +327,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Format of reply:
      *   Message=Message
      *   ID=id
+     *   MessageIndex=123         (unique per board)
      *   Title=title
      *   Author=freetalkAddr
      *   Date=utcMillis
@@ -327,12 +345,17 @@ public final class FCPInterface implements FredPluginFCP {
      *   <123 bytes of utf8 text>
      *   (no EndMessage!)
      */
-    private void sendSingleMessage(final PluginReplySender replysender, final Message message, final boolean includeMessageText)
+    private void sendSingleMessage(
+            final PluginReplySender replysender,
+            final Message message,
+            final int messageIndex,
+            final boolean includeMessageText)
     throws PluginNotFoundException, UnsupportedEncodingException
     {
         final SimpleFieldSet sfs = new SimpleFieldSet(true);
         sfs.putOverwrite("Message", "Message");
         sfs.putOverwrite("ID", message.getID());
+        sfs.put("MessageIndex", messageIndex);
         sfs.putOverwrite("Title", message.getTitle());
         sfs.putOverwrite("Author", message.getAuthor().getFreetalkAddress());
         sfs.put("Date", message.getDate().getTime());
