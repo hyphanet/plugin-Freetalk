@@ -498,7 +498,7 @@ public final class Board implements Comparable<Board> {
     }
 
     @SuppressWarnings("unchecked")
-    public synchronized List<MessageReference> getMessagesByMinimumDate(int minimumDate, final boolean sortByMessageDateAscending) {
+    public synchronized List<MessageReference> getMessagesByMinimumDate(long minimumDate, final boolean sortByMessageDateAscending) {
         final Query q = db.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this);
