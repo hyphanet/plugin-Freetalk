@@ -40,7 +40,7 @@ import freenet.support.api.Bucket;
  * FCP message format:
  *   Command=name
  *   ...
- * 
+ *
  * @author bback
  */
 public final class FCPInterface implements FredPluginFCP {
@@ -87,6 +87,8 @@ public final class FCPInterface implements FredPluginFCP {
                 handleListKnownIdentities(replysender, params);
             } else if (message.equals("ListThreads")) {
                 handleListThreads(replysender, params);
+            } else if (message.equals("ListThreadMessages")) {
+                handleListThreadMessages(replysender, params);
             } else if (message.equals("ListMessages")) {
                 handleListMessages(replysender, params);
 
@@ -120,7 +122,9 @@ public final class FCPInterface implements FredPluginFCP {
     /**
      * Handle ListBoards command.
      * Send a number of Board messages and finally an EndListBoards message.
-     * Format:
+     * Format of request:
+     *   Message=ListBoards
+     * Format of reply:
      *   Message=Board
      *   Name=name
      *   MessageCount=123
@@ -216,9 +220,15 @@ public final class FCPInterface implements FredPluginFCP {
      * Format of request:
      *   Message=ListMessages
      *   BoardName=abc
-     *   ThreadID=ID                     (optional, if not specified retrieves all Messages of Board)
+     *
+     *   (only one SortByMessageXXX is allowed to be true)
      *   SortByMessageIndexAscending=true|false   (Optional, default is false)
+     *   SortByMessageDateAscending=true|false    (Optional, default is false)
+     *
+     *   (only one MinimumMessageXXX constraint is allowed)
      *   MinimumMessageIndex=123         (optional, datatype int, default is 0)
+     *   MinimumMessageDate=utcMillis    (optional, datatype long, default is 0)
+     *
      *   IncludeMessageText=true|false   (optional, default is false)
      * Format of reply: see sendSingleMessage()
      */
@@ -230,14 +240,26 @@ public final class FCPInterface implements FredPluginFCP {
         if (boardName == null) {
             throw new InvalidParameterException("Boardname parameter not specified");
         }
-        final String threadID = params.get("ThreadID");
         final boolean sortByMessageIndexAscending = Boolean.parseBoolean(params.get("SortByMessageIndexAscending"));
+        final boolean sortByMessageDateAscending = Boolean.parseBoolean(params.get("SortByMessageDateAscending"));
+        if (sortByMessageIndexAscending && sortByMessageDateAscending) {
+            throw new InvalidParameterException("Only one of SortByMessageIndexAscending and SortByMessageDateAscending is allowed to be true");
+        }
 
         int minimumMessageIndex;
         try {
             minimumMessageIndex = Integer.parseInt(params.get("MinimumMessageIndex"));
         } catch(final NumberFormatException e) {
             minimumMessageIndex = 0;
+        }
+        long minimumMessageDate;
+        try {
+            minimumMessageDate = Long.parseLong(params.get("MinimumMessageDate"));
+        } catch(final NumberFormatException e) {
+            minimumMessageDate = 0;
+        }
+        if (minimumMessageIndex > 0 && minimumMessageDate > 0) {
+            throw new InvalidParameterException("MinimumMessageIndex and MinimumMessageDate must not be specified together");
         }
         final boolean includeMessageText = Boolean.parseBoolean(params.get("IncludeMessageText"));
 
@@ -246,23 +268,69 @@ public final class FCPInterface implements FredPluginFCP {
         synchronized(board) {  /* FIXME: Is this enough synchronization or should we lock the message manager? */
 
             final List<MessageReference> messageRefList;
-            if (threadID == null) {
-                messageRefList = board.getMessagesByMinimumIndex(minimumMessageIndex, sortByMessageIndexAscending);
+            if (minimumMessageIndex > 0) {
+                messageRefList = board.getMessagesByMinimumIndex(minimumMessageIndex, sortByMessageIndexAscending, sortByMessageDateAscending);
+            } else if (minimumMessageDate > 0) {
+                messageRefList = board.getMessagesByMinimumDate(minimumMessageDate, sortByMessageIndexAscending, sortByMessageDateAscending);
             } else {
-                final Message thread = mFreetalk.getMessageManager().get(threadID); // throws exception when not found
-                final int messageIndex = board.getMessageIndex(thread); // throws exception when not found
-                if (messageIndex >= minimumMessageIndex) {
-                    sendSingleMessage(replysender, thread, messageIndex, includeMessageText);
-                }
-                messageRefList = board.getAllThreadReplies(thread, sortByMessageIndexAscending);
+                messageRefList = board.getAllMessages(sortByMessageIndexAscending);
             }
 
+            // send all messages
             for(final MessageReference reference : messageRefList) {
                 final Message msg = reference.getMessage();
                 final int messageIndex = board.getMessageIndex(msg); // throws exception when not found
-                if (messageIndex >= minimumMessageIndex) {
-                    sendSingleMessage(replysender, msg, messageIndex, includeMessageText);
-                }
+                sendSingleMessage(replysender, msg, messageIndex, includeMessageText);
+            }
+        }
+
+        final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "EndListMessages");
+        replysender.send(sfs);
+    }
+
+    /**
+     * Handle ListThreadMessages command.
+     * Send a number of Message messages and finally an EndListMessages message.
+     * Format of request:
+     *   Message=ListThreadMessages
+     *   BoardName=abc
+     *   ThreadID=ID                     (optional, if not specified retrieves all Messages of Board)
+     *   SortByMessageIndexAscending=true|false   (Optional, default is false)
+     *   IncludeMessageText=true|false   (optional, default is false)
+     * Format of reply: see sendSingleMessage()
+     */
+    private void handleListThreadMessages(final PluginReplySender replysender, final SimpleFieldSet params)
+    throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchMessageException,
+    UnsupportedEncodingException
+    {
+        final String boardName = params.get("BoardName");
+        if (boardName == null) {
+            throw new InvalidParameterException("Boardname parameter not specified");
+        }
+        final String threadID = params.get("ThreadID");
+        final boolean sortByMessageIndexAscending = Boolean.parseBoolean(params.get("SortByMessageIndexAscending"));
+        final boolean includeMessageText = Boolean.parseBoolean(params.get("IncludeMessageText"));
+
+        final Board board = mFreetalk.getMessageManager().getBoardByName(boardName); // throws exception when not found
+
+        synchronized(board) {  /* FIXME: Is this enough synchronization or should we lock the message manager? */
+
+            final List<MessageReference> messageRefList;
+            final Message thread = mFreetalk.getMessageManager().get(threadID); // throws exception when not found
+            {
+                // send thread root message
+                final int messageIndex = board.getMessageIndex(thread); // throws exception when not found
+                sendSingleMessage(replysender, thread, messageIndex, includeMessageText);
+            }
+
+            messageRefList = board.getAllThreadReplies(thread, sortByMessageIndexAscending);
+
+            // send all messages of thread
+            for(final MessageReference reference : messageRefList) {
+                final Message msg = reference.getMessage();
+                final int messageIndex = board.getMessageIndex(msg); // throws exception when not found
+                sendSingleMessage(replysender, msg, messageIndex, includeMessageText);
             }
         }
 
@@ -604,7 +672,7 @@ public final class FCPInterface implements FredPluginFCP {
      *   FileAttachmentURI.2=CHK@def
      *   FileAttachmentSize.2=456
      *   Title=abc def           (message title)
-     * 
+     *
      * Format of reply:
      *   Message=PutMessageReply
      *   MessageEnqueued=true|false
