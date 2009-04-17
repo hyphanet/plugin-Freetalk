@@ -487,10 +487,27 @@ public final class Board implements Comparable<Board> {
         final Query q = db.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this);
-        minimumIndex--; // db4o provides no greaterEqual(), so we do it this way
-        q.descend("mMessageIndex").constrain(minimumIndex).greater();
+        if (minimumIndex > 0) {
+            minimumIndex--; // db4o provides no greaterEqual(), so we do it this way
+            q.descend("mMessageIndex").constrain(minimumIndex).greater();
+        }
         if (sortByMessageIndexAscending) {
             q.descend("mMessageIndex").orderAscending();
+        }
+        return q.execute();
+    }
+
+    @SuppressWarnings("unchecked")
+    public synchronized List<MessageReference> getMessagesByMinimumDate(int minimumDate, final boolean sortByMessageDateAscending) {
+        final Query q = db.query();
+        q.constrain(BoardMessageLink.class);
+        q.descend("mBoard").constrain(this);
+        if (minimumDate > 0) {
+            minimumDate--; // db4o provides no greaterEqual(), so we do it this way
+            q.descend("mMessage").descend("mDate").constrain(minimumDate).greater();
+        }
+        if (sortByMessageDateAscending) {
+            q.descend("mMessage").descend("mDate").orderAscending();
         }
         return q.execute();
     }
