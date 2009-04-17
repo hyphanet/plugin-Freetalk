@@ -319,7 +319,7 @@ public final class Board implements Comparable<Board> {
          * Or we could first just query for message objects with the given ID (ignoring BoardMessageLinks!) and then query for a BoardMessageLink
          * which links the resulting message to the target board? - This could be sufficiently fast as the number of messages which are
          * posted to multiple boards will be very small. */
-        q.descend("mBoard").constrain(this);
+        q.descend("mBoard").constrain(this).identity();
         q.descend("mMessage").descend("mID").constrain(m.getThreadID());
         ObjectSet<MessageReference> parents = q.execute();
 
@@ -418,7 +418,7 @@ public final class Board implements Comparable<Board> {
                  * to keep a separate list of those. */
                 Query q = db.query();
                 q.constrain(BoardMessageLink.class);
-                q.descend("mBoard").constrain(Board.this);
+                q.descend("mBoard").constrain(Board.this).identity();
                 q.descend("mMessage").descend("mThreadID").constrain(threadID);
                 q.descend("mMessage").descend("mThread").constrain(null).identity();
                 iter = q.execute().iterator();
@@ -444,7 +444,7 @@ public final class Board implements Comparable<Board> {
     public synchronized List<MessageReference> getAllMessages(final boolean sortByMessageIndexAscending) {
         Query q = db.query();
         q.constrain(BoardMessageLink.class);
-        q.descend("mBoard").constrain(this);
+        q.descend("mBoard").constrain(this).identity();
         if (sortByMessageIndexAscending) {
             q.descend("mMessageIndex").orderAscending(); /* Needed for NNTP */
         }
@@ -455,7 +455,7 @@ public final class Board implements Comparable<Board> {
     public synchronized int getMessageIndex(Message message) throws NoSuchMessageException {
         Query q = db.query();
         q.constrain(BoardMessageLink.class);
-        q.descend("mMessage").constrain(message);
+        q.descend("mMessage").constrain(message).identity();
         ObjectSet<BoardMessageLink> result = q.execute();
 
         if(result.size() == 0)
@@ -473,7 +473,7 @@ public final class Board implements Comparable<Board> {
     public synchronized Message getMessageByIndex(int index) throws NoSuchMessageException {
         Query q = db.query();
         q.constrain(BoardMessageLink.class);
-        q.descend("mBoard").constrain(this);
+        q.descend("mBoard").constrain(this).identity();
         q.descend("mMessageIndex").constrain(index);
         ObjectSet<MessageReference> result = q.execute();
         if(result.size() == 0)
@@ -486,7 +486,7 @@ public final class Board implements Comparable<Board> {
     public synchronized List<MessageReference> getMessagesByMinimumIndex(int minimumIndex, final boolean sortByMessageIndexAscending) {
         final Query q = db.query();
         q.constrain(BoardMessageLink.class);
-        q.descend("mBoard").constrain(this);
+        q.descend("mBoard").constrain(this).identity();
         if (minimumIndex > 0) {
             minimumIndex--; // db4o provides no greaterEqual(), so we do it this way
             q.descend("mMessageIndex").constrain(minimumIndex).greater();
@@ -501,7 +501,7 @@ public final class Board implements Comparable<Board> {
     public synchronized List<MessageReference> getMessagesByMinimumDate(long minimumDate, final boolean sortByMessageDateAscending) {
         final Query q = db.query();
         q.constrain(BoardMessageLink.class);
-        q.descend("mBoard").constrain(this);
+        q.descend("mBoard").constrain(this).identity();
         if (minimumDate > 0) {
             minimumDate--; // db4o provides no greaterEqual(), so we do it this way
             q.descend("mMessage").descend("mDate").constrain(minimumDate).greater();
@@ -520,7 +520,7 @@ public final class Board implements Comparable<Board> {
     private int getFreeMessageIndex() {
         Query q = db.query();
         q.constrain(BoardMessageLink.class);
-        q.descend("mBoard").constrain(this);
+        q.descend("mBoard").constrain(this).identity();
         q.descend("mMessageIndex").orderDescending(); /* FIXME: Use a db4o native query to find the maximum instead of sorting. O(n) vs. O(n log(n))! */
         ObjectSet<MessageReference> result = q.execute();
         return result.size() == 0 ? 1 : result.next().getIndex()+1;
@@ -533,7 +533,7 @@ public final class Board implements Comparable<Board> {
     public synchronized int messageCount() {
         Query q = db.query();
         q.constrain(BoardMessageLink.class);
-        q.descend("mBoard").constrain(this);
+        q.descend("mBoard").constrain(this).identity();
         return q.execute().size();
     }
 
@@ -556,7 +556,7 @@ public final class Board implements Comparable<Board> {
         /* FIXME: This query is inefficient. It should rather first query for objects of Message.class which have mThreadID == thread.getID()
          * and then check whether a BoardMessageLink to this board exists. */
         q.constrain(BoardMessageLink.class);
-        q.descend("mBoard").constrain(this);
+        q.descend("mBoard").constrain(this).identity();
         q.descend("mMessage").constrain(thread).identity().not();
         try {
             q.descend("mMessage").descend("mThreadID").constrain(thread.isThread() ? thread.getID() : thread.getThreadID());
