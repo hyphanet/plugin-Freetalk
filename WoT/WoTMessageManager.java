@@ -7,10 +7,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.TimeZone;
 
-import plugins.Freetalk.CurrentTimeUTC;
 import plugins.Freetalk.Board;
+import plugins.Freetalk.CurrentTimeUTC;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Message;
@@ -129,7 +128,7 @@ public class WoTMessageManager extends MessageManager {
 	public synchronized void addMessageToMessageList(WoTOwnMessage message) throws Exception {
 		Query query = db.query();
 		query.constrain(WoTOwnMessageList.class);
-		query.descend("mAuthor").constrain(message.getAuthor());
+		query.descend("mAuthor").constrain(message.getAuthor()).identity();
 		query.descend("iWasInserted").constrain(false);
 		query.descend("iAmBeingInserted").constrain(false);
 		
@@ -240,7 +239,7 @@ public class WoTMessageManager extends MessageManager {
 		Query query = db.query();
 		query.constrain(WoTMessageList.class);
 		query.constrain(WoTOwnMessageList.class).not();
-		query.descend("mAuthor").constrain(identity);
+		query.descend("mAuthor").constrain(identity).identity();
 		query.descend("mIndex").orderDescending(); /* FIXME: This is inefficient! Use a native query instead, we just need to find the maximum */
 		ObjectSet<WoTMessageList> result = query.execute();
 		
@@ -255,7 +254,7 @@ public class WoTMessageManager extends MessageManager {
 		Query query = db.query();
 		query.constrain(WoTMessageList.class);
 		query.constrain(WoTOwnMessageList.class).not();
-		query.descend("mAuthor").constrain(identity);
+		query.descend("mAuthor").constrain(identity).identity();
 		query.descend("mIndex").orderDescending(); /* FIXME: This is inefficient! Use a native query instead */
 		ObjectSet<WoTMessageList> result = query.execute();
 		
@@ -283,7 +282,7 @@ public class WoTMessageManager extends MessageManager {
 		Query q = db.query();
 		/* We query for WoTMessageList and not WoTOwnMessageList because the user might have deleted his own messages or lost his database */
 		q.constrain(WoTMessageList.class);
-		q.descend("mAuthor").constrain(messageAuthor);
+		q.descend("mAuthor").constrain(messageAuthor).identity();
 		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
 		ObjectSet<WoTMessageList> result = q.execute();
 		

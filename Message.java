@@ -463,7 +463,7 @@ public abstract class Message implements Comparable<Message> {
 				 * - Not very important for now since threads are usually small. */
 				Query q = db.query();
 				q.constrain(Message.class);
-				q.descend("mParent").constrain(this);
+				q.descend("mParent").constrain(this).identity();
 				q.descend("mDate").orderDescending();
 				
 				iter = q.execute().iterator();
