@@ -24,7 +24,7 @@ import freenet.support.StringValidityChecker;
  * Represents a forum / newsgroups / discussion board in Freetalk. Boards are created by the <code>MessageManager</code> on demand, you do
  * not need to manually create them. The <code>MessageManager</code> takes care of anything related to boards, to someone who just wants to
  * write a user interface this class can be considered as read-only.
- * 
+ *
  * @author xor
  */
 public final class Board implements Comparable<Board> {
@@ -483,7 +483,11 @@ public final class Board implements Comparable<Board> {
     }
 
     @SuppressWarnings("unchecked")
-    public synchronized List<MessageReference> getMessagesByMinimumIndex(int minimumIndex, final boolean sortByMessageIndexAscending) {
+    public synchronized List<MessageReference> getMessagesByMinimumIndex(
+            int minimumIndex,
+            final boolean sortByMessageIndexAscending,
+            final boolean sortByMessageDateAscending)
+    {
         final Query q = db.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
@@ -494,17 +498,27 @@ public final class Board implements Comparable<Board> {
         if (sortByMessageIndexAscending) {
             q.descend("mMessageIndex").orderAscending();
         }
+        if (sortByMessageDateAscending) {
+            q.descend("mMessage").descend("mDate").orderAscending();
+        }
         return q.execute();
     }
 
     @SuppressWarnings("unchecked")
-    public synchronized List<MessageReference> getMessagesByMinimumDate(long minimumDate, final boolean sortByMessageDateAscending) {
+    public synchronized List<MessageReference> getMessagesByMinimumDate(
+            long minimumDate,
+            final boolean sortByMessageIndexAscending,
+            final boolean sortByMessageDateAscending)
+    {
         final Query q = db.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         if (minimumDate > 0) {
             minimumDate--; // db4o provides no greaterEqual(), so we do it this way
             q.descend("mMessage").descend("mDate").constrain(minimumDate).greater();
+        }
+        if (sortByMessageIndexAscending) {
+            q.descend("mMessageIndex").orderAscending();
         }
         if (sortByMessageDateAscending) {
             q.descend("mMessage").descend("mDate").orderAscending();
