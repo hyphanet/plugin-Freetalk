@@ -147,8 +147,9 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.debug(this, "Creating FCP interface...");
 		mFCPInterface = new FCPInterface(this);
 		
-		Logger.debug(this, "Starting NNTP server...");
-		mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "127.0.0.1", "127.0.0.1");
+		// FIXME: Fix this: https://bugs.freenetproject.org/view.php?id=2977
+		//Logger.debug(this, "Starting NNTP server...");
+		//mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "127.0.0.1", "127.0.0.1");
 		//mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "0.0.0.0", "*");
 		
 		Logger.debug(this, "Plugin loaded.");
