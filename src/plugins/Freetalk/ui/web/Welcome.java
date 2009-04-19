@@ -26,8 +26,11 @@ public final class Welcome extends WebPageImpl {
 	private final void makeWelcomeBox() {
 		HTMLNode welcomeBox = addContentBox("Welcome");
 		welcomeBox.addChild("p", "IMPORTANT NOTE: All messages you post with the current Freetalk release are considered as testing messages and will NOT be readable by the first stable release. This is necessary so that we could change internal stuff completely if there is a need to do so.");
-		welcomeBox.addChild("p", "You can use Freetalk via the webinterface or with a newsreader connected to localhost port 1199.");
-		welcomeBox.addChild("p", "For the newsreader: As the account name, specify the nickname of an own identity and as the e-mail address specify the Freetalk address. You can look it up on the identities page. A password is not required.");
+		HTMLNode p = welcomeBox.addChild("p", "You can use Freetalk via the webinterface ");
+		p.addChild("strike", "or with a newsreader connected to localhost port 1199.");
+		p.addChild("#", " Unfortunately the newsreader interface seems to have a bug which makes it cause 100% CPU usage when it" +
+				" is not even being used. Until we find the time to debug it, it is disabled.");
+		//welcomeBox.addChild("p", "For the newsreader: As the account name, specify the nickname of an own identity and as the e-mail address specify the Freetalk address. You can look it up on the identities page. A password is not required.");
 	}
 
 	private final void makeOverviewBox() {
