@@ -245,7 +245,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	private void requestIdentities() {
 		SimpleFieldSet p1 = new SimpleFieldSet(true);
 		p1.putOverwrite("Message", "GetIdentitiesByScore");
-		p1.putOverwrite("Select", "+");
+		p1.putOverwrite("Selection", "+");
 		p1.putOverwrite("Context", Freetalk.WOT_CONTEXT);
 		mTalker.send(p1, null);
 		
