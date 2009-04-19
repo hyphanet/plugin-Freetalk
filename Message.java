@@ -35,6 +35,8 @@ public abstract class Message implements Comparable<Message> {
     /* Public constants */
     
     public final static int MAX_MESSAGE_TITLE_TEXT_LENGTH = 256;     // String.length()
+    
+    public final static int MAX_MESSAGE_TEXT_LENGTH = 64*1024;
     public final static int MAX_MESSAGE_TEXT_BYTE_LENGTH  = 64*1024; // byte[].length
 	
 	/* Attributes, stored in the database */
@@ -528,11 +530,11 @@ public abstract class Message implements Comparable<Message> {
         if (text == null) {
             return false;
         }
-	    if (text.length() > MAX_MESSAGE_TITLE_TEXT_LENGTH) {
+	    if (text.length() > MAX_MESSAGE_TEXT_LENGTH) {
 	        return false;
 	    }
 	    try {
-    	    if (text.getBytes("UTF-8").length > MAX_MESSAGE_TITLE_TEXT_LENGTH) {
+    	    if (text.getBytes("UTF-8").length > MAX_MESSAGE_TEXT_BYTE_LENGTH) {
     	        return false;
     	    }
 	    } catch(UnsupportedEncodingException e) {
