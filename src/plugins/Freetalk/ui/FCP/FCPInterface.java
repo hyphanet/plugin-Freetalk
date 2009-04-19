@@ -458,7 +458,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Format:
      *   Message=KnownIdentity
      *   UID=uid
-     *   NickName=name
+     *   Nickname=name
      *   FreetalkAddress=freetalkAddr
      */
     private void handleListKnownIdentities(final PluginReplySender replysender, final SimpleFieldSet params)
@@ -471,7 +471,7 @@ public final class FCPInterface implements FredPluginFCP {
             final SimpleFieldSet sfs = new SimpleFieldSet(true);
             sfs.putOverwrite("Message", "KnownIdentity");
             sfs.putOverwrite("UID", id.getUID());
-            sfs.putOverwrite("NickName", id.getNickname());
+            sfs.putOverwrite("Nickname", id.getNickname());
             sfs.putOverwrite("FreetalkAddress", id.getFreetalkAddress());
             replysender.send(sfs);
         }
@@ -487,7 +487,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Format:
      *   Message=OwnIdentity
      *   UID=uid
-     *   NickName=name
+     *   Nickname=name
      *   FreetalkAddress=freetalkAddr
      */
     private void handleListOwnIdentities(final PluginReplySender replysender, final SimpleFieldSet params)
@@ -500,7 +500,7 @@ public final class FCPInterface implements FredPluginFCP {
             final SimpleFieldSet sfs = new SimpleFieldSet(true);
             sfs.putOverwrite("Message", "OwnIdentity");
             sfs.putOverwrite("UID", id.getUID());
-            sfs.putOverwrite("NickName", id.getNickname());
+            sfs.putOverwrite("Nickname", id.getNickname());
             sfs.putOverwrite("FreetalkAddress", id.getFreetalkAddress());
             replysender.send(sfs);
         }
@@ -514,7 +514,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Handle CreateOwnIdentity command.
      * Format of request:
      *   Message=CreateOwnIdentity
-     *   NickName=name
+     *   Nickname=name
      *   PublishTrustList=true|false            (optional, default is true)
      *   PublishIntroductionPuzzles=true|false  (optional, default is true)
      *   RequestURI=...                         (optional)
@@ -532,9 +532,9 @@ public final class FCPInterface implements FredPluginFCP {
     throws PluginNotFoundException
     {
         try {
-            final String nickName = params.get("NickName");
+            final String nickName = params.get("Nickname");
             if (nickName == null || nickName.length() == 0) {
-                throw new InvalidParameterException("NickName parameter not specified");
+                throw new InvalidParameterException("Nickname parameter not specified");
             }
             WoTIdentity.validateNickname(nickName); // throws Exception if invalid
 
