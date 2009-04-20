@@ -7,12 +7,12 @@ import plugins.Freetalk.FTOwnIdentity;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
-public final class Errors extends WebPageImpl {
+public final class ErrorPage extends WebPageImpl {
 	
 	private final String mErrorTitle;
 	private final String mErrorMessage;
 
-	public Errors(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, String errorTitle, String errorMessage) {
+	public ErrorPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, String errorTitle, String errorMessage) {
 		super(myWebInterface, viewer, request);
 		mErrorTitle = errorTitle;
 		mErrorMessage = errorMessage;
