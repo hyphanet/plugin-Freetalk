@@ -7,6 +7,7 @@ import java.util.Iterator;
 
 import plugins.Freetalk.CurrentTimeUTC;
 import plugins.Freetalk.FTIdentity;
+import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
@@ -37,7 +38,7 @@ import freenet.support.io.NativeThread;
 public class WoTIdentityManager extends IdentityManager implements FredPluginTalker {
 	
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
-	private static final int THREAD_PERIOD = 10 * 60 * 1000;
+	private static final int THREAD_PERIOD = 5 * 60 * 1000;
 
 	private volatile boolean isRunning = false;
 	private volatile boolean shutdownFinished = false;
@@ -168,6 +169,23 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 			}
 		};
 	}
+	
+
+	/* FIXME: This was a quick hack to make the log in page instantly display own identities. Think about it again */
+	/*
+	public synchronized Iterator<FTOwnIdentity> ownIdentityIterator() {
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
+		sfs.putOverwrite("Message","GetOwnIdentities");
+		try {
+			parseIdentities(sendFCPMessageBlocking(sfs, null, "OwnIdentities").params, true);
+		} catch (Exception e) {
+			Logger.error(this, "Requesting own identities failed.", e);
+		}
+		
+		return super.ownIdentityIterator();
+	}
+	*/
+
 
 	@SuppressWarnings("unchecked")
 	public synchronized WoTIdentity getIdentity(String uid) throws NoSuchIdentityException {
@@ -243,12 +261,14 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	}
 	
 	private void requestIdentities() {
+		Logger.debug(this, "Requesting identities with positive score from WoT ...");
 		SimpleFieldSet p1 = new SimpleFieldSet(true);
 		p1.putOverwrite("Message", "GetIdentitiesByScore");
 		p1.putOverwrite("Selection", "+");
 		p1.putOverwrite("Context", Freetalk.WOT_CONTEXT);
 		mTalker.send(p1, null);
 		
+		Logger.debug(this, "Requesting own identities from WoT ...");
 		SimpleFieldSet p2 = new SimpleFieldSet(true);
 		p2.putOverwrite("Message","GetOwnIdentities");
 		mTalker.send(p2, null);
@@ -256,6 +276,11 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	
 	@SuppressWarnings("unchecked")
 	private void parseIdentities(SimpleFieldSet params, boolean bOwnIdentities) {
+		if(bOwnIdentities)
+			Logger.debug(this, "Parsing received own identities...");
+		else
+			Logger.debug(this, "Parsing received identities...");
+		
 		long time = CurrentTimeUTC.getInMillis();
 	
 		for(int idx = 1; ; idx++) {
@@ -342,7 +367,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		
 		try {
 			Logger.debug(this, "Waiting for the node to start up...");
-			Thread.sleep((long) (0.5f*60*1000 * (0.5f + Math.random()))); /* Let the node start up */
+			Thread.sleep((long) (30*1000 * (0.5f + Math.random()))); /* Let the node start up */
 		}
 		catch (InterruptedException e)
 		{
