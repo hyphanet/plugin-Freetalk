@@ -135,7 +135,7 @@ public final class WebInterface implements FredPluginHTTP {
 	public final String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
 		String pass = request.getPartAsString("formPassword", 32);
 		if (pass == null || (pass.length() == 0) || !pass.equals(mFreetalk.getPluginRespirator().getNode().clientCore.formPassword)) {
-			return new Errors(this, null, request, "Error", "Invalid form password.").toHTML();
+			return new ErrorPage(this, null, request, "Error", "Invalid form password.").toHTML();
 		}
 
 		String page = request.getPath().substring(Freetalk.PLUGIN_URI.length());
