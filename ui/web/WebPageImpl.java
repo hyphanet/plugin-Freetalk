@@ -3,9 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import freenet.clients.http.PageMaker;
