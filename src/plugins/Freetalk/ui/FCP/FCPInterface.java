@@ -436,9 +436,9 @@ public final class FCPInterface implements FredPluginFCP {
         final Attachment[] attachments = message.getAttachments();
         if (attachments != null && attachments.length > 0) {
             sfs.put("FileAttachmentCount", attachments.length);
-            for(int x=0; x<attachments.length; x++) {
-                sfs.putOverwrite("FileAttachmentURI", attachments[x].getURI().toString());
-                sfs.put("FileAttachmentSize", attachments[x].getSize());
+            for(int x=1; x <= attachments.length; x++) {
+                sfs.putOverwrite("FileAttachmentURI."+x, attachments[x-1].getURI().toString());
+                sfs.put("FileAttachmentSize."+x, attachments[x-1].getSize());
             }
         }
         if (includeMessageText
@@ -752,7 +752,7 @@ public final class FCPInterface implements FredPluginFCP {
                     attachmentCount = 0;
                 }
                 final List<Attachment> attachments = new ArrayList<Attachment>(attachmentCount);
-                for (int x=0; x < attachmentCount; x++) {
+                for (int x=1; x <= attachmentCount; x++) {
                     final String uriString = params.get("FileAttachmentURI."+x);
                     final String sizeString = params.get("FileAttachmentSize."+x);
                     if (uriString == null || sizeString == null) {
