@@ -102,6 +102,9 @@ public final class FCPInterface implements FredPluginFCP {
             } else if (message.equals("CreateOwnIdentity")) {
                 handleCreateOwnIdentity(replysender, params);
 
+            } else if (message.equals("Status")) {
+                handleStatus(replysender, params);
+
             } else if (message.equals("Ping")) {
                 handlePing(replysender, params);
             } else {
@@ -824,6 +827,21 @@ public final class FCPInterface implements FredPluginFCP {
                 replysender.send(sfs);
             }
         } // synchronized(mFreetalk.getMessageManager())
+    }
+
+    /**
+     * Status command handler.
+     * Format of reply:
+     *   Message=StatusReply
+     *   UnsentMessageCount=123
+     */
+    private void handleStatus(final PluginReplySender replysender, final SimpleFieldSet params)
+    throws PluginNotFoundException
+    {
+        final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "StatusReply");
+        sfs.put("UnsentMessageCount", mFreetalk.getMessageManager().countUnsentMessages());
+        replysender.send(sfs);
     }
 
     /**
