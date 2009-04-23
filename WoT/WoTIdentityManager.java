@@ -7,7 +7,6 @@ import java.util.Iterator;
 
 import plugins.Freetalk.CurrentTimeUTC;
 import plugins.Freetalk.FTIdentity;
-import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
@@ -15,8 +14,8 @@ import plugins.Freetalk.PluginTalkerBlocking;
 import plugins.Freetalk.exceptions.DuplicateIdentityException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 
-import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
@@ -54,7 +53,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	/**
 	 * @param executor
 	 */
-	public WoTIdentityManager(ObjectContainer myDB, PluginRespirator pr) throws PluginNotFoundException {
+	public WoTIdentityManager(ExtObjectContainer myDB, PluginRespirator pr) throws PluginNotFoundException {
 		super(myDB, pr.getNode().executor);
 		mTalker = pr.getPluginTalker(this, Freetalk.WOT_NAME, Freetalk.PLUGIN_TITLE);
 		mBlockingTalker = new PluginTalkerBlocking(pr);
@@ -66,7 +65,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	/**
 	 * For being used in JUnit tests to run without a node.
 	 */
-	public WoTIdentityManager(ObjectContainer myDB) {
+	public WoTIdentityManager(ExtObjectContainer myDB) {
 		super(myDB);
 	}
 	
@@ -107,8 +106,10 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 				new FreenetURI(result.params.get("InsertURI")),
 				newNickname);
 		
+		synchronized(db.lock()) {
 		db.store(identity);
 		db.commit();
+		}
 		
 		return identity;
 	}
@@ -133,8 +134,10 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 				new FreenetURI(result.params.get("InsertURI")),
 				newNickname);
 		
+		synchronized(db.lock()) {
 		db.store(identity);
 		db.commit();
+		}
 		
 		return identity;
 	}
@@ -333,6 +336,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */
 		long lastAcceptTime = System.currentTimeMillis() - THREAD_PERIOD * 3; /* FIXME: Use UTC */
 		
+		synchronized(db.lock()) {
 		Query q = db.query();
 		q.constrain(WoTIdentity.class);
 		q.descend("isNeeded").constrain(false);
@@ -347,6 +351,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		}
 		
 		db.commit();
+		}
 	}
 	
 	/**

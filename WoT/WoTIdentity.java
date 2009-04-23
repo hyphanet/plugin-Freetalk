@@ -9,7 +9,7 @@ import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 
-import com.db4o.ObjectContainer;
+import com.db4o.ext.ExtObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
@@ -45,7 +45,7 @@ public class WoTIdentity implements FTIdentity {
 	
 	/* References to objects of the plugin, not stored in the database. */
 	
-	protected transient ObjectContainer db;
+	protected transient ExtObjectContainer db;
 	
 	protected transient WoTIdentityManager mIdentityManager;
 	
@@ -71,7 +71,7 @@ public class WoTIdentity implements FTIdentity {
 	/**
 	 * Has to be used after loading a FTIdentityWoT object from the database to initialize the transient fields.
 	 */
-	public void initializeTransient(ObjectContainer myDB, IdentityManager myIdentityManager) {
+	public void initializeTransient(ExtObjectContainer myDB, IdentityManager myIdentityManager) {
 		assert(myDB != null);
 		db = myDB;
 		mIdentityManager = (WoTIdentityManager)myIdentityManager;
@@ -148,13 +148,15 @@ public class WoTIdentity implements FTIdentity {
 
 	public void store() {
 		/* FIXME: check for duplicates */
-		
+
+		synchronized(db.lock()) {
 		if(db.ext().isStored(this) && !db.ext().isActive(this))
 			throw new RuntimeException("Trying to store a non-active WoTIdentity object");
 		
 		db.store(mRequestURI);
 		db.store(this);
 		db.commit();
+		}
 	}
 	
 }

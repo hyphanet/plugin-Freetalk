@@ -14,7 +14,7 @@ import java.util.Set;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
-import com.db4o.ObjectContainer;
+import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
@@ -138,7 +138,7 @@ public abstract class Message implements Comparable<Message> {
 	
 	/* References to objects of the plugin, not stored in the database. */
 	
-	protected transient ObjectContainer db;
+	protected transient ExtObjectContainer db;
 	
 	protected transient MessageManager mMessageManager;
 	
@@ -208,7 +208,7 @@ public abstract class Message implements Comparable<Message> {
 	/**
 	 * Has to be used after loading a FTBoard object from the database to initialize the transient fields.
 	 */
-	public void initializeTransient(ObjectContainer myDB, MessageManager myMessageManager) {
+	public void initializeTransient(ExtObjectContainer myDB, MessageManager myMessageManager) {
 		assert(myDB != null);
 		assert(myMessageManager != null);
 		db = myDB;
@@ -651,7 +651,7 @@ public abstract class Message implements Comparable<Message> {
 	
 	public synchronized void store() {
 		/* FIXME: Check for duplicates. Also notice that an OwnMessage which is equal might exist */
-		
+		synchronized(db.lock()) {
 		if(db.ext().isStored(this) && !db.ext().isActive(this))
 			throw new RuntimeException("Trying to store a non-active Message object");
 		
@@ -671,6 +671,7 @@ public abstract class Message implements Comparable<Message> {
 		// db.store(mAttachments); /* Not stored because it is a primitive for db4o */
 		db.store(this);
 		db.commit();
+		}
 	}
 
 	public int compareTo(Message other) {

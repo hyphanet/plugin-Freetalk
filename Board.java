@@ -13,8 +13,8 @@ import java.util.Locale;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
-import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.support.Logger;
@@ -53,7 +53,7 @@ public final class Board implements Comparable<Board> {
 
     /* References to objects of the plugin, not stored in the database. */
 
-    private transient ObjectContainer db;
+    private transient ExtObjectContainer db;
     private transient MessageManager mMessageManager;
 
 
@@ -92,7 +92,7 @@ public final class Board implements Comparable<Board> {
     /**
      * Has to be used after loading a FTBoard object from the database to initialize the transient fields.
      */
-    public void initializeTransient(ObjectContainer myDB, MessageManager myMessageManager) {
+    public void initializeTransient(ExtObjectContainer myDB, MessageManager myMessageManager) {
         assert(myDB != null);
         assert(myMessageManager != null);
         db = myDB;
@@ -105,11 +105,13 @@ public final class Board implements Comparable<Board> {
     public synchronized void store() {
         /* FIXME: check for duplicates */
 
+    	synchronized(db.lock()) {
         if(db.ext().isStored(this) && !db.ext().isActive(this))
             throw new RuntimeException("Trying to store a non-active Board object");
 
         db.store(this);
         db.commit();
+    	}
     }
 
     /**
@@ -610,12 +612,14 @@ public final class Board implements Comparable<Board> {
             mMessageIndex = myIndex;
         }
 
-        public void store(ObjectContainer localDb) {
+        public void store(ExtObjectContainer localDb) {
+        	synchronized(db.lock()) {
             if(localDb.ext().isStored(this) && !localDb.ext().isActive(this))
                 throw new RuntimeException("Trying to store a non-active BoardMessageLink object");
 
             localDb.store(this);
             localDb.commit();
+        	}
         }
 
         public int getIndex() {

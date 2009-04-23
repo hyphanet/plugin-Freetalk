@@ -13,7 +13,7 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
-import com.db4o.ObjectContainer;
+import com.db4o.ext.ExtObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
@@ -66,19 +66,21 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			mBoard = myBoard;
 		}
 		
-		private transient ObjectContainer db;
+		private transient ExtObjectContainer db;
 		
-		public void initializeTransient(ObjectContainer myDB) {
+		public void initializeTransient(ExtObjectContainer myDB) {
 			db = myDB;
 		}
 		
 		public synchronized void store() {
+			synchronized(db.lock()) {
 			if(db.ext().isStored(this) && !db.ext().isActive(this))
 				throw new RuntimeException("Trying to store a non-active MessageList object");
 			
 			db.store(mURI);
 			db.store(this);
 			db.commit();
+			}
 		}
 		
 		/**
@@ -152,9 +154,9 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			mReason = myReason;
 		}
 	
-		private transient ObjectContainer db;
+		private transient ExtObjectContainer db;
 
-		public void initializeTransient(ObjectContainer myDB) {
+		public void initializeTransient(ExtObjectContainer myDB) {
 			db = myDB;
 		}
 
@@ -204,9 +206,9 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			mReason = myReason;
 		}
 	
-		private transient ObjectContainer db;
+		private transient ExtObjectContainer db;
 
-		public void initializeTransient(ObjectContainer myDB) {
+		public void initializeTransient(ExtObjectContainer myDB) {
 			db = myDB;
 		}
 
@@ -314,23 +316,24 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		mMessages = new ArrayList<MessageReference>(16); /* TODO: Find a reasonable value */
 	}
 	
-	protected transient ObjectContainer db;
+	protected transient ExtObjectContainer db;
 	protected transient MessageManager mMessageManager;
 
-	public void initializeTransient(ObjectContainer myDB, MessageManager myMessageManager) {
+	public void initializeTransient(ExtObjectContainer myDB, MessageManager myMessageManager) {
 		db = myDB;
 		mMessageManager = myMessageManager;
 	}
 	
 	public synchronized void store() {
 		/* FIXME: Check for duplicates */
-		
+		synchronized(db.lock()) {
 		for(MessageReference ref : mMessages) {
 			ref.initializeTransient(db);
 			ref.store();
 		}
 		db.store(this);
 		db.commit();
+		}
 	}
 	
 	protected String calculateID() {

@@ -19,8 +19,8 @@ import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
 
-import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
@@ -35,13 +35,13 @@ public abstract class MessageManager implements Runnable {
 	
 	protected final MessageManager self = this;
 
-	protected ObjectContainer db;
+	protected ExtObjectContainer db;
 	
 	protected Executor mExecutor;
 
 	protected IdentityManager mIdentityManager;
 
-	public MessageManager(ObjectContainer myDB, Executor myExecutor, IdentityManager myIdentityManager) {
+	public MessageManager(ExtObjectContainer myDB, Executor myExecutor, IdentityManager myIdentityManager) {
 		assert(myDB != null);
 		assert(myIdentityManager != null);
 
@@ -53,7 +53,7 @@ public abstract class MessageManager implements Runnable {
 	/**
 	 * For being used in JUnit tests to run without a node.
 	 */
-	public MessageManager(ObjectContainer myDB, IdentityManager myIdentityManager) {
+	public MessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager) {
 		db = myDB;
 		mExecutor = null;
 		mIdentityManager = myIdentityManager;
