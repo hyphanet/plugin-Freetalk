@@ -16,9 +16,9 @@ import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
 import plugins.Freetalk.ui.web.WebInterface;
 
 import com.db4o.Db4o;
-import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
+import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
@@ -70,7 +70,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	
 	/* The plugin's own references */
 	
-	private ObjectContainer db;
+	private ExtObjectContainer db;
 	
 	private WoTIdentityManager mIdentityManager;
 	
@@ -155,7 +155,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.debug(this, "Plugin loaded.");
 	}
 	
-	private ObjectContainer openDatabase(String filename) {
+	private ExtObjectContainer openDatabase(String filename) {
 		Configuration dbCfg = Db4o.newConfiguration();
 		dbCfg.reflectWith(new JdkReflector(mClassLoader));
 		dbCfg.exceptionsOnNotStorable(true);
@@ -182,10 +182,10 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			dbCfg.objectClass(WoTOwnIdentity.class).objectField(f).indexed(true);
 		}
 		
-		return Db4o.openFile(dbCfg, filename);
+		return Db4o.openFile(dbCfg, filename).ext();
 	}
 	
-	private void closeDatabase(ObjectContainer myDB) {
+	private void closeDatabase(ExtObjectContainer myDB) {
 		/* FIXME: Figure out whether we can use db4o to tell whether this commit() does something. If it does, then log an error, because then
 		 * probably we forgot a commit() somewhere. */
 		/* FIXME: We should rater rollback() than commit(). But while the plugin is not stable enough it might be necessary to commit() */

@@ -5,10 +5,10 @@ package plugins.Freetalk.test;
 
 import java.io.File;
 
-import com.db4o.Db4o;
-import com.db4o.ObjectContainer;
-
 import junit.framework.TestCase;
+
+import com.db4o.Db4o;
+import com.db4o.ext.ExtObjectContainer;
 
 /**
  * A JUnit <code>TestCase</code> which opens a db4o database in setUp() and closes it in tearDown().
@@ -27,7 +27,7 @@ public class DatabaseBasedTest extends TestCase {
 	/**
 	 * The database used by this test.
 	 */
-	protected ObjectContainer db;
+	protected ExtObjectContainer db;
 
 	/**
 	 * @return Returns the filename of the database. This is the name of the current test function plus ".db4o".
@@ -47,7 +47,7 @@ public class DatabaseBasedTest extends TestCase {
 			databaseFile.delete();
 		assertFalse(databaseFile.exists());
 		
-		db = Db4o.openFile(getDatabaseFilename());
+		db = Db4o.openFile(getDatabaseFilename()).ext();
 	}
 
 	/**

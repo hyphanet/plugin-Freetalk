@@ -21,6 +21,7 @@ import plugins.Freetalk.exceptions.NoSuchMessageListException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
@@ -41,7 +42,7 @@ public class WoTMessageManager extends MessageManager {
 	public RequestClient requestClient;
 
 
-	public WoTMessageManager(ObjectContainer myDB, Executor myExecutor, WoTIdentityManager myIdentityManager) {
+	public WoTMessageManager(ExtObjectContainer myDB, Executor myExecutor, WoTIdentityManager myIdentityManager) {
 		super(myDB, myExecutor, myIdentityManager);
 		mIdentityManager = myIdentityManager;
 		isRunning = true;
@@ -63,7 +64,7 @@ public class WoTMessageManager extends MessageManager {
 	/**
 	 * For being used in JUnit tests to run without a node.
 	 */
-	public WoTMessageManager(ObjectContainer myDB, WoTIdentityManager myIdentityManager) {
+	public WoTMessageManager(ExtObjectContainer myDB, WoTIdentityManager myIdentityManager) {
 		super(myDB, myIdentityManager);
 	}
 
@@ -119,8 +120,10 @@ public class WoTMessageManager extends MessageManager {
 			}
 			catch(Exception ex) {
 				Logger.error(this, "Error while marking a message list as 'download failed'", ex);
+				synchronized(db.lock()) {
 				db.delete(list);
 				db.commit();
+				}
 			}
 		}
 	}

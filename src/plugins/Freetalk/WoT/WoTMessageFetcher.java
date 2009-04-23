@@ -10,12 +10,13 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Random;
 
-import com.db4o.ObjectContainer;
-
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageFetcher;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;

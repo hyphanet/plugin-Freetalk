@@ -7,7 +7,7 @@ import java.util.Iterator;
 
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 
-import com.db4o.ObjectContainer;
+import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
@@ -21,11 +21,11 @@ import freenet.support.Logger;
  */
 public abstract class IdentityManager implements PrioRunnable {
 	
-	protected final ObjectContainer db;
+	protected final ExtObjectContainer db;
 
 	protected final Executor mExecutor;
 
-	public IdentityManager(ObjectContainer myDB, Executor myExecutor) {
+	public IdentityManager(ExtObjectContainer myDB, Executor myExecutor) {
 		Logger.debug(this, "Creating identity manager...");
 		db = myDB;
 		mExecutor = myExecutor;
@@ -34,7 +34,7 @@ public abstract class IdentityManager implements PrioRunnable {
 	/**
 	 * For being used in JUnit tests to run without a node.
 	 */
-	public IdentityManager(ObjectContainer myDB) {
+	public IdentityManager(ExtObjectContainer myDB) {
 		db = myDB;
 		mExecutor = null;
 	}
