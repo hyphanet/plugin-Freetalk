@@ -19,13 +19,14 @@ import freenet.support.api.HTTPRequest;
 
 /**
  * 
- * @author xor, saces
+ * @author xor (xor@freenetproject.org)
+ * @author saces
  */
-public final class WebInterface implements FredPluginHTTP {
+public class WebInterface implements FredPluginHTTP {
 	
 	private final Freetalk mFreetalk;
 	
-	private final PageMaker mPageMaker;
+	protected final PageMaker mPageMaker;
 	
 	private FTOwnIdentity mOwnIdentity;
 
@@ -34,13 +35,9 @@ public final class WebInterface implements FredPluginHTTP {
 		mPageMaker = mFreetalk.getPluginRespirator().getPageMaker();
 		mOwnIdentity = null;
 	}
-	
+
 	private void setUpMenu() {
-		mPageMaker.removeNavigationLink("Home");
-		mPageMaker.removeNavigationLink("Boards");
-		mPageMaker.removeNavigationLink("Identities");
-		mPageMaker.removeNavigationLink("Log out");
-		mPageMaker.removeNavigationLink("Back to Freenet");
+		mPageMaker.removeAllNavigationLinks();
 		
 		if(mOwnIdentity == null) {
 			mPageMaker.addNavigationLink("/", "Back to Freenet", "Back to nodes home", false, null);
@@ -51,9 +48,9 @@ public final class WebInterface implements FredPluginHTTP {
 		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/messages", "Boards", "View all boards", false, null);
 		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/identities", "Identities", "Manage your own and known identities", false, null);
 		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/LogOut", "Log out", "Log out", false, null);
-		mPageMaker.addNavigationLink("/", "Back to Freenet", "Back to nodes home", false, null);
+		mPageMaker.addNavigationLink("/", "Back to Freenet", "Back to your Freenet node", false, null);
 	}
-	
+
 	private void setLoggedInOwnIdentity(FTOwnIdentity user) {
 		mOwnIdentity = user;
 	}
@@ -63,7 +60,7 @@ public final class WebInterface implements FredPluginHTTP {
 	}
 
 	/* TODO: This function is ugly clean it up */
-	public final String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
+	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
 		/* FIXME 
 		String pass = request.getParam("formPassword");
 		if(pass != null) {	// FIXME: is this correct? what if the client just does not specify the password so that its null? 
@@ -132,7 +129,7 @@ public final class WebInterface implements FredPluginHTTP {
 	}
 
 	/* TODO: This function is ugly clean it up */
-	public final String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
+	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
 		String pass = request.getPartAsString("formPassword", 32);
 		if (pass == null || (pass.length() == 0) || !pass.equals(mFreetalk.getPluginRespirator().getNode().clientCore.formPassword)) {
 			return new ErrorPage(this, null, request, "Error", "Invalid form password.").toHTML();
