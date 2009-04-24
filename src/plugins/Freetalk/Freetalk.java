@@ -14,6 +14,7 @@ import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.ui.FCP.FCPInterface;
 import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
 import plugins.Freetalk.ui.web.WebInterface;
+import plugins.Freetalk.ui.web.WebInterfaceNoWoT;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectSet;
@@ -34,7 +35,6 @@ import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.FredPluginWithClassLoader;
 import freenet.pluginmanager.PluginHTTPException;
-import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
@@ -43,8 +43,8 @@ import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 
 /**
- * @author saces, xor
- *
+ * @author xor@freenetproject.org
+ * @author saces
  */
 public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginThreadless,
 	FredPluginVersioned, FredPluginRealVersioned, FredPluginWithClassLoader {
@@ -55,7 +55,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	public static final String PLUGIN_TITLE = "Freetalk-testing"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
 	public static final String WOT_NAME = "plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "Freetalk";
-	public static final String DATABASE_FILE = "freetalk_data.db4o";
+	public static final String DATABASE_FILENAME = "freetalk_data.db4o";
+	public static final int DATABASE_FORMAT_VERSION = -100;
 
 	/* References from the node */
 	
@@ -71,6 +72,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	/* The plugin's own references */
 	
 	private ExtObjectContainer db;
+	
+	private Config mConfig;
 	
 	private WoTIdentityManager mIdentityManager;
 	
@@ -89,16 +92,22 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	private FCPInterface mFCPInterface;
 	
 	private FreetalkNNTPServer mNNTPServer;
-	
-	
+
+
 	public void runPlugin(PluginRespirator myPR) {
 		Logger.debug(this, "Plugin starting up...");
 
 		mPluginRespirator = myPR;
 
 		Logger.debug(this, "Opening database...");
-		db = openDatabase(DATABASE_FILE);
+		db = openDatabase(DATABASE_FILENAME);
 		Logger.debug(this, "Database opened.");
+		
+		mConfig = Config.loadOrCreate(this, db);
+		if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > Freetalk.DATABASE_FORMAT_VERSION)
+			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
+		
+		upgradeDatabase();
 
 		deleteBrokenObjects();
 		
@@ -111,20 +120,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.debug(this, "Database wiped.");
 		
 		Logger.debug(this, "Creating identity manager...");
-		int tries = 0;
-		do {
-			try {
-				++tries;
-				mIdentityManager = new WoTIdentityManager(db, mPluginRespirator);
-			}
-		
-			catch(PluginNotFoundException e) {
-				if(tries == 10)
-					throw new RuntimeException(e);
-				Logger.error(this, "WoT plugin not found! Retrying ...");
-				try { Thread.sleep(10 * 1000); } catch(InterruptedException ex) {}
-			}
-		} while(mIdentityManager == null);
+		mIdentityManager = new WoTIdentityManager(db, this);
 		
 		Logger.debug(this, "Creating message manager...");
 		mMessageManager = new WoTMessageManager(db, mPluginRespirator.getNode().executor, mIdentityManager);
@@ -141,8 +137,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.debug(this, "Creating message list inserter...");
 		mMessageListInserter = new WoTMessageListInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT MessageList Inserter", mIdentityManager, mMessageManager);
 
-		Logger.debug(this, "Creating webinterface ...");
-		mWebInterface = new WebInterface(this);
+		Logger.debug(this, "Creating Web interface...");
+		mWebInterface = new WebInterfaceNoWoT(this);
 		
 		Logger.debug(this, "Creating FCP interface...");
 		mFCPInterface = new FCPInterface(this);
@@ -184,13 +180,15 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		
 		return Db4o.openFile(dbCfg, filename).ext();
 	}
-	
-	private void closeDatabase(ExtObjectContainer myDB) {
-		/* FIXME: Figure out whether we can use db4o to tell whether this commit() does something. If it does, then log an error, because then
-		 * probably we forgot a commit() somewhere. */
-		/* FIXME: We should rater rollback() than commit(). But while the plugin is not stable enough it might be necessary to commit() */
-		myDB.commit();
-		myDB.close();
+
+	private void upgradeDatabase() {
+		int oldVersion = mConfig.getInt(Config.DATABASE_FORMAT_VERSION);
+		
+		if(oldVersion == Freetalk.DATABASE_FORMAT_VERSION)
+			return;
+		
+		throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
+				+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
 	}
 	
 	/**
@@ -209,6 +207,30 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		}
 
 		db.commit();
+	}
+
+	private void closeDatabase() {
+		synchronized(db.lock()) {
+			try {
+				db.rollback();
+				db.close();
+				db = null;
+			}
+			catch(RuntimeException e) {
+				Logger.error(this, "Error while closing database", e);
+			}
+		}
+	}
+	
+	public synchronized void handleWotConnected() {
+		Logger.debug(this, "Connected to WoT plugin.");
+		mWebInterface = new WebInterface(this);
+	}
+	
+	public synchronized void handleWotDisconnected() {
+		Logger.debug(this, "Disconnected from WoT plugin");
+		if(!(mWebInterface instanceof WebInterfaceNoWoT))
+				mWebInterface = new WebInterfaceNoWoT(this);
 	}
 
 	public void terminate() {
@@ -274,7 +296,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		}
 
 		try {
-			closeDatabase(db);
+			closeDatabase();
 		} catch(Exception e) {
 			Logger.error(this, "Error while closing database.", e);
 		}
@@ -282,11 +304,11 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.debug(this, "Freetalk plugin terminated.");
 	}
 	
-	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
+	public synchronized String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
 		return mWebInterface.handleHTTPGet(request);
 	}
 	
-	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
+	public synchronized String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
 		return mWebInterface.handleHTTPPost(request);
 	}
 	
