@@ -7,6 +7,7 @@ import java.util.Iterator;
 
 import plugins.Freetalk.CurrentTimeUTC;
 import plugins.Freetalk.FTIdentity;
+import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
@@ -19,10 +20,7 @@ import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
-import freenet.pluginmanager.FredPluginTalker;
 import freenet.pluginmanager.PluginNotFoundException;
-import freenet.pluginmanager.PluginRespirator;
-import freenet.pluginmanager.PluginTalker;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -34,29 +32,24 @@ import freenet.support.io.NativeThread;
  * @author xor
  *
  */
-public class WoTIdentityManager extends IdentityManager implements FredPluginTalker {
+public class WoTIdentityManager extends IdentityManager {
 	
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
 	private static final int THREAD_PERIOD = 5 * 60 * 1000;
+	
+	private final Freetalk mFreetalk;
 
 	private volatile boolean isRunning = false;
 	private volatile boolean shutdownFinished = false;
 	private Thread mThread = null;
 
-	private PluginTalker mTalker; /* FIXME: Use a blocking talker here for everything */
-	private PluginTalkerBlocking mBlockingTalker;
-	
-	private final Object sfsLock = new Object();
-	private SimpleFieldSet sfsIdentities = null;
-	private SimpleFieldSet sfsOwnIdentities = null;
+	private PluginTalkerBlocking mTalker = null;
 
-	/**
-	 * @param executor
-	 */
-	public WoTIdentityManager(ExtObjectContainer myDB, PluginRespirator pr) throws PluginNotFoundException {
-		super(myDB, pr.getNode().executor);
-		mTalker = pr.getPluginTalker(this, Freetalk.WOT_NAME, Freetalk.PLUGIN_TITLE);
-		mBlockingTalker = new PluginTalkerBlocking(pr);
+	public WoTIdentityManager(ExtObjectContainer myDB, Freetalk myFreetalk) {
+		super(myDB, myFreetalk.getPluginRespirator().getNode().executor);
+		
+		mFreetalk = myFreetalk;
+		
 		isRunning = true;
 		mExecutor.execute(this, "FT Identity Manager");
 		Logger.debug(this, "Identity manager started.");
@@ -67,6 +60,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	 */
 	public WoTIdentityManager(ExtObjectContainer myDB) {
 		super(myDB);
+		mFreetalk = null;
 	}
 	
 	
@@ -81,7 +75,7 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 	 * @throws Exception If the WoT plugin replied with an error message or not with the expected message.
 	 */
 	private PluginTalkerBlocking.Result sendFCPMessageBlocking(SimpleFieldSet params, Bucket data, String expectedReplyMessage) throws Exception {
-		PluginTalkerBlocking.Result result = mBlockingTalker.sendBlocking(params, data);
+		PluginTalkerBlocking.Result result = mTalker.sendBlocking(params, data);
 		
 		if(result.params.get("Message").equals("Error"))
 			throw new Exception("FCP message " + result.params.get("OriginalMessage") + " failed: " + result.params.get("Description"));
@@ -173,22 +167,15 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		};
 	}
 	
-
-	/* FIXME: This was a quick hack to make the log in page instantly display own identities. Think about it again */
-	/*
 	public synchronized Iterator<FTOwnIdentity> ownIdentityIterator() {
-		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		sfs.putOverwrite("Message","GetOwnIdentities");
 		try {
-			parseIdentities(sendFCPMessageBlocking(sfs, null, "OwnIdentities").params, true);
-		} catch (Exception e) {
-			Logger.error(this, "Requesting own identities failed.", e);
-		}
+			fetchOwnIdentities();
+			/* FIXME: Garbage collect own identities! */
+		} 
+		catch(PluginNotFoundException e) {} /* Ignore, return the ones which are in database now */
 		
 		return super.ownIdentityIterator();
 	}
-	*/
-
 
 	@SuppressWarnings("unchecked")
 	public synchronized WoTIdentity getIdentity(String uid) throws NoSuchIdentityException {
@@ -231,50 +218,47 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		return 0;
 	}
 
-	private void addFreetalkContext(WoTIdentity oid) {
+	private synchronized void addFreetalkContext(WoTIdentity oid){
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "AddContext");
 		params.putOverwrite("Identity", oid.getUID());
 		params.putOverwrite("Context", Freetalk.WOT_CONTEXT);
-		mTalker.send(params, null);
+		try {
+			mTalker.sendBlocking(params, null);
+		} catch(PluginNotFoundException e) {
+			/* We do not throw because that would make parseIdentities() too complicated */
+			Logger.error(this, "Adding Freetalk context failed.", e);
+		}
 	}
 	
 	/**
-	 * Called by the PluginTalker, it is run in a different Thread. Therefore, we store the result and let our own thread process it so we
-	 * can run the processing at minimal thread priority, which is necessary because the amount of identities might become large.
+	 * Fetches the identities with positive score from WoT and stores them in the database.
+	 * @throws PluginNotFoundException If the connection to WoT has been lost.
 	 */
-	public void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data) {
-		String message = params.get("Message");
+	private synchronized void fetchIdentities() throws PluginNotFoundException {
+		if(mTalker == null)
+			throw new PluginNotFoundException();
 		
-		boolean identitiesWereReceived = false;
-		
-		synchronized(sfsLock) {
-			if(message.equals("Identities")) {
-				sfsIdentities = params;
-				identitiesWereReceived = true;
-			}
-			else if(message.equals("OwnIdentities")) {
-				sfsOwnIdentities = params;
-				identitiesWereReceived = true;
-			}
-		}
-		
-		if(identitiesWereReceived)
-			mThread.interrupt();
-	}
-	
-	private void requestIdentities() {
 		Logger.debug(this, "Requesting identities with positive score from WoT ...");
 		SimpleFieldSet p1 = new SimpleFieldSet(true);
 		p1.putOverwrite("Message", "GetIdentitiesByScore");
 		p1.putOverwrite("Selection", "+");
 		p1.putOverwrite("Context", Freetalk.WOT_CONTEXT);
-		mTalker.send(p1, null);
+		parseIdentities(mTalker.sendBlocking(p1, null).params, false);
+	}
+	
+	/**
+	 * Fetches the own identities with positive score from WoT and stores them in the database.
+	 * @throws PluginNotFoundException If the connection to WoT has been lost.
+	 */
+	private synchronized void fetchOwnIdentities() throws PluginNotFoundException {
+		if(mTalker == null)
+			throw new PluginNotFoundException();
 		
 		Logger.debug(this, "Requesting own identities from WoT ...");
 		SimpleFieldSet p2 = new SimpleFieldSet(true);
 		p2.putOverwrite("Message","GetOwnIdentities");
-		mTalker.send(p2, null);
+		parseIdentities(mTalker.sendBlocking(p2, null).params, true);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -365,19 +349,34 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		q.descend("mAuthor").constrain(i);
 		return (q.execute().size() == 0);
 	}
+	
+	private synchronized boolean connectToWoT() {
+		if(mTalker != null) { /* Old connection exists */
+			SimpleFieldSet sfs = new SimpleFieldSet(true);
+			sfs.putOverwrite("Message", "Ping");
+			try {
+				mTalker.sendBlocking(sfs, null); /* Verify that the old connection is still alive */
+				return true;
+			}
+			catch(PluginNotFoundException e) {
+				mTalker = null;
+				/* Do not return, try to reconnect in next try{} block */
+			}
+		}
+		
+		try {
+			mTalker = new PluginTalkerBlocking(mFreetalk.getPluginRespirator());
+			mFreetalk.handleWotConnected();
+			return true;
+		} catch(PluginNotFoundException e) {
+			mFreetalk.handleWotDisconnected();
+			return false;
+		}
+	}
 
 	public void run() {
 		Logger.debug(this, "Identity manager running.");
 		mThread = Thread.currentThread();
-		
-		try {
-			Logger.debug(this, "Waiting for the node to start up...");
-			Thread.sleep((long) (30*1000 * (0.5f + Math.random()))); /* Let the node start up */
-		}
-		catch (InterruptedException e)
-		{
-			mThread.interrupt();
-		}
 		
 		long nextIdentityRequestTime = 0;
 		
@@ -385,28 +384,21 @@ public class WoTIdentityManager extends IdentityManager implements FredPluginTal
 		while(isRunning) {
 			Thread.interrupted();
 			Logger.debug(this, "Identity manager loop running...");
-
-			boolean identitiesWereReceived;
 			
-			synchronized(sfsLock) {
-				identitiesWereReceived = sfsIdentities != null || sfsOwnIdentities != null;
-				if(sfsIdentities != null) {
-					parseIdentities(sfsIdentities, false);
-					sfsIdentities = null;
-				}
-				if(sfsOwnIdentities != null) {
-					parseIdentities(sfsOwnIdentities, true);
-					sfsOwnIdentities = null;
-				}
-				
-				if(identitiesWereReceived)
-					garbageCollectIdentities();
-			}
+			boolean connected = connectToWoT();
 
 			long currentTime = System.currentTimeMillis();
-			long sleepTime = (long) (THREAD_PERIOD * (0.5f + Math.random()));
+			long sleepTime = connected ? (long) (THREAD_PERIOD * (0.5f + Math.random())) : 5*1000;
+			
 			if(currentTime >= nextIdentityRequestTime) {
-				requestIdentities();
+				try {
+					fetchIdentities();
+					fetchOwnIdentities();
+					garbageCollectIdentities();
+				} catch (PluginNotFoundException e) {
+					Logger.debug(this, "Connection to WoT lost while requesting identities.");
+				}
+				
 				nextIdentityRequestTime = currentTime + sleepTime;
 			}
 			
