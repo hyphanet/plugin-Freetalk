@@ -28,6 +28,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 
@@ -151,13 +152,15 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched message: " + state.getURI());
 		
-		InputStream input = null;
+		Bucket bucket = null;
+		InputStream inputStream = null;
 		WoTMessageList list = null;
 		
 		try {
 			list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
-			input = result.asBucket().getInputStream();
-			Message message = WoTMessageXML.decode(mMessageManager, input, list, state.getURI());
+			bucket = result.asBucket();
+			inputStream = bucket.getInputStream();
+			Message message = WoTMessageXML.decode(mMessageManager, inputStream, list, state.getURI());
 			mMessageManager.onMessageReceived(message);
 		}
 		catch (Exception e) {
@@ -174,7 +177,10 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			}
 		}
 		finally {
-			Closer.close(input);
+			Closer.close(inputStream);
+			// TODO: Wire in when build 1210 is released: Closer.close(bucket);
+			if(bucket != null)
+				bucket.free();
 			removeFetch(state); /* FIXME: This was in the try{} block somewhere else in the FT/WoT code. Move it to finally{} there, too */
 			
 			/* FIXME: this will wake up the loop over and over again. we need to store the previous parallel fetch count and if waking

@@ -24,6 +24,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 
@@ -173,14 +174,16 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	@Override
 	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched MessageList: " + state.getURI());
-		
-		InputStream input = null;
+
+		Bucket bucket = null;
+		InputStream inputStream = null;
 		WoTIdentity identity = null;
 		
 		try {
 			identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI());
-			input = result.asBucket().getInputStream();
-			WoTMessageList list = WoTMessageListXML.decode(mMessageManager, identity, state.getURI(), input);
+			bucket = result.asBucket();			
+			inputStream = bucket.getInputStream();
+			WoTMessageList list = WoTMessageListXML.decode(mMessageManager, identity, state.getURI(), inputStream);
 			mMessageManager.onMessageListReceived(list);
 		}
 		catch (Exception e) {
@@ -191,7 +194,10 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 			}
 		}
 		finally {
-			Closer.close(input);
+			Closer.close(inputStream);
+			// TODO: Wire in when build 1210 is released: Closer.close(bucket);
+			if(bucket != null)
+				bucket.free();
 			removeFetch(state);
 		}
 		
