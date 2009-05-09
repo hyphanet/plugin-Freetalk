@@ -102,7 +102,7 @@ public class WoTIdentityManager extends IdentityManager {
 		
 		synchronized(db.lock()) {
 		db.store(identity);
-		db.commit();
+		db.commit(); Logger.debug(this, "COMMITED.");
 		}
 		
 		return identity;
@@ -130,7 +130,7 @@ public class WoTIdentityManager extends IdentityManager {
 		
 		synchronized(db.lock()) {
 		db.store(identity);
-		db.commit();
+		db.commit(); Logger.debug(this, "COMMITED.");
 		}
 		
 		return identity;
@@ -334,7 +334,7 @@ public class WoTIdentityManager extends IdentityManager {
 			db.delete(i);
 		}
 		
-		db.commit();
+		db.commit(); Logger.debug(this, "COMMITED.");
 		}
 	}
 	

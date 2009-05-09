@@ -110,7 +110,7 @@ public final class Board implements Comparable<Board> {
             throw new RuntimeException("Trying to store a non-active Board object");
 
         db.store(this);
-        db.commit();
+        db.commit(); Logger.debug(this, "COMMITED.");
     	}
     }
 
@@ -618,7 +618,7 @@ public final class Board implements Comparable<Board> {
                 throw new RuntimeException("Trying to store a non-active BoardMessageLink object");
 
             localDb.store(this);
-            localDb.commit();
+            localDb.commit(); Logger.debug(this, "COMMITED.");
         	}
         }
 

@@ -670,7 +670,7 @@ public abstract class Message implements Comparable<Message> {
 		// db.store(mDate); /* Not stored because it is a primitive for db4o */
 		// db.store(mAttachments); /* Not stored because it is a primitive for db4o */
 		db.store(this);
-		db.commit();
+		db.commit(); Logger.debug(this, "COMMITED.");
 		}
 	}
 

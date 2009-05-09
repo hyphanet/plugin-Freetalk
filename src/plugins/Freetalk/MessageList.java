@@ -17,6 +17,7 @@ import com.db4o.ext.ExtObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
+import freenet.support.Logger;
 
 /**
  * A <code>MessageList</code> contains a list of <code>MessageReference</code> objects.
@@ -79,7 +80,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			
 			db.store(mURI);
 			db.store(this);
-			db.commit();
+			db.commit(); Logger.debug(this, "COMMITED.");
 			}
 		}
 		
@@ -332,7 +333,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			ref.store();
 		}
 		db.store(this);
-		db.commit();
+		db.commit(); Logger.debug(this, "COMMITED.");
 		}
 	}
 	

@@ -116,7 +116,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		ObjectSet<Object> result = db.queryByExample(new Object());
 		for (Object o : result)
 			db.delete(o);
-		db.commit();
+		db.commit(); Logger.debug(this, "COMMITED.");
 		Logger.debug(this, "Database wiped.");
 		
 		Logger.debug(this, "Creating identity manager...");
@@ -206,7 +206,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 			db.delete(m);
 		}
 
-		db.commit();
+		db.commit(); Logger.debug(this, "COMMITED.");
 	}
 
 	private void closeDatabase() {

@@ -13,6 +13,7 @@ import com.db4o.ext.ExtObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
+import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 
 
@@ -155,7 +156,7 @@ public class WoTIdentity implements FTIdentity {
 		
 		db.store(mRequestURI);
 		db.store(this);
-		db.commit();
+		db.commit(); Logger.debug(this, "COMMITED.");
 		}
 	}
 	

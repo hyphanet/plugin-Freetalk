@@ -122,7 +122,7 @@ public class WoTMessageManager extends MessageManager {
 				Logger.error(this, "Error while marking a message list as 'download failed'", ex);
 				synchronized(db.lock()) {
 				db.delete(list);
-				db.commit();
+				db.commit(); Logger.debug(this, "COMMITED.");
 				}
 			}
 		}
