@@ -119,6 +119,9 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		db.commit(); Logger.debug(this, "COMMITED.");
 		Logger.debug(this, "Database wiped.");
 		
+		Logger.debug(this, "Creating Web interface...");
+		mWebInterface = new WebInterfaceNoWoT(this);
+		
 		Logger.debug(this, "Creating identity manager...");
 		mIdentityManager = new WoTIdentityManager(db, this);
 		
@@ -137,9 +140,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.debug(this, "Creating message list inserter...");
 		mMessageListInserter = new WoTMessageListInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT MessageList Inserter", mIdentityManager, mMessageManager);
 
-		Logger.debug(this, "Creating Web interface...");
-		mWebInterface = new WebInterfaceNoWoT(this);
-		
+
 		Logger.debug(this, "Creating FCP interface...");
 		mFCPInterface = new FCPInterface(this);
 		
