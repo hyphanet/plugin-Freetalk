@@ -58,7 +58,6 @@ public class WoTMessageManager extends MessageManager {
 			}
 			
 		};
-		Logger.debug(this, "Message manager started.");
 	}
 	
 	/**
@@ -293,7 +292,7 @@ public class WoTMessageManager extends MessageManager {
 	}
 
 	public void run() {
-		Logger.debug(this, "Message manager running.");
+		Logger.debug(this, "Message manager started.");
 		mThread = Thread.currentThread();
 		
 		try {

@@ -37,6 +37,9 @@ public class WoTIdentityManager extends IdentityManager {
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
 	private static final int THREAD_PERIOD = 5 * 60 * 1000;
 	
+	/** The amount of time between each attempt to connect to the WoT plugin */
+	private static final int WOT_RECONNECT_DELAY = 5 * 1000; 
+	
 	private final Freetalk mFreetalk;
 
 	private volatile boolean isRunning = false;
@@ -52,7 +55,6 @@ public class WoTIdentityManager extends IdentityManager {
 		
 		isRunning = true;
 		mExecutor.execute(this, "FT Identity Manager");
-		Logger.debug(this, "Identity manager started.");
 	}
 	
 	/**
@@ -375,7 +377,7 @@ public class WoTIdentityManager extends IdentityManager {
 	}
 
 	public void run() {
-		Logger.debug(this, "Identity manager running.");
+		Logger.debug(this, "Identity manager started.");
 		mThread = Thread.currentThread();
 		
 		long nextIdentityRequestTime = 0;
@@ -388,7 +390,7 @@ public class WoTIdentityManager extends IdentityManager {
 			boolean connected = connectToWoT();
 
 			long currentTime = System.currentTimeMillis();
-			long sleepTime = connected ? (long) (THREAD_PERIOD * (0.5f + Math.random())) : 5*1000;
+			long sleepTime = connected ? (long) (THREAD_PERIOD * (0.5f + Math.random())) : WOT_RECONNECT_DELAY;
 			
 			if(currentTime >= nextIdentityRequestTime) {
 				try {
