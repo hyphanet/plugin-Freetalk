@@ -147,9 +147,11 @@ public final class WoTMessageInserter extends MessageInserter {
 	@Override
 	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		try {
+			synchronized(mMessageManager) {
 			WoTOwnMessage m = (WoTOwnMessage)mMessageManager.getOwnMessage(mMessageIDs.get(state));
 			m.markAsInserted(state.getURI());
 			mMessageManager.addMessageToMessageList(m);
+			}
 			Logger.debug(this, "Successful insert of " + m.getRealURI());
 		}
 		catch(Exception e) {
