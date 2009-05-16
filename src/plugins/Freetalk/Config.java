@@ -91,6 +91,7 @@ public final class Config {
 				mDB.store(mStringParams, 3);
 				mDB.store(mIntParams, 3);
 				mDB.store(this);
+				mDB.commit();
 			}
 			catch(RuntimeException e) {
 				mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
