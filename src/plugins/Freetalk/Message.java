@@ -652,31 +652,31 @@ public abstract class Message implements Comparable<Message> {
 	public synchronized void store() {
 		/* FIXME: Check for duplicates. Also notice that an OwnMessage which is equal might exist */
 		synchronized(db.lock()) {
-		try {
-		if(db.ext().isStored(this) && !db.ext().isActive(this))
-			throw new RuntimeException("Trying to store a non-active Message object");
-		
-		if(mAuthor == null)
-			throw new RuntimeException("Trying to store a message with mAuthor == null");
-		
-		if(mURI != null)
-			db.store(mURI);
-		if(mRealURI != null)
-			db.store(mRealURI);
-		if(mThreadURI != null)
-			db.store(mThreadURI);
-		if(mParentURI != null)
-			db.store(mParentURI);
-		// db.store(mBoards); /* Not stored because it is a primitive for db4o */
-		// db.store(mDate); /* Not stored because it is a primitive for db4o */
-		// db.store(mAttachments); /* Not stored because it is a primitive for db4o */
-		db.store(this);
-		db.commit(); Logger.debug(this, "COMMITED.");
-		}
-		catch(RuntimeException e) {
-			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-			throw e;
-		}
+			try {
+				if(db.ext().isStored(this) && !db.ext().isActive(this))
+					throw new RuntimeException("Trying to store a non-active Message object");
+
+				if(mAuthor == null)
+					throw new RuntimeException("Trying to store a message with mAuthor == null");
+
+				if(mURI != null)
+					db.store(mURI);
+				if(mRealURI != null)
+					db.store(mRealURI);
+				if(mThreadURI != null)
+					db.store(mThreadURI);
+				if(mParentURI != null)
+					db.store(mParentURI);
+				// db.store(mBoards); /* Not stored because it is a primitive for db4o */
+				// db.store(mDate); /* Not stored because it is a primitive for db4o */
+				// db.store(mAttachments); /* Not stored because it is a primitive for db4o */
+				db.store(this);
+				db.commit(); Logger.debug(this, "COMMITED.");
+			}
+			catch(RuntimeException e) {
+				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				throw e;
+			}
 		}
 		
 	}

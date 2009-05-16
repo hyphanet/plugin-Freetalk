@@ -335,18 +335,18 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	public synchronized void store() {
 		/* FIXME: Check for duplicates */
 		synchronized(db.lock()) {
-		try {
-		for(MessageReference ref : mMessages) {
-			ref.initializeTransient(db);
-			ref.store();
-		}
-		db.store(this);
-		db.commit(); Logger.debug(this, "COMMITED.");
-		}
-		catch(RuntimeException e) {
-			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-			throw e;
-		}
+			try {
+				for(MessageReference ref : mMessages) {
+					ref.initializeTransient(db);
+					ref.store();
+				}
+				db.store(this);
+				db.commit(); Logger.debug(this, "COMMITED.");
+			}
+			catch(RuntimeException e) {
+				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				throw e;
+			}
 		}
 	}
 	
