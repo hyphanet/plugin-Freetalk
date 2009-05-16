@@ -73,6 +73,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			db = myDB;
 		}
 		
+		/* FIXME: This should not commit, it will break the rollback() in MessageList.store! */
 		public synchronized void store() {
 			synchronized(db.lock()) {
 				try {
@@ -334,12 +335,18 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	public synchronized void store() {
 		/* FIXME: Check for duplicates */
 		synchronized(db.lock()) {
+		try {
 		for(MessageReference ref : mMessages) {
 			ref.initializeTransient(db);
 			ref.store();
 		}
 		db.store(this);
 		db.commit(); Logger.debug(this, "COMMITED.");
+		}
+		catch(RuntimeException e) {
+			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+			throw e;
+		}
 		}
 	}
 	
