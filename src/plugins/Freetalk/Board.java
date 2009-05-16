@@ -636,17 +636,17 @@ public final class Board implements Comparable<Board> {
 
         public void store(ExtObjectContainer localDb) {
         	synchronized(db.lock()) {
-        	try {
-            if(localDb.ext().isStored(this) && !localDb.ext().isActive(this))
-                throw new RuntimeException("Trying to store a non-active BoardMessageLink object");
+        		try {
+        			if(localDb.ext().isStored(this) && !localDb.ext().isActive(this))
+        				throw new RuntimeException("Trying to store a non-active BoardMessageLink object");
 
-            localDb.store(this);
-            localDb.commit(); Logger.debug(this, "COMMITED.");
-    		}
-			catch(RuntimeException e) {
-				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
-			}
+        			localDb.store(this);
+        			localDb.commit(); Logger.debug(this, "COMMITED.");
+        		}
+        		catch(RuntimeException e) {
+        			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+        			throw e;
+        		}
         	}
         }
 
