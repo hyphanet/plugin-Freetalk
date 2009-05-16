@@ -45,13 +45,6 @@ public final class Board implements Comparable<Board> {
 
     /* Attributes, stored in the database */
     
-    /**
-     * A local (to this Freetalk database), random, unique ID of this board,
-     * Needed for synchronization with client apps: They use the per-board unique message index numbers to check whether they have all messages stored in their
-     * caching database. If the user deleted a board in Freetalk and then the board was re-created due to new messages, the message indexes will start at 0 again.
-     * If we used only the board name as identification, the client apps would not download the new messages because they already have stored messages with index
-     * 0, 1, 2 and so on. 
-     */
     private final String mID;
 
     private final String mName;
@@ -175,10 +168,23 @@ public final class Board implements Comparable<Board> {
 
         return (ISOLanguages.contains(parts[0]));
     }
-
+    
+    /**
+     * Get the ID of this board.
+     * 
+     * It is a local (to this Freetalk database), random, unique UUID of this board. If a board is created, deleted and then re-created with the same name,
+     * the ID will still be different.
+     * Needed for synchronization with client apps: They use the per-board unique message index numbers to check whether they have all messages stored in their
+     * caching database. If the user deleted a board in Freetalk and then the board was re-created due to new messages, the message indexes will start at 0 again.
+     * If we used only the board name as identification, the client apps would not download the new messages because they already have stored messages with index
+     * 0, 1, 2 and so on. 
+     */
+    public String getID() {
+    	return mID;
+    }
 
     /**
-     * @return The name.
+     * @return The name of this board. Only one board with a given name can exist at once. The name is case-insensitive.
      */
     public String getName() {
         return mName;
