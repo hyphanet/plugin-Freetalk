@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -43,6 +44,8 @@ public final class Board implements Comparable<Board> {
 
 
     /* Attributes, stored in the database */
+    
+    private final String mID;
 
     private final String mName;
 
@@ -83,7 +86,7 @@ public final class Board implements Comparable<Board> {
         if(!isNameValid(newName))
             throw new InvalidParameterException("Board names have to be either in English or have an ISO language code at the beginning followed by a dot.");
 
-        // FIXME: Validate name and description.
+        mID = UUID.randomUUID().toString();
         mName = newName.toLowerCase();
         mFirstSeenDate = CurrentTimeUTC.get();
         mLatestMessageDate = null;
