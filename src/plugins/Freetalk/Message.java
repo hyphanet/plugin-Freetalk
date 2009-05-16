@@ -652,6 +652,7 @@ public abstract class Message implements Comparable<Message> {
 	public synchronized void store() {
 		/* FIXME: Check for duplicates. Also notice that an OwnMessage which is equal might exist */
 		synchronized(db.lock()) {
+		try {
 		if(db.ext().isStored(this) && !db.ext().isActive(this))
 			throw new RuntimeException("Trying to store a non-active Message object");
 		
@@ -672,6 +673,12 @@ public abstract class Message implements Comparable<Message> {
 		db.store(this);
 		db.commit(); Logger.debug(this, "COMMITED.");
 		}
+		catch(RuntimeException e) {
+			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+			throw e;
+		}
+		}
+		
 	}
 
 	public int compareTo(Message other) {

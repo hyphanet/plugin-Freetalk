@@ -109,11 +109,17 @@ public final class Board implements Comparable<Board> {
         /* FIXME: check for duplicates */
 
     	synchronized(db.lock()) {
-        if(db.ext().isStored(this) && !db.ext().isActive(this))
-            throw new RuntimeException("Trying to store a non-active Board object");
+    		try  {
+    		if(db.ext().isStored(this) && !db.ext().isActive(this))
+    			throw new RuntimeException("Trying to store a non-active Board object");
 
-        db.store(this);
-        db.commit(); Logger.debug(this, "COMMITED.");
+    		db.store(this);
+    		db.commit(); Logger.debug(this, "COMMITED.");
+    		}
+			catch(RuntimeException e) {
+				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				throw e;
+			}
     	}
     }
 

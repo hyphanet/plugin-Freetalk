@@ -93,7 +93,7 @@ public final class Config {
 				mDB.store(this);
 			}
 			catch(RuntimeException e) {
-				mDB.rollback();
+				mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
 				throw e;
 			}
 		}

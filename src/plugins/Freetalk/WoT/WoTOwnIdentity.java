@@ -10,6 +10,7 @@ import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 
 /**
  * @author xor
@@ -68,12 +69,20 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	
 	public void store() {
 		/* FIXME: check for duplicates */
+		synchronized(db.lock()) {
+		try {
 		if(db.ext().isStored(this) && !db.ext().isActive(this))
 			throw new RuntimeException("Trying to store a non-active WoTOwnIdentity object");
 		
 		db.store(mSubscribedBoards);
 		db.store(mInsertURI);
 		super.store();
+		}
+		catch(RuntimeException e) {
+			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+			throw e;
+		}
+		}
 	}
 
 }
