@@ -122,11 +122,16 @@ public abstract class MessageManager implements Runnable {
 			try {
 				message.initializeTransient(db, this);
 				message.store();
-				for(Board board : message.getBoards())
-					board.addMessage(message);
+				
+				for(Board board : message.getBoards()) {
+					board.addMessage(message); /* FIXME: add without commit! */
+					board.store();
+				}
 				
 				for(MessageReference ref : getAllReferencesToMessage(message.getID()))
-					ref.setMessageWasDownloadedFlag();
+					ref.setMessageWasDownloadedFlag(); /* FIXME: store without commit */
+				
+				/* FIXME: commit here instead of in the called functions! */
 			}
 			catch(Exception ex) {
 				/* FIXME: Delete the message if this happens. */
