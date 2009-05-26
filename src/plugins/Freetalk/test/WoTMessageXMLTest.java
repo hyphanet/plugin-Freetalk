@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import plugins.Freetalk.Board;
+import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.Message.Attachment;
@@ -67,6 +68,8 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		mMessage = WoTMessage.construct(mMessageList, mMessageRealURI, myMessageID, new WoTMessageURI(mMessageList.getURI(), myMessageID),
 				new WoTMessageURI(mMessageList.getURI(), myThreadID), myBoards, myBoard, myAuthor,
 				"Message title", new Date(109, 4, 3, 16, 15, 14), "Message body\nNew line", attachments);
+		
+		mMessage.initializeTransient(db, mMessageManager);
 
 		mHardcodedEncodedMessage = new String(
 			"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
@@ -119,7 +122,9 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 	public void testDecode() throws Exception {
 		ByteArrayInputStream is = new ByteArrayInputStream(mHardcodedEncodedMessage.getBytes());
 		ByteArrayOutputStream decodedAndEncodedMessage = new ByteArrayOutputStream(4096);
-		WoTMessageXML.encode(WoTMessageXML.decode(mMessageManager, is, mMessageList, mMessageRealURI), decodedAndEncodedMessage);		
+		Message decodedMessage = WoTMessageXML.decode(mMessageManager, is, mMessageList, mMessageRealURI);
+		decodedMessage.initializeTransient(db, mMessageManager);
+		WoTMessageXML.encode(decodedMessage, decodedAndEncodedMessage);		
 		
 		assertEquals(mHardcodedEncodedMessage, decodedAndEncodedMessage.toString().replaceAll("[\r\n]", ""));
 	}
