@@ -330,11 +330,11 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	}
 	
 	public String getVersion() {
-		return "r" + Version.svnRevision;
+		return Version.getMarketingVersion();
 	}
 	
 	public long getRealVersion() {
-		return Version.version;
+		return Version.getRealVersion();
 	}
 
 	public String getString(String key) {
