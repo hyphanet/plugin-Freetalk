@@ -4,6 +4,7 @@
 package plugins.Freetalk.ui.web;
 
 import plugins.Freetalk.FTOwnIdentity;
+import freenet.clients.http.RedirectException;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -18,7 +19,9 @@ public final class Welcome extends WebPageImpl {
 		// TODO Auto-generated constructor stub
 	}
 
-	public final void make() {
+	public final void make() throws RedirectException {
+		if(mOwnIdentity == null)
+			throw new RedirectException(logIn);
 		makeWelcomeBox();
 		makeOverviewBox();
 	}

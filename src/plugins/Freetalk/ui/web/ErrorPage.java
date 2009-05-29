@@ -12,8 +12,8 @@ public final class ErrorPage extends WebPageImpl {
 	private final String mErrorTitle;
 	private final String mErrorMessage;
 
-	public ErrorPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, String errorTitle, String errorMessage) {
-		super(myWebInterface, viewer, request);
+	public ErrorPage(WebInterface webInterface, FTOwnIdentity viewer, HTTPRequest request, String errorTitle, String errorMessage) {
+		super(webInterface, viewer, request);
 		mErrorTitle = errorTitle;
 		mErrorMessage = errorMessage;
 	}

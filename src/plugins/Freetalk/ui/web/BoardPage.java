@@ -8,6 +8,7 @@ import java.util.Iterator;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Board.MessageReference;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
@@ -32,7 +33,7 @@ public final class BoardPage extends WebPageImpl {
 		
 		HTMLNode threadsBox = addContentBox("Threads in '" + mBoard.getName() + "'");
 		
-		HTMLNode newThreadForm = addFormChild(threadsBox, SELF_URI + "/NewThread", "NewThreadPage");
+		HTMLNode newThreadForm = addFormChild(threadsBox, Freetalk.PLUGIN_URI + "/NewThread", "NewThreadPage");
 		newThreadForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
 		newThreadForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
 		newThreadForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", "New thread" });
@@ -55,7 +56,7 @@ public final class BoardPage extends WebPageImpl {
 				row = threadsTable.addChild("tr");
 
 				HTMLNode titleCell = row.addChild("td", new String[] { "align" }, new String[] { "left" });
-				titleCell.addChild(new HTMLNode("a", "href", SELF_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
+				titleCell.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
 						"&board=" + mBoard.getName() + "&id=" + thread.getID(), thread.getTitle()));
 
 				/* Author */

@@ -8,6 +8,8 @@ import java.util.Iterator;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Freetalk;
+import freenet.clients.http.RedirectException;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -22,14 +24,16 @@ public final class BoardsPage extends WebPageImpl {
 		// TODO Auto-generated constructor stub
 	}
 
-	public final void make() {
+	public final void make() throws RedirectException {
+		if(mOwnIdentity == null)
+			throw new RedirectException(logIn);
 		makeBoardsList();
 	}
 
 	private void makeBoardsList() {
 		HTMLNode boardsBox = addContentBox("Boards");
 		
-		HTMLNode newBoardForm = addFormChild(boardsBox, SELF_URI + "/NewBoard", "NewBoardPage");
+		HTMLNode newBoardForm = addFormChild(boardsBox, Freetalk.PLUGIN_URI + "/NewBoard", "NewBoardPage");
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", "New board" });
 		
@@ -51,7 +55,7 @@ public final class BoardsPage extends WebPageImpl {
 				row = boardsTable.addChild("tr");
 
 				HTMLNode nameCell = row.addChild("th", new String[] { "align" }, new String[] { "left" });
-				nameCell.addChild(new HTMLNode("a", "href", SELF_URI + "/showBoard?identity=" + mOwnIdentity.getUID() + "&name=" + board.getName(),
+				nameCell.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getUID() + "&name=" + board.getName(),
 						board.getName()));
 
 				/* Description */

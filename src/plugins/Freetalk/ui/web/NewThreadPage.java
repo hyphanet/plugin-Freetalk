@@ -7,6 +7,7 @@ import java.util.HashSet;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import freenet.support.HTMLNode;
@@ -33,7 +34,7 @@ public final class NewThreadPage extends WebPageImpl {
 
 				HTMLNode successBox = addContentBox("Thread created");
 				successBox.addChild("p", "The thread was put into your outbox. Freetalk will upload it after some time.");
-				successBox.addChild(new HTMLNode("a", "href", SELF_URI + "/showBoard?identity=" + mOwnIdentity.getUID() + "&name=" + mBoard.getName(),
+				successBox.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getUID() + "&name=" + mBoard.getName(),
 								"Go back to " + mBoard.getName()));
 			} catch (Exception e) {
 				HTMLNode alertBox = addAlertBox("The thread could not be created.");
@@ -48,7 +49,7 @@ public final class NewThreadPage extends WebPageImpl {
 
 	private void makeNewThreadPage(String threadSubject, String threadText) {
 		HTMLNode threadBox = addContentBox("New thread in " + mBoard.getName());
-		HTMLNode newThreadForm = addFormChild(threadBox, SELF_URI + "/NewThread", "NewThread");
+		HTMLNode newThreadForm = addFormChild(threadBox, Freetalk.PLUGIN_URI + "/NewThread", "NewThread");
 		newThreadForm.addChild("input", new String[] { "type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
 		
 		HTMLNode authorBox = newThreadForm.addChild(getContentBox("Author"));

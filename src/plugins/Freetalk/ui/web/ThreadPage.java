@@ -7,6 +7,7 @@ import java.text.DateFormat;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Board.MessageReference;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
@@ -72,7 +73,7 @@ public final class ThreadPage extends WebPageImpl {
 
     private void addReplyButton(HTMLNode parent, Message parentMessage) {
         parent = parent.addChild("div", "align", "right");
-        HTMLNode newReplyForm = addFormChild(parent, SELF_URI + "/NewReply", "NewReplyPage");
+        HTMLNode newReplyForm = addFormChild(parent, Freetalk.PLUGIN_URI + "/NewReply", "NewReplyPage");
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ParentMessageID", parentMessage.getID()});

@@ -5,7 +5,9 @@ package plugins.Freetalk.ui.web;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import freenet.clients.http.RedirectException;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -15,7 +17,9 @@ public final class NewBoardPage extends WebPageImpl {
 		super(myWebInterface, viewer, request);
 	}
 
-	public void make() {
+	public void make() throws RedirectException {
+		if(mOwnIdentity == null)
+			throw new RedirectException(logIn);
 		if(mRequest.isPartSet("CreateBoard")) {
 		    final int boardLanguageLength = 8;
 		    final int maxBoardNameLength = Board.MAX_BOARDNAME_TEXT_LENGTH - boardLanguageLength - 1; // +1 for the '.'
@@ -26,7 +30,7 @@ public final class NewBoardPage extends WebPageImpl {
 				Board board = mFreetalk.getMessageManager().getOrCreateBoard(boardLanguage + "." + boardName);
 				HTMLNode successBox = addContentBox("Board was created");
 				successBox.addChild("div", "The board "); /* TODO: I have no idea how to make this text appear in one line without removing the <u> */
-				successBox.addChild("u").addChild(new HTMLNode("a", "href", SELF_URI + "/showBoard?identity=" + mOwnIdentity.getUID() + "&name=" + board.getName(), board.getName()));
+				successBox.addChild("u").addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getUID() + "&name=" + board.getName(), board.getName()));
 				successBox.addChild("div", " was successfully created.");
 				makeNewBoardPage("en", "");
 			} catch (InvalidParameterException e) {
@@ -42,7 +46,7 @@ public final class NewBoardPage extends WebPageImpl {
 	
 	private void makeNewBoardPage(String boardLanguage, String boardName) {
 		HTMLNode newBoardBox = addContentBox("Create a new board");
-		HTMLNode newBoardForm = addFormChild(newBoardBox, SELF_URI + "/NewBoard", "NewBoard");
+		HTMLNode newBoardForm = addFormChild(newBoardBox, Freetalk.PLUGIN_TITLE + "/NewBoard", "NewBoard");
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
 		
 		HTMLNode languageBox = newBoardForm.addChild(getContentBox("Language"));

@@ -3,9 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
+import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.PageMaker;
+import freenet.clients.http.PageNode;
+import freenet.clients.http.RedirectException;
+import freenet.clients.http.ToadletContext;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -16,9 +23,6 @@ import freenet.support.api.HTTPRequest;
  * @author Julien Cornuwel (batosai@freenetproject.org), xor
  */
 public abstract class WebPageImpl implements WebPage {
-
-	/** The URI the plugin can be accessed from. */
-	protected static final String SELF_URI = Freetalk.PLUGIN_URI;
 
 	protected final WebInterface mWebInterface;
 	
@@ -38,6 +42,8 @@ public abstract class WebPageImpl implements WebPage {
 	
 	protected HTMLNode mContentNode;
 
+	protected final URI logIn;
+	
 	/**
 	 * Creates a new WebPageImpl. It is abstract because only a subclass can run
 	 * the desired make() method to generate the content.
@@ -50,7 +56,13 @@ public abstract class WebPageImpl implements WebPage {
 	 *            the request from the user.
 	 */
 	public WebPageImpl(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) {
-
+		
+		try {
+			logIn = new URI(Freetalk.PLUGIN_URI+"/LogIn");
+		} catch (URISyntaxException e) {
+			throw new Error(e);
+		}
+		
 		mWebInterface = myWebInterface;
 		
 		mFreetalk = mWebInterface.getFreetalk();
@@ -66,22 +78,24 @@ public abstract class WebPageImpl implements WebPage {
 	 * Generates the HTML code that will be sent to the browser.
 	 * 
 	 * @return HTML code of the page.
+	 * @throws RedirectException 
 	 */
-	public final String toHTML() {
-		HTMLNode pageNode;
+	public final String toHTML(ToadletContext ctx) throws RedirectException {
+		PageNode page;
 		if(mOwnIdentity != null)
-			pageNode = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getFreetalkAddress(), null);
+			page = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getFreetalkAddress(), ctx);
 		else
-			pageNode = mPM.getPageNode(Freetalk.PLUGIN_TITLE, null);
+			page = mPM.getPageNode(Freetalk.PLUGIN_TITLE, ctx);
 
-		addToPage(mPM.getContentNode(pageNode));
-		return pageNode.generate();
+		addToPage(page.content);
+		return page.outer.generate();
 	}
 	
 	/**
 	 * Adds this WebPage to the given page as a HTMLNode.
+	 * @throws RedirectException 
 	 */
-	public final void addToPage(HTMLNode contentNode) {
+	public final void addToPage(HTMLNode contentNode) throws RedirectException {
 		mContentNode = contentNode;
 		make();
 	}
@@ -93,9 +107,10 @@ public abstract class WebPageImpl implements WebPage {
 	 * @return the contentNode of the newly created InfoBox
 	 */
 	protected final HTMLNode addContentBox(String title) {
-		HTMLNode box = mPM.getInfobox(title);
+		InfoboxNode infobox = mPM.getInfobox(title);
+		HTMLNode box = infobox.outer;
 		mContentNode.addChild(box);
-		return mPM.getContentNode(box);
+		return infobox.content;
 	}
 	
 	/**
@@ -104,17 +119,17 @@ public abstract class WebPageImpl implements WebPage {
 	 * @return the contentNode of the newly created Infobox
 	 */
 	protected final HTMLNode getContentBox(String title) {
-		return mPM.getInfobox(title);
+		InfoboxNode infobox = mPM.getInfobox(title);
+		return infobox.outer;
 	}
 	
 	protected final HTMLNode getAlertBox(String title) {
-		return mPM.getInfobox("infobox-alert", title);
+		InfoboxNode infobox = mPM.getInfobox("infobox-alert", title);
+		return infobox.outer;
 	}
 	
 	protected final HTMLNode addAlertBox(String title) {
-		HTMLNode box = mPM.getInfobox("infobox-alert", title);
-		mContentNode.addChild(box);
-		return mPM.getContentNode(box);
+		return mPM.getInfobox("infobox-alert", title, mContentNode);
 	}
 	
 	protected HTMLNode addFormChild(HTMLNode parentNode, String target, String name) {

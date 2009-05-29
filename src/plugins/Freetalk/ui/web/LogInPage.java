@@ -6,6 +6,8 @@ package plugins.Freetalk.ui.web;
 import java.util.Iterator;
 
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Freetalk;
+import freenet.clients.http.RedirectException;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -16,7 +18,7 @@ public final class LogInPage extends WebPageImpl {
 		// TODO Auto-generated constructor stub
 	}
 
-	public void make() {
+	public void make() throws RedirectException {
 		makeWelcomeBox();
 		if(mFreetalk.getIdentityManager().ownIdentityIterator().hasNext()) {
 			makeLoginBox();
@@ -54,7 +56,7 @@ public final class LogInPage extends WebPageImpl {
 		}
 		*/
 		
-		HTMLNode selectForm = addFormChild(loginBox, SELF_URI + "/LogIn", "LogIn");
+		HTMLNode selectForm = addFormChild(loginBox, Freetalk.PLUGIN_URI + "/LogIn", "LogIn");
 		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnIdentityID");
 		while(iter.hasNext()) {
 			FTOwnIdentity ownIdentity = iter.next();
@@ -65,6 +67,6 @@ public final class LogInPage extends WebPageImpl {
 	
 	private void makeCreateIdentityBox() {
 		HTMLNode createIdentityBox = addContentBox("Create an own identity");
-		createIdentityBox.addChild("a", "href", SELF_URI + "/CreateIdentity", "You can create another own identity here");
+		createIdentityBox.addChild("a", "href", Freetalk.PLUGIN_URI + "/CreateIdentity", "You can create another own identity here");
 	}
 }

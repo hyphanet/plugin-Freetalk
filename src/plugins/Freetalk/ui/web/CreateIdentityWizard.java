@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import freenet.keys.FreenetURI;
@@ -44,7 +45,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 	 */
 	private void makeCreateIdentityBox() {
 		HTMLNode createBox = addContentBox("Create an own identity");
-		HTMLNode createForm = addFormChild(createBox, SELF_URI + "/CreateIdentity", "CreateIdentity");
+		HTMLNode createForm = addFormChild(createBox, Freetalk.PLUGIN_URI + "/CreateIdentity", "CreateIdentity");
 		
 		boolean randomSSK = false;
 		Exception requestURIproblem = null;
@@ -217,7 +218,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 				HTMLNode summaryBox = getContentBox("Identity created");
 				createForm.addChild(summaryBox);
 				
-				summaryBox.addChild("a", "href", SELF_URI + "/LogIn?OwnIdentityID=" + id.getUID(),
+				summaryBox.addChild("a", "href", Freetalk.PLUGIN_URI + "/LogIn?OwnIdentityID=" + id.getUID(),
 						"Your identity was successfully created. You can log in with it now."); 
 			}
 			catch(Exception e) {

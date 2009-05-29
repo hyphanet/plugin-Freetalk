@@ -3,6 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import java.net.URISyntaxException;
+
+import freenet.clients.http.RedirectException;
+import freenet.clients.http.ToadletContext;
+
 /**
  * Interface specifying what a WebPage should do.
  * 
@@ -12,12 +17,16 @@ public interface WebPage {
 	
 	/**
 	 * Actually generates the page's content.
+	 * @throws URISyntaxException 
+	 * @throws  
+	 * @throws RedirectException 
 	 */
-	public void make();
+	public void make() throws RedirectException;
 	
 	/**
 	 * @return the HTML code of this WebPage.
+	 * @throws RedirectException 
 	 */
-	public String toHTML();
+	public String toHTML(ToadletContext ctx) throws RedirectException;
 	
 }

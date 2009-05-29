@@ -14,7 +14,6 @@ import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.ui.FCP.FCPInterface;
 import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
 import plugins.Freetalk.ui.web.WebInterface;
-import plugins.Freetalk.ui.web.WebInterfaceNoWoT;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectSet;
@@ -27,31 +26,28 @@ import freenet.clients.http.PageMaker.THEME;
 import freenet.l10n.L10n.LANGUAGE;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginFCP;
-import freenet.pluginmanager.FredPluginHTTP;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.pluginmanager.FredPluginRealVersioned;
 import freenet.pluginmanager.FredPluginThemed;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.FredPluginWithClassLoader;
-import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
-import freenet.support.api.HTTPRequest;
 
 /**
  * @author xor@freenetproject.org
  * @author saces
  */
-public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, FredPluginL10n, FredPluginThemed, FredPluginThreadless,
+public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, FredPluginThemed, FredPluginThreadless,
 	FredPluginVersioned, FredPluginRealVersioned, FredPluginWithClassLoader {
 
 	/* Constants */
 	
-	public static final String PLUGIN_URI = "/plugins/plugins.Freetalk.Freetalk";
+	public static final String PLUGIN_URI = "/Freetalk";
 	public static final String PLUGIN_TITLE = "Freetalk-testing"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
 	public static final String WOT_NAME = "plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "Freetalk";
@@ -120,7 +116,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		Logger.debug(this, "Database wiped.");
 		
 		Logger.debug(this, "Creating Web interface...");
-		mWebInterface = new WebInterfaceNoWoT(this);
+		mWebInterface = new WebInterface(this);
 		
 		Logger.debug(this, "Creating identity manager...");
 		mIdentityManager = new WoTIdentityManager(db, this);
@@ -225,19 +221,35 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 	
 	public synchronized void handleWotConnected() {
 		Logger.debug(this, "Connected to WoT plugin.");
-		mWebInterface = new WebInterface(this);
+		wotConnected = true;
 	}
+	
+	private boolean wotConnected;
 	
 	public synchronized void handleWotDisconnected() {
 		Logger.debug(this, "Disconnected from WoT plugin");
-		if(!(mWebInterface instanceof WebInterfaceNoWoT))
-				mWebInterface = new WebInterfaceNoWoT(this);
+		wotConnected = false;
+	}
+	
+	public synchronized boolean wotConnected() {
+		return wotConnected;
+	}
+	
+	public boolean wotOutdated() {
+		return false;
 	}
 
 	public void terminate() {
 		Logger.debug(this, "Terminating Freetalk ...");
 		
 		/* We use single try/catch blocks so that failure of termination of one service does not prevent termination of the others */
+		try {
+			mWebInterface.terminate();
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
+		
 		try {
 			mNNTPServer.terminate();
 		}
@@ -303,14 +315,6 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginHTTP, Fred
 		}
 		
 		Logger.debug(this, "Freetalk plugin terminated.");
-	}
-	
-	public synchronized String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
-		return mWebInterface.handleHTTPGet(request);
-	}
-	
-	public synchronized String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
-		return mWebInterface.handleHTTPPost(request);
 	}
 	
 	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {

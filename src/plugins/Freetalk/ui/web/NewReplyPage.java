@@ -7,6 +7,7 @@ import java.util.HashSet;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Quoting;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
@@ -41,7 +42,7 @@ public class NewReplyPage extends WebPageImpl {
 				
 				try {
 					/* We use getThread().getID() instead of getParentThreadID() because the message's thread might not have been downloaded yet */
-					successBox.addChild(new HTMLNode("a", "href", SELF_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
+					successBox.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
 							"&board=" + mBoard.getName() + "&id=" + (mParentMessage.isThread() ? mParentMessage.getID() : mParentMessage.getThread().getID()), 
 					"Go back to parent thread"));
 					successBox.addChild("br");
@@ -50,7 +51,7 @@ public class NewReplyPage extends WebPageImpl {
 					Logger.error(this, "Should not happen", e);
 				}
 				
-				successBox.addChild(new HTMLNode("a", "href", SELF_URI + "/showBoard?identity=" + mOwnIdentity.getUID() + "&name=" + mBoard.getName(),
+				successBox.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getUID() + "&name=" + mBoard.getName(),
 						"Go back to " + mBoard.getName()));
 			} catch (Exception e) {
 				HTMLNode alertBox = addAlertBox("The reply could not be created.");
@@ -70,7 +71,7 @@ public class NewReplyPage extends WebPageImpl {
 
 	private void makeNewReplyPage(String replySubject, String replyText) {
 		HTMLNode replyBox = addContentBox("New reply to " + mBoard.getName());
-		HTMLNode newReplyForm = addFormChild(replyBox, SELF_URI + "/NewReply", "NewReply");
+		HTMLNode newReplyForm = addFormChild(replyBox, Freetalk.PLUGIN_URI + "/NewReply", "NewReply");
 		newReplyForm.addChild("input", new String[] { "type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
 		newReplyForm.addChild("input", new String[] { "type", "name", "value"}, new String[] {"hidden", "ParentMessageID", mParentMessage.getID()});
 		

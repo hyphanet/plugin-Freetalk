@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Iterator;
 
 import plugins.Freetalk.FTOwnIdentity;
@@ -10,10 +12,13 @@ import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker;
-import freenet.pluginmanager.FredPluginHTTP;
-import freenet.pluginmanager.NotFoundPluginHTTPException;
-import freenet.pluginmanager.PluginHTTPException;
+import freenet.clients.http.RedirectException;
+import freenet.clients.http.Toadlet;
+import freenet.clients.http.ToadletContainer;
+import freenet.clients.http.ToadletContext;
+import freenet.node.NodeClientCore;
 import freenet.support.api.HTTPRequest;
 
 
@@ -22,33 +27,301 @@ import freenet.support.api.HTTPRequest;
  * @author xor (xor@freenetproject.org)
  * @author saces
  */
-public class WebInterface implements FredPluginHTTP {
+public class WebInterface {
 	
 	private final Freetalk mFreetalk;
 	
 	protected final PageMaker mPageMaker;
 	
 	private FTOwnIdentity mOwnIdentity;
+	
+	// Visible
+	private final WebInterfaceToadlet homeToadlet;
+	private final WebInterfaceToadlet messagesToadlet;
+	private final WebInterfaceToadlet identitiesToadlet;
+	private final WebInterfaceToadlet logOutToadlet;
+	
+	// Invisible
+	private final WebInterfaceToadlet logInToadlet;
+	private final WebInterfaceToadlet createIdentityToadlet;
+	private final WebInterfaceToadlet newThreadToadlet;
+	private final WebInterfaceToadlet showBoardToadlet;
+	private final WebInterfaceToadlet showThreadToadlet;
+	private final WebInterfaceToadlet newReplyToadlet;
+	private final WebInterfaceToadlet newBoardToadlet;
+	
+	class HomeWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected HomeWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			return new Welcome(webInterface, mOwnIdentity, req);
+		}
+		
+	}
+	
+	class MessagesWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected MessagesWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			return new BoardsPage(webInterface, mOwnIdentity, req);
+		}
+		
+	}
+	
+	class IdentitiesWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected IdentitiesWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			return new IdentityEditor(webInterface, mOwnIdentity, req);
+		}
+		
+	}
+	
+	protected final URI logIn;
+	
+	class LogOutWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected LogOutWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			setLoggedInOwnIdentity(null);
+			throw new RedirectException(logIn);
+		}
+		
+	}
+	
+	class LogInWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected LogInWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			try {
+				if(req.getMethod().equals("GET"))
+					setLoggedInOwnIdentity(mFreetalk.getIdentityManager().getOwnIdentity(req.getParam("OwnIdentityID")));
+				else
+					setLoggedInOwnIdentity(mFreetalk.getIdentityManager().getOwnIdentity(req.getPartAsString("OwnIdentityID", 64)));
+				return new Welcome(webInterface, getLoggedInOwnIdentity(), req);
+			}
+			catch(NoSuchIdentityException e) {
+				/* Ignore and continue as if the user did not specify an identity, he will end up with a LogInPage */
+			}
+			return new LogInPage(webInterface, mOwnIdentity, req);
+		}
+		
+		@Override
+		public Toadlet showAsToadlet() {
+			return homeToadlet;
+		}
+		
+	}
+	
+	class CreateIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected CreateIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			return new CreateIdentityWizard(webInterface, req);
+		}
+		
+		@Override
+		public Toadlet showAsToadlet() {
+			return identitiesToadlet;
+		}
+		
+	}
+	
+	class NewThreadWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected NewThreadWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			if(mOwnIdentity == null)
+				throw new RedirectException(logIn);
+			try {
+				return new NewThreadPage(webInterface, mOwnIdentity, req);
+			} catch (NoSuchBoardException e) {
+				return new ErrorPage(webInterface, mOwnIdentity, req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
+				
+			}
+		}
+		
+		@Override
+		public Toadlet showAsToadlet() {
+			return messagesToadlet;
+		}
+		
+	}
+	
+	class ShowBoardWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected ShowBoardWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			if(mOwnIdentity == null)
+				throw new RedirectException(logIn);
+			try {
+				return new BoardPage(webInterface, mOwnIdentity, req);
+			} catch (NoSuchBoardException e) {
+				return new ErrorPage(webInterface, mOwnIdentity, req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
+				
+			}
+		}
+		
+		@Override
+		public Toadlet showAsToadlet() {
+			return messagesToadlet;
+		}
+		
+	}
+	
+	class ShowThreadWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected ShowThreadWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			if(mOwnIdentity == null)
+				throw new RedirectException(logIn);
+			try {
+				return new ThreadPage(webInterface, mOwnIdentity, req);
+			} catch (NoSuchBoardException e) {
+				return new ErrorPage(webInterface, mOwnIdentity, req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
+			} catch (NoSuchMessageException e) {
+				return new ErrorPage(webInterface, mOwnIdentity, req, "Unknown message "+req.getParam("id"), "Unknown message "+req.getParam("id"));
+			}
+		}
+		
+		@Override
+		public Toadlet showAsToadlet() {
+			return messagesToadlet;
+		}
+		
+	}
+	
+	class NewReplyWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected NewReplyWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			if(mOwnIdentity == null)
+				throw new RedirectException(logIn);
+			try {
+				return new NewReplyPage(webInterface, mOwnIdentity, req);
+			} catch (NoSuchBoardException e) {
+				return new ErrorPage(webInterface, mOwnIdentity, req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
+			} catch (NoSuchMessageException e) {
+				return new ErrorPage(webInterface, mOwnIdentity, req, "Unknown message "+req.getParam("id"), "Unknown message "+req.getParam("id"));
+			}
+		}
+		
+		@Override
+		public Toadlet showAsToadlet() {
+			return messagesToadlet;
+		}
+		
+	}
+	
+	class NewBoardWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected NewBoardWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			return new NewBoardPage(webInterface, mOwnIdentity, req);
+		}
+		
+		@Override
+		public Toadlet showAsToadlet() {
+			return messagesToadlet;
+		}
+		
+	}
 
 	public WebInterface(Freetalk myFreetalk) {
+		try {
+			logIn = new URI(Freetalk.PLUGIN_URI+"/LogIn");
+		} catch (URISyntaxException e) {
+			throw new Error(e);
+		}
+		
 		mFreetalk = myFreetalk;
 		mPageMaker = mFreetalk.getPluginRespirator().getPageMaker();
 		mOwnIdentity = null;
-	}
-
-	private void setUpMenu() {
-		mPageMaker.removeAllNavigationLinks();
+		ToadletContainer container = mFreetalk.getPluginRespirator().getToadletContainer();
 		
-		if(mOwnIdentity == null) {
-			mPageMaker.addNavigationLink("/", "Back to Freenet", "Back to nodes home", false, null);
-			return;
-		}
+		mPageMaker.addNavigationCategory(Freetalk.PLUGIN_URI+"/", "Freetalk", "Message boards", mFreetalk);
 		
-		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/", "Home", "Freetalk plugin home", false, null);
-		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/messages", "Boards", "View all boards", false, null);
-		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/identities", "Identities", "Manage your own and known identities", false, null);
-		mPageMaker.addNavigationLink(Freetalk.PLUGIN_URI + "/LogOut", "Log out", "Log out", false, null);
-		mPageMaker.addNavigationLink("/", "Back to Freenet", "Back to your Freenet node", false, null);
+		// Visible pages
+		
+		container.register(homeToadlet = new HomeWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, ""), "Freetalk", Freetalk.PLUGIN_URI+"/", true, "Home", "Home page", false, null);
+		container.register(messagesToadlet = new MessagesWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "messages"), "Freetalk", Freetalk.PLUGIN_URI+"/messages", true, "Boards", "View all boards", false, messagesToadlet);
+		container.register(identitiesToadlet = new IdentitiesWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "identities"), "Freetalk", Freetalk.PLUGIN_URI+"/identities", true, "Identities", "Manage your own and known identities", false, identitiesToadlet);
+		container.register(logOutToadlet = new LogOutWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "LogOut"), "Freetalk", Freetalk.PLUGIN_URI+"/LogOut", true, "Log out", "Log out", false, logOutToadlet);
+		
+		// Invisible pages
+		container.register(logInToadlet = new LogInWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "LogIn"), null, Freetalk.PLUGIN_URI + "/LogIn", true, false);
+		container.register(createIdentityToadlet = new CreateIdentityWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "CreateIdentity"), null, Freetalk.PLUGIN_URI + "/CreateIdentity", true, false);
+		container.register(newThreadToadlet = new NewThreadWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewThread"), null, Freetalk.PLUGIN_URI + "/NewThread", true, false);
+		container.register(showBoardToadlet = new ShowBoardWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "showBoard"), null, Freetalk.PLUGIN_URI + "/showBoard", true, false);
+		container.register(showThreadToadlet = new ShowThreadWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "showThread"), null, Freetalk.PLUGIN_URI + "/showThread", true, false);
+		container.register(newReplyToadlet = new NewReplyWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewReply"), null, Freetalk.PLUGIN_URI + "/NewReply", true, false);
+		container.register(newBoardToadlet = new NewBoardWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewBoard"), null, Freetalk.PLUGIN_URI + "/NewBoard", true, false);
 	}
 
 	private void setLoggedInOwnIdentity(FTOwnIdentity user) {
@@ -59,270 +332,6 @@ public class WebInterface implements FredPluginHTTP {
 		return mOwnIdentity;
 	}
 
-	/* TODO: This function is ugly clean it up */
-	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
-		/* FIXME 
-		String pass = request.getParam("formPassword");
-		if(pass != null) {	// FIXME: is this correct? what if the client just does not specify the password so that its null? 
-			if ((pass.length() == 0) || !pass.equals(pr.getNode().clientCore.formPassword))
-				return Errors.makeErrorPage(this, "Buh! Invalid form password");
-		}
-		*/
-
-		/* FIXME: ugly hack! remove! */
-		String page = request.getPath().substring(Freetalk.PLUGIN_URI.length());
-		int endIndex = request.getPath().indexOf('?');
-		if(endIndex > 0)
-			page = page.substring(0, endIndex);
-		
-		if(page.equals("/LogOut"))
-			setLoggedInOwnIdentity(null);
-		
-		setUpMenu();
-		
-		if(page.equals("/CreateIdentity"))
-			return new CreateIdentityWizard(this, request).toHTML();
-		
-		if(page.equals("/LogIn")) {
-			try {
-				setLoggedInOwnIdentity(mFreetalk.getIdentityManager().getOwnIdentity(request.getParam("OwnIdentityID")));
-				setUpMenu();
-				return new Welcome(this, getLoggedInOwnIdentity(), request).toHTML();
-			}
-			catch(NoSuchIdentityException e) {
-				/* Ignore and continue as if the user did not specify an identity, he will end up with a LogInPage */
-			}
-		}
-		
-		if(getLoggedInOwnIdentity() == null)
-			return new LogInPage(this, null, request).toHTML();
-
-		/* Anything below this line assumes that we have a logged in own identity */
-		
-		if ((page.length() < 1) || ("/".equals(page)))
-			return new Welcome(this, getLoggedInOwnIdentity(), request).toHTML();
-		
-		if ("/identities".equals(page))
-			return new IdentityEditor(this, getLoggedInOwnIdentity(), request).toHTML();
-
-		if ("/messages".equals(page))
-			return new BoardsPage(this, getLoggedInOwnIdentity(), request).toHTML();
-		
-		try {
-			/* FIXME: Also use getLoggedInOwnIdentity() here? */
-			if(page.equals("/showBoard"))
-				return new BoardPage(this, getLoggedInOwnIdentity(), request).toHTML();
-			
-			if(page.equals("/showThread"))
-				return new ThreadPage(this, getLoggedInOwnIdentity(), request).toHTML();
-		}
-		/* TODO: Make this exceptions store the specified non-existant element theirselves */
-		catch(NoSuchBoardException e) {
-			throw new NotFoundPluginHTTPException("Unknown board " + request.getParam("name"), page);
-		}
-		catch(NoSuchMessageException e) {
-			throw new NotFoundPluginHTTPException("Unknown message " + request.getParam("id"), page);
-		}
-	
-
-		throw new NotFoundPluginHTTPException("Resource not found in Freetalk plugin", page);
-	}
-
-	/* TODO: This function is ugly clean it up */
-	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
-		String pass = request.getPartAsString("formPassword", 32);
-		if (pass == null || (pass.length() == 0) || !pass.equals(mFreetalk.getPluginRespirator().getNode().clientCore.formPassword)) {
-			return new ErrorPage(this, null, request, "Error", "Invalid form password.").toHTML();
-		}
-
-		String page = request.getPath().substring(Freetalk.PLUGIN_URI.length());
-
-		if (page.length() < 1)
-			throw new NotFoundPluginHTTPException("Resource not found", page);
-		
-		try {
-			if(page.equals("/CreateIdentity")) {
-				setUpMenu();
-				return new CreateIdentityWizard(this, request).toHTML();
-			}
-			
-			/* Anything below this line requires the user to be logged in with a certain own identity */
-			
-			FTOwnIdentity ownId = mFreetalk.getIdentityManager().getOwnIdentity(request.getPartAsString("OwnIdentityID", 64));
-			
-			if(page.equals("/LogIn")) {
-				setLoggedInOwnIdentity(ownId);
-				setUpMenu();
-				return new Welcome(this, ownId, request).toHTML();
-			}
-			
-			setUpMenu();
-			
-			if(page.equals("/NewBoard"))
-				return new NewBoardPage(this, ownId, request).toHTML();
-			
-			if(page.equals("/NewThread"))
-				return new NewThreadPage(this, ownId, request).toHTML();
-			
-			if(page.equals("/NewReply")) 
-				return new NewReplyPage(this, ownId, request).toHTML();
-		}
-		catch(NoSuchIdentityException e) {
-			throw new NotFoundPluginHTTPException(e.getMessage(), page);
-		}
-		catch(NoSuchBoardException e) {
-			throw new NotFoundPluginHTTPException(e.getMessage(), page);
-		}
-		catch (NoSuchMessageException e) {
-			throw new NotFoundPluginHTTPException(e.getMessage(), page);
-		}
-
-		/*
-		if (page.equals("/exportDB")) {
-			StringWriter sw = new StringWriter();
-			try {
-				Backup.exportConfigDb(db, sw);
-			} catch (IOException e) {
-				Logger.error(this, "Error While exporting database!", e);
-				return Errors.makeErrorPage(this, "Server BuhBuh! " + e.getMessage());
-			}
-			throw new DownloadPluginHTTPException(sw.toString().getBytes("UTF-8"), "fms-kidding.xml", "fms-clone/db-backup");
-		}
-		*/
-		
-		/*
-		if (page.equals("/importDB")) {
-			HTTPUploadedFile file = request.getUploadedFile("filename");
-			if (file == null || file.getFilename().trim().length() == 0) {
-				return Errors.makeErrorPage(this, "No file to import selected!");
-			}
-			try {
-				Backup.importConfigDb(db, file.getData().getInputStream());
-			} catch (Exception e) {
-				Logger.error(this, "Error While importing db from: " + file.getFilename(), e);
-				return Errors.makeErrorPage(this, "Error While importing db from: " + file.getFilename() + e.getMessage());
-			}
-			throw new RedirectPluginHTTPException("", mFreetalk.PLUGIN_URI);
-		}
-		*/
-
-		/*
-		if (page.equals("/createownidentity")) {
-			List<String> err = new ArrayList<String>();
-			String nick = request.getPartAsString("nick", 1024).trim();
-			String requestUri = request.getPartAsString("requestURI", 1024);
-			String insertUri = request.getPartAsString("insertURI", 1024);
-			boolean publish = "true".equals(request.getPartAsString("publishTrustList", 24));
-
-			IdentityEditor.checkNick(err, nick);
-
-			if ((requestUri.length() == 0) && (insertUri.length() == 0)) {
-				FreenetURI[] kp = mClient.generateKeyPair("fms");
-				insertUri = kp[0].toString();
-				requestUri = kp[1].toString();
-				err.add("URI was empty, I generated one for you.");
-				return IdentityEditor.makeNewOwnIdentityPage(this, nick, requestUri, insertUri, publish, err);
-			}
-
-			IdentityEditor.checkInsertURI(err, insertUri);
-			IdentityEditor.checkRequestURI(err, requestUri);
-
-			if (err.size() == 0) {
-				// FIXME: use identity manager to implement this
-				throw new UnsupportedOperationException();
-				// FTOwnIdentity oi = new FTOwnIdentity(nick, requestUri, insertUri, publish);
-				// IdentityEditor.addNewOwnIdentity(db_config, oi, err);
-			}
-
-			if (err.size() == 0) {
-				throw new RedirectPluginHTTPException("", mFreetalk.PLUGIN_URI + "/ownidentities");
-			}
-
-			return IdentityEditor.makeNewOwnIdentityPage(this, nick, requestUri, insertUri, publish, err);
-		}
-		*/
-
-		/*
-		if (page.equals("/addknownidentity")) {
-			List<String> err = new ArrayList<String>();
-
-			String requestUri = request.getPartAsString("requestURI", 1024);
-
-			if (requestUri.length() == 0) {
-				err.add("Are you jokingly? URI was empty.");
-				return IdentityEditor.makeNewKnownIdentityPage(this, requestUri, err);
-			}
-
-			IdentityEditor.checkRequestURI(err, requestUri);
-
-			if (err.size() == 0) {
-				// FIXME: use identity manager to implement this
-				throw new UnsupportedOperationException();
-				
-				//FTIdentity i = new FTIdentity("", requestUri);
-				//IdentityEditor.addNewKnownIdentity(db_config, i, err);
-				
-			}
-
-			if (err.size() == 0) {
-				throw new RedirectPluginHTTPException("", mFreetalk.PLUGIN_URI + "/knownidentities");
-			}
-
-			return IdentityEditor.makeNewKnownIdentityPage(this, requestUri, err);
-		}
-		*/
-
-		/*
-		if (page.equals("/deleteOwnIdentity")) {
-			List<String> err = new ArrayList<String>();
-
-			String requestUri = request.getPartAsString("identity", 1024);
-			if (requestUri.length() == 0) {
-				err.add("Are you jokingly? URI was empty.");
-				return IdentityEditor.makeDeleteOwnIdentityPage(this, requestUri, err);
-			}
-
-			if (request.isPartSet("confirmed")) {
-				IdentityEditor.deleteIdentity(this, requestUri, err);
-			} else {
-				err.add("Please confirm.");
-			}
-
-			if (err.size() > 0) {
-				return IdentityEditor.makeDeleteOwnIdentityPage(this, requestUri, err);
-			}
-			throw new RedirectPluginHTTPException("", mFreetalk.PLUGIN_URI + "/ownidentities");
-			// return IdentityEditor.makeDeleteOwnIdentityPage(fms, requestUri,
-			// err);
-		}
-		*/
-
-		/*
-		if (page.equals("/deleteIdentity")) {
-			List<String> err = new ArrayList<String>();
-
-			String requestUri = request.getPartAsString("identity", 1024);
-			if (requestUri.length() == 0) {
-				err.add("Are you jokingly? URI was empty.");
-				return IdentityEditor.makeDeleteKnownIdentityPage(this, requestUri, err);
-			}
-
-			if (request.isPartSet("confirmed")) {
-				IdentityEditor.deleteIdentity(this, requestUri, err);
-			} else {
-				err.add("Please confirm.");
-			}
-
-			if (err.size() > 0) {
-				return IdentityEditor.makeDeleteKnownIdentityPage(this, requestUri, err);
-			}
-			throw new RedirectPluginHTTPException("", mFreetalk.PLUGIN_URI + "/knownidentities");
-		}
-		*/
-		
-		throw new NotFoundPluginHTTPException("Resource not found", page);
-	}
-	
 	public final Freetalk getFreetalk() {
 		return mFreetalk;
 	}
@@ -338,4 +347,23 @@ public class WebInterface implements FredPluginHTTP {
 		Iterator<FTOwnIdentity> iter = mFreetalk.getIdentityManager().ownIdentityIterator();
 		return iter.hasNext() ? iter.next() : null;
 	}
+	
+	public void terminate() {
+		ToadletContainer container = mFreetalk.getPluginRespirator().getToadletContainer();
+		for(Toadlet t : new Toadlet[] { 
+				homeToadlet,
+				messagesToadlet,
+				identitiesToadlet,
+				logOutToadlet,
+				logInToadlet,
+				createIdentityToadlet,
+				newThreadToadlet,
+				showBoardToadlet,
+				showThreadToadlet,
+				newReplyToadlet,
+				newBoardToadlet
+		}) container.unregister(t);
+		mPageMaker.removeNavigationCategory("Freetalk");
+	}
+
 }
