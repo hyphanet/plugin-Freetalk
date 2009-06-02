@@ -13,7 +13,6 @@ import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.LinkEnabledCallback;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.Toadlet;
@@ -61,7 +60,7 @@ public class WebInterface {
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
 			if(!mFreetalk.wotConnected())
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
-			return new Welcome(webInterface, mOwnIdentity, req);
+			return new Welcome(webInterface, getLoggedInOwnIdentity(), req);
 		}
 		
 	}
@@ -76,7 +75,12 @@ public class WebInterface {
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
 			if(!mFreetalk.wotConnected())
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
-			return new BoardsPage(webInterface, mOwnIdentity, req);
+			return new BoardsPage(webInterface, getLoggedInOwnIdentity(), req);
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && webInterface.getLoggedInOwnIdentity() != null;
 		}
 		
 	}
@@ -91,7 +95,12 @@ public class WebInterface {
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
 			if(!mFreetalk.wotConnected())
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
-			return new IdentityEditor(webInterface, mOwnIdentity, req);
+			return new IdentityEditor(webInterface, getLoggedInOwnIdentity(), req);
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && webInterface.getLoggedInOwnIdentity() != null;
 		}
 		
 	}
@@ -110,6 +119,11 @@ public class WebInterface {
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
 			setLoggedInOwnIdentity(null);
 			throw new RedirectException(logIn);
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && webInterface.getLoggedInOwnIdentity() != null;
 		}
 		
 	}
@@ -134,12 +148,17 @@ public class WebInterface {
 			catch(NoSuchIdentityException e) {
 				/* Ignore and continue as if the user did not specify an identity, he will end up with a LogInPage */
 			}
-			return new LogInPage(webInterface, mOwnIdentity, req);
+			return new LogInPage(webInterface, getLoggedInOwnIdentity(), req);
 		}
 		
 		@Override
 		public Toadlet showAsToadlet() {
 			return homeToadlet;
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && webInterface.getLoggedInOwnIdentity() == null;
 		}
 		
 	}
@@ -174,12 +193,12 @@ public class WebInterface {
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
-			if(mOwnIdentity == null)
+			if(getLoggedInOwnIdentity() == null)
 				throw new RedirectException(logIn);
 			try {
-				return new NewThreadPage(webInterface, mOwnIdentity, req);
+				return new NewThreadPage(webInterface, getLoggedInOwnIdentity(), req);
 			} catch (NoSuchBoardException e) {
-				return new ErrorPage(webInterface, mOwnIdentity, req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
 				
 			}
 		}
@@ -187,6 +206,11 @@ public class WebInterface {
 		@Override
 		public Toadlet showAsToadlet() {
 			return messagesToadlet;
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && webInterface.getLoggedInOwnIdentity() != null;
 		}
 		
 	}
@@ -201,12 +225,12 @@ public class WebInterface {
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
-			if(mOwnIdentity == null)
+			if(getLoggedInOwnIdentity() == null)
 				throw new RedirectException(logIn);
 			try {
-				return new BoardPage(webInterface, mOwnIdentity, req);
+				return new BoardPage(webInterface, getLoggedInOwnIdentity(), req);
 			} catch (NoSuchBoardException e) {
-				return new ErrorPage(webInterface, mOwnIdentity, req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
 				
 			}
 		}
@@ -214,6 +238,11 @@ public class WebInterface {
 		@Override
 		public Toadlet showAsToadlet() {
 			return messagesToadlet;
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && webInterface.getLoggedInOwnIdentity() != null;
 		}
 		
 	}
@@ -228,20 +257,25 @@ public class WebInterface {
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
-			if(mOwnIdentity == null)
+			if(getLoggedInOwnIdentity() == null)
 				throw new RedirectException(logIn);
 			try {
-				return new ThreadPage(webInterface, mOwnIdentity, req);
+				return new ThreadPage(webInterface, getLoggedInOwnIdentity(), req);
 			} catch (NoSuchBoardException e) {
-				return new ErrorPage(webInterface, mOwnIdentity, req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
 			} catch (NoSuchMessageException e) {
-				return new ErrorPage(webInterface, mOwnIdentity, req, "Unknown message "+req.getParam("id"), "Unknown message "+req.getParam("id"));
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Unknown message "+req.getParam("id"), "Unknown message "+req.getParam("id"));
 			}
 		}
 		
 		@Override
 		public Toadlet showAsToadlet() {
 			return messagesToadlet;
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && webInterface.getLoggedInOwnIdentity() != null;
 		}
 		
 	}
@@ -256,20 +290,25 @@ public class WebInterface {
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
-			if(mOwnIdentity == null)
+			if(getLoggedInOwnIdentity() == null)
 				throw new RedirectException(logIn);
 			try {
-				return new NewReplyPage(webInterface, mOwnIdentity, req);
+				return new NewReplyPage(webInterface, getLoggedInOwnIdentity(), req);
 			} catch (NoSuchBoardException e) {
-				return new ErrorPage(webInterface, mOwnIdentity, req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
 			} catch (NoSuchMessageException e) {
-				return new ErrorPage(webInterface, mOwnIdentity, req, "Unknown message "+req.getParam("id"), "Unknown message "+req.getParam("id"));
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Unknown message "+req.getParam("id"), "Unknown message "+req.getParam("id"));
 			}
 		}
 		
 		@Override
 		public Toadlet showAsToadlet() {
 			return messagesToadlet;
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && webInterface.getLoggedInOwnIdentity() != null;
 		}
 		
 	}
@@ -284,12 +323,17 @@ public class WebInterface {
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
-			return new NewBoardPage(webInterface, mOwnIdentity, req);
+			return new NewBoardPage(webInterface, getLoggedInOwnIdentity(), req);
 		}
 		
 		@Override
 		public Toadlet showAsToadlet() {
 			return messagesToadlet;
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && webInterface.getLoggedInOwnIdentity() != null;
 		}
 		
 	}
@@ -352,14 +396,6 @@ public class WebInterface {
 
 	public final PageMaker getPageMaker() {
 		return mPageMaker;
-	}
-	
-	/**
-	 * @return The <code>FTOwnIdentity</code> which is currently logged in.
-	 */
-	public final FTOwnIdentity getOwnIdentity() {
-		Iterator<FTOwnIdentity> iter = mFreetalk.getIdentityManager().ownIdentityIterator();
-		return iter.hasNext() ? iter.next() : null;
 	}
 	
 	public void terminate() {
