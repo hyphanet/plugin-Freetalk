@@ -13,6 +13,7 @@ import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.LinkEnabledCallback;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.Toadlet;
@@ -309,19 +310,32 @@ public class WebInterface {
 		
 		// Visible pages
 		
-		container.register(homeToadlet = new HomeWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, ""), "Freetalk", Freetalk.PLUGIN_URI+"/", true, "Home", "Home page", false, null);
-		container.register(messagesToadlet = new MessagesWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "messages"), "Freetalk", Freetalk.PLUGIN_URI+"/messages", true, "Boards", "View all boards", false, messagesToadlet);
-		container.register(identitiesToadlet = new IdentitiesWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "identities"), "Freetalk", Freetalk.PLUGIN_URI+"/identities", true, "Identities", "Manage your own and known identities", false, identitiesToadlet);
-		container.register(logOutToadlet = new LogOutWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "LogOut"), "Freetalk", Freetalk.PLUGIN_URI+"/LogOut", true, "Log out", "Log out", false, logOutToadlet);
+		homeToadlet = new HomeWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "");
+		messagesToadlet = new MessagesWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "messages");
+		identitiesToadlet = new IdentitiesWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "identities");
+		logOutToadlet = new LogOutWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "LogOut");
+		
+		container.register(homeToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/", true, "Home", "Home page", false, null);
+		container.register(messagesToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/messages", true, "Boards", "View all boards", false, messagesToadlet);
+		container.register(identitiesToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/identities", true, "Identities", "Manage your own and known identities", false, identitiesToadlet);
+		container.register(logOutToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/LogOut", true, "Log out", "Log out", false, logOutToadlet);
 		
 		// Invisible pages
-		container.register(logInToadlet = new LogInWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "LogIn"), null, Freetalk.PLUGIN_URI + "/LogIn", true, false);
-		container.register(createIdentityToadlet = new CreateIdentityWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "CreateIdentity"), null, Freetalk.PLUGIN_URI + "/CreateIdentity", true, false);
-		container.register(newThreadToadlet = new NewThreadWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewThread"), null, Freetalk.PLUGIN_URI + "/NewThread", true, false);
-		container.register(showBoardToadlet = new ShowBoardWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "showBoard"), null, Freetalk.PLUGIN_URI + "/showBoard", true, false);
-		container.register(showThreadToadlet = new ShowThreadWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "showThread"), null, Freetalk.PLUGIN_URI + "/showThread", true, false);
-		container.register(newReplyToadlet = new NewReplyWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewReply"), null, Freetalk.PLUGIN_URI + "/NewReply", true, false);
-		container.register(newBoardToadlet = new NewBoardWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewBoard"), null, Freetalk.PLUGIN_URI + "/NewBoard", true, false);
+		logInToadlet = new LogInWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "LogIn");
+		createIdentityToadlet = new CreateIdentityWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "CreateIdentity");
+		newThreadToadlet = new NewThreadWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewThread");
+		showBoardToadlet = new ShowBoardWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "showBoard");
+		showThreadToadlet = new ShowThreadWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "showThread");
+		newReplyToadlet = new NewReplyWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewReply");
+		newBoardToadlet = new NewBoardWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewBoard");
+		
+		container.register(logInToadlet, null, Freetalk.PLUGIN_URI + "/LogIn", true, false);
+		container.register(createIdentityToadlet, null, Freetalk.PLUGIN_URI + "/CreateIdentity", true, false);
+		container.register(newThreadToadlet, null, Freetalk.PLUGIN_URI + "/NewThread", true, false);
+		container.register(showBoardToadlet, null, Freetalk.PLUGIN_URI + "/showBoard", true, false);
+		container.register(showThreadToadlet, null, Freetalk.PLUGIN_URI + "/showThread", true, false);
+		container.register(newReplyToadlet, null, Freetalk.PLUGIN_URI + "/NewReply", true, false);
+		container.register(newBoardToadlet, null, Freetalk.PLUGIN_URI + "/NewBoard", true, false);
 	}
 
 	private void setLoggedInOwnIdentity(FTOwnIdentity user) {
