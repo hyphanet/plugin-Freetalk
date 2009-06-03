@@ -1,24 +1,48 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
 import java.net.MalformedURLException;
 import java.util.UUID;
 
+import com.db4o.ext.ExtObjectContainer;
+
 import plugins.Freetalk.MessageURI;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 
+
+/**
+ * The WoT-based implementation of a message URI:
+ * 
+ * The raw messages are inserted as CHK. Therefore, they cannot be associated with an author, and because CHK-URIs are dependent on the content, they cannot be
+ * guessed by someone who wants to download messages of a given author.
+ * 
+ * An author is a SSK URI.  Each CHK URI of a message therefore must be referenced by a message list of the author - message lists are stored under the SSK URI of 
+ * the author so the URIs of message lists can be guessed for downloading them.
+ * 
+ * A WoTMessageURI is a fully qualified reference to a message: It stores the SSK URI of the message list which contains the CHK URI of the message, and the ID 
+ * of the message so you know which CHK URI in the given message list is being referenced. 
+ * 
+ * @author xor (xor@freenetproject.org)
+ */
 public final class WoTMessageURI extends MessageURI {
 
 	private final FreenetURI mFreenetURI;
 	private final String mMessageID;
 
 	public WoTMessageURI(FreenetURI myFreenetURI, String myMessageID) {
-		if(myFreenetURI == null || myMessageID == null)
-			throw new IllegalArgumentException("Trying to create an empty WoTMessageURI");
+		if(myFreenetURI == null)
+			throw new IllegalArgumentException("Trying to create a WoTMessageURI without a FreenetURI.");
+		
+		if(myMessageID == null)
+			throw new IllegalArgumentException("Trying to create a WoTMessageURI without an ID.");
+			
 		
 		mFreenetURI = myFreenetURI.isUSK() ? myFreenetURI.sskForUSK() : myFreenetURI;
 		if(!mFreenetURI.isSSK())
-			throw new IllegalArgumentException("Trying to create a WoTMessageURI with illegal key type " + myFreenetURI.getKeyType());
+			throw new IllegalArgumentException("Trying to create a WoTMessageURI with illegal key type: " + myFreenetURI.getKeyType());
 		 		
 		mMessageID = myMessageID;
 		String[] tokens = mMessageID.split("[@]", 2);
@@ -27,11 +51,11 @@ public final class WoTMessageURI extends MessageURI {
 			UUID.fromString(tokens[0]);
 		}
 		catch(IllegalArgumentException e) {
-			throw new IllegalArgumentException("Illegal id:" + mMessageID);
+			throw new IllegalArgumentException("Invalid UUID in message ID:" + mMessageID);
 		}
 		
 		if(tokens[1].equals(Base64.encode(mFreenetURI.getRoutingKey())) == false)
-			throw new IllegalArgumentException("Illegal id:" + mMessageID);
+			throw new IllegalArgumentException("ID does not match URI: " + mMessageID);
 	}
 
 	/**
@@ -88,5 +112,16 @@ public final class WoTMessageURI extends MessageURI {
 		return mFreenetURI.toString() + "#" + mMessageID.split("[@]", 2)[0];
 	}
 
+	@Override
+	public void removeFrom(ExtObjectContainer db) {
+		mFreenetURI.removeFrom(db);
+		db.delete(this);
+	}
+
+	@Override
+	public void storeWithoutCommit(ExtObjectContainer db) {
+		db.store(mFreenetURI);
+		db.store(this);
+	}
 
 }
