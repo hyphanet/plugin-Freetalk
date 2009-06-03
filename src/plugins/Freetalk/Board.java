@@ -80,7 +80,7 @@ public final class Board implements Comparable<Board> {
      * @param newName The name of the board. For restrictions, see <code>isNameValid()</code>
      * @throws InvalidParameterException If none or an invalid name is given.
      */
-    public Board(String newName) throws InvalidParameterException {
+    protected Board(String newName) throws InvalidParameterException {
         if(newName==null || newName.length() == 0)
             throw new IllegalArgumentException("Empty board name.");
         if(!isNameValid(newName))
@@ -95,7 +95,7 @@ public final class Board implements Comparable<Board> {
     /**
      * Has to be used after loading a FTBoard object from the database to initialize the transient fields.
      */
-    public void initializeTransient(ExtObjectContainer myDB, MessageManager myMessageManager) {
+    protected void initializeTransient(ExtObjectContainer myDB, MessageManager myMessageManager) {
         assert(myDB != null);
         assert(myMessageManager != null);
         db = myDB;
@@ -107,7 +107,7 @@ public final class Board implements Comparable<Board> {
      * 
      * Does not provide synchronization, you have to lock the MessageManager, this Board and then the database before calling this function.
      */
-    public void storeWithoutCommit() {
+    protected void storeWithoutCommit() {
     	try  {
     		if(db.ext().isStored(this) && !db.ext().isActive(this))
     			throw new RuntimeException("Trying to store a non-active Board object");
@@ -292,7 +292,7 @@ public final class Board implements Comparable<Board> {
                 }
             }
         }
-        else {
+        else { /* The given message is not a thread */
             try {
                 Message parentThread = newMessage.getThread();
                 /* Search in its parent thread for its children */
@@ -306,7 +306,7 @@ public final class Board implements Comparable<Board> {
                     }
                 }
             }
-            catch(NoSuchMessageException e)
+            catch(NoSuchMessageException e) /* The given message is not a thread and the parent thread was not found yet */
             { /* The new message is an absolute orphan, find its children amongst the other absolute orphans */
                 Iterator<Message> absoluteOrphans = absoluteOrphanIterator(newMessage.getID());
                 while(absoluteOrphans.hasNext()){	/* Search in the orphans for messages which belong to this message  */
