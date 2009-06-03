@@ -108,16 +108,16 @@ public final class Board implements Comparable<Board> {
      * Does not provide synchronization, you have to lock the MessageManager, this Board and then the database before calling this function.
      */
     public void storeWithoutCommit() {
-    		try  {
-    			if(db.ext().isStored(this) && !db.ext().isActive(this))
-    				throw new RuntimeException("Trying to store a non-active Board object");
+    	try  {
+    		if(db.ext().isStored(this) && !db.ext().isActive(this))
+    			throw new RuntimeException("Trying to store a non-active Board object");
 
-    			db.store(this);
-    		}
-			catch(RuntimeException e) {
-				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
-			}
+    		db.store(this);
+    	}
+    	catch(RuntimeException e) {
+    		db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+    		throw e;
+    	}
     }
 
     /**
@@ -231,49 +231,48 @@ public final class Board implements Comparable<Board> {
      * 
      * Does not store the message, you have to do this before!
      */
-    protected synchronized void addMessage(Message newMessage) {
-        
-            if(newMessage instanceof OwnMessage) {
-                /* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
-                 * successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
-                throw new IllegalArgumentException("Adding OwnMessages to a board is not allowed.");
-            }
+    protected synchronized void addMessage(Message newMessage) {        
+    	if(newMessage instanceof OwnMessage) {
+    		/* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
+    		 * successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
+    		throw new IllegalArgumentException("Adding OwnMessages to a board is not allowed.");
+    	}
 
-            synchronized(BoardMessageLink.class) {
-                new BoardMessageLink(this, newMessage, getFreeMessageIndex()).storeWithoutCommit(db);
-            }
+    	synchronized(BoardMessageLink.class) {
+    		new BoardMessageLink(this, newMessage, getFreeMessageIndex()).storeWithoutCommit(db);
+    	}
 
-            if(!newMessage.isThread())
-            {
-                Message parentThread = null;
+    	if(!newMessage.isThread())
+    	{
+    		Message parentThread = null;
 
-                try {
-                    parentThread = findParentThread(newMessage).getMessage();
-                    newMessage.setThread(parentThread);
-                }
-                catch(NoSuchMessageException e) {}
+    		try {
+    			parentThread = findParentThread(newMessage).getMessage();
+    			newMessage.setThread(parentThread);
+    		}
+    		catch(NoSuchMessageException e) {}
 
-                try {
-                    newMessage.setParent(mMessageManager.get(newMessage.getParentID())); /* TODO: This allows crossposting. Figure out whether we need to handle it specially */
-                }
-                catch(NoSuchMessageException e) {/* The message is an orphan */
-                    if(parentThread == null) {
-                        /* The message is an absolute orphan */
+    		try {
+    			newMessage.setParent(mMessageManager.get(newMessage.getParentID())); /* TODO: This allows crossposting. Figure out whether we need to handle it specially */
+    		}
+    		catch(NoSuchMessageException e) {/* The message is an orphan */
+    			if(parentThread == null) {
+    				/* The message is an absolute orphan */
 
-                        /*
-                         * FIXME: The MessageManager should try to download the parent message if it's poster has enough trust.
-                         * If it is programmed to do that, it will check its Hashtable whether the parent message already exists.
-                         * We also do that here, therefore, when implementing parent message downloading, please do the Hashtable checking only once.
-                         */
-                    }
-                }
-            }
+    				/*
+    				 * FIXME: The MessageManager should try to download the parent message if it's poster has enough trust.
+    				 * If it is programmed to do that, it will check its Hashtable whether the parent message already exists.
+    				 * We also do that here, therefore, when implementing parent message downloading, please do the Hashtable checking only once.
+    				 */
+    			}
+    		}
+    	}
 
-            linkOrphansToNewParent(newMessage);
-            if(mLatestMessageDate == null || newMessage.getDate().after(mLatestMessageDate))
-                mLatestMessageDate = newMessage.getDate();
-            
-            storeWithoutCommit();
+    	linkOrphansToNewParent(newMessage);
+    	if(mLatestMessageDate == null || newMessage.getDate().after(mLatestMessageDate))
+    		mLatestMessageDate = newMessage.getDate();
+
+    	storeWithoutCommit();
     }
 
     /**
