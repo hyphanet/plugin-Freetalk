@@ -64,7 +64,7 @@ public final class Board implements Comparable<Board> {
      * Get a list of fields which the database should create an index on.
      */
     public static String[] getIndexedFields() {
-        return new String[] {"mName"};
+        return new String[] { "mID", "mName" };
     }
 
     public static String[] getBoardMessageLinkIndexedFields() { /* TODO: ugly! find a better way */
@@ -104,23 +104,20 @@ public final class Board implements Comparable<Board> {
 
     /**
      * Store this object in the database. You have to initializeTransient() before.
+     * 
+     * Does not provide synchronization, you have to lock the MessageManager, this Board and then the database before calling this function.
      */
-    public synchronized void storeAndCommit() {
-        /* FIXME: check for duplicates */
-
-    	synchronized(db.lock()) {
+    public void storeWithoutCommit() {
     		try  {
     			if(db.ext().isStored(this) && !db.ext().isActive(this))
     				throw new RuntimeException("Trying to store a non-active Board object");
 
     			db.store(this);
-    			db.commit(); Logger.debug(this, "COMMITED.");
     		}
 			catch(RuntimeException e) {
 				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
 				throw e;
 			}
-    	}
     }
 
     /**
@@ -231,17 +228,16 @@ public final class Board implements Comparable<Board> {
      * Called by the <code>FTMessageManager</code> to add a just received message to the board.
      * The job for this function is to find the right place in the thread-tree for the new message and to move around older messages
      * if a parent message of them is received.
+     * 
+     * Does not store the message, you have to do this before!
      */
-    protected synchronized void addMessage(Message newMessage) {
+    protected synchronized void addMessageWithoutCommit(Message newMessage) {
         
             if(newMessage instanceof OwnMessage) {
                 /* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
                  * successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
                 throw new IllegalArgumentException("Adding OwnMessages to a board is not allowed.");
             }
-
-            newMessage.initializeTransient(db, mMessageManager);
-            newMessage.storeWithoutCommit();
 
             synchronized(BoardMessageLink.class) {
                 new BoardMessageLink(this, newMessage, getFreeMessageIndex()).storeWithoutCommit(db);
@@ -276,7 +272,8 @@ public final class Board implements Comparable<Board> {
             linkOrphansToNewParent(newMessage);
             if(mLatestMessageDate == null || newMessage.getDate().after(mLatestMessageDate))
                 mLatestMessageDate = newMessage.getDate();
-
+            
+            storeWithoutCommit();
     }
 
     /**
@@ -615,17 +612,22 @@ public final class Board implements Comparable<Board> {
         public Message getMessage();
 
         /** Get an unique index number of this message in the board where which the query for the message was executed.
-         * This index number is needed for NNTP. */
+         * This index number is needed for NNTP and for synchronization with client-applications: They can check whether they have all messages by querying
+         * for the highest available index number. */
         public int getIndex();
     }
 
+    
+    // FIXME: This class was made static so that it does not store an internal reference to it's Board object because we store that reference in mBoard already,
+    // for being able to access it with db4o queries. Reconsider whether it should really be static: It would be nice if db4o did store an index on mMessageIndex
+    // *per-board*, and not just a global index - the message index is board-local anyway! Does db4o store a per-board index if the class is not static???
     /**
      * Helper class to associate messages with boards in the database
      */
     public final static class BoardMessageLink implements MessageReference { /* TODO: This is only public for configuring db4o. Find a better way */
         private final Board mBoard;
         private final Message mMessage;
-        private final int mMessageIndex; /* TODO: The NNTP server should maintain the index values itself maybe. */
+        private final int mMessageIndex;
 
         public BoardMessageLink(Board myBoard, Message myMessage, int myIndex) {
             assert(myBoard != null && myMessage != null);
