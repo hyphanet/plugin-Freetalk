@@ -231,7 +231,7 @@ public final class Board implements Comparable<Board> {
      * 
      * Does not store the message, you have to do this before!
      */
-    protected synchronized void addMessageWithoutCommit(Message newMessage) {
+    protected synchronized void addMessage(Message newMessage) {
         
             if(newMessage instanceof OwnMessage) {
                 /* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
