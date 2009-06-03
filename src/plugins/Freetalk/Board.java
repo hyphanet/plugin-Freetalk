@@ -105,7 +105,7 @@ public final class Board implements Comparable<Board> {
     /**
      * Store this object in the database. You have to initializeTransient() before.
      */
-    public synchronized void store() {
+    public synchronized void storeAndCommit() {
         /* FIXME: check for duplicates */
 
     	synchronized(db.lock()) {
@@ -232,8 +232,8 @@ public final class Board implements Comparable<Board> {
      * The job for this function is to find the right place in the thread-tree for the new message and to move around older messages
      * if a parent message of them is received.
      */
-    public synchronized void addMessage(Message newMessage) {
-        synchronized(mMessageManager) {
+    protected synchronized void addMessage(Message newMessage) {
+        
             if(newMessage instanceof OwnMessage) {
                 /* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
                  * successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
@@ -241,10 +241,10 @@ public final class Board implements Comparable<Board> {
             }
 
             newMessage.initializeTransient(db, mMessageManager);
-            newMessage.store();
+            newMessage.storeWithoutCommit();
 
             synchronized(BoardMessageLink.class) {
-                new BoardMessageLink(this, newMessage, getFreeMessageIndex()).store(db);
+                new BoardMessageLink(this, newMessage, getFreeMessageIndex()).storeWithoutCommit(db);
             }
 
             if(!newMessage.isThread())
@@ -276,7 +276,7 @@ public final class Board implements Comparable<Board> {
             linkOrphansToNewParent(newMessage);
             if(mLatestMessageDate == null || newMessage.getDate().after(mLatestMessageDate))
                 mLatestMessageDate = newMessage.getDate();
-        }
+
     }
 
     /**
@@ -622,7 +622,7 @@ public final class Board implements Comparable<Board> {
     /**
      * Helper class to associate messages with boards in the database
      */
-    public final class BoardMessageLink implements MessageReference { /* TODO: This is only public for configuring db4o. Find a better way */
+    public final static class BoardMessageLink implements MessageReference { /* TODO: This is only public for configuring db4o. Find a better way */
         private final Board mBoard;
         private final Message mMessage;
         private final int mMessageIndex; /* TODO: The NNTP server should maintain the index values itself maybe. */
@@ -634,20 +634,20 @@ public final class Board implements Comparable<Board> {
             mMessageIndex = myIndex;
         }
 
-        public void store(ExtObjectContainer localDb) {
-        	synchronized(db.lock()) {
+        public void storeWithoutCommit(ExtObjectContainer db) {
+        	
         		try {
-        			if(localDb.ext().isStored(this) && !localDb.ext().isActive(this))
+        			if(db.ext().isStored(this) && !db.ext().isActive(this))
         				throw new RuntimeException("Trying to store a non-active BoardMessageLink object");
 
-        			localDb.store(this);
-        			localDb.commit(); Logger.debug(this, "COMMITED.");
+        			db.store(this);
+        			
         		}
         		catch(RuntimeException e) {
         			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
         			throw e;
         		}
-        	}
+
         }
 
         public int getIndex() {
@@ -658,7 +658,7 @@ public final class Board implements Comparable<Board> {
             /* We do not have to initialize mBoard and can assume that it is initialized because a BoardMessageLink will only be loaded
              * by the board it belongs to. */
             mMessage.initializeTransient(mBoard.db, mBoard.mMessageManager);
-            db.activate(mMessage, 2); /* FIXME: Figure out a reasonable depth */
+            mBoard.db.activate(mMessage, 2); /* FIXME: Figure out a reasonable depth */
             return mMessage;
         }
     }
