@@ -74,7 +74,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		}
 		
 		/* FIXME: This should not commit, it will break the rollback() in MessageList.store! */
-		public synchronized void store() {
+		public synchronized void storeAndCommit() {
 			synchronized(db.lock()) {
 				try {
 					if(db.ext().isStored(this) && !db.ext().isActive(this))
@@ -332,13 +332,13 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		mMessageManager = myMessageManager;
 	}
 	
-	public synchronized void store() {
+	public synchronized void storeWithoutCommit() {
 		/* FIXME: Check for duplicates */
 		synchronized(db.lock()) {
 			try {
 				for(MessageReference ref : mMessages) {
 					ref.initializeTransient(db);
-					ref.store();
+					ref.storeWithoutCommit();
 				}
 				db.store(this);
 				db.commit(); Logger.debug(this, "COMMITED.");
