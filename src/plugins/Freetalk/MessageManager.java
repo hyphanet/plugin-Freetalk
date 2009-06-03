@@ -119,23 +119,23 @@ public abstract class MessageManager implements Runnable {
 			Logger.debug(this, "Downloaded a message which we already have: " + message.getURI());
 		}
 		catch(NoSuchMessageException e) {
+			synchronized(db.lock()) {
 			try {
 				message.initializeTransient(db, this);
-				message.store();
+				message.storeWithoutCommit();
 				
-				for(Board board : message.getBoards()) {
-					board.addMessage(message); /* FIXME: add without commit! */
-					board.store();
-				}
+				for(Board board : message.getBoards())
+					board.addMessage(message);
 				
 				for(MessageReference ref : getAllReferencesToMessage(message.getID()))
-					ref.setMessageWasDownloadedFlag(); /* FIXME: store without commit */
+					ref.setMessageWasDownloadedFlag();
 				
-				/* FIXME: commit here instead of in the called functions! */
+				db.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(Exception ex) {
-				/* FIXME: Delete the message if this happens. */
+				db.rollback(); Logger.error(this, "ROLLED BACK!", ex);
 				Logger.error(this, "Exception while storing a downloaded message", ex);
+			}
 			}
 		}
 	}
@@ -146,8 +146,17 @@ public abstract class MessageManager implements Runnable {
 			Logger.debug(this, "Downloaded a MessageList which we already have: " + list.getURI());
 		}
 		catch(NoSuchMessageListException e) {
-			list.initializeTransient(db, this);
-			list.store();
+			synchronized(db.lock()) {
+				try {
+					list.initializeTransient(db, this);
+					list.storeWithoutCommit();
+					db.commit(); Logger.debug(this, "COMMITED.");
+				}
+				catch(RuntimeException ex) {
+					db.rollback(); Logger.error(this, "ROLLED BACK!", ex);
+					Logger.error(this, "Exception while storing a downloaded message list", ex);
+				}
+			}
 		}
 	}
 	
