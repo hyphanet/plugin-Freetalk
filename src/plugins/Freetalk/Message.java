@@ -156,13 +156,15 @@ public abstract class Message implements Comparable<Message> {
 	}
 	
 	protected Message(MessageURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, MessageURI newThreadURI, MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		/* We only assert() instead of throwing because the constructor is protected and the construct() function should verify this */
-		assert(newURI == null || Arrays.equals(newURI.getFreenetURI().getRoutingKey(), newAuthor.getRequestURI().getRoutingKey()));
-		
-		/* FIXME: assert(newMessageList.getAuthor() == newAuthor); */
-		/* FIXME: assert(newRealURI == null || newMessageList.contains(newRealURI)); */
+		if(newURI != null && Arrays.equals(newURI.getFreenetURI().getRoutingKey(), newAuthor.getRequestURI().getRoutingKey()) == false)
+			throw new InvalidParameterException("The URI of the given message does not match the author's URI: " + newURI);
 		
 		verifyID(newAuthor, newID);
+		
+		if(newMessageList.getAuthor() != newAuthor)
+			throw new InvalidParameterException("The author of the given message list is not the author of this message: " + newURI);
+		
+		/* FIXME: assert(newRealURI == null || newMessageList.contains(newRealURI)); */
 		
 		if(newParentURI != null && newThreadURI == null) 
 			Logger.error(this, "Message with parent URI but without thread URI created: " + newURI);
@@ -186,7 +188,7 @@ public abstract class Message implements Comparable<Message> {
 		/* If a message has no thread URI specified (this is a bug in the client which inserted it) we store the parent URI as thread URI instead.
 		 * This will be corrected later by setParent(). */
 		mThreadURI = newThreadURI != null ? newThreadURI : mParentURI;
-		mThreadID = mThreadURI != null ? mThreadURI.getMessageID() : mParentID;
+		mThreadID = newThreadURI != null ? newThreadURI.getMessageID() : mParentID;
 		
 		mBoards = newBoards.toArray(new Board[newBoards.size()]);
 		Arrays.sort(mBoards);		
@@ -263,9 +265,12 @@ public abstract class Message implements Comparable<Message> {
 	 * Used internally for correcting the thread URIs of messages which have specified them wrong in the XML.
 	 */
 	protected synchronized void setThreadURIAndID(MessageURI newThreadURI) {
+		if(mThreadURI != null)
+			mThreadURI.removeFrom(db);
+		
 		mThreadURI = newThreadURI;
 		mThreadID = mThreadURI.getMessageID();
-		store();
+		storeWithoutCommit();
 	}
 	
 	/**
@@ -370,7 +375,7 @@ public abstract class Message implements Comparable<Message> {
 			throw new IllegalArgumentException("Trying to setThread(not a thread).");
 		
 		mThread = newParentThread;
-		store();
+		storeWithoutCommit();
 	}
 
 	/**
@@ -398,7 +403,7 @@ public abstract class Message implements Comparable<Message> {
 		 * and the conclusion is that they MUST be corrected, otherwise those messages will disappear in getAllThreadReplies() */
 		
 		synchronized(mParent) {
-			String realThreadID = newParent.isThread() ? newParent.getID() : mParent.mThreadID;
+			String realThreadID = newParent.isThread() ? newParent.getID() : newParent.mThreadID;
 			if(!realThreadID.equals(mThreadID)) {
 				Logger.error(this, "Correcting thread URI/ID of " + getURI());
 				
@@ -442,7 +447,7 @@ public abstract class Message implements Comparable<Message> {
 		}
 		
 		
-		store();
+		storeWithoutCommit();
 	}
 	
 	/**
@@ -649,36 +654,39 @@ public abstract class Message implements Comparable<Message> {
 		return text.replace("\r\n", "\n");
 	}
 	
-	public synchronized void store() {
+	public synchronized void storeAndCommit() {
 		/* FIXME: Check for duplicates. Also notice that an OwnMessage which is equal might exist */
 		synchronized(db.lock()) {
-			try {
-				if(db.ext().isStored(this) && !db.ext().isActive(this))
-					throw new RuntimeException("Trying to store a non-active Message object");
-
-				if(mAuthor == null)
-					throw new RuntimeException("Trying to store a message with mAuthor == null");
-
-				if(mURI != null)
-					db.store(mURI);
-				if(mRealURI != null)
-					db.store(mRealURI);
-				if(mThreadURI != null)
-					db.store(mThreadURI);
-				if(mParentURI != null)
-					db.store(mParentURI);
-				// db.store(mBoards); /* Not stored because it is a primitive for db4o */
-				// db.store(mDate); /* Not stored because it is a primitive for db4o */
-				// db.store(mAttachments); /* Not stored because it is a primitive for db4o */
-				db.store(this);
-				db.commit(); Logger.debug(this, "COMMITED.");
-			}
-			catch(RuntimeException e) {
-				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
-			}
+			storeWithoutCommit();
+			db.commit(); Logger.debug(this, "COMMITED.");
 		}
-		
+	}
+	
+	public void storeWithoutCommit() {
+		try {
+			if(db.ext().isStored(this) && !db.ext().isActive(this))
+				throw new RuntimeException("Trying to store a non-active Message object");
+
+			if(mAuthor == null)
+				throw new RuntimeException("Trying to store a message with mAuthor == null");
+
+			if(mURI != null)
+				db.store(mURI);
+			if(mRealURI != null)
+				db.store(mRealURI);
+			if(mThreadURI != null)
+				mThreadURI.storeWithoutCommit(db);
+			if(mParentURI != null)
+				mParentURI.storeWithoutCommit(db);
+			// db.store(mBoards); /* Not stored because it is a primitive for db4o */
+			// db.store(mDate); /* Not stored because it is a primitive for db4o */
+			// db.store(mAttachments); /* Not stored because it is a primitive for db4o */
+			db.store(this);
+		}
+		catch(RuntimeException e) {
+			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+			throw e;
+		}
 	}
 
 	public int compareTo(Message other) {
