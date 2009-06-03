@@ -164,7 +164,13 @@ public abstract class Message implements Comparable<Message> {
 		if(newMessageList.getAuthor() != newAuthor)
 			throw new InvalidParameterException("The author of the given message list is not the author of this message: " + newURI);
 		
-		/* FIXME: assert(newRealURI == null || newMessageList.contains(newRealURI)); */
+		try {
+			if(newRealURI != null)
+				newMessageList.getReference(newRealURI);
+		}
+		catch(NoSuchMessageException e) {
+			throw new InvalidParameterException("The given message list does not contain this message: " + newURI);
+		}
 		
 		if(newParentURI != null && newThreadURI == null) 
 			Logger.error(this, "Message with parent URI but without thread URI created: " + newURI);
