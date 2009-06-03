@@ -53,7 +53,6 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		
 		private final FreenetURI mURI; 
 		
-		@SuppressWarnings("unused")
 		private final Board mBoard;
 		
 		private boolean iWasDownloaded = false;
@@ -69,25 +68,21 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		
 		private transient ExtObjectContainer db;
 		
-		public void initializeTransient(ExtObjectContainer myDB) {
+		protected void initializeTransient(ExtObjectContainer myDB) {
 			db = myDB;
 		}
 		
-		/* FIXME: This should not commit, it will break the rollback() in MessageList.store! */
-		public synchronized void storeAndCommit() {
-			synchronized(db.lock()) {
-				try {
-					if(db.ext().isStored(this) && !db.ext().isActive(this))
-						throw new RuntimeException("Trying to store a non-active MessageList object");
+		protected void storeWithoutCommit() {
+			try {
+				if(db.ext().isStored(this) && !db.ext().isActive(this))
+					throw new RuntimeException("Trying to store a non-active MessageList object");
 
-					db.store(mURI);
-					db.store(this);
-					db.commit(); Logger.debug(this, "COMMITED.");
-				}
-				catch(RuntimeException e) {
-					db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-					throw e;
-				}
+				db.store(mURI);
+				db.store(this);
+			}
+			catch(RuntimeException e) {
+				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				throw e;
 			}
 		}
 		
@@ -111,12 +106,12 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		}
 		
 		/**
-		 * Marks the MessageReference as downloaded and stores the change in the database.
+		 * Marks the MessageReference as downloaded and stores the change in the database, without committing the transaction.
 		 */
 		public synchronized void setMessageWasDownloadedFlag() {
 			assert(iWasDownloaded == false);
 			iWasDownloaded = true;
-			store();
+			storeWithoutCommit();
 		}
 
 		public MessageList getMessageList() {
@@ -164,15 +159,18 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	
 		private transient ExtObjectContainer db;
 
-		public void initializeTransient(ExtObjectContainer myDB) {
+		protected void initializeTransient(ExtObjectContainer myDB) {
 			db = myDB;
 		}
 
-		/**
-		 * Not synchronized because this class only has final members.
-		 */
-		public void store() {
-			db.store(this);
+		protected void storeWithoutCommit() {
+			try {
+				db.store(this);
+			}
+			catch(RuntimeException e) {
+				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				throw e;
+			}
 		}
 		
 		public MessageList getMessageList() {
@@ -216,15 +214,18 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	
 		private transient ExtObjectContainer db;
 
-		public void initializeTransient(ExtObjectContainer myDB) {
+		protected void initializeTransient(ExtObjectContainer myDB) {
 			db = myDB;
 		}
 
-		/**
-		 * Not synchronized because this class only has final members.
-		 */
-		public void store() {
-			db.store(this);
+		protected void storeWithoutCommit() {
+			try {
+				db.store(this);
+			}
+			catch(RuntimeException e) {
+				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				throw e;
+			}
 		}
 		
 		public MessageReference getMessageReference() {
@@ -333,21 +334,17 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	}
 	
 	public synchronized void storeWithoutCommit() {
-		/* FIXME: Check for duplicates */
-		synchronized(db.lock()) {
 			try {
 				for(MessageReference ref : mMessages) {
 					ref.initializeTransient(db);
 					ref.storeWithoutCommit();
 				}
 				db.store(this);
-				db.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
 				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
 				throw e;
 			}
-		}
 	}
 	
 	protected String calculateID() {
