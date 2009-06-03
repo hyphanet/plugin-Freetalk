@@ -635,20 +635,20 @@ public final class Board implements Comparable<Board> {
             mMessageIndex = myIndex;
         }
 
+        /**
+         * Does not provide synchronization, you have to lock the MessageManager, this Board and then the database before calling this function.
+         */
         public void storeWithoutCommit(ExtObjectContainer db) {
-        	
-        		try {
-        			if(db.ext().isStored(this) && !db.ext().isActive(this))
-        				throw new RuntimeException("Trying to store a non-active BoardMessageLink object");
+        	try {
+        		if(db.ext().isStored(this) && !db.ext().isActive(this))
+        			throw new RuntimeException("Trying to store a non-active BoardMessageLink object");
 
-        			db.store(this);
-        			
-        		}
-        		catch(RuntimeException e) {
-        			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-        			throw e;
-        		}
-
+        		db.store(this);
+        	}
+        	catch(RuntimeException e) {
+        		db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+        		throw e;
+        	}
         }
 
         public int getIndex() {
