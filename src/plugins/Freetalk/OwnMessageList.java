@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import plugins.Freetalk.WoT.WoTOwnMessage;
 import freenet.keys.FreenetURI;
 
 public abstract class OwnMessageList extends MessageList {
@@ -41,9 +40,11 @@ public abstract class OwnMessageList extends MessageList {
 	/**
 	 * Add an <code>OwnMessage</code> to this <code>MessageList</code>.
 	 * This function synchronizes on the <code>MessageList</code> and the given message.
+	 * Stores the given message and this OwnMessageList in the database without committing the transaction.
+	 * 
 	 * @throws Exception If the message list is full.
 	 */
-	public synchronized void addMessage(WoTOwnMessage newMessage) throws Exception {
+	public synchronized void addMessage(OwnMessage newMessage) throws Exception {
 		synchronized(newMessage) {
 			if(iAmBeingInserted || iWasInserted)
 				throw new IllegalArgumentException("Trying to add a message to a message list which is already being inserted.");
@@ -59,7 +60,8 @@ public abstract class OwnMessageList extends MessageList {
 			}
 			
 			newMessage.setMessageList(this);
-			store();
+			
+			storeWithoutCommit();
 		}
 	}
 	
@@ -69,26 +71,35 @@ public abstract class OwnMessageList extends MessageList {
 
 	protected abstract boolean fitsIntoContainer();
 	
+	/**
+	 * Stores this OwnMessageList in the database without committing the transaction.
+	 */
 	public synchronized void beginOfInsert() {
 		iAmBeingInserted = true;
-		store();
+		storeWithoutCommit();
 	}
 
+	/**
+	 * Stores this OwnMessageList in the database without committing the transaction.
+	 */
 	public synchronized void cancelInsert() {
 		if(iWasInserted)
 			throw new RuntimeException("The OwnMessageList was already inserted.");
 		
 		iAmBeingInserted = false;
-		store();
+		storeWithoutCommit();
 	}
 	
 	public synchronized boolean wasInserted() {
 		return iWasInserted;
 	}
 
+	/**
+	 * Stores this OwnMessageList in the database without committing the transaction.
+	 */
 	public synchronized void markAsInserted() {
 		iWasInserted = true;
-		store();
+		storeWithoutCommit();
 	}
 
 }
