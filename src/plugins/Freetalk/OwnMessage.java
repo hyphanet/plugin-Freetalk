@@ -41,18 +41,30 @@ public abstract class OwnMessage extends Message {
 		return mRealURI;
 	}
 
+	/**
+	 * Set the message list at which this message is listed to the given one.
+	 * Stores this OwnMessage in the database without committing the transaction.
+	 */
 	public synchronized void setMessageList(OwnMessageList newMessageList) {
 		mMessageList = newMessageList;
-		store();
+		storeWithoutCommit();
 	}
 
+	/**
+	 * Tells whether this message was inserted already. If a message was inserted, this does not necessarily mean that it will be visible to anyone:
+	 * The message might only become visible if the message list which lists it has been inserted. This is implementation dependent, for example {@see WoTOwnMessage}.
+	 */
 	public synchronized boolean wasInserted() {
 		return (mRealURI != null);
 	}
 
+	/**
+	 * Marks the message as inserted by storing the given URI as it's URI.
+	 * Stores this OwnMessage in the database without committing the transaction. 
+	 */
 	public synchronized void markAsInserted(FreenetURI myRealURI) {
 		mRealURI = myRealURI;
-		store();
+		storeWithoutCommit();
 	}
 
 }
