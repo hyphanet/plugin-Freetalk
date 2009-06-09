@@ -64,6 +64,8 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 			mMessageList.addMessage(mMessages[i]);
 		}
 		
+		db.commit();
+		
 		mHardcodedEncodedMessageList = new String(
 				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" + 
 				"<Freetalk-testing>" + 
