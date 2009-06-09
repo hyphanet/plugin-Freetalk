@@ -127,7 +127,24 @@ public class WoTMessageManager extends MessageManager {
 		}
 	}
 	
-	public synchronized void addMessageToMessageList(WoTOwnMessage message) throws Exception {
+	public synchronized void onOwnMessageInserted(String id, FreenetURI realURI) throws NoSuchMessageException {
+		synchronized(db.lock()) {
+			try {
+				WoTOwnMessage message = (WoTOwnMessage) getOwnMessage(id);
+				if(message == null)
+					throw new NoSuchMessageException(id);
+
+				message.markAsInserted(realURI); /* Does not db.commit() */
+				addMessageToMessageList(message); /* Does db.commit(); */
+			}
+			catch(RuntimeException e) {
+				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				throw e;
+			}
+		}
+	}
+	
+	private synchronized void addMessageToMessageList(WoTOwnMessage message) {
 		Query query = db.query();
 		query.constrain(WoTOwnMessageList.class);
 		query.descend("mAuthor").constrain(message.getAuthor()).identity();
@@ -150,6 +167,7 @@ public class WoTMessageManager extends MessageManager {
 		list.initializeTransient(db, this);
 		list.addMessage(message);
 		list.store();
+		/* FIXME: try,commit/catch */
 		Logger.debug(this, "Created the new list " + list.getID() + " for message " + message.getID());
 	}
 
