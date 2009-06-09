@@ -54,6 +54,8 @@ public final class WoTMessageListInserter extends MessageListInserter {
 		synchronized(messageManager) {
 			for(WoTOwnMessageList list : messageManager.getBeingInsertedOwnMessageLists()) 
 				list.cancelInsert();
+			
+			throw new UnsupportedOperationException(); /* FIXME: we have to commit the transaction and rollback if something fails afterwards! */
 		}
 	}
 
@@ -111,6 +113,8 @@ public final class WoTMessageListInserter extends MessageListInserter {
 		try {
 			os = tempB.getOutputStream();
 			list.beginOfInsert();
+			throw new UnsupportedOperationException(); /* FIXME: we have to commit the transaction and rollback if something fails afterwards! */
+			
 			WoTMessageListXML.encode(mMessageManager, list, os);
 			os.close(); os = null;
 			tempB.setReadOnly();
@@ -138,7 +142,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 		try {
 			Logger.debug(this, "Successfully inserted WoTOwnMessageList at " + state.getURI());
 			WoTOwnMessageList list = (WoTOwnMessageList)mMessageManager.getOwnMessageList(MessageList.getIDFromURI(state.getURI()));
-			list.markAsInserted();
+			list.markAsInserted(); throw new UnsupportedOperationException(); /* FIXME: we have to commit the transaction and rollback if something fails afterwards! */
 		}
 		catch(Exception e) {
 			Logger.error(this, "WoTOwnMessageList insert succeeded but onSuccess() failed", e);
