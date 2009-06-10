@@ -4,6 +4,7 @@
 package plugins.Freetalk;
 
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 
 public abstract class OwnMessageList extends MessageList {
 
@@ -102,6 +103,9 @@ public abstract class OwnMessageList extends MessageList {
 			throw new RuntimeException("Trying to mark a MessageList as 'inserted' which was not marked as 'being inserted': This MUST NOT happen:" +
 					" Messages can still be added to a list if it is not marked as being inserted. If it is being inserted already without being marked," +
 					" the messages will not be contained in the actually inserted message list."); 
+		
+		if(iWasInserted)
+			Logger.error(this, "markAsInserted called for an already inserted message list: " + this);
 			
 		iWasInserted = true;
 		storeWithoutCommit();
