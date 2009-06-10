@@ -98,6 +98,11 @@ public abstract class OwnMessageList extends MessageList {
 	 * Stores this OwnMessageList in the database without committing the transaction.
 	 */
 	public synchronized void markAsInserted() {
+		if(iAmBeingInserted == false)
+			throw new RuntimeException("Trying to mark a MessageList as 'inserted' which was not marked as 'being inserted': This MUST NOT happen:" +
+					" Messages can still be added to a list if it is not marked as being inserted. If it is being inserted already without being marked," +
+					" the messages will not be contained in the actually inserted message list."); 
+			
 		iWasInserted = true;
 		storeWithoutCommit();
 	}
