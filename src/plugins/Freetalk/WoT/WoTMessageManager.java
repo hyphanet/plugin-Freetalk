@@ -15,6 +15,7 @@ import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.OwnMessageList;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
@@ -95,6 +96,25 @@ public class WoTMessageManager extends MessageManager {
 		}
 		
 		return m;
+	}
+	
+	@Override
+	public synchronized void onMessageListInsertFailed(FreenetURI uri,boolean collision) throws NoSuchMessageListException {
+		synchronized(db.lock()) {
+			try {
+				WoTOwnMessageList list = (WoTOwnMessageList)getOwnMessageList(MessageList.getIDFromURI(uri));
+				list.cancelInsert();
+				
+				if(collision)
+					list.incrementInsertIndex();
+				
+				db.commit(); Logger.debug(this, "COMMITED.");
+			}
+			catch(RuntimeException e) {
+				db.rollback();
+				Logger.error(this, "ROLLED BACK: Exception in onMessageListInserFailed for " + uri, e);
+			}
+		}
 	}
 	
 	public synchronized void onMessageListFetchFailed(FTIdentity author, FreenetURI uri, MessageList.MessageListFetchFailedReference.Reason reason) {

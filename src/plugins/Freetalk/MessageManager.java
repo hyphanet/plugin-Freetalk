@@ -11,6 +11,7 @@ import java.util.Set;
 
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageList.MessageReference;
+import plugins.Freetalk.WoT.WoTOwnMessageList;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.DuplicateMessageListException;
@@ -28,8 +29,11 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 
 /**
- * @author xor
- *
+ * The MessageManager is the core connection between the UI and the backend of the plugin:
+ * It is the entry point for posting messages, obtaining messages, obtaining boards, etc.
+ * 
+ * 
+ * @author xor (xor@freenetproject.org)
  */
 public abstract class MessageManager implements Runnable {
 	
@@ -112,6 +116,43 @@ public abstract class MessageManager implements Runnable {
 		
 		return unsentCount;
 	}
+	
+	public synchronized void onMessageListInsertStarted(OwnMessageList list) {
+		synchronized(db.lock()) {
+			try {
+				list.beginOfInsert();
+				db.commit(); Logger.debug(this, "COMMITED.");
+			}
+			catch(RuntimeException e) {
+				db.rollback();
+				Logger.error(this, "ROLLED BACK: Exception in onMessageListInsertStarted for " + list, e);
+				// This function MUST NOT succeed if the list was not marked as being inserted: Otherwise messages could be added to the list while it is
+				// being inserted already, resulting in the messages being marked as successfully inserted but not being visible to anyone!
+				throw e;
+			}
+		}
+	}
+	
+	public synchronized void onMessageListInsertSucceeded(FreenetURI uri) throws NoSuchMessageListException {
+		synchronized(db.lock()) {
+			try {
+				OwnMessageList list = getOwnMessageList(MessageList.getIDFromURI(uri));
+				list.markAsInserted();
+				db.commit(); Logger.debug(this, "COMMITED.");
+			}
+			catch(RuntimeException e) {
+				db.rollback();
+				Logger.error(this, "ROLLED BACK: Exception in onMessageListInsertSucceeded for " + uri, e);
+			}
+		}
+	}
+	
+	/**
+	 * @param uri
+	 * @param collision Whether the index of the message list was already taken. If true, the index of the message list is incremented.
+	 * @throws NoSuchMessageListException
+	 */
+	public abstract void onMessageListInsertFailed(FreenetURI uri, boolean collision) throws NoSuchMessageListException;
 	
 	public synchronized void onMessageReceived(Message message) {
 		try {

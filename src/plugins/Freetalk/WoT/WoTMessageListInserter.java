@@ -104,7 +104,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	}
 	
 	/**
-	 * You have to synchronize on this <code>WoTMessageListInserter</code> when using this function.
+	 * You have to synchronize on this <code>WoTMessageListInserter</code> and then on the <code>WoTMessageManager</code> when using this function.
 	 */
 	private void insertMessageList(WoTOwnMessageList list) throws TransformerException, ParserConfigurationException, NoSuchMessageException, IOException, InsertException {
 		Bucket tempB = mTBF.makeBucket(4096); /* TODO: set to a reasonable value */
@@ -112,8 +112,9 @@ public final class WoTMessageListInserter extends MessageListInserter {
 		
 		try {
 			os = tempB.getOutputStream();
-			list.beginOfInsert();
-			throw new UnsupportedOperationException(); /* FIXME: we have to commit the transaction and rollback if something fails afterwards! */
+			// This is what requires synchronization on the WoTMessageManager: While being marked as "being inserted", message lists cannot be modified anymore,
+			// so it must be guranteed that the "being inserted" mark does not change while we encode the XML etc.
+			mMessageManager.onMessageListInsertStarted(list);
 			
 			WoTMessageListXML.encode(mMessageManager, list, os);
 			os.close(); os = null;
@@ -141,8 +142,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		try {
 			Logger.debug(this, "Successfully inserted WoTOwnMessageList at " + state.getURI());
-			WoTOwnMessageList list = (WoTOwnMessageList)mMessageManager.getOwnMessageList(MessageList.getIDFromURI(state.getURI()));
-			list.markAsInserted(); throw new UnsupportedOperationException(); /* FIXME: we have to commit the transaction and rollback if something fails afterwards! */
+			mMessageManager.onMessageListInsertSucceeded(state.getURI());
 		}
 		catch(Exception e) {
 			Logger.error(this, "WoTOwnMessageList insert succeeded but onSuccess() failed", e);
@@ -158,15 +158,16 @@ public final class WoTMessageListInserter extends MessageListInserter {
 			if(e.getMode() == InsertException.COLLISION) {
 				Logger.error(this, "WoTOwnMessageList insert collided, trying to insert with higher index ...");
 				try {
-					WoTOwnMessageList list = (WoTOwnMessageList)mMessageManager.getOwnMessageList(MessageList.getIDFromURI(state.getURI()));
-					list.incrementInsertIndex();
-					insertMessageList(list);
+					synchronized(mMessageManager) {
+						mMessageManager.onMessageListInsertFailed(state.getURI(), true);
+						insertMessageList((WoTOwnMessageList)mMessageManager.getOwnMessageList(MessageList.getIDFromURI(state.getURI())));
+					}
 				}
 				catch(Exception ex) {
 					Logger.error(this, "Inserting WoTOwnMessageList with higher index failed", ex);
 				}
 			} else
-				throw e;
+				mMessageManager.onMessageListInsertFailed(state.getURI(), false);
 		}
 		catch(Exception ex) {
 			Logger.error(this, "WoTOwnMessageList insert failed", ex);
