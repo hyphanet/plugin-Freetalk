@@ -117,6 +117,15 @@ public abstract class MessageManager implements Runnable {
 		return unsentCount;
 	}
 	
+	/**
+	 * Called by the {@link MessageListInserter} implementation when the insertion of an {@link OwnMessageList} is to be started.
+	 * Has to be called before any data is pulled from the {@link OwnMessageList}: It locks the list so no further messages can be added.
+	 * Further, you have to acquire the lock on this MessageManager before calling this function and while taking data from the {@link OwnMessageList} since
+	 * the lock of the message list could be cleared and further messages could be added if you do not.
+	 * 
+	 * @param uri The URI of the {@link OwnMessageList}.
+	 * @throws NoSuchMessageListException If there is no such {@link OwnMessageList}.
+	 */
 	public synchronized void onMessageListInsertStarted(OwnMessageList list) {
 		synchronized(db.lock()) {
 			try {
@@ -133,6 +142,12 @@ public abstract class MessageManager implements Runnable {
 		}
 	}
 	
+	/**
+	 * Called by the {@link MessageListInserter} implementation when the insertion of an {@link OwnMessageList} succeeded. Marks the list as inserted.
+	 * 
+	 * @param uri The URI of the {@link OwnMessageList}.
+	 * @throws NoSuchMessageListException If there is no such {@link OwnMessageList}.
+	 */
 	public synchronized void onMessageListInsertSucceeded(FreenetURI uri) throws NoSuchMessageListException {
 		synchronized(db.lock()) {
 			try {
@@ -148,9 +163,12 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 	/**
-	 * @param uri
-	 * @param collision Whether the index of the message list was already taken. If true, the index of the message list is incremented.
-	 * @throws NoSuchMessageListException
+	 * Called by the {@link MessageListInserter} implementation when the insertion of an {@link OwnMessageList} fails.
+	 * Clears the "being inserted"-flag of the given message list.
+	 * 
+	 * @param uri The URI of the {@link OwnMessageList}.
+	 * @param collision Whether the index of the {@link OwnMessageList} was already taken. If true, the index of the message list is incremented.
+	 * @throws NoSuchMessageListException If there is no such {@link OwnMessageList}.
 	 */
 	public abstract void onMessageListInsertFailed(FreenetURI uri, boolean collision) throws NoSuchMessageListException;
 	
