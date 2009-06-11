@@ -14,6 +14,7 @@ import com.db4o.ObjectContainer;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageListInserter;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -50,12 +51,15 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	
 	@Override
 	protected void clearBeingInsertedFlags() {
-		WoTMessageManager messageManager = (WoTMessageManager)super.mMessageManager;
+		WoTMessageManager messageManager = mMessageManager;
 		synchronized(messageManager) {
-			for(WoTOwnMessageList list : messageManager.getBeingInsertedOwnMessageLists()) 
-				list.cancelInsert();
-			
-			throw new UnsupportedOperationException(); /* FIXME: we have to commit the transaction and rollback if something fails afterwards! */
+			for(WoTOwnMessageList list : messageManager.getBeingInsertedOwnMessageLists()) {
+				try {
+					messageManager.onMessageListInsertFailed(list.getURI(), false);
+				} catch (NoSuchMessageListException e) {
+					Logger.error(this, "SHOULD NOT HAPPEN", e);
+				}
+			}
 		}
 	}
 
