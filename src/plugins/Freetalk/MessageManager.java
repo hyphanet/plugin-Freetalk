@@ -161,22 +161,22 @@ public abstract class MessageManager implements Runnable {
 		}
 		catch(NoSuchMessageException e) {
 			synchronized(db.lock()) {
-			try {
-				message.initializeTransient(db, this);
-				message.storeWithoutCommit();
-				
-				for(Board board : message.getBoards())
-					board.addMessage(message);
-				
-				for(MessageReference ref : getAllReferencesToMessage(message.getID()))
-					ref.setMessageWasDownloadedFlag();
-				
-				db.commit(); Logger.debug(this, "COMMITED.");
-			}
-			catch(Exception ex) {
-				db.rollback(); Logger.error(this, "ROLLED BACK!", ex);
-				Logger.error(this, "Exception while storing a downloaded message", ex);
-			}
+				try {
+					message.initializeTransient(db, this);
+					message.storeWithoutCommit();
+
+					for(Board board : message.getBoards())
+						board.addMessage(message);
+
+					for(MessageReference ref : getAllReferencesToMessage(message.getID()))
+						ref.setMessageWasDownloadedFlag();
+
+					db.commit(); Logger.debug(this, "COMMITED.");
+				}
+				catch(Exception ex) {
+					db.rollback(); Logger.error(this, "ROLLED BACK!", ex);
+					Logger.error(this, "Exception while storing a downloaded message", ex);
+				}
 			}
 		}
 	}
