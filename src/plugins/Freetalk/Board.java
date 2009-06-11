@@ -18,6 +18,7 @@ import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 

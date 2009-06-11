@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import plugins.Freetalk.CurrentTimeUTC;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
@@ -13,6 +12,7 @@ import com.db4o.ext.ExtObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 

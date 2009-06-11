@@ -19,6 +19,7 @@ import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 

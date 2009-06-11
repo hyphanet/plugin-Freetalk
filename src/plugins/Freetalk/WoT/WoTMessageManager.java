@@ -9,13 +9,11 @@ import java.util.List;
 import java.util.Set;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.CurrentTimeUTC;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
-import plugins.Freetalk.OwnMessageList;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
@@ -27,6 +25,7 @@ import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Executor;
 import freenet.support.Logger;
 

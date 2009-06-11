@@ -5,7 +5,6 @@ package plugins.Freetalk.WoT;
 
 import java.util.Iterator;
 
-import plugins.Freetalk.CurrentTimeUTC;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
@@ -21,6 +20,7 @@ import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.pluginmanager.PluginNotFoundException;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
