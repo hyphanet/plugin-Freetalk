@@ -11,7 +11,6 @@ import java.util.Set;
 
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageList.MessageReference;
-import plugins.Freetalk.WoT.WoTOwnMessageList;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.DuplicateMessageListException;
@@ -236,16 +235,22 @@ public abstract class MessageManager implements Runnable {
 			Logger.debug(this, "Trying to mark a message as 'downlod failed' which we actually have: " + messageReference.getURI());
 		}
 		catch(NoSuchMessageException e) {
+			synchronized(db.lock()) {
 			try {
 				MessageList.MessageFetchFailedReference failedMarker = new MessageList.MessageFetchFailedReference(messageReference, reason);
 				failedMarker.initializeTransient(db);
-				failedMarker.store();
+				failedMarker.storeWithoutCommit();
+				
 				for(MessageReference r : getAllReferencesToMessage(messageReference.getMessageID()))
 					r.setMessageWasDownloadedFlag();
+				
 				Logger.debug(this, "Marked message as download failed with reason " + reason + ": " +  messageReference.getURI());
+				db.commit(); Logger.debug(this, "COMMITED.");
 			}
-			catch(Exception ex) {
-				Logger.error(this, "Exception while marking a not-downloadable messge", ex);
+			catch(RuntimeException ex) {
+				db.rollback();
+				Logger.error(this, "ROLLED BACK: Exception while marking a not-downloadable messge", ex);
+			}
 			}
 		}
 	}
@@ -424,9 +429,19 @@ public abstract class MessageManager implements Runnable {
 			board = getBoardByName(name);
 		}
 		catch(NoSuchBoardException e) {
-			board = new Board(name);
-			board.initializeTransient(db, this);
-			board.store();
+			synchronized(db.lock()) {
+			try {
+				board = new Board(name);
+				board.initializeTransient(db, this);
+				board.storeWithoutCommit();
+				db.commit(); Logger.debug(this, "COMMITED: Created board " + name);
+			}
+			catch(RuntimeException ex) {
+				db.rollback();
+				Logger.error(this, "ROLLED BACK: Exception while creating board " + name, ex);
+				throw ex;
+			}
+			}
 		}
 		
 		return board;
