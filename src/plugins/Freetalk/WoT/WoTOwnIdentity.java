@@ -67,7 +67,7 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 		return mIdentityManager.getScore(this, identity) >= 0;	/* FIXME: this has to be configurable */
 	}
 	
-	protected void storeWithoutCommit() {
+	public void storeWithoutCommit() {
 		/* FIXME: check for duplicates */
 
 			try {

@@ -87,8 +87,10 @@ public class ThreadTreeTest extends DatabaseBasedTest {
 			FreenetURI requestURI = new FreenetURI(requestSSKs[i]); FreenetURI insertURI = new FreenetURI(insertSSKs[i]);
 			mOwnIdentities[i] = new WoTOwnIdentity(WoTOwnIdentity.getUIDFromURI(requestURI), requestURI, insertURI, "nickname" + i);
 			mOwnIdentities[i].initializeTransient(db, mIdentityManager);
-			mOwnIdentities[i].store();
+			mOwnIdentities[i].storeWithoutCommit();
 		}
+		
+		db.commit();
 	}
 
 	/*
