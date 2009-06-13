@@ -70,39 +70,37 @@ public class WoTMessageManager extends MessageManager {
 	public synchronized WoTOwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
 			String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
 		WoTOwnMessage m;
-		
 
-			Message parentThread = null;
+		Message parentThread = null;
+		try {
+			if(myParentMessage != null) {
+				if(myParentMessage.isThread())
+					parentThread = myParentMessage;
+				else
+					parentThread = myParentMessage.getThread();
+			}
+		}
+		catch(NoSuchMessageException e) {
+
+		}
+
+		Date date = myDate!=null ? myDate : CurrentTimeUTC.get();
+		m = WoTOwnMessage.construct(parentThread, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
+		m.initializeTransient(db, this);
+		synchronized(db.lock()) {
 			try {
-				if(myParentMessage != null) {
-					if(myParentMessage.isThread())
-						parentThread = myParentMessage;
-					else
-						parentThread = myParentMessage.getThread();
-				}
+				m.storeWithoutCommit();
+				db.commit(); Logger.debug(this, "COMMITED.");
 			}
-			catch(NoSuchMessageException e) {
+			catch(RuntimeException e) {
+				db.rollback();
+				Logger.error(this, "ROLLED BACK: Error in postMessage", e);
+				throw e;
+			}
+		}
 
-			}
-			
-			Date date = myDate!=null ? myDate : CurrentTimeUTC.get();
-			m = WoTOwnMessage.construct(parentThread, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
-			m.initializeTransient(db, this);
-			synchronized(db.lock()) {
-				try {
-					m.storeWithoutCommit();
-					db.commit(); Logger.debug(this, "COMMITED.");
-				}
-				catch(RuntimeException e) {
-					db.rollback();
-					Logger.error(this, "ROLLED BACK: Error in postMessage", e);
-					throw e;
-				}
-			}
-			
-			/* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
-			 * successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
-
+		/* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
+		 * successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
 		
 		return m;
 	}
@@ -139,19 +137,19 @@ public class WoTMessageManager extends MessageManager {
 		}
 		catch(NoSuchMessageListException e) {
 			synchronized(db.lock()) {
-			try {
-				list.initializeTransient(db, this);
-				list.storeWithoutCommit();
-				MessageList.MessageListFetchFailedReference ref = new MessageList.MessageListFetchFailedReference(list, reason);
-				ref.initializeTransient(db);
-				ref.storeWithoutCommit();
-				db.commit();
-				Logger.debug(this, "COMMITED: arked message list as download failed with reason " + reason + ": " +  uri);
-			}
-			catch(Exception ex) {
-				db.rollback();
-				Logger.error(this, "ROLLED BACK: Error while marking a message list as 'download failed'", ex);
-			}
+				try {
+					list.initializeTransient(db, this);
+					list.storeWithoutCommit();
+					MessageList.MessageListFetchFailedReference ref = new MessageList.MessageListFetchFailedReference(list, reason);
+					ref.initializeTransient(db);
+					ref.storeWithoutCommit();
+					db.commit();
+					Logger.debug(this, "COMMITED: arked message list as download failed with reason " + reason + ": " +  uri);
+				}
+				catch(Exception ex) {
+					db.rollback();
+					Logger.error(this, "ROLLED BACK: Error while marking a message list as 'download failed'", ex);
+				}
 			}
 		}
 	}

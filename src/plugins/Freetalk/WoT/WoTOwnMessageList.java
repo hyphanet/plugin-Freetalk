@@ -20,10 +20,10 @@ public final class WoTOwnMessageList extends OwnMessageList {
 	 * Only to be used by the WoTMessageManager, which provides the necessary synchronization.
 	 */
 	protected synchronized void incrementInsertIndex() {
-			int freeIndex = ((WoTMessageManager)mMessageManager).getFreeOwnMessageListIndex(getAuthor());
-			mIndex = Math.max(mIndex+1, freeIndex);
-			mID = calculateID();
-			storeWithoutCommit();
+		int freeIndex = ((WoTMessageManager)mMessageManager).getFreeOwnMessageListIndex(getAuthor());
+		mIndex = Math.max(mIndex+1, freeIndex);
+		mID = calculateID();
+		storeWithoutCommit();
 	}
 	
 	public WoTOwnIdentity getAuthor() {
