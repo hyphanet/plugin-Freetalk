@@ -103,8 +103,14 @@ public class WoTIdentityManager extends IdentityManager {
 				newNickname);
 		
 		synchronized(db.lock()) {
-		db.store(identity);
-		db.commit(); Logger.debug(this, "COMMITED.");
+			try {
+				identity.storeWithoutCommit();
+				db.commit(); Logger.debug(this, "COMMITED.");
+			}
+			catch(RuntimeException e) {
+				db.rollback();
+				Logger.error(this, "ROLLED BACK: Error while creating OwnIdentity", e);
+			}
 		}
 		
 		return identity;
@@ -131,8 +137,14 @@ public class WoTIdentityManager extends IdentityManager {
 				newNickname);
 		
 		synchronized(db.lock()) {
-		db.store(identity);
-		db.commit(); Logger.debug(this, "COMMITED.");
+			try {
+				identity.storeWithoutCommit();
+				db.commit(); Logger.debug(this, "COMMITED.");
+			}
+			catch(RuntimeException e) {
+				db.rollback();
+				Logger.error(this, "ROLLED BACK: Error while creating OwnIdentity", e);
+			}
 		}
 		
 		return identity;
@@ -288,16 +300,20 @@ public class WoTIdentityManager extends IdentityManager {
 				WoTIdentity id = null; 
 
 				if(result.size() == 0) {
+					synchronized(db.lock()) {
 					try {
 						Logger.debug(this, "Importing identity from WoT: " + requestURI);
 						id = bOwnIdentities ?	new WoTOwnIdentity(uid, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
 							new WoTIdentity(uid, new FreenetURI(requestURI), nickname);
 
 						id.initializeTransient(db, this);
-						id.store();
+						id.storeWithoutCommit();
+						db.commit(); Logger.debug(this, "COMMITED.");
 					}
 					catch(Exception e) {
-						Logger.error(this, "Error in parseIdentities", e);
+						db.rollback();
+						Logger.error(this, "ROLLED BACK: Error in parseIdentities", e);
+					}
 					}
 				} else {
 					Logger.debug(this, "Not importing already existing identity " + requestURI);
@@ -322,7 +338,6 @@ public class WoTIdentityManager extends IdentityManager {
 		 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */
 		long lastAcceptTime = System.currentTimeMillis() - THREAD_PERIOD * 3; /* FIXME: Use UTC */
 		
-		synchronized(db.lock()) {
 		Query q = db.query();
 		q.constrain(WoTIdentity.class);
 		q.descend("isNeeded").constrain(false);
@@ -330,14 +345,21 @@ public class WoTIdentityManager extends IdentityManager {
 		ObjectSet<WoTIdentity> result = q.execute();
 		
 		while(result.hasNext()) {
+			synchronized(db.lock()) {
+			try {
 			WoTIdentity i = result.next();
 			assert(identityIsNotNeeded(i)); /* Check whether the isNeeded field of the identity was correct */
 			Logger.debug(this, "Garbage collecting identity " + i.getRequestURI());
-			db.delete(i);
+			i.deleteWithoutCommit();
+			db.commit(); Logger.debug(this, "COMMITED.");
+			}
+			catch(RuntimeException e) {
+				db.rollback();
+				Logger.error(this, "ROLLED BACK: Error in garbageCollectIdentities", e);
+			}
+			}
 		}
 		
-		db.commit(); Logger.debug(this, "COMMITED.");
-		}
 	}
 	
 	/**

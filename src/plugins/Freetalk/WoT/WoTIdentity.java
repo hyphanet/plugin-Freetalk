@@ -7,6 +7,8 @@ import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.WoT.Identity;
+import plugins.WoT.OwnIdentity;
 
 import com.db4o.ext.ExtObjectContainer;
 
@@ -118,7 +120,7 @@ public class WoTIdentity implements FTIdentity {
 	 */
 	public synchronized void setLastReceivedFromWoT(long time) {
 		mLastReceivedFromWoT = time;
-		store();
+		storeWithoutCommit();
 	}
 	
 	public synchronized boolean isNeeded() {
@@ -127,7 +129,7 @@ public class WoTIdentity implements FTIdentity {
 	
 	public synchronized void setIsNeeded(boolean newValue) {
 		mIsNeeded = newValue;
-		store();
+		storeWithoutCommit();
 	}
 	
 
@@ -147,23 +149,35 @@ public class WoTIdentity implements FTIdentity {
 		if(newNickname.length() > 50) throw new InvalidParameterException("Nickname is too long, the limit is 50 characters.");
 	}
 
-	public void store() {
+	protected void storeWithoutCommit() {
 		/* FIXME: check for duplicates */
 
-		synchronized(db.lock()) {
 			try {
 				if(db.ext().isStored(this) && !db.ext().isActive(this))
 					throw new RuntimeException("Trying to store a non-active WoTIdentity object");
 
 				db.store(mRequestURI);
 				db.store(this);
-				db.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
 				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
 				throw e;
 			}
-		}
 	}
 	
+	protected void deleteWithoutCommit() {
+		if(db.ext().isStored(this) && !db.ext().isActive(this))
+			throw new RuntimeException("Trying to delete a non-active WoTIdentity object");
+		
+		/* FIXME: We also need to check whether the member objects are active here!!! */
+		
+		try {
+			mRequestURI.removeFrom(db);
+			db.delete(this);
+		}
+		catch(RuntimeException e) {
+			db.rollback(); Logger.debug(this, "ROLLED BACK!");
+			throw e;
+		}
+	}
 }

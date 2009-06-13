@@ -50,13 +50,13 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 		}
 		mSubscribedBoards.add(board);
 		
-		store();
+		storeWithoutCommit();
 	}
 
 	public synchronized void unsubscribeFromBoard(Board board) {
 		mSubscribedBoards.remove(board);
 		
-		store();
+		storeWithoutCommit();
 	}
 
 	public synchronized Iterator<Board> subscribedBoardsIterator() {
@@ -67,22 +67,37 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 		return mIdentityManager.getScore(this, identity) >= 0;	/* FIXME: this has to be configurable */
 	}
 	
-	public void store() {
+	protected void storeWithoutCommit() {
 		/* FIXME: check for duplicates */
-		synchronized(db.lock()) {
+
 			try {
 				if(db.ext().isStored(this) && !db.ext().isActive(this))
 					throw new RuntimeException("Trying to store a non-active WoTOwnIdentity object");
 
-				db.store(mSubscribedBoards);
+				db.store(mSubscribedBoards); // FIXME: Is this correct??
 				db.store(mInsertURI);
-				super.store();
+				super.storeWithoutCommit();
 			}
 			catch(RuntimeException e) {
 				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
 				throw e;
 			}
-		}
 	}
 
+	protected void deleteWithoutCommit() {
+		if(db.ext().isStored(this) && !db.ext().isActive(this))
+			throw new RuntimeException("Trying to delete a non-active WoTIdentity object");
+		
+		/* FIXME: We also need to check whether the member objects are active here!!! */
+		
+		try {
+			mInsertURI.removeFrom(db);
+			db.delete(mSubscribedBoards); // FIXME: Is this correct??
+			super.deleteWithoutCommit();
+		}
+		catch(RuntimeException e) {
+			db.rollback(); Logger.debug(this, "ROLLED BACK!");
+			throw e;
+		}
+	}
 }
