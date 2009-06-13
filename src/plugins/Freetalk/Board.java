@@ -78,10 +78,12 @@ public final class Board implements Comparable<Board> {
 
     /**
      * Create a board. You have to store() it yourself after creation.
+     * Only for being used directly by unit tests. The client interface for creating boards is {@link MessageManager.getOrCreateBoard}.
+     * 
      * @param newName The name of the board. For restrictions, see <code>isNameValid()</code>
      * @throws InvalidParameterException If none or an invalid name is given.
      */
-    protected Board(String newName) throws InvalidParameterException {
+    public Board(String newName) throws InvalidParameterException {
         if(newName==null || newName.length() == 0)
             throw new IllegalArgumentException("Empty board name.");
         if(!isNameValid(newName))
