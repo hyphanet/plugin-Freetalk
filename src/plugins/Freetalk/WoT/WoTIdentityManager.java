@@ -198,13 +198,14 @@ public class WoTIdentityManager extends IdentityManager {
 		q.descend("mUID").constrain(uid);
 		ObjectSet<WoTIdentity> result = q.execute();
 		
-		if(result.size() > 1)
-			throw new DuplicateIdentityException();
-	
-		if(result.size() == 0)
-			throw new NoSuchIdentityException(uid);
-		
-		return result.next();
+		switch(result.size()) {
+			case 1:
+				return result.next();
+			case 0:
+				throw new NoSuchIdentityException(uid);
+			default:
+				throw new DuplicateIdentityException();
+		}
 	}
 	
 	public FTIdentity getIdentityByURI(FreenetURI uri) throws NoSuchIdentityException {
@@ -218,13 +219,14 @@ public class WoTIdentityManager extends IdentityManager {
 		q.descend("mUID").constrain(uid);
 		ObjectSet<WoTOwnIdentity> result = q.execute();
 		
-		if(result.size() > 1)
-			throw new DuplicateIdentityException();
-	
-		if(result.size() == 0)
-			throw new NoSuchIdentityException(uid);
-		
-		return result.next();
+		switch(result.size()) {
+			case 1:
+				return result.next();
+			case 0:
+				throw new NoSuchIdentityException(uid);
+			default:
+				throw new DuplicateIdentityException();
+		}
 	}
 
 	public int getScore(WoTOwnIdentity treeOwner, FTIdentity target) {
