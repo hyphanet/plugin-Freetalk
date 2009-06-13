@@ -159,11 +159,11 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	
 		private transient ExtObjectContainer db;
 
-		protected void initializeTransient(ExtObjectContainer myDB) {
+		public void initializeTransient(ExtObjectContainer myDB) {
 			db = myDB;
 		}
 
-		protected void storeWithoutCommit() {
+		public void storeWithoutCommit() {
 			try {
 				db.store(this);
 			}

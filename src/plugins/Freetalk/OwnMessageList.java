@@ -45,19 +45,19 @@ public abstract class OwnMessageList extends MessageList {
 	 * 
 	 * @throws Exception If the message list is full.
 	 */
-	public synchronized void addMessage(OwnMessage newMessage) throws Exception {
+	public synchronized void addMessage(OwnMessage newMessage) {
 		synchronized(newMessage) {
 			if(iAmBeingInserted || iWasInserted)
-				throw new IllegalArgumentException("Trying to add a message to a message list which is already being inserted.");
+				throw new IllegalStateException("Trying to add a message to a message list which is already being inserted.");
 			
 			if(newMessage.getAuthor() != mAuthor)
-				throw new IllegalArgumentException("Trying to add a message with wrong author " + newMessage.getAuthor() + " to an own message list of " + mAuthor);
+				throw new IllegalStateException("Trying to add a message with wrong author " + newMessage.getAuthor() + " to an own message list of " + mAuthor);
 			
 			OwnMessageReference ref = new OwnMessageReference(newMessage);
 			mMessages.add(ref);
 			if(mMessages.size() > 1 && fitsIntoContainer() == false) {
 				mMessages.remove(ref);
-				throw new Exception("OwnMessageList is full."); /* TODO: Chose a better exception */
+				throw new IllegalStateException("OwnMessageList is full."); /* TODO: Chose a better exception */
 			}
 			
 			newMessage.setMessageList(this);

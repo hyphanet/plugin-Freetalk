@@ -71,7 +71,7 @@ public class WoTMessageManager extends MessageManager {
 			String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
 		WoTOwnMessage m;
 		
-		synchronized(WoTOwnMessage.class) {	/* TODO: Investigate whether this lock is necessary. */
+
 			Message parentThread = null;
 			try {
 				if(myParentMessage != null) {
@@ -88,11 +88,21 @@ public class WoTMessageManager extends MessageManager {
 			Date date = myDate!=null ? myDate : CurrentTimeUTC.get();
 			m = WoTOwnMessage.construct(parentThread, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
 			m.initializeTransient(db, this);
-			m.store();
+			synchronized(db.lock()) {
+				try {
+					m.storeWithoutCommit();
+					db.commit(); Logger.debug(this, "COMMITED.");
+				}
+				catch(RuntimeException e) {
+					db.rollback();
+					Logger.error(this, "ROLLED BACK: Error in postMessage", e);
+					throw e;
+				}
+			}
 			
 			/* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
 			 * successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
-		}
+
 		
 		return m;
 	}
@@ -128,20 +138,20 @@ public class WoTMessageManager extends MessageManager {
 			Logger.debug(this, "Download failed of a MessageList which we already have: " + list.getURI());
 		}
 		catch(NoSuchMessageListException e) {
+			synchronized(db.lock()) {
 			try {
 				list.initializeTransient(db, this);
-				list.store();
+				list.storeWithoutCommit();
 				MessageList.MessageListFetchFailedReference ref = new MessageList.MessageListFetchFailedReference(list, reason);
 				ref.initializeTransient(db);
-				ref.store();
-				Logger.debug(this, "Marked message list as download failed with reason " + reason + ": " +  uri);
+				ref.storeWithoutCommit();
+				db.commit();
+				Logger.debug(this, "COMMITED: arked message list as download failed with reason " + reason + ": " +  uri);
 			}
 			catch(Exception ex) {
-				Logger.error(this, "Error while marking a message list as 'download failed'", ex);
-				synchronized(db.lock()) {
-				db.delete(list);
-				db.commit(); Logger.debug(this, "COMMITED.");
-				}
+				db.rollback();
+				Logger.error(this, "ROLLED BACK: Error while marking a message list as 'download failed'", ex);
+			}
 			}
 		}
 	}
@@ -153,8 +163,9 @@ public class WoTMessageManager extends MessageManager {
 				if(message == null)
 					throw new NoSuchMessageException(id);
 
-				message.markAsInserted(realURI); /* Does not db.commit() */
-				addMessageToMessageList(message); /* Does db.commit(); */
+				message.markAsInserted(realURI);
+				addMessageToMessageList(message);
+				db.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
 				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
@@ -163,7 +174,10 @@ public class WoTMessageManager extends MessageManager {
 		}
 	}
 	
-	private synchronized void addMessageToMessageList(WoTOwnMessage message) {
+	/**
+	 * You have to synchronize on this MessageManager and on db.lock() when using this function.
+	 */
+	private void addMessageToMessageList(WoTOwnMessage message) {
 		Query query = db.query();
 		query.constrain(WoTOwnMessageList.class);
 		query.descend("mAuthor").constrain(message.getAuthor()).identity();
@@ -173,9 +187,10 @@ public class WoTMessageManager extends MessageManager {
 		for(WoTOwnMessageList list : generalGetOwnMessageListIterable(query)) {
 			try {
 				list.addMessage(message);
+				Logger.debug(this, "Added own message " + message + " to list " + list);
 				return;
 			}
-			catch(Exception e) {
+			catch(RuntimeException e) {
 				/* The list is full. */
 				Logger.debug(this, "Not adding message " + message.getID() + " to message list " + list.getID(), e);
 			}
@@ -185,9 +200,8 @@ public class WoTMessageManager extends MessageManager {
 		WoTOwnMessageList list = new WoTOwnMessageList(author, getFreeOwnMessageListIndex(author));
 		list.initializeTransient(db, this);
 		list.addMessage(message);
-		list.store();
-		/* FIXME: try,commit/catch */
-		Logger.debug(this, "Created the new list " + list.getID() + " for message " + message.getID());
+		list.storeWithoutCommit();
+		Logger.debug(this, "Found no list with free space, created the new list " + list.getID() + " for own message " + message.getID());
 	}
 
 	@SuppressWarnings("unchecked")
