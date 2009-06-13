@@ -301,19 +301,19 @@ public class WoTIdentityManager extends IdentityManager {
 
 				if(result.size() == 0) {
 					synchronized(db.lock()) {
-					try {
-						Logger.debug(this, "Importing identity from WoT: " + requestURI);
-						id = bOwnIdentities ?	new WoTOwnIdentity(uid, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
-							new WoTIdentity(uid, new FreenetURI(requestURI), nickname);
+						try {
+							Logger.debug(this, "Importing identity from WoT: " + requestURI);
+							id = bOwnIdentities ?	new WoTOwnIdentity(uid, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
+								new WoTIdentity(uid, new FreenetURI(requestURI), nickname);
 
-						id.initializeTransient(db, this);
-						id.storeWithoutCommit();
-						db.commit(); Logger.debug(this, "COMMITED.");
-					}
-					catch(Exception e) {
-						db.rollback();
-						Logger.error(this, "ROLLED BACK: Error in parseIdentities", e);
-					}
+							id.initializeTransient(db, this);
+							id.storeWithoutCommit();
+							db.commit(); Logger.debug(this, "COMMITED.");
+						}
+						catch(Exception e) {
+							db.rollback();
+							Logger.error(this, "ROLLED BACK: Error in parseIdentities", e);
+						}
 					}
 				} else {
 					Logger.debug(this, "Not importing already existing identity " + requestURI);
@@ -346,17 +346,17 @@ public class WoTIdentityManager extends IdentityManager {
 		
 		while(result.hasNext()) {
 			synchronized(db.lock()) {
-			try {
-			WoTIdentity i = result.next();
-			assert(identityIsNotNeeded(i)); /* Check whether the isNeeded field of the identity was correct */
-			Logger.debug(this, "Garbage collecting identity " + i.getRequestURI());
-			i.deleteWithoutCommit();
-			db.commit(); Logger.debug(this, "COMMITED.");
-			}
-			catch(RuntimeException e) {
-				db.rollback();
-				Logger.error(this, "ROLLED BACK: Error in garbageCollectIdentities", e);
-			}
+				try {
+					WoTIdentity i = result.next();
+					assert(identityIsNotNeeded(i)); /* Check whether the isNeeded field of the identity was correct */
+					Logger.debug(this, "Garbage collecting identity " + i.getRequestURI());
+					i.deleteWithoutCommit();
+					db.commit(); Logger.debug(this, "COMMITED.");
+				}
+				catch(RuntimeException e) {
+					db.rollback();
+					Logger.error(this, "ROLLED BACK: Error in garbageCollectIdentities", e);
+				}
 			}
 		}
 		
