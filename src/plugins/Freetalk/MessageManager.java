@@ -319,15 +319,16 @@ public abstract class MessageManager implements Runnable {
 		query.descend("mID").constrain(id);
 		ObjectSet<Message> result = query.execute();
 
-		if(result.size() > 1)
-			throw new DuplicateMessageException();
-		
-		if(result.size() == 0)
-			throw new NoSuchMessageException(id);
-
-		Message m = result.next();
-		m.initializeTransient(db, this);
-		return m;
+		switch(result.size()) {
+			case 1:
+				Message m = result.next();
+				m.initializeTransient(db, this);
+				return m;
+			case 0:
+				throw new NoSuchMessageException(id);
+			default:
+				throw new DuplicateMessageException();
+		}
 	}
 	
 	/**
@@ -344,15 +345,16 @@ public abstract class MessageManager implements Runnable {
 		query.descend("mID").constrain(id);
 		ObjectSet<MessageList> result = query.execute();
 
-		if(result.size() > 1)
-			throw new DuplicateMessageListException();
-		
-		if(result.size() == 0)
-			throw new NoSuchMessageListException(id);
-
-		MessageList list = result.next();
-		list.initializeTransient(db, this);
-		return list;
+		switch(result.size()) {
+			case 1:
+				MessageList list = result.next();
+				list.initializeTransient(db, this);
+				return list;
+			case 0:
+				throw new NoSuchMessageListException(id);
+			default:
+				throw new DuplicateMessageListException();
+		}
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -362,15 +364,16 @@ public abstract class MessageManager implements Runnable {
 		query.descend("mID").constrain(id);
 		ObjectSet<OwnMessageList> result = query.execute();
 
-		if(result.size() > 1)
-			throw new DuplicateMessageListException();
-		
-		if(result.size() == 0)
-			throw new NoSuchMessageListException(id);
-
-		OwnMessageList list = result.next();
-		list.initializeTransient(db, this);
-		return list;
+		switch(result.size()) {
+			case 1:
+				OwnMessageList list = result.next();
+				list.initializeTransient(db, this);
+				return list;
+			case 0:
+				throw new NoSuchMessageListException(id);
+			default:
+				throw new DuplicateMessageListException();
+		}
 	}
 	
 	public OwnMessage getOwnMessage(FreenetURI uri) throws NoSuchMessageException {
@@ -385,15 +388,16 @@ public abstract class MessageManager implements Runnable {
 		query.descend("mID").constrain(id);
 		ObjectSet<OwnMessage> result = query.execute();
 
-		if(result.size() > 1)
-			throw new DuplicateMessageException();
-		
-		if(result.size() == 0)
-			throw new NoSuchMessageException(id);
-
-		OwnMessage m = result.next();
-		m.initializeTransient(db, this);
-		return m;
+		switch(result.size()) {
+			case 1:
+				OwnMessage m = result.next();
+				m.initializeTransient(db, this);
+				return m;
+			case 0:
+				throw new NoSuchMessageException(id);
+			default:
+				throw new DuplicateMessageException();
+		}
 	}
 
 	/**
@@ -409,17 +413,23 @@ public abstract class MessageManager implements Runnable {
 		query.descend("mName").constrain(name);
 		ObjectSet<Board> result = query.execute();
 
-		if(result.size() > 1)
-			throw new DuplicateBoardException();
-
-		if(result.size() == 0)
-			throw new NoSuchBoardException(name);
-		
-		Board b = result.next();
-		b.initializeTransient(db, this);
-		return b;
+		switch(result.size()) {
+			case 1:
+				Board b = result.next();
+				b.initializeTransient(db, this);
+				return b;
+			case 0:
+				throw new NoSuchBoardException(name);
+			default:
+				throw new DuplicateBoardException();
+		}
 	}
 	
+	/**
+	 * Gets the board with the given name. If it does not exist, it is created and stored, the transaction is commited.
+	 * @param The name of the desired board
+	 * @throws InvalidParameterException If the name is invalid.
+	 */
 	public synchronized Board getOrCreateBoard(String name) throws InvalidParameterException {
 		name = name.toLowerCase();
 		
