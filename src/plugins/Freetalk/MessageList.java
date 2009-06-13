@@ -334,17 +334,17 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	}
 	
 	public synchronized void storeWithoutCommit() {
-			try {
-				for(MessageReference ref : mMessages) {
-					ref.initializeTransient(db);
-					ref.storeWithoutCommit();
-				}
-				db.store(this);
+		try {
+			for(MessageReference ref : mMessages) {
+				ref.initializeTransient(db);
+				ref.storeWithoutCommit();
 			}
-			catch(RuntimeException e) {
-				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
-			}
+			db.store(this);
+		}
+		catch(RuntimeException e) {
+			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+			throw e;
+		}
 	}
 	
 	protected String calculateID() {
