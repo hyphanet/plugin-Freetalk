@@ -7,8 +7,6 @@ import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.exceptions.InvalidParameterException;
-import plugins.WoT.Identity;
-import plugins.WoT.OwnIdentity;
 
 import com.db4o.ext.ExtObjectContainer;
 
