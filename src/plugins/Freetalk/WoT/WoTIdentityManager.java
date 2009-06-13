@@ -200,7 +200,9 @@ public class WoTIdentityManager extends IdentityManager {
 		
 		switch(result.size()) {
 			case 1:
-				return result.next();
+				WoTIdentity identity = result.next();
+				identity.initializeTransient(db, this);
+				return identity;
 			case 0:
 				throw new NoSuchIdentityException(uid);
 			default:
@@ -221,7 +223,9 @@ public class WoTIdentityManager extends IdentityManager {
 		
 		switch(result.size()) {
 			case 1:
-				return result.next();
+				WoTOwnIdentity identity = result.next();
+				identity.initializeTransient(db, this);
+				return identity;
 			case 0:
 				throw new NoSuchIdentityException(uid);
 			default:
