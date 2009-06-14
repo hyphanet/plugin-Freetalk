@@ -4,7 +4,6 @@
 package plugins.Freetalk.ui.web;
 
 import java.text.DateFormat;
-import java.util.Iterator;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
@@ -16,9 +15,9 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
+ * Displays the content messages of a board.
  * 
- * @author xor
- *
+ * @author xor (xor@freenetproject.org)
  */
 public final class BoardPage extends WebPageImpl {
 
@@ -30,30 +29,39 @@ public final class BoardPage extends WebPageImpl {
 	}
 
 	public final void make() {
-		
 		HTMLNode threadsBox = addContentBox("Threads in '" + mBoard.getName() + "'");
 		
+		// Button for creating a new thread
 		HTMLNode newThreadForm = addFormChild(threadsBox, Freetalk.PLUGIN_URI + "/NewThread", "NewThreadPage");
-		newThreadForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
-		newThreadForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
-		newThreadForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", "New thread" });
+			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getUID() });
+			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "BoardName", mBoard.getName() });
+			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "New thread" });
 		
-		// Display the list of known identities
-		HTMLNode threadsTable = threadsBox.addChild("table", new String[] {"border", "width"}, new String[] {"0", "100%"});
-		HTMLNode row = threadsTable.addChild("tr");
-		row.addChild("th", "Title");
-		row.addChild("th", "Author");
-		row.addChild("th", "Date");
-		row.addChild("th", "Replies");
+		// Threads table
+		HTMLNode threadsTable = threadsBox.addChild("table", new String[] { "border", "width" }, new String[] { "0", "100%" });
+		
+		// Tell the browser the table columns and their size 
+		HTMLNode colgroup = threadsTable.addChild("colgroup");
+			colgroup.addChild("col", "width", "100%"); // Title, should use as much space as possible, the other columns should have minimal size
+			colgroup.addChild("col"); // Author
+			colgroup.addChild("col"); // Date
+			colgroup.addChild("col"); // Replies
+		
+		HTMLNode row = threadsTable.addChild("thead");
+			row.addChild("th", "Title");
+			row.addChild("th", "Author");
+			row.addChild("th", "Date");
+			row.addChild("th", "Replies");
 		
 		DateFormat dateFormat = DateFormat.getInstance();
 		
-		synchronized(mBoard) { /* FIXME: Is this enough synchronization or should we lock the message manager? */
-			Iterator<MessageReference> threads = mBoard.threadIterator(mOwnIdentity);
-			while(threads.hasNext()) {
-				Message thread = threads.next().getMessage();
+		HTMLNode table = threadsTable.addChild("tbody");
+		
+		synchronized(mBoard) {
+			for(MessageReference threadReference : mBoard.getThreads(mOwnIdentity)) {
+				Message thread = threadReference.getMessage();
 
-				row = threadsTable.addChild("tr");
+				row = table.addChild("tr");
 
 				HTMLNode titleCell = row.addChild("td", new String[] { "align" }, new String[] { "left" });
 				titleCell.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
@@ -61,17 +69,17 @@ public final class BoardPage extends WebPageImpl {
 
 				/* Author */
 				String authorText = thread.getAuthor().getFreetalkAddress();
-				/* FIXME: Use the following algorithm for selecting how many characters after the '@' to show:
+				/* FIXME: (https://bugs.freenetproject.org/view.php?id=3230) Use the following algorithm for selecting how many characters after the '@' to show:
 				 * characterCount = 0
 				 * while(two or more identities exist with authorText being the same with given characterCount) characterCount++; */
 				authorText = authorText.substring(0, authorText.indexOf('@') + 5);
 				row.addChild("td", new String[] { "align" }, new String[] { "left" }, authorText);
 
 				/* Date */
-				row.addChild("td", new String[] { "align" }, new String[] { "center" }, dateFormat.format(thread.getDate()));
+				row.addChild("td", new String[] { "align" , "style" }, new String[] { "center" , "white-space:nowrap;"}, dateFormat.format(thread.getDate()));
 
 				/* Reply count */
-				row.addChild("td", new String[] { "align" }, new String[] { "right" }, Integer.toString(mBoard.threadReplyCount(mOwnIdentity, thread)));
+				row.addChild("td", new String[] { "align" }, new String[] { "center" }, Integer.toString(mBoard.threadReplyCount(mOwnIdentity, thread)));
 			}
 		}
 	}

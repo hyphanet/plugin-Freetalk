@@ -195,9 +195,8 @@ public final class FCPInterface implements FredPluginFCP {
         final Board board = mFreetalk.getMessageManager().getBoardByName(boardName); // throws exception when not found
 
         synchronized(board) { /* FIXME: Is this enough synchronization or should we lock the message manager? */
-            final Iterator<MessageReference> threads = board.threadIterator(ownIdentity);
-            while(threads.hasNext()) {
-                final Message thread = threads.next().getMessage();
+            for(MessageReference threadReference : board.getThreads(ownIdentity)) {
+                final Message thread = threadReference.getMessage();
 
                 final SimpleFieldSet sfs = new SimpleFieldSet(true);
                 sfs.putOverwrite("Message", "MessageThread");

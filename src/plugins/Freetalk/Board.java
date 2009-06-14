@@ -382,7 +382,10 @@ public final class Board implements Comparable<Board> {
      * @return An iterator of the message which the identity will see (based on its trust levels).
      */
     @SuppressWarnings("unchecked")
-    public synchronized Iterator<MessageReference> threadIterator(final FTOwnIdentity identity) {
+    public synchronized Iterable<MessageReference> getThreads(final FTOwnIdentity identity) {
+    	return new Iterable<MessageReference>() {
+		@Override
+		public Iterator<MessageReference> iterator() {
         return new Iterator<MessageReference>() {
             private final FTOwnIdentity mIdentity = identity;
             private final Iterator<BoardMessageLink> iter;
@@ -423,7 +426,8 @@ public final class Board implements Comparable<Board> {
             public void remove() {
                 throw new UnsupportedOperationException();
             }
-
+		};
+    	}
         };
     }
 
