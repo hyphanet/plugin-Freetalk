@@ -51,7 +51,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	
 	@Override
 	protected void clearBeingInsertedFlags() {
-		WoTMessageManager messageManager = mMessageManager;
+		WoTMessageManager messageManager = (WoTMessageManager)super.mMessageManager;
 		synchronized(messageManager) {
 			for(WoTOwnMessageList list : messageManager.getBeingInsertedOwnMessageLists()) {
 				try {
