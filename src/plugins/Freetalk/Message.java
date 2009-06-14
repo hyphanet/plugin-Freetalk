@@ -162,7 +162,7 @@ public abstract class Message implements Comparable<Message> {
 		
 		verifyID(newAuthor, newID);
 		
-		if(newMessageList.getAuthor() != newAuthor)
+		if(newMessageList != null && newMessageList.getAuthor() != newAuthor)
 			throw new InvalidParameterException("The author of the given message list is not the author of this message: " + newURI);
 		
 		try {
