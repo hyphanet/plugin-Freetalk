@@ -68,6 +68,8 @@ public final class BoardsPage extends WebPageImpl {
 				row.addChild("td", new String[] { "align" }, new String[] { "center" }, board.getLatestMessageDate() == null ? "-" : dateFormat.format(board.getLatestMessageDate()));
 			}
 		}
+
+		boardsBox.addChild("p", "It may take a few minutes before Freetalk has discovered all boards and all messages posted to it.");
 	}
 
 }
