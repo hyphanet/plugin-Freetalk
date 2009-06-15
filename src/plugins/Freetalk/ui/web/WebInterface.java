@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Iterator;
@@ -18,6 +19,7 @@ import freenet.clients.http.RedirectException;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.ToadletContext;
+import freenet.clients.http.ToadletContextClosedException;
 import freenet.node.NodeClientCore;
 import freenet.support.api.HTTPRequest;
 
@@ -134,15 +136,30 @@ public class WebInterface {
 			super(client, wi, core, pageTitle);
 		}
 
+		/** Log an user in from a POST and redirect to the BoardsPage */
+		@Override
+		public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+			String pass = request.getPartAsString("formPassword", 32);
+			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
+				writeHTMLReply(ctx, 403, "Forbidden", "Invalid form password.");
+				return;
+			}
+
+			try {
+				setLoggedInOwnIdentity(mFreetalk.getIdentityManager().getOwnIdentity(request.getPartAsString("OwnIdentityID", 64)));
+			} catch(NoSuchIdentityException e) {
+				throw new RedirectException(logIn);
+			}
+
+			writeTemporaryRedirect(ctx, "Login successful, redirecting to the board overview", Freetalk.PLUGIN_URI + "/messages");
+		}
+
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
 			if(!mFreetalk.wotConnected())
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
 			try {
-				if(req.getMethod().equals("GET"))
-					setLoggedInOwnIdentity(mFreetalk.getIdentityManager().getOwnIdentity(req.getParam("OwnIdentityID")));
-				else
-					setLoggedInOwnIdentity(mFreetalk.getIdentityManager().getOwnIdentity(req.getPartAsString("OwnIdentityID", 64)));
+				setLoggedInOwnIdentity(mFreetalk.getIdentityManager().getOwnIdentity(req.getParam("OwnIdentityID")));
 				return new Welcome(webInterface, getLoggedInOwnIdentity(), req);
 			}
 			catch(NoSuchIdentityException e) {
