@@ -29,17 +29,10 @@ public final class LogInPage extends WebPageImpl {
 	}
 
 	private final void makeWelcomeBox() {
-		/* TODO: Make double-sure that the following text is short and yet makes very clear what Freetalk is about. It will be the first
-		 * text which people read when they access Freetalk from FProxy. */
 		HTMLNode welcomeBox = addContentBox("Welcome to Freetalk");
-		welcomeBox.addChild("p", "Freetalk is a pseudo-anonymous messaging system based on Freenet. It is very similar to internet forums " +
-				"and newsgroups. Pseudo-anonymous means that you post your messages using an 'identity' which is uniquely identitfied by it's " +
-				"Freetalk address which consists of a nickname and an unique cryptography key.");
-		HTMLNode p = welcomeBox.addChild("p", "Because you can keep the private part of the cryptography key secret, only you can post under " + 
-				"your Freetalk address, which means that everyone knows that all messages from a given identity probably come from the same " + 
-				"author, therefore you are "); p.addChild("b", "pseudo"); p.addChild("#", "-anonymous.");
-		welcomeBox.addChild("p", "But due to the nature of Freenet, nobody will know who is inserting the messages of your identity, which " +
-				"means that you as a real person are still an ").addChild("b", "anonymous author.");
+		welcomeBox.addChild("div", "Freetalk is a message system based on Freenet. It is similar to internet forums and newsgroups.");
+		welcomeBox.addChild("div", "Using a nickname you can post messages that cannot be traced back to your real identity.");
+		welcomeBox.addChild("div", "Freetalk uses the Web of Trust to prevent spam and other unwanted content.");
 	}
 	
 	private final void makeLoginBox() {
