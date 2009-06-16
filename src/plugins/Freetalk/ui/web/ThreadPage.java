@@ -33,8 +33,9 @@ public final class ThreadPage extends WebPageImpl {
     }
 
     public final void make() {
+        makeBreadcrumbs();
         synchronized (mLocalDateFormat) {
-            synchronized(mBoard) {	/* FIXME: Is this enough synchronization or should we lock the message manager? */
+            synchronized(mBoard) {  /* FIXME: Is this enough synchronization or should we lock the message manager? */
                 addMessageBox(mThread);
 
                 for(MessageReference reference : mBoard.getAllThreadReplies(mThread, true))
@@ -100,4 +101,16 @@ public final class ThreadPage extends WebPageImpl {
         }
     }
 
+    private void makeBreadcrumbs() {
+        BreadcrumbTrail trail = new BreadcrumbTrail();
+        Welcome.addBreadcrumb(trail);
+        BoardsPage.addBreadcrumb(trail);
+        BoardPage.addBreadcrumb(trail, mBoard);
+        ThreadPage.addBreadcrumb(trail, mBoard, mThread);
+        mContentNode.addChild(trail.getHTMLNode());
+    }
+
+    public static void addBreadcrumb(BreadcrumbTrail trail, Board board, Message thread) {
+        trail.addBreadcrumbInfo(thread.getTitle(), Freetalk.PLUGIN_URI + "/showThread?board=" + board.getName() + "&id=" + thread.getID());
+    }
 }

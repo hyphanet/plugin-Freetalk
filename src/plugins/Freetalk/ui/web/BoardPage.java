@@ -29,6 +29,8 @@ public final class BoardPage extends WebPageImpl {
 	}
 
 	public final void make() {
+		makeBreadcrumbs();
+
 		HTMLNode threadsBox = addContentBox("Threads in '" + mBoard.getName() + "'");
 		
 		// Button for creating a new thread
@@ -84,4 +86,15 @@ public final class BoardPage extends WebPageImpl {
 		}
 	}
 
+	private void makeBreadcrumbs() {
+		BreadcrumbTrail trail = new BreadcrumbTrail();
+		Welcome.addBreadcrumb(trail);
+		BoardsPage.addBreadcrumb(trail);
+		BoardPage.addBreadcrumb(trail, mBoard);
+		mContentNode.addChild(trail.getHTMLNode());
+	}
+
+	public static void addBreadcrumb(BreadcrumbTrail trail, Board board) {
+		trail.addBreadcrumbInfo(board.getName(), Freetalk.PLUGIN_URI + "/showBoard?name=" + board.getName());
+	}
 }

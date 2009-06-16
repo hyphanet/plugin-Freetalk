@@ -28,5 +28,4 @@ public interface WebPage {
 	 * @throws RedirectException 
 	 */
 	public String toHTML(ToadletContext ctx) throws RedirectException;
-	
 }

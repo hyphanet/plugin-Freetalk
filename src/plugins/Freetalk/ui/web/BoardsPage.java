@@ -27,12 +27,14 @@ public final class BoardsPage extends WebPageImpl {
 	public final void make() throws RedirectException {
 		if(mOwnIdentity == null)
 			throw new RedirectException(logIn);
+
+		makeBreadcrumbs();
 		makeBoardsList();
 	}
 
 	private void makeBoardsList() {
 		HTMLNode boardsBox = addContentBox("Boards");
-		
+
 		HTMLNode newBoardForm = addFormChild(boardsBox, Freetalk.PLUGIN_URI + "/NewBoard", "NewBoardPage");
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", "New board" });
@@ -72,4 +74,14 @@ public final class BoardsPage extends WebPageImpl {
 		boardsBox.addChild("p", "It may take a few minutes before Freetalk has discovered all boards and all messages posted to it.");
 	}
 
+	private void makeBreadcrumbs() {
+		BreadcrumbTrail trail = new BreadcrumbTrail();
+		Welcome.addBreadcrumb(trail);
+		BoardsPage.addBreadcrumb(trail);
+		mContentNode.addChild(trail.getHTMLNode());
+	}
+
+	public static void addBreadcrumb(BreadcrumbTrail trail) {
+		trail.addBreadcrumbInfo("Boards", Freetalk.PLUGIN_URI + "/messages");
+	}
 }

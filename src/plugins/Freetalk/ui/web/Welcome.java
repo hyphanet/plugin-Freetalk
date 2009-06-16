@@ -4,6 +4,7 @@
 package plugins.Freetalk.ui.web;
 
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Freetalk;
 import freenet.clients.http.RedirectException;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -41,6 +42,10 @@ public final class Welcome extends WebPageImpl {
 		HTMLNode list = overviewBox.addChild("ul");
 		list.addChild(new HTMLNode("li", "Known Identities: " + mFreetalk.getIdentityManager().countKnownIdentities()));
 		list.addChild(new HTMLNode("li", "Messages waiting to be sent: " + mFreetalk.getMessageManager().countUnsentMessages()));
+	}
+
+	public static void addBreadcrumb(BreadcrumbTrail trail) {
+		trail.addBreadcrumbInfo("Freetalk", Freetalk.PLUGIN_URI);
 	}
 
 	/*

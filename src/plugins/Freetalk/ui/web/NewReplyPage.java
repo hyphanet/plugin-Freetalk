@@ -19,15 +19,18 @@ import freenet.support.api.HTTPRequest;
 public class NewReplyPage extends WebPageImpl {
 
 	private final Board mBoard;
+	private final Message mThread;
 	private final Message mParentMessage;
 
 	public NewReplyPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchBoardException, NoSuchMessageException {
 		super(myWebInterface, viewer, request);
 		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getPartAsString("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
 		mParentMessage = mFreetalk.getMessageManager().get(request.getPartAsString("ParentMessageID", 128)); /* TODO: adapt to maximal ID length when it has been decided */
+		mThread = (mParentMessage.isThread() ? mParentMessage : mParentMessage.getThread());
 	}
 
 	public void make() {
+		makeBreadcrumbs();
 		if(mRequest.isPartSet("CreateReply")) {
 			HashSet<Board> boards = new HashSet<Board>();
 			boards.add(mBoard);
@@ -40,16 +43,10 @@ public class NewReplyPage extends WebPageImpl {
 				HTMLNode successBox = addContentBox("Reply created");
 				successBox.addChild("p", "The reply was put into your outbox. Freetalk will upload it after some time."); 
 				
-				try {
-					/* We use getThread().getID() instead of getParentThreadID() because the message's thread might not have been downloaded yet */
-					successBox.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
-							"&board=" + mBoard.getName() + "&id=" + (mParentMessage.isThread() ? mParentMessage.getID() : mParentMessage.getThread().getID()), 
-					"Go back to parent thread"));
-					successBox.addChild("br");
-				}
-				catch(NoSuchMessageException e) {
-					Logger.error(this, "Should not happen", e);
-				}
+				successBox.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
+						"&board=" + mBoard.getName() + "&id=" + mThread.getID(),
+				"Go back to parent thread"));
+				successBox.addChild("br");
 				
 				successBox.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getUID() + "&name=" + mBoard.getName(),
 						"Go back to " + mBoard.getName()));
@@ -88,4 +85,17 @@ public class NewReplyPage extends WebPageImpl {
 		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateReply", "Submit"});
 	}
 
+	private void makeBreadcrumbs() {
+		BreadcrumbTrail trail = new BreadcrumbTrail();
+		Welcome.addBreadcrumb(trail);
+		BoardsPage.addBreadcrumb(trail);
+		BoardPage.addBreadcrumb(trail, mBoard);
+		ThreadPage.addBreadcrumb(trail, mBoard, mThread);
+		NewReplyPage.addBreadcrumb(trail);
+		mContentNode.addChild(trail.getHTMLNode());
+	}
+
+	public static void addBreadcrumb(BreadcrumbTrail trail) {
+		trail.addBreadcrumbInfo("Reply", "");
+	}
 }
