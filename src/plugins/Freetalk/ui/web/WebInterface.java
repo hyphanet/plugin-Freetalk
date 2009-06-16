@@ -64,7 +64,12 @@ public class WebInterface {
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
 			return new Welcome(webInterface, getLoggedInOwnIdentity(), req);
 		}
-		
+
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && webInterface.getLoggedInOwnIdentity() != null;
+		}
+
 	}
 	
 	class MessagesWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -370,19 +375,19 @@ public class WebInterface {
 		mPageMaker.addNavigationCategory(Freetalk.PLUGIN_URI+"/", "Freetalk", "Message boards", mFreetalk);
 		
 		// Visible pages
-		
+		logInToadlet = new LogInWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "LogIn");
 		homeToadlet = new HomeWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "");
 		messagesToadlet = new MessagesWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "messages");
 		identitiesToadlet = new IdentitiesWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "identities");
 		logOutToadlet = new LogOutWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "LogOut");
 		
-		container.register(homeToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/", true, "Home", "Home page", false, null);
+		container.register(homeToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/", true, "Log in", "Log in", false, logInToadlet);
+		container.register(homeToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/", true, "Home", "Home page", false, homeToadlet);
 		container.register(messagesToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/messages", true, "Boards", "View all boards", false, messagesToadlet);
 		container.register(identitiesToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/identities", true, "Identities", "Manage your own and known identities", false, identitiesToadlet);
 		container.register(logOutToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/LogOut", true, "Log out", "Log out", false, logOutToadlet);
 		
 		// Invisible pages
-		logInToadlet = new LogInWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "LogIn");
 		createIdentityToadlet = new CreateIdentityWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "CreateIdentity");
 		newThreadToadlet = new NewThreadWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewThread");
 		showBoardToadlet = new ShowBoardWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "showBoard");
