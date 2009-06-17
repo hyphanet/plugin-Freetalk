@@ -26,7 +26,15 @@ public class NewReplyPage extends WebPageImpl {
 		super(myWebInterface, viewer, request);
 		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getPartAsString("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
 		mParentMessage = mFreetalk.getMessageManager().get(request.getPartAsString("ParentMessageID", 128)); /* TODO: adapt to maximal ID length when it has been decided */
-		mThread = (mParentMessage.isThread() ? mParentMessage : mParentMessage.getThread());
+
+		Message thread;
+		try {
+			thread = (mParentMessage.isThread() ? mParentMessage : mParentMessage.getThread());
+		} catch(NoSuchMessageException e) {
+			// the thread is not loaded yet, make do with the message we are replying to
+			thread = mParentMessage;
+		}
+		mThread = thread;
 	}
 
 	public void make() {
