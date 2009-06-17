@@ -101,4 +101,30 @@ public abstract class IdentityManager implements PrioRunnable {
 	
 	public abstract void terminate();
 
+	/// format the name of an author
+	public String shortestUniqueName(FTIdentity identity, int maxLength) {
+		String nick = identity.getNickname(maxLength-5);
+		String uid = identity.getUID();
+		int longestCommonPrefix = 0;
+		String formatted;
+
+		// FIXME: use a map when this gets slow
+		for(FTIdentity i : getAllIdentities()) {
+			String otherUID = i.getUID();
+			if(i.getNickname(maxLength-5).equals(nick) && !otherUID.equals(uid)) {
+				if(longestCommonPrefix == 0) {
+					longestCommonPrefix = 1;
+				}
+				while(uid.substring(0, longestCommonPrefix).equals(otherUID.substring(0, longestCommonPrefix))){
+					longestCommonPrefix++;
+				}
+			}
+		}
+		if(longestCommonPrefix > 0) {
+			return nick + "@" + uid.substring(0, longestCommonPrefix);
+		} else {
+			return nick;
+		}
+	} 
+
 }

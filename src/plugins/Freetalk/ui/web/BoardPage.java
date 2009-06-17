@@ -67,14 +67,10 @@ public final class BoardPage extends WebPageImpl {
 
 				HTMLNode titleCell = row.addChild("td", new String[] { "align" }, new String[] { "left" });
 				titleCell.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
-						"&board=" + mBoard.getName() + "&id=" + thread.getID(), thread.getTitle()));
+						"&board=" + mBoard.getName() + "&id=" + thread.getID(), maxLength(thread.getTitle(), 50)));
 
 				/* Author */
-				String authorText = thread.getAuthor().getFreetalkAddress();
-				/* FIXME: (https://bugs.freenetproject.org/view.php?id=3230) Use the following algorithm for selecting how many characters after the '@' to show:
-				 * characterCount = 0
-				 * while(two or more identities exist with authorText being the same with given characterCount) characterCount++; */
-				authorText = authorText.substring(0, authorText.indexOf('@') + 5);
+				String authorText = thread.getAuthor().getShortestUniqueName(50);
 				row.addChild("td", new String[] { "align" }, new String[] { "left" }, authorText);
 
 				/* Date */

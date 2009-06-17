@@ -46,13 +46,13 @@ public final class ThreadPage extends WebPageImpl {
 
     /* You have to synchronize on mLocalDateFormat when using this function */
     private void addMessageBox(Message message) {
-        HTMLNode messageBox = addContentBox("Subject: " + message.getTitle());
+        HTMLNode messageBox = addContentBox("Subject: " + maxLength(message.getTitle(),50));
 
         HTMLNode table = messageBox.addChild("table", new String[] {"border", "width" }, new String[] { "0", "100%" });
 
         HTMLNode row = table.addChild("tr");
         row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Author:");
-        row.addChild("td", new String[] { "align" }, new String[] { "left" }, message.getAuthor().getFreetalkAddress());
+        row.addChild("td", new String[] { "align" }, new String[] { "left" }, message.getAuthor().getShortestUniqueName(50));
         row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Date:");
         row.addChild("td", new String[] { "align" }, new String[] { "left" }, mLocalDateFormat.format(message.getDate()));
 
@@ -111,6 +111,6 @@ public final class ThreadPage extends WebPageImpl {
     }
 
     public static void addBreadcrumb(BreadcrumbTrail trail, Board board, Message thread) {
-        trail.addBreadcrumbInfo(thread.getTitle(), Freetalk.PLUGIN_URI + "/showThread?board=" + board.getName() + "&id=" + thread.getID());
+        trail.addBreadcrumbInfo(maxLength(thread.getTitle(),30), Freetalk.PLUGIN_URI + "/showThread?board=" + board.getName() + "&id=" + thread.getID());
     }
 }

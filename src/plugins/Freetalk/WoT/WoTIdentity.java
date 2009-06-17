@@ -103,7 +103,18 @@ public class WoTIdentity implements FTIdentity {
 	public String getNickname() {
 		return mNickname;
 	}
-	
+
+	public String getNickname(int maxLength) {
+		if(mNickname.length() > maxLength) {
+			return mNickname.substring(0, maxLength-3) + "...";
+		}
+		return mNickname;
+	}
+
+	public String getShortestUniqueName(int maxLength) {
+		return mIdentityManager.shortestUniqueName(this, maxLength);
+	}
+
 	public String getFreetalkAddress() {
 		return mNickname + "@" + mUID + "." + Freetalk.WOT_CONTEXT.toLowerCase();	
 	}

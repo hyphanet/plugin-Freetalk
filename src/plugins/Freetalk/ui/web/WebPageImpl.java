@@ -7,6 +7,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.PageMaker;
@@ -83,7 +84,7 @@ public abstract class WebPageImpl implements WebPage {
 	public final String toHTML(ToadletContext ctx) throws RedirectException {
 		PageNode page;
 		if(mOwnIdentity != null)
-			page = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getFreetalkAddress(), ctx);
+			page = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getShortestUniqueName(40), ctx);
 		else
 			page = mPM.getPageNode(Freetalk.PLUGIN_TITLE, ctx);
 
@@ -147,5 +148,12 @@ public abstract class WebPageImpl implements WebPage {
 		}
 		
 		return result;
+	}
+
+	protected static String maxLength(String s, int max) {
+		if(s.length() > max) {
+			s = s.substring(0, max-3) + "...";
+		}
+		return s;
 	}
 }
