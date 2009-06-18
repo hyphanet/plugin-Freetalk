@@ -13,7 +13,6 @@ import plugins.Freetalk.Quoting;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.support.HTMLNode;
-import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
 public class NewReplyPage extends WebPageImpl {
@@ -85,7 +84,8 @@ public class NewReplyPage extends WebPageImpl {
 		authorBox.addChild("b", mOwnIdentity.getFreetalkAddress());
 		
 		HTMLNode subjectBox = newReplyForm.addChild(getContentBox("Subject"));
-		subjectBox.addChild("input", new String[] {"type", "name", "size", "value"}, new String[] {"text", "ReplySubject", "100", replySubject}); /* FIXME: Find a reasonable maximal subject length and specify here and elsewhere */		
+		subjectBox.addChild("input", new String[] {"type", "name", "size", "maxlength", "value"},
+									new String[] {"text", "ReplySubject", "100", Integer.toString(Message.MAX_MESSAGE_TITLE_TEXT_LENGTH), replySubject});		
 		
 		HTMLNode textBox = newReplyForm.addChild(getContentBox("Text"));
 		textBox.addChild("textarea", new String[] { "name", "cols", "rows" }, new String[] { "ReplyText", "80", "30" }, replyText);
