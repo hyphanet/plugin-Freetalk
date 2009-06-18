@@ -489,7 +489,6 @@ public abstract class MessageManager implements Runnable {
 	 * Get an iterator of all boards. The transient fields of the returned boards will be initialized already.
 	 */
 	public synchronized Iterator<Board> boardIterator() {
-		/* FIXME: Accelerate this query. db4o should be configured to keep an alphabetic index of boards */
 		Query query = db.query();
 		query.constrain(Board.class);
 		query.descend("mName").orderDescending();
