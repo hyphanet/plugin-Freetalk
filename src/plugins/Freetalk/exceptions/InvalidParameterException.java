@@ -4,7 +4,7 @@
 package plugins.Freetalk.exceptions;
 
 /* 
- * FIXME: Isn't there any standard java exception for that purpose?
+ * TODO: Isn't there any standard java exception for that purpose?
  * IllegalArgumentException is unfortunately a RuntimeException, same
  * for the java.security.InvalidParameterException.
  */
