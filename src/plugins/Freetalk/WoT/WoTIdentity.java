@@ -161,17 +161,17 @@ public class WoTIdentity implements FTIdentity {
 	protected void storeWithoutCommit() {
 		/* FIXME: check for duplicates */
 
-			try {
-				if(db.ext().isStored(this) && !db.ext().isActive(this))
-					throw new RuntimeException("Trying to store a non-active WoTIdentity object");
+		try {
+			if(db.ext().isStored(this) && !db.ext().isActive(this))
+				throw new RuntimeException("Trying to store a non-active WoTIdentity object");
 
-				db.store(mRequestURI);
-				db.store(this);
-			}
-			catch(RuntimeException e) {
-				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
-			}
+			db.store(mRequestURI);
+			db.store(this);
+		}
+		catch(RuntimeException e) {
+			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+			throw e;
+		}
 	}
 	
 	protected void deleteWithoutCommit() {
