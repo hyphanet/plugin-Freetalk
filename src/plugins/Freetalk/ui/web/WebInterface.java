@@ -53,6 +53,8 @@ public class WebInterface {
 	private final WebInterfaceToadlet newReplyToadlet;
 	private final WebInterfaceToadlet newBoardToadlet;
 	private final WebInterfaceToadlet changeTrustToadlet;
+	private final WebInterfaceToadlet wikiToadlet;
+	private final WebInterfaceToadlet editWikiToadlet;
 	
 	class HomeWebInterfaceToadlet extends WebInterfaceToadlet {
 
@@ -399,6 +401,71 @@ public class WebInterface {
 		
 	}
 
+	class WikiWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected WikiWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			try {
+				return new WikiPage(webInterface, getLoggedInOwnIdentity(), req);
+			} catch (NoSuchBoardException e) {
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Could not find Wiki board", "Could not find Wiki board");
+			} catch (NoSuchMessageException e) {
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Unknown Wiki Page "+req.getParam("page"), "Unknown Wiki Page "+req.getParam("page"));
+			}
+		}
+		
+		@Override
+		public Toadlet showAsToadlet() {
+			return messagesToadlet;
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && webInterface.getLoggedInOwnIdentity() != null;
+		}
+		
+	}
+
+	class EditWikiWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected EditWikiWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			if(getLoggedInOwnIdentity() == null)
+				throw new RedirectException(logIn);
+			try {
+				return new EditWikiPage(webInterface, getLoggedInOwnIdentity(), req);
+			} catch (NoSuchBoardException e) {
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
+			} catch (NoSuchMessageException e) {
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Unknown message "+req.getParam("id"), "Unknown message "+req.getParam("id"));
+			}
+		}
+		
+		@Override
+		public Toadlet showAsToadlet() {
+			return messagesToadlet;
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && webInterface.getLoggedInOwnIdentity() != null;
+		}
+		
+	}
+
+
 	public WebInterface(Freetalk myFreetalk) {
 		try {
 			logIn = new URI(Freetalk.PLUGIN_URI+"/LogIn");
@@ -434,6 +501,8 @@ public class WebInterface {
 		newReplyToadlet = new NewReplyWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewReply");
 		newBoardToadlet = new NewBoardWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewBoard");
 		changeTrustToadlet = new ChangeTrustWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "ChangeTrust");
+		wikiToadlet = new WikiWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "Wiki");
+		editWikiToadlet = new EditWikiWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "EditWiki");
 		
 		container.register(logInToadlet, null, Freetalk.PLUGIN_URI + "/LogIn", true, false);
 		container.register(createIdentityToadlet, null, Freetalk.PLUGIN_URI + "/CreateIdentity", true, false);
@@ -443,6 +512,8 @@ public class WebInterface {
 		container.register(newReplyToadlet, null, Freetalk.PLUGIN_URI + "/NewReply", true, false);
 		container.register(newBoardToadlet, null, Freetalk.PLUGIN_URI + "/NewBoard", true, false);
 		container.register(changeTrustToadlet, null, Freetalk.PLUGIN_URI + "/ChangeTrust", true, false);
+		container.register(wikiToadlet, null, Freetalk.PLUGIN_URI + "/Wiki", true, false);
+		container.register(editWikiToadlet, null, Freetalk.PLUGIN_URI + "/EditWiki", true, false);
 	}
 
 	private void setLoggedInOwnIdentity(FTOwnIdentity user) {
@@ -474,7 +545,9 @@ public class WebInterface {
 				showBoardToadlet,
 				showThreadToadlet,
 				newReplyToadlet,
-				newBoardToadlet
+				newBoardToadlet,
+				wikiToadlet,
+				editWikiToadlet
 		}) container.unregister(t);
 		mPageMaker.removeNavigationCategory("Freetalk");
 	}
