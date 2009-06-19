@@ -98,6 +98,8 @@ public abstract class IdentityManager implements PrioRunnable {
 
 		return noOwnIdentities ? true : false;
 	}
+
+	public abstract int getScore(FTOwnIdentity treeOwner, FTIdentity target);
 	
 	public abstract void terminate();
 

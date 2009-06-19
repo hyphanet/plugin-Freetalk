@@ -233,7 +233,7 @@ public class WoTIdentityManager extends IdentityManager {
 		}
 	}
 
-	public int getScore(WoTOwnIdentity treeOwner, FTIdentity target) {
+	public int getScore(FTOwnIdentity treeOwner, FTIdentity target) {
 		// FIXME: implement
 		return 0;
 	}

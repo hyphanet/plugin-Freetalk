@@ -16,11 +16,11 @@ public interface FTOwnIdentity extends FTIdentity {
 	public FreenetURI getInsertURI();
 	
 	public boolean wantsMessagesFrom(FTIdentity identity);
+	public int getScoreFor(FTIdentity identity);
 	
 	public void subscribeToBoard(Board board);
 	
 	public void unsubscribeFromBoard(Board board);
 	
 	public Iterator<Board> subscribedBoardsIterator();
-	
 }

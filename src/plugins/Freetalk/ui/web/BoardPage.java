@@ -52,6 +52,7 @@ public final class BoardPage extends WebPageImpl {
 		HTMLNode row = threadsTable.addChild("thead");
 			row.addChild("th", "Title");
 			row.addChild("th", "Author");
+			row.addChild("th", "Trust");
 			row.addChild("th", "Date");
 			row.addChild("th", "Replies");
 		
@@ -72,6 +73,9 @@ public final class BoardPage extends WebPageImpl {
 				/* Author */
 				String authorText = thread.getAuthor().getShortestUniqueName(50);
 				row.addChild("td", new String[] { "align" }, new String[] { "left" }, authorText);
+
+				/* Trust */
+				row.addChild("td", new String[] { "align" }, new String[] { "left" }, String.valueOf(mOwnIdentity.getScoreFor(thread.getAuthor())));
 
 				/* Date */
 				row.addChild("td", new String[] { "align" , "style" }, new String[] { "center" , "white-space:nowrap;"}, dateFormat.format(thread.getDate()));

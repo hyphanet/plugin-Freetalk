@@ -53,15 +53,17 @@ public final class ThreadPage extends WebPageImpl {
         HTMLNode row = table.addChild("tr");
         row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Author:");
         row.addChild("td", new String[] { "align" }, new String[] { "left" }, message.getAuthor().getShortestUniqueName(50));
+        row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Trust:");
+        row.addChild("td", new String[] { "align" }, new String[] { "left" }, String.valueOf(mOwnIdentity.getScoreFor(message.getAuthor())));
         row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Date:");
         row.addChild("td", new String[] { "align" }, new String[] { "left" }, mLocalDateFormat.format(message.getDate()));
 
         row = table.addChild("tr");
         row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Debug:");
-        addDebugInfo(row.addChild("td", new String[] { "align", "colspan"}, new String[] { "left", "3" }), message);
+        addDebugInfo(row.addChild("td", new String[] { "align", "colspan"}, new String[] { "left", "5" }), message);
 
         row = table.addChild("tr");
-        HTMLNode cell = row.addChild("td", new String[] { "align", "colspan" }, new String[] { "left", "4" });
+        HTMLNode cell = row.addChild("td", new String[] { "align", "colspan" }, new String[] { "left", "6" });
 
         String[] lines = message.getText().split("\r\n|\n");
         for(String line : lines) {
