@@ -68,10 +68,10 @@ public final class BoardPage extends WebPageImpl {
 
 				HTMLNode titleCell = row.addChild("td", new String[] { "align" }, new String[] { "left" });
 				titleCell.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
-						"&board=" + mBoard.getName() + "&id=" + thread.getID(), maxLength(thread.getTitle(), 50)));
+						"&board=" + mBoard.getName() + "&id=" + thread.getID(), maxLength(thread.getTitle(), 40)));
 
 				/* Author */
-				String authorText = thread.getAuthor().getShortestUniqueName(50);
+				String authorText = thread.getAuthor().getShortestUniqueName(30);
 				row.addChild("td", new String[] { "align" }, new String[] { "left" }, authorText);
 
 				/* Trust */
