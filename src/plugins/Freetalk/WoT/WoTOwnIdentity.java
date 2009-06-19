@@ -70,6 +70,14 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	public int getScoreFor(FTIdentity identity) {
 		return mIdentityManager.getScore(this, identity);
 	}
+
+	public int getTrustIn(FTIdentity identity) {
+		return mIdentityManager.getTrust(this, identity);
+	}
+
+	public void setTrust(FTIdentity identity, int trust, String comment) {
+		mIdentityManager.setTrust(this, identity, trust, comment);
+	}
 	
 	public void storeWithoutCommit() {
 		/* FIXME: check for duplicates */

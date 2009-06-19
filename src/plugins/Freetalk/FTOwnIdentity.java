@@ -17,6 +17,8 @@ public interface FTOwnIdentity extends FTIdentity {
 	
 	public boolean wantsMessagesFrom(FTIdentity identity);
 	public int getScoreFor(FTIdentity identity);
+	public int getTrustIn(FTIdentity identity);
+	public void setTrust(FTIdentity identity, int trust, String comment);
 	
 	public void subscribeToBoard(Board board);
 	

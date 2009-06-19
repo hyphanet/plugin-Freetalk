@@ -6,6 +6,7 @@ package plugins.Freetalk.ui.web;
 import java.text.DateFormat;
 
 import plugins.Freetalk.Board;
+import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
@@ -54,7 +55,10 @@ public final class ThreadPage extends WebPageImpl {
         row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Author:");
         row.addChild("td", new String[] { "align" }, new String[] { "left" }, message.getAuthor().getShortestUniqueName(50));
         row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Trust:");
-        row.addChild("td", new String[] { "align" }, new String[] { "left" }, String.valueOf(mOwnIdentity.getScoreFor(message.getAuthor())));
+        HTMLNode trustItem = row.addChild("td", new String[] { "align" }, new String[] { "left" }, "");
+        trustItem.addChild("span", "style", "float:left", String.valueOf(mOwnIdentity.getScoreFor(message.getAuthor())));
+        addModButton(trustItem, message.getAuthor(), 10, "+");
+        addModButton(trustItem, message.getAuthor(), -10, "-");
         row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Date:");
         row.addChild("td", new String[] { "align" }, new String[] { "left" }, mLocalDateFormat.format(message.getDate()));
 
@@ -81,6 +85,17 @@ public final class ThreadPage extends WebPageImpl {
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ParentMessageID", parentMessage.getID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", "Reply" });
+    }
+
+    private void addModButton(HTMLNode parent, FTIdentity identity, int change, String label) {
+        parent = parent.addChild("span", "style", "float:left");
+        HTMLNode newReplyForm = addFormChild(parent, Freetalk.PLUGIN_URI + "/ChangeTrust", "ChangeTrustPage");
+        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
+        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OtherIdentityID", identity.getUID()});
+        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
+        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ThreadID", mThread.getID()});
+        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "TrustChange", String.valueOf(change)});
+        newReplyForm.addChild("input", new String[] {"type", "name", "value", "style"}, new String[] {"submit", "submit", label, "width:3em" });
     }
 
     private void addDebugInfo(HTMLNode messageBox, Message message) {

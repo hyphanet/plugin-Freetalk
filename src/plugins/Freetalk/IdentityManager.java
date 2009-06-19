@@ -100,7 +100,10 @@ public abstract class IdentityManager implements PrioRunnable {
 	}
 
 	public abstract int getScore(FTOwnIdentity treeOwner, FTIdentity target);
-	
+	public abstract int getTrust(FTOwnIdentity treeOwner, FTIdentity target);
+
+	public abstract void setTrust(FTOwnIdentity treeOwner, FTIdentity identity, int trust, String comment);
+
 	public abstract void terminate();
 
 	/// format the name of an author

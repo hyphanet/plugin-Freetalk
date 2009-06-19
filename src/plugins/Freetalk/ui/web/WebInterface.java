@@ -9,6 +9,7 @@ import java.net.URISyntaxException;
 import java.util.Iterator;
 
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
@@ -51,6 +52,7 @@ public class WebInterface {
 	private final WebInterfaceToadlet showThreadToadlet;
 	private final WebInterfaceToadlet newReplyToadlet;
 	private final WebInterfaceToadlet newBoardToadlet;
+	private final WebInterfaceToadlet changeTrustToadlet;
 	
 	class HomeWebInterfaceToadlet extends WebInterfaceToadlet {
 
@@ -183,6 +185,43 @@ public class WebInterface {
 			return super.isEnabled(ctx) && webInterface.getLoggedInOwnIdentity() == null;
 		}
 		
+	}
+
+	class ChangeTrustWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected ChangeTrustWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+			String pass = request.getPartAsString("formPassword", 32);
+			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
+				writeHTMLReply(ctx, 403, "Forbidden", "Invalid form password.");
+				return;
+			}
+			try {
+				FTOwnIdentity own = mFreetalk.getIdentityManager().getOwnIdentity(request.getPartAsString("OwnIdentityID", 64));
+				FTIdentity other = mFreetalk.getIdentityManager().getIdentity(request.getPartAsString("OtherIdentityID", 64));
+				int change = Integer.parseInt(request.getPartAsString("TrustChange", 5));
+				mFreetalk.getIdentityManager().setTrust(own, other, own.getTrustIn(other)+change, "+/- button from web interface");
+			} catch(NoSuchIdentityException e) {
+				// FIXME: provide error message
+			}
+
+			writeTemporaryRedirect(ctx, "Changing trust succesful, redirecting to thread", Freetalk.PLUGIN_URI + "/showThread?board=" + request.getPartAsString("BoardName", 64) + "&id=" + request.getPartAsString("ThreadID", 128));
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
+			// not expected to make it here
+			return new Welcome(webInterface, getLoggedInOwnIdentity(), req);
+		}
+		
+		@Override
+		public Toadlet showAsToadlet() {
+			return homeToadlet;
+		}
 	}
 	
 	class CreateIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -394,6 +433,7 @@ public class WebInterface {
 		showThreadToadlet = new ShowThreadWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "showThread");
 		newReplyToadlet = new NewReplyWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewReply");
 		newBoardToadlet = new NewBoardWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewBoard");
+		changeTrustToadlet = new ChangeTrustWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "ChangeTrust");
 		
 		container.register(logInToadlet, null, Freetalk.PLUGIN_URI + "/LogIn", true, false);
 		container.register(createIdentityToadlet, null, Freetalk.PLUGIN_URI + "/CreateIdentity", true, false);
@@ -402,6 +442,7 @@ public class WebInterface {
 		container.register(showThreadToadlet, null, Freetalk.PLUGIN_URI + "/showThread", true, false);
 		container.register(newReplyToadlet, null, Freetalk.PLUGIN_URI + "/NewReply", true, false);
 		container.register(newBoardToadlet, null, Freetalk.PLUGIN_URI + "/NewBoard", true, false);
+		container.register(changeTrustToadlet, null, Freetalk.PLUGIN_URI + "/ChangeTrust", true, false);
 	}
 
 	private void setLoggedInOwnIdentity(FTOwnIdentity user) {

@@ -233,9 +233,10 @@ public class WoTIdentityManager extends IdentityManager {
 		}
 	}
 
-	public int getScore(FTOwnIdentity treeOwner, FTIdentity target) {
+	// FIXME: should throw exceptions instead of silently returning ""
+	protected String getProperty(FTOwnIdentity treeOwner, FTIdentity target, String property) {
 		if(mTalker == null)
-			return 0;
+			return "";
 
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		SimpleFieldSet results;
@@ -246,14 +247,44 @@ public class WoTIdentityManager extends IdentityManager {
 			results = mTalker.sendBlocking(sfs, null).params; /* Verify that the old connection is still alive */
 		}
 		catch(PluginNotFoundException e) {
+			return "";
+		}
+		String result = results.get(property);
+		return result;
+	}
+
+	public int getScore(FTOwnIdentity treeOwner, FTIdentity target) {
+		try {
+			return Integer.parseInt(getProperty(treeOwner, target, "Score"));
+		} catch (NumberFormatException e) {
 			return 0;
 		}
-		String score = results.get("Score");
-		if(score.equals("null")) {
-			// now what?
+	}
+
+	public int getTrust(FTOwnIdentity treeOwner, FTIdentity target) {
+		try {
+			return Integer.parseInt(getProperty(treeOwner, target, "Trust"));
+		} catch (NumberFormatException e) {
 			return 0;
 		}
-		return Integer.parseInt(score);
+	}
+
+	public void setTrust(FTOwnIdentity treeOwner, FTIdentity identity, int trust, String comment) {
+		if(mTalker == null)
+			return; // FIXME: throw something?
+
+		SimpleFieldSet request = new SimpleFieldSet(true);
+		request.putOverwrite("Message", "SetTrust");
+		request.putOverwrite("Truster", treeOwner.getUID());
+		request.putOverwrite("Trustee", identity.getUID());
+		request.putOverwrite("Value", String.valueOf(trust));
+		request.putOverwrite("Comment", comment);
+		try {
+			mTalker.sendBlocking(request, null);
+		}
+		catch(PluginNotFoundException e) {
+			// ignore silently
+		}
 	}
 
 	private synchronized void addFreetalkContext(WoTIdentity oid){
