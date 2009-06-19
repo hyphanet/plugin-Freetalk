@@ -234,8 +234,26 @@ public class WoTIdentityManager extends IdentityManager {
 	}
 
 	public int getScore(FTOwnIdentity treeOwner, FTIdentity target) {
-		// FIXME: implement
-		return 0;
+		if(mTalker == null)
+			return 0;
+
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
+		SimpleFieldSet results;
+		sfs.putOverwrite("Message", "GetIdentity");
+		sfs.putOverwrite("TreeOwner", treeOwner.getUID());
+		sfs.putOverwrite("Identity", target.getUID());
+		try {
+			results = mTalker.sendBlocking(sfs, null).params; /* Verify that the old connection is still alive */
+		}
+		catch(PluginNotFoundException e) {
+			return 0;
+		}
+		String score = results.get("Score");
+		if(score.equals("null")) {
+			// now what?
+			return 0;
+		}
+		return Integer.parseInt(score);
 	}
 
 	private synchronized void addFreetalkContext(WoTIdentity oid){
