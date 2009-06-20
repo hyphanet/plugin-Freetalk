@@ -71,7 +71,7 @@ public class Wiki {
 		if(last != null) {
 			return last;
 		}
-		throw new NoSuchMessageException();
+		return thread;
 	}
 
 	public String getText() {
