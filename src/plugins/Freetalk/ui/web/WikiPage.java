@@ -44,7 +44,14 @@ public final class WikiPage extends WebPageImpl {
 			throw new RedirectException(logIn);
 		HTMLNode test = addContentBox(mPage);
 		addEditButton(test);
-		test.addChild("#", mWiki.getText());
+		test.addChild("%", formatWikiText(mWiki.getText()));
+	}
+
+	private String formatWikiText(String text) {
+		text = text.replace("\r\n", "\n");
+		text = text.replace("\n", "<br>");
+		text = text.replaceAll("\\[\\[(.*?)\\]\\]", "<a href=\"/Freetalk/wiki\\?page=$1\">$1</a>");
+		return text;
 	}
 
 	private void addEditButton(HTMLNode parent) {
