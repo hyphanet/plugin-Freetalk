@@ -413,10 +413,12 @@ public class WebInterface {
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
 			try {
 				return new WikiPage(webInterface, getLoggedInOwnIdentity(), req);
-			} catch (NoSuchBoardException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Could not find Wiki board", "Could not find Wiki board");
 			} catch (NoSuchMessageException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Unknown Wiki Page "+req.getParam("page"), "Unknown Wiki Page "+req.getParam("page"));
+				try {
+					return new EditWikiPage(webInterface, getLoggedInOwnIdentity(), req);
+				} catch (NoSuchMessageException e2) {
+					return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Unable to edit "+req.getParam("page"), "Unable to edit "+req.getParam("page"));
+				}
 			}
 		}
 		
@@ -446,10 +448,8 @@ public class WebInterface {
 				throw new RedirectException(logIn);
 			try {
 				return new EditWikiPage(webInterface, getLoggedInOwnIdentity(), req);
-			} catch (NoSuchBoardException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
 			} catch (NoSuchMessageException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Unknown message "+req.getParam("id"), "Unknown message "+req.getParam("id"));
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(), req, "Unable to edit "+req.getParam("page"), "Unable to edit "+req.getParam("page"));
 			}
 		}
 		
@@ -484,12 +484,14 @@ public class WebInterface {
 		logInToadlet = new LogInWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "LogIn");
 		homeToadlet = new HomeWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "");
 		messagesToadlet = new MessagesWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "messages");
+		wikiToadlet = new WikiWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "wiki");
 		identitiesToadlet = new IdentitiesWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "identities");
 		logOutToadlet = new LogOutWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "LogOut");
 		
 		container.register(homeToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/", true, "Log in", "Log in", false, logInToadlet);
 		container.register(homeToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/", true, "Home", "Home page", false, homeToadlet);
 		container.register(messagesToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/messages", true, "Boards", "View all boards", false, messagesToadlet);
+		container.register(wikiToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/wiki", true, "Wiki", "Pages everyone can edit", false, wikiToadlet);
 		container.register(identitiesToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/identities", true, "Identities", "Manage your own and known identities", false, identitiesToadlet);
 		container.register(logOutToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/LogOut", true, "Log out", "Log out", false, logOutToadlet);
 		
@@ -501,7 +503,6 @@ public class WebInterface {
 		newReplyToadlet = new NewReplyWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewReply");
 		newBoardToadlet = new NewBoardWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewBoard");
 		changeTrustToadlet = new ChangeTrustWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "ChangeTrust");
-		wikiToadlet = new WikiWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "Wiki");
 		editWikiToadlet = new EditWikiWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "EditWiki");
 		
 		container.register(logInToadlet, null, Freetalk.PLUGIN_URI + "/LogIn", true, false);
@@ -512,8 +513,7 @@ public class WebInterface {
 		container.register(newReplyToadlet, null, Freetalk.PLUGIN_URI + "/NewReply", true, false);
 		container.register(newBoardToadlet, null, Freetalk.PLUGIN_URI + "/NewBoard", true, false);
 		container.register(changeTrustToadlet, null, Freetalk.PLUGIN_URI + "/ChangeTrust", true, false);
-		container.register(wikiToadlet, null, Freetalk.PLUGIN_URI + "/Wiki", true, false);
-		container.register(editWikiToadlet, null, Freetalk.PLUGIN_URI + "/EditWiki", true, false);
+		container.register(editWikiToadlet, null, Freetalk.PLUGIN_URI + "/editWiki", true, false);
 	}
 
 	private void setLoggedInOwnIdentity(FTOwnIdentity user) {
