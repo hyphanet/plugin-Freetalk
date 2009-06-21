@@ -11,6 +11,7 @@ import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Board.MessageReference;
+import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.support.HTMLNode;
@@ -56,7 +57,8 @@ public final class ThreadPage extends WebPageImpl {
         row.addChild("td", new String[] { "align" }, new String[] { "left" }, message.getAuthor().getShortestUniqueName(50));
         row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Trust:");
         HTMLNode trustItem = row.addChild("td", new String[] { "align" }, new String[] { "left" }, "");
-        trustItem.addChild("span", "style", "float:left", String.valueOf(mOwnIdentity.getScoreFor(message.getAuthor())));
+        // TODO: Get rid of the ugly cast, maybe this should be called WoTThreadPage :|
+        trustItem.addChild("span", "style", "float:left", Integer.toString(((WoTOwnIdentity)mOwnIdentity).getScoreFor(message.getAuthor())));
         addModButton(trustItem, message.getAuthor(), 10, "+");
         addModButton(trustItem, message.getAuthor(), -10, "-");
         row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Date:");

@@ -10,6 +10,7 @@ import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Board.MessageReference;
+import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -75,7 +76,8 @@ public final class BoardPage extends WebPageImpl {
 				row.addChild("td", new String[] { "align" }, new String[] { "left" }, authorText);
 
 				/* Trust */
-				row.addChild("td", new String[] { "align" }, new String[] { "left" }, String.valueOf(mOwnIdentity.getScoreFor(thread.getAuthor())));
+				// TODO: Get rid of the cast somehow, we should maybe call this WoTBoardPage :|
+				row.addChild("td", new String[] { "align" }, new String[] { "left" }, Integer.toString(((WoTOwnIdentity)mOwnIdentity).getScoreFor(thread.getAuthor())));
 
 				/* Date */
 				row.addChild("td", new String[] { "align" , "style" }, new String[] { "center" , "white-space:nowrap;"}, dateFormat.format(thread.getDate()));
