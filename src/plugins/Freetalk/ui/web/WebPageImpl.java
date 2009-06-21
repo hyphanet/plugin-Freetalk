@@ -7,7 +7,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import plugins.Freetalk.FTOwnIdentity;
-import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.PageMaker;
