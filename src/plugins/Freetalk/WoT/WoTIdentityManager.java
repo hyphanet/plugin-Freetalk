@@ -13,6 +13,7 @@ import plugins.Freetalk.Message;
 import plugins.Freetalk.PluginTalkerBlocking;
 import plugins.Freetalk.exceptions.DuplicateIdentityException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
+import plugins.Freetalk.exceptions.WoTDisconnectedException;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -29,8 +30,7 @@ import freenet.support.io.NativeThread;
 /**
  * An identity manager which uses the identities from the WoT plugin.
  * 
- * @author xor
- *
+ * @author xor (xor@freenetproject.org)
  */
 public class WoTIdentityManager extends IdentityManager {
 	
@@ -233,61 +233,51 @@ public class WoTIdentityManager extends IdentityManager {
 		}
 	}
 
-	// FIXME: should throw exceptions instead of silently returning ""
-	protected String getProperty(FTOwnIdentity treeOwner, FTIdentity target, String property) {
+	protected synchronized String getProperty(FTOwnIdentity treeOwner, FTIdentity target, String property) {
 		if(mTalker == null)
-			return "";
+			throw new WoTDisconnectedException();
 
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		SimpleFieldSet results;
 		sfs.putOverwrite("Message", "GetIdentity");
 		sfs.putOverwrite("TreeOwner", treeOwner.getUID());
 		sfs.putOverwrite("Identity", target.getUID());
+
 		try {
-			results = mTalker.sendBlocking(sfs, null).params; /* Verify that the old connection is still alive */
+			return mTalker.sendBlocking(sfs, null).params.get(property);
 		}
 		catch(PluginNotFoundException e) {
-			return "";
+			throw new WoTDisconnectedException();
 		}
-		String result = results.get(property);
-		return result;
 	}
 
 	public int getScore(FTOwnIdentity treeOwner, FTIdentity target) {
-		try {
-			return Integer.parseInt(getProperty(treeOwner, target, "Score"));
-		} catch (NumberFormatException e) {
-			return 0;
-		}
+		return Integer.parseInt(getProperty(treeOwner, target, "Score"));
 	}
 
 	public int getTrust(FTOwnIdentity treeOwner, FTIdentity target) {
-		try {
-			return Integer.parseInt(getProperty(treeOwner, target, "Trust"));
-		} catch (NumberFormatException e) {
-			return 0;
-		}
+		return Integer.parseInt(getProperty(treeOwner, target, "Trust"));
 	}
 
-	public void setTrust(FTOwnIdentity treeOwner, FTIdentity identity, int trust, String comment) {
+	public synchronized void setTrust(FTOwnIdentity treeOwner, FTIdentity identity, int trust, String comment) {
 		if(mTalker == null)
-			return; // FIXME: throw something?
+			throw new WoTDisconnectedException();
 
 		SimpleFieldSet request = new SimpleFieldSet(true);
 		request.putOverwrite("Message", "SetTrust");
 		request.putOverwrite("Truster", treeOwner.getUID());
 		request.putOverwrite("Trustee", identity.getUID());
-		request.putOverwrite("Value", String.valueOf(trust));
+		request.putOverwrite("Value", Integer.toString(trust));
 		request.putOverwrite("Comment", comment);
 		try {
 			mTalker.sendBlocking(request, null);
+			// FIXME: Parse result, throw if setTrust failed.
 		}
 		catch(PluginNotFoundException e) {
-			// ignore silently
+			throw new WoTDisconnectedException();
 		}
 	}
 
-	private synchronized void addFreetalkContext(WoTIdentity oid){
+	private synchronized void addFreetalkContext(WoTIdentity oid) {
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "AddContext");
 		params.putOverwrite("Identity", oid.getUID());
