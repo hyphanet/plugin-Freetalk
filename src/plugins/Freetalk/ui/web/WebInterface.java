@@ -11,6 +11,9 @@ import java.util.Iterator;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.WoT.WoTIdentity;
+import plugins.Freetalk.WoT.WoTIdentityManager;
+import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -201,10 +204,13 @@ public class WebInterface {
 				return;
 			}
 			try {
-				FTOwnIdentity own = mFreetalk.getIdentityManager().getOwnIdentity(request.getPartAsString("OwnIdentityID", 64));
-				FTIdentity other = mFreetalk.getIdentityManager().getIdentity(request.getPartAsString("OtherIdentityID", 64));
+				// TODO: These casts are ugly.
+				WoTOwnIdentity own = (WoTOwnIdentity)mFreetalk.getIdentityManager().getOwnIdentity(request.getPartAsString("OwnIdentityID", 64));
+				WoTIdentity other = (WoTOwnIdentity)mFreetalk.getIdentityManager().getIdentity(request.getPartAsString("OtherIdentityID", 64));
 				int change = Integer.parseInt(request.getPartAsString("TrustChange", 5));
-				mFreetalk.getIdentityManager().setTrust(own, other, own.getTrustIn(other)+change, "+/- button from web interface");
+				WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
+				
+				identityManager.setTrust(own, other, own.getTrustIn(other)+change, "+/- button from web interface");
 			} catch(NoSuchIdentityException e) {
 				// FIXME: provide error message
 			}
