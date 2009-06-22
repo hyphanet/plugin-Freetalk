@@ -586,6 +586,15 @@ public abstract class MessageManager implements Runnable {
 		};
 	}
 
+	public synchronized List<Message> getMessagesBy(FTIdentity author) {
+		Query query = db.query();
+		query.constrain(Message.class);
+		query.constrain(OwnMessage.class).not();
+		query.descend("mAuthor").constrain(author);
+		ObjectSet<Message> result = query.execute();
+		return result;
+	}
+
 	/**
 	 * Returns true if the message was not downloaded yet and any of the FTOwnIdentity wants the message.
 	 */

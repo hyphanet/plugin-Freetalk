@@ -57,6 +57,8 @@ public final class ThreadPage extends WebPageImpl {
         HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width" }, new String[] { "left", "top", "2", "15%" }, "");
         authorNode.addChild("b").addChild("i").addChild("#", message.getAuthor().getShortestUniqueName(50));
         authorNode.addChild("br");
+        authorNode.addChild("#", "Posts: " + mFreetalk.getMessageManager().getMessagesBy(message.getAuthor()).size());
+        authorNode.addChild("br");
         authorNode.addChild("#", "Reputation: ");
         addTrustersInfo(authorNode, message.getAuthor());
         authorNode.addChild("br");
