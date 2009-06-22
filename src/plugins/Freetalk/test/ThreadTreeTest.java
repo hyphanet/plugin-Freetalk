@@ -5,15 +5,26 @@ package plugins.Freetalk.test;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
+import plugins.Freetalk.Board;
+import plugins.Freetalk.MessageList;
+import plugins.Freetalk.Board.MessageReference;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTMessage;
 import plugins.Freetalk.WoT.WoTMessageList;
 import plugins.Freetalk.WoT.WoTMessageManager;
+import plugins.Freetalk.WoT.WoTMessageURI;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
+import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import freenet.keys.FreenetURI;
-import freenet.support.Base64;
+import freenet.support.CurrentTimeUTC;
 
 /**
  * When you obtain a message object from the database, different kinds of other message objects can be queried from the message:
@@ -54,6 +65,25 @@ public class ThreadTreeTest extends DatabaseBasedTest {
 	private WoTMessageManager mMessageManager;
 	
 	private WoTOwnIdentity[] mOwnIdentities;
+	
+	private Set<Board> mBoards;
+	private Board mBoard;
+
+	private int mMessageListIndex = 0;
+	
+	/**
+	 * The threads which we stored in the database. The unit test should test whether board.getThreads() returns the threads in the order in which they are stored
+	 * in this list. It should of course also test whether no thread is missing, or no thread is returned even though it should
+	 * not be returned as a thread.
+	 */
+	private LinkedList<WoTMessage> mThreads;
+	
+	/**
+	 * The replies to each message which we stored in the database. The unit test should test whether the replies show up, whether their order is correct, etc.
+	 */
+	private Hashtable<WoTMessage, LinkedList<WoTMessage>> mReplies;
+	
+	
 
 	protected void setUp() throws Exception {
 		super.setUp();
@@ -62,6 +92,10 @@ public class ThreadTreeTest extends DatabaseBasedTest {
 		mMessageManager = new WoTMessageManager(db, mIdentityManager);
 		
 		constructIdentities();
+		constructBoards();
+		
+		mThreads = new LinkedList<WoTMessage>();
+		mReplies = new Hashtable<WoTMessage, LinkedList<WoTMessage>>();
 	}
 	
 	private void constructIdentities() throws MalformedURLException {
@@ -92,16 +126,71 @@ public class ThreadTreeTest extends DatabaseBasedTest {
 		
 		db.commit();
 	}
+	
+	private void constructBoards() throws InvalidParameterException {
+		mBoard = mMessageManager.getOrCreateBoard("en.test");
+		
+		mBoards = new HashSet<Board>();
+		mBoards.add(mBoard);
+	}
 
-	/*
-	private WoTMessageList constructMessageList() {
-		return null;
+
+	private WoTMessageList storeMessageList(WoTOwnIdentity author, FreenetURI uri, MessageList.MessageReference messageRef) throws InvalidParameterException, NoSuchIdentityException {
+		List<MessageList.MessageReference> references = new ArrayList<MessageList.MessageReference>(2);
+		references.add(messageRef);
+		
+		WoTMessageList list = new WoTMessageList(author, uri, references);
+		list.initializeTransient(db, mMessageManager);
+		list.storeWithoutCommit();
+		db.commit();
+		
+		return list;
+		
 	}
 	
-	private WoTMessage constructTestMessage(FreenetURI myAuthorRequestSSK, UUID myUUID, FreenetURI myRealURI,
-			FreenetURI myThreadURI, FreenetURI myParentURI) throws MalformedURLException {
+	private WoTMessage storeTestMessage(WoTOwnIdentity author, WoTMessage myParent, WoTMessage myThread)
+		throws MalformedURLException, InvalidParameterException, NoSuchIdentityException {
 		
-		return null;
+		FreenetURI myRealURI = new FreenetURI("CHK@");
+		UUID myUUID = UUID.randomUUID();
+		FreenetURI myListURI = WoTMessageList.assembleURI(author.getRequestURI(), mMessageListIndex);
+		WoTMessageURI myURI = new WoTMessageURI(myListURI + "#" + myUUID);
+		
+		MessageList.MessageReference ref = new MessageList.MessageReference(myURI.getMessageID(), myRealURI, mBoard);
+		
+		WoTMessageList myList = storeMessageList(author, myListURI, ref);
+		
+		WoTMessageURI myThreadURI = myThread != null ? (WoTMessageURI)myThread.getURI() : null;
+		WoTMessageURI myParentURI = myParent != null ? (WoTMessageURI)myParent.getURI() : null;
+		
+		WoTMessage message = WoTMessage.construct(myList, myRealURI, myURI.getMessageID(), myThreadURI, myParentURI,
+				mBoards, mBoards.iterator().next(),  author, "message " + myUUID, CurrentTimeUTC.get(), "message body " + myUUID, null);
+		
+		mMessageManager.onMessageReceived(message);
+		return message;
 	}
-	*/
+	
+	private void verifyThreads() {
+		int i = 0;
+	
+		for(MessageReference ref : mBoard.getThreads(mOwnIdentities[0])) {
+			assertTrue(i < mThreads.size());
+			assertEquals(mThreads.get(i), ref.getMessage());
+			
+			++i;
+		}
+	}
+	
+	public void testThreading() throws MalformedURLException, InvalidParameterException, NoSuchIdentityException {
+		mThreads.addFirst(storeTestMessage(mOwnIdentities[0], null, null));
+		verifyThreads();
+		
+		mReplies.put(mThreads.get(0), new LinkedList<WoTMessage>());
+		
+		mReplies.get(mThreads.get(0)).addFirst(storeTestMessage(mOwnIdentities[1], mThreads.get(0), mThreads.get(0)));
+		verifyThreads();
+		
+		mThreads.addFirst(storeTestMessage(mOwnIdentities[2], null, null));
+		verifyThreads();
+	}
 }

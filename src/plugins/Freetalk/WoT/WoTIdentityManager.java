@@ -43,6 +43,9 @@ public class WoTIdentityManager extends IdentityManager {
 	/** The amount of time between each attempt to connect to the WoT plugin */
 	private static final int WOT_RECONNECT_DELAY = 5 * 1000; 
 	
+	/** If true, this identity manager is being use in a unit test - it will return 0 for any score / trust value then */
+	private final boolean mIsUnitTest;
+	
 	private final Freetalk mFreetalk;
 
 	private volatile boolean isRunning = false;
@@ -53,6 +56,7 @@ public class WoTIdentityManager extends IdentityManager {
 
 	public WoTIdentityManager(ExtObjectContainer myDB, Freetalk myFreetalk) {
 		super(myDB, myFreetalk.getPluginRespirator().getNode().executor);
+		mIsUnitTest = false;
 		
 		mFreetalk = myFreetalk;
 		
@@ -65,6 +69,7 @@ public class WoTIdentityManager extends IdentityManager {
 	 */
 	public WoTIdentityManager(ExtObjectContainer myDB) {
 		super(myDB);
+		mIsUnitTest = true;
 		mFreetalk = null;
 	}
 	
@@ -254,10 +259,16 @@ public class WoTIdentityManager extends IdentityManager {
 	}
 
 	public int getScore(FTOwnIdentity treeOwner, FTIdentity target) {
+		if(mIsUnitTest)
+			return 0;
+		
 		return Integer.parseInt(getProperty(treeOwner, target, "Score"));
 	}
 
 	public int getTrust(FTOwnIdentity treeOwner, FTIdentity target) {
+		if(mIsUnitTest)
+			return 0;
+		
 		return Integer.parseInt(getProperty(treeOwner, target, "Trust"));
 	}
 
