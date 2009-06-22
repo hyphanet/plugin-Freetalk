@@ -4,16 +4,20 @@
 package plugins.Freetalk.test;
 
 import java.net.MalformedURLException;
-import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
+import plugins.Freetalk.Board;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTMessage;
 import plugins.Freetalk.WoT.WoTMessageList;
 import plugins.Freetalk.WoT.WoTMessageManager;
+import plugins.Freetalk.WoT.WoTMessageURI;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
+import plugins.Freetalk.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
-import freenet.support.Base64;
+import freenet.support.CurrentTimeUTC;
 
 /**
  * When you obtain a message object from the database, different kinds of other message objects can be queried from the message:
@@ -53,7 +57,11 @@ public class ThreadTreeTest extends DatabaseBasedTest {
 	private WoTIdentityManager mIdentityManager;
 	private WoTMessageManager mMessageManager;
 	
+	private Set<Board> mBoards;
+	
 	private WoTOwnIdentity[] mOwnIdentities;
+
+	private int mMessageListIndex = 0;
 
 	protected void setUp() throws Exception {
 		super.setUp();
@@ -62,6 +70,7 @@ public class ThreadTreeTest extends DatabaseBasedTest {
 		mMessageManager = new WoTMessageManager(db, mIdentityManager);
 		
 		constructIdentities();
+		constructBoards();
 	}
 	
 	private void constructIdentities() throws MalformedURLException {
@@ -92,16 +101,33 @@ public class ThreadTreeTest extends DatabaseBasedTest {
 		
 		db.commit();
 	}
+	
+	private void constructBoards() throws InvalidParameterException {
+		mBoards = new HashSet<Board>();
+		mBoards.add(mMessageManager.getOrCreateBoard("en.test"));
+	}
 
-	/*
-	private WoTMessageList constructMessageList() {
-		return null;
+
+	private WoTMessageList constructMessageList(WoTOwnIdentity author) {
+		WoTMessageList list = new WoTMessageList(author, WoTMessageList.generateURI(author, mMessageListIndex++));
+		list.initializeTransient(db, mMessageManager);
+		list.storeWithoutCommit();
+		db.commit();
+		
+		return list;
+		
 	}
 	
-	private WoTMessage constructTestMessage(FreenetURI myAuthorRequestSSK, UUID myUUID, FreenetURI myRealURI,
-			FreenetURI myThreadURI, FreenetURI myParentURI) throws MalformedURLException {
+	private WoTMessage constructTestMessage(WoTOwnIdentity author, WoTMessageURI myParentURI, WoTMessageURI myThreadURI)
+		throws MalformedURLException, InvalidParameterException {
 		
-		return null;
+		FreenetURI myRealURI = new FreenetURI("CHK@");
+		UUID myUUID = UUID.randomUUID();
+		
+		WoTMessageList myList = constructMessageList(author);
+		WoTMessageURI myURI = new WoTMessageURI(myList.getURI() + "#" + myUUID);
+		
+		return WoTMessage.construct(myList, myRealURI, myURI.getMessageID(), myThreadURI, myParentURI, mBoards, mBoards.iterator().next(), 
+				author, "message " + myUUID, CurrentTimeUTC.get(), "message body " + myUUID, null);
 	}
-	*/
 }
