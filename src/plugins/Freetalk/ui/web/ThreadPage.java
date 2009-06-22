@@ -54,7 +54,7 @@ public final class ThreadPage extends WebPageImpl {
     private void addMessageBox(Message message) {
         HTMLNode table = mContentNode.addChild("table", new String[] {"border", "width" }, new String[] { "0", "100%" });
         HTMLNode row = table.addChild("tr");
-        HTMLNode authorNode = row.addChild("td", new String[] { "align", "rowspan", "width" }, new String[] { "left", "2", "15%" }, "");
+        HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width" }, new String[] { "left", "top", "2", "15%" }, "");
         authorNode.addChild("b").addChild("i").addChild("#", message.getAuthor().getShortestUniqueName(50));
         authorNode.addChild("br");
         authorNode.addChild("#", "Reputation: ");
@@ -62,8 +62,6 @@ public final class ThreadPage extends WebPageImpl {
         authorNode.addChild("br");
         authorNode.addChild("#", "Esteem: "+makeStars((int)(Math.log(((WoTIdentityManager)mFreetalk.getIdentityManager()).getScore(mOwnIdentity, message.getAuthor()))/Math.log(10))));
         authorNode.addChild("br");
-        addModButton(authorNode, message.getAuthor(), -10, "-");
-        addModButton(authorNode, message.getAuthor(), 10, "+");
         int trust;
         try {
             trust = ((WoTOwnIdentity)mOwnIdentity).getTrustIn(message.getAuthor());
@@ -74,6 +72,11 @@ public final class ThreadPage extends WebPageImpl {
 
         HTMLNode title = row.addChild("td", "align", "left", "");
         title.addChild("span", "style", "float:right", mLocalDateFormat.format(message.getDate()));
+        if(((WoTOwnIdentity)mOwnIdentity).getAssessed(message) == false) {
+            addModButton(title, message, 10, "+");
+            addModButton(title, message, -10, "-");
+            title.addChild("%", "&nbsp;");
+        }
         title.addChild("b", maxLength(message.getTitle(),50));
 
         row = table.addChild("tr");
@@ -140,15 +143,16 @@ public final class ThreadPage extends WebPageImpl {
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", "Reply" });
     }
 
-    private void addModButton(HTMLNode parent, FTIdentity identity, int change, String label) {
-        parent = parent.addChild("span", "style", "float:right");
+    private void addModButton(HTMLNode parent, Message message, int change, String label) {
+        parent = parent.addChild("span", "style", "float:left");
         HTMLNode newReplyForm = addFormChild(parent, Freetalk.PLUGIN_URI + "/ChangeTrust", "ChangeTrustPage");
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
-        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OtherIdentityID", identity.getUID()});
+        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OtherIdentityID", message.getAuthor().getUID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ThreadID", mThread.getID()});
+        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "MessageID", message.getID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "TrustChange", String.valueOf(change)});
-        newReplyForm.addChild("input", new String[] {"type", "name", "value", "style"}, new String[] {"submit", "submit", label, "width:3em" });
+        newReplyForm.addChild("input", new String[] {"type", "name", "value", "style"}, new String[] {"submit", "submit", label, "width:2em" });
     }
 
     private void addDebugInfo(HTMLNode messageBox, Message message) {

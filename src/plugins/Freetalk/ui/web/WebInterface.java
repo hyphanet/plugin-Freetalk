@@ -11,6 +11,7 @@ import java.util.Iterator;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.Message;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
@@ -216,6 +217,13 @@ public class WebInterface {
 					trust = 0;
 				}
 				own.setTrust(other, trust+change, "Freetalk web interface");
+
+				try {
+					Message message = mFreetalk.getMessageManager().get(request.getPartAsString("MessageID", 128));
+					own.setAssessed(message, true);
+					own.storeAndCommit();
+				} catch (NoSuchMessageException e) {
+				}
 			} catch(NoSuchIdentityException e) {
 				// FIXME: provide error message
 			}

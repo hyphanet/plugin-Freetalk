@@ -158,6 +158,13 @@ public class WoTIdentity implements FTIdentity {
 		if(newNickname.length() > 50) throw new InvalidParameterException("Nickname is too long, the limit is 50 characters.");
 	}
 
+	public synchronized void storeAndCommit() {
+		synchronized(db.lock()) {
+			storeWithoutCommit();
+			db.commit(); Logger.debug(this, "COMMITED.");
+		}
+	}
+
 	protected void storeWithoutCommit() {
 		/* FIXME: check for duplicates */
 

@@ -5,8 +5,11 @@ package plugins.Freetalk.WoT;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.TreeMap;
 
 import plugins.Freetalk.Board;
+import plugins.Freetalk.Message;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import freenet.keys.FreenetURI;
@@ -24,6 +27,8 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 
 	private final FreenetURI mInsertURI;
 
+	private final Map<String, Boolean> mAssessed;
+
 	/** Get a list of fields which the database should create an index on. */
 	public static String[] getIndexedFields() {
 		/* FIXME: Figure out whether indexed fields are inherited from parent classes. Otherwise we would have to also list the indexed fields
@@ -37,10 +42,22 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 		if(myInsertURI == null)
 			throw new IllegalArgumentException();
 		mInsertURI = myInsertURI;
+		mAssessed = new TreeMap<String, Boolean>();
 	}
 
 	public FreenetURI getInsertURI() {
 		return mInsertURI;
+	}
+
+	public void setAssessed(Message message, boolean assessed) {
+		mAssessed.put(message.getID(), new Boolean(assessed) );
+	}
+
+	public boolean getAssessed(Message message) {
+		if(!mAssessed.containsKey(message.getID())) {
+			return false;
+		}
+		return mAssessed.get(message.getID()).booleanValue();
 	}
 
 	public synchronized void subscribeToBoard(Board board) {
@@ -88,6 +105,7 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 
 				db.store(mSubscribedBoards); // FIXME: Is this correct??
 				db.store(mInsertURI);
+				db.store(mAssessed);
 				super.storeWithoutCommit();
 			}
 			catch(RuntimeException e) {
@@ -105,6 +123,7 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 		try {
 			mInsertURI.removeFrom(db);
 			db.delete(mSubscribedBoards); // FIXME: Is this correct??
+			db.delete(mAssessed);
 			super.deleteWithoutCommit();
 		}
 		catch(RuntimeException e) {
