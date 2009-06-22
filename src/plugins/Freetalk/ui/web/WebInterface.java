@@ -206,11 +206,16 @@ public class WebInterface {
 			try {
 				// TODO: These casts are ugly.
 				WoTOwnIdentity own = (WoTOwnIdentity)mFreetalk.getIdentityManager().getOwnIdentity(request.getPartAsString("OwnIdentityID", 64));
-				WoTIdentity other = (WoTOwnIdentity)mFreetalk.getIdentityManager().getIdentity(request.getPartAsString("OtherIdentityID", 64));
+				WoTIdentity other = (WoTIdentity)mFreetalk.getIdentityManager().getIdentity(request.getPartAsString("OtherIdentityID", 64));
 				int change = Integer.parseInt(request.getPartAsString("TrustChange", 5));
 				WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
-				
-				identityManager.setTrust(own, other, own.getTrustIn(other)+change, "+/- button from web interface");
+				int trust;
+				try {
+					trust = own.getTrustIn(other);
+				} catch (NumberFormatException e) {
+					trust = 0;
+				}
+				own.setTrust(other, trust+change, "Freetalk web interface");
 			} catch(NoSuchIdentityException e) {
 				// FIXME: provide error message
 			}

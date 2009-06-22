@@ -52,38 +52,45 @@ public final class ThreadPage extends WebPageImpl {
 
     /* You have to synchronize on mLocalDateFormat when using this function */
     private void addMessageBox(Message message) {
-        HTMLNode messageBox = addContentBox("Subject: " + maxLength(message.getTitle(),50));
-
-        HTMLNode table = messageBox.addChild("table", new String[] {"border", "width" }, new String[] { "0", "100%" });
-
+        HTMLNode table = mContentNode.addChild("table", new String[] {"border", "width" }, new String[] { "0", "100%" });
         HTMLNode row = table.addChild("tr");
-        row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Author:");
-        HTMLNode authorInfo = new HTMLNode("td", new String[] { "align" }, new String[] { "left" }, message.getAuthor().getShortestUniqueName(50) + " ");
-        addTrustersInfo(authorInfo, message.getAuthor());
-        row.addChild(authorInfo);
-        row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Trust:");
-        HTMLNode trustItem = row.addChild("td", new String[] { "align" }, new String[] { "left" }, "");
-        // TODO: Get rid of the ugly cast, maybe this should be called WoTThreadPage :|
-        trustItem.addChild("span", "style", "float:left", Integer.toString(((WoTOwnIdentity)mOwnIdentity).getScoreFor(message.getAuthor())));
-        addModButton(trustItem, message.getAuthor(), 10, "+");
-        addModButton(trustItem, message.getAuthor(), -10, "-");
-        row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Date:");
-        row.addChild("td", new String[] { "align" }, new String[] { "left" }, mLocalDateFormat.format(message.getDate()));
+        HTMLNode authorNode = row.addChild("td", new String[] { "align", "rowspan", "width" }, new String[] { "left", "2", "15%" }, "");
+        authorNode.addChild("b").addChild("i").addChild("#", message.getAuthor().getShortestUniqueName(50));
+        authorNode.addChild("br");
+        authorNode.addChild("#", "Reputation: ");
+        addTrustersInfo(authorNode, message.getAuthor());
+        authorNode.addChild("br");
+        authorNode.addChild("#", "Esteem: "+makeStars((int)(Math.log(((WoTIdentityManager)mFreetalk.getIdentityManager()).getScore(mOwnIdentity, message.getAuthor()))/Math.log(10))));
+        authorNode.addChild("br");
+        addModButton(authorNode, message.getAuthor(), -10, "-");
+        addModButton(authorNode, message.getAuthor(), 10, "+");
+        int trust;
+        try {
+            trust = ((WoTOwnIdentity)mOwnIdentity).getTrustIn(message.getAuthor());
+        } catch (NumberFormatException e) {
+            trust = 0;
+        }
+        authorNode.addChild("#", "Trust: "+trust);
+
+        HTMLNode title = row.addChild("td", "align", "left", "");
+        title.addChild("span", "style", "float:right", mLocalDateFormat.format(message.getDate()));
+        title.addChild("b", maxLength(message.getTitle(),50));
 
         row = table.addChild("tr");
-        row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Debug:");
-        addDebugInfo(row.addChild("td", new String[] { "align", "colspan"}, new String[] { "left", "5" }), message);
-
-        row = table.addChild("tr");
-        HTMLNode cell = row.addChild("td", new String[] { "align", "colspan" }, new String[] { "left", "6" });
-
+        HTMLNode text = row.addChild("td", "align", "left", "");
         String[] lines = message.getText().split("\r\n|\n");
         for(String line : lines) {
-            cell.addChild("#", line);
-            cell.addChild("br");
+            text.addChild("#", line);
+            text.addChild("br");
         }
+        addReplyButton(text, message);
+    }
 
-        addReplyButton(cell, message);
+    private String makeStars(int number) {
+        String result = "";
+        for(int i=0;i<number;i++)
+            result += "*";
+        return result;
     }
 
     private void addTrustersInfo(HTMLNode parent, FTIdentity author) {
@@ -134,7 +141,7 @@ public final class ThreadPage extends WebPageImpl {
     }
 
     private void addModButton(HTMLNode parent, FTIdentity identity, int change, String label) {
-        parent = parent.addChild("span", "style", "float:left");
+        parent = parent.addChild("span", "style", "float:right");
         HTMLNode newReplyForm = addFormChild(parent, Freetalk.PLUGIN_URI + "/ChangeTrust", "ChangeTrustPage");
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OtherIdentityID", identity.getUID()});
