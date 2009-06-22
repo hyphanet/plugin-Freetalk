@@ -4,6 +4,8 @@
 package plugins.Freetalk.WoT;
 
 import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
 
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
@@ -14,6 +16,7 @@ import plugins.Freetalk.PluginTalkerBlocking;
 import plugins.Freetalk.exceptions.DuplicateIdentityException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.WoTDisconnectedException;
+import plugins.Freetalk.exceptions.InvalidParameterException;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -275,6 +278,34 @@ public class WoTIdentityManager extends IdentityManager {
 		catch(PluginNotFoundException e) {
 			throw new WoTDisconnectedException();
 		}
+	}
+
+	public synchronized List<WoTTrust> getReceivedTrusts(FTIdentity trustee) throws WoTDisconnectedException{
+		List<WoTTrust> result = new ArrayList<WoTTrust>();
+		if(mTalker == null)
+			throw new WoTDisconnectedException();
+
+		SimpleFieldSet request = new SimpleFieldSet(true);
+		request.putOverwrite("Message", "GetTrusters");
+		request.putOverwrite("Context", "");
+		request.putOverwrite("Identity", trustee.getUID());
+		try {
+			SimpleFieldSet answer = mTalker.sendBlocking(request, null).params;
+			for(int idx = 1; ; idx++) {
+				String uid = answer.get("Identity"+idx);
+				if(uid == null || uid.equals("")) /* FIXME: Figure out whether the second condition is necessary */
+					break;
+				try {
+					result.add(new WoTTrust(getIdentity(uid), trustee, (byte)Integer.parseInt(answer.get("Value"+idx)), answer.get("Comment"+idx)));
+				} catch (NoSuchIdentityException e) {
+				} catch (InvalidParameterException e) {
+				}
+			}
+		}
+		catch(PluginNotFoundException e) {
+			throw new WoTDisconnectedException();
+		}
+		return result;
 	}
 
 	private synchronized void addFreetalkContext(WoTIdentity oid) {

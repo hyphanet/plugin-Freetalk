@@ -4,6 +4,7 @@
 package plugins.Freetalk.ui.web;
 
 import java.text.DateFormat;
+import java.util.List;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
@@ -12,8 +13,11 @@ import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Board.MessageReference;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
+import plugins.Freetalk.WoT.WoTIdentityManager;
+import plugins.Freetalk.WoT.WoTTrust;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.exceptions.WoTDisconnectedException;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -54,7 +58,9 @@ public final class ThreadPage extends WebPageImpl {
 
         HTMLNode row = table.addChild("tr");
         row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Author:");
-        row.addChild("td", new String[] { "align" }, new String[] { "left" }, message.getAuthor().getShortestUniqueName(50));
+        HTMLNode authorInfo = new HTMLNode("td", new String[] { "align" }, new String[] { "left" }, message.getAuthor().getShortestUniqueName(50) + " ");
+        addTrustersInfo(authorInfo, message.getAuthor());
+        row.addChild(authorInfo);
         row.addChild("th", new String[] { "align" }, new String[] { "left" }, "Trust:");
         HTMLNode trustItem = row.addChild("td", new String[] { "align" }, new String[] { "left" }, "");
         // TODO: Get rid of the ugly cast, maybe this should be called WoTThreadPage :|
@@ -78,6 +84,44 @@ public final class ThreadPage extends WebPageImpl {
         }
 
         addReplyButton(cell, message);
+    }
+
+    private void addTrustersInfo(HTMLNode parent, FTIdentity author) {
+        int trustedBy = 0;
+        int distrustedBy = 0;
+        String trusted = "";
+        String distrusted = "";
+        List<WoTTrust> receivedTrust;
+        try {
+            receivedTrust = ((WoTIdentityManager)mFreetalk.getIdentityManager()).getReceivedTrusts(author);
+            for(WoTTrust t: receivedTrust) {
+                if(t.getValue() > 0) {
+                    trustedBy++;
+                    if(!trusted.equals("")) trusted += ", ";
+                    trusted += t.getTruster().getShortestUniqueName(20);
+                }
+                if(t.getValue() < 0) {
+                    distrustedBy++;
+                    if(!distrusted.equals("")) distrusted += ", ";
+                    distrusted += t.getTruster().getShortestUniqueName(20);
+                }
+            }
+        } catch (WoTDisconnectedException e) {
+            parent.addChild("#", "?");
+            return;
+        }
+
+        if(trustedBy > 0) {
+            parent.addChild("abbr", new String[]{"title", "style"}, new String[]{trusted, "color:green"}, String.valueOf(trustedBy));
+        } else {
+            parent.addChild("#", String.valueOf(trustedBy));
+        }
+        parent.addChild("#", "/");
+        if(distrustedBy > 0) {
+            parent.addChild("abbr", new String[]{"title", "style"}, new String[]{distrusted, "color:red"}, String.valueOf(distrustedBy));
+        } else {
+            parent.addChild("#", String.valueOf(distrustedBy));
+        }
     }
 
     private void addReplyButton(HTMLNode parent, Message parentMessage) {
