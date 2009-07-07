@@ -384,7 +384,6 @@ public final class Board implements Comparable<Board> {
     @SuppressWarnings("unchecked")
     public synchronized Iterable<MessageReference> getThreads(final FTOwnIdentity identity) {
     	return new Iterable<MessageReference>() {
-		@Override
 		public Iterator<MessageReference> iterator() {
         return new Iterator<MessageReference>() {
             private final FTOwnIdentity mIdentity = identity;
