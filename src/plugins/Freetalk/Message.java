@@ -69,9 +69,9 @@ public abstract class Message implements Comparable<Message> {
 	 * If we receive the parent messages of those messages, we will be able to find their orphan children faster if we only need to search in
 	 * the thread they belong to and not in the whole FTBoard - which may contain many thousands of messages.
 	 */
-	protected MessageURI mThreadURI;
+	protected final MessageURI mThreadURI;
 	
-	protected String mThreadID;
+	protected final String mThreadID;
 	
 	/**
 	 * The URI of the message to which this message is a reply. Null if it is a thread.
@@ -134,7 +134,7 @@ public abstract class Message implements Comparable<Message> {
 	/**
 	 * The message to which this message is a reply.
 	 */
-	private Message mParent = null;
+	private Message mParent = null;  /* FIXME: For some reason mParent seems to stay null on some thread replies even though their parent is present in the database! */
 	
 	
 	/* References to objects of the plugin, not stored in the database. */
@@ -269,18 +269,6 @@ public abstract class Message implements Comparable<Message> {
 	}
 	
 	/**
-	 * Used internally for correcting the thread URIs of messages which have specified them wrong in the XML.
-	 */
-	protected synchronized void setThreadURIAndID(MessageURI newThreadURI) {
-		if(mThreadURI != null)
-			mThreadURI.removeFrom(db);
-		
-		mThreadURI = newThreadURI;
-		mThreadID = mThreadURI.getMessageID();
-		storeWithoutCommit();
-	}
-	
-	/**
 	 * Get the MessageURI to which this message is a reply. Null if the message is a thread.
 	 */
 	public MessageURI getParentURI() throws NoSuchMessageException {
@@ -403,56 +391,6 @@ public abstract class Message implements Comparable<Message> {
 		
 		/* TODO: assert(newParent contains at least one board which mBoards contains) */
 		mParent = newParent;
-		
-		/* Check whether mThreadURI/ID is correct. If it is not, adopt the thread URI/ID of the parent message and also set this on
-		 * all our children and their children. I thought about how to handle incorrect thread URI/ID for about 3 hours and it seems to me
-		 * like this is the way to go... requires lots of brainwork to imagine what side effects can happen due to incorrect thread URI/ID
-		 * and the conclusion is that they MUST be corrected, otherwise those messages will disappear in getAllThreadReplies() */
-		
-		synchronized(mParent) {
-			String realThreadID = newParent.isThread() ? newParent.getID() : newParent.mThreadID;
-			if(!realThreadID.equals(mThreadID)) {
-				Logger.error(this, "Correcting thread URI/ID of " + getURI());
-				
-				/* It is unpredictable what messages will be affected by this code because we modify all children, so unfortunately we should
-				 * probably lock all changes to messages here :| */
-				synchronized(Message.class) { 
-					if(mParent.isThread()) {
-						setThreadURIAndID(mParent.getURI());
-						setThread(mParent);
-					} else
-						setThreadURIAndID(mParent.mThreadURI);
-					
-					/* Use depth-first-search for setting the URI/ID on the children
-					 * This is dangerous: An attacker might cause very high memory usage if we do not ensure that we use DFS properly so 
-					 * that only 1 message must be in memory at once */
-					
-					Message child = this;
-					boolean foundChild;
-					do {
-						foundChild = false;
-						for(Message c : child.getChildren(null)) {
-							if(!mThreadID.equals(c.mThreadID)) {
-								db.deactivate(child, 1);
-								child = c;
-								child.setThreadURIAndID(mThreadURI);
-								foundChild = true; break;
-							}
-						}
-						
-						if(!foundChild && child != this) {
-							try {
-								child = child.getParent();
-								foundChild = true;
-							} catch (NoSuchMessageException e) {
-								Logger.error(this, "Should never happen!");
-							}							
-						}
-					} while(foundChild);
-				}
-			}
-		}
-		
 		
 		storeWithoutCommit();
 	}

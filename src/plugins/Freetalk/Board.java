@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
@@ -67,9 +68,17 @@ public final class Board implements Comparable<Board> {
     public static String[] getIndexedFields() {
         return new String[] { "mID", "mName" };
     }
+    
+    public static String[] getMessageReferenceIndexedFields() { /* TODO: ugly! find a better way */
+    	return new String[] { "mBoard", "mMessage", "mMessageIndex" };
+    }
 
     public static String[] getBoardMessageLinkIndexedFields() { /* TODO: ugly! find a better way */
-        return new String[] { "mBoard", "mMessage", "mMessageIndex" };
+        return new String[] { "mThreadID" };
+    }
+    
+    public static String[] getBoardThreadLinkIndexedFields() { /* TODO: ugly! find a better way */
+    	return new String[] { "mThreadID" };
     }
 
     public static String[] getAllowedLanguageCodes() {
@@ -234,6 +243,7 @@ public final class Board implements Comparable<Board> {
      * 
      * Does not store the message, you have to do this before!
      */
+    /* FIXME: This function is obsolete it needs to be reviewed / rewritten */
     protected synchronized void addMessage(Message newMessage) {        
     	if(newMessage instanceof OwnMessage) {
     		/* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
@@ -281,6 +291,7 @@ public final class Board implements Comparable<Board> {
     /**
      * Assumes that the transient fields of the newMessage are initialized already.
      */
+    /* FIXME: This function is obsolete it needs to be reviewed / rewritten */
     private synchronized void linkOrphansToNewParent(Message newMessage) {
         if(newMessage.isThread()) {
             Iterator<Message> absoluteOrphans = absoluteOrphanIterator(newMessage.getID());
@@ -334,16 +345,13 @@ public final class Board implements Comparable<Board> {
      * Finds the parent thread of a message in the database. The transient fields of the returned message will be initialized already.
      * @throws NoSuchMessageException
      */
+    /* FIXME: This function is partly obsolete it needs to be reviewed / rewritten */
     @SuppressWarnings("unchecked")
     private synchronized MessageReference findParentThread(Message m) throws NoSuchMessageException {
         Query q = db.query();
-        q.constrain(BoardMessageLink.class);
-        /* FIXME: This query has to be optimized. Maybe we should store the thread ID in the BoardMessageLink ?
-         * Or we could first just query for message objects with the given ID (ignoring BoardMessageLinks!) and then query for a BoardMessageLink
-         * which links the resulting message to the target board? - This could be sufficiently fast as the number of messages which are
-         * posted to multiple boards will be very small. */
+        q.constrain(BoardThreadLink.class);
         q.descend("mBoard").constrain(this).identity();
-        q.descend("mMessage").descend("mID").constrain(m.getThreadID());
+        q.descend("mThreadID").constrain(m.getThreadID()).identity();
         ObjectSet<MessageReference> parents = q.execute();
 
         assert(parents.size() <= 1);
@@ -353,7 +361,10 @@ public final class Board implements Comparable<Board> {
         else {
             MessageReference parentThread = parents.next();
             assert(parentThread.getMessage().getID().equals(m.getThreadID())); /* The query works */
+            
+            
 
+            /* FIXME: This comment is obsolete. */
             /* Important: It is possible that we receive a message which has a parent thread URI specified, but the message at that URI is not
              * really a thread but just a reply to a thread. We MUST NOT return the thread which is specified as thread in the referred URI
              * instead because the thread ID of that one is different to the thread ID which is calculated from the false thread URI!
@@ -367,6 +378,9 @@ public final class Board implements Comparable<Board> {
              * Notice that this comment was written after I figured out that messages are NOT being displayed if the if() is left out, so
              * please do not remove it in the future.
              */
+            /* FIXME: This code is obsolete!! It won't work: This function now queries for BoardThreadLink objects, those are only stored for
+             * threads. We need to add code which detects when a message references a non-thread message as it's parent thread and create
+             * a BoardThreadLink for the non-thread message */
             if(parentThread.getMessage().isThread() == false)
                 throw new NoSuchMessageException();
 
@@ -384,6 +398,7 @@ public final class Board implements Comparable<Board> {
     @SuppressWarnings("unchecked")
     public synchronized Iterable<MessageReference> getThreads(final FTOwnIdentity identity) {
     	return new Iterable<MessageReference>() {
+		@Override
 		public Iterator<MessageReference> iterator() {
         return new Iterator<MessageReference>() {
             private final FTOwnIdentity mIdentity = identity;
@@ -391,18 +406,11 @@ public final class Board implements Comparable<Board> {
             private MessageReference next;
 
             {
-                /* FIXME: If db4o supports precompiled queries, this one should be stored precompiled.
-                 * Reason: We sort the threads by date.
-                 * Maybe we can just keep the Query-object and call q.execute() as many times as we like to?
-                 * Or somehow tell db4o to keep a per-board thread index which is sorted by Date? - This would be the best solution */
                 Query q = db.query();
-                q.constrain(BoardMessageLink.class);
-                q.descend("mBoard").constrain(Board.this);
-                q.descend("mMessage").descend("mThread").constrain(null).identity();
-                /* We require mParent to be null because this allows discussions where only the head message is missing to be displayed as
-                 * a single thread instead of displaying a bunch of single messages where each would appear to be a thread. */
-                q.descend("mMessage").descend("mParent").constrain(null).identity();
-                q.descend("mMessage").descend("mDate").orderDescending();
+                q.constrain(BoardThreadLink.class);
+                q.descend("mBoard").constrain(Board.this).identity();
+                q.descend("mLastReplyDate").orderDescending();
+                               
                 iter = q.execute().iterator();
                 next = iter.hasNext() ? iter.next() : null;
             }
@@ -444,8 +452,8 @@ public final class Board implements Comparable<Board> {
                  * to keep a separate list of those. */
                 Query q = db.query();
                 q.constrain(BoardMessageLink.class);
-                q.descend("mBoard").constrain(Board.this).identity();
-                q.descend("mMessage").descend("mThreadID").constrain(threadID);
+                q.descend("mBoard").constrain(this).identity();
+                q.descend("mThreadID").constrain(threadID);
                 q.descend("mMessage").descend("mThread").constrain(null).identity();
                 iter = q.execute().iterator();
             }
@@ -469,7 +477,7 @@ public final class Board implements Comparable<Board> {
     @SuppressWarnings("unchecked")
     public synchronized List<MessageReference> getAllMessages(final boolean sortByMessageIndexAscending) {
         Query q = db.query();
-        q.constrain(BoardMessageLink.class);
+        q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         if (sortByMessageIndexAscending) {
             q.descend("mMessageIndex").orderAscending(); /* Needed for NNTP */
@@ -480,9 +488,9 @@ public final class Board implements Comparable<Board> {
     @SuppressWarnings("unchecked")
     public synchronized int getMessageIndex(Message message) throws NoSuchMessageException {
         Query q = db.query();
-        q.constrain(BoardMessageLink.class);
+        q.constrain(MessageReference.class);
         q.descend("mMessage").constrain(message).identity();
-        ObjectSet<BoardMessageLink> result = q.execute();
+        ObjectSet<MessageReference> result = q.execute();
 
         if(result.size() == 0)
             throw new NoSuchMessageException(message.getID());
@@ -498,14 +506,19 @@ public final class Board implements Comparable<Board> {
     @SuppressWarnings("unchecked")
     public synchronized Message getMessageByIndex(int index) throws NoSuchMessageException {
         Query q = db.query();
-        q.constrain(BoardMessageLink.class);
+        q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mMessageIndex").constrain(index);
         ObjectSet<MessageReference> result = q.execute();
-        if(result.size() == 0)
-            throw new NoSuchMessageException();
-
-        return result.next().getMessage();
+        
+        switch(result.size()) {
+	        case 1:
+	        	return result.next().getMessage();
+	        case 0:
+	            throw new NoSuchMessageException();
+	        default:
+	        	throw new DuplicateMessageException();
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -515,17 +528,16 @@ public final class Board implements Comparable<Board> {
             final boolean sortByMessageDateAscending)
     {
         final Query q = db.query();
-        q.constrain(BoardMessageLink.class);
+        q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         if (minimumIndex > 0) {
-            minimumIndex--; // db4o provides no greaterEqual(), so we do it this way
-            q.descend("mMessageIndex").constrain(minimumIndex).greater();
+            q.descend("mMessageIndex").constrain(minimumIndex).smaller().not();
         }
         if (sortByMessageIndexAscending) {
             q.descend("mMessageIndex").orderAscending();
         }
         if (sortByMessageDateAscending) {
-            q.descend("mMessage").descend("mDate").orderAscending();
+            q.descend("mMessageDate").orderAscending();
         }
         return q.execute();
     }
@@ -537,17 +549,16 @@ public final class Board implements Comparable<Board> {
             final boolean sortByMessageDateAscending)
     {
         final Query q = db.query();
-        q.constrain(BoardMessageLink.class);
+        q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         if (minimumDate > 0) {
-            minimumDate--; // db4o provides no greaterEqual(), so we do it this way
-            q.descend("mMessage").descend("mDate").constrain(minimumDate).greater();
+            q.descend("mMessageDate").constrain(minimumDate).smaller().not();
         }
         if (sortByMessageIndexAscending) {
             q.descend("mMessageIndex").orderAscending();
         }
         if (sortByMessageDateAscending) {
-            q.descend("mMessage").descend("mDate").orderAscending();
+            q.descend("mMessageDate").orderAscending();
         }
         return q.execute();
     }
@@ -559,7 +570,7 @@ public final class Board implements Comparable<Board> {
     @SuppressWarnings("unchecked")
     private int getFreeMessageIndex() {
         Query q = db.query();
-        q.constrain(BoardMessageLink.class);
+        q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mMessageIndex").orderDescending(); /* FIXME: Use a db4o native query to find the maximum instead of sorting. O(n) vs. O(n log(n))! */
         ObjectSet<MessageReference> result = q.execute();
@@ -593,58 +604,75 @@ public final class Board implements Comparable<Board> {
     @SuppressWarnings("unchecked")
     public synchronized List<MessageReference> getAllThreadReplies(Message thread, final boolean sortByDateAscending) {
         Query q = db.query();
-        /* FIXME: This query is inefficient. It should rather first query for objects of Message.class which have mThreadID == thread.getID()
-         * and then check whether a BoardMessageLink to this board exists. */
         q.constrain(BoardMessageLink.class);
-        q.descend("mBoard").constrain(this).identity();
-        q.descend("mMessage").constrain(thread).identity().not();
         try {
-            q.descend("mMessage").descend("mThreadID").constrain(thread.isThread() ? thread.getID() : thread.getThreadID());
-            /* FIXME: For some reason mParent seems to stay null on some thread replies even though their parent is present in the database! */
-            //q.descend("mMessage").descend("mParent").constrain(null).identity().not();
+        	q.descend("mBoard").constrain(this).identity();
+            q.descend("mThreadID").constrain(thread.isThread() ? thread.getID() : thread.getThreadID());
+            
         } catch (NoSuchMessageException e) {
             throw new RuntimeException( "Message is no thread but parentThreadURI == null : " + thread.getURI());
         }
+        
         if (sortByDateAscending) {
-            q.descend("mMessage").descend("mDate").orderAscending();
+            q.descend("mMessageDate").orderAscending();
         }
-
+       
         return q.execute();
     }
 
-    public interface MessageReference {
-        /** Get the message to which this reference points */
-        public Message getMessage();
+    public static abstract class MessageReference {
+    	
+    	protected final Board mBoard;
+    	
+    	protected Message mMessage;
+    	
+    	protected Date mMessageDate;
+    	
+    	protected final int mMessageIndex;
 
+    	
+    	private MessageReference(Board myBoard, int myMessageIndex) {
+        	if(myBoard == null)
+        		throw new NullPointerException();
+        	
+    		mBoard = myBoard;
+    		mMessage = null;
+    		mMessageDate = null;
+    		mMessageIndex = myMessageIndex;
+    		
+    		assert(mMessageIndex >= mBoard.getFreeMessageIndex());
+    	}
+    	
+    	private MessageReference(Board myBoard, Message myMessage, int myMessageIndex) {
+    		this(myBoard, myMessageIndex);
+    		
+    		if(myMessage == null)
+    			throw new NullPointerException();
+    		
+    		mMessage = myMessage;
+    		mMessageDate = mMessage.getDate();
+    	}
+    	
+        /** Get the message to which this reference points */
+        public synchronized Message getMessage() {
+            /* We do not have to initialize mBoard and can assume that it is initialized because a BoardMessageLink will only be loaded
+             * by the board it belongs to. */
+            mMessage.initializeTransient(mBoard.db, mBoard.mMessageManager);
+            mBoard.db.activate(mMessage, 2); /* FIXME: Figure out a reasonable depth */
+            return mMessage;
+        }
+        
         /** Get an unique index number of this message in the board where which the query for the message was executed.
          * This index number is needed for NNTP and for synchronization with client-applications: They can check whether they have all messages by querying
          * for the highest available index number. */
-        public int getIndex();
-    }
-
-    
-    // FIXME: This class was made static so that it does not store an internal reference to it's Board object because we store that reference in mBoard already,
-    // for being able to access it with db4o queries. Reconsider whether it should really be static: It would be nice if db4o did store an index on mMessageIndex
-    // *per-board*, and not just a global index - the message index is board-local anyway! Does db4o store a per-board index if the class is not static???
-    /**
-     * Helper class to associate messages with boards in the database
-     */
-    public final static class BoardMessageLink implements MessageReference { /* TODO: This is only public for configuring db4o. Find a better way */
-        private final Board mBoard;
-        private final Message mMessage;
-        private final int mMessageIndex;
-
-        public BoardMessageLink(Board myBoard, Message myMessage, int myIndex) {
-            assert(myBoard != null && myMessage != null);
-            mBoard = myBoard;
-            mMessage = myMessage;
-            mMessageIndex = myIndex;
+        public int getIndex() {
+        	return mMessageIndex;
         }
-
+        
         /**
          * Does not provide synchronization, you have to lock the MessageManager, this Board and then the database before calling this function.
          */
-        public void storeWithoutCommit(ExtObjectContainer db) {
+        protected void storeWithoutCommit(ExtObjectContainer db) {
         	try {
         		if(db.ext().isStored(this) && !db.ext().isActive(this))
         			throw new RuntimeException("Trying to store a non-active BoardMessageLink object");
@@ -656,18 +684,69 @@ public final class Board implements Comparable<Board> {
         		throw e;
         	}
         }
+    }
 
-        public int getIndex() {
-            return mMessageIndex;
+    
+    // FIXME: This class was made static so that it does not store an internal reference to it's Board object because we store that reference in mBoard already,
+    // for being able to access it with db4o queries. Reconsider whether it should really be static: It would be nice if db4o did store an index on mMessageIndex
+    // *per-board*, and not just a global index - the message index is board-local anyway! Does db4o store a per-board index if the class is not static???
+    /**
+     * Helper class to associate messages with boards in the database
+     */
+    public static class BoardMessageLink extends MessageReference { /* TODO: This is only public for configuring db4o. Find a better way */
+        
+        private final String mThreadID;
+
+        protected BoardMessageLink(Board myBoard, Message myMessage, int myIndex) {
+        	super(myBoard, myMessage, myIndex);
+            
+            try {
+            	mThreadID = mMessage.getThreadID();
+            }
+            catch(NoSuchMessageException e) {
+            	throw new IllegalArgumentException("Trying to create a BoardMessageLink for a thread, should be a BoardThreadLink.");
+            }
+            
         }
 
-        public Message getMessage() {
-            /* We do not have to initialize mBoard and can assume that it is initialized because a BoardMessageLink will only be loaded
-             * by the board it belongs to. */
-            mMessage.initializeTransient(mBoard.db, mBoard.mMessageManager);
-            mBoard.db.activate(mMessage, 2); /* FIXME: Figure out a reasonable depth */
-            return mMessage;
-        }
+    }
+    
+    public final static class BoardThreadLink  extends MessageReference {
+        
+        private final String mThreadID;
+        
+    	private Date mLastReplyDate;
+    	
+    	
+    	public BoardThreadLink(Board myBoard, Message myThread, int myMessageIndex) {
+    		super(myBoard, myThread, myMessageIndex);
+    		
+    		if(myThread == null)
+    			throw new NullPointerException();
+    		
+    		mThreadID = mMessage.getID();
+    	}
+    	
+    	public BoardThreadLink(Board myBoard, String myThreadID, int myMessageIndex) {
+    		super(myBoard, myMessageIndex);
+    		
+    		if(myThreadID == null)
+    			throw new NullPointerException();
+    		
+    		// TODO: We might validate the thread id here. Should be safe not to do so because it is taken from class Message which validates it.
+    		
+    		mThreadID = myThreadID;
+    	}
+		
+		protected synchronized void updateLastReplyDate(Date newDate) {
+			if(newDate.after(mLastReplyDate))
+				mLastReplyDate = newDate;
+		}
+		
+		protected synchronized Date getLastReplyDate() {
+			return mLastReplyDate;
+		}
+    	
     }
 
 }
