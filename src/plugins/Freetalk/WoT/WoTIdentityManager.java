@@ -423,12 +423,12 @@ public class WoTIdentityManager extends IdentityManager {
 	private synchronized void garbageCollectIdentities() {
 		/* Executing the thread loop once will always take longer than THREAD_PERIOD. Therefore, if we set the limit to 3*THREAD_PERIOD,
 		 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */
-		long lastAcceptTime = System.currentTimeMillis() - THREAD_PERIOD * 3; /* FIXME: Use UTC */
+		long lastAcceptTime = CurrentTimeUTC.getInMillis() - THREAD_PERIOD * 3;
 		
 		Query q = db.query();
 		q.constrain(WoTIdentity.class);
-		q.descend("isNeeded").constrain(false);
-		q.descend("lastReceivedFromWoT").constrain(new Long(lastAcceptTime)).smaller();
+		q.descend("mIsNeeded").constrain(false);
+		q.descend("mLastReceivedFromWoT").constrain(lastAcceptTime).smaller();
 		ObjectSet<WoTIdentity> result = q.execute();
 		
 		while(result.hasNext()) {

@@ -59,7 +59,8 @@ public final class NewBoardPage extends WebPageImpl {
 		nameBox.addChild("p", "Please try to make the name as self-explantory as possible." +
 				"You should split the name in categories separated by dots whenever possible, for example \"Freenet.Support\" instead of just \"Suppport\".");
 		
-		nameBox.addChild("input", new String[] { "type", "size", "name", "value"}, new String[] {"text", "128", "BoardName", boardName}); /* FIXME: Chose a resonable max board name length, specify it here and in Board.java */
+		nameBox.addChild("input", new String[] { "type", "size", "maxlength", "name", "value"},
+				new String[] {"text", "128", Integer.toString(Board.MAX_BOARDNAME_TEXT_LENGTH), "BoardName", boardName});
 		
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateBoard", "Create the board"});
 	}
