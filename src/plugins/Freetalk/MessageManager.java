@@ -586,6 +586,7 @@ public abstract class MessageManager implements Runnable {
 		};
 	}
 
+	@SuppressWarnings("unchecked")
 	public synchronized List<Message> getMessagesBy(FTIdentity author) {
 		Query query = db.query();
 		query.constrain(Message.class);
