@@ -9,7 +9,7 @@ import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
-import plugins.Freetalk.Board.MessageReference;
+import plugins.Freetalk.Board.BoardThreadLink;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import freenet.support.HTMLNode;
@@ -62,28 +62,43 @@ public final class BoardPage extends WebPageImpl {
 		HTMLNode table = threadsTable.addChild("tbody");
 		
 		synchronized(mBoard) {
-			for(MessageReference threadReference : mBoard.getThreads(mOwnIdentity)) {
+			for(BoardThreadLink threadReference : mBoard.getThreads(mOwnIdentity)) {
 				Message thread = threadReference.getMessage();
 
 				row = table.addChild("tr");
+				
+				String threadTitle;
+				if(thread != null)
+					threadTitle = thread.getTitle();
+				else {
+					// The thread was not downloaded yet, we use the title of it's first reply as it's title.
+					threadTitle = mBoard.getAllThreadReplies(threadReference.getThreadID(), true).iterator().next().getMessage().getTitle();
+				}
+				threadTitle = maxLength(threadTitle, 40); // TODO: Adjust
 
 				HTMLNode titleCell = row.addChild("td", new String[] { "align" }, new String[] { "left" });
 				titleCell.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
-						"&board=" + mBoard.getName() + "&id=" + thread.getID(), maxLength(thread.getTitle(), 40)));
+						"&board=" + mBoard.getName() + "&id=" + threadReference.getThreadID(), threadTitle));
 
 				/* Author */
-				String authorText = thread.getAuthor().getShortestUniqueName(30);
+            	// FIXME: The author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out
+            	// what the proper place for a function "getIdentityIDFromThreadID" is and whether I have already written one which can do that, and if
+            	// yes, where it is.
+				String authorText = thread != null ? thread.getAuthor().getShortestUniqueName(30) : "UNKNOWN";
 				row.addChild("td", new String[] { "align" }, new String[] { "left" }, authorText);
 
 				/* Trust */
 				// TODO: Get rid of the cast somehow, we should maybe call this WoTBoardPage :|
-				row.addChild("td", new String[] { "align" }, new String[] { "left" }, Integer.toString(((WoTOwnIdentity)mOwnIdentity).getScoreFor(thread.getAuthor())));
+				row.addChild("td", new String[] { "align" }, new String[] { "left" }, 
+						Integer.toString(((WoTOwnIdentity)mOwnIdentity).getScoreFor(thread.getAuthor())));
 
-				/* Date */
-				row.addChild("td", new String[] { "align" , "style" }, new String[] { "center" , "white-space:nowrap;"}, dateFormat.format(thread.getDate()));
+				/* Date of last reply */
+				row.addChild("td", new String[] { "align" , "style" }, new String[] { "center" , "white-space:nowrap;"}, 
+						dateFormat.format(threadReference.getLastReplyDate()));
 
 				/* Reply count */
-				row.addChild("td", new String[] { "align" }, new String[] { "center" }, Integer.toString(mBoard.threadReplyCount(mOwnIdentity, thread)));
+				row.addChild("td", new String[] { "align" }, new String[] { "center" }, 
+						Integer.toString(mBoard.threadReplyCount(mOwnIdentity, threadReference.getThreadID())));
 			}
 		}
 	}

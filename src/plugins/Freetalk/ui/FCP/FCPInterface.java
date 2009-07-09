@@ -17,6 +17,7 @@ import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Board.BoardMessageLink;
+import plugins.Freetalk.Board.BoardThreadLink;
 import plugins.Freetalk.Board.MessageReference;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.WoT.WoTIdentity;
@@ -175,6 +176,7 @@ public final class FCPInterface implements FredPluginFCP {
      *   ID=id
      *   Title=title
      *   Author=freetalkAddr
+     *   LastReplyDate=utcMillis
      *   Date=utcMillis
      *   ReplyCount=123
      *   FetchDate=utcMillis
@@ -196,18 +198,28 @@ public final class FCPInterface implements FredPluginFCP {
         final Board board = mFreetalk.getMessageManager().getBoardByName(boardName); // throws exception when not found
 
         synchronized(board) { /* FIXME: Is this enough synchronization or should we lock the message manager? */
-            for(MessageReference threadReference : board.getThreads(ownIdentity)) {
-                final Message thread = threadReference.getMessage();
-
+            for(BoardThreadLink threadReference : board.getThreads(ownIdentity)) {
                 final SimpleFieldSet sfs = new SimpleFieldSet(true);
                 sfs.putOverwrite("Message", "MessageThread");
-                sfs.putOverwrite("ID", thread.getID());
-                sfs.putOverwrite("Title", thread.getTitle());
-                sfs.putOverwrite("Author", thread.getAuthor().getFreetalkAddress());
-                sfs.put("Date", thread.getDate().getTime());
-                sfs.put("ReplyCount", board.threadReplyCount(ownIdentity, thread));
-                sfs.put("FetchDate", thread.getFetchDate().getTime());
-                sfs.put("IsThread", thread.isThread());
+                sfs.putOverwrite("ID", threadReference.getThreadID());
+                sfs.put("ReplyCount", board.threadReplyCount(ownIdentity, threadReference.getThreadID()));
+                sfs.put("LastReplyDate", threadReference.getLastReplyDate().getTime());
+                
+                final Message thread = threadReference.getMessage();
+                
+                if(thread != null) {
+	                sfs.putOverwrite("Title", thread.getTitle());
+	                sfs.putOverwrite("Author", thread.getAuthor().getFreetalkAddress());
+	                sfs.put("Date", thread.getDate().getTime());
+	                sfs.put("FetchDate", thread.getFetchDate().getTime());
+	                sfs.put("IsThread", thread.isThread());
+                } else {
+                	// The thread was not downloaded yet.
+                	// TODO: Maybe Add title guess = title of first reply. See BoardPage for how to obtain.
+                	// FIXME: The author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out
+                	// what the proper place for a function "getIdentityIDFromThreadID" is and whether I have already written one which can do that, and if
+                	// yes, where it is.
+                }
                 replysender.send(sfs);
             }
         }
@@ -327,6 +339,7 @@ public final class FCPInterface implements FredPluginFCP {
                 sendSingleMessage(replysender, thread, messageIndex, includeMessageText);
             }
 
+            /* FIXME: This actually sorts by date! Is the sorting by message index needed anyway?? */
             messageRefList = board.getAllThreadReplies(thread.getID(), sortByMessageIndexAscending);
 
             // send all messages of thread
