@@ -327,7 +327,7 @@ public abstract class MessageManager implements Runnable {
 			case 0:
 				throw new NoSuchMessageException(id);
 			default:
-				throw new DuplicateMessageException();
+				throw new DuplicateMessageException(id);
 		}
 	}
 	
@@ -353,7 +353,7 @@ public abstract class MessageManager implements Runnable {
 			case 0:
 				throw new NoSuchMessageListException(id);
 			default:
-				throw new DuplicateMessageListException();
+				throw new DuplicateMessageListException(id);
 		}
 	}
 	
@@ -372,7 +372,7 @@ public abstract class MessageManager implements Runnable {
 			case 0:
 				throw new NoSuchMessageListException(id);
 			default:
-				throw new DuplicateMessageListException();
+				throw new DuplicateMessageListException(id);
 		}
 	}
 	
@@ -396,7 +396,7 @@ public abstract class MessageManager implements Runnable {
 			case 0:
 				throw new NoSuchMessageException(id);
 			default:
-				throw new DuplicateMessageException();
+				throw new DuplicateMessageException(id);
 		}
 	}
 
@@ -421,7 +421,7 @@ public abstract class MessageManager implements Runnable {
 			case 0:
 				throw new NoSuchBoardException(name);
 			default:
-				throw new DuplicateBoardException();
+				throw new DuplicateBoardException(name);
 		}
 	}
 	

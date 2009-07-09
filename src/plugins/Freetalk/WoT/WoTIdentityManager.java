@@ -214,7 +214,7 @@ public class WoTIdentityManager extends IdentityManager {
 			case 0:
 				throw new NoSuchIdentityException(uid);
 			default:
-				throw new DuplicateIdentityException();
+				throw new DuplicateIdentityException(uid);
 		}
 	}
 	
@@ -237,7 +237,7 @@ public class WoTIdentityManager extends IdentityManager {
 			case 0:
 				throw new NoSuchIdentityException(uid);
 			default:
-				throw new DuplicateIdentityException();
+				throw new DuplicateIdentityException(uid);
 		}
 	}
 

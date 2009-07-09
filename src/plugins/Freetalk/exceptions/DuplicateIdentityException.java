@@ -5,6 +5,10 @@ package plugins.Freetalk.exceptions;
 
 public class DuplicateIdentityException extends DuplicateElementException {
 
+	public DuplicateIdentityException(String id) {
+		super("ID: " + id);
+	}
+
 	private static final long serialVersionUID = 1L;
 
 }

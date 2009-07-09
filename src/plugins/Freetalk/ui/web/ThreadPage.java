@@ -44,7 +44,7 @@ public final class ThreadPage extends WebPageImpl {
             synchronized(mBoard) {  /* FIXME: Is this enough synchronization or should we lock the message manager? */
                 addMessageBox(mThread);
 
-                for(MessageReference reference : mBoard.getAllThreadReplies(mThread, true))
+                for(MessageReference reference : mBoard.getAllThreadReplies(mThread.getID(), true))
                     addMessageBox(reference.getMessage());
             }
         }
