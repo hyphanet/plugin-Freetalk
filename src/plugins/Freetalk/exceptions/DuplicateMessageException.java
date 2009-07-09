@@ -7,4 +7,7 @@ public class DuplicateMessageException extends DuplicateElementException {
 
 	private static final long serialVersionUID = 1L;
 
+	public DuplicateMessageException(String threadID) {
+		super("Duplicate message: " + threadID);
+	}
 }

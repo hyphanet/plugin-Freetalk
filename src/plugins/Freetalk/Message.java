@@ -285,8 +285,12 @@ public abstract class Message implements Comparable<Message> {
 		return mParentID;
 	}
 	
+	/**
+	 * Returns true if the message is a thread. A message is considered as a thread if and only if it does not specify the URI of a parent thread - even if it does
+	 * specify the URI of a parent message it is still a thread if there is no parent thread URI!
+	 */
 	public boolean isThread() {
-		return mParentURI == null;
+		return mThreadURI == null;
 	}
 	
 	/**
@@ -399,6 +403,7 @@ public abstract class Message implements Comparable<Message> {
 	 * Returns an iterator over the children of the message, sorted descending by date.
 	 * The transient fields of the children will be initialized already.
 	 */
+	/*
 	@SuppressWarnings("unchecked")
 	public synchronized Iterable<Message> getChildren(final Board targetBoard) {
 		return new Iterable<Message>() {
@@ -411,8 +416,8 @@ public abstract class Message implements Comparable<Message> {
 			{
 				board = targetBoard;
 				
-				/* TODO: Accelerate this query: configure db4o to keep a per-message date-sorted index of children.
-				 * - Not very important for now since threads are usually small. */
+				// TODO: Accelerate this query: configure db4o to keep a per-message date-sorted index of children.
+				// - Not very important for now since threads are usually small.
 				Query q = db.query();
 				q.constrain(Message.class);
 				q.descend("mParent").constrain(this);
@@ -437,8 +442,8 @@ public abstract class Message implements Comparable<Message> {
 			}
 
 			public Message next() {
-				if(!hasNext()) { /* We have to call hasNext() to ignore messages which do not belong to the selected board */
-					assert(false); /* However, the users of the function should do this for us */
+				if(!hasNext()) { // We have to call hasNext() to ignore messages which do not belong to the selected board
+					assert(false); // However, the users of the function should do this for us
 					throw new NoSuchElementException();
 				}
 				
@@ -455,6 +460,7 @@ public abstract class Message implements Comparable<Message> {
 		}
 		};
 	}
+	*/
 	
 	/**
 	 * Checks whether the title of the message is valid. Validity conditions:

@@ -17,6 +17,7 @@ import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
+import com.db4o.internal.Null;
 import com.db4o.query.Query;
 
 import freenet.support.CurrentTimeUTC;
@@ -243,45 +244,73 @@ public final class Board implements Comparable<Board> {
      * 
      * Does not store the message, you have to do this before!
      */
-    /* FIXME: This function is obsolete it needs to be reviewed / rewritten */
     protected synchronized void addMessage(Message newMessage) {        
     	if(newMessage instanceof OwnMessage) {
     		/* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
     		 * successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
     		throw new IllegalArgumentException("Adding OwnMessages to a board is not allowed.");
     	}
-
-    	synchronized(BoardMessageLink.class) {
-    		new BoardMessageLink(this, newMessage, getFreeMessageIndex()).storeWithoutCommit(db);
+    	
+    	BoardThreadLink ghostRef = null;
+    	
+    	try {
+    		// If there was a ghost thread reference for the new message, we associate the message with it - even if it is no thread:
+    		// People are allowed to reply to non-threads as if they were threads, which results in a 'forked' thread.
+    		ghostRef = getThreadReference(newMessage.getID());
+    		ghostRef.setMessage(newMessage);
+    		ghostRef.storeWithoutCommit(db);
+    		
+    		linkThreadRepliesToNewParent(newMessage.getID(), newMessage);
     	}
-
-    	if(!newMessage.isThread())
-    	{
-    		Message parentThread = null;
-
-    		try {
-    			parentThread = findParentThread(newMessage).getMessage();
+    	catch(NoSuchMessageException e) {
+    		// If there was no ghost reference, we must store a BoardThreadLink if the new message is a thread 
+			if(newMessage.isThread()) {
+	    		BoardThreadLink threadRef = new BoardThreadLink(this, newMessage, getFreeMessageIndex());
+	    		threadRef.storeWithoutCommit(db);
+	    		
+	    		// We do not call linkThreadRepliesToNewParent() here because if there was no ghost reference for the new message this means that no replies to
+	    		// it were received yet.
+			}
+    	}
+    
+    	if(newMessage.isThread() == false) {
+    		// The new message is no thread. We must:
+    		
+    		// 1. Find it's parent thread, create a ghost reference for it if it does not exist.
+    		BoardThreadLink parentThreadRef = findOrCreateParentThread(newMessage);
+    		
+    		// 2. Tell it about it's parent thread if it exists.
+    		Message parentThread = parentThreadRef.getMessage(); // Can return null if the parent thread was not downloaded yet, then it's a ghost reference.
+    		if(parentThread != null)
     			newMessage.setThread(parentThread);
-    		}
-    		catch(NoSuchMessageException e) {}
-
+    		
+    		// 3. Update the last reply date of the parent thread
+    		parentThreadRef.updateLastReplyDate(newMessage.getDate());
+    		parentThreadRef.storeWithoutCommit(db);
+    		
+    		// 4. Store a BoardMessageLink for the new message
+    		BoardMessageLink messageRef = new BoardMessageLink(this, newMessage, getFreeMessageIndex());
+    		messageRef.storeWithoutCommit(db);
+    		
+    		
+    		// 5. Try to find the new message's parent message and tell it about it's parent message if it exists.
     		try {
-    			newMessage.setParent(mMessageManager.get(newMessage.getParentID())); /* TODO: This allows crossposting. Figure out whether we need to handle it specially */
+    			// Try to find the parent message of the message
+    			
+    			// FIXME: This allows crossposting. Figure out whether we need to handle it specially:
+    			// What happens if the message has specified a parent thread which belongs to this board BUT a parent message which is in a different board
+    			// and does not belong to the parent thread
+    			newMessage.setParent(mMessageManager.get(newMessage.getParentID()));
     		}
-    		catch(NoSuchMessageException e) {/* The message is an orphan */
-    			if(parentThread == null) {
-    				/* The message is an absolute orphan */
+    		catch(NoSuchMessageException e) {
+    			// The parent message of the message was not downloaded yet
+    			// TODO: The MessageManager should try to download the parent message if it's poster has enough trust.
+    		}
 
-    				/*
-    				 * FIXME: The MessageManager should try to download the parent message if it's poster has enough trust.
-    				 * If it is programmed to do that, it will check its Hashtable whether the parent message already exists.
-    				 * We also do that here, therefore, when implementing parent message downloading, please do the Hashtable checking only once.
-    				 */
-    			}
-    		}
+    		linkThreadRepliesToNewParent(parentThreadRef.getMessageID(), newMessage);
     	}
-
-    	linkOrphansToNewParent(newMessage);
+    	
+    	// Finally, we must update the latest message date of this board.
     	if(mLatestMessageDate == null || newMessage.getDate().after(mLatestMessageDate))
     		mLatestMessageDate = newMessage.getDate();
 
@@ -289,103 +318,116 @@ public final class Board implements Comparable<Board> {
     }
 
     /**
+     * For a new thread, calls setParent() for all messages which are a reply to it and setThread() for all messages which belong to the new thread.
+     * For a new message, i.e. reply to a thread, calls setParent() for all messages which are a reply to it.
+     *      
      * Assumes that the transient fields of the newMessage are initialized already.
      */
-    /* FIXME: This function is obsolete it needs to be reviewed / rewritten */
-    private synchronized void linkOrphansToNewParent(Message newMessage) {
-        if(newMessage.isThread()) {
-            Iterator<Message> absoluteOrphans = absoluteOrphanIterator(newMessage.getID());
-            while(absoluteOrphans.hasNext()) {	/* Search in the absolute orphans for messages which belong to this thread  */
-                Message orphan = absoluteOrphans.next();
-                orphan.setThread(newMessage);
-                try {
-                    if(orphan.getParentURI().equals(newMessage.getURI()))
-                        orphan.setParent(newMessage);
-                } catch (NoSuchMessageException e) {
-                    Logger.error(this, "Message is reply to thread but parentURI == null: " + orphan.getURI());
-                }
-            }
-        }
-        else { /* The given message is not a thread */
-            try {
-                Message parentThread = newMessage.getThread();
-                /* Search in its parent thread for its children */
-                for(Message parentThreadChild : parentThread.getChildren(this)) {
-                    try {
-                        if(parentThreadChild.getParentURI().equals(newMessage.getURI())) /* We found its parent, yeah! */
-                            parentThreadChild.setParent(newMessage); /* It's a child of the newMessage, not of the parentThread */
-                    }
-                    catch(NoSuchMessageException e) {
-                        Logger.error(this, "Message is reply to thread but parentURI == null: " + parentThreadChild.getURI());
-                    }
-                }
-            }
-            catch(NoSuchMessageException e) /* The given message is not a thread and the parent thread was not found yet */
-            { /* The new message is an absolute orphan, find its children amongst the other absolute orphans */
-                Iterator<Message> absoluteOrphans = absoluteOrphanIterator(newMessage.getID());
-                while(absoluteOrphans.hasNext()){	/* Search in the orphans for messages which belong to this message  */
-                    Message orphan = absoluteOrphans.next();
-                    /*
-                     * The following if() could be joined into the db4o query in absoluteOrphanIterator(). I did not do it because we could
-                     * cache the list of absolute orphans locally.
-                     */
-                    try {
-                        if(orphan.getParentURI().equals(newMessage.getURI()))
-                            orphan.setParent(newMessage);
-                    }
-                    catch(NoSuchMessageException error) {
-                        Logger.error(this, "Should not happen", error);
-                    }
-                }
-            }
+    private synchronized void linkThreadRepliesToNewParent(String parentThreadID, Message newMessage) {
+    	
+    	boolean newMessageIsThread = (newMessage.getID().equals(parentThreadID));
+ 
+    	for(MessageReference ref : getAllThreadReplies(parentThreadID, false)) {
+    		Message threadReply = ref.getMessage();
+    		
+    		try {
+    			threadReply.getParent();
+    		}
+    		catch(NoSuchMessageException e) {
+    			try {
+    				if(threadReply.getParentID().equals(newMessage.getID()))
+    					threadReply.setParent(newMessage);
+    			}
+    			catch(NoSuchMessageException ex) {
+    				Logger.debug(this, "SHOULD NOT HAPPEN: getParentID() failed for a thread reply: " + threadReply, ex);
+    			}
+    		}
+    		
+    		if(newMessageIsThread) {
+	    		try {
+	    			threadReply.getThread();
+	    		}
+	    		catch(NoSuchMessageException e) {
+	    			threadReply.setThread(newMessage);
+	    		}
+    		}
+    	}
+    }
+    
+    @SuppressWarnings("unchecked")
+	private synchronized BoardThreadLink getThreadReference(String threadID) throws NoSuchMessageException {
+        Query q = db.query();
+        q.constrain(BoardThreadLink.class);
+        q.descend("mBoard").constrain(this).identity();
+        q.descend("mThreadID").constrain(threadID).identity();
+        ObjectSet<BoardThreadLink> results = q.execute();
+        
+        switch(results.size()) {
+	        case 1:
+				BoardThreadLink threadRef = results.next();
+				assert(threadRef.getMessage().getID().equals(threadID)); // The query works
+				return threadRef;
+	        case 0:
+	        	throw new NoSuchMessageException(threadID);
+	        default:
+	        	throw new DuplicateMessageException(threadID);
         }
     }
 
     /**
-     * Finds the parent thread of a message in the database. The transient fields of the returned message will be initialized already.
+     * Returns the {@link BoardThreadLink} of the parent thread of the given message.
+     * If the parent thread was not downloaded yet, a ghost BoardThreadLink is created and stored for it, without committing the transaction. 
+     * You have to lock the board and the database before calling this function.
+     * 
+     * If the parent thread was downloaded but is no thread actually, a new thread is 'forked' off, making the parent thread message of the given message
+     * both appear as a reply to the original thread where it belonged AND as a thread on it's own to which the given message belong.
+     * 
+     * The transient fields of the returned message will be initialized already.
      * @throws NoSuchMessageException
      */
-    /* FIXME: This function is partly obsolete it needs to be reviewed / rewritten */
     @SuppressWarnings("unchecked")
-    private synchronized MessageReference findParentThread(Message m) throws NoSuchMessageException {
-        Query q = db.query();
-        q.constrain(BoardThreadLink.class);
-        q.descend("mBoard").constrain(this).identity();
-        q.descend("mThreadID").constrain(m.getThreadID()).identity();
-        ObjectSet<MessageReference> parents = q.execute();
+    private synchronized BoardThreadLink findOrCreateParentThread(Message newMessage) {
+    	String parentThreadID;
+    	
+    	try {
+    		parentThreadID = newMessage.getThreadID();
+    	}
+    	catch(NoSuchMessageException e) {
+    		Logger.error(this, "SHOULD NOT HAPPEN: findOrCreateParentThread called for a message where getThreadID failed: " + e);
+    		throw new IllegalArgumentException(e);
+    	}
 
-        assert(parents.size() <= 1);
+    	try {
+    		// The parent thread was downloaded and marked as a thread already, we return its BoardThreadLink
+    		return getThreadReference(parentThreadID);
+    	}
+    	catch(NoSuchMessageException e) {
+    		// There is no thread reference for the parent thread yet. Either it was not downloaded yet or it was downloaded but is no thread.
+    		try {
+    			Message parentThread = mMessageManager.get(parentThreadID);
+    			
+    			if(Arrays.binarySearch(parentThread.getBoards(), this) < 0) {
+    				// The parent thread is not a message in this board.
+    				// TODO: Decide whether we should maybe store a flag in the BoardThreadLink which marks it.
+    				// IMHO it is part of the UI's job to read the board list of the actual Message object and display something if the thread is not
+    				// really a message to this board.
+    			}
 
-        if(parents.size() == 0)
-            throw new NoSuchMessageException(m.getThreadID());
-        else {
-            MessageReference parentThread = parents.next();
-            assert(parentThread.getMessage().getID().equals(m.getThreadID())); /* The query works */
-            
-            
+    			// The parent thread was downloaded and is no thread actually, we create a BoardThreadLink for it and therefore 'fork' a new thread off
+    			// that message. The parent thread message will still be displayed as a reply to it's original thread, but it will also appear as a new thread
+    			// which is the parent of the message which was passed to this function.
 
-            /* FIXME: This comment is obsolete. */
-            /* Important: It is possible that we receive a message which has a parent thread URI specified, but the message at that URI is not
-             * really a thread but just a reply to a thread. We MUST NOT return the thread which is specified as thread in the referred URI
-             * instead because the thread ID of that one is different to the thread ID which is calculated from the false thread URI!
-             * To explain it in other words: The given message has a wrong thread URI stored (caused by a malfunction in the client which
-             * inserted the message), and the thread ID which is stored in that message is calculated from the URI, therefore it is also wrong.
-             * If this function did return the "real" thread for the given message, then it would return false information, because the ID of the
-             * returned thread would not match the ID which is stored in the given message. Further, we also cannot return the message which
-             * is referred by the false URI because it is NOT a thread - other functions in Freetalk rely on the fact that messages which
-             * are said to be threads are really threads.
-             * - so that is the reason why the following if()-statement is necessary.
-             * Notice that this comment was written after I figured out that messages are NOT being displayed if the if() is left out, so
-             * please do not remove it in the future.
-             */
-            /* FIXME: This code is obsolete!! It won't work: This function now queries for BoardThreadLink objects, those are only stored for
-             * threads. We need to add code which detects when a message references a non-thread message as it's parent thread and create
-             * a BoardThreadLink for the non-thread message */
-            if(parentThread.getMessage().isThread() == false)
-                throw new NoSuchMessageException();
-
-            return parentThread;
-        }
+    			BoardThreadLink parentThreadRef = new BoardThreadLink(this, parentThread, getFreeMessageIndex()); 
+    			parentThreadRef.storeWithoutCommit(db);
+    			return parentThreadRef;
+    		}
+    		catch(NoSuchMessageException ex) { 
+    			// The message manager did not find the parentThreadID, so the parent thread was not downloaded yet, we create a ghost thread reference for it.
+    			BoardThreadLink ghostThreadRef = new BoardThreadLink(this, parentThreadID, getFreeMessageIndex());
+    			ghostThreadRef.storeWithoutCommit(db);
+    			return ghostThreadRef;
+    		}		
+    	}
     }
 
 
@@ -396,14 +438,14 @@ public final class Board implements Comparable<Board> {
      * @return An iterator of the message which the identity will see (based on its trust levels).
      */
     @SuppressWarnings("unchecked")
-    public synchronized Iterable<MessageReference> getThreads(final FTOwnIdentity identity) {
-    	return new Iterable<MessageReference>() {
+    public synchronized Iterable<BoardThreadLink> getThreads(final FTOwnIdentity identity) {
+    	return new Iterable<BoardThreadLink>() {
 		@Override
-		public Iterator<MessageReference> iterator() {
-        return new Iterator<MessageReference>() {
+		public Iterator<BoardThreadLink> iterator() {
+        return new Iterator<BoardThreadLink>() {
             private final FTOwnIdentity mIdentity = identity;
-            private final Iterator<BoardMessageLink> iter;
-            private MessageReference next;
+            private final Iterator<BoardThreadLink> iter;
+            private BoardThreadLink next;
 
             {
                 Query q = db.query();
@@ -424,8 +466,8 @@ public final class Board implements Comparable<Board> {
                 return false;
             }
 
-            public MessageReference next() {
-                MessageReference result = hasNext() ? next : null;
+            public BoardThreadLink next() {
+                BoardThreadLink result = hasNext() ? next : null;
                 next = iter.hasNext() ? iter.next() : null;
                 return result;
             }
@@ -438,39 +480,6 @@ public final class Board implements Comparable<Board> {
         };
     }
 
-    /**
-     * Get an iterator over messages for which the parent thread with the given ID was not known.
-     * The transient fields of the returned messages will be initialized already.
-     */
-    @SuppressWarnings("unchecked")
-    private synchronized Iterator<Message> absoluteOrphanIterator(final String threadID) {
-        return new Iterator<Message>() {
-            private final Iterator<BoardMessageLink> iter;
-
-            {
-                /* FIXME: This query should be accelerated. The amount of absolute orphans is very small usually, so we should configure db4o
-                 * to keep a separate list of those. */
-                Query q = db.query();
-                q.constrain(BoardMessageLink.class);
-                q.descend("mBoard").constrain(this).identity();
-                q.descend("mThreadID").constrain(threadID);
-                q.descend("mMessage").descend("mThread").constrain(null).identity();
-                iter = q.execute().iterator();
-            }
-
-            public boolean hasNext() {
-                return iter.hasNext();
-            }
-
-            public Message next() {
-                return iter.next().getMessage();
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
-    }
 
     /* FIXME: This function returns all messages, not only the ones which the viewer wants to see. Convert the function to an iterator
      * which picks threads chosen by the viewer, see threadIterator() for how to do this */
@@ -517,7 +526,7 @@ public final class Board implements Comparable<Board> {
 	        case 0:
 	            throw new NoSuchMessageException();
 	        default:
-	        	throw new DuplicateMessageException();
+	        	throw new DuplicateMessageException("index " + Integer.toString(index));
         }
     }
 
@@ -593,25 +602,22 @@ public final class Board implements Comparable<Board> {
      */
     /* FIXME: This function counts all replies, not only the ones which the viewer wants to see. */
     public synchronized int threadReplyCount(FTOwnIdentity viewer, Message thread) {
-        return getAllThreadReplies(thread, false).size();
+        return getAllThreadReplies(thread.getID(), false).size();
     }
 
     /**
      * Get all replies to the given thread, sorted ascending by date if requested
      */
-    /* FIXME: This function returns all replies, not only the ones which the viewer wants to see. Convert the function to an iterator
-     * which picks threads chosen by the viewer, see threadIterator() for how to do this */
+    // FIXME: This function returns all replies, not only the ones which the viewer wants to see. Convert the function to an iterator
+    // which picks threads chosen by the viewer, see threadIterator() for how to do this.
+    // FIXME: The behavior of the function has changed, it assumes that the given message is a thread. Check all references to this function whether they
+    // do not accidentially pass a thread reply
     @SuppressWarnings("unchecked")
-    public synchronized List<MessageReference> getAllThreadReplies(Message thread, final boolean sortByDateAscending) {
+    public synchronized List<BoardMessageLink> getAllThreadReplies(String threadID, final boolean sortByDateAscending) {
         Query q = db.query();
         q.constrain(BoardMessageLink.class);
-        try {
-        	q.descend("mBoard").constrain(this).identity();
-            q.descend("mThreadID").constrain(thread.isThread() ? thread.getID() : thread.getThreadID());
-            
-        } catch (NoSuchMessageException e) {
-            throw new RuntimeException( "Message is no thread but parentThreadURI == null : " + thread.getURI());
-        }
+        q.descend("mBoard").constrain(this).identity();
+        q.descend("mThreadID").constrain(threadID);
         
         if (sortByDateAscending) {
             q.descend("mMessageDate").orderAscending();
@@ -739,7 +745,7 @@ public final class Board implements Comparable<Board> {
     	}
 		
 		protected synchronized void updateLastReplyDate(Date newDate) {
-			if(newDate.after(mLastReplyDate))
+			if(mLastReplyDate == null || newDate.after(mLastReplyDate))
 				mLastReplyDate = newDate;
 		}
 		
@@ -747,6 +753,29 @@ public final class Board implements Comparable<Board> {
 			return mLastReplyDate;
 		}
     	
+		public String getMessageID() {
+			return mThreadID;
+		}
+		
+		@Override
+		public synchronized Message getMessage() {
+			if(mMessage == null)
+				return null;
+			
+			return super.getMessage();
+		}
+		
+		public synchronized void setMessage(Message myThread) {
+			if(myThread == null)
+				throw new NullPointerException();
+			
+			if(myThread.getID().equals(mThreadID) == false)
+				throw new IllegalArgumentException();
+			
+			mMessage = myThread;
+			
+			updateLastReplyDate(myThread.getDate());
+		}
     }
 
 }
