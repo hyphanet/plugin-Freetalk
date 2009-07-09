@@ -590,7 +590,7 @@ public final class Board implements Comparable<Board> {
     /* FIXME: This function counts all messages, not only the ones which the viewer wants to see. */
     public synchronized int messageCount() {
         Query q = db.query();
-        q.constrain(BoardMessageLink.class);
+        q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         return q.execute().size();
     }
@@ -599,8 +599,8 @@ public final class Board implements Comparable<Board> {
      * Get the number of replies to the given thread.
      */
     /* FIXME: This function counts all replies, not only the ones which the viewer wants to see. */
-    public synchronized int threadReplyCount(FTOwnIdentity viewer, Message thread) {
-        return getAllThreadReplies(thread.getID(), false).size();
+    public synchronized int threadReplyCount(FTOwnIdentity viewer, String threadID) {
+        return getAllThreadReplies(threadID, false).size();
     }
 
     /**
@@ -757,7 +757,7 @@ public final class Board implements Comparable<Board> {
 				mLastReplyDate = newDate;
 		}
 		
-		protected synchronized Date getLastReplyDate() {
+		public synchronized Date getLastReplyDate() {
 			return mLastReplyDate;
 		}
     	
