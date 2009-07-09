@@ -9,6 +9,7 @@ import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.Board.BoardMessageLink;
 import plugins.Freetalk.Board.BoardThreadLink;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
@@ -67,12 +68,15 @@ public final class BoardPage extends WebPageImpl {
 
 				row = table.addChild("tr");
 				
-				String threadTitle;
+				String threadTitle = "UNKNOWN";
 				if(thread != null)
 					threadTitle = thread.getTitle();
 				else {
 					// The thread was not downloaded yet, we use the title of it's first reply as it's title.
-					threadTitle = mBoard.getAllThreadReplies(threadReference.getThreadID(), true).iterator().next().getMessage().getTitle();
+					for(BoardMessageLink messageRef : mBoard.getAllThreadReplies(threadReference.getThreadID(), true)) {
+						threadTitle = messageRef.getMessage().getTitle();
+						break;
+					}
 				}
 				threadTitle = maxLength(threadTitle, 40); // TODO: Adjust
 
