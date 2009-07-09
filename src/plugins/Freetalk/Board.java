@@ -458,6 +458,9 @@ public final class Board implements Comparable<Board> {
             public boolean hasNext() {
                 for(; next != null; next = iter.hasNext() ? iter.next() : null)
                 {
+                	if(next.getMessage() == null)
+                		return true; // FIXME: Get the author from the message ID 
+                	
                     if(mIdentity.wantsMessagesFrom(next.getMessage().getAuthor()))
                         return true;
                 }
@@ -784,6 +787,7 @@ public final class Board implements Comparable<Board> {
 			
 			updateLastReplyDate(myThread.getDate());
 		}
+	
     }
 
 }
