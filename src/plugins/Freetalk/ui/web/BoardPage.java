@@ -90,7 +90,7 @@ public final class BoardPage extends WebPageImpl {
 				/* Trust */
 				// TODO: Get rid of the cast somehow, we should maybe call this WoTBoardPage :|
 				row.addChild("td", new String[] { "align" }, new String[] { "left" }, 
-						Integer.toString(((WoTOwnIdentity)mOwnIdentity).getScoreFor(thread.getAuthor())));
+						thread != null ? Integer.toString(((WoTOwnIdentity)mOwnIdentity).getScoreFor(thread.getAuthor())) : "UNKNOWN");
 
 				/* Date of last reply */
 				row.addChild("td", new String[] { "align" , "style" }, new String[] { "center" , "white-space:nowrap;"}, 
