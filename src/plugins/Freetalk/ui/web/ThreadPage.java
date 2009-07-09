@@ -36,13 +36,15 @@ public final class ThreadPage extends WebPageImpl {
         super(myWebInterface, viewer, request);
         mBoard = mFreetalk.getMessageManager().getBoardByName(request.getParam("board"));
         mThread = mFreetalk.getMessageManager().get(request.getParam("id"));
+        /* FIXME: If the thread was not downloaded yet we should display a warning box about that instead of throwing NoSuchMessageException */
     }
 
     public final void make() {
         makeBreadcrumbs();
         synchronized (mLocalDateFormat) {
             synchronized(mBoard) {  /* FIXME: Is this enough synchronization or should we lock the message manager? */
-                addMessageBox(mThread);
+                /* FIXME: We must add a special warning box if the thread is not really a thread but rather a forked thread. */
+            	addMessageBox(mThread);
 
                 for(MessageReference reference : mBoard.getAllThreadReplies(mThread.getID(), true))
                     addMessageBox(reference.getMessage());
