@@ -6,16 +6,13 @@ package plugins.Freetalk;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Set;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.ext.ExtObjectContainer;
-import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;

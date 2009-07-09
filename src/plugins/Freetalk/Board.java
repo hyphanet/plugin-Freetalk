@@ -17,7 +17,6 @@ import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
-import com.db4o.internal.Null;
 import com.db4o.query.Query;
 
 import freenet.support.CurrentTimeUTC;
@@ -307,7 +306,7 @@ public final class Board implements Comparable<Board> {
     			// TODO: The MessageManager should try to download the parent message if it's poster has enough trust.
     		}
 
-    		linkThreadRepliesToNewParent(parentThreadRef.getMessageID(), newMessage);
+    		linkThreadRepliesToNewParent(parentThreadRef.getThreadID(), newMessage);
     	}
     	
     	// Finally, we must update the latest message date of this board.
@@ -359,7 +358,7 @@ public final class Board implements Comparable<Board> {
         Query q = db.query();
         q.constrain(BoardThreadLink.class);
         q.descend("mBoard").constrain(this).identity();
-        q.descend("mThreadID").constrain(threadID).identity();
+        q.descend("mThreadID").constrain(threadID);
         ObjectSet<BoardThreadLink> results = q.execute();
         
         switch(results.size()) {
@@ -385,7 +384,6 @@ public final class Board implements Comparable<Board> {
      * The transient fields of the returned message will be initialized already.
      * @throws NoSuchMessageException
      */
-    @SuppressWarnings("unchecked")
     private synchronized BoardThreadLink findOrCreateParentThread(Message newMessage) {
     	String parentThreadID;
     	
@@ -714,6 +712,10 @@ public final class Board implements Comparable<Board> {
             }
             
         }
+        
+        public String getThreadID() {
+        	return mThreadID;
+        }
 
     }
     
@@ -753,7 +755,7 @@ public final class Board implements Comparable<Board> {
 			return mLastReplyDate;
 		}
     	
-		public String getMessageID() {
+		public String getThreadID() {
 			return mThreadID;
 		}
 		
