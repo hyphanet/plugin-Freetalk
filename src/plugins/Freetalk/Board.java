@@ -421,7 +421,7 @@ public final class Board implements Comparable<Board> {
     		}
     		catch(NoSuchMessageException ex) { 
     			// The message manager did not find the parentThreadID, so the parent thread was not downloaded yet, we create a ghost thread reference for it.
-    			BoardThreadLink ghostThreadRef = new BoardThreadLink(this, parentThreadID, getFreeMessageIndex());
+    			BoardThreadLink ghostThreadRef = new BoardThreadLink(this, parentThreadID, newMessage.getDate(), getFreeMessageIndex());
     			ghostThreadRef.storeWithoutCommit(db);
     			return ghostThreadRef;
     		}		
@@ -726,16 +726,21 @@ public final class Board implements Comparable<Board> {
     	private Date mLastReplyDate;
     	
     	
-    	public BoardThreadLink(Board myBoard, Message myThread, int myMessageIndex) {
+    	protected BoardThreadLink(Board myBoard, Message myThread, int myMessageIndex) {
     		super(myBoard, myThread, myMessageIndex);
     		
     		if(myThread == null)
     			throw new NullPointerException();
     		
     		mThreadID = mMessage.getID();
+    		mLastReplyDate = myThread.getDate();
     	}
     	
-    	public BoardThreadLink(Board myBoard, String myThreadID, int myMessageIndex) {
+    	/**
+    	 * @param myLastReplyDate The date of the last reply to this thread. This parameter must be specified at creation to prevent threads from being hidden if
+    	 * 							the user of this constructor forgot to call updateLastReplyDate() - thread display is sorted descending by reply date!
+    	 */
+    	protected BoardThreadLink(Board myBoard, String myThreadID, Date myLastReplyDate, int myMessageIndex) {
     		super(myBoard, myMessageIndex);
     		
     		if(myThreadID == null)
@@ -744,10 +749,11 @@ public final class Board implements Comparable<Board> {
     		// TODO: We might validate the thread id here. Should be safe not to do so because it is taken from class Message which validates it.
     		
     		mThreadID = myThreadID;
+    		mLastReplyDate = myLastReplyDate;
     	}
 		
 		protected synchronized void updateLastReplyDate(Date newDate) {
-			if(mLastReplyDate == null || newDate.after(mLastReplyDate))
+			if(newDate.after(mLastReplyDate))
 				mLastReplyDate = newDate;
 		}
 		
