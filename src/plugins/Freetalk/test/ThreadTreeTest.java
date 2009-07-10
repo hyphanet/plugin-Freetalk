@@ -80,12 +80,12 @@ public class ThreadTreeTest extends DatabaseBasedTest {
 	 * in this list. It should of course also test whether no thread is missing, or no thread is returned even though it should
 	 * not be returned as a thread.
 	 */
-	private LinkedList<BoardThreadLink> mThreads;
+	private LinkedList<String> mThreads;
 	
 	/**
 	 * The replies to each message which we stored in the database. The unit test should test whether the replies show up, whether their order is correct, etc.
 	 */
-	private Hashtable<String, LinkedList<WoTMessage>> mReplies;
+	private Hashtable<String, LinkedList<String>> mReplies;
 	
 	
 
@@ -98,8 +98,8 @@ public class ThreadTreeTest extends DatabaseBasedTest {
 		constructIdentities();
 		constructBoards();
 		
-		mThreads = new LinkedList<BoardThreadLink>();
-		mReplies = new Hashtable<String, LinkedList<WoTMessage>>();
+		mThreads = new LinkedList<String>();
+		mReplies = new Hashtable<String, LinkedList<String>>();
 	}
 	
 	private void constructIdentities() throws MalformedURLException {
@@ -173,29 +173,29 @@ public class ThreadTreeTest extends DatabaseBasedTest {
 	}
 	
 	private void verifyStructure() {
-		Iterator<BoardThreadLink> expectedThreads = mThreads.iterator();
+		System.gc();
+		db.purge();
+		System.gc();
+		
+		Iterator<String> expectedThreads = mThreads.iterator();
 	
 		for(BoardThreadLink ref : mBoard.getThreads(mOwnIdentities[0])) {
 			// Verify that the thread exists
 			assertTrue(expectedThreads.hasNext());
 			
 			// ... and that it is in the correct position
-			BoardThreadLink expectedRef = expectedThreads.next();
-			assertEquals(expectedRef, ref);
-			assertEquals(expectedRef.getMessage(), ref.getMessage());
+			assertEquals(expectedThreads.next(), ref.getThreadID());
 			
 			// Verify the replies of the thread
 			
-			LinkedList<WoTMessage> expectedRepliesList= mReplies.get(ref.getThreadID());
+			LinkedList<String> expectedRepliesList= mReplies.get(ref.getThreadID());
 			if(expectedRepliesList == null)
-				expectedRepliesList = new LinkedList<WoTMessage>();
-			Iterator<WoTMessage> expectedReplies = expectedRepliesList.iterator(); 
+				expectedRepliesList = new LinkedList<String>();
+			Iterator<String> expectedReplies = expectedRepliesList.iterator(); 
 			
 			for(MessageReference replyRef : mBoard.getAllThreadReplies(ref.getThreadID(), true)) {
 				assertTrue(expectedReplies.hasNext());
-				WoTMessage expectedReply = expectedReplies.next();
-				Message actualReply = replyRef.getMessage();
-				assertEquals(expectedReply, actualReply);
+				assertEquals(expectedReplies.next(), replyRef.getMessage().getID());
 			}
 		}
 	}
@@ -204,22 +204,22 @@ public class ThreadTreeTest extends DatabaseBasedTest {
 	public void testThreading() throws MalformedURLException, InvalidParameterException, NoSuchIdentityException, NoSuchMessageException {
 		WoTMessage thread0 = createTestMessage(mOwnIdentities[0], null, null);
 			mMessageManager.onMessageReceived(thread0);
-			mThreads.addFirst(mBoard.getThreadReference(thread0.getID())); // Single empty thread
+			mThreads.addFirst(thread0.getID()); // Single empty thread
 			verifyStructure();
 		
 		{ // Keep the variables in scope so we do not mix them up
 		WoTMessage thread1 = createTestMessage(mOwnIdentities[1], null, null); 	
 			mMessageManager.onMessageReceived(thread1);	
-			mThreads.addFirst(mBoard.getThreadReference(thread1.getID())); // Two empty threads, onMessageReceived called in chronological order
+			mThreads.addFirst(thread1.getID()); // Two empty threads, onMessageReceived called in chronological order
 			verifyStructure(); 
 		}
 		
 		{
 		WoTMessage thread0reply0 = createTestMessage(mOwnIdentities[2], thread0, thread0.getURI());
 			mMessageManager.onMessageReceived(thread0reply0); //First thread receives 1 reply, should be moved to top now
-			mReplies.put(thread0.getID(), new LinkedList<WoTMessage>());
-			mReplies.get(thread0.getID()).addLast(thread0reply0); 
-			mThreads.remove(mBoard.getThreadReference(thread0.getID())); mThreads.addFirst(mBoard.getThreadReference(thread0.getID()));
+			mReplies.put(thread0.getID(), new LinkedList<String>());
+			mReplies.get(thread0.getID()).addLast(thread0reply0.getID()); 
+			mThreads.remove(thread0.getID()); mThreads.addFirst(thread0.getID());
 			verifyStructure();
 		}
 		
@@ -228,34 +228,34 @@ public class ThreadTreeTest extends DatabaseBasedTest {
 		{
 		    thread2 = createTestMessage(mOwnIdentities[3], null, null);
 			mMessageManager.onMessageReceived(thread2); // Third thread created, should be on top now
-			mThreads.addFirst(mBoard.getThreadReference(thread2.getID()));
+			mThreads.addFirst(thread2.getID());
 			verifyStructure(); 
 			
 			WoTMessage thread2reply0 = createTestMessage(mOwnIdentities[0], thread2, thread2.getURI());
 			thread2reply1 = createTestMessage(mOwnIdentities[1], thread2reply0, thread2.getURI());
 			WoTMessage thread2reply2 = createTestMessage(mOwnIdentities[2], thread2, thread2.getURI());
 
-			mReplies.put(thread2.getID(), new LinkedList<WoTMessage>());
+			mReplies.put(thread2.getID(), new LinkedList<String>());
 			// Three replies, onMessageReceived called in chronological order
-			mMessageManager.onMessageReceived(thread2reply0); mReplies.get(thread2.getID()).addLast(thread2reply0); verifyStructure();
-			mMessageManager.onMessageReceived(thread2reply1); mReplies.get(thread2.getID()).addLast(thread2reply1);  verifyStructure();
-			mMessageManager.onMessageReceived(thread2reply2); mReplies.get(thread2.getID()).addLast(thread2reply2); verifyStructure();
+			mMessageManager.onMessageReceived(thread2reply0); mReplies.get(thread2.getID()).addLast(thread2reply0.getID()); verifyStructure();
+			mMessageManager.onMessageReceived(thread2reply1); mReplies.get(thread2.getID()).addLast(thread2reply1.getID());  verifyStructure();
+			mMessageManager.onMessageReceived(thread2reply2); mReplies.get(thread2.getID()).addLast(thread2reply2.getID()); verifyStructure();
 		}
 		
 		{
 		WoTMessage thread3 = createTestMessage(mOwnIdentities[4], null, null);
-			mMessageManager.onMessageReceived(thread3); mThreads.addFirst(mBoard.getThreadReference(thread3.getID()));
+			mMessageManager.onMessageReceived(thread3); mThreads.addFirst(thread3.getID());
 			verifyStructure(); // Fourth thread created, should be on top now
 			WoTMessage thread3reply0 = createTestMessage(mOwnIdentities[0], thread3, thread3.getURI());
 			WoTMessage thread3reply1 = createTestMessage(mOwnIdentities[1], thread3reply0, thread3.getURI());
 			WoTMessage thread3reply2 = createTestMessage(mOwnIdentities[2], thread3reply1, thread3.getURI());
 			WoTMessage thread3reply3 = createTestMessage(mOwnIdentities[3], thread3reply1, thread3.getURI());
 			// Four replies, onMessageReceived called in random order
-			mReplies.put(thread3.getID(), new LinkedList<WoTMessage>());
-			mReplies.get(thread3.getID()).addLast(thread3reply3); mMessageManager.onMessageReceived(thread3reply3); verifyStructure();
-			mReplies.get(thread3.getID()).addFirst(thread3reply2); mMessageManager.onMessageReceived(thread3reply2); verifyStructure();
-			mReplies.get(thread3.getID()).addFirst(thread3reply0); mMessageManager.onMessageReceived(thread3reply0); verifyStructure();
-			mReplies.get(thread3.getID()).add(1, thread3reply1); mMessageManager.onMessageReceived(thread3reply1); verifyStructure();
+			mReplies.put(thread3.getID(), new LinkedList<String>());
+			mReplies.get(thread3.getID()).addLast(thread3reply3.getID()); mMessageManager.onMessageReceived(thread3reply3); verifyStructure();
+			mReplies.get(thread3.getID()).addFirst(thread3reply2.getID()); mMessageManager.onMessageReceived(thread3reply2); verifyStructure();
+			mReplies.get(thread3.getID()).addFirst(thread3reply0.getID()); mMessageManager.onMessageReceived(thread3reply0); verifyStructure();
+			mReplies.get(thread3.getID()).add(1, thread3reply1.getID()); mMessageManager.onMessageReceived(thread3reply1); verifyStructure();
 		}
 		
 		{
@@ -265,24 +265,24 @@ public class ThreadTreeTest extends DatabaseBasedTest {
 			WoTMessage thread4reply2 = createTestMessage(mOwnIdentities[2], null, thread4.getURI()); // Specify no parent, should be set to thread2reply1 FIXME verify this
 			WoTMessage thread4reply3 = createTestMessage(mOwnIdentities[2], thread0, thread4.getURI()); // Specify different thread as parent
 				mMessageManager.onMessageReceived(thread4reply0);
-				mThreads.addFirst(mBoard.getThreadReference(thread4.getID()));
-				mReplies.put(thread4.getID(), new LinkedList<WoTMessage>());
-				mReplies.get(thread4.getID()).addFirst(thread4reply0);
+				mThreads.addFirst(thread4.getID());
+				mReplies.put(thread4.getID(), new LinkedList<String>());
+				mReplies.get(thread4.getID()).addFirst(thread4reply0.getID());
 				verifyStructure();
 				
 				// Insert the replies in random order, TODO: Try all different orders
-				mReplies.get(thread4.getID()).addLast(thread4reply2); mMessageManager.onMessageReceived(thread4reply2); verifyStructure();
-				mReplies.get(thread4.getID()).add(1, thread4reply1); mMessageManager.onMessageReceived(thread4reply1); verifyStructure();
-				mReplies.get(thread4.getID()).add(3, thread4reply3); mMessageManager.onMessageReceived(thread4reply3); verifyStructure();
+				mReplies.get(thread4.getID()).addLast(thread4reply2.getID()); mMessageManager.onMessageReceived(thread4reply2); verifyStructure();
+				mReplies.get(thread4.getID()).add(1, thread4reply1.getID()); mMessageManager.onMessageReceived(thread4reply1); verifyStructure();
+				mReplies.get(thread4.getID()).add(3, thread4reply3.getID()); mMessageManager.onMessageReceived(thread4reply3); verifyStructure();
 		}
 		
 		{
 			WoTMessage thread2reply3 = createTestMessage(mOwnIdentities[0], thread2reply1, thread2.getURI());
 			// Replying to thread2reply1 within thread2 should still work even though someone forked a thread off it 
-			mMessageManager.onMessageReceived(thread2reply3); mReplies.get(thread2.getID()).addLast(thread2reply3);
-			mThreads.remove(mBoard.getThreadReference(thread2.getID())); mThreads.addFirst(mBoard.getThreadReference(thread2.getID())); // thread2 should be on top
+			mMessageManager.onMessageReceived(thread2reply3); mReplies.get(thread2.getID()).addLast(thread2reply3.getID());
+			mThreads.remove(thread2.getID()); mThreads.addFirst(thread2.getID()); // thread2 should be on top
 			verifyStructure();
 		}
-		
+
 	}
 }
