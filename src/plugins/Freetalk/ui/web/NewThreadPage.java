@@ -30,7 +30,7 @@ public final class NewThreadPage extends WebPageImpl {
 			String threadText = mRequest.getPartAsString("ThreadText", Message.MAX_MESSAGE_TEXT_BYTE_LENGTH);
 
 			try {
-				mFreetalk.getMessageManager().postMessage(null, boards, mBoard, mOwnIdentity, threadSubject, null, threadText, null);
+				mFreetalk.getMessageManager().postMessage(null, null, boards, mBoard, mOwnIdentity, threadSubject, null, threadText, null);
 
 				HTMLNode successBox = addContentBox("Thread created");
 				successBox.addChild("p", "The thread was put into your outbox. Freetalk will upload it after some time.");

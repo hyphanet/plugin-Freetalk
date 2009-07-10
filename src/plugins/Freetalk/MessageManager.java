@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import plugins.Freetalk.Board.BoardThreadLink;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageList.MessageReference;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
@@ -77,11 +78,11 @@ public abstract class MessageManager implements Runnable {
 	 * @throws InvalidParameterException Invalid board names, invalid title, invalid body.
 	 * @throws Exception 
 	 */
-	public abstract OwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
+	public abstract OwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
 			String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws InvalidParameterException, Exception;
 
-	public synchronized OwnMessage postMessage(Message myParentMessage, Set<String> myBoards, String myReplyToBoard, FTOwnIdentity myAuthor,
-			String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
+	public synchronized OwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<String> myBoards, String myReplyToBoard,
+			FTOwnIdentity myAuthor, String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
 
 		/* FIXME: Instead of always creating the boards, notify the user that they do not exist and ask if he made a typo */
 		HashSet<Board> boardSet = new HashSet<Board>();
@@ -96,7 +97,7 @@ public abstract class MessageManager implements Runnable {
 			replyToBoard = getOrCreateBoard(myReplyToBoard);
 		}
 
-		return postMessage(myParentMessage, boardSet, replyToBoard, myAuthor, myTitle, myDate, myText, myAttachments);
+		return postMessage(myParentThreadURI, myParentMessage, boardSet, replyToBoard, myAuthor, myTitle, myDate, myText, myAttachments);
 	}
 	
 	@SuppressWarnings("unchecked")

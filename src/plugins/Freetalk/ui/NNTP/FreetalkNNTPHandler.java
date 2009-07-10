@@ -731,9 +731,13 @@ public class FreetalkNNTPHandler implements Runnable {
                     catch (NoSuchMessageException e) {
                         parentMessage = null;
                     }
+                    
+                	// FIXME: When replying to forked threads, this code will always sent the replies to the original thread. We need to find a way
+                	// to figure out whether the user wanted to reply to a forked thread - does NNTP pass a thread ID?
 
                     HashSet<String> boardSet = new HashSet<String>(parser.getBoards());
-                    OwnMessage message = mMessageManager.postMessage(parentMessage, boardSet, parser.getReplyToBoard(), myIdentity, parser.getTitle(), null, parser.getText(), null);
+                    OwnMessage message = mMessageManager.postMessage(parentMessage.isThread() ? parentMessage.getURI() : parentMessage.getThreadURI(),
+                    		parentMessage, boardSet, parser.getReplyToBoard(), myIdentity, parser.getTitle(), null, parser.getText(), null);
                     printStatusLine("240 Message posted; ID is <" + message.getID() + ">");
                 }
                 catch (Exception e) {

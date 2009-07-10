@@ -45,9 +45,9 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 		mMessageManager = new WoTMessageManager(db, null);
 		
 		 mMessages = new WoTOwnMessage[] {
-			mMessageManager.postMessage(null, myBoards1, null, myAuthor, "title1", new Date(2009-1900, 06-1, 01), "text1", null),
-			mMessageManager.postMessage(null, myBoards2, null, myAuthor, "title2", new Date(2008-1900, 05-1, 02), "text2", null),
-			mMessageManager.postMessage(null, myBoards3, null, myAuthor, "title3", new Date(2007-1900, 04-1, 03),"text3", null),
+			mMessageManager.postMessage(null, null, myBoards1, null, myAuthor, "title1", new Date(2009-1900, 06-1, 01), "text1", null),
+			mMessageManager.postMessage(null, null, myBoards2, null, myAuthor, "title2", new Date(2008-1900, 05-1, 02), "text2", null),
+			mMessageManager.postMessage(null, null, myBoards3, null, myAuthor, "title3", new Date(2007-1900, 04-1, 03),"text3", null),
 		};
 	
 		FreenetURI[] messageURIs = new FreenetURI[] {

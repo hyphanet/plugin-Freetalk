@@ -11,9 +11,11 @@ import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.Board.BoardMessageLink;
+import plugins.Freetalk.Board.BoardThreadLink;
 import plugins.Freetalk.Board.MessageReference;
-import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
+import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.WoT.WoTTrust;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -28,28 +30,52 @@ import freenet.support.api.HTTPRequest;
 public final class ThreadPage extends WebPageImpl {
 
     private final Board mBoard;
-    private final Message mThread;
+    private final BoardThreadLink mThread;
 
     private static final DateFormat mLocalDateFormat = DateFormat.getDateTimeInstance();
 
     public ThreadPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchMessageException, NoSuchBoardException {
         super(myWebInterface, viewer, request);
         mBoard = mFreetalk.getMessageManager().getBoardByName(request.getParam("board"));
-        mThread = mFreetalk.getMessageManager().get(request.getParam("id"));
-        /* FIXME: If the thread was not downloaded yet we should display a warning box about that instead of throwing NoSuchMessageException */
+        mThread = mBoard.getThreadReference(request.getParam("id"));
     }
 
     public final void make() {
         makeBreadcrumbs();
         synchronized (mLocalDateFormat) {
-            synchronized(mBoard) {  /* FIXME: Is this enough synchronization or should we lock the message manager? */
-                /* FIXME: We must add a special warning box if the thread is not really a thread but rather a forked thread. */
-            	addMessageBox(mThread);
+            synchronized(mBoard) {
+            	if(mThread.getMessage() != null) {
+            		if(mThread.getMessage().isThread() == false)
+            			addThreadIsNoThreadWarning();
 
-                for(MessageReference reference : mBoard.getAllThreadReplies(mThread.getID(), true))
+            		addMessageBox(mThread.getMessage());
+            	}
+            	else
+            		addThreadNotDownloadedWarning();
+
+                for(MessageReference reference : mBoard.getAllThreadReplies(mThread.getThreadID(), true))
                     addMessageBox(reference.getMessage());
             }
         }
+    }
+    
+    private void addThreadNotDownloadedWarning() {
+    	addAlertBox("Thread not downloaded").addChild("p", "The parent thread of these messages was not downloaded yet.");
+    }
+    
+    private void addThreadIsNoThreadWarning() {
+    	HTMLNode p = addAlertBox("This is a forked thread").addChild("p");
+    
+    	p.addChild("#", "The author of the second message below replied to the first message stating that it should become a new thread, the first message was"
+    			+ " not intended to be a thread by it's author, it was a reply to ");
+    	try {
+			p.addChild("a", "href",  Freetalk.PLUGIN_URI + "/showThread?board=" + mBoard.getName() + "&id=" + mThread.getMessage().getThreadID())
+			.addChild("#", "this");
+		} catch (NoSuchMessageException e) {
+			throw new IllegalArgumentException("SHOULD NOT HAPPEN");
+		}
+		
+		p.addChild("#", " thread.");
     }
 
     /* You have to synchronize on mLocalDateFormat when using this function */
@@ -143,6 +169,7 @@ public final class ThreadPage extends WebPageImpl {
         HTMLNode newReplyForm = addFormChild(parent, Freetalk.PLUGIN_URI + "/NewReply", "NewReplyPage");
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
+        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ParentThreadID", mThread.getThreadID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ParentMessageID", parentMessage.getID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", "Reply" });
     }
@@ -153,7 +180,7 @@ public final class ThreadPage extends WebPageImpl {
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OtherIdentityID", message.getAuthor().getUID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
-        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ThreadID", mThread.getID()});
+        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ThreadID", mThread.getThreadID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "MessageID", message.getID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "TrustChange", String.valueOf(change)});
         newReplyForm.addChild("input", new String[] {"type", "name", "value", "style"}, new String[] {"submit", "submit", label, "width:2em" });
@@ -188,7 +215,23 @@ public final class ThreadPage extends WebPageImpl {
         mContentNode.addChild(trail.getHTMLNode());
     }
 
-    public static void addBreadcrumb(BreadcrumbTrail trail, Board board, Message thread) {
-        trail.addBreadcrumbInfo(maxLength(thread.getTitle(),30), Freetalk.PLUGIN_URI + "/showThread?board=" + board.getName() + "&id=" + thread.getID());
+    /**
+     * 
+     * @param trail
+     * @param board
+     * @param firstMessageInThread The thread itself if it was downloaded already, if not, the first reply
+     * @param threadID
+     */
+    public static void addBreadcrumb(BreadcrumbTrail trail, Board board, BoardThreadLink myThread) {
+        Message firstMessage = myThread.getMessage();
+        
+        if(firstMessage == null) { // The thread was not downloaded yet, we use it's first reply for obtaining the information in the breadcrumb
+        	for(BoardMessageLink ref : board.getAllThreadReplies(myThread.getThreadID(), true)) {
+        		firstMessage = ref.getMessage();
+        		break;
+        	}
+        }
+        
+        trail.addBreadcrumbInfo(maxLength(firstMessage.getTitle(),30), Freetalk.PLUGIN_URI + "/showThread?board=" + board.getName() + "&id=" + myThread.getThreadID());
     }
 }

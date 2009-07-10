@@ -16,14 +16,16 @@ import freenet.support.Base64;
 
 public class WoTOwnMessage extends OwnMessage {
 
-	public static WoTOwnMessage construct(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor,
-			String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		return new WoTOwnMessage(newParentThread, newParentMessage, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
+	public static WoTOwnMessage construct(WoTMessageURI myParentThreadURI, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, 
+			FTOwnIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+		
+		return new WoTOwnMessage(myParentThreadURI, newParentMessage, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
 
-	protected WoTOwnMessage(Message newParentThread, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor,
+	protected WoTOwnMessage(WoTMessageURI myParentThreadURI, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor,
 			String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		super(null, null, generateRandomID(newAuthor), null, (newParentThread == null ? null : newParentThread.getURI()),
+		
+		super(null, null, generateRandomID(newAuthor), null, myParentThreadURI,
 			  (newParentMessage == null ? null : newParentMessage.getURI()),
 			  newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}

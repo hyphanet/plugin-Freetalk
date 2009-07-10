@@ -14,6 +14,7 @@ import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.MessageURI;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
@@ -67,25 +68,15 @@ public class WoTMessageManager extends MessageManager {
 		super(myDB, myIdentityManager);
 	}
 
-	public synchronized WoTOwnMessage postMessage(Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
-			String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
+	public synchronized WoTOwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, 
+			FTOwnIdentity myAuthor, String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
 		WoTOwnMessage m;
-
-		Message parentThread = null;
-		try {
-			if(myParentMessage != null) {
-				if(myParentMessage.isThread())
-					parentThread = myParentMessage;
-				else
-					parentThread = myParentMessage.getThread();
-			}
-		}
-		catch(NoSuchMessageException e) {
-
-		}
+		
+		if(!(myParentThreadURI instanceof WoTMessageURI))
+			throw new IllegalArgumentException("Parent thread URI is no WoTMessageURI: " + myParentThreadURI);
 
 		Date date = myDate!=null ? myDate : CurrentTimeUTC.get();
-		m = WoTOwnMessage.construct(parentThread, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
+		m = WoTOwnMessage.construct((WoTMessageURI)myParentThreadURI, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
 		m.initializeTransient(db, this);
 		synchronized(db.lock()) {
 			try {

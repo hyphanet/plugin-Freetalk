@@ -700,6 +700,7 @@ public final class FCPInterface implements FredPluginFCP {
         synchronized(mFreetalk.getMessageManager()) {
 
             try {
+                
                 // evaluate parentMessage
                 final String parentMsgId = params.get("ParentID"); // may be null
                 Message parentMessage = null;
@@ -747,6 +748,10 @@ public final class FCPInterface implements FredPluginFCP {
                         throw new InvalidParameterException("ReplyToBoard is not contained in TargetBoards");
                     }
                 }
+                
+                // evaluate parentThread
+                final String parentThreadID = params.get("ParentThreadID"); // may be null
+                // FIXME: implement! Currently, all replies to forked threads will go to the original thread!
 
                 // evaluate authorIdentity
                 final String authorIdentityUidString = params.get("AuthorIdentityUID");
@@ -817,7 +822,7 @@ public final class FCPInterface implements FredPluginFCP {
                 final String messageText = new String(utf8Bytes, "UTF-8");
 
                 // post new message
-                mFreetalk.getMessageManager().postMessage(
+                mFreetalk.getMessageManager().postMessage(parentMessage.isThread() ? parentMessage.getURI() : parentMessage.getThreadURI(),
                         parentMessage,
                         targetBoards,
                         replyToBoard,
