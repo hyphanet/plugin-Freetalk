@@ -72,7 +72,7 @@ public class WoTMessageManager extends MessageManager {
 			FTOwnIdentity myAuthor, String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
 		WoTOwnMessage m;
 		
-		if(!(myParentThreadURI instanceof WoTMessageURI))
+		if(myParentThreadURI != null && !(myParentThreadURI instanceof WoTMessageURI))
 			throw new IllegalArgumentException("Parent thread URI is no WoTMessageURI: " + myParentThreadURI);
 
 		Date date = myDate!=null ? myDate : CurrentTimeUTC.get();
