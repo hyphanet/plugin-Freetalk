@@ -59,5 +59,10 @@ public final class WoTMessage extends Message {
 	public static WoTMessageURI calculateURI(MessageList myMessageList, String myID) {
 		return new WoTMessageURI(myMessageList.getURI(), myID);
 	}
+	
+	@Override
+	public WoTMessageURI getURI() { /* Not synchronized because only OwnMessage might change the URI */
+		return (WoTMessageURI)mURI;
+	}
 
 }
