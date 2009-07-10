@@ -629,8 +629,6 @@ public final class Board implements Comparable<Board> {
      */
     // FIXME: This function returns all replies, not only the ones which the viewer wants to see. Convert the function to an iterator
     // which picks threads chosen by the viewer, see threadIterator() for how to do this.
-    // FIXME: The behavior of the function has changed, it assumes that the given message is a thread. Check all references to this function whether they
-    // do not accidentially pass a thread reply
     @SuppressWarnings("unchecked")
     public synchronized List<BoardMessageLink> getAllThreadReplies(String threadID, final boolean sortByDateAscending) {
         Query q = db.query();
