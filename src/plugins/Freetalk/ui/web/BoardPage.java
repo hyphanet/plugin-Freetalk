@@ -92,19 +92,19 @@ public final class BoardPage extends WebPageImpl {
 				row.addChild("td", new String[] { "align" }, new String[] { "left" }, authorText);
 
 				/* Trust */
-				int score; 
+				Integer score; 
 				try {
 					if(thread != null)
 						// TODO: Get rid of the cast somehow, we should maybe call this WoTBoardPage :|
 						score = ((WoTOwnIdentity)mOwnIdentity).getScoreFor(thread.getAuthor());
 					else
-						score = -1;
+						score = null;
 				}
 				catch(NumberFormatException e) { // FIXME: this is a bug...
-					score = -1;
+					score = null;
 				}
 				row.addChild("td", new String[] { "align" }, new String[] { "left" }, 
-						score > 0 ? Integer.toString(score) : "UNKNOWN");
+						score != null ? Integer.toString(score) : "UNKNOWN");
 
 				/* Date of last reply */
 				row.addChild("td", new String[] { "align" , "style" }, new String[] { "center" , "white-space:nowrap;"}, 
