@@ -353,8 +353,26 @@ public final class Board implements Comparable<Board> {
     	}
     }
     
+    public synchronized BoardMessageLink getMessageReference(Message message) throws NoSuchMessageException {
+        Query q = db.query();
+        q.constrain(BoardMessageLink.class);
+        q.descend("mMessage").constrain(message).identity();
+        ObjectSet<BoardMessageLink> results = q.execute();
+        
+        switch(results.size()) {
+	        case 1:
+				BoardMessageLink messageRef = results.next();
+				assert(messageRef.getMessage().equals(message)); // The query works
+				return messageRef;
+	        case 0:
+	        	throw new NoSuchMessageException(message.getID());
+	        default:
+	        	throw new DuplicateMessageException(message.getID());
+        }
+    }
+    
     @SuppressWarnings("unchecked")
-	private synchronized BoardThreadLink getThreadReference(String threadID) throws NoSuchMessageException {
+	public synchronized BoardThreadLink getThreadReference(String threadID) throws NoSuchMessageException {
         Query q = db.query();
         q.constrain(BoardThreadLink.class);
         q.descend("mBoard").constrain(this).identity();
