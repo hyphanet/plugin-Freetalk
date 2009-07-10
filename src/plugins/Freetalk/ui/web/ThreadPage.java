@@ -60,22 +60,22 @@ public final class ThreadPage extends WebPageImpl {
     }
     
     private void addThreadNotDownloadedWarning() {
-    	addAlertBox("Thread not downloaded").addChild("p", "The parent thread of these messages was not downloaded yet.");
+    	addAlertBox("Thread not downloaded").addChild("div", "The parent thread of these messages was not downloaded yet.");
     }
     
     private void addThreadIsNoThreadWarning() {
-    	HTMLNode p = addAlertBox("This is a forked thread").addChild("p");
+    	HTMLNode div = addAlertBox("This is a forked thread").addChild("div");
     
-    	p.addChild("#", "The author of the second message below replied to the first message stating that it should become a new thread, the first message was"
+    	div.addChild("#", "The author of the second message below replied to the first message stating that it should become a new thread, the first message was"
     			+ " not intended to be a thread by it's author, it was a reply to ");
     	try {
-			p.addChild("a", "href",  Freetalk.PLUGIN_URI + "/showThread?board=" + mBoard.getName() + "&id=" + mThread.getMessage().getThreadID())
+			div.addChild("a", "href",  Freetalk.PLUGIN_URI + "/showThread?board=" + mBoard.getName() + "&id=" + mThread.getMessage().getThreadID())
 			.addChild("#", "this");
 		} catch (NoSuchMessageException e) {
 			throw new IllegalArgumentException("SHOULD NOT HAPPEN");
 		}
 		
-		p.addChild("#", " thread.");
+		div.addChild("#", " thread.");
     }
 
     /* You have to synchronize on mLocalDateFormat when using this function */
