@@ -81,7 +81,14 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	}
 
 	public synchronized boolean wantsMessagesFrom(FTIdentity identity) {
+		try {
 		return getScoreFor(identity) >= 0;	/* FIXME: this has to be configurable */
+		}
+		catch(NumberFormatException e) {
+			// TODO: Maybe make getScore() throw a real exception and not number format exception.
+			Logger.error(this, "Unable to obtain score from " + this + " to " + identity, e);
+			return false;
+		}
 	}
 
 	public int getScoreFor(FTIdentity identity) {
