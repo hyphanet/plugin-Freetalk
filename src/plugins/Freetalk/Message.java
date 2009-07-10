@@ -337,6 +337,7 @@ public abstract class Message implements Comparable<Message> {
 	 * Get the text of the message.
 	 */
 	public String getText() {
+		db.activate(this, 3); // FIXME: We currently have a bug which makes the message bodies get lost in inserted messages. Does this fix it?
 		return mText;
 	}
 	
@@ -344,6 +345,7 @@ public abstract class Message implements Comparable<Message> {
 	 * Get the attachments of the message, in the order in which they were received.
 	 */
 	public Attachment[] getAttachments() {
+		db.activate(this, 3);
 		return mAttachments;
 	}
 	
