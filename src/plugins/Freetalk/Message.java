@@ -187,12 +187,12 @@ public abstract class Message implements Comparable<Message> {
 		mAuthor = newAuthor;
 		mID = newID;
 		
-		mParentURI = newParentURI;
+		mParentURI = newParentURI != null ? newParentURI : newThreadURI;
 		mParentID = mParentURI != null ? mParentURI.getMessageID() : null;
-		/* If a message has no thread URI specified (this is a bug in the client which inserted it) we store the parent URI as thread URI instead.
-		 * This will be corrected later by setParent(). */
-		mThreadURI = newThreadURI != null ? newThreadURI : mParentURI;
-		mThreadID = newThreadURI != null ? newThreadURI.getMessageID() : mParentID;
+
+		/* If the given thread URI is null, the message will be a thread */ 
+		mThreadURI = newThreadURI;
+		mThreadID = newThreadURI != null ? newThreadURI.getMessageID() : null;
 		
 		mBoards = newBoards.toArray(new Board[newBoards.size()]);
 		Arrays.sort(mBoards);		
@@ -366,9 +366,6 @@ public abstract class Message implements Comparable<Message> {
 		
 		if(!newParentThread.getID().equals(mThreadID))
 			throw new IllegalArgumentException("Trying to set a message as thread which has the wrong ID: " + newParentThread.getID());
-		
-		if(!newParentThread.isThread())
-			throw new IllegalArgumentException("Trying to setThread(not a thread).");
 		
 		mThread = newParentThread;
 		storeWithoutCommit();
@@ -637,8 +634,19 @@ public abstract class Message implements Comparable<Message> {
 		}
 	}
 
+    
+    @Override
+	public boolean equals(Object obj) {
+    	if(obj instanceof Message) {
+    		Message otherMessage = (Message)obj;
+    		return mID.equals(otherMessage.getID());
+    	} else
+    		return false;
+	}
+    
 	public int compareTo(Message other) {
 		return mDate.compareTo(other.mDate);
 	}
+	
 
 }
