@@ -82,7 +82,7 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 		return mSubscribedBoards.iterator();
 	}
 
-	public synchronized boolean wantsMessagesFrom(FTIdentity identity) {
+	public boolean wantsMessagesFrom(FTIdentity identity) {
 		try {
 		return getScoreFor(identity) >= 0;	/* FIXME: this has to be configurable */
 		}
