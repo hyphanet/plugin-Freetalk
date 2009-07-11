@@ -106,27 +106,27 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	}
 	
 	public void storeWithoutCommit() {
+		try {
 			try {
-				try {
-					if(mIdentityManager.getOwnIdentity(getID()) != this)
-						throw new DuplicateIdentityException(getID());
-				}
-				catch(NoSuchIdentityException e) {
-					
-				}
-				
-				if(db.ext().isStored(this) && !db.ext().isActive(this))
-					throw new RuntimeException("Trying to store a non-active WoTOwnIdentity object");
+				if(mIdentityManager.getOwnIdentity(getID()) != this)
+					throw new DuplicateIdentityException(getID());
+			}
+			catch(NoSuchIdentityException e) {
 
-				db.store(mSubscribedBoards); // FIXME: Is this correct??
-				db.store(mInsertURI);
-				db.store(mAssessed);
-				super.storeWithoutCommit();
 			}
-			catch(RuntimeException e) {
-				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
-			}
+
+			if(db.ext().isStored(this) && !db.ext().isActive(this))
+				throw new RuntimeException("Trying to store a non-active WoTOwnIdentity object");
+
+			db.store(mSubscribedBoards); // FIXME: Is this correct??
+			db.store(mInsertURI);
+			db.store(mAssessed);
+			super.storeWithoutCommit();
+		}
+		catch(RuntimeException e) {
+			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+			throw e;
+		}
 	}
 
 	protected void deleteWithoutCommit() {
