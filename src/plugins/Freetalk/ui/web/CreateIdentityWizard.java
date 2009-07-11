@@ -218,7 +218,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 				HTMLNode summaryBox = getContentBox("Identity created");
 				createForm.addChild(summaryBox);
 				
-				summaryBox.addChild("a", "href", Freetalk.PLUGIN_URI + "/LogIn?OwnIdentityID=" + id.getUID(),
+				summaryBox.addChild("a", "href", Freetalk.PLUGIN_URI + "/LogIn?OwnIdentityID=" + id.getID(),
 						"Your identity was successfully created. You can log in with it now."); 
 			}
 			catch(Exception e) {

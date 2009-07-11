@@ -11,7 +11,7 @@ public interface FTIdentity {
 	
 	public void initializeTransient(ExtObjectContainer myDB, IdentityManager myIdentityManager);
 
-	public String getUID();
+	public String getID();
 	
 	/**
 	 * @return The requestURI ({@link FreenetURI}) to fetch this Identity 

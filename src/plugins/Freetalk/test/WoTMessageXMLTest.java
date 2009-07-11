@@ -46,13 +46,13 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		
 		FreenetURI authorRequestSSK = new FreenetURI("SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/");
 		FreenetURI authorInsertSSK = new FreenetURI("SSK@Ykhv0x0K8jtrgOlqWVS4S2Jvmnm64zv5voNjMfz1nYI,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQECAAE/");
-		WoTIdentity myAuthor = new WoTOwnIdentity(WoTIdentity.getUIDFromURI(authorRequestSSK), authorRequestSSK, authorInsertSSK, "Nickname");
+		WoTIdentity myAuthor = new WoTOwnIdentity(WoTIdentity.getIDFromURI(authorRequestSSK), authorRequestSSK, authorInsertSSK, "Nickname");
 		
 		FreenetURI myThreadRealURI = new FreenetURI("CHK@7qMS7LklYIhbZ88i0~u97lxrLKS2uxNwZWQOjPdXnJw,IlA~FSjWW2mPWlzWx7FgpZbBErYdLkqie1uSrcN~LbM,AAIA--8");
-		String myThreadID = "afe6519b-7fb2-4533-b172-1f966e79d127" + "@" + myAuthor.getUID();
+		String myThreadID = "afe6519b-7fb2-4533-b172-1f966e79d127" + "@" + myAuthor.getID();
 		
 		mMessageRealURI = new FreenetURI("CHK@7qMS7LklYIhbZ88i0~u97lxrLKS2uxNwZWQOjPdXnJw,IlA~FSjWW2mPWlzWx7FgpZbBErYdLkqie1uSrcN~LbM,AAIA--8");
-		String myMessageID = "2a3a8e7e-9e53-4978-a8fd-17b2d92d949c" + "@" + myAuthor.getUID();
+		String myMessageID = "2a3a8e7e-9e53-4978-a8fd-17b2d92d949c" + "@" + myAuthor.getID();
 		
 		List<MessageList.MessageReference> messageReferences = new ArrayList<MessageList.MessageReference>(2);
 		for(Board board : myBoards) {

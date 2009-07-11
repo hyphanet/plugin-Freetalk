@@ -200,10 +200,10 @@ public class WoTIdentityManager extends IdentityManager {
 	}
 
 	@SuppressWarnings("unchecked")
-	public synchronized WoTIdentity getIdentity(String uid) throws NoSuchIdentityException {
+	public synchronized WoTIdentity getIdentity(String id) throws NoSuchIdentityException {
 		Query q = db.query();
 		q.constrain(WoTIdentity.class);
-		q.descend("mUID").constrain(uid);
+		q.descend("mID").constrain(id);
 		ObjectSet<WoTIdentity> result = q.execute();
 		
 		switch(result.size()) {
@@ -212,21 +212,21 @@ public class WoTIdentityManager extends IdentityManager {
 				identity.initializeTransient(db, this);
 				return identity;
 			case 0:
-				throw new NoSuchIdentityException(uid);
+				throw new NoSuchIdentityException(id);
 			default:
-				throw new DuplicateIdentityException(uid);
+				throw new DuplicateIdentityException(id);
 		}
 	}
 	
 	public FTIdentity getIdentityByURI(FreenetURI uri) throws NoSuchIdentityException {
-		return getIdentity(WoTIdentity.getUIDFromURI(uri));
+		return getIdentity(WoTIdentity.getIDFromURI(uri));
 	}
 	
 	@SuppressWarnings("unchecked")
-	public synchronized WoTOwnIdentity getOwnIdentity(String uid) throws NoSuchIdentityException {
+	public synchronized WoTOwnIdentity getOwnIdentity(String id) throws NoSuchIdentityException {
 		Query q = db.query();
 		q.constrain(WoTOwnIdentity.class);
-		q.descend("mUID").constrain(uid);
+		q.descend("mID").constrain(id);
 		ObjectSet<WoTOwnIdentity> result = q.execute();
 		
 		switch(result.size()) {
@@ -235,9 +235,9 @@ public class WoTIdentityManager extends IdentityManager {
 				identity.initializeTransient(db, this);
 				return identity;
 			case 0:
-				throw new NoSuchIdentityException(uid);
+				throw new NoSuchIdentityException(id);
 			default:
-				throw new DuplicateIdentityException(uid);
+				throw new DuplicateIdentityException(id);
 		}
 	}
 
@@ -247,8 +247,8 @@ public class WoTIdentityManager extends IdentityManager {
 
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "GetIdentity");
-		sfs.putOverwrite("TreeOwner", treeOwner.getUID());
-		sfs.putOverwrite("Identity", target.getUID());
+		sfs.putOverwrite("TreeOwner", treeOwner.getID());
+		sfs.putOverwrite("Identity", target.getID());
 
 		try {
 			return mTalker.sendBlocking(sfs, null).params.get(property);
@@ -278,8 +278,8 @@ public class WoTIdentityManager extends IdentityManager {
 
 		SimpleFieldSet request = new SimpleFieldSet(true);
 		request.putOverwrite("Message", "SetTrust");
-		request.putOverwrite("Truster", treeOwner.getUID());
-		request.putOverwrite("Trustee", identity.getUID());
+		request.putOverwrite("Truster", treeOwner.getID());
+		request.putOverwrite("Trustee", identity.getID());
 		request.putOverwrite("Value", Integer.toString(trust));
 		request.putOverwrite("Comment", comment);
 		try {
@@ -299,15 +299,15 @@ public class WoTIdentityManager extends IdentityManager {
 		SimpleFieldSet request = new SimpleFieldSet(true);
 		request.putOverwrite("Message", "GetTrusters");
 		request.putOverwrite("Context", "");
-		request.putOverwrite("Identity", trustee.getUID());
+		request.putOverwrite("Identity", trustee.getID());
 		try {
 			SimpleFieldSet answer = mTalker.sendBlocking(request, null).params;
 			for(int idx = 1; ; idx++) {
-				String uid = answer.get("Identity"+idx);
-				if(uid == null || uid.equals("")) /* FIXME: Figure out whether the second condition is necessary */
+				String id = answer.get("Identity"+idx);
+				if(id == null || id.equals("")) /* FIXME: Figure out whether the second condition is necessary */
 					break;
 				try {
-					result.add(new WoTTrust(getIdentity(uid), trustee, (byte)Integer.parseInt(answer.get("Value"+idx)), answer.get("Comment"+idx)));
+					result.add(new WoTTrust(getIdentity(id), trustee, (byte)Integer.parseInt(answer.get("Value"+idx)), answer.get("Comment"+idx)));
 				} catch (NoSuchIdentityException e) {
 				} catch (InvalidParameterException e) {
 				}
@@ -322,7 +322,7 @@ public class WoTIdentityManager extends IdentityManager {
 	private synchronized void addFreetalkContext(WoTIdentity oid) {
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "AddContext");
-		params.putOverwrite("Identity", oid.getUID());
+		params.putOverwrite("Identity", oid.getID());
 		params.putOverwrite("Context", Freetalk.WOT_CONTEXT);
 		try {
 			mTalker.sendBlocking(params, null);
@@ -372,8 +372,8 @@ public class WoTIdentityManager extends IdentityManager {
 		long time = CurrentTimeUTC.getInMillis();
 	
 		for(int idx = 1; ; idx++) {
-			String uid = params.get("Identity"+idx);
-			if(uid == null || uid.equals("")) /* FIXME: Figure out whether the second condition is necessary */
+			String identityID = params.get("Identity"+idx);
+			if(identityID == null || identityID.equals("")) /* FIXME: Figure out whether the second condition is necessary */
 				break;
 			String requestURI = params.get("RequestURI"+idx);
 			String insertURI = bOwnIdentities ? params.get("InsertURI"+idx) : null;
@@ -382,7 +382,7 @@ public class WoTIdentityManager extends IdentityManager {
 			synchronized(this) { /* We lock here and not during the whole function to allow other threads to execute */
 				Query q = db.query();
 				q.constrain(WoTIdentity.class);
-				q.descend("mUID").constrain(uid);
+				q.descend("mID").constrain(identityID);
 				ObjectSet<WoTIdentity> result = q.execute();
 				WoTIdentity id = null; 
 
@@ -390,8 +390,8 @@ public class WoTIdentityManager extends IdentityManager {
 					synchronized(db.lock()) {
 						try {
 							Logger.debug(this, "Importing identity from WoT: " + requestURI);
-							id = bOwnIdentities ?	new WoTOwnIdentity(uid, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
-								new WoTIdentity(uid, new FreenetURI(requestURI), nickname);
+							id = bOwnIdentities ?	new WoTOwnIdentity(identityID, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
+								new WoTIdentity(identityID, new FreenetURI(requestURI), nickname);
 
 							id.initializeTransient(db, this);
 							id.storeWithoutCommit();

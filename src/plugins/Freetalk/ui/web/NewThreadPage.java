@@ -34,7 +34,7 @@ public final class NewThreadPage extends WebPageImpl {
 
 				HTMLNode successBox = addContentBox("Thread created");
 				successBox.addChild("p", "The thread was put into your outbox. Freetalk will upload it after some time.");
-				successBox.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getUID() + "&name=" + mBoard.getName(),
+				successBox.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + mBoard.getName(),
 								"Go back to " + mBoard.getName()));
 			} catch (Exception e) {
 				HTMLNode alertBox = addAlertBox("The thread could not be created.");
@@ -53,7 +53,7 @@ public final class NewThreadPage extends WebPageImpl {
 		newThreadForm.addChild("input", new String[] { "type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
 		
 		HTMLNode authorBox = newThreadForm.addChild(getContentBox("Author"));
-		authorBox.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
+		authorBox.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
 		authorBox.addChild("b", mOwnIdentity.getFreetalkAddress());
 		
 		HTMLNode subjectBox = newThreadForm.addChild(getContentBox("Subject"));

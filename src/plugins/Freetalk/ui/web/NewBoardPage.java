@@ -30,7 +30,7 @@ public final class NewBoardPage extends WebPageImpl {
 				Board board = mFreetalk.getMessageManager().getOrCreateBoard(boardLanguage + "." + boardName);
 				HTMLNode successBox = addContentBox("Board was created");
 				successBox.addChild("div", "The board "); /* TODO: I have no idea how to make this text appear in one line without removing the <u> */
-				successBox.addChild("u").addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getUID() + "&name=" + board.getName(), board.getName()));
+				successBox.addChild("u").addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + board.getName(), board.getName()));
 				successBox.addChild("div", " was successfully created.");
 				makeNewBoardPage("en", "");
 			} catch (InvalidParameterException e) {
@@ -47,7 +47,7 @@ public final class NewBoardPage extends WebPageImpl {
 	private void makeNewBoardPage(String boardLanguage, String boardName) {
 		HTMLNode newBoardBox = addContentBox("Create a new board");
 		HTMLNode newBoardForm = addFormChild(newBoardBox, Freetalk.PLUGIN_TITLE + "/NewBoard", "NewBoard");
-		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
+		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
 		
 		HTMLNode languageBox = newBoardForm.addChild(getContentBox("Language"));
 		languageBox.addChild("p", "The board name will be prefixed with the following language code:");

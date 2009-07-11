@@ -39,7 +39,7 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 		
 		FreenetURI authorRequestSSK = new FreenetURI("SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/");
 		FreenetURI authorInsertSSK = new FreenetURI("SSK@Ykhv0x0K8jtrgOlqWVS4S2Jvmnm64zv5voNjMfz1nYI,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQECAAE/");
-		String authorID = WoTIdentity.getUIDFromURI(authorRequestSSK);
+		String authorID = WoTIdentity.getIDFromURI(authorRequestSSK);
 		WoTOwnIdentity myAuthor = new WoTOwnIdentity(authorID, authorRequestSSK, authorInsertSSK, "Nickname");
 		
 		mMessageManager = new WoTMessageManager(db, null);

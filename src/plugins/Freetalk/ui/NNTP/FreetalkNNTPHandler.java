@@ -677,8 +677,8 @@ public class FreetalkNNTPHandler implements Runnable {
         while (i.hasNext()) {
             FTOwnIdentity identity = i.next();
             if (identity.getNickname().equals(name)) {
-                String uid = identity.getUID();
-                if (uid.startsWith(domain) || domain.startsWith(uid)) {
+                String id = identity.getID();
+                if (id.startsWith(domain) || domain.startsWith(id)) {
                     if (matchDomain)
                         multiple = true;
                     bestMatch = identity;

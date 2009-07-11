@@ -27,7 +27,7 @@ public class WoTIdentity implements FTIdentity {
 	
 	/* Attributes, stored in the database. */
 	
-	private final String mUID;
+	private final String mID;
     
 	/** The requestURI used to fetch this identity from Freenet */
 	private final FreenetURI mRequestURI;
@@ -54,17 +54,17 @@ public class WoTIdentity implements FTIdentity {
 	
 	/** Get a list of fields which the database should create an index on. */
 	public static String[] getIndexedFields() {
-		return new String[] { "mUID", "mRequestURI" };
+		return new String[] { "mID", "mRequestURI" };
 	}
 
-	public WoTIdentity(String myUID, FreenetURI myRequestURI, String myNickname) {
-		if(myUID == null) throw new IllegalArgumentException("UID == null");
-		if(myUID.length() == 0) throw new IllegalArgumentException("UID.length() == 0");
+	public WoTIdentity(String myID, FreenetURI myRequestURI, String myNickname) {
+		if(myID == null) throw new IllegalArgumentException("ID == null");
+		if(myID.length() == 0) throw new IllegalArgumentException("ID.length() == 0");
 		if(myRequestURI == null) throw new IllegalArgumentException("RequestURI == null");
 		if(myNickname == null) throw new IllegalArgumentException("Nickname == null");
 		if(myNickname.length() == 0) throw new IllegalArgumentException("Nickname.length() == 0");
 		
-		mUID = myUID;
+		mID = myID;
 		mRequestURI = myRequestURI;
 		mNickname = myNickname;
 		mLastReceivedFromWoT = CurrentTimeUTC.getInMillis();
@@ -80,8 +80,8 @@ public class WoTIdentity implements FTIdentity {
 		mIdentityManager = (WoTIdentityManager)myIdentityManager;
 	}
 	
-	public String getUID() {
-		return mUID;
+	public String getID() {
+		return mID;
 	}
 	
 	/**
@@ -92,7 +92,7 @@ public class WoTIdentity implements FTIdentity {
 	 * @param uri The requestURI of the Identity
 	 * @return A string to uniquely identify an Identity
 	 */
-	public static String getUIDFromURI (FreenetURI uri) {
+	public static String getIDFromURI (FreenetURI uri) {
 		/* WARNING: This is a copy of the code of plugins.WoT.Identity. Freetalk is not allowed to have its own custom IDs, you cannot change
 		 * this code here. */
 		return Base64.encode(uri.getRoutingKey());
@@ -118,7 +118,7 @@ public class WoTIdentity implements FTIdentity {
 	}
 
 	public String getFreetalkAddress() {
-		return mNickname + "@" + mUID + "." + Freetalk.WOT_CONTEXT.toLowerCase();	
+		return mNickname + "@" + mID + "." + Freetalk.WOT_CONTEXT.toLowerCase();	
 	}
 
 	public synchronized long getLastReceivedFromWoT() {
@@ -170,8 +170,8 @@ public class WoTIdentity implements FTIdentity {
 	protected void storeWithoutCommit() {
 		try {
 			try {
-				if(mIdentityManager.getIdentity(mUID) != this)
-					throw new DuplicateIdentityException(mUID);
+				if(mIdentityManager.getIdentity(mID) != this)
+					throw new DuplicateIdentityException(mID);
 			}
 			catch(NoSuchIdentityException e) {
 				

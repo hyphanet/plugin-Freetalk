@@ -37,7 +37,7 @@ public final class BoardPage extends WebPageImpl {
 		
 		// Button for creating a new thread
 		HTMLNode newThreadForm = addFormChild(threadsBox, Freetalk.PLUGIN_URI + "/NewThread", "NewThreadPage");
-			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getUID() });
+			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID() });
 			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "BoardName", mBoard.getName() });
 			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "New thread" });
 		
@@ -81,7 +81,7 @@ public final class BoardPage extends WebPageImpl {
 				threadTitle = maxLength(threadTitle, 40); // TODO: Adjust
 
 				HTMLNode titleCell = row.addChild("td", new String[] { "align" }, new String[] { "left" });
-				titleCell.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
+				titleCell.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showThread?identity=" + mOwnIdentity.getID() + 
 						"&board=" + mBoard.getName() + "&id=" + threadReference.getThreadID(), threadTitle));
 
 				/* Author */

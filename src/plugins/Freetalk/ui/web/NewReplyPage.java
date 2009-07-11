@@ -57,12 +57,12 @@ public class NewReplyPage extends WebPageImpl {
 				HTMLNode successBox = addContentBox("Reply created");
 				successBox.addChild("p", "The reply was put into your outbox. Freetalk will upload it after some time."); 
 				
-				successBox.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showThread?identity=" + mOwnIdentity.getUID() + 
+				successBox.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showThread?identity=" + mOwnIdentity.getID() + 
 						"&board=" + mBoard.getName() + "&id=" + mParentThread.getThreadID(),
 				"Go back to parent thread"));
 				successBox.addChild("br");
 				
-				successBox.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getUID() + "&name=" + mBoard.getName(),
+				successBox.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + mBoard.getName(),
 						"Go back to " + mBoard.getName()));
 			} catch (Exception e) {
 				HTMLNode alertBox = addAlertBox("The reply could not be created.");
@@ -88,7 +88,7 @@ public class NewReplyPage extends WebPageImpl {
 		newReplyForm.addChild("input", new String[] { "type", "name", "value"}, new String[] {"hidden", "ParentMessageID", mParentMessage.getID()});
 		
 		HTMLNode authorBox = newReplyForm.addChild(getContentBox("Author"));
-		authorBox.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getUID()});
+		authorBox.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
 		authorBox.addChild("b", mOwnIdentity.getFreetalkAddress());
 		
 		HTMLNode subjectBox = newReplyForm.addChild(getContentBox("Subject"));

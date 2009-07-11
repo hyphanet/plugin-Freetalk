@@ -81,9 +81,9 @@ public abstract class IdentityManager implements PrioRunnable {
 		};
 	}
 	
-	public abstract FTIdentity getIdentity(String uid) throws NoSuchIdentityException;
+	public abstract FTIdentity getIdentity(String id) throws NoSuchIdentityException;
 	
-	public abstract FTOwnIdentity getOwnIdentity(String uid) throws NoSuchIdentityException;
+	public abstract FTOwnIdentity getOwnIdentity(String id) throws NoSuchIdentityException;
 
 	public synchronized boolean anyOwnIdentityWantsMessagesFrom(FTIdentity identity) {
 		Iterator<FTOwnIdentity> iter = ownIdentityIterator();
@@ -104,24 +104,24 @@ public abstract class IdentityManager implements PrioRunnable {
 	/// format the name of an author
 	public String shortestUniqueName(FTIdentity identity, int maxLength) {
 		String nick = identity.getNickname(maxLength-5);
-		String uid = identity.getUID();
+		String id = identity.getID();
 		int longestCommonPrefix = 0;
 		String formatted;
 
 		// FIXME: use a map when this gets slow
 		for(FTIdentity i : getAllIdentities()) {
-			String otherUID = i.getUID();
-			if(i.getNickname(maxLength-5).equals(nick) && !otherUID.equals(uid)) {
+			String otherID = i.getID();
+			if(i.getNickname(maxLength-5).equals(nick) && !otherID.equals(id)) {
 				if(longestCommonPrefix == 0) {
 					longestCommonPrefix = 1;
 				}
-				while(uid.substring(0, longestCommonPrefix).equals(otherUID.substring(0, longestCommonPrefix))){
+				while(id.substring(0, longestCommonPrefix).equals(otherID.substring(0, longestCommonPrefix))){
 					longestCommonPrefix++;
 				}
 			}
 		}
 		if(longestCommonPrefix > 0) {
-			return nick + "@" + uid.substring(0, longestCommonPrefix);
+			return nick + "@" + id.substring(0, longestCommonPrefix);
 		} else {
 			return nick;
 		}

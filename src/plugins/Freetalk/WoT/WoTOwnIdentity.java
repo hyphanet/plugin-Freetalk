@@ -39,8 +39,8 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 		return new String[] { "mInsertURI" }; 
 	}
 
-	public WoTOwnIdentity(String myUID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
-		super(myUID, myRequestURI, myNickname);
+	public WoTOwnIdentity(String myID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
+		super(myID, myRequestURI, myNickname);
 		if(myInsertURI == null)
 			throw new IllegalArgumentException();
 		mInsertURI = myInsertURI;
@@ -108,8 +108,8 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	public void storeWithoutCommit() {
 			try {
 				try {
-					if(mIdentityManager.getOwnIdentity(getUID()) != this)
-						throw new DuplicateIdentityException(getUID());
+					if(mIdentityManager.getOwnIdentity(getID()) != this)
+						throw new DuplicateIdentityException(getID());
 				}
 				catch(NoSuchIdentityException e) {
 					

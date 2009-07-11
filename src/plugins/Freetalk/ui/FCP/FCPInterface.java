@@ -170,7 +170,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Format of request:
      *   Message=ListThreads
      *   BoardName=abc
-     *   OwnIdentityUID=UID
+     *   OwnIdentityID=ID
      * Format of reply:
      *   Message=MessageThread
      *   ID=id
@@ -189,12 +189,12 @@ public final class FCPInterface implements FredPluginFCP {
         if (boardName == null) {
             throw new InvalidParameterException("Boardname parameter not specified");
         }
-        final String ownIdentityUID = params.get("OwnIdentityUID");
-        if (ownIdentityUID == null) {
-            throw new InvalidParameterException("OwnIdentityUID parameter not specified");
+        final String ownIdentityID = params.get("OwnIdentityID");
+        if (ownIdentityID == null) {
+            throw new InvalidParameterException("OwnIdentityID parameter not specified");
         }
 
-        final FTOwnIdentity ownIdentity = mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityUID); // throws exception when not found
+        final FTOwnIdentity ownIdentity = mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID); // throws exception when not found
         final Board board = mFreetalk.getMessageManager().getBoardByName(boardName); // throws exception when not found
 
         synchronized(board) { /* FIXME: Is this enough synchronization or should we lock the message manager? */
@@ -473,7 +473,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Send a number of KnownIdentity messages and finally an EndListKnownIdentities message.
      * Format:
      *   Message=KnownIdentity
-     *   UID=uid
+     *   ID=id
      *   Nickname=name
      *   FreetalkAddress=freetalkAddr
      */
@@ -486,7 +486,7 @@ public final class FCPInterface implements FredPluginFCP {
             }
             final SimpleFieldSet sfs = new SimpleFieldSet(true);
             sfs.putOverwrite("Message", "KnownIdentity");
-            sfs.putOverwrite("UID", id.getUID());
+            sfs.putOverwrite("ID", id.getID());
             sfs.putOverwrite("Nickname", id.getNickname());
             sfs.putOverwrite("FreetalkAddress", id.getFreetalkAddress());
             replysender.send(sfs);
@@ -502,7 +502,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Send a number of OwnIdentity messages and finally an EndListOwnIdentities message.
      * Format:
      *   Message=OwnIdentity
-     *   UID=uid
+     *   ID=id
      *   Nickname=name
      *   FreetalkAddress=freetalkAddr
      */
@@ -515,7 +515,7 @@ public final class FCPInterface implements FredPluginFCP {
 
             final SimpleFieldSet sfs = new SimpleFieldSet(true);
             sfs.putOverwrite("Message", "OwnIdentity");
-            sfs.putOverwrite("UID", id.getUID());
+            sfs.putOverwrite("ID", id.getID());
             sfs.putOverwrite("Nickname", id.getNickname());
             sfs.putOverwrite("FreetalkAddress", id.getFreetalkAddress());
             replysender.send(sfs);
@@ -538,7 +538,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Format of reply:
      *   Message=CreateOwnIdentityReply
      *   OwnIdentityCreated=true|false
-     *   UID=uid
+     *   ID=id
      *   FreetalkAddress=addr
      *   InsertURI=...
      *   RequestURI=...
@@ -600,7 +600,7 @@ public final class FCPInterface implements FredPluginFCP {
             final SimpleFieldSet sfs = new SimpleFieldSet(true);
             sfs.putOverwrite("Message", "CreateOwnIdentityReply");
             sfs.putOverwrite("OwnIdentityCreated", "true");
-            sfs.putOverwrite("UID", id.getUID());
+            sfs.putOverwrite("ID", id.getID());
             sfs.putOverwrite("FreetalkAddress", id.getFreetalkAddress());
             sfs.putOverwrite("InsertURI", id.getInsertURI().toString());
             sfs.putOverwrite("RequestURI", id.getRequestURI().toString());
@@ -681,7 +681,7 @@ public final class FCPInterface implements FredPluginFCP {
      *   ParentID=ID             (optional, when set the msg is a reply)
      *   TargetBoards=abc,def    (comma separated list of target boards. one is required.)
      *   ReplyToBoard=abc        (optional, must be in TargetBoards)
-     *   AuthorIdentityUID=UID   (UID of an own identity)
+     *   AuthorIdentityID=ID   (ID of an own identity)
      *   FileAttachmentCount=2    (optional, not send if value is 0)
      *   FileAttachmentURI.1=CHK@abc
      *   FileAttachmentSize.1=123 (datatype long)
@@ -754,15 +754,15 @@ public final class FCPInterface implements FredPluginFCP {
                 // FIXME: implement! Currently, all replies to forked threads will go to the original thread!
 
                 // evaluate authorIdentity
-                final String authorIdentityUidString = params.get("AuthorIdentityUID");
-                if (authorIdentityUidString == null) {
-                    throw new InvalidParameterException("AuthorIdentityUID parameter not specified");
+                final String authorIdentityIDString = params.get("AuthorIdentityID");
+                if (authorIdentityIDString == null) {
+                    throw new InvalidParameterException("AuthorIdentityID parameter not specified");
                 }
                 final FTOwnIdentity authorIdentity;
                 try {
-                    authorIdentity = mFreetalk.getIdentityManager().getOwnIdentity(authorIdentityUidString);
+                    authorIdentity = mFreetalk.getIdentityManager().getOwnIdentity(authorIdentityIDString);
                 } catch(final NoSuchIdentityException e) {
-                    throw new InvalidParameterException("No own identity found for AuthorIdentityUID");
+                    throw new InvalidParameterException("No own identity found for AuthorIdentityID");
                 }
 
                 // evaluate attachments
