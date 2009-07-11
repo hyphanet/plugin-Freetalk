@@ -9,9 +9,11 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 
+import plugins.Freetalk.exceptions.DuplicateMessageListException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.exceptions.NoSuchMessageListException;
 
 import com.db4o.ext.ExtObjectContainer;
 
@@ -334,6 +336,15 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	}
 	
 	public synchronized void storeWithoutCommit() {
+		try {
+			MessageList list = mMessageManager.getMessageList(mID);
+			if(list != this)
+				throw new DuplicateMessageListException(mID);
+		}
+		catch(NoSuchMessageListException e) {
+			
+		}
+		
 		try {
 			for(MessageReference ref : mMessages) {
 				ref.initializeTransient(db);

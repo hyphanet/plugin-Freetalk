@@ -6,7 +6,9 @@ package plugins.Freetalk.WoT;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
+import plugins.Freetalk.exceptions.DuplicateIdentityException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 
 import com.db4o.ext.ExtObjectContainer;
 
@@ -166,9 +168,15 @@ public class WoTIdentity implements FTIdentity {
 	}
 
 	protected void storeWithoutCommit() {
-		/* FIXME: check for duplicates */
-
 		try {
+			try {
+				if(mIdentityManager.getIdentity(mUID) != this)
+					throw new DuplicateIdentityException(mUID);
+			}
+			catch(NoSuchIdentityException e) {
+				
+			}
+			
 			if(db.ext().isStored(this) && !db.ext().isActive(this))
 				throw new RuntimeException("Trying to store a non-active WoTIdentity object");
 

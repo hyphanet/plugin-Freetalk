@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
@@ -602,7 +603,6 @@ public abstract class Message implements Comparable<Message> {
 	}
 	
 	public synchronized void storeAndCommit() {
-		/* FIXME: Check for duplicates. Also notice that an OwnMessage which is equal might exist */
 		synchronized(db.lock()) {
 			storeWithoutCommit();
 			db.commit(); Logger.debug(this, "COMMITED.");
@@ -611,6 +611,14 @@ public abstract class Message implements Comparable<Message> {
 	
 	public void storeWithoutCommit() {
 		try {
+			try {
+				if(mMessageManager.get(mID) != this)
+					throw new DuplicateMessageException(mID);
+			}
+			catch(NoSuchMessageException e) {
+				
+			}
+			
 			if(db.ext().isStored(this) && !db.ext().isActive(this))
 				throw new RuntimeException("Trying to store a non-active Message object");
 

@@ -12,6 +12,8 @@ import plugins.Freetalk.Board;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.exceptions.DuplicateIdentityException;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
@@ -104,9 +106,15 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	}
 	
 	public void storeWithoutCommit() {
-		/* FIXME: check for duplicates */
-
 			try {
+				try {
+					if(mIdentityManager.getOwnIdentity(getUID()) != this)
+						throw new DuplicateIdentityException(getUID());
+				}
+				catch(NoSuchIdentityException e) {
+					
+				}
+				
 				if(db.ext().isStored(this) && !db.ext().isActive(this))
 					throw new RuntimeException("Trying to store a non-active WoTOwnIdentity object");
 
