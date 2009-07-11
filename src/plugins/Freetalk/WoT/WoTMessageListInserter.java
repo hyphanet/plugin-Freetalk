@@ -163,8 +163,12 @@ public final class WoTMessageListInserter extends MessageListInserter {
 				Logger.error(this, "WoTOwnMessageList insert collided, trying to insert with higher index ...");
 				try {
 					synchronized(mMessageManager) {
+						// We must call getOwnMessageList() before calling onMessageListInsertFailed() because the latter will increment the message list's
+						// index, resulting in the ID of the message list changing - getIDFromURI would fail with the old state.getURI() if we called it after
+						// onMessageListInsertFailed()
+						WoTOwnMessageList list = (WoTOwnMessageList)mMessageManager.getOwnMessageList(MessageList.getIDFromURI(state.getURI()));
 						mMessageManager.onMessageListInsertFailed(state.getURI(), true);
-						insertMessageList((WoTOwnMessageList)mMessageManager.getOwnMessageList(MessageList.getIDFromURI(state.getURI())));
+						insertMessageList(list);
 					}
 				}
 				catch(Exception ex) {
