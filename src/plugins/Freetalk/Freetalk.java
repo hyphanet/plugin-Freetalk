@@ -51,8 +51,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	public static final String PLUGIN_TITLE = "Freetalk-testing"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
 	public static final String WOT_NAME = "plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "Freetalk";
-	public static final String DATABASE_FILENAME = "freetalk-testing.db4o";
-	public static final int DATABASE_FORMAT_VERSION = -99;
+	public static final String DATABASE_FILENAME = "freetalk-testing-2.db4o";
+	public static final int DATABASE_FORMAT_VERSION = -98;
 
 	/* References from the node */
 	
@@ -107,13 +107,13 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 
 		deleteBrokenObjects();
 		
-		/* FIXME: Debug code, remove when not needed anymore */
-		Logger.debug(this, "Wiping database...");
-		ObjectSet<Object> result = db.queryByExample(new Object());
-		for (Object o : result)
-			db.delete(o);
-		db.commit(); Logger.debug(this, "COMMITED.");
-		Logger.debug(this, "Database wiped.");
+//		/* FIXME: Debug code, remove when not needed anymore */
+//		Logger.debug(this, "Wiping database...");
+//		ObjectSet<Object> result = db.queryByExample(new Object());
+//		for (Object o : result)
+//			db.delete(o);
+//		db.commit(); Logger.debug(this, "COMMITED.");
+//		Logger.debug(this, "Database wiped.");
 		
 		Logger.debug(this, "Creating Web interface...");
 		mWebInterface = new WebInterface(this);
