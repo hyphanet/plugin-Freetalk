@@ -157,7 +157,7 @@ public class ThreadTreeTest extends DatabaseBasedTest {
 		
 		FreenetURI myRealURI = new FreenetURI("CHK@");
 		UUID myUUID = UUID.randomUUID();
-		FreenetURI myListURI = WoTMessageList.assembleURI(author.getRequestURI(), mMessageListIndex);
+		FreenetURI myListURI = WoTMessageList.assembleURI(author.getRequestURI(), mMessageListIndex++);
 		WoTMessageURI myURI = new WoTMessageURI(myListURI + "#" + myUUID);
 		
 		MessageList.MessageReference ref = new MessageList.MessageReference(myURI.getMessageID(), myRealURI, mBoard);
