@@ -244,11 +244,6 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	protected final ArrayList<MessageReference> mMessages;
 	
 	/**
-	 * To accelerate database queries we also store the message count here instead of obtaining it from the ArrayList of messages.
-	 */
-	protected int mMessageCount;
-	
-	/**
 	 * 
 	 * @param identityManager
 	 * @param myURI
@@ -311,7 +306,6 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		mAuthor = myAuthor;
 		mID = calculateID();
 		mMessages = newMessages;
-		mMessageCount = mMessages.size();
 	}
 	
 	protected MessageList(FTOwnIdentity myAuthor, int newIndex) {
