@@ -437,6 +437,7 @@ public class WoTIdentityManager extends IdentityManager {
 					WoTIdentity i = result.next();
 					assert(identityIsNotNeeded(i)); /* Check whether the isNeeded field of the identity was correct */
 					Logger.debug(this, "Garbage collecting identity " + i.getRequestURI());
+					i.initializeTransient(db, this);
 					i.deleteWithoutCommit();
 					db.commit(); Logger.debug(this, "COMMITED.");
 				}
