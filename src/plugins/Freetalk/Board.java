@@ -680,8 +680,8 @@ public final class Board implements Comparable<Board> {
         public synchronized Message getMessage() {
             /* We do not have to initialize mBoard and can assume that it is initialized because a BoardMessageLink will only be loaded
              * by the board it belongs to. */
-            mMessage.initializeTransient(mBoard.db, mBoard.mMessageManager);
-            mBoard.db.activate(mMessage, 2); /* FIXME: Figure out a reasonable depth */
+        	mBoard.db.activate(this, 3); // FIXME: Figure out a reasonable depth
+        	mMessage.initializeTransient(mBoard.db, mBoard.mMessageManager);
             return mMessage;
         }
         
