@@ -8,6 +8,7 @@ import java.io.File;
 import junit.framework.TestCase;
 
 import com.db4o.Db4o;
+import com.db4o.config.Configuration;
 import com.db4o.ext.ExtObjectContainer;
 
 /**
@@ -46,8 +47,10 @@ public class DatabaseBasedTest extends TestCase {
 		if(databaseFile.exists())
 			databaseFile.delete();
 		assertFalse(databaseFile.exists());
+
 		
 		db = Db4o.openFile(getDatabaseFilename()).ext();
+		db.configure().exceptionsOnNotStorable(true);
 	}
 
 	/**
