@@ -6,10 +6,8 @@ package plugins.Freetalk.ui.web;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Iterator;
 
 import plugins.Freetalk.FTOwnIdentity;
-import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.WoT.WoTIdentity;
@@ -439,11 +437,11 @@ public class WebInterface {
 		identitiesToadlet = new IdentitiesWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "identities");
 		logOutToadlet = new LogOutWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "LogOut");
 		
-		container.register(homeToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/", true, "Log in", "Log in", false, logInToadlet);
-		container.register(homeToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/", true, "Home", "Home page", false, homeToadlet);
-		container.register(messagesToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/messages", true, "Boards", "View all boards", false, messagesToadlet);
-		container.register(identitiesToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/identities", true, "Identities", "Manage your own and known identities", false, identitiesToadlet);
-		container.register(logOutToadlet, "Freetalk", Freetalk.PLUGIN_URI+"/LogOut", true, "Log out", "Log out", false, logOutToadlet);
+		container.register(homeToadlet, "Discussion", Freetalk.PLUGIN_URI+"/", true, "Log in", "Log in", false, logInToadlet);
+		container.register(homeToadlet, "Discussion", Freetalk.PLUGIN_URI+"/", true, "Home", "Home page", false, homeToadlet);
+		container.register(messagesToadlet, "Discussion", Freetalk.PLUGIN_URI+"/messages", true, "Boards", "View all boards", false, messagesToadlet);
+		container.register(identitiesToadlet, "Discussion", Freetalk.PLUGIN_URI+"/identities", true, "Identities", "Manage your own and known identities", false, identitiesToadlet);
+		container.register(logOutToadlet, "Discussion", Freetalk.PLUGIN_URI+"/LogOut", true, "Log out", "Log out", false, logOutToadlet);
 		
 		// Invisible pages
 		createIdentityToadlet = new CreateIdentityWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "CreateIdentity");
@@ -495,7 +493,7 @@ public class WebInterface {
 				newReplyToadlet,
 				newBoardToadlet
 		}) container.unregister(t);
-		mPageMaker.removeNavigationCategory("Freetalk");
+		mPageMaker.removeNavigationCategory("Discussion");
 	}
 
 }
