@@ -344,6 +344,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 				ref.initializeTransient(db);
 				ref.storeWithoutCommit();
 			}
+			db.store(mMessages);
 			db.store(this);
 		}
 		catch(RuntimeException e) {
