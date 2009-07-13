@@ -118,6 +118,7 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 			if(db.ext().isStored(this) && !db.ext().isActive(this))
 				throw new RuntimeException("Trying to store a non-active WoTOwnIdentity object");
 
+			// TODO: As soon as we have a unit test which checks whether the content of subscribed boards gets stored, specify a depth here. Probably 1
 			db.store(mSubscribedBoards);
 			db.store(mInsertURI);
 			db.store(mAssessed);
