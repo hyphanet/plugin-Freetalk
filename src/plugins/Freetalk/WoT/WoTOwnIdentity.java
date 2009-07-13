@@ -118,7 +118,7 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 			if(db.ext().isStored(this) && !db.ext().isActive(this))
 				throw new RuntimeException("Trying to store a non-active WoTOwnIdentity object");
 
-			db.store(mSubscribedBoards); // FIXME: Is this correct??
+			db.store(mSubscribedBoards);
 			db.store(mInsertURI);
 			db.store(mAssessed);
 			super.storeWithoutCommit();
@@ -136,8 +136,8 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 		/* FIXME: We also need to check whether the member objects are active here!!! */
 		
 		try {
+			db.delete(mSubscribedBoards);
 			mInsertURI.removeFrom(db);
-			db.delete(mSubscribedBoards); // FIXME: Is this correct??
 			db.delete(mAssessed);
 			super.deleteWithoutCommit();
 		}
