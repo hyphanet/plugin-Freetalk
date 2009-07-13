@@ -430,7 +430,7 @@ public class WebInterface {
 		mOwnIdentity = null;
 		ToadletContainer container = mFreetalk.getPluginRespirator().getToadletContainer();
 		
-		mPageMaker.addNavigationCategory(Freetalk.PLUGIN_URI+"/", "Freetalk", "Message boards", mFreetalk);
+		mPageMaker.addNavigationCategory(Freetalk.PLUGIN_URI+"/", "Discussion", "Message boards", mFreetalk);
 		
 		// Visible pages
 		logInToadlet = new LogInWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "LogIn");
