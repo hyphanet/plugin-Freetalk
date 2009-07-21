@@ -619,9 +619,9 @@ public abstract class Message implements Comparable<Message> {
 				
 			}
 			
-			if(db.ext().isStored(this) && !db.ext().isActive(this))
-				throw new RuntimeException("Trying to store a non-active Message object");
-
+			if(db.ext().isStored(this))
+				db.activate(this, 3); // FIXME: We currently have a bug which makes the message bodies get lost in inserted messages. Does this fix it?
+			
 			if(mAuthor == null)
 				throw new RuntimeException("Trying to store a message with mAuthor == null");
 
