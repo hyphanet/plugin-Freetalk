@@ -213,7 +213,7 @@ public class WoTMessageManager extends MessageManager {
 
 					public WoTOwnMessage next() {
 						WoTOwnMessage next = iter.next();
-						next.initializeTransient(db, self);
+						next.initializeTransient(db, WoTMessageManager.this);
 						return next;
 					}
 
@@ -244,7 +244,7 @@ public class WoTMessageManager extends MessageManager {
 
 					public WoTOwnMessageList next() {
 						WoTOwnMessageList next = iter.next();
-						next.initializeTransient(db, self);
+						next.initializeTransient(db, WoTMessageManager.this);
 						return next;
 					}
 
