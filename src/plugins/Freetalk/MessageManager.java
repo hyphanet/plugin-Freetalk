@@ -9,7 +9,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import plugins.Freetalk.Board.BoardThreadLink;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageList.MessageReference;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
@@ -36,8 +35,6 @@ import freenet.support.Logger;
  * @author xor (xor@freenetproject.org)
  */
 public abstract class MessageManager implements Runnable {
-	
-	protected final MessageManager self = this;
 
 	protected ExtObjectContainer db;
 	
@@ -475,7 +472,7 @@ public abstract class MessageManager implements Runnable {
 
 			public Board next() {
 				Board next = iter.next();
-				next.initializeTransient(db, self);
+				next.initializeTransient(db, MessageManager.this);
 				return next;
 			}
 
@@ -539,7 +536,7 @@ public abstract class MessageManager implements Runnable {
 
 			public OwnMessage next() {
 				OwnMessage next = iter.next();
-				next.initializeTransient(db, self);
+				next.initializeTransient(db, MessageManager.this);
 				return next;
 			}
 
