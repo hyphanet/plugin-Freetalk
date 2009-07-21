@@ -132,7 +132,7 @@ public abstract class Message implements Comparable<Message> {
 	/**
 	 * The message to which this message is a reply.
 	 */
-	private Message mParent = null;  /* FIXME: For some reason mParent seems to stay null on some thread replies even though their parent is present in the database! */
+	private Message mParent = null;
 	
 	
 	/* References to objects of the plugin, not stored in the database. */
