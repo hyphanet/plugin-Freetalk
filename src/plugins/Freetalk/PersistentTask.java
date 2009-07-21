@@ -20,6 +20,8 @@ import plugins.Freetalk.ui.web.WebPage;
  */
 public abstract class PersistentTask {
 	
+	private FTOwnIdentity mOwner;
+	
 	private long mNextProcessingTime;
 	
 	private long mNextDisplayTime;
@@ -29,5 +31,13 @@ public abstract class PersistentTask {
 	public abstract void process();
 	
 	public abstract WebPage display();
+	
+	protected void storeWithoutCommit() {
+		
+	}
+	
+	protected void deleteWithoutCommit() {
+		
+	}
 
 }
