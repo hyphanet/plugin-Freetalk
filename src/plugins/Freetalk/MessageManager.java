@@ -44,6 +44,7 @@ public abstract class MessageManager implements Runnable {
 
 	public MessageManager(ExtObjectContainer myDB, Executor myExecutor, IdentityManager myIdentityManager) {
 		assert(myDB != null);
+		assert(myExecutor != null);
 		assert(myIdentityManager != null);
 
 		db = myDB;
@@ -55,6 +56,9 @@ public abstract class MessageManager implements Runnable {
 	 * For being used in JUnit tests to run without a node.
 	 */
 	public MessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager) {
+		assert(myDB != null);
+		assert(myIdentityManager != null);
+		
 		db = myDB;
 		mExecutor = null;
 		mIdentityManager = myIdentityManager;
