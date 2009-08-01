@@ -334,6 +334,10 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		return mPluginRespirator;
 	}
 	
+	public Config getConfig() {
+		return mConfig;
+	}
+	
 	public IdentityManager getIdentityManager() {
 		return mIdentityManager;
 	}	

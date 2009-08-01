@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import freenet.support.CurrentTimeUTC;
 import plugins.Freetalk.ui.web.WebPage;
 
 /**
@@ -20,14 +21,32 @@ import plugins.Freetalk.ui.web.WebPage;
  */
 public abstract class PersistentTask {
 	
-	private FTOwnIdentity mOwner;
+	protected final FTOwnIdentity mOwner;
 	
-	private long mNextProcessingTime;
+	protected long mNextProcessingTime;
 	
-	private long mNextDisplayTime;
+	protected long mNextDisplayTime;
 	
-	private long mDeleteTime;
+	protected long mDeleteTime;
 	
+	
+	protected transient Freetalk mFreetalk;
+	
+	
+	protected PersistentTask(FTOwnIdentity myOwner) {
+		if(myOwner == null)
+			throw new NullPointerException();
+		
+		mOwner = myOwner;
+		mNextProcessingTime = CurrentTimeUTC.getInMillis();
+		mNextDisplayTime = Long.MAX_VALUE;
+		mDeleteTime = Long.MAX_VALUE;
+	}
+	
+	protected void initializeTransient(Freetalk myFreetalk) { 
+		mFreetalk = myFreetalk;
+	}
+
 	public abstract void process();
 	
 	public abstract WebPage display();

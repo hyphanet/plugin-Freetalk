@@ -25,6 +25,8 @@ public final class Config {
 	
 	public static final String DATABASE_FORMAT_VERSION = "DatabaseFormatVersion";
 	
+	public static final String MINIMUM_TRUSTER_COUNT = "Introduction.MinimumTrusterCount";
+	
 
 	/**
 	 * The HashMap that contains all cofiguration parameters
@@ -199,5 +201,8 @@ public final class Config {
 		/* Do not overwrite, it shall only be overwritten when the database has been converted to a new format */
 		if(!containsInt(DATABASE_FORMAT_VERSION))
 			set(DATABASE_FORMAT_VERSION, Freetalk.DATABASE_FORMAT_VERSION);
+		
+		if(!containsInt(MINIMUM_TRUSTER_COUNT))
+			set(MINIMUM_TRUSTER_COUNT, 5);
 	}
 }

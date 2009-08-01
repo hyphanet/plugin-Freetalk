@@ -318,6 +318,25 @@ public class WoTIdentityManager extends IdentityManager {
 		}
 		return result;
 	}
+	
+	public synchronized int getReceivedTrustsCount(FTIdentity trustee) throws WoTDisconnectedException {
+		if(mTalker == null)
+			throw new WoTDisconnectedException();
+		
+		SimpleFieldSet request = new SimpleFieldSet(true);
+		request.putOverwrite("Message", "GetTrustersCount");
+		request.putOverwrite("Identity", trustee.getID());
+		request.putOverwrite("Context", "");
+		
+		try {
+			SimpleFieldSet answer = mTalker.sendBlocking(request, null).params;
+			return Integer.parseInt(answer.get("Value"));
+		}
+		catch(PluginNotFoundException e) {
+			throw new WoTDisconnectedException();
+		}
+
+	}
 
 	private synchronized void addFreetalkContext(WoTIdentity oid) {
 		SimpleFieldSet params = new SimpleFieldSet(true);
