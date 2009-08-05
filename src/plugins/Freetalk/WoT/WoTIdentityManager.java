@@ -24,7 +24,9 @@ import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.pluginmanager.PluginNotFoundException;
+import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -337,6 +339,95 @@ public class WoTIdentityManager extends IdentityManager {
 		}
 
 	}
+	
+	public static final class IntroductionPuzzle {
+		public final String ID;
+		public final String MimeType;
+		public final byte[] Data;
+		
+		protected IntroductionPuzzle(String myID, String myMimeType, byte[] myData) {
+			if(myID == null) throw new NullPointerException();
+			if(myMimeType == null) throw new NullPointerException();
+			if(myData == null) throw new NullPointerException();
+			
+			ID = myID;
+			MimeType = myMimeType;
+			Data = myData;
+		}
+	}
+	
+	/**
+	 * Get a set of introduction puzzle IDs which the given own identity might solve.
+	 * 
+	 * The puzzle's data is not returned because when generating HTML for displaying the puzzles we must reference them with a IMG-tag and we cannot
+	 * embed the data of the puzzles in the IMG-tag because embedding image-data has only recently been added to browsers and many do not support it yet.
+	 * 
+	 * @param ownIdentity The identity which wants to solve the puzzles.
+	 * @param amount The amount of puzzles to request.
+	 * @return A list of the IDs of the puzzles. The amount might be less than the requested amount and even zero if WoT has not downloaded puzzles yet.
+	 */
+	public List<String> getIntroductionPuzzles(WoTOwnIdentity ownIdentity, int amount) {
+		if(mTalker == null)
+			throw new WoTDisconnectedException();
+		
+		ArrayList<String> puzzleIDs = new ArrayList<String>(amount + 1);
+		
+		SimpleFieldSet params = new SimpleFieldSet(true);
+		params.putOverwrite("Message", "GetIntroductionPuzzles");
+		params.putOverwrite("Identity", ownIdentity.getID());
+		params.putOverwrite("Type", "Captcha"); // TODO: Don't hardcode the String
+		params.put("Amount", amount);
+		
+		try {
+			SimpleFieldSet result = mTalker.sendBlocking(params, null).params;
+			
+			for(int idx = 1; ; idx++) {
+				String id = result.get("Puzzle" + idx);
+				
+				if(id == null || id.equals("")) /* FIXME: Figure out whether the second condition is necessary */
+					break;
+				
+				puzzleIDs.add(id);
+			}
+		}
+		catch(PluginNotFoundException e) {
+			Logger.error(this, "Getting puzzles failed", e);
+		}
+		
+		return puzzleIDs;
+	}
+	
+	public IntroductionPuzzle getIntroductionPuzzle(String id) {
+		if(mTalker == null)
+			throw new WoTDisconnectedException();
+		
+		
+		SimpleFieldSet params = new SimpleFieldSet(true);
+		params.putOverwrite("Message", "GetIntroductionPuzzle");
+		params.putOverwrite("Puzzle", id);
+		
+		try {
+			SimpleFieldSet result = mTalker.sendBlocking(params, null).params;
+			
+			try {
+				return new IntroductionPuzzle(id, result.get("MimeType"), Base64.decodeStandard(result.get("Data")));
+			}
+			catch(RuntimeException e) {
+				Logger.error(this, "Parsing puzzle failed", e);
+			}
+			catch(IllegalBase64Exception e) {
+				Logger.error(this, "Parsing puzzle failed", e);
+			}
+			
+			return null;
+		}
+		catch(PluginNotFoundException e) {
+			Logger.error(this, "Getting puzzles failed", e);
+			
+			return null;
+		}
+	}
+	
 
 	private synchronized void addFreetalkContext(WoTIdentity oid) {
 		SimpleFieldSet params = new SimpleFieldSet(true);
