@@ -22,12 +22,16 @@ public abstract class PersistentTaskManager implements Runnable {
 		mExecutor = myExecutor;
 	}
 	
+	public void run() {
+
+	}
+	
 	@SuppressWarnings("unchecked")
-	protected synchronized void deleteExpiredTasks() {
+	protected synchronized void deleteExpiredTasks(long currentTime) {
 		Query q = mDB.query();
 		
 		q.constrain(PersistentTask.class);
-		q.descend("mDeleteTime").constrain(CurrentTimeUTC.get().getTime()).smaller();
+		q.descend("mDeleteTime").constrain(currentTime).smaller();
 		ObjectSet<PersistentTask> expiredTasks = q.execute();
 		
 		for(PersistentTask task : expiredTasks) {
@@ -38,6 +42,29 @@ public abstract class PersistentTaskManager implements Runnable {
 				}
 				catch(RuntimeException e) {
 					Logger.error(this, "Error while trying to delete an expired task", e);
+					mDB.rollback();
+				}
+			}
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	protected synchronized void proccessTasks(long currentTime) {
+		Query q = mDB.query();
+		
+		q.constrain(PersistentTask.class);
+		q.descend("mNextProcessingTime").constrain(currentTime).smaller();
+		ObjectSet<PersistentTask> pendingTasks = q.execute();
+		
+		for(PersistentTask task : pendingTasks) {
+			synchronized(mDB.lock()) {
+				try {
+					task.process();
+					task.storeWithoutCommit();
+					mDB.commit();
+				}
+				catch(RuntimeException e) {
+					Logger.error(this, "Error while processing a task", e);
 					mDB.rollback();
 				}
 			}
@@ -59,6 +86,10 @@ public abstract class PersistentTaskManager implements Runnable {
 		q.descend("mNextDisplayTime").constrain(time).smaller();
 		q.descend("mDeleteTime").constrain(time).greater();
 		q.descend("mOwner").constrain(owner).identity();
+		
+		q.descend("mNextDisplayTime").orderDescending();
+		
 		return q.execute();
 	}
+
 }
