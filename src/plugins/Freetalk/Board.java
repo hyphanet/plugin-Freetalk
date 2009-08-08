@@ -456,7 +456,6 @@ public final class Board implements Comparable<Board> {
     @SuppressWarnings("unchecked")
     public synchronized Iterable<BoardThreadLink> getThreads(final FTOwnIdentity identity) {
     	return new Iterable<BoardThreadLink>() {
-		@Override
 		public Iterator<BoardThreadLink> iterator() {
         return new Iterator<BoardThreadLink>() {
             private final FTOwnIdentity mIdentity = identity;
