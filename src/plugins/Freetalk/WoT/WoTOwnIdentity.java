@@ -107,14 +107,6 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	
 	public void storeWithoutCommit() {
 		try {
-			try {
-				if(mIdentityManager.getOwnIdentity(getID()) != this)
-					throw new DuplicateIdentityException(getID());
-			}
-			catch(NoSuchIdentityException e) {
-
-			}
-
 			if(db.ext().isStored(this) && !db.ext().isActive(this))
 				throw new RuntimeException("Trying to store a non-active WoTOwnIdentity object");
 

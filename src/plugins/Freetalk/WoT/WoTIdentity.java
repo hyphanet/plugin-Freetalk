@@ -168,15 +168,7 @@ public class WoTIdentity implements FTIdentity {
 	}
 
 	protected void storeWithoutCommit() {
-		try {
-			try {
-				if(mIdentityManager.getIdentity(mID) != this)
-					throw new DuplicateIdentityException(mID);
-			}
-			catch(NoSuchIdentityException e) {
-				
-			}
-			
+		try {		
 			if(db.ext().isStored(this) && !db.ext().isActive(this))
 				throw new RuntimeException("Trying to store a non-active WoTIdentity object");
 

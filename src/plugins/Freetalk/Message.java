@@ -611,14 +611,6 @@ public abstract class Message implements Comparable<Message> {
 	
 	public void storeWithoutCommit() {
 		try {
-			try {
-				if(mMessageManager.get(mID) != this)
-					throw new DuplicateMessageException(mID);
-			}
-			catch(NoSuchMessageException e) {
-				
-			}
-			
 			if(db.ext().isStored(this))
 				db.activate(this, 3); // FIXME: We currently have a bug which makes the message bodies get lost in inserted messages. Does this fix it?
 			

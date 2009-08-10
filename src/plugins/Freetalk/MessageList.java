@@ -331,15 +331,6 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	
 	public synchronized void storeWithoutCommit() {
 		try {
-			MessageList list = mMessageManager.getMessageList(mID);
-			if(list != this)
-				throw new DuplicateMessageListException(mID);
-		}
-		catch(NoSuchMessageListException e) {
-			
-		}
-		
-		try {
 			for(MessageReference ref : mMessages) {
 				ref.initializeTransient(db);
 				ref.storeWithoutCommit();
