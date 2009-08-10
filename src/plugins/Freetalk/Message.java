@@ -9,7 +9,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
@@ -29,7 +28,7 @@ import freenet.support.StringValidityChecker;
  * 
  * @author saces, xor
  */
-public abstract class Message implements Comparable<Message> {
+public abstract class Message {
     
     /* Public constants */
     
@@ -614,6 +613,11 @@ public abstract class Message implements Comparable<Message> {
 			if(db.ext().isStored(this))
 				db.activate(this, 3); // FIXME: We currently have a bug which makes the message bodies get lost in inserted messages. Does this fix it?
 			
+			if(this instanceof OwnMessage) { // FIXME: Debug code for bug 3378
+				if(mText.equals(""))
+					Logger.error(this, "EMPTY OwnMessage, intended?");
+			}
+			
 			if(mAuthor == null)
 				throw new RuntimeException("Trying to store a message with mAuthor == null");
 
@@ -645,10 +649,5 @@ public abstract class Message implements Comparable<Message> {
     	} else
     		return false;
 	}
-    
-	public int compareTo(Message other) {
-		return mDate.compareTo(other.mDate);
-	}
-	
 
 }
