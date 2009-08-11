@@ -36,7 +36,10 @@ public class NewReplyPage extends WebPageImpl {
 			HashSet<Board> boards = new HashSet<Board>();
 			boards.add(mBoard);
 			String replySubject = mRequest.getPartAsString("ReplySubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH);
-			String replyText = mRequest.getPartAsString("ReplyText", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH);
+			String replyText = mRequest.getPartAsString("ReplyText", Message.MAX_MESSAGE_TEXT_LENGTH);
+			
+			/* FIXME: Add code which warns the user if the subject / text is to long. Currently, getPartAsString just returns an empty string if it is.
+			 * For the subject this might be okay because the <input type="text" ...> can and does specify a max length, but the <textarea> cannot AFAIK. */
 
 			try {
 				MessageURI parentThreadURI;

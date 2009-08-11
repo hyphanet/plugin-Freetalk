@@ -610,13 +610,8 @@ public abstract class Message {
 	
 	public void storeWithoutCommit() {
 		try {
-			if(db.ext().isStored(this))
-				db.activate(this, 3); // FIXME: We currently have a bug which makes the message bodies get lost in inserted messages. Does this fix it?
-			
-			if(this instanceof OwnMessage) { // FIXME: Debug code for bug 3378
-				if(mText.equals(""))
-					Logger.error(this, "EMPTY OwnMessage, intended?");
-			}
+			if(db.ext().isStored(this)) // TODO: Decide whether this is necessary. Probably it is good :)
+				db.activate(this, 3);
 			
 			if(mAuthor == null)
 				throw new RuntimeException("Trying to store a message with mAuthor == null");
