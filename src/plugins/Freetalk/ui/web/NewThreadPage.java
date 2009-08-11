@@ -60,8 +60,8 @@ public final class NewThreadPage extends WebPageImpl {
 		authorBox.addChild("b", mOwnIdentity.getFreetalkAddress());
 		
 		HTMLNode subjectBox = newThreadForm.addChild(getContentBox("Subject"));
-		subjectBox.addChild("input", new String[] {"type", "name", "size", "value"},
-				new String[] {"text", "ThreadSubject", Integer.toString(Message.MAX_MESSAGE_TITLE_TEXT_LENGTH), threadSubject});		
+		subjectBox.addChild("input", new String[] {"type", "name", "size", "maxlength", "value"},
+				new String[] {"text", "ThreadSubject", "100", Integer.toString(Message.MAX_MESSAGE_TITLE_TEXT_LENGTH), threadSubject});		
 		
 		HTMLNode textBox = newThreadForm.addChild(getContentBox("Text"));
 		textBox.addChild("textarea", new String[] { "name", "cols", "rows" }, new String[] { "ThreadText", "80", "30" }, threadText);
