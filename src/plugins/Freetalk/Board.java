@@ -353,7 +353,8 @@ public final class Board implements Comparable<Board> {
     	}
     }
     
-    public synchronized BoardReplyLink getMessageReference(Message message) throws NoSuchMessageException {
+    @SuppressWarnings("unchecked")
+	public synchronized BoardReplyLink getMessageReference(Message message) throws NoSuchMessageException {
         Query q = db.query();
         q.constrain(BoardReplyLink.class);
         q.descend("mMessage").constrain(message).identity();
