@@ -16,7 +16,7 @@ import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
-import plugins.Freetalk.Board.BoardMessageLink;
+import plugins.Freetalk.Board.BoardReplyLink;
 import plugins.Freetalk.Board.BoardThreadLink;
 import plugins.Freetalk.Board.MessageReference;
 import plugins.Freetalk.Message.Attachment;
@@ -331,7 +331,7 @@ public final class FCPInterface implements FredPluginFCP {
 
         synchronized(board) {  /* FIXME: Is this enough synchronization or should we lock the message manager? */
 
-            final List<BoardMessageLink> messageRefList;
+            final List<BoardReplyLink> messageRefList;
             final Message thread = mFreetalk.getMessageManager().get(threadID); // throws exception when not found
             {
                 // send thread root message

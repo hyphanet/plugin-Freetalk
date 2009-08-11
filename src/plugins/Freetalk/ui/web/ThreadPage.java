@@ -11,7 +11,7 @@ import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
-import plugins.Freetalk.Board.BoardMessageLink;
+import plugins.Freetalk.Board.BoardReplyLink;
 import plugins.Freetalk.Board.BoardThreadLink;
 import plugins.Freetalk.Board.MessageReference;
 import plugins.Freetalk.WoT.WoTIdentityManager;
@@ -226,7 +226,7 @@ public final class ThreadPage extends WebPageImpl {
         Message firstMessage = myThread.getMessage();
         
         if(firstMessage == null) { // The thread was not downloaded yet, we use it's first reply for obtaining the information in the breadcrumb
-        	for(BoardMessageLink ref : board.getAllThreadReplies(myThread.getThreadID(), true)) {
+        	for(BoardReplyLink ref : board.getAllThreadReplies(myThread.getThreadID(), true)) {
         		firstMessage = ref.getMessage();
         		break;
         	}

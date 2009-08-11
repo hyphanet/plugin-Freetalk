@@ -73,7 +73,7 @@ public final class Board implements Comparable<Board> {
     	return new String[] { "mBoard", "mMessage", "mMessageIndex" };
     }
 
-    public static String[] getBoardMessageLinkIndexedFields() { /* TODO: ugly! find a better way */
+    public static String[] getBoardReplyLinkIndexedFields() { /* TODO: ugly! find a better way */
         return new String[] { "mThreadID" };
     }
     
@@ -287,8 +287,8 @@ public final class Board implements Comparable<Board> {
     		parentThreadRef.updateLastReplyDate(newMessage.getDate());
     		parentThreadRef.storeWithoutCommit(db);
     		
-    		// 4. Store a BoardMessageLink for the new message
-    		BoardMessageLink messageRef = new BoardMessageLink(this, newMessage, getFreeMessageIndex());
+    		// 4. Store a BoardReplyLink for the new message
+    		BoardReplyLink messageRef = new BoardReplyLink(this, newMessage, getFreeMessageIndex());
     		messageRef.storeWithoutCommit(db);
     		
     		
@@ -353,15 +353,15 @@ public final class Board implements Comparable<Board> {
     	}
     }
     
-    public synchronized BoardMessageLink getMessageReference(Message message) throws NoSuchMessageException {
+    public synchronized BoardReplyLink getMessageReference(Message message) throws NoSuchMessageException {
         Query q = db.query();
-        q.constrain(BoardMessageLink.class);
+        q.constrain(BoardReplyLink.class);
         q.descend("mMessage").constrain(message).identity();
-        ObjectSet<BoardMessageLink> results = q.execute();
+        ObjectSet<BoardReplyLink> results = q.execute();
         
         switch(results.size()) {
 	        case 1:
-				BoardMessageLink messageRef = results.next();
+				BoardReplyLink messageRef = results.next();
 				assert(messageRef.getMessage().equals(message)); // The query works
 				return messageRef;
 	        case 0:
@@ -591,7 +591,7 @@ public final class Board implements Comparable<Board> {
     }
 
     /**
-     * Get the next free NNTP index for a message. Please synchronize on BoardMessageLink.class when creating a message, this method
+     * Get the next free NNTP index for a message. Please synchronize on this Board when creating a message, this method
      * does not and cannot provide synchronization as creating a message is no atomic operation.
      */
     @SuppressWarnings("unchecked")
@@ -629,9 +629,9 @@ public final class Board implements Comparable<Board> {
     // FIXME: This function returns all replies, not only the ones which the viewer wants to see. Convert the function to an iterator
     // which picks threads chosen by the viewer, see threadIterator() for how to do this.
     @SuppressWarnings("unchecked")
-    public synchronized List<BoardMessageLink> getAllThreadReplies(String threadID, final boolean sortByDateAscending) {
+    public synchronized List<BoardReplyLink> getAllThreadReplies(String threadID, final boolean sortByDateAscending) {
         Query q = db.query();
-        q.constrain(BoardMessageLink.class);
+        q.constrain(BoardReplyLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mThreadID").constrain(threadID);
         
@@ -677,7 +677,7 @@ public final class Board implements Comparable<Board> {
     	
         /** Get the message to which this reference points */
         public synchronized Message getMessage() {
-            /* We do not have to initialize mBoard and can assume that it is initialized because a BoardMessageLink will only be loaded
+            /* We do not have to initialize mBoard and can assume that it is initialized because a MessageReference will only be loaded
              * by the board it belongs to. */
         	mBoard.db.activate(this, 3); // FIXME: Figure out a reasonable depth
         	mMessage.initializeTransient(mBoard.db, mBoard.mMessageManager);
@@ -697,7 +697,7 @@ public final class Board implements Comparable<Board> {
         protected void storeWithoutCommit(ExtObjectContainer db) {
         	try {
         		if(db.ext().isStored(this) && !db.ext().isActive(this))
-        			throw new RuntimeException("Trying to store a non-active BoardMessageLink object");
+        			throw new RuntimeException("Trying to store a non-active MessageReference object");
 
         		db.store(this);
         	}
@@ -715,18 +715,18 @@ public final class Board implements Comparable<Board> {
     /**
      * Helper class to associate messages with boards in the database
      */
-    public static class BoardMessageLink extends MessageReference { /* TODO: This is only public for configuring db4o. Find a better way */
+    public static class BoardReplyLink extends MessageReference { /* TODO: This is only public for configuring db4o. Find a better way */
         
         private final String mThreadID;
 
-        protected BoardMessageLink(Board myBoard, Message myMessage, int myIndex) {
+        protected BoardReplyLink(Board myBoard, Message myMessage, int myIndex) {
         	super(myBoard, myMessage, myIndex);
             
             try {
             	mThreadID = mMessage.getThreadID();
             }
             catch(NoSuchMessageException e) {
-            	throw new IllegalArgumentException("Trying to create a BoardMessageLink for a thread, should be a BoardThreadLink.");
+            	throw new IllegalArgumentException("Trying to create a BoardReplyLink for a thread, should be a BoardThreadLink.");
             }
             
         }

@@ -165,15 +165,15 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		}
 		
 		for(String f : Board.getMessageReferenceIndexedFields()) {
-			dbCfg.objectClass(Board.BoardMessageLink.class).objectField(f).indexed(true);
+			dbCfg.objectClass(Board.BoardReplyLink.class).objectField(f).indexed(true);
 		}
 		
-		for(String f : Board.getBoardMessageLinkIndexedFields()) {
-			dbCfg.objectClass(Board.BoardMessageLink.class).objectField(f).indexed(true);
+		for(String f : Board.getBoardReplyLinkIndexedFields()) {
+			dbCfg.objectClass(Board.BoardReplyLink.class).objectField(f).indexed(true);
 		}		
 		
 		for(String f : Board.getBoardThreadLinkIndexedFields()) {
-			dbCfg.objectClass(Board.BoardMessageLink.class).objectField(f).indexed(true);
+			dbCfg.objectClass(Board.BoardReplyLink.class).objectField(f).indexed(true);
 		}
 
 		for(String f :  WoTIdentity.getIndexedFields()) {
