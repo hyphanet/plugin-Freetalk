@@ -27,7 +27,10 @@ public final class NewThreadPage extends WebPageImpl {
 			HashSet<Board> boards = new HashSet<Board>();
 			boards.add(mBoard);
 			String threadSubject = mRequest.getPartAsString("ThreadSubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH);
-			String threadText = mRequest.getPartAsString("ThreadText", Message.MAX_MESSAGE_TEXT_BYTE_LENGTH);
+			String threadText = mRequest.getPartAsString("ThreadText", Message.MAX_MESSAGE_TEXT_LENGTH);
+			
+			/* FIXME: Add code which warns the user if the subject / text is to long. Currently, getPartAsString just returns an empty string if it is.
+			 * For the subject this might be okay because the <input type="text" ...> can and does specify a max length, but the <textarea> cannot AFAIK. */
 
 			try {
 				mFreetalk.getMessageManager().postMessage(null, null, boards, mBoard, mOwnIdentity, threadSubject, null, threadText, null);
@@ -57,7 +60,8 @@ public final class NewThreadPage extends WebPageImpl {
 		authorBox.addChild("b", mOwnIdentity.getFreetalkAddress());
 		
 		HTMLNode subjectBox = newThreadForm.addChild(getContentBox("Subject"));
-		subjectBox.addChild("input", new String[] {"type", "name", "size", "value"}, new String[] {"text", "ThreadSubject", "100", threadSubject}); /* FIXME: Find a reasonable maximal subject length and specify here and elsewhere */		
+		subjectBox.addChild("input", new String[] {"type", "name", "size", "value"},
+				new String[] {"text", "ThreadSubject", Integer.toString(Message.MAX_MESSAGE_TITLE_TEXT_LENGTH), threadSubject});		
 		
 		HTMLNode textBox = newThreadForm.addChild(getContentBox("Text"));
 		textBox.addChild("textarea", new String[] { "name", "cols", "rows" }, new String[] { "ThreadText", "80", "30" }, threadText);
