@@ -15,6 +15,8 @@ import plugins.Freetalk.Message;
 import plugins.Freetalk.PluginTalkerBlocking;
 import plugins.Freetalk.exceptions.DuplicateIdentityException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
+import plugins.Freetalk.exceptions.NotInTrustTreeException;
+import plugins.Freetalk.exceptions.NotTrustedException;
 import plugins.Freetalk.exceptions.WoTDisconnectedException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 
@@ -84,10 +86,19 @@ public class WoTIdentityManager extends IdentityManager {
 	 * @param params The params of the FCP message.
 	 * @param expectedReplyMessage The excepted content of the "Message" field of the SimpleFieldSet of the reply message.
 	 * @return The unmodified Result object which was returned by the PluginTalker.
+	 * @throws WoTDisconnectedException If the connection to WoT was lost. 
 	 * @throws Exception If the WoT plugin replied with an error message or not with the expected message.
 	 */
 	private PluginTalkerBlocking.Result sendFCPMessageBlocking(SimpleFieldSet params, Bucket data, String expectedReplyMessage) throws Exception {
-		PluginTalkerBlocking.Result result = mTalker.sendBlocking(params, data);
+		if(mTalker == null)
+			throw new WoTDisconnectedException();
+		
+		PluginTalkerBlocking.Result result;
+		try {
+			result = mTalker.sendBlocking(params, data);
+		} catch (PluginNotFoundException e) {
+			throw new WoTDisconnectedException();
+		}
 		
 		if(result.params.get("Message").equals("Error"))
 			throw new Exception("FCP message " + result.params.get("OriginalMessage") + " failed: " + result.params.get("Description"));
@@ -196,7 +207,7 @@ public class WoTIdentityManager extends IdentityManager {
 			fetchOwnIdentities();
 			/* FIXME: Garbage collect own identities! */
 		} 
-		catch(PluginNotFoundException e) {} /* Ignore, return the ones which are in database now */
+		catch(Exception e) {} /* Ignore, return the ones which are in database now */
 		
 		return super.ownIdentityIterator();
 	}
@@ -243,57 +254,51 @@ public class WoTIdentityManager extends IdentityManager {
 		}
 	}
 
-	protected synchronized String getProperty(FTOwnIdentity treeOwner, FTIdentity target, String property) {
-		if(mTalker == null)
-			throw new WoTDisconnectedException();
-
+	protected synchronized String getProperty(FTOwnIdentity treeOwner, FTIdentity target, String property) throws Exception {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "GetIdentity");
 		sfs.putOverwrite("TreeOwner", treeOwner.getID());
 		sfs.putOverwrite("Identity", target.getID());
 
-		try {
-			return mTalker.sendBlocking(sfs, null).params.get(property);
-		}
-		catch(PluginNotFoundException e) {
-			throw new WoTDisconnectedException();
-		}
+		return sendFCPMessageBlocking(sfs, null, "Identity").params.get(property);
 	}
 
-	public int getScore(FTOwnIdentity treeOwner, FTIdentity target) {
+	public int getScore(WoTOwnIdentity treeOwner, WoTIdentity target) throws NotInTrustTreeException, Exception {
 		if(mIsUnitTest)
 			return 0;
 		
-		return Integer.parseInt(getProperty(treeOwner, target, "Score"));
+		String score = getProperty(treeOwner, target, "Score");
+		
+		if(score.equals("null"))
+			throw new NotInTrustTreeException(treeOwner, target);
+		
+		return Integer.parseInt(score);
 	}
 
-	public int getTrust(FTOwnIdentity treeOwner, FTIdentity target) {
+	public int getTrust(WoTOwnIdentity treeOwner, WoTIdentity target) throws NotTrustedException, Exception {
 		if(mIsUnitTest)
 			return 0;
 		
-		return Integer.parseInt(getProperty(treeOwner, target, "Trust"));
+		String trust = getProperty(treeOwner, target, "Trust");
+		
+		if(trust.equals("null"))
+			throw new NotTrustedException(treeOwner, target);
+		
+		return Integer.parseInt(trust);
 	}
 
-	public synchronized void setTrust(FTOwnIdentity treeOwner, FTIdentity identity, int trust, String comment) {
-		if(mTalker == null)
-			throw new WoTDisconnectedException();
-
+	public synchronized void setTrust(FTOwnIdentity treeOwner, FTIdentity identity, int trust, String comment) throws Exception {
 		SimpleFieldSet request = new SimpleFieldSet(true);
 		request.putOverwrite("Message", "SetTrust");
 		request.putOverwrite("Truster", treeOwner.getID());
 		request.putOverwrite("Trustee", identity.getID());
 		request.putOverwrite("Value", Integer.toString(trust));
 		request.putOverwrite("Comment", comment);
-		try {
-			mTalker.sendBlocking(request, null);
-			// FIXME: Parse result, throw if setTrust failed.
-		}
-		catch(PluginNotFoundException e) {
-			throw new WoTDisconnectedException();
-		}
+
+		sendFCPMessageBlocking(request, null, "TrustSet");
 	}
 
-	public synchronized List<WoTTrust> getReceivedTrusts(FTIdentity trustee) throws WoTDisconnectedException{
+	public synchronized List<WoTTrust> getReceivedTrusts(FTIdentity trustee) throws Exception {
 		List<WoTTrust> result = new ArrayList<WoTTrust>();
 		if(mTalker == null)
 			throw new WoTDisconnectedException();
@@ -303,7 +308,7 @@ public class WoTIdentityManager extends IdentityManager {
 		request.putOverwrite("Context", "");
 		request.putOverwrite("Identity", trustee.getID());
 		try {
-			SimpleFieldSet answer = mTalker.sendBlocking(request, null).params;
+			SimpleFieldSet answer = sendFCPMessageBlocking(request, null, "Identities").params;
 			for(int idx = 1; ; idx++) {
 				String id = answer.get("Identity"+idx);
 				if(id == null || id.equals("")) /* FIXME: Figure out whether the second condition is necessary */
@@ -321,7 +326,7 @@ public class WoTIdentityManager extends IdentityManager {
 		return result;
 	}
 	
-	public synchronized int getReceivedTrustsCount(FTIdentity trustee) throws WoTDisconnectedException {
+	public synchronized int getReceivedTrustsCount(FTIdentity trustee) throws Exception {
 		if(mTalker == null)
 			throw new WoTDisconnectedException();
 		
@@ -331,7 +336,7 @@ public class WoTIdentityManager extends IdentityManager {
 		request.putOverwrite("Context", "");
 		
 		try {
-			SimpleFieldSet answer = mTalker.sendBlocking(request, null).params;
+			SimpleFieldSet answer = sendFCPMessageBlocking(request, null, "TrustersCount").params;
 			return Integer.parseInt(answer.get("Value"));
 		}
 		catch(PluginNotFoundException e) {
@@ -365,8 +370,9 @@ public class WoTIdentityManager extends IdentityManager {
 	 * @param ownIdentity The identity which wants to solve the puzzles.
 	 * @param amount The amount of puzzles to request.
 	 * @return A list of the IDs of the puzzles. The amount might be less than the requested amount and even zero if WoT has not downloaded puzzles yet.
+	 * @throws Exception 
 	 */
-	public List<String> getIntroductionPuzzles(WoTOwnIdentity ownIdentity, int amount) {
+	public List<String> getIntroductionPuzzles(WoTOwnIdentity ownIdentity, int amount) throws Exception {
 		if(mTalker == null)
 			throw new WoTDisconnectedException();
 		
@@ -379,7 +385,7 @@ public class WoTIdentityManager extends IdentityManager {
 		params.put("Amount", amount);
 		
 		try {
-			SimpleFieldSet result = mTalker.sendBlocking(params, null).params;
+			SimpleFieldSet result = sendFCPMessageBlocking(params, null, "IntroductionPuzzles").params;
 			
 			for(int idx = 1; ; idx++) {
 				String id = result.get("Puzzle" + idx);
@@ -397,7 +403,7 @@ public class WoTIdentityManager extends IdentityManager {
 		return puzzleIDs;
 	}
 	
-	public IntroductionPuzzle getIntroductionPuzzle(String id) {
+	public IntroductionPuzzle getIntroductionPuzzle(String id) throws Exception {
 		if(mTalker == null)
 			throw new WoTDisconnectedException();
 		
@@ -407,7 +413,7 @@ public class WoTIdentityManager extends IdentityManager {
 		params.putOverwrite("Puzzle", id);
 		
 		try {
-			SimpleFieldSet result = mTalker.sendBlocking(params, null).params;
+			SimpleFieldSet result = sendFCPMessageBlocking(params, null, "IntroductionPuzzle").params;
 			
 			try {
 				return new IntroductionPuzzle(id, result.get("MimeType"), Base64.decodeStandard(result.get("Data")));
@@ -428,6 +434,19 @@ public class WoTIdentityManager extends IdentityManager {
 		}
 	}
 	
+	public void solveIntroductionPuzzle(WoTOwnIdentity ownIdentity, String puzzleID, String solution) throws Exception {
+		if(mTalker == null)
+			throw new WoTDisconnectedException();
+		
+		SimpleFieldSet params = new SimpleFieldSet(true);
+		params.putOverwrite("Message", "SolveIntroductionPuzzle");
+		params.putOverwrite("Identity", ownIdentity.getID());
+		params.putOverwrite("Puzzle", puzzleID);
+		params.putOverwrite("Solution", solution);
+		
+		sendFCPMessageBlocking(params, null, "PuzzleSolved");
+	}
+	
 
 	private synchronized void addFreetalkContext(WoTIdentity oid) {
 		SimpleFieldSet params = new SimpleFieldSet(true);
@@ -435,8 +454,8 @@ public class WoTIdentityManager extends IdentityManager {
 		params.putOverwrite("Identity", oid.getID());
 		params.putOverwrite("Context", Freetalk.WOT_CONTEXT);
 		try {
-			mTalker.sendBlocking(params, null);
-		} catch(PluginNotFoundException e) {
+			sendFCPMessageBlocking(params, null, "ContextAdded");
+		} catch(Exception e) {
 			/* We do not throw because that would make parseIdentities() too complicated */
 			Logger.error(this, "Adding Freetalk context failed.", e);
 		}
@@ -444,9 +463,9 @@ public class WoTIdentityManager extends IdentityManager {
 	
 	/**
 	 * Fetches the identities with positive score from WoT and stores them in the database.
-	 * @throws PluginNotFoundException If the connection to WoT has been lost.
+	 * @throws Exception 
 	 */
-	private synchronized void fetchIdentities() throws PluginNotFoundException {
+	private synchronized void fetchIdentities() throws Exception {
 		if(mTalker == null)
 			throw new PluginNotFoundException();
 		
@@ -455,21 +474,18 @@ public class WoTIdentityManager extends IdentityManager {
 		p1.putOverwrite("Message", "GetIdentitiesByScore");
 		p1.putOverwrite("Selection", "+");
 		p1.putOverwrite("Context", Freetalk.WOT_CONTEXT);
-		parseIdentities(mTalker.sendBlocking(p1, null).params, false);
+		parseIdentities(sendFCPMessageBlocking(p1, null, "Identities").params, false);
 	}
 	
 	/**
 	 * Fetches the own identities with positive score from WoT and stores them in the database.
-	 * @throws PluginNotFoundException If the connection to WoT has been lost.
+	 * @throws Exception 
 	 */
-	private synchronized void fetchOwnIdentities() throws PluginNotFoundException {
-		if(mTalker == null)
-			throw new PluginNotFoundException();
-		
+	private synchronized void fetchOwnIdentities() throws Exception {
 		Logger.debug(this, "Requesting own identities from WoT ...");
 		SimpleFieldSet p2 = new SimpleFieldSet(true);
 		p2.putOverwrite("Message","GetOwnIdentities");
-		parseIdentities(mTalker.sendBlocking(p2, null).params, true);
+		parseIdentities(sendFCPMessageBlocking(p2, null, "OwnIdentities").params, true);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -617,8 +633,8 @@ public class WoTIdentityManager extends IdentityManager {
 					fetchIdentities();
 					fetchOwnIdentities();
 					garbageCollectIdentities();
-				} catch (PluginNotFoundException e) {
-					Logger.debug(this, "Connection to WoT lost while requesting identities.");
+				} catch (Exception e) {
+					Logger.debug(this, "Fetching identities failed.", e);
 				}
 				
 				nextIdentityRequestTime = currentTime + sleepTime;
@@ -665,4 +681,5 @@ public class WoTIdentityManager extends IdentityManager {
 		}
 		Logger.debug(this, "Stopped the indentity manager.");
 	}
+
 }

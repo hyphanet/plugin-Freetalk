@@ -16,6 +16,7 @@ import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.exceptions.NotTrustedException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.RedirectException;
@@ -207,11 +208,11 @@ public class WebInterface {
 				WoTOwnIdentity own = (WoTOwnIdentity)mFreetalk.getIdentityManager().getOwnIdentity(request.getPartAsString("OwnIdentityID", 64));
 				WoTIdentity other = (WoTIdentity)mFreetalk.getIdentityManager().getIdentity(request.getPartAsString("OtherIdentityID", 64));
 				int change = Integer.parseInt(request.getPartAsString("TrustChange", 5));
-				WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
+				
 				int trust;
 				try {
 					trust = own.getTrustIn(other);
-				} catch (NumberFormatException e) {
+				} catch (NotTrustedException e) {
 					trust = 0;
 				}
 				own.setTrust(other, trust+change, "Freetalk web interface");
@@ -222,7 +223,7 @@ public class WebInterface {
 					own.storeAndCommit();
 				} catch (NoSuchMessageException e) {
 				}
-			} catch(NoSuchIdentityException e) {
+			} catch(Exception e) {
 				// FIXME: provide error message
 			}
 

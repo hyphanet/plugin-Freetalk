@@ -34,13 +34,18 @@ public class IntroduceIdentityTask extends PersistentTask {
 		
 		long now = CurrentTimeUTC.getInMillis(); 
 		
-		if(mFreetalk.getMessageManager().getMessagesBy(mOwner).size() > 0 && 
-				identityManager.getReceivedTrustsCount(mOwner) < mFreetalk.getConfig().getInt(Config.MINIMUM_TRUSTER_COUNT)) {
+		try {
+			if(mFreetalk.getMessageManager().getMessagesBy(mOwner).size() > 0 && 
+					identityManager.getReceivedTrustsCount(mOwner) < mFreetalk.getConfig().getInt(Config.MINIMUM_TRUSTER_COUNT)) {
+				
+				mNextDisplayTime = now;
+			}
 			
-			mNextDisplayTime = now;
+			mNextProcessingTime = now + PROCESSING_INTERVAL;
+		} catch (Exception e) {
+			mNextProcessingTime = now + PROCESSING_INTERVAL / 8; 
 		}
-
-		mNextProcessingTime = now + PROCESSING_INTERVAL;
+		
 	}
 
 }

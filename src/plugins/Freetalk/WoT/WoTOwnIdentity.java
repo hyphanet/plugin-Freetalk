@@ -9,11 +9,11 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.Message;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
-import plugins.Freetalk.exceptions.DuplicateIdentityException;
-import plugins.Freetalk.exceptions.NoSuchIdentityException;
+import plugins.Freetalk.Message;
+import plugins.Freetalk.exceptions.NotInTrustTreeException;
+import plugins.Freetalk.exceptions.NotTrustedException;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
@@ -83,25 +83,26 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	}
 
 	public boolean wantsMessagesFrom(FTIdentity identity) {
+		if(!(identity instanceof WoTIdentity))
+			throw new IllegalArgumentException();
+		
 		try {
-		return getScoreFor(identity) >= 0;	/* FIXME: this has to be configurable */
+			return getScoreFor((WoTIdentity)identity) >= 0;	/* FIXME: this has to be configurable */
 		}
-		catch(NumberFormatException e) {
-			// TODO: Maybe make getScore() throw a real exception and not number format exception.
-			Logger.error(this, "Unable to obtain score from " + this + " to " + identity, e);
+		catch(Exception e) {
 			return false;
 		}
 	}
 
-	public int getScoreFor(FTIdentity identity) {
+	public int getScoreFor(WoTIdentity identity) throws NotInTrustTreeException, Exception {
 		return mIdentityManager.getScore(this, identity);
 	}
 
-	public int getTrustIn(FTIdentity identity) {
+	public int getTrustIn(WoTIdentity identity) throws NotTrustedException, Exception {
 		return mIdentityManager.getTrust(this, identity);
 	}
 
-	public void setTrust(FTIdentity identity, int trust, String comment) {
+	public void setTrust(WoTIdentity identity, int trust, String comment) throws Exception {
 		mIdentityManager.setTrust(this, identity, trust, comment);
 	}
 	

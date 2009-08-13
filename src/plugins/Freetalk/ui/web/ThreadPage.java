@@ -14,13 +14,17 @@ import plugins.Freetalk.Message;
 import plugins.Freetalk.Board.BoardReplyLink;
 import plugins.Freetalk.Board.BoardThreadLink;
 import plugins.Freetalk.Board.MessageReference;
+import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.WoT.WoTTrust;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.exceptions.NotInTrustTreeException;
+import plugins.Freetalk.exceptions.NotTrustedException;
 import plugins.Freetalk.exceptions.WoTDisconnectedException;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
 /**
@@ -88,17 +92,41 @@ public final class ThreadPage extends WebPageImpl {
         authorNode.addChild("#", "Posts: " + mFreetalk.getMessageManager().getMessagesBy(message.getAuthor()).size());
         authorNode.addChild("br");
         authorNode.addChild("#", "Reputation: ");
-        addTrustersInfo(authorNode, message.getAuthor());
-        authorNode.addChild("br");
-        authorNode.addChild("#", "Esteem: "+makeStars((int)(Math.log(((WoTIdentityManager)mFreetalk.getIdentityManager()).getScore(mOwnIdentity, message.getAuthor()))/Math.log(10))));
-        authorNode.addChild("br");
-        int trust;
         try {
-            trust = ((WoTOwnIdentity)mOwnIdentity).getTrustIn(message.getAuthor());
-        } catch (NumberFormatException e) {
-            trust = 0;
+        	addTrustersInfo(authorNode, message.getAuthor());
         }
-        authorNode.addChild("#", "Trust: "+trust);
+        catch(Exception e) {
+        	Logger.error(this, "addTrustersInfo() failed", e);
+        	authorNode.addChild("#", "Unknown");
+        }
+        
+        authorNode.addChild("br");
+        
+        try {
+        	int score = ((WoTIdentityManager)mFreetalk.getIdentityManager()).getScore((WoTOwnIdentity)mOwnIdentity, (WoTIdentity)message.getAuthor());
+        		
+        	authorNode.addChild("#", "Esteem: "+ makeStars((int)(Math.log(score)/Math.log(10))));
+        } catch(NotInTrustTreeException e) {
+        	authorNode.addChild("#", "Esteem: None");
+        } catch(Exception e) {
+        	Logger.error(this, "getScore() failed", e);
+        	authorNode.addChild("#", "Esteem: None");
+        }
+        
+        authorNode.addChild("br");
+        
+        String trust;
+        try {
+            int intTrust = ((WoTOwnIdentity)mOwnIdentity).getTrustIn((WoTIdentity)message.getAuthor());
+            trust = Integer.toString(intTrust); 
+        } catch (NotTrustedException e) {
+            trust = "None";
+        } catch (Exception e) {
+        	Logger.error(this, "getTrust() failed", e);
+        	trust = "UNKNOWN";
+        }
+        
+        authorNode.addChild("#", "Your trust: "+trust);
 
         HTMLNode title = row.addChild("td", "align", "left", "");
         title.addChild("span", "style", "float:right", mLocalDateFormat.format(message.getDate()));
@@ -126,7 +154,7 @@ public final class ThreadPage extends WebPageImpl {
         return result;
     }
 
-    private void addTrustersInfo(HTMLNode parent, FTIdentity author) {
+    private void addTrustersInfo(HTMLNode parent, FTIdentity author) throws Exception {
         int trustedBy = 0;
         int distrustedBy = 0;
         String trusted = "";

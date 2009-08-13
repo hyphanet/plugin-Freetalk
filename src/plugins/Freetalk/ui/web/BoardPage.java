@@ -11,9 +11,12 @@ import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Board.BoardReplyLink;
 import plugins.Freetalk.Board.BoardThreadLink;
+import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
+import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
 /**
@@ -93,16 +96,22 @@ public final class BoardPage extends WebPageImpl {
 
 				/* Trust */
 				String score; 
-				try {
-					if(thread != null)
+
+					if(thread != null) {
+						try {
 						// TODO: Get rid of the cast somehow, we should maybe call this WoTBoardPage :|
-						score = Integer.toString(((WoTOwnIdentity)mOwnIdentity).getScoreFor(thread.getAuthor()));
+							score = Integer.toString(((WoTOwnIdentity)mOwnIdentity).getScoreFor((WoTIdentity)thread.getAuthor()));
+						}
+						catch(NotInTrustTreeException e) {
+							score = "null"; // FIXME: Decide about this we should display something better
+						}
+						catch(Exception e) {
+							Logger.error(this, "getScoreFor() failed", e);
+							score = "UNKNOWN";
+						}
+					}
 					else
 						score = "UNKNOWN";
-				}
-				catch(NumberFormatException e) { // FIXME: this is a bug...
-					score = "UNKNOWN";
-				}
 				
 				row.addChild("td", new String[] { "align" }, new String[] { "left" }, score);
 
