@@ -10,6 +10,14 @@ import freenet.support.api.HTTPRequest;
 public class IntroduceIdentityPage extends WebPageImpl {
 	
 	private WoTIdentityManager mIdentityManager;
+	
+	//protected final int mNumberOfPuzzles;
+	
+	public IntroduceIdentityPage(WebInterface myWebInterface, WoTOwnIdentity myViewer, String myTaskID, int numberOfPuzzles) {
+		super(myWebInterface, myViewer, null);
+		
+		//mNumberOfPuzzles = numberOfPuzzles;
+	}
 
 	public IntroduceIdentityPage(WebInterface myWebInterface,
 			FTOwnIdentity viewer, HTTPRequest request) {

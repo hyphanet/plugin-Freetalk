@@ -16,29 +16,38 @@ public class IntroduceIdentityTask extends PersistentTask {
 	 * How often do we check whether this identity needs to solve introduction puzzles?
 	 */
 	public static final long PROCESSING_INTERVAL = 1 * 24 * 60 * 60 * 1000;
+	
+	protected int mPuzzlesToSolve;
 
 	protected IntroduceIdentityTask(WoTOwnIdentity myOwner) {
 		super(myOwner);
+		
+		mPuzzlesToSolve = 0;
 	}
 
 	@Override
-	public WebPage display() {
+	public synchronized WebPage display() {
 		// FIXME implement
+		
+		
 		
 		return null;
 	}
 
 	@Override
-	public void process() {
+	public synchronized void process() {
 		WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 		
 		long now = CurrentTimeUTC.getInMillis(); 
 		
 		try {
-			if(mFreetalk.getMessageManager().getMessagesBy(mOwner).size() > 0 && 
-					identityManager.getReceivedTrustsCount(mOwner) < mFreetalk.getConfig().getInt(Config.MINIMUM_TRUSTER_COUNT)) {
+			if(mFreetalk.getMessageManager().getMessagesBy(mOwner).size() > 0) {
+				int minimumTrusterCount = mFreetalk.getConfig().getInt(Config.MINIMUM_TRUSTER_COUNT); 
 				
-				mNextDisplayTime = now;
+				if(identityManager.getReceivedTrustsCount(mOwner) < minimumTrusterCount) {
+					mPuzzlesToSolve = minimumTrusterCount * 2;  
+					mNextDisplayTime = now;
+				}
 			}
 			
 			mNextProcessingTime = now + PROCESSING_INTERVAL;
@@ -46,6 +55,25 @@ public class IntroduceIdentityTask extends PersistentTask {
 			mNextProcessingTime = now + PROCESSING_INTERVAL / 8; 
 		}
 		
+		storeWithoutCommit();
+	}
+	
+	public synchronized void onHideForSomeTime() {
+		mPuzzlesToSolve = 0;
+		mNextProcessingTime = CurrentTimeUTC.getInMillis() + PROCESSING_INTERVAL;
+		mNextDisplayTime = Long.MAX_VALUE;
+		
+		storeWithoutCommit();
+	}
+	
+	public synchronized void onPuzzleSolved() {
+		if(mPuzzlesToSolve > 0) 
+			--mPuzzlesToSolve;
+		
+		if(mPuzzlesToSolve == 0)
+			mNextDisplayTime = Long.MAX_VALUE;
+		
+		storeWithoutCommit();
 	}
 
 }

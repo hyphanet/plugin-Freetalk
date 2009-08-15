@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import java.util.UUID;
+
 import freenet.support.CurrentTimeUTC;
 import plugins.Freetalk.ui.web.WebPage;
 
@@ -21,6 +23,8 @@ import plugins.Freetalk.ui.web.WebPage;
  */
 public abstract class PersistentTask {
 	
+	protected final String mID;
+	
 	protected final FTOwnIdentity mOwner;
 	
 	protected long mNextProcessingTime;
@@ -37,6 +41,7 @@ public abstract class PersistentTask {
 		if(myOwner == null)
 			throw new NullPointerException();
 		
+		mID = UUID.randomUUID().toString();
 		mOwner = myOwner;
 		mNextProcessingTime = CurrentTimeUTC.getInMillis();
 		mNextDisplayTime = Long.MAX_VALUE;
@@ -47,9 +52,14 @@ public abstract class PersistentTask {
 		mFreetalk = myFreetalk;
 	}
 
-	public abstract void process();
+	protected abstract void process();
 	
 	public abstract WebPage display();
+	
+	/**
+	 * Called by the WebPage when the user clicks the "Hide for some time" button.
+	 */
+	public abstract void onHideForSomeTime();
 	
 	protected void storeWithoutCommit() {
 		
