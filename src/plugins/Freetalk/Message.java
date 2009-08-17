@@ -109,6 +109,8 @@ public abstract class Message {
 		private final FreenetURI mURI;
 		private final long mSize; /* Size in bytes */
 		
+		// TODO: Store mime type and maybe some hashes.
+		
 		public Attachment(FreenetURI myURI, long mySize) {
 			mURI = myURI;
 			mSize = mySize;
