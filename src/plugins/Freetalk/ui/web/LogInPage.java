@@ -44,15 +44,6 @@ public final class LogInPage extends WebPageImpl {
 		HTMLNode loginBox = addContentBox("Log in");
 	
 		Iterator<FTOwnIdentity> iter = mFreetalk.getIdentityManager().ownIdentityIterator();
-		/*
-		if(!iter.hasNext()) {
-			loginBox.addChild("p", "Sorry, Freetalk has not yet downloaded your own identities from the WoT plugin. Please wait 1-2 minutes.");
-			HTMLNode p = loginBox.addChild("p", "If you have not created an own identity yet, please go to the ");
-			p.addChild("a", "href", "/plugins/plugins.WoT.WoT", "WoT web interface");
-			p.addChild("#", " and create an own identity there. Do not forget to introduce it to others by solving introduction puzzles.");
-			return;
-		}
-		*/
 		
 		HTMLNode selectForm = addFormChild(loginBox, Freetalk.PLUGIN_URI + "/LogIn", "LogIn");
 		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnIdentityID");
