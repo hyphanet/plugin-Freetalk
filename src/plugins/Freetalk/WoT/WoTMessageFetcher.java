@@ -200,8 +200,8 @@ public final class WoTMessageFetcher extends MessageFetcher {
 						WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
 						mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), MessageList.MessageFetchFailedReference.Reason.DataNotFound);
 					} catch (Exception ex) { /* NoSuchMessageList / NoSuchMessage */
-						assert(false);
 						Logger.error(this, "SHOULD NOT HAPPEN", ex);
+						assert(false);
 					}
 					finally {
 						Logger.error(this, "DNF for message " + state.getURI());
