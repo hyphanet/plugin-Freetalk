@@ -130,7 +130,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 	public void testDecode() throws Exception {
 		System.gc(); db.purge(); System.gc();
 		
-		ByteArrayInputStream is = new ByteArrayInputStream(mHardcodedEncodedMessage.getBytes());
+		ByteArrayInputStream is = new ByteArrayInputStream(mHardcodedEncodedMessage.getBytes("UTF-8"));
 		ByteArrayOutputStream decodedAndEncodedMessage = new ByteArrayOutputStream(4096);
 		Message decodedMessage = WoTMessageXML.decode(mMessageManager, is, (WoTMessageList)mMessageManager.getMessageList(mMessageListID), mMessageRealURI);
 		decodedMessage.initializeTransient(db, mMessageManager);
