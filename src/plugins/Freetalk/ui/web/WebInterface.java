@@ -148,7 +148,7 @@ public class WebInterface {
 
 		/** Log an user in from a POST and redirect to the BoardsPage */
 		@Override
-		public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 			String pass = request.getPartAsString("formPassword", 32);
 			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
 				writeHTMLReply(ctx, 403, "Forbidden", "Invalid form password.");
@@ -197,7 +197,7 @@ public class WebInterface {
 		}
 
 		@Override
-		public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 			String pass = request.getPartAsString("formPassword", 32);
 			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
 				writeHTMLReply(ctx, 403, "Forbidden", "Invalid form password.");
