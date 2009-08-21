@@ -66,6 +66,10 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		mRandom = mNode.fastWeakRandom;
 		clientContext = mNode.clientCore.clientContext;
 		mRequestClient = mMessageManager.requestClient;
+		
+		// FIXME: You should avoid calling methods in constructors that might lead to the object 
+		// being registered and then called back to before the fields have been written.
+		// => Move start() call outside, after fred build 1232 is released, it will change the visibility of TransferThread.start() to public.
 		start();
 	}
 
