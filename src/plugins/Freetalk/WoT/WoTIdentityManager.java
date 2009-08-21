@@ -3,9 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Random;
 
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
@@ -14,11 +15,11 @@ import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.PluginTalkerBlocking;
 import plugins.Freetalk.exceptions.DuplicateIdentityException;
+import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import plugins.Freetalk.exceptions.NotTrustedException;
 import plugins.Freetalk.exceptions.WoTDisconnectedException;
-import plugins.Freetalk.exceptions.InvalidParameterException;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -612,11 +613,13 @@ public class WoTIdentityManager extends IdentityManager {
 		}
 	}
 
-	public void run() {
+	public void run() { 
 		Logger.debug(this, "Identity manager started.");
 		mThread = Thread.currentThread();
 		
 		long nextIdentityRequestTime = 0;
+		
+		Random random = mFreetalk.getPluginRespirator().getNode().fastWeakRandom;
 		
 		try {
 		while(isRunning) {
@@ -626,7 +629,8 @@ public class WoTIdentityManager extends IdentityManager {
 			boolean connected = connectToWoT();
 
 			long currentTime = System.currentTimeMillis();
-			long sleepTime = connected ? (long) (THREAD_PERIOD * (0.5f + Math.random())) : WOT_RECONNECT_DELAY;
+			
+			long sleepTime = connected ? (THREAD_PERIOD/2 + random.nextInt(THREAD_PERIOD)) : WOT_RECONNECT_DELAY;
 			
 			if(currentTime >= nextIdentityRequestTime) {
 				try {
@@ -643,7 +647,7 @@ public class WoTIdentityManager extends IdentityManager {
 			Logger.debug(this, "Identity manager loop finished.");
 
 			try {
-				Thread.sleep(sleepTime);
+				Thread.sleep(sleepTime); // TODO: Maybe use a Ticker implementation instead?
 			}
 			catch (InterruptedException e)
 			{

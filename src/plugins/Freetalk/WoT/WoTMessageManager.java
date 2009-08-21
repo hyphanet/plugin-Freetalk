@@ -6,11 +6,13 @@ package plugins.Freetalk.WoT;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
@@ -33,7 +35,11 @@ import freenet.support.Logger;
 public class WoTMessageManager extends MessageManager {
 	
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
+	
+	private static final int STARTUP_DELAY = 3 * 60 * 1000;
 	private static final int THREAD_PERIOD = 5 * 60 * 1000;
+	
+	private final Freetalk mFreetalk;
 
 	private volatile boolean isRunning = false;
 	private volatile boolean shutdownFinished = false;
@@ -43,9 +49,13 @@ public class WoTMessageManager extends MessageManager {
 	public RequestClient requestClient;
 
 
-	public WoTMessageManager(ExtObjectContainer myDB, Executor myExecutor, WoTIdentityManager myIdentityManager) {
-		super(myDB, myExecutor, myIdentityManager);
-		mIdentityManager = myIdentityManager;
+	public WoTMessageManager(ExtObjectContainer myDB, Executor myExecutor, Freetalk myFreetalk) {
+		super(myDB, myExecutor, myFreetalk.getIdentityManager());
+		
+		// assert(myFreetalk != null); // Not necessary because we dereference it above.
+		
+		mFreetalk = myFreetalk;
+		
 		isRunning = true;
 		mExecutor.execute(this, "FT Message Manager");
 		requestClient = new RequestClient() {
@@ -66,6 +76,8 @@ public class WoTMessageManager extends MessageManager {
 	 */
 	public WoTMessageManager(ExtObjectContainer myDB, WoTIdentityManager myIdentityManager) {
 		super(myDB, myIdentityManager);
+		
+		mFreetalk = null;
 	}
 
 	public synchronized WoTOwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, 
@@ -335,9 +347,11 @@ public class WoTMessageManager extends MessageManager {
 		Logger.debug(this, "Message manager started.");
 		mThread = Thread.currentThread();
 		
+		Random random = mFreetalk.getPluginRespirator().getNode().fastWeakRandom;
+		
 		try {
 			Logger.debug(this, "Waiting for the node to start up...");
-			Thread.sleep((long) (3*60*1000 * (0.5f + Math.random()))); /* Let the node start up */
+			Thread.sleep(STARTUP_DELAY/2 + random.nextInt(STARTUP_DELAY));
 		}
 		catch (InterruptedException e)
 		{
@@ -351,7 +365,7 @@ public class WoTMessageManager extends MessageManager {
 				Logger.debug(this, "Message manager loop finished.");
 
 				try {
-					Thread.sleep((long) (THREAD_PERIOD * (0.5f + Math.random())));
+					Thread.sleep(THREAD_PERIOD/2 + random.nextInt(THREAD_PERIOD));  // TODO: Maybe use a Ticker implementation instead?
 				}
 				catch (InterruptedException e)
 				{

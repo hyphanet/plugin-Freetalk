@@ -391,7 +391,6 @@ public abstract class Message {
 		if(!newParent.getID().equals(mParentID))
 			throw new IllegalArgumentException("Trying to set a message as parent which has the wrong ID: " + newParent.getID());
 		
-		/* TODO: assert(newParent contains at least one board which mBoards contains) */
 		mParent = newParent;
 		
 		storeWithoutCommit();
@@ -414,11 +413,9 @@ public abstract class Message {
 			{
 				board = targetBoard;
 				
-				// TODO: Accelerate this query: configure db4o to keep a per-message date-sorted index of children.
-				// - Not very important for now since threads are usually small.
 				Query q = db.query();
 				q.constrain(Message.class);
-				q.descend("mParent").constrain(this);
+				q.descend("mParentID").constrain(mParentID);
 				q.descend("mDate").orderDescending();
 				
 				iter = q.execute().iterator();
