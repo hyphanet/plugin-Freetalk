@@ -122,7 +122,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		mIdentityManager = new WoTIdentityManager(db, this);
 		
 		Logger.debug(this, "Creating message manager...");
-		mMessageManager = new WoTMessageManager(db, mPluginRespirator.getNode().executor, mIdentityManager);
+		mMessageManager = new WoTMessageManager(db, mPluginRespirator.getNode().executor, this);
 		
 		Logger.debug(this, "Creating message fetcher...");
 		mMessageFetcher = new WoTMessageFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT Message Fetcher", mIdentityManager, mMessageManager);
