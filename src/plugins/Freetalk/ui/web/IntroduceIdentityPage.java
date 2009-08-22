@@ -48,7 +48,6 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		}
 	}
 
-	@Override
 	public void make() throws RedirectException {
 		
 
