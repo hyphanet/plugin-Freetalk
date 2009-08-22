@@ -140,7 +140,7 @@ public class WebInterface {
 		
 	}
 	
-	class LogInWebInterfaceToadlet extends WebInterfaceToadlet {
+	public class LogInWebInterfaceToadlet extends WebInterfaceToadlet {
 
 		protected LogInWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
