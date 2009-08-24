@@ -1,9 +1,11 @@
 package plugins.Freetalk.WoT;
 
-import freenet.support.CurrentTimeUTC;
 import plugins.Freetalk.Config;
 import plugins.Freetalk.PersistentTask;
+import plugins.Freetalk.ui.web.IntroduceIdentityPage;
+import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;
+import freenet.support.CurrentTimeUTC;
 
 
 /**
@@ -25,16 +27,10 @@ public class IntroduceIdentityTask extends PersistentTask {
 		mPuzzlesToSolve = 0;
 	}
 
-	@Override
-	public synchronized WebPage display() {
-		// FIXME implement
-		
-		
-		
-		return null;
+	public synchronized WebPage display(WebInterface myWebInterface) {
+		return new IntroduceIdentityPage(myWebInterface, (WoTOwnIdentity)mOwner, mID, mPuzzlesToSolve);
 	}
 
-	@Override
 	public synchronized void process() {
 		WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 		

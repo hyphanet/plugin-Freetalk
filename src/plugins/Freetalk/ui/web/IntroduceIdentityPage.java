@@ -4,6 +4,7 @@ import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import freenet.clients.http.RedirectException;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
@@ -49,8 +50,10 @@ public class IntroduceIdentityPage extends WebPageImpl {
 	}
 
 	public void make() throws RedirectException {
+		HTMLNode contentBox = addAlertBox("Introduce your identity");
 		
-
+		contentBox.addChild("p", "You have not received enough trust values from other identities: Your messages will not be seen by others." +
+				" You have to solve the following puzzles to get trusted by other identities, then your messages will be visible to the most identities: ");
 	}
 
 }

@@ -5,8 +5,9 @@ package plugins.Freetalk;
 
 import java.util.UUID;
 
-import freenet.support.CurrentTimeUTC;
+import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;
+import freenet.support.CurrentTimeUTC;
 
 /**
  * A PersistentTask is a user notification which is stored in the database as long as it is valid.
@@ -54,7 +55,7 @@ public abstract class PersistentTask {
 
 	protected abstract void process();
 	
-	public abstract WebPage display();
+	public abstract WebPage display(WebInterface myWebInterface);
 	
 	/**
 	 * Called by the WebPage when the user clicks the "Hide for some time" button.
