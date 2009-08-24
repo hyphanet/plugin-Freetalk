@@ -1,5 +1,8 @@
 package plugins.Freetalk;
 
+import plugins.Freetalk.exceptions.DuplicateTaskException;
+import plugins.Freetalk.exceptions.NoSuchTaskException;
+
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
@@ -68,6 +71,24 @@ public abstract class PersistentTaskManager implements Runnable {
 					mDB.rollback();
 				}
 			}
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	public synchronized PersistentTask getTask(String id) throws NoSuchTaskException {
+		Query q = mDB.query();
+		
+		q.constrain(PersistentTask.class);
+		q.descend("mID").constrain(id);
+		ObjectSet<PersistentTask> result = q.execute();
+		
+		switch(result.size()) {
+			case 1:
+				return result.next();
+			case 0:
+				throw new NoSuchTaskException(id);
+			default:
+				throw new DuplicateTaskException(id, result.size());
 		}
 	}
 	
