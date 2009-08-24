@@ -4,6 +4,7 @@
 package plugins.Freetalk.ui.web;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -13,6 +14,7 @@ import plugins.Freetalk.Message;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
+import plugins.Freetalk.WoT.WoTIdentityManager.IntroductionPuzzle;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -24,8 +26,13 @@ import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
+import freenet.clients.http.filter.ContentFilter;
+import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.node.NodeClientCore;
+import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.Closer;
+import freenet.support.io.TempBucketFactory;
 
 
 /**
@@ -56,6 +63,7 @@ public class WebInterface {
 	private final WebInterfaceToadlet newReplyToadlet;
 	private final WebInterfaceToadlet newBoardToadlet;
 	private final WebInterfaceToadlet changeTrustToadlet;
+	private final WebInterfaceToadlet getPuzzleToadlet;
 	
 	class HomeWebInterfaceToadlet extends WebInterfaceToadlet {
 
@@ -190,7 +198,7 @@ public class WebInterface {
 		
 	}
 
-	class ChangeTrustWebInterfaceToadlet extends WebInterfaceToadlet {
+	public class ChangeTrustWebInterfaceToadlet extends WebInterfaceToadlet {
 
 		protected ChangeTrustWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
@@ -416,6 +424,58 @@ public class WebInterface {
 		}
 		
 	}
+	
+	class GetPuzzleWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected GetPuzzleWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+			WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
+			
+			Bucket dataBucket = null;
+			OutputStream outputStream = null;
+			
+			try {
+				IntroductionPuzzle puzzle = identityManager.getIntroductionPuzzle(req.getParam("PuzzleID"));
+				
+				// TODO: Store the list of allowed mime types in a constant. Also consider that we might have introduction puzzles with "Type=Audio" in the future.
+				if(!puzzle.MimeType.equalsIgnoreCase("image/jpeg") &&
+				  	!puzzle.MimeType.equalsIgnoreCase("image/gif") && 
+				  	!puzzle.MimeType.equalsIgnoreCase("image/png")) {
+					
+					throw new Exception("Mime type '" + puzzle.MimeType + "' not allowed for introduction puzzles.");
+				}
+				
+				dataBucket = core.tempBucketFactory.makeBucket(puzzle.Data.length);
+				outputStream = dataBucket.getOutputStream();
+				outputStream.write(puzzle.Data);
+				
+				FilterOutput output = null;
+				try {
+					output = ContentFilter.filter(dataBucket, core.tempBucketFactory, puzzle.MimeType, null, null);
+				
+					writeReply(ctx, 200, output.type, "OK", output.data);
+				}
+				finally {
+					Closer.close(output.data);
+				}
+			}
+			catch(Exception e) {
+				sendErrorPage(ctx, 404, "Introduction puzzle not available", e.getMessage());
+			}
+			finally {
+				Closer.close(outputStream);
+				Closer.close(dataBucket);
+			}
+		}
+		
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			// not expected to make it here
+			return new Welcome(webInterface, getLoggedInOwnIdentity(), req);
+		}
+	}
 
 	public WebInterface(Freetalk myFreetalk) {
 		try {
@@ -431,12 +491,14 @@ public class WebInterface {
 		
 		mPageMaker.addNavigationCategory(Freetalk.PLUGIN_URI+"/", "Discussion", "Message boards", mFreetalk);
 		
+		NodeClientCore clientCore = mFreetalk.getPluginRespirator().getNode().clientCore;
+		
 		// Visible pages
-		logInToadlet = new LogInWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "LogIn");
-		homeToadlet = new HomeWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "");
-		messagesToadlet = new MessagesWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "messages");
-		identitiesToadlet = new IdentitiesWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "identities");
-		logOutToadlet = new LogOutWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "LogOut");
+		logInToadlet = new LogInWebInterfaceToadlet(null, this, clientCore, "LogIn");
+		homeToadlet = new HomeWebInterfaceToadlet(null, this, clientCore, "");
+		messagesToadlet = new MessagesWebInterfaceToadlet(null, this, clientCore, "messages");
+		identitiesToadlet = new IdentitiesWebInterfaceToadlet(null, this, clientCore, "identities");
+		logOutToadlet = new LogOutWebInterfaceToadlet(null, this, clientCore, "LogOut");
 		
 		container.register(homeToadlet, "Discussion", Freetalk.PLUGIN_URI+"/", true, "Log in", "Log in", false, logInToadlet);
 		container.register(homeToadlet, "Discussion", Freetalk.PLUGIN_URI+"/", true, "Home", "Home page", false, homeToadlet);
@@ -445,13 +507,14 @@ public class WebInterface {
 		container.register(logOutToadlet, "Discussion", Freetalk.PLUGIN_URI+"/LogOut", true, "Log out", "Log out", false, logOutToadlet);
 		
 		// Invisible pages
-		createIdentityToadlet = new CreateIdentityWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "CreateIdentity");
-		newThreadToadlet = new NewThreadWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewThread");
-		showBoardToadlet = new ShowBoardWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "showBoard");
-		showThreadToadlet = new ShowThreadWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "showThread");
-		newReplyToadlet = new NewReplyWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewReply");
-		newBoardToadlet = new NewBoardWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "NewBoard");
-		changeTrustToadlet = new ChangeTrustWebInterfaceToadlet(null, this, mFreetalk.getPluginRespirator().getNode().clientCore, "ChangeTrust");
+		createIdentityToadlet = new CreateIdentityWebInterfaceToadlet(null, this, clientCore, "CreateIdentity");
+		newThreadToadlet = new NewThreadWebInterfaceToadlet(null, this, clientCore, "NewThread");
+		showBoardToadlet = new ShowBoardWebInterfaceToadlet(null, this, clientCore, "showBoard");
+		showThreadToadlet = new ShowThreadWebInterfaceToadlet(null, this, clientCore, "showThread");
+		newReplyToadlet = new NewReplyWebInterfaceToadlet(null, this, clientCore, "NewReply");
+		newBoardToadlet = new NewBoardWebInterfaceToadlet(null, this, clientCore, "NewBoard");
+		changeTrustToadlet = new ChangeTrustWebInterfaceToadlet(null, this, clientCore, "ChangeTrust");
+		getPuzzleToadlet = new GetPuzzleWebInterfaceToadlet(null, this, clientCore, "GetPuzzle");
 		
 		container.register(logInToadlet, null, Freetalk.PLUGIN_URI + "/LogIn", true, false);
 		container.register(createIdentityToadlet, null, Freetalk.PLUGIN_URI + "/CreateIdentity", true, false);
@@ -461,6 +524,7 @@ public class WebInterface {
 		container.register(newReplyToadlet, null, Freetalk.PLUGIN_URI + "/NewReply", true, false);
 		container.register(newBoardToadlet, null, Freetalk.PLUGIN_URI + "/NewBoard", true, false);
 		container.register(changeTrustToadlet, null, Freetalk.PLUGIN_URI + "/ChangeTrust", true, false);
+		container.register(getPuzzleToadlet, null, Freetalk.PLUGIN_URI + "/GetPuzzle", true, false);
 	}
 
 	private void setLoggedInOwnIdentity(FTOwnIdentity user) {
@@ -492,7 +556,8 @@ public class WebInterface {
 				showBoardToadlet,
 				showThreadToadlet,
 				newReplyToadlet,
-				newBoardToadlet
+				newBoardToadlet,
+				getPuzzleToadlet
 		}) container.unregister(t);
 		mPageMaker.removeNavigationCategory("Discussion");
 	}
