@@ -1,5 +1,6 @@
-package plugins.Freetalk;
+package plugins.Freetalk.Tasks;
 
+import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.exceptions.DuplicateTaskException;
 import plugins.Freetalk.exceptions.NoSuchTaskException;
 

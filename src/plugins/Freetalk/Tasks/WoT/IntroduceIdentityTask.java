@@ -1,7 +1,9 @@
-package plugins.Freetalk.WoT;
+package plugins.Freetalk.Tasks.WoT;
 
 import plugins.Freetalk.Config;
-import plugins.Freetalk.PersistentTask;
+import plugins.Freetalk.Tasks.PersistentTask;
+import plugins.Freetalk.WoT.WoTIdentityManager;
+import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.ui.web.IntroduceIdentityPage;
 import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;

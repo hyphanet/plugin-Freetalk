@@ -1,10 +1,12 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package plugins.Freetalk;
+package plugins.Freetalk.Tasks;
 
 import java.util.UUID;
 
+import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;
 import freenet.support.CurrentTimeUTC;
