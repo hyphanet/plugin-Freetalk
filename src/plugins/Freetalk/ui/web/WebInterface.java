@@ -29,10 +29,11 @@ import freenet.clients.http.ToadletContextClosedException;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.node.NodeClientCore;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
-import freenet.support.io.TempBucketFactory;
 
 
 /**
@@ -435,7 +436,7 @@ public class WebInterface {
 			WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 			
 			Bucket dataBucket = null;
-			OutputStream outputStream = null;
+			FilterOutput output = null;
 			
 			try {
 				IntroductionPuzzle puzzle = identityManager.getIntroductionPuzzle(req.getParam("PuzzleID"));
@@ -448,25 +449,16 @@ public class WebInterface {
 					throw new Exception("Mime type '" + puzzle.MimeType + "' not allowed for introduction puzzles.");
 				}
 				
-				dataBucket = core.tempBucketFactory.makeBucket(puzzle.Data.length);
-				outputStream = dataBucket.getOutputStream();
-				outputStream.write(puzzle.Data);
-				
-				FilterOutput output = null;
-				try {
-					output = ContentFilter.filter(dataBucket, core.tempBucketFactory, puzzle.MimeType, null, null);
-				
-					writeReply(ctx, 200, output.type, "OK", output.data);
-				}
-				finally {
-					Closer.close(output.data);
-				}
+				dataBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, puzzle.Data);
+				output = ContentFilter.filter(dataBucket, core.tempBucketFactory, puzzle.MimeType, null, null);
+				writeReply(ctx, 200, output.type, "OK", output.data);
 			}
 			catch(Exception e) {
 				sendErrorPage(ctx, 404, "Introduction puzzle not available", e.getMessage());
+				Logger.error(this, "GetPuzzle failed", e);
 			}
 			finally {
-				Closer.close(outputStream);
+				Closer.close(output.data);
 				Closer.close(dataBucket);
 			}
 		}
