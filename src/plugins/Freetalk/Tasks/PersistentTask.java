@@ -68,6 +68,10 @@ public abstract class PersistentTask {
 		
 	}
 	
+	public void storeAndCommit() {
+		
+	}
+	
 	protected void deleteWithoutCommit() {
 		
 	}

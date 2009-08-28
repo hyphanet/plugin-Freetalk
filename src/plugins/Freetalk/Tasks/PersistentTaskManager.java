@@ -12,7 +12,7 @@ import freenet.support.CurrentTimeUTC;
 import freenet.support.Executor;
 import freenet.support.Logger;
 
-public abstract class PersistentTaskManager implements Runnable {
+public class PersistentTaskManager implements Runnable {
 	
 	protected ExtObjectContainer mDB;
 	
@@ -27,6 +27,10 @@ public abstract class PersistentTaskManager implements Runnable {
 	}
 	
 	public void run() {
+
+	}
+	
+	public void terminate() {
 
 	}
 	

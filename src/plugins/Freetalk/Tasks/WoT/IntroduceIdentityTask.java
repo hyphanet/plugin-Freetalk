@@ -73,5 +73,9 @@ public class IntroduceIdentityTask extends PersistentTask {
 		
 		storeWithoutCommit();
 	}
+	
+	public synchronized int getNumberOfPuzzlesToSolve() {
+		return mPuzzlesToSolve;
+	}
 
 }

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import plugins.Freetalk.Tasks.PersistentTaskManager;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTMessageFetcher;
@@ -82,6 +83,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	private WoTMessageListFetcher mMessageListFetcher;
 	
 	private WoTMessageListInserter mMessageListInserter;
+	
+	private PersistentTaskManager mTaskManager;
 
 	private WebInterface mWebInterface;
 	
@@ -135,6 +138,9 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		
 		Logger.debug(this, "Creating message list inserter...");
 		mMessageListInserter = new WoTMessageListInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT MessageList Inserter", mIdentityManager, mMessageManager);
+		
+		Logger.debug(this, "Creating task manager...");
+		mTaskManager = new PersistentTaskManager(db, mPluginRespirator.getNode().executor);
 
 
 		Logger.debug(this, "Creating FCP interface...");
@@ -275,6 +281,13 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		
 		/* WebInterface is stateless and does not need to be terminated */
 		
+        try {
+        	mTaskManager.terminate();
+        }
+        catch(Exception e) {
+        	Logger.error(this, "Error during termination.", e);	
+        }
+        
 		try {
 			mMessageListInserter.terminate();
 		}
@@ -344,6 +357,10 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	
 	public MessageManager getMessageManager() {
 		return mMessageManager;
+	}
+	
+	public PersistentTaskManager getTaskManager() {
+		return mTaskManager;
 	}
 	
 	public String getVersion() {
