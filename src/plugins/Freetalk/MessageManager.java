@@ -119,6 +119,45 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 	/**
+	 * Called by the {@link IdentityManager} before an identity is deleted from the database.
+	 * 
+	 * Deletes any messages and message lists referencing to it.
+	 */
+	public synchronized void onIdentityDeletion(FTIdentity identity) {
+		synchronized(db.lock()) {
+			try {
+				for(Message message : getMessagesBy(identity)) {
+					message.initializeTransient(db, this);
+					message.deleteWithoutCommit();
+				}
+
+				for(MessageList messageList : getMessageListsBy(identity)) {
+					messageList.initializeTransient(db, this);
+					messageList.deleteWithoutCommit();
+				}
+
+				if(identity instanceof FTOwnIdentity) {
+					for(OwnMessage message : getOwnMessagesBy((FTOwnIdentity)identity)) {
+						message.initializeTransient(db, this);
+						message.deleteWithoutCommit();
+					}
+
+					for(OwnMessageList messageList : getOwnMessageListsBy((FTOwnIdentity)identity)) {
+						messageList.initializeTransient(db, this);
+						messageList.deleteWithoutCommit();
+					}
+				}
+
+				db.commit(); Logger.debug(this, "COMMITED.");
+			}
+			catch(RuntimeException e) {
+				db.rollback();
+				Logger.error(this, "ROLLED BACK: Exception in onIdentityDeletion for " + identity, e);
+			}
+		}
+	}
+	
+	/**
 	 * Called by the {@link MessageListInserter} implementation when the insertion of an {@link OwnMessageList} is to be started.
 	 * Has to be called before any data is pulled from the {@link OwnMessageList}: It locks the list so no further messages can be added.
 	 * Further, you have to acquire the lock on this MessageManager before calling this function and while taking data from the {@link OwnMessageList} since
@@ -588,16 +627,87 @@ public abstract class MessageManager implements Runnable {
 		};
 	}
 
+
+	/**
+	 * Get a list of all message lists from the given identity.
+	 * If the identity is an {@link FTOwnIdentity}, it's own message lists are only returned if they have been downloaded as normal message lists.
+	 * Technically, this means that no objects of class {@link OwnMessageList} are returned.
+	 * 
+	 * The purpose of this behavior is to ensure that own messages are only displayed to the user if they have been successfully inserted.
+	 * 
+	 * @param author An identity or own identity.
+	 * @return All message lists of the given identity except those of class OwnMessageList.
+	 */
+	@SuppressWarnings("unchecked")
+	protected synchronized List<MessageList> getMessageListsBy(FTIdentity author) {
+		Query query = db.query();
+		query.constrain(MessageList.class);
+		query.constrain(OwnMessageList.class).not();
+		query.descend("mAuthor").constrain(author).identity();
+		return query.execute();
+	}
+	
+	/**
+	 * Get a list of locally stored own message lists of the given identity. 
+	 * Locally stored means that only message lists of class {@link OwnMessageList} are returned.
+	 * 
+	 * This means that there is no guarantee that the returned message lists have actually been inserted to Freenet.
+	 * - The message lists returned by this function can be considered as the outbox of the given identity.
+	 * 
+	 * If you want a list of message lists  which is actually downloadable from Freenet, see {@link getMessageListsBy}.
+	 * 
+	 * @param author The author of the message lists.
+	 * @return All own message lists of the given own identity.
+	 */
+	@SuppressWarnings("unchecked")
+	protected synchronized List<OwnMessageList> getOwnMessageListsBy(FTOwnIdentity author) {
+		Query query = db.query();
+		query.constrain(OwnMessageList.class);
+		query.descend("mAuthor").constrain(author).identity();
+		return query.execute();
+	}
+	
+	
+	/**
+	 * Get a list of all messages from the given identity.
+	 * If the identity is an {@link FTOwnIdentity}, it's own messages are only returned if they have been downloaded as normal messages.
+	 * Technically, this means that no objects of class {@link OwnMessage} are returned.
+	 * 
+	 * The purpose of this behavior is to ensure that own messages are only displayed to the user if they have been successfully inserted.
+	 * 
+	 * @param author An identity or own identity.
+	 * @return All messages of the given identity except those of class OwnMessage.
+	 */
 	@SuppressWarnings("unchecked")
 	public synchronized List<Message> getMessagesBy(FTIdentity author) {
 		Query query = db.query();
 		query.constrain(Message.class);
 		query.constrain(OwnMessage.class).not();
-		query.descend("mAuthor").constrain(author);
+		query.descend("mAuthor").constrain(author); // FIXME: add .identity() here. Test whether the function still works. It should. Semantically we NEED the .identity()
 		ObjectSet<Message> result = query.execute();
 		return result;
 	}
-
+	
+	/**
+	 * Get a list of locally stored own messages of the given identity. 
+	 * Locally stored means that only messages of class {@link OwnMessage} are returned.
+	 * 
+	 * This means that there is no guarantee that the returned messages have actually been inserted to Freenet.
+	 * - The messages returned by this function can be considered as the outbox of the given identity.
+	 * 
+	 * If you want a list of messages which is actually downloadable from Freenet, see {@link getMessagesBy}.
+	 * 
+	 * @param author The author of the messages.
+	 * @return All own messages of the given own identity.
+	 */
+	@SuppressWarnings("unchecked")
+	public synchronized List<OwnMessage> getOwnMessagesBy(FTOwnIdentity author) {
+		Query query = db.query();
+		query.constrain(OwnMessage.class);
+		query.descend("mAuthor").constrain(author).identity();
+		return query.execute();
+	}
+	
 	/**
 	 * Returns true if the message was not downloaded yet and any of the FTOwnIdentity wants the message.
 	 */

@@ -614,6 +614,8 @@ public abstract class Message {
 			
 			if(mAuthor == null)
 				throw new RuntimeException("Trying to store a message with mAuthor == null");
+			
+			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 
 			if(mURI != null)
 				db.store(mURI);
@@ -627,6 +629,24 @@ public abstract class Message {
 			// db.store(mDate); /* Not stored because it is a primitive for db4o */
 			// db.store(mAttachments); /* Not stored because it is a primitive for db4o */
 			db.store(this);
+		}
+		catch(RuntimeException e) {
+			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+			throw e;
+		}
+	}
+	
+	protected void deleteWithoutCommit() {
+		try {
+			if(db.ext().isStored(this)) // TODO: Decide whether this is necessary. Probably it is good :)
+				db.activate(this, 3);
+			
+			db.delete(this);
+			
+			if(mParentURI != null) mParentURI.removeFrom(db);
+			if(mThreadURI != null) mThreadURI.removeFrom(db);
+			if(mRealURI != null) mRealURI.removeFrom(db);
+			if(mURI != null) mURI.removeFrom(db);
 		}
 		catch(RuntimeException e) {
 			db.rollback(); Logger.error(this, "ROLLED BACK!", e);

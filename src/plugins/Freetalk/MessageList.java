@@ -9,13 +9,13 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 
-import plugins.Freetalk.exceptions.DuplicateMessageListException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
-import plugins.Freetalk.exceptions.NoSuchMessageListException;
 
+import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
+import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
@@ -78,9 +78,22 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			try {
 				if(db.ext().isStored(this) && !db.ext().isActive(this))
 					throw new RuntimeException("Trying to store a non-active MessageList object");
+				
+				// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 
 				db.store(mURI);
 				db.store(this);
+			}
+			catch(RuntimeException e) {
+				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				throw e;
+			}
+		}
+		
+		public void deleteWithoutCommit() {
+			try {
+				db.delete(this);
+				mURI.removeFrom(db);
 			}
 			catch(RuntimeException e) {
 				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
@@ -167,7 +180,19 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 
 		public void storeWithoutCommit() {
 			try {
+				// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
+				
 				db.store(this);
+			}
+			catch(RuntimeException e) {
+				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				throw e;
+			}
+		}
+		
+		protected void deleteWithoutCommit() {
+			try {
+				db.delete(this);
 			}
 			catch(RuntimeException e) {
 				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
@@ -222,7 +247,19 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 
 		protected void storeWithoutCommit() {
 			try {
+				// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
+				
 				db.store(this);
+			}
+			catch(RuntimeException e) {
+				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+				throw e;
+			}
+		}
+		
+		protected void deleteWithoutCommit() {
+			try {
+				db.delete(this);
 			}
 			catch(RuntimeException e) {
 				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
@@ -331,12 +368,57 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	
 	public synchronized void storeWithoutCommit() {
 		try {
+			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
+			
 			for(MessageReference ref : mMessages) {
 				ref.initializeTransient(db);
 				ref.storeWithoutCommit();
 			}
 			db.store(mMessages, 1);
 			db.store(this);
+		}
+		catch(RuntimeException e) {
+			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
+			throw e;
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	protected synchronized void deleteWithoutCommit() {
+		try {
+			{ // First we have to delete the objects of type MessageListFetchFailedReference because this MessageList needs to exist in the db so we can query them
+				Query query = db.query();
+				query.constrain(MessageListFetchFailedReference.class);
+				query.descend("mMessageList").constrain(this).identity();
+				
+				for(MessageListFetchFailedReference failedRef : (ObjectSet<MessageListFetchFailedReference>)query.execute()) {
+					failedRef.initializeTransient(db);
+					failedRef.deleteWithoutCommit();
+				}
+			}
+			
+			
+			// Then we delete our list of MessageReferences before we delete each of it's MessageReferences 
+			// - less work of db4o, it does not have to null all the pointers to dhem.
+			db.delete(mMessages);
+			
+			for(MessageReference ref : mMessages) {
+				Query query = db.query();
+				query.constrain(MessageFetchFailedReference.class);
+				query.descend("mMessageReference").constrain(ref).identity();
+				
+				// Before deleting the MessageReference itself, we must delete any MessageFetchFailedReference objects which point to it. 
+				for(MessageFetchFailedReference failedRef : (ObjectSet<MessageFetchFailedReference>)query.execute()) {
+					failedRef.initializeTransient(db);
+					failedRef.deleteWithoutCommit();
+				}
+				
+				ref.initializeTransient(db);
+				ref.deleteWithoutCommit();
+			}
+			
+			// We delete this at last because each MessageReference object had a pointer to it - less work for db4o, it doesn't have to null them all
+			db.delete(this);
 		}
 		catch(RuntimeException e) {
 			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
