@@ -76,8 +76,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		
 		protected void storeWithoutCommit() {
 			try {
-				if(db.ext().isStored(this) && !db.ext().isActive(this))
-					throw new RuntimeException("Trying to store a non-active MessageList object");
+				DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
 				
 				// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 
@@ -85,19 +84,20 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 				db.store(this);
 			}
 			catch(RuntimeException e) {
-				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
+				DBUtil.rollbackAndThrow(db, this, e);
 			}
 		}
 		
 		public void deleteWithoutCommit() {
 			try {
-				db.delete(this);
+				DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+				
+				DBUtil.checkedDelete(db, this);
+				
 				mURI.removeFrom(db);
 			}
 			catch(RuntimeException e) {
-				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
+				DBUtil.rollbackAndThrow(db, this, e);
 			}
 		}
 		
@@ -180,23 +180,25 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 
 		public void storeWithoutCommit() {
 			try {
+				DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+				
 				// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 				
 				db.store(this);
 			}
 			catch(RuntimeException e) {
-				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
+				DBUtil.rollbackAndThrow(db, this, e);
 			}
 		}
 		
 		protected void deleteWithoutCommit() {
 			try {
-				db.delete(this);
+				DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+				
+				DBUtil.checkedDelete(db, this);
 			}
 			catch(RuntimeException e) {
-				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
+				DBUtil.rollbackAndThrow(db, this, e);
 			}
 		}
 		
@@ -247,23 +249,25 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 
 		protected void storeWithoutCommit() {
 			try {
+				DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+				
 				// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 				
 				db.store(this);
 			}
 			catch(RuntimeException e) {
-				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
+				DBUtil.rollbackAndThrow(db, this, e);
 			}
 		}
 		
 		protected void deleteWithoutCommit() {
 			try {
-				db.delete(this);
+				DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+				
+				DBUtil.checkedDelete(db, this);
 			}
 			catch(RuntimeException e) {
-				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
+				DBUtil.rollbackAndThrow(db, this, e);
 			}
 		}
 		
@@ -368,6 +372,8 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	
 	public synchronized void storeWithoutCommit() {
 		try {
+			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 			
 			for(MessageReference ref : mMessages) {
@@ -378,14 +384,15 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			db.store(this);
 		}
 		catch(RuntimeException e) {
-			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-			throw e;
+			DBUtil.rollbackAndThrow(db, this, e);
 		}
 	}
 	
 	@SuppressWarnings("unchecked")
 	protected synchronized void deleteWithoutCommit() {
 		try {
+			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			
 			{ // First we have to delete the objects of type MessageListFetchFailedReference because this MessageList needs to exist in the db so we can query them
 				Query query = db.query();
 				query.constrain(MessageListFetchFailedReference.class);
@@ -400,7 +407,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			
 			// Then we delete our list of MessageReferences before we delete each of it's MessageReferences 
 			// - less work of db4o, it does not have to null all the pointers to dhem.
-			db.delete(mMessages);
+			DBUtil.checkedDelete(db, mMessages);
 			
 			for(MessageReference ref : mMessages) {
 				Query query = db.query();
@@ -418,11 +425,10 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			}
 			
 			// We delete this at last because each MessageReference object had a pointer to it - less work for db4o, it doesn't have to null them all
-			db.delete(this);
+			DBUtil.checkedDelete(db, this);
 		}
 		catch(RuntimeException e) {
-			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-			throw e;
+			DBUtil.rollbackAndThrow(db, this, e);
 		}
 	}
 	

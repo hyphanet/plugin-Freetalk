@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import plugins.Freetalk.Board;
+import plugins.Freetalk.DBUtil;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Message;
@@ -108,8 +109,7 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	
 	public void storeWithoutCommit() {
 		try {
-			if(db.ext().isStored(this) && !db.ext().isActive(this))
-				throw new RuntimeException("Trying to store a non-active WoTOwnIdentity object");
+			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 
@@ -120,27 +120,23 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 			super.storeWithoutCommit();
 		}
 		catch(RuntimeException e) {
-			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-			throw e;
+			DBUtil.rollbackAndThrow(db, this, e);
 		}
 	}
 
-	protected void deleteWithoutCommit() {
-		if(db.ext().isStored(this) && !db.ext().isActive(this))
-			throw new RuntimeException("Trying to delete a non-active WoTIdentity object");
-		
-		// super.deleteWithoutCommit() does the following already so there is no need to do it here
-		// db.activate(this, 3);
-		
+	protected void deleteWithoutCommit() {	
 		try {
+			// super.deleteWithoutCommit() does the following already so there is no need to do it here
+			// DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			
 			super.deleteWithoutCommit();
-			db.delete(mAssessed);
+			
+			DBUtil.checkedDelete(db, mAssessed);
 			mInsertURI.removeFrom(db);
-			db.delete(mSubscribedBoards);
+			DBUtil.checkedDelete(db, mSubscribedBoards);
 		}
 		catch(RuntimeException e) {
-			db.rollback(); Logger.debug(this, "ROLLED BACK!");
-			throw e;
+			DBUtil.rollbackAndThrow(db, this, e);
 		}
 	}
 }

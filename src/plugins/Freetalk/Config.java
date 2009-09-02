@@ -90,14 +90,15 @@ public final class Config {
 	public synchronized void storeAndCommit() {
 		synchronized(mDB.lock()) {
 			try {
+				DBUtil.checkedActivate(mDB, this, 3);
+				
 				mDB.store(mStringParams, 3);
 				mDB.store(mIntParams, 3);
 				mDB.store(this);
 				mDB.commit();
 			}
 			catch(RuntimeException e) {
-				mDB.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
+				DBUtil.rollbackAndThrow(mDB, this, e);
 			}
 		}
 	}

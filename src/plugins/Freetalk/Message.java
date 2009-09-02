@@ -609,8 +609,7 @@ public abstract class Message {
 	
 	public void storeWithoutCommit() {
 		try {
-			if(db.ext().isStored(this)) // TODO: Decide whether this is necessary. Probably it is good :)
-				db.activate(this, 3);
+			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
 			
 			if(mAuthor == null)
 				throw new RuntimeException("Trying to store a message with mAuthor == null");
@@ -631,17 +630,15 @@ public abstract class Message {
 			db.store(this);
 		}
 		catch(RuntimeException e) {
-			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-			throw e;
+			DBUtil.rollbackAndThrow(db, this, e);
 		}
 	}
 	
 	protected void deleteWithoutCommit() {
 		try {
-			if(db.ext().isStored(this)) // TODO: Decide whether this is necessary. Probably it is good :)
-				db.activate(this, 3);
+			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
 			
-			db.delete(this);
+			DBUtil.checkedDelete(db, this);
 			
 			if(mParentURI != null) mParentURI.removeFrom(db);
 			if(mThreadURI != null) mThreadURI.removeFrom(db);
@@ -649,8 +646,7 @@ public abstract class Message {
 			if(mURI != null) mURI.removeFrom(db);
 		}
 		catch(RuntimeException e) {
-			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-			throw e;
+			DBUtil.rollbackAndThrow(db, this, e);
 		}
 	}
 

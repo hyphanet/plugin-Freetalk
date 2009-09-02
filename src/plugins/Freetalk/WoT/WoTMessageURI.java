@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import com.db4o.ext.ExtObjectContainer;
 
+import plugins.Freetalk.DBUtil;
 import plugins.Freetalk.MessageURI;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
@@ -114,14 +115,31 @@ public final class WoTMessageURI extends MessageURI {
 
 	@Override
 	public void removeFrom(ExtObjectContainer db) {
-		mFreenetURI.removeFrom(db);
-		db.delete(this);
+		try {
+			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			
+			DBUtil.checkedDelete(db, this);
+			
+			mFreenetURI.removeFrom(db);
+		}
+		catch(RuntimeException e) {
+			DBUtil.rollbackAndThrow(db, this, e);
+		}
 	}
 
 	@Override
 	public void storeWithoutCommit(ExtObjectContainer db) {
-		db.store(mFreenetURI);
-		db.store(this);
+		try {
+			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			
+			// You have to take care to keep the list of stored objects synchronized with those being deleted in removeFrom() !
+			
+			db.store(mFreenetURI);
+			db.store(this);
+		}
+		catch(RuntimeException e) {
+			DBUtil.rollbackAndThrow(db, this, e);
+		}
 	}
 
 }

@@ -123,30 +123,31 @@ public abstract class MessageManager implements Runnable {
 	 * 
 	 * Deletes any messages and message lists referencing to it.
 	 * 
-	 * Neither locks the database nor commits the transaction. You have to lock the MessageManager and the database before calling this function.
+	 * This function does not commit the transaction and therefore does not lock this MessageManager and the database.
+	 * - Therefore you have to lock the MessageManager and the database before calling this function.
 	 */
 	public void onIdentityDeletion(FTIdentity identity) {
-				for(Message message : getMessagesBy(identity)) {
-					message.initializeTransient(db, this);
-					message.deleteWithoutCommit();
-				}
+		for(Message message : getMessagesBy(identity)) {
+			message.initializeTransient(db, this);
+			message.deleteWithoutCommit();
+		}
 
-				for(MessageList messageList : getMessageListsBy(identity)) {
-					messageList.initializeTransient(db, this);
-					messageList.deleteWithoutCommit();
-				}
+		for(MessageList messageList : getMessageListsBy(identity)) {
+			messageList.initializeTransient(db, this);
+			messageList.deleteWithoutCommit();
+		}
 
-				if(identity instanceof FTOwnIdentity) {
-					for(OwnMessage message : getOwnMessagesBy((FTOwnIdentity)identity)) {
-						message.initializeTransient(db, this);
-						message.deleteWithoutCommit();
-					}
+		if(identity instanceof FTOwnIdentity) {
+			for(OwnMessage message : getOwnMessagesBy((FTOwnIdentity)identity)) {
+				message.initializeTransient(db, this);
+				message.deleteWithoutCommit();
+			}
 
-					for(OwnMessageList messageList : getOwnMessageListsBy((FTOwnIdentity)identity)) {
-						messageList.initializeTransient(db, this);
-						messageList.deleteWithoutCommit();
-					}
-				}
+			for(OwnMessageList messageList : getOwnMessageListsBy((FTOwnIdentity)identity)) {
+				messageList.initializeTransient(db, this);
+				messageList.deleteWithoutCommit();
+			}
+		}
 	}
 	
 	/**

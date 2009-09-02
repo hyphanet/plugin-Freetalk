@@ -8,12 +8,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
+import plugins.Freetalk.DBUtil;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.PluginTalkerBlocking;
+import plugins.Freetalk.Tasks.PersistentTaskManager;
 import plugins.Freetalk.exceptions.DuplicateIdentityException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
@@ -556,7 +558,11 @@ public class WoTIdentityManager extends IdentityManager {
 		long lastAcceptTime = CurrentTimeUTC.getInMillis() - THREAD_PERIOD * 3;
 		
 		MessageManager messageManager = mFreetalk.getMessageManager();
+		PersistentTaskManager taskManager = mFreetalk.getTaskManager();
 		
+		// FIXME: This locking is very ugly but necessary. For the current order, we have to ensure that the MessageManager does never lock itself and then
+		// the task manager... Currently, this is the fact, but as soon as we get tasks which depend on messages this might change.
+		synchronized(taskManager) {
 		synchronized(messageManager) {
 		synchronized(this) {
 		Query q = db.query();
@@ -568,16 +574,23 @@ public class WoTIdentityManager extends IdentityManager {
 			synchronized(db.lock()) {
 				try {
 					Logger.debug(this, "Garbage collecting identity " + identity.getRequestURI());
+					
 					identity.initializeTransient(db, this);
+					
 					messageManager.onIdentityDeletion(identity);
+					
+					if(identity instanceof WoTOwnIdentity)
+						taskManager.onOwnIdentityDeletion((WoTOwnIdentity)identity);
+					
 					identity.deleteWithoutCommit();
+					
 					db.commit(); Logger.debug(this, "COMMITED.");
 				}
 				catch(RuntimeException e) {
-					db.rollback();
-					Logger.error(this, "ROLLED BACK: Error in garbageCollectIdentities", e);
+					DBUtil.rollbackAndThrow(db, this, e);
 				}
 			}
+		}
 		}
 		}
 		}

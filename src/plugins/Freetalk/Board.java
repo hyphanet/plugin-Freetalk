@@ -121,14 +121,12 @@ public final class Board implements Comparable<Board> {
      */
     protected void storeWithoutCommit() {
     	try  {
-    		if(db.ext().isStored(this) && !db.ext().isActive(this))
-    			throw new RuntimeException("Trying to store a non-active Board object");
+    		DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
 
     		db.store(this);
     	}
     	catch(RuntimeException e) {
-    		db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-    		throw e;
+    		DBUtil.rollbackAndThrow(db, this, e);
     	}
     }
 
@@ -697,14 +695,12 @@ public final class Board implements Comparable<Board> {
          */
         protected void storeWithoutCommit(ExtObjectContainer db) {
         	try {
-        		if(db.ext().isStored(this) && !db.ext().isActive(this))
-        			throw new RuntimeException("Trying to store a non-active MessageReference object");
+        		DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
 
         		db.store(this);
         	}
         	catch(RuntimeException e) {
-        		db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-        		throw e;
+        		DBUtil.rollbackAndThrow(db, this, e);
         	}
         }
     }

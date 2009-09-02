@@ -1,6 +1,8 @@
 package plugins.Freetalk.Tasks;
 
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.exceptions.DuplicateTaskException;
 import plugins.Freetalk.exceptions.NoSuchTaskException;
 
@@ -14,16 +16,19 @@ import freenet.support.Logger;
 
 public class PersistentTaskManager implements Runnable {
 	
+	protected Freetalk mFreetalk;
+	
 	protected ExtObjectContainer mDB;
 	
 	protected Executor mExecutor;
 	
-	public PersistentTaskManager(ExtObjectContainer myDB, Executor myExecutor) {
+	public PersistentTaskManager(ExtObjectContainer myDB, Executor myExecutor, Freetalk myFreetalk) {
 		assert(myDB != null);
 		assert(myExecutor != null);
 		
 		mDB = myDB;
 		mExecutor = myExecutor;
+		mFreetalk = myFreetalk;
 	}
 	
 	public void run() {
@@ -116,6 +121,28 @@ public class PersistentTaskManager implements Runnable {
 		q.descend("mNextDisplayTime").orderDescending();
 		
 		return q.execute();
+	}
+	
+	/**
+	 * Called by the {@link IdentityManager} before an identity is deleted from the database.
+	 * 
+	 * Deletes all it's tasks.
+	 * 
+	 * This function does not commit the transaction and therefore does not lock this PersistentTaskManager and the database.
+	 * - Therefore you have to lock the PersistentTaskmanager and the database before calling this function.
+	 */
+	@SuppressWarnings("unchecked")
+	public void onOwnIdentityDeletion(FTOwnIdentity identity) {
+		Query q = mDB.query();
+		
+		q.constrain(PersistentTask.class);
+		q.descend("mOwner").constrain(identity).identity();
+		ObjectSet<PersistentTask> tasks = q.execute();
+		
+		for(PersistentTask task : tasks) {
+			task.initializeTransient(mDB, mFreetalk);
+			task.deleteWithoutCommit();
+		}
 	}
 
 }

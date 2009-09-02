@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import plugins.Freetalk.DBUtil;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
@@ -151,8 +152,7 @@ public class WoTIdentity implements FTIdentity {
 
 	protected void storeWithoutCommit() {
 		try {		
-			if(db.ext().isStored(this) && !db.ext().isActive(this))
-				throw new RuntimeException("Trying to store a non-active WoTIdentity object");
+			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
 
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 			
@@ -160,24 +160,20 @@ public class WoTIdentity implements FTIdentity {
 			db.store(this);
 		}
 		catch(RuntimeException e) {
-			db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-			throw e;
+			DBUtil.rollbackAndThrow(db, this, e);
 		}
 	}
 	
 	protected void deleteWithoutCommit() {
-		if(db.ext().isStored(this) && !db.ext().isActive(this))
-			throw new RuntimeException("Trying to delete a non-active WoTIdentity object");
-		
-		db.activate(this, 3); // TODO: Figure out what depth we actually need.
-		
 		try {
-			db.delete(this);
+			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			
+			DBUtil.checkedDelete(db, this);
+			
 			mRequestURI.removeFrom(db);
 		}
 		catch(RuntimeException e) {
-			db.rollback(); Logger.debug(this, "ROLLED BACK!");
-			throw e;
+			DBUtil.rollbackAndThrow(db, this, e);
 		}
 	}
 }
