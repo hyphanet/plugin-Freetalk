@@ -110,6 +110,8 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 		try {
 			if(db.ext().isStored(this) && !db.ext().isActive(this))
 				throw new RuntimeException("Trying to store a non-active WoTOwnIdentity object");
+			
+			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 
 			// TODO: As soon as we have a unit test which checks whether the content of subscribed boards gets stored, specify a depth here. Probably 1
 			db.store(mSubscribedBoards);
@@ -127,13 +129,14 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 		if(db.ext().isStored(this) && !db.ext().isActive(this))
 			throw new RuntimeException("Trying to delete a non-active WoTIdentity object");
 		
-		/* FIXME: We also need to check whether the member objects are active here!!! */
+		// super.deleteWithoutCommit() does the following already so there is no need to do it here
+		// db.activate(this, 3);
 		
 		try {
-			db.delete(mSubscribedBoards);
-			mInsertURI.removeFrom(db);
-			db.delete(mAssessed);
 			super.deleteWithoutCommit();
+			db.delete(mAssessed);
+			mInsertURI.removeFrom(db);
+			db.delete(mSubscribedBoards);
 		}
 		catch(RuntimeException e) {
 			db.rollback(); Logger.debug(this, "ROLLED BACK!");

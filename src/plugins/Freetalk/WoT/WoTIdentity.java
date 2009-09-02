@@ -6,9 +6,7 @@ package plugins.Freetalk.WoT;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
-import plugins.Freetalk.exceptions.DuplicateIdentityException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
-import plugins.Freetalk.exceptions.NoSuchIdentityException;
 
 import com.db4o.ext.ExtObjectContainer;
 
@@ -41,11 +39,6 @@ public class WoTIdentity implements FTIdentity {
 	 */
 	private long mLastReceivedFromWoT;
 	
-	/**
-	 * Set to true if the identity is referenced by any messages.
-	 */
-	private boolean mIsNeeded;
-	
 	/* References to objects of the plugin, not stored in the database. */
 	
 	protected transient ExtObjectContainer db;
@@ -68,7 +61,6 @@ public class WoTIdentity implements FTIdentity {
 		mRequestURI = myRequestURI;
 		mNickname = myNickname;
 		mLastReceivedFromWoT = CurrentTimeUTC.getInMillis();
-		mIsNeeded = false;
 	}
 	
 	/**
@@ -133,16 +125,6 @@ public class WoTIdentity implements FTIdentity {
 		mLastReceivedFromWoT = time;
 		storeWithoutCommit();
 	}
-	
-	public synchronized boolean isNeeded() {
-		return mIsNeeded;
-	}
-	
-	public synchronized void setIsNeeded(boolean newValue) {
-		mIsNeeded = newValue;
-		storeWithoutCommit();
-	}
-	
 
 	/**
 	 * Validates the nickname. If it is valid, nothing happens. If it is invalid, an exception is thrown which exactly describes what is
@@ -172,6 +154,8 @@ public class WoTIdentity implements FTIdentity {
 			if(db.ext().isStored(this) && !db.ext().isActive(this))
 				throw new RuntimeException("Trying to store a non-active WoTIdentity object");
 
+			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
+			
 			db.store(mRequestURI);
 			db.store(this);
 		}
@@ -185,11 +169,11 @@ public class WoTIdentity implements FTIdentity {
 		if(db.ext().isStored(this) && !db.ext().isActive(this))
 			throw new RuntimeException("Trying to delete a non-active WoTIdentity object");
 		
-		/* FIXME: We also need to check whether the member objects are active here!!! */
+		db.activate(this, 3); // TODO: Figure out what depth we actually need.
 		
 		try {
-			mRequestURI.removeFrom(db);
 			db.delete(this);
+			mRequestURI.removeFrom(db);
 		}
 		catch(RuntimeException e) {
 			db.rollback(); Logger.debug(this, "ROLLED BACK!");
