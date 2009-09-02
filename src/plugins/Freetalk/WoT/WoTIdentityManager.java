@@ -12,7 +12,7 @@ import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
-import plugins.Freetalk.Message;
+import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.PluginTalkerBlocking;
 import plugins.Freetalk.exceptions.DuplicateIdentityException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
@@ -550,25 +550,27 @@ public class WoTIdentityManager extends IdentityManager {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private synchronized void garbageCollectIdentities() {
+	private void garbageCollectIdentities() {
 		/* Executing the thread loop once will always take longer than THREAD_PERIOD. Therefore, if we set the limit to 3*THREAD_PERIOD,
 		 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */
 		long lastAcceptTime = CurrentTimeUTC.getInMillis() - THREAD_PERIOD * 3;
 		
+		MessageManager messageManager = mFreetalk.getMessageManager();
+		
+		synchronized(messageManager) {
+		synchronized(this) {
 		Query q = db.query();
 		q.constrain(WoTIdentity.class);
-		q.descend("mIsNeeded").constrain(false);
 		q.descend("mLastReceivedFromWoT").constrain(lastAcceptTime).smaller();
 		ObjectSet<WoTIdentity> result = q.execute();
 		
-		while(result.hasNext()) {
+		for(WoTIdentity identity : result) {
 			synchronized(db.lock()) {
 				try {
-					WoTIdentity i = result.next();
-					assert(identityIsNotNeeded(i)); /* Check whether the isNeeded field of the identity was correct */
-					Logger.debug(this, "Garbage collecting identity " + i.getRequestURI());
-					i.initializeTransient(db, this);
-					i.deleteWithoutCommit();
+					Logger.debug(this, "Garbage collecting identity " + identity.getRequestURI());
+					identity.initializeTransient(db, this);
+					messageManager.onIdentityDeletion(identity);
+					identity.deleteWithoutCommit();
 					db.commit(); Logger.debug(this, "COMMITED.");
 				}
 				catch(RuntimeException e) {
@@ -577,19 +579,8 @@ public class WoTIdentityManager extends IdentityManager {
 				}
 			}
 		}
-		
-	}
-	
-	/**
-	 * Debug function for checking whether the isNeeded field of an identity is correct.
-	 */
-	private boolean identityIsNotNeeded(WoTIdentity i) {
-		/* FIXME: This function does not lock, it should probably. But we cannot lock on the message manager because it locks on the identity
-		 * manager and therefore this might cause deadlock. */
-		Query q = db.query();
-		q.constrain(Message.class);
-		q.descend("mAuthor").constrain(i);
-		return (q.execute().size() == 0);
+		}
+		}
 	}
 	
 	private synchronized boolean connectToWoT() {
