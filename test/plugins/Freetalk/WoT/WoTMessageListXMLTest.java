@@ -1,4 +1,4 @@
-package plugins.Freetalk.test;
+package plugins.Freetalk.WoT;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -9,6 +9,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import plugins.Freetalk.Board;
+import plugins.Freetalk.DatabaseBasedTest;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTMessageList;

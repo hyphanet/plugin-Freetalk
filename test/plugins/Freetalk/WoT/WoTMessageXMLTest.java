@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package plugins.Freetalk.test;
+package plugins.Freetalk.WoT;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import plugins.Freetalk.Board;
+import plugins.Freetalk.DatabaseBasedTest;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;

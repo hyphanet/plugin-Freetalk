@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package plugins.Freetalk.test;
+package plugins.Freetalk.WoT;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import plugins.Freetalk.Board;
+import plugins.Freetalk.DatabaseBasedTest;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.Board.BoardThreadLink;
