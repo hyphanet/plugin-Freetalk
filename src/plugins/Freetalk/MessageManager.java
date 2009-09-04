@@ -677,11 +677,13 @@ public abstract class MessageManager implements Runnable {
 	 * 
 	 * The purpose of this behavior is to ensure that own messages are only displayed to the user if they have been successfully inserted.
 	 * 
+	 * Does not lock the MessageManager, you have to do this while calling the function and parsing the returned list.
+	 * 
 	 * @param author An identity or own identity.
 	 * @return All messages of the given identity except those of class OwnMessage.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized List<Message> getMessagesBy(FTIdentity author) {
+	public List<Message> getMessagesBy(FTIdentity author) {
 		Query query = db.query();
 		query.constrain(Message.class);
 		query.constrain(OwnMessage.class).not();
