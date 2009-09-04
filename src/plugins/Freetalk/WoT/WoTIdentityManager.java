@@ -77,7 +77,7 @@ public class WoTIdentityManager extends IdentityManager {
 	/**
 	 * For being used in JUnit tests to run without a node.
 	 */
-	public WoTIdentityManager(ExtObjectContainer myDB) {
+	WoTIdentityManager(ExtObjectContainer myDB) {
 		super(myDB);
 		mIsUnitTest = true;
 		mFreetalk = null;

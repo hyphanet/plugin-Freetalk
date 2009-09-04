@@ -77,7 +77,7 @@ public class WoTMessageManager extends MessageManager {
 	/**
 	 * For being used in JUnit tests to run without a node.
 	 */
-	public WoTMessageManager(ExtObjectContainer myDB, WoTIdentityManager myIdentityManager) {
+	WoTMessageManager(ExtObjectContainer myDB, WoTIdentityManager myIdentityManager) {
 		super(myDB, myIdentityManager);
 		
 		mFreetalk = null;
