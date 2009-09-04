@@ -64,7 +64,7 @@ import freenet.support.CurrentTimeUTC;
  * functions for listing all threads, replies, etc.
  * 
  */
-public class ThreadTreeTest extends DatabaseBasedTest {
+public class WoTMessageManagerTest extends DatabaseBasedTest {
 	
 	private WoTIdentityManager mIdentityManager;
 	private WoTMessageManager mMessageManager;
