@@ -235,7 +235,7 @@ public final class Board implements Comparable<Board> {
     }
 
     /**
-     * Called by the <code>FTMessageManager</code> to add a just received message to the board.
+     * Called by the {@link MessageManager} to add a just received message to the board.
      * The job for this function is to find the right place in the thread-tree for the new message and to move around older messages
      * if a parent message of them is received.
      * 
@@ -312,6 +312,44 @@ public final class Board implements Comparable<Board> {
     		mLatestMessageDate = newMessage.getDate();
 
     	storeWithoutCommit();
+    }
+    
+    /**
+     * Called by the {@link MessageManager} before a {@link Message} object is deleted from the database.
+     * This usually happens when an {@link FTIdentity} is being deleted.
+     * 
+     * Does not delete the Message object itself, this is to be done by the callee.
+     * 
+     * @param message The message which is about to be deleted. It must still be stored within the database so that queries on it work.
+     * @throws NoSuchMessageException If the message does not exist in this Board.
+     */
+    protected synchronized void deleteMessage(Message message) throws NoSuchMessageException {
+    	
+    	try {
+    		// Check whether the message was listed as a thread.
+    		BoardThreadLink threadLink = getThreadReference(message.getID());
+    		
+    		// If it was listed as a thread and had no replies, we can delete it's ThreadLink.
+    		// We do not delete the ThreadLink if it has replies already: We want the replies to stay visible and therefore the ThreadLink has to be kept,
+    		// db4o will set it's mMessage field to null after the message was deleted so it will become a ghost thread reference.
+	    	if(getAllThreadReplies(message.getID(), false).size() == 0)
+	    		threadLink.deleteWithoutCommit(db);
+    	}
+    	catch(NoSuchMessageException e) { // getThreadReference failed
+    		if(message.isThread()) {
+				Logger.error(this, "Should not happen: deleteMessage() called for a thread which does not exist in this Board.", e);
+				throw e;
+    		}
+    	}
+    	
+    	if(message.isThread() == false) {
+			try {
+				getMessageReference(message).deleteWithoutCommit(db);
+			} catch (NoSuchMessageException e) {
+				Logger.error(this, "Should not happen: deleteMessage() called for a reply message which does not exist in this Board.", e);
+				throw e;
+			}
+    	}
     }
 
     /**
@@ -663,8 +701,8 @@ public final class Board implements Comparable<Board> {
     		
     		assert(mMessageIndex >= mBoard.getFreeMessageIndex());
     	}
-    	
-    	private MessageReference(Board myBoard, Message myMessage, int myMessageIndex) {
+
+		private MessageReference(Board myBoard, Message myMessage, int myMessageIndex) {
     		this(myBoard, myMessageIndex);
     		
     		if(myMessage == null)
@@ -703,6 +741,18 @@ public final class Board implements Comparable<Board> {
         		DBUtil.rollbackAndThrow(db, this, e);
         	}
         }
+        
+    	protected void deleteWithoutCommit(ExtObjectContainer db) {
+    		try {
+    			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+    			
+    			DBUtil.checkedDelete(db, this);
+    		}
+    		catch(RuntimeException e) {
+        		DBUtil.rollbackAndThrow(db, this, e);
+        	}
+			
+		}
     }
 
     

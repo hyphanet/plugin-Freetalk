@@ -25,39 +25,7 @@ import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 
-/**
- * When you obtain a message object from the database, different kinds of other message objects can be queried from the message:
- * - The thread it belongs to
- * - The message it is a reply to
- * - The replies to the message
- * 
- * Because messages are downloaded in random order, any of those referenced other messages can be unknown to Freetalk at a single point in time.
- * For example if the thread a message belongs to was not downloaded yet, the message object contains the FreenetURI of the thread (which is
- * sort of it's "primary key" in database-speech) but the reference to the actual message object which IS the thread will be null because the
- * thread was not downloaded yet.
- * 
- * Therefore, it is the job of the MessageManager object and Board objects to <b>correctly</b> update associations of Message objects with
- * each others, for example:
- * - when a new message is downloaded, all it's already existent children should be linked to it
- * - when a new thread is downloaded, all messages whose parent messages have not been downloaded yet should be temporarily be set as children
- *		of the thread, even though they are not.
- * - when a new message is downloaded, it should be ensured that any temporary parent&child associations mentioned in the previous line are
- *		 replaced with the real parent&child association with the new message.
- * - etc.
- * 
- * There are many pitfalls in those tasks which might cause messages being permanently linked to wrong parents, children or threads or even
- * being lost.
- * Therefore, it is the job of this unit test to use a hardcoded image of an example thread tree with several messages for testing whether
- * the thread tree is properly reconstructed if the messages are fed in random order to the WoTMessageManager.
- * 
- * This is accomplished by feeding the messages in ANY possible order to the WoTMessageManager (each time with a new blank database) and
- * verifying the thread tree after storing the messages. "Any possible order" means that all permutations of the ordering are covered.
- * 
- * As a side effect, this test also ensures that no messages are invisible to the user when querying the WoTMessageManager for messages in a
- * certain board. This is done by not querying the database for the hardcoded message IDs directly but rather using the client-interface
- * functions for listing all threads, replies, etc.
- * 
- */
+
 public class WoTMessageManagerTest extends DatabaseBasedTest {
 	
 	private WoTIdentityManager mIdentityManager;
@@ -196,6 +164,39 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 	}
 
 	
+	/**
+	 * When you obtain a message object from the database, different kinds of other message objects can be queried from the message:
+	 * - The thread it belongs to
+	 * - The message it is a reply to
+	 * - The replies to the message
+	 * 
+	 * Because messages are downloaded in random order, any of those referenced other messages can be unknown to Freetalk at a single point in time.
+	 * For example if the thread a message belongs to was not downloaded yet, the message object contains the FreenetURI of the thread (which is
+	 * sort of it's "primary key" in database-speech) but the reference to the actual message object which IS the thread will be null because the
+	 * thread was not downloaded yet.
+	 * 
+	 * Therefore, it is the job of the MessageManager object and Board objects to <b>correctly</b> update associations of Message objects with
+	 * each others, for example:
+	 * - when a new message is downloaded, all it's already existent children should be linked to it
+	 * - when a new thread is downloaded, all messages whose parent messages have not been downloaded yet should be temporarily be set as children
+	 *		of the thread, even though they are not.
+	 * - when a new message is downloaded, it should be ensured that any temporary parent&child associations mentioned in the previous line are
+	 *		 replaced with the real parent&child association with the new message.
+	 * - etc.
+	 * 
+	 * There are many pitfalls in those tasks which might cause messages being permanently linked to wrong parents, children or threads or even
+	 * being lost.
+	 * Therefore, it is the job of this unit test to use a hardcoded image of an example thread tree with several messages for testing whether
+	 * the thread tree is properly reconstructed if the messages are fed in random order to the WoTMessageManager.
+	 * 
+	 * This is accomplished by feeding the messages in ANY possible order to the WoTMessageManager (each time with a new blank database) and
+	 * verifying the thread tree after storing the messages. "Any possible order" means that all permutations of the ordering are covered.
+	 * 
+	 * As a side effect, this test also ensures that no messages are invisible to the user when querying the WoTMessageManager for messages in a
+	 * certain board. This is done by not querying the database for the hardcoded message IDs directly but rather using the client-interface
+	 * functions for listing all threads, replies, etc.
+	 * 
+	 */
 	public void testThreading() throws MalformedURLException, InvalidParameterException, NoSuchIdentityException, NoSuchMessageException {
 		WoTMessage thread0 = createTestMessage(mOwnIdentities[0], null, null);
 			mMessageManager.onMessageReceived(thread0);
@@ -299,10 +300,20 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		mThreads.remove(thread0.getID()); mThreads.addFirst(thread0.getID());
 		verifyStructure();
 	
-		{
-			WoTMessage thread1 = createTestMessage(mOwnIdentities[1], null, null); 	
-			mMessageManager.onMessageReceived(thread1);	
-			mThreads.addFirst(thread1.getID()); // Two empty threads, onMessageReceived called in chronological order
+		// Fork a new thread off thread0 by creating a reply to it. The reply should not be deleted because it's from a different identity.
+		// After deletion of the author of thread0reply0 thread1 should still be visible, as a ghost thread now. See Board.deleteMessage().
+		WoTMessage thread1 = thread0reply0;
+		WoTMessage thread1reply0 = createTestMessage(mOwnIdentities[1], thread1, thread1.getURI());
+		mMessageManager.onMessageReceived(thread1reply0);
+		mThreads.addFirst(thread1.getID());
+		mReplies.put(thread1.getID(), new LinkedList<String>());
+		mReplies.get(thread1.getID()).addFirst(thread1reply0.getID());
+		verifyStructure();
+	
+		{ // This thread should not be deleted because it's from a different identity.
+			WoTMessage thread2 = createTestMessage(mOwnIdentities[1], null, null); 	
+			mMessageManager.onMessageReceived(thread2);	
+			mThreads.addFirst(thread2.getID()); // Two empty threads, onMessageReceived called in chronological order
 			verifyStructure(); 
 		}
 		
@@ -310,11 +321,11 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		mOwnIdentities[0].deleteWithoutCommit();
 		db.commit();
 		
-		// onIdentityDeletion should have deleted that thread.
+		// onIdentityDeletion should have deleted that thread because it only contains messages from the deleted identity.
 		mThreads.remove(thread0.getID());
-		
-		// Check whether BoardThreadLink and BoardMessageLink objects have been deleted.
-		verifyStructure();
+		// Thread 1 should still be visible even though it's message is from the deleted identity because it contains a reply from another identity.
+	
+		verifyStructure(); // Check whether Board.deleteMessage() worked.
 		
 		try {
 			mMessageManager.getOwnMessage(thread0.getID());

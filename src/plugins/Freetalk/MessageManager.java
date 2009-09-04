@@ -129,6 +129,15 @@ public abstract class MessageManager implements Runnable {
 	public void onIdentityDeletion(FTIdentity identity) {
 		for(Message message : getMessagesBy(identity)) {
 			message.initializeTransient(db, this);
+			
+			for(Board board : message.getBoards()) {
+				try {
+					board.deleteMessage(message);
+				} catch (NoSuchMessageException e) {
+					throw new RuntimeException(e);
+				}
+			}
+			
 			message.deleteWithoutCommit();
 		}
 
