@@ -15,19 +15,13 @@ import java.util.UUID;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.DatabaseBasedTest;
-import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.Board.BoardThreadLink;
 import plugins.Freetalk.Board.MessageReference;
-import plugins.Freetalk.WoT.WoTIdentityManager;
-import plugins.Freetalk.WoT.WoTMessage;
-import plugins.Freetalk.WoT.WoTMessageList;
-import plugins.Freetalk.WoT.WoTMessageManager;
-import plugins.Freetalk.WoT.WoTMessageURI;
-import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 
@@ -285,5 +279,53 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 			verifyStructure();
 		}
 
+	}
+	
+	/**
+	 * Tests whether deleting an own identity also deletes it's threads and message lists.
+	 * 
+	 * TODO: Also test for non-own identities.
+	 * TODO: Also check whether deleting MessageFetchFailedReference and MessageListFetchFailedReference works.
+	 */
+	public void testOnIdentityDeletion() throws MalformedURLException, InvalidParameterException, NoSuchIdentityException, NoSuchMessageException {
+		WoTMessage thread0 = createTestMessage(mOwnIdentities[0], null, null);
+		mMessageManager.onMessageReceived(thread0);
+		mThreads.addFirst(thread0.getID()); // Single empty thread
+		
+		WoTMessage thread0reply0 = createTestMessage(mOwnIdentities[0], thread0, thread0.getURI());
+		mMessageManager.onMessageReceived(thread0reply0); //First thread receives 1 reply, should be moved to top now
+		mReplies.put(thread0.getID(), new LinkedList<String>());
+		mReplies.get(thread0.getID()).addLast(thread0reply0.getID()); 
+		mThreads.remove(thread0.getID()); mThreads.addFirst(thread0.getID());
+		verifyStructure();
+	
+		{
+			WoTMessage thread1 = createTestMessage(mOwnIdentities[1], null, null); 	
+			mMessageManager.onMessageReceived(thread1);	
+			mThreads.addFirst(thread1.getID()); // Two empty threads, onMessageReceived called in chronological order
+			verifyStructure(); 
+		}
+		
+		mMessageManager.onIdentityDeletion(mOwnIdentities[0]);
+		mOwnIdentities[0].deleteWithoutCommit();
+		db.commit();
+		
+		// onIdentityDeletion should have deleted that thread.
+		mThreads.remove(thread0.getID());
+		
+		// Check whether BoardThreadLink and BoardMessageLink objects have been deleted.
+		verifyStructure();
+		
+		try {
+			mMessageManager.getOwnMessage(thread0.getID());
+			fail("onIdentityDeletion() did not delete a Message object!");
+		}
+		catch(NoSuchMessageException e) { }
+		
+		try {
+			mMessageManager.getOwnMessageList(thread0.getMessageList().getID());
+			fail("onIdentityDeletion() did not delete a MessageLis objectt!");
+		}
+		catch(NoSuchMessageListException e) { }
 	}
 }

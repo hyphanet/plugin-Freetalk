@@ -243,6 +243,10 @@ public abstract class Message {
 		return mID;
 	}
 	
+	public synchronized MessageList getMessageList() {
+		return mMessageList;
+	}
+	
 	/**
 	 * Get the MessageURI of the thread this message belongs to.
 	 * @throws NoSuchMessageException 
