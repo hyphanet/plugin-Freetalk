@@ -17,10 +17,8 @@ import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
 import plugins.Freetalk.ui.web.WebInterface;
 
 import com.db4o.Db4o;
-import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
 import com.db4o.ext.ExtObjectContainer;
-import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
 import freenet.clients.http.PageMaker.THEME;
@@ -52,8 +50,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	public static final String PLUGIN_TITLE = "Freetalk-testing"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
 	public static final String WOT_NAME = "plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "Freetalk";
-	public static final String DATABASE_FILENAME = "freetalk-testing-3.db4o";
-	public static final int DATABASE_FORMAT_VERSION = -97;
+	public static final String DATABASE_FILENAME = "freetalk-testing-4.db4o";
+	public static final int DATABASE_FORMAT_VERSION = -96;
 
 	/* References from the node */
 	
@@ -107,8 +105,6 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 		
 		upgradeDatabase();
-
-		deleteBrokenObjects();
 		
 //		/* FIXME: Debug code, remove when not needed anymore */
 //		Logger.debug(this, "Wiping database...");
@@ -201,24 +197,6 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		
 		throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
 				+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
-	}
-	
-	/**
-	 * Debug function.
-	 */
-	@SuppressWarnings("unchecked")
-	private void deleteBrokenObjects() {
-		Query q = db.query();
-		q.constrain(Message.class);
-		q.descend("mAuthor").constrain(null).identity();
-		
-		ObjectSet<Message> brokenMessages = q.execute();
-		for(Message m : brokenMessages) {
-			Logger.error(m, "Deleting message with mAuthor == null: " + m.getURI());
-			db.delete(m);
-		}
-
-		db.commit(); Logger.debug(this, "COMMITED.");
 	}
 
 	private void closeDatabase() {
