@@ -140,7 +140,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		mMessageListInserter = new WoTMessageListInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT MessageList Inserter", mIdentityManager, mMessageManager);
 		
 		Logger.debug(this, "Creating task manager...");
-		mTaskManager = new PersistentTaskManager(db, mPluginRespirator.getNode().executor);
+		mTaskManager = new PersistentTaskManager(db, mPluginRespirator.getNode().executor, this);
 
 
 		Logger.debug(this, "Creating FCP interface...");
