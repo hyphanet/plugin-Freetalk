@@ -1,5 +1,7 @@
 package plugins.Freetalk.tasks;
 
+import java.util.Random;
+
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
@@ -16,27 +18,76 @@ import freenet.support.Logger;
 
 public class PersistentTaskManager implements Runnable {
 	
+	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
+	private static final int THREAD_PERIOD = 1 * 60 * 1000;
+	
 	protected Freetalk mFreetalk;
 	
 	protected ExtObjectContainer mDB;
 	
 	protected Executor mExecutor;
+	private volatile boolean isRunning = false;
+	private volatile boolean shutdownFinished = false;
+	private Thread mThread = null;
 	
-	public PersistentTaskManager(ExtObjectContainer myDB, Executor myExecutor, Freetalk myFreetalk) {
+	public PersistentTaskManager(ExtObjectContainer myDB, Freetalk myFreetalk) {
 		assert(myDB != null);
-		assert(myExecutor != null);
 		
 		mDB = myDB;
-		mExecutor = myExecutor;
 		mFreetalk = myFreetalk;
 	}
 	
 	public void run() {
+		Logger.debug(this, "Task manager started.");
+		mThread = Thread.currentThread();
+		
+		Random random = mFreetalk.getPluginRespirator().getNode().fastWeakRandom;
+		
+		try {
+		while(isRunning) {
+			Thread.interrupted();
+			Logger.debug(this, "Task manager loop running...");
 
+			long now = CurrentTimeUTC.getInMillis();
+			deleteExpiredTasks(now);
+			proccessTasks(now);
+			
+			Logger.debug(this, "Task manager loop finished.");
+
+			try {
+				Thread.sleep(THREAD_PERIOD/2 + random.nextInt(THREAD_PERIOD)); // TODO: Maybe use a Ticker implementation instead?
+			}
+			catch (InterruptedException e)
+			{
+				mThread.interrupt();
+			}
+		}
+		}
+		
+		finally {
+			synchronized (this) {
+				shutdownFinished = true;
+				Logger.debug(this, "Task manager thread exiting.");
+				notify();
+			}
+		}
 	}
 	
 	public void terminate() {
-
+		Logger.debug(this, "Stopping the task manager...");
+		isRunning = false;
+		mThread.interrupt();
+		synchronized(this) {
+			while(!shutdownFinished) {
+				try {
+					wait();
+				}
+				catch (InterruptedException e) {
+					Thread.interrupted();
+				}
+			}
+		}
+		Logger.debug(this, "Stopped the task manager.");
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -67,6 +118,7 @@ public class PersistentTaskManager implements Runnable {
 		
 		q.constrain(PersistentTask.class);
 		q.descend("mNextProcessingTime").constrain(currentTime).smaller();
+		q.descend("mNextProcessingTime").orderAscending();
 		ObjectSet<PersistentTask> pendingTasks = q.execute();
 		
 		for(PersistentTask task : pendingTasks) {
