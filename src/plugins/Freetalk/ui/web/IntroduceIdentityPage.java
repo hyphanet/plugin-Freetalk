@@ -3,10 +3,10 @@ package plugins.Freetalk.ui.web;
 import java.util.List;
 
 import plugins.Freetalk.Freetalk;
-import plugins.Freetalk.Tasks.WoT.IntroduceIdentityTask;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.NoSuchTaskException;
+import plugins.Freetalk.tasks.WoT.IntroduceIdentityTask;
 import freenet.clients.http.RedirectException;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;

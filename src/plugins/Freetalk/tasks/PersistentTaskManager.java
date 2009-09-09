@@ -1,4 +1,4 @@
-package plugins.Freetalk.Tasks;
+package plugins.Freetalk.tasks;
 
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;

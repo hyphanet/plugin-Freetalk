@@ -15,13 +15,13 @@ import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.PluginTalkerBlocking;
-import plugins.Freetalk.Tasks.PersistentTaskManager;
 import plugins.Freetalk.exceptions.DuplicateIdentityException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import plugins.Freetalk.exceptions.NotTrustedException;
 import plugins.Freetalk.exceptions.WoTDisconnectedException;
+import plugins.Freetalk.tasks.PersistentTaskManager;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
