@@ -21,7 +21,9 @@ import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import plugins.Freetalk.exceptions.NotTrustedException;
 import plugins.Freetalk.exceptions.WoTDisconnectedException;
+import plugins.Freetalk.tasks.PersistentTask;
 import plugins.Freetalk.tasks.PersistentTaskManager;
+import plugins.Freetalk.tasks.WoT.IntroduceIdentityTask;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -211,7 +213,7 @@ public class WoTIdentityManager extends IdentityManager {
 	public synchronized Iterator<FTOwnIdentity> ownIdentityIterator() {
 		try {
 			fetchOwnIdentities();
-			/* FIXME: Garbage collect own identities! */
+			garbageCollectIdentities();
 		} 
 		catch(Exception e) {} /* Ignore, return the ones which are in database now */
 		
@@ -454,17 +456,12 @@ public class WoTIdentityManager extends IdentityManager {
 	}
 	
 
-	private synchronized void addFreetalkContext(WoTIdentity oid) {
+	private synchronized void addFreetalkContext(WoTIdentity oid) throws Exception {
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "AddContext");
 		params.putOverwrite("Identity", oid.getID());
 		params.putOverwrite("Context", Freetalk.WOT_CONTEXT);
-		try {
-			sendFCPMessageBlocking(params, null, "ContextAdded");
-		} catch(Exception e) {
-			/* We do not throw because that would make parseIdentities() too complicated */
-			Logger.error(this, "Adding Freetalk context failed.", e);
-		}
+		sendFCPMessageBlocking(params, null, "ContextAdded");
 	}
 	
 	/**
@@ -494,6 +491,26 @@ public class WoTIdentityManager extends IdentityManager {
 		parseIdentities(sendFCPMessageBlocking(p2, null, "OwnIdentities").params, true);
 	}
 	
+	/**
+	 * Called by this WoTIdentityManager after a new WoTIdentity has been stored to the database and before committing the transaction.
+	 * 
+	 * 
+	 * You have to lock this WoTIdentityManager, the PersistentTaskManager and the database before calling this function.
+	 * 
+	 * @param newIdentity
+	 * @throws Exception If adding the Freetalk context to the identity in WoT failed.
+	 */
+	private void onIdentityCreated(WoTIdentity newIdentity) throws Exception {
+		if(newIdentity instanceof WoTOwnIdentity) {
+			/* FIXME: Only add the context if the user actually uses the identity with Freetalk */
+			addFreetalkContext(newIdentity);
+			
+			PersistentTask introductionTask = new IntroduceIdentityTask((WoTOwnIdentity)newIdentity);
+			introductionTask.initializeTransient(db, mFreetalk);
+			introductionTask.storeWithoutCommit();
+		}
+	}
+	
 	@SuppressWarnings("unchecked")
 	private void parseIdentities(SimpleFieldSet params, boolean bOwnIdentities) {
 		if(bOwnIdentities)
@@ -502,6 +519,8 @@ public class WoTIdentityManager extends IdentityManager {
 			Logger.debug(this, "Parsing received identities...");
 		
 		long time = CurrentTimeUTC.getInMillis();
+		
+		final PersistentTaskManager taskManager = mFreetalk.getTaskManager();
 	
 		for(int idx = 1; ; idx++) {
 			String identityID = params.get("Identity"+idx);
@@ -511,6 +530,7 @@ public class WoTIdentityManager extends IdentityManager {
 			String insertURI = bOwnIdentities ? params.get("InsertURI"+idx) : null;
 			String nickname = params.get("Nickname"+idx);
 
+			synchronized(taskManager) {
 			synchronized(this) { /* We lock here and not during the whole function to allow other threads to execute */
 				Query q = db.query();
 				q.constrain(WoTIdentity.class);
@@ -527,6 +547,9 @@ public class WoTIdentityManager extends IdentityManager {
 
 							id.initializeTransient(db, this);
 							id.storeWithoutCommit();
+							
+							onIdentityCreated(id);
+							
 							db.commit(); Logger.debug(this, "COMMITED.");
 						}
 						catch(Exception e) {
@@ -539,13 +562,19 @@ public class WoTIdentityManager extends IdentityManager {
 					assert(result.size() == 1);
 					id = result.next();
 					id.initializeTransient(db, this);
+					
+					synchronized(db.lock()) {
+						try {
+							id.setLastReceivedFromWoT(time);
+							db.commit(); Logger.debug(this, "COMMITED.");
+						}
+						catch(RuntimeException e) {
+							db.rollback();
+							Logger.error(this, "ROLLED BACK: Error in parseIdentities", e);
+						}
+					}
 				}
-
-				if(id != null) {
-					if(bOwnIdentities)	/* FIXME: Only add the context if the user actually uses the identity with Freetalk */
-						addFreetalkContext(id);
-					id.setLastReceivedFromWoT(time);
-				}
+			}
 			}
 			Thread.yield();
 		}
@@ -560,10 +589,6 @@ public class WoTIdentityManager extends IdentityManager {
 		MessageManager messageManager = mFreetalk.getMessageManager();
 		PersistentTaskManager taskManager = mFreetalk.getTaskManager();
 		
-		// FIXME: This locking is very ugly but necessary. For the current order, we have to ensure that the MessageManager does never lock itself and then
-		// the task manager... Currently, this is the fact, but as soon as we get tasks which depend on messages this might change.
-		synchronized(taskManager) {
-		synchronized(messageManager) {
 		synchronized(this) {
 		Query q = db.query();
 		q.constrain(WoTIdentity.class);
@@ -571,28 +596,30 @@ public class WoTIdentityManager extends IdentityManager {
 		ObjectSet<WoTIdentity> result = q.execute();
 		
 		for(WoTIdentity identity : result) {
-			synchronized(db.lock()) {
-				try {
-					Logger.debug(this, "Garbage collecting identity " + identity.getRequestURI());
-					
-					identity.initializeTransient(db, this);
-					
-					messageManager.onIdentityDeletion(identity);
-					
-					if(identity instanceof WoTOwnIdentity)
-						taskManager.onOwnIdentityDeletion((WoTOwnIdentity)identity);
-					
-					identity.deleteWithoutCommit();
-					
-					db.commit(); Logger.debug(this, "COMMITED.");
-				}
-				catch(RuntimeException e) {
-					DBUtil.rollbackAndThrow(db, this, e);
-				}
+			Logger.debug(this, "Garbage collecting identity " + identity);
+			deleteIdentity(identity, messageManager, taskManager);
+		}
+		}
+	}
+	
+	private void deleteIdentity(WoTIdentity identity, MessageManager messageManager, PersistentTaskManager taskManager) {
+		
+		messageManager.onIdentityDeletion(identity);
+
+		if(identity instanceof WoTOwnIdentity)
+			taskManager.onOwnIdentityDeletion((WoTOwnIdentity)identity);
+		
+		synchronized(db.lock()) {
+			try {
+				identity.initializeTransient(db, this);
+				identity.deleteWithoutCommit();
+				
+				Logger.debug(this, "Identity deleted: " + identity);
+				db.commit(); Logger.debug(this, "COMMITED.");
 			}
-		}
-		}
-		}
+			catch(RuntimeException e) {
+				DBUtil.rollbackAndThrow(db, this, e);
+			}
 		}
 	}
 	
