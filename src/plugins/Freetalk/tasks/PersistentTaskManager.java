@@ -124,20 +124,15 @@ public class PersistentTaskManager implements Runnable {
 		ObjectSet<PersistentTask> pendingTasks = q.execute();
 		
 		for(PersistentTask task : pendingTasks) {
-			synchronized(mDB.lock()) {
 				try {
 					Logger.debug(this, "Processing task " + task);
 					task.initializeTransient(mDB, mFreetalk);
 					task.process();
-					task.storeWithoutCommit();
 					Logger.debug(this, "Processing finished.");
-					mDB.commit();
 				}
 				catch(RuntimeException e) {
 					Logger.error(this, "Error while processing a task", e);
-					mDB.rollback();
 				}
-			}
 		}
 	}
 	
