@@ -8,6 +8,7 @@ import plugins.Freetalk.ui.web.IntroduceIdentityPage;
 import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.Logger;
 
 
 /**
@@ -19,7 +20,7 @@ public class IntroduceIdentityTask extends PersistentTask {
 	/**
 	 * How often do we check whether this identity needs to solve introduction puzzles?
 	 */
-	public static final long PROCESSING_INTERVAL = 1 * 60 * 1000; // FIXME: before release, set to: 1 * 24 * 60 * 60 * 1000;
+	public static final long PROCESSING_INTERVAL = 1 * 24 * 60 * 60 * 1000;
 	
 	protected int mPuzzlesToSolve;
 
@@ -38,6 +39,8 @@ public class IntroduceIdentityTask extends PersistentTask {
 		
 		long now = CurrentTimeUTC.getInMillis(); 
 		
+		assert(mNextProcessingTime < now);
+		
 		try {
 			if(mFreetalk.getMessageManager().getMessagesBy(mOwner).size() > 0) {
 				int minimumTrusterCount = mFreetalk.getConfig().getInt(Config.MINIMUM_TRUSTER_COUNT); 
@@ -50,7 +53,8 @@ public class IntroduceIdentityTask extends PersistentTask {
 			
 			mNextProcessingTime = now + PROCESSING_INTERVAL;
 		} catch (Exception e) {
-			mNextProcessingTime = now + PROCESSING_INTERVAL / 8; 
+			mNextProcessingTime = now + PROCESSING_INTERVAL / 8;
+			Logger.error(this, "Error while processing an IntroduceIdentityTask", e);
 		}
 		
 		storeAndCommit();
@@ -70,6 +74,8 @@ public class IntroduceIdentityTask extends PersistentTask {
 		
 		if(mPuzzlesToSolve == 0)
 			mNextDisplayTime = Long.MAX_VALUE;
+		
+		storeAndCommit();
 	}
 	
 	public synchronized int getNumberOfPuzzlesToSolve() {
