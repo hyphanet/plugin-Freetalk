@@ -40,6 +40,7 @@ public class PersistentTaskManager implements Runnable {
 	public void run() {
 		Logger.debug(this, "Task manager started.");
 		mThread = Thread.currentThread();
+		isRunning = true;
 		
 		Random random = mFreetalk.getPluginRespirator().getNode().fastWeakRandom;
 		
@@ -101,6 +102,7 @@ public class PersistentTaskManager implements Runnable {
 		for(PersistentTask task : expiredTasks) {
 			synchronized(mDB.lock()) {
 				try {
+					task.initializeTransient(mDB, mFreetalk);
 					task.deleteWithoutCommit();
 					mDB.commit();
 				}
@@ -124,8 +126,11 @@ public class PersistentTaskManager implements Runnable {
 		for(PersistentTask task : pendingTasks) {
 			synchronized(mDB.lock()) {
 				try {
+					Logger.debug(this, "Processing task " + task);
+					task.initializeTransient(mDB, mFreetalk);
 					task.process();
 					task.storeWithoutCommit();
+					Logger.debug(this, "Processing finished.");
 					mDB.commit();
 				}
 				catch(RuntimeException e) {
@@ -146,7 +151,9 @@ public class PersistentTaskManager implements Runnable {
 		
 		switch(result.size()) {
 			case 1:
-				return result.next();
+				PersistentTask task = result.next();
+				task.initializeTransient(mDB, mFreetalk);
+				return task;
 			case 0:
 				throw new NoSuchTaskException(id);
 			default:
