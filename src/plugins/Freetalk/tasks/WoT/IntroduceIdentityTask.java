@@ -19,11 +19,11 @@ public class IntroduceIdentityTask extends PersistentTask {
 	/**
 	 * How often do we check whether this identity needs to solve introduction puzzles?
 	 */
-	public static final long PROCESSING_INTERVAL = 1 * 24 * 60 * 60 * 1000;
+	public static final long PROCESSING_INTERVAL = 1 * 60 * 1000; // FIXME: before release, set to: 1 * 24 * 60 * 60 * 1000;
 	
 	protected int mPuzzlesToSolve;
 
-	protected IntroduceIdentityTask(WoTOwnIdentity myOwner) {
+	public IntroduceIdentityTask(WoTOwnIdentity myOwner) {
 		super(myOwner);
 		
 		mPuzzlesToSolve = 0;
@@ -53,7 +53,7 @@ public class IntroduceIdentityTask extends PersistentTask {
 			mNextProcessingTime = now + PROCESSING_INTERVAL / 8; 
 		}
 		
-		storeWithoutCommit();
+		storeAndCommit();
 	}
 	
 	public synchronized void onHideForSomeTime() {
@@ -70,8 +70,6 @@ public class IntroduceIdentityTask extends PersistentTask {
 		
 		if(mPuzzlesToSolve == 0)
 			mNextDisplayTime = Long.MAX_VALUE;
-		
-		storeWithoutCommit();
 	}
 	
 	public synchronized int getNumberOfPuzzlesToSolve() {
