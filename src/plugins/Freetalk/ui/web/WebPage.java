@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.ToadletContext;
+import freenet.support.HTMLNode;
 
 /**
  * Interface specifying what a WebPage should do.
@@ -28,4 +29,10 @@ public interface WebPage {
 	 * @throws RedirectException 
 	 */
 	public String toHTML(ToadletContext ctx) throws RedirectException;
+	
+	/**
+	 * Adds this WebPage to the given page as a HTMLNode.
+	 * @throws RedirectException 
+	 */
+	public abstract void addToPage(HTMLNode contentNode) throws RedirectException;
 }

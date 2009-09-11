@@ -12,28 +12,23 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
-public class IntroduceIdentityPage extends WebPageImpl {
-	
-	protected final String mTaskID;
+public final class IntroduceIdentityPage extends TaskPage {
 	
 	protected final int mNumberOfPuzzles;
 	
 	private final WoTIdentityManager mIdentityManager;
 	
 	public IntroduceIdentityPage(WebInterface myWebInterface, WoTOwnIdentity myViewer, String myTaskID, int numberOfPuzzles) {
-		super(myWebInterface, myViewer, null);
-
-		mTaskID = myTaskID;
+		super(myWebInterface, myViewer, myTaskID);
 		
 		mIdentityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 		
 		mNumberOfPuzzles = numberOfPuzzles;
 	}
 
-	public IntroduceIdentityPage(WebInterface myWebInterface, WoTOwnIdentity viewer, HTTPRequest request) throws NoSuchTaskException {
+	public IntroduceIdentityPage(WebInterface myWebInterface, WoTOwnIdentity viewer, HTTPRequest request) {
 		super(myWebInterface, viewer, request);
 		
-		mTaskID = mRequest.getPartAsString("TaskID", 64);
 		mIdentityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 		
 		if(!request.isPartSet("SolvePuzzles")) {
@@ -43,8 +38,13 @@ public class IntroduceIdentityPage extends WebPageImpl {
 		}
 		
 		synchronized(mFreetalk.getTaskManager()) {
-
-			IntroduceIdentityTask myTask = (IntroduceIdentityTask)mFreetalk.getTaskManager().getTask(mTaskID);
+			IntroduceIdentityTask myTask;
+			
+			try {
+				myTask = (IntroduceIdentityTask)mFreetalk.getTaskManager().getTask(mTaskID);
+			} catch(NoSuchTaskException e) {
+				throw new IllegalArgumentException(e);
+			}
 
 			int idx = 0;
 
@@ -52,7 +52,7 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				String id = request.getPartAsString("PuzzleID" + idx, 128);
 				String solution = request.getPartAsString("Solution" + id, 32); /* TODO: replace "32" with the maximal solution length */
 
-				if(!solution.equals("")) {
+				if(!solution.trim().equals("")) {
 
 					try {
 						mIdentityManager.solveIntroductionPuzzle((WoTOwnIdentity)mOwnIdentity, id, solution);
@@ -66,34 +66,32 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				}
 				++idx;
 			}
-
-			myTask.storeAndCommit();
 			
 			mNumberOfPuzzles = myTask.getNumberOfPuzzlesToSolve();
 		}
 	}
-
-	public void make() throws RedirectException {
+	
+	protected void showPuzzles() throws RedirectException {
 		HTMLNode contentBox = addAlertBox("Introduce your identity");
 		
 		contentBox.addChild("p", "You have not received enough trust values from other identities: Your messages will not be seen by others." +
-				" You have to solve the following puzzles to get trusted by other identities, then your messages will be visible to the most identities: ");
-		
+		" You have to solve the following puzzles to get trusted by other identities, then your messages will be visible to the most identities: ");
+
 		List<String> puzzleIDs = null;
 		try {
 			puzzleIDs = mIdentityManager.getIntroductionPuzzles((WoTOwnIdentity)mOwnIdentity, mNumberOfPuzzles);
 		} catch (Exception e) {
 			Logger.error(this, "getIntroductionPuzzles() failed", e);
-			
+
 			new ErrorPage(mWebInterface, mOwnIdentity, mRequest, "Obtaining puzzles failed", e.getMessage()).addToPage(contentBox);
 			return;
 		}
-		
+
 		if(puzzleIDs.size() == 0 ) {
 			contentBox.addChild("p", "No puzzles were downloaded yet, sorry. Please give the WoT plugin some time to retrieve puzzles.");
 			return;
 		}
-			
+
 		HTMLNode solveForm = mFreetalk.getPluginRespirator().addFormChild(contentBox, Freetalk.PLUGIN_URI + "/IntroduceIdentity", "SolvePuzzles");
 
 		solveForm.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "TaskID", mTaskID });
@@ -111,7 +109,20 @@ public class IntroduceIdentityPage extends WebPageImpl {
 			++counter;
 		}
 
-		solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Solve", "Submit" });
+		solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SolvePuzzles", "Submit" });
+	}
+	
+	protected void showEnoughPuzzlesSolvedMessage() {
+		HTMLNode contentBox = addContentBox("Identity introduced");
+		contentBox.addChild("#", "You have solved enough puzzles. In theory, the next day your identity should be visible to others. Freetalk will tell you to"
+				+ " solve more puzzles if it is not.");
+	}
+
+	public void make() throws RedirectException {
+		if(mNumberOfPuzzles > 0)
+			showPuzzles();
+		else
+			showEnoughPuzzlesSolvedMessage();
 	}
 
 }

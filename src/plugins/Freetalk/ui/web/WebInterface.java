@@ -4,7 +4,6 @@
 package plugins.Freetalk.ui.web;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -65,6 +64,7 @@ public class WebInterface {
 	private final WebInterfaceToadlet newBoardToadlet;
 	private final WebInterfaceToadlet changeTrustToadlet;
 	private final WebInterfaceToadlet getPuzzleToadlet;
+	private final WebInterfaceToadlet introduceIdentityToadlet;
 	
 	class HomeWebInterfaceToadlet extends WebInterfaceToadlet {
 
@@ -426,7 +426,7 @@ public class WebInterface {
 		
 	}
 	
-	class GetPuzzleWebInterfaceToadlet extends WebInterfaceToadlet {
+	public class GetPuzzleWebInterfaceToadlet extends WebInterfaceToadlet {
 
 		protected GetPuzzleWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
@@ -450,7 +450,7 @@ public class WebInterface {
 				}
 				
 				dataBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, puzzle.Data);
-				output = ContentFilter.filter(dataBucket, core.tempBucketFactory, puzzle.MimeType, null, null);
+				output = ContentFilter.filter(dataBucket, core.tempBucketFactory, puzzle.MimeType, uri, null);
 				writeReply(ctx, 200, output.type, "OK", output.data);
 			}
 			catch(Exception e) {
@@ -458,7 +458,8 @@ public class WebInterface {
 				Logger.error(this, "GetPuzzle failed", e);
 			}
 			finally {
-				Closer.close(output.data);
+				if(output != null)
+					Closer.close(output.data);
 				Closer.close(dataBucket);
 			}
 		}
@@ -468,6 +469,33 @@ public class WebInterface {
 			return new Welcome(webInterface, getLoggedInOwnIdentity(), req);
 		}
 	}
+	
+	class IntroduceIdentityWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected IntroduceIdentityWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			
+			return new IntroduceIdentityPage(webInterface, (WoTOwnIdentity)webInterface.getLoggedInOwnIdentity(), req);
+		}
+		
+		@Override
+		public Toadlet showAsToadlet() {
+			return introduceIdentityToadlet;
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && webInterface.getLoggedInOwnIdentity() != null;
+		}
+		
+	}
+	
 
 	public WebInterface(Freetalk myFreetalk) {
 		try {
@@ -507,6 +535,7 @@ public class WebInterface {
 		newBoardToadlet = new NewBoardWebInterfaceToadlet(null, this, clientCore, "NewBoard");
 		changeTrustToadlet = new ChangeTrustWebInterfaceToadlet(null, this, clientCore, "ChangeTrust");
 		getPuzzleToadlet = new GetPuzzleWebInterfaceToadlet(null, this, clientCore, "GetPuzzle");
+		introduceIdentityToadlet = new IntroduceIdentityWebInterfaceToadlet(null, this, clientCore, "IntroduceIdentity");
 		
 		container.register(logInToadlet, null, Freetalk.PLUGIN_URI + "/LogIn", true, false);
 		container.register(createIdentityToadlet, null, Freetalk.PLUGIN_URI + "/CreateIdentity", true, false);
@@ -517,6 +546,7 @@ public class WebInterface {
 		container.register(newBoardToadlet, null, Freetalk.PLUGIN_URI + "/NewBoard", true, false);
 		container.register(changeTrustToadlet, null, Freetalk.PLUGIN_URI + "/ChangeTrust", true, false);
 		container.register(getPuzzleToadlet, null, Freetalk.PLUGIN_URI + "/GetPuzzle", true, false);
+		container.register(introduceIdentityToadlet, null, Freetalk.PLUGIN_URI + "/IntroduceIdentity", true, false);
 	}
 
 	private void setLoggedInOwnIdentity(FTOwnIdentity user) {
@@ -549,7 +579,8 @@ public class WebInterface {
 				showThreadToadlet,
 				newReplyToadlet,
 				newBoardToadlet,
-				getPuzzleToadlet
+				getPuzzleToadlet,
+				introduceIdentityToadlet
 		}) container.unregister(t);
 		mPageMaker.removeNavigationCategory("Discussion");
 	}

@@ -8,6 +8,8 @@ import java.net.URISyntaxException;
 
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.tasks.PersistentTask;
+import plugins.Freetalk.tasks.PersistentTaskManager;
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.PageNode;
@@ -86,7 +88,18 @@ public abstract class WebPageImpl implements WebPage {
 			page = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getShortestUniqueName(40), ctx);
 		else
 			page = mPM.getPageNode(Freetalk.PLUGIN_TITLE, ctx);
-
+		
+		if(mOwnIdentity != null && !(this instanceof TaskPage)) {
+			PersistentTaskManager taskManager = mFreetalk.getTaskManager();
+			
+			// TODO: Use a timeout here when trying to acquire the lock, the tasks are being displayed on every page anyway, so it does not matter if they are not
+			// being displayed once due to the task manager being locked.
+			synchronized(taskManager) { 
+				for(PersistentTask task :taskManager.getVisibleTasks(mOwnIdentity))
+					task.display(mWebInterface).addToPage(page.content);
+			}
+		}
+		
 		addToPage(page.content);
 		return page.outer.generate();
 	}
