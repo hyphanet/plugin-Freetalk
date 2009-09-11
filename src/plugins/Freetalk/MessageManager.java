@@ -121,12 +121,11 @@ public abstract class MessageManager implements Runnable {
 	/**
 	 * Called by the {@link IdentityManager} before an identity is deleted from the database.
 	 * 
-	 * Deletes any messages and message lists referencing to it.
-	 * 
-	 * This function does not commit the transaction and therefore does not lock this MessageManager and the database.
-	 * - Therefore you have to lock the MessageManager and the database before calling this function.
+	 * Deletes any messages and message lists referencing to it and commits the transaction.
 	 */
-	public void onIdentityDeletion(FTIdentity identity) {
+	public synchronized void onIdentityDeletion(FTIdentity identity) {
+		synchronized(db.lock()) {
+		try {
 		for(Message message : getMessagesBy(identity)) {
 			message.initializeTransient(db, this);
 			
@@ -156,6 +155,12 @@ public abstract class MessageManager implements Runnable {
 				messageList.initializeTransient(db, this);
 				messageList.deleteWithoutCommit();
 			}
+		}
+		db.commit(); Logger.debug(this, "COMMITED: Messages and message lists deleted for " + identity);
+		}
+		catch(RuntimeException e) {
+			DBUtil.rollbackAndThrow(db, this, e);
+		}
 		}
 	}
 	
