@@ -61,7 +61,7 @@ public class IntroduceIdentityTask extends PersistentTask {
 		mNextProcessingTime = CurrentTimeUTC.getInMillis() + PROCESSING_INTERVAL;
 		mNextDisplayTime = Long.MAX_VALUE;
 		
-		storeWithoutCommit();
+		storeAndCommit();
 	}
 	
 	public synchronized void onPuzzleSolved() {
