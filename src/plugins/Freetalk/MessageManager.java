@@ -221,9 +221,9 @@ public abstract class MessageManager implements Runnable {
 		}
 		catch(NoSuchMessageException e) {
 		
-			// FIXME: This code produces deadlocks: We have to synchronize on ALL boards of the message before obtaining the db.lock()
-			// Unfortunately, I do not know how to obtain objects of class Lock which are equal to the implicit lock objects of the boards so that I could
-			// do an ArrayLists of Lock objects...
+			// FIXME: This code produces deadlocks: We have to lock the Board before obtaining db.lock() because Board.addMessage locks the board
+			// This will require us to split up the transaction in one transaction per board, we then will need special code to delete the message if one of
+			// the transactions fails. Eww :|
 			
 			synchronized(db.lock()) {
 				try {
