@@ -125,42 +125,42 @@ public abstract class MessageManager implements Runnable {
 	 */
 	public synchronized void onIdentityDeletion(FTIdentity identity) {
 		synchronized(db.lock()) {
-		try {
-		for(Message message : getMessagesBy(identity)) {
-			message.initializeTransient(db, this);
-			
-			for(Board board : message.getBoards()) {
-				try {
-					board.deleteMessage(message);
-				} catch (NoSuchMessageException e) {
-					throw new RuntimeException(e);
+			try {
+				for(Message message : getMessagesBy(identity)) {
+					message.initializeTransient(db, this);
+
+					for(Board board : message.getBoards()) {
+						try {
+							board.deleteMessage(message);
+						} catch (NoSuchMessageException e) {
+							throw new RuntimeException(e);
+						}
+					}
+
+					message.deleteWithoutCommit();
 				}
-			}
-			
-			message.deleteWithoutCommit();
-		}
 
-		for(MessageList messageList : getMessageListsBy(identity)) {
-			messageList.initializeTransient(db, this);
-			messageList.deleteWithoutCommit();
-		}
+				for(MessageList messageList : getMessageListsBy(identity)) {
+					messageList.initializeTransient(db, this);
+					messageList.deleteWithoutCommit();
+				}
 
-		if(identity instanceof FTOwnIdentity) {
-			for(OwnMessage message : getOwnMessagesBy((FTOwnIdentity)identity)) {
-				message.initializeTransient(db, this);
-				message.deleteWithoutCommit();
-			}
+				if(identity instanceof FTOwnIdentity) {
+					for(OwnMessage message : getOwnMessagesBy((FTOwnIdentity)identity)) {
+						message.initializeTransient(db, this);
+						message.deleteWithoutCommit();
+					}
 
-			for(OwnMessageList messageList : getOwnMessageListsBy((FTOwnIdentity)identity)) {
-				messageList.initializeTransient(db, this);
-				messageList.deleteWithoutCommit();
+					for(OwnMessageList messageList : getOwnMessageListsBy((FTOwnIdentity)identity)) {
+						messageList.initializeTransient(db, this);
+						messageList.deleteWithoutCommit();
+					}
+				}
+				db.commit(); Logger.debug(this, "COMMITED: Messages and message lists deleted for " + identity);
 			}
-		}
-		db.commit(); Logger.debug(this, "COMMITED: Messages and message lists deleted for " + identity);
-		}
-		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(db, this, e);
-		}
+			catch(RuntimeException e) {
+				DBUtil.rollbackAndThrow(db, this, e);
+			}
 		}
 	}
 	
