@@ -2,6 +2,7 @@ package plugins.Freetalk.tasks;
 
 import java.util.Random;
 
+import plugins.Freetalk.DBUtil;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
@@ -115,8 +116,12 @@ public class PersistentTaskManager implements Runnable {
 	}
 	
 	@SuppressWarnings("unchecked")
-	protected synchronized void proccessTasks(long currentTime) {
+	protected void proccessTasks(long currentTime) {
 		Query q = mDB.query();
+		
+		synchronized(mFreetalk.getIdentityManager()) {
+		synchronized(mFreetalk.getMessageManager()) {
+		synchronized(this) {
 		
 		q.constrain(PersistentTask.class);
 		q.descend("mNextProcessingTime").constrain(currentTime).smaller();
@@ -133,6 +138,10 @@ public class PersistentTaskManager implements Runnable {
 			catch(RuntimeException e) {
 				Logger.error(this, "Error while processing a task", e);
 			}
+		}
+		
+		}
+		}
 		}
 	}
 	
@@ -180,22 +189,28 @@ public class PersistentTaskManager implements Runnable {
 	/**
 	 * Called by the {@link IdentityManager} before an identity is deleted from the database.
 	 * 
-	 * Deletes all it's tasks.
-	 * 
-	 * This function does not commit the transaction and therefore does not lock this PersistentTaskManager and the database.
-	 * - Therefore you have to lock the PersistentTaskmanager and the database before calling this function.
+	 * Deletes all it's tasks and commits the transaction.
 	 */
 	@SuppressWarnings("unchecked")
-	public void onOwnIdentityDeletion(FTOwnIdentity identity) {
+	public synchronized void onOwnIdentityDeletion(FTOwnIdentity identity) {
 		Query q = mDB.query();
 		
 		q.constrain(PersistentTask.class);
 		q.descend("mOwner").constrain(identity).identity();
 		ObjectSet<PersistentTask> tasks = q.execute();
 		
-		for(PersistentTask task : tasks) {
-			task.initializeTransient(mDB, mFreetalk);
-			task.deleteWithoutCommit();
+		synchronized(mDB.lock()) {
+			try {
+				for(PersistentTask task : tasks) {
+					task.initializeTransient(mDB, mFreetalk);
+					task.deleteWithoutCommit();
+				}
+				
+				mDB.commit(); Logger.debug(this, "COMMITED: Deleted tasks of " + identity);
+			}
+			catch(RuntimeException e) {
+				DBUtil.rollbackAndThrow(mDB, this, e);
+			}
 		}
 	}
 
