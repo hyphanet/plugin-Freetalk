@@ -220,6 +220,11 @@ public abstract class MessageManager implements Runnable {
 			Logger.debug(this, "Downloaded a message which we already have: " + message.getURI());
 		}
 		catch(NoSuchMessageException e) {
+		
+			// FIXME: This code produces deadlocks: We have to synchronize on ALL boards of the message before obtaining the db.lock()
+			// Unfortunately, I do not know how to obtain objects of class Lock which are equal to the implicit lock objects of the boards so that I could
+			// do an ArrayLists of Lock objects...
+			
 			synchronized(db.lock()) {
 				try {
 					message.initializeTransient(db, this);
@@ -235,7 +240,6 @@ public abstract class MessageManager implements Runnable {
 				}
 				catch(Exception ex) {
 					db.rollback(); Logger.error(this, "ROLLED BACK!", ex);
-					Logger.error(this, "Exception while storing a downloaded message", ex);
 				}
 			}
 		}
@@ -255,7 +259,6 @@ public abstract class MessageManager implements Runnable {
 				}
 				catch(RuntimeException ex) {
 					db.rollback(); Logger.error(this, "ROLLED BACK!", ex);
-					Logger.error(this, "Exception while storing a downloaded message list", ex);
 				}
 			}
 		}
