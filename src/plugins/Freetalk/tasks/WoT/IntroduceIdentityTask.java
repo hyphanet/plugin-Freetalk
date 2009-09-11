@@ -22,6 +22,12 @@ public class IntroduceIdentityTask extends PersistentTask {
 	 */
 	public static final long PROCESSING_INTERVAL = 1 * 24 * 60 * 60 * 1000;
 	
+	/**
+	 * For new identities, we check more frequently whether we want to tell them to solve puzzles, because we do not show the alert if they have not written
+	 * a message yet.
+	 */
+	public static final long PROCESSING_INTERVAL_SHORT = 60 * 60 * 1000;
+	
 	protected int mPuzzlesToSolve;
 
 	public IntroduceIdentityTask(WoTOwnIdentity myOwner) {
@@ -49,11 +55,13 @@ public class IntroduceIdentityTask extends PersistentTask {
 					mPuzzlesToSolve = minimumTrusterCount * 2;  
 					mNextDisplayTime = now;
 				}
-			}
+				
+				mNextProcessingTime = Long.MAX_VALUE;
+			} else // Check again soon whether the identity has written a message
+				mNextProcessingTime = PROCESSING_INTERVAL_SHORT;
 			
-			mNextProcessingTime = now + PROCESSING_INTERVAL;
 		} catch (Exception e) {
-			mNextProcessingTime = now + PROCESSING_INTERVAL / 8;
+			mNextProcessingTime = now + PROCESSING_INTERVAL_SHORT;
 			Logger.error(this, "Error while processing an IntroduceIdentityTask", e);
 		}
 		
@@ -72,8 +80,10 @@ public class IntroduceIdentityTask extends PersistentTask {
 		if(mPuzzlesToSolve > 0) 
 			--mPuzzlesToSolve;
 		
-		if(mPuzzlesToSolve == 0)
+		if(mPuzzlesToSolve == 0) {
+			mNextProcessingTime = CurrentTimeUTC.getInMillis() + PROCESSING_INTERVAL;
 			mNextDisplayTime = Long.MAX_VALUE;
+		}
 		
 		storeAndCommit();
 	}
