@@ -57,7 +57,7 @@ public class PluginTalkerBlocking implements FredPluginTalker {
 	/* Synchronized because notifyAll() will otherwise throw IllegalMonitorStateException */
 	public synchronized void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data) {
 		if(mResult != null) {
-			Logger.error(this, "sendBlocking() called for a FCP function which sends more than 1 reply.");
+			Logger.error(this, "sendBlocking() called for a FCP function which sends more than 1 reply, second reply was: " + params);
 			return;
 		}
 		
