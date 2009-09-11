@@ -58,7 +58,7 @@ public abstract class PersistentTask {
 		mDeleteTime = Long.MAX_VALUE;
 	}
 	
-	protected void initializeTransient(ExtObjectContainer db, Freetalk myFreetalk) {
+	public void initializeTransient(ExtObjectContainer db, Freetalk myFreetalk) {
 		mDB = db;
 		mFreetalk = myFreetalk;
 	}
@@ -72,7 +72,7 @@ public abstract class PersistentTask {
 	 */
 	public abstract void onHideForSomeTime();
 	
-	protected void storeWithoutCommit() {
+	public void storeWithoutCommit() {
 		try {
 			DBUtil.checkedActivate(mDB, this, 3); // TODO: Figure out a suitable depth.
 
