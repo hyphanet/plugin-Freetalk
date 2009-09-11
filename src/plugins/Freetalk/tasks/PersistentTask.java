@@ -63,8 +63,17 @@ public abstract class PersistentTask {
 		mFreetalk = myFreetalk;
 	}
 
+	/**
+	 * ATTENTION: The process method must synchronize on this PersistentTask and then on the database lock when storing
+	 * modifications to itself.
+	 */
 	protected abstract void process();
 	
+	/**
+	 * ATTENTION: Returned web page objects MUST NOT synchronize on the identity manager or message manager.
+	 * The reason is that WebPageImpl.toHTML() locks the PersistentTaskManager before calling display() but does not lock
+	 * the IdentityManager and MessageManager before - the locking order requires those to be locked before the task manager.
+	 */
 	public abstract WebPage display(WebInterface myWebInterface);
 	
 	/**
