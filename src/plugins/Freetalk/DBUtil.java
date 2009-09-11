@@ -29,8 +29,8 @@ public class DBUtil {
 			Logger.error(object, "Trying to delete a inexistent object!");
 	}
 	
-	public static void rollbackAndThrow(ExtObjectContainer db, Object object, RuntimeException error) {
-		db.rollback(); Logger.error(object, "ROLLED BACK!", error);
+	public static void rollbackAndThrow(ExtObjectContainer db, Object loggingObject, RuntimeException error) {
+		db.rollback(); Logger.error(loggingObject, "ROLLED BACK!", error);
 		throw error;
 	}
 }
