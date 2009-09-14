@@ -19,6 +19,7 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
+import plugins.Freetalk.tasks.PersistentTaskManager;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -39,6 +40,8 @@ public abstract class MessageManager implements Runnable {
 
 	protected final IdentityManager mIdentityManager;
 	
+	protected final Freetalk mFreetalk;
+	
 	protected final ExtObjectContainer db;
 	
 	protected final PluginRespirator mPluginRespirator;
@@ -53,13 +56,15 @@ public abstract class MessageManager implements Runnable {
 	private volatile boolean shutdownFinished = false;
 	private Thread mThread;
 
-	public MessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager, PluginRespirator myPluginRespirator) {
+	public MessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager, Freetalk myFreetalk, PluginRespirator myPluginRespirator) {
 		assert(myDB != null);
 		assert(myIdentityManager != null);
+		assert(myFreetalk != null);
 		assert(myPluginRespirator != null);		
 		
 		db = myDB;
 		mIdentityManager = myIdentityManager;
+		mFreetalk = myFreetalk;
 		mPluginRespirator = myPluginRespirator;
 		
 		// It might happen that Freetalk is shutdown after a message has been downloaded and before addMessagesToBoards was called:
@@ -83,6 +88,7 @@ public abstract class MessageManager implements Runnable {
 		
 		db = myDB;
 		mIdentityManager = myIdentityManager;
+		mFreetalk = null;
 		mPluginRespirator = null;
 	}
 	
@@ -162,10 +168,9 @@ public abstract class MessageManager implements Runnable {
 	public abstract OwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
 			String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws InvalidParameterException, Exception;
 
-	public synchronized OwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<String> myBoards, String myReplyToBoard,
+	public OwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<String> myBoards, String myReplyToBoard,
 			FTOwnIdentity myAuthor, String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
 
-		/* FIXME: Instead of always creating the boards, notify the user that they do not exist and ask if he made a typo */
 		HashSet<Board> boardSet = new HashSet<Board>();
 		for (Iterator<String> i = myBoards.iterator(); i.hasNext(); ) {
 			String boardName = i.next();

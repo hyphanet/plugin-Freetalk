@@ -50,8 +50,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	public static final String PLUGIN_TITLE = "Freetalk-testing"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
 	public static final String WOT_NAME = "plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "Freetalk";
-	public static final String DATABASE_FILENAME = "freetalk-testing-4.db4o";
-	public static final int DATABASE_FORMAT_VERSION = -96;
+	public static final String DATABASE_FILENAME = "freetalk-testing-5.db4o";
+	public static final int DATABASE_FORMAT_VERSION = -95;
 
 	/* References from the node */
 	
@@ -121,7 +121,11 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		mIdentityManager = new WoTIdentityManager(db, this);
 		
 		Logger.debug(this, "Creating message manager...");
-		mMessageManager = new WoTMessageManager(db, mIdentityManager, mPluginRespirator);
+		mMessageManager = new WoTMessageManager(db, mIdentityManager, this, mPluginRespirator);
+		
+		Logger.debug(this, "Creating task manager...");
+		mTaskManager = new PersistentTaskManager(db, this);
+		mPluginRespirator.getNode().executor.execute(mTaskManager, "FT PersistentTaskManager");
 		
 		Logger.debug(this, "Creating message fetcher...");
 		mMessageFetcher = new WoTMessageFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT Message Fetcher", mIdentityManager, mMessageManager);
@@ -134,10 +138,6 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		
 		Logger.debug(this, "Creating message list inserter...");
 		mMessageListInserter = new WoTMessageListInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT MessageList Inserter", mIdentityManager, mMessageManager);
-		
-		Logger.debug(this, "Creating task manager...");
-		mTaskManager = new PersistentTaskManager(db, this);
-		mPluginRespirator.getNode().executor.execute(mTaskManager, "FT PersistentTaskManager");
 
 		Logger.debug(this, "Creating FCP interface...");
 		mFCPInterface = new FCPInterface(this);

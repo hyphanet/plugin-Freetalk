@@ -11,6 +11,7 @@ import java.util.Set;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
@@ -19,6 +20,7 @@ import plugins.Freetalk.MessageURI;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
+import plugins.Freetalk.tasks.PersistentTaskManager;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -36,8 +38,8 @@ public class WoTMessageManager extends MessageManager {
 	/** One for all requests for WoTMessage*, for fairness. */
 	final RequestClient mRequestClient;
 
-	public WoTMessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager, PluginRespirator myPluginRespirator) {
-		super(myDB, myIdentityManager, myPluginRespirator);
+	public WoTMessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager, Freetalk myFreetalk, PluginRespirator myPluginRespirator) {
+		super(myDB, myIdentityManager, myFreetalk, myPluginRespirator);
 		
 		mRequestClient = new RequestClient() {
 
@@ -61,7 +63,7 @@ public class WoTMessageManager extends MessageManager {
 		mRequestClient = null;
 	}
 
-	public synchronized WoTOwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, 
+	public WoTOwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, 
 			FTOwnIdentity myAuthor, String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
 		WoTOwnMessage m;
 		
@@ -71,18 +73,16 @@ public class WoTMessageManager extends MessageManager {
 		Date date = myDate!=null ? myDate : CurrentTimeUTC.get();
 		m = WoTOwnMessage.construct((WoTMessageURI)myParentThreadURI, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
 		m.initializeTransient(db, this);
-		synchronized(db.lock()) {
-			try {
-				m.storeWithoutCommit();
-				db.commit(); Logger.debug(this, "COMMITED.");
-			}
-			catch(RuntimeException e) {
-				db.rollback();
-				Logger.error(this, "ROLLED BACK: Error in postMessage", e);
-				throw e;
-			}
+		synchronized(this) {
+			m.storeAndCommit();
 		}
 
+		if(mFreetalk != null) {
+			PersistentTaskManager taskManager = mFreetalk.getTaskManager();
+			if(taskManager != null)
+				taskManager.onOwnMessagePosted(m);
+		}
+		
 		/* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
 		 * successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
 		
