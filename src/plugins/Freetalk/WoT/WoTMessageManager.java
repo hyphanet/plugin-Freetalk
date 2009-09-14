@@ -6,13 +6,12 @@ package plugins.Freetalk.WoT;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
-import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
@@ -28,40 +27,19 @@ import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
-import freenet.support.Executor;
 import freenet.support.Logger;
 
 public class WoTMessageManager extends MessageManager {
 	
-	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
-	
-	private static final int STARTUP_DELAY = 3 * 60 * 1000;
-	private static final int THREAD_PERIOD = 5 * 60 * 1000;
-	
-	private final Freetalk mFreetalk;
-
-	private volatile boolean isRunning = false;
-	private volatile boolean shutdownFinished = false;
-	private Thread mThread;
-
 	/** One for all requests for WoTMessage*, for fairness. */
-	public RequestClient requestClient;
+	final RequestClient mRequestClient;
 
-
-	public WoTMessageManager(ExtObjectContainer myDB, Executor myExecutor, Freetalk myFreetalk) {
-		super(myDB, myExecutor, myFreetalk.getIdentityManager());
+	public WoTMessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager, PluginRespirator myPluginRespirator) {
+		super(myDB, myIdentityManager, myPluginRespirator);
 		
-		// assert(myFreetalk != null); // Not necessary because we dereference it above.
-		
-		mFreetalk = myFreetalk;
-		
-		isRunning = true;
-		
-		// FIXME: You should avoid calling methods in constructors that might lead to the object 
-		// being registered and then called back to before the fields have been written.
-		mExecutor.execute(this, "FT Message Manager");
-		requestClient = new RequestClient() {
+		mRequestClient = new RequestClient() {
 
 			public boolean persistent() {
 				return false;
@@ -71,16 +49,16 @@ public class WoTMessageManager extends MessageManager {
 				throw new UnsupportedOperationException();
 			}
 			
-		};
+		};;
 	}
-	
+
 	/**
 	 * For being used in JUnit tests to run without a node.
 	 */
 	WoTMessageManager(ExtObjectContainer myDB, WoTIdentityManager myIdentityManager) {
 		super(myDB, myIdentityManager);
 		
-		mFreetalk = null;
+		mRequestClient = null;
 	}
 
 	public synchronized WoTOwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, 
@@ -344,64 +322,6 @@ public class WoTMessageManager extends MessageManager {
 		ObjectSet<WoTMessageList> result = q.execute();
 		
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;
-	}
-
-	public void run() {
-		Logger.debug(this, "Message manager started.");
-		mThread = Thread.currentThread();
-		
-		Random random = mFreetalk.getPluginRespirator().getNode().fastWeakRandom;
-		
-		try {
-			Logger.debug(this, "Waiting for the node to start up...");
-			Thread.sleep(STARTUP_DELAY/2 + random.nextInt(STARTUP_DELAY));
-		}
-		catch (InterruptedException e)
-		{
-			mThread.interrupt();
-		}
-		
-		try {
-			while(isRunning) {
-				Logger.debug(this, "Message manager loop running...");
-
-				Logger.debug(this, "Message manager loop finished.");
-
-				try {
-					Thread.sleep(THREAD_PERIOD/2 + random.nextInt(THREAD_PERIOD));  // TODO: Maybe use a Ticker implementation instead?
-				}
-				catch (InterruptedException e)
-				{
-					mThread.interrupt();
-					Logger.debug(this, "Message manager loop interrupted!");
-				}
-			}
-		}
-		
-		finally {
-			synchronized (this) {
-				shutdownFinished = true;
-				Logger.debug(this, "Message manager thread exiting.");
-				notify();
-			}
-		}
-	}
-
-	public void terminate() {
-		Logger.debug(this, "Stopping the message manager..."); 
-		isRunning = false;
-		mThread.interrupt();
-		synchronized(this) {
-			while(!shutdownFinished) {
-				try {
-					wait();
-				}
-				catch (InterruptedException e) {
-					Thread.interrupted();
-				}
-			}
-		}
-		Logger.debug(this, "Stopped the message manager.");
 	}
 
 }
