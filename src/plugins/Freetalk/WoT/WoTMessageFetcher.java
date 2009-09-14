@@ -53,7 +53,6 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	
 	private final Random mRandom;
 	
-	/** One for all requests for WoTMessage*, for fairness. */
 	private final RequestClient requestClient;
 	
 	/**
@@ -65,17 +64,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
 		mRandom = mNode.fastWeakRandom;
-		requestClient = new RequestClient() {
-
-			public boolean persistent() {
-				return false;
-			}
-
-			public void removeFrom(ObjectContainer container) {
-				throw new UnsupportedOperationException();
-			}
-			
-		};;
+		requestClient = myMessageManager.mRequestClient;
 		
 		// FIXME: You should avoid calling methods in constructors that might lead to the object 
 		// being registered and then called back to before the fields have been written.
