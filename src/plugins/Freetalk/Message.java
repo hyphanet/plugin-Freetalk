@@ -135,6 +135,11 @@ public abstract class Message {
 	 */
 	private Message mParent = null;
 	
+	/**
+	 * Whether this message was linked into all it's boards. For an explanation of this flag please read the documentation of {@link wasLinkedIn}.
+	 */
+	private boolean mWasLinkedIn = false;
+	
 	
 	/* References to objects of the plugin, not stored in the database. */
 	
@@ -151,7 +156,8 @@ public abstract class Message {
 								"mID", /* Indexed because it is our primary key */
 								"mThreadID", /* Indexed for being able to query all messages of a thread */
 								"mParentID", /* Indexed for being able to get all replies to a message */
-								"mFetchDate", /* Indexed because Frost needs to query for all messages after the time it has last done so */ 
+								"mFetchDate", /* Indexed because Frost needs to query for all messages after the time it has last done so */
+								"mWasLinkedIn" /* Indexed because the message manager needs to query for all messages which have not been linked in */
 							};
 	}
 	
@@ -398,6 +404,23 @@ public abstract class Message {
 		mParent = newParent;
 		
 		storeWithoutCommit();
+	}
+	
+	/** 
+	 * @return Returns a flag which indicates whether this message was linked into all boards where it should be visible (by calling addMessage() on those boards).
+	 * 			A message will only be visible in boards where it was linked in - the sole storage of a object of type Message does not make it visible.
+	 * 
+	 */
+	protected synchronized boolean wasLinkedIn() {
+		return mWasLinkedIn;
+	}
+	
+	/**
+	 * Sets the wasLinkedIn flag of this message.
+	 * For an explanation of this flag please read the documentation of {@link wasLinkedIn}.
+	 */
+	protected synchronized void setLinkedIn(boolean wasLinkedIn) {
+		mWasLinkedIn = wasLinkedIn;
 	}
 	
 	/**
