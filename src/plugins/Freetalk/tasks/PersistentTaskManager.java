@@ -6,6 +6,7 @@ import plugins.Freetalk.DBUtil;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
+import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.exceptions.DuplicateTaskException;
 import plugins.Freetalk.exceptions.NoSuchTaskException;
 
@@ -20,7 +21,7 @@ import freenet.support.Logger;
 public class PersistentTaskManager implements Runnable {
 	
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
-	private static final int THREAD_PERIOD = 1 * 60 * 1000;
+	private static final int THREAD_PERIOD = 3 * 60 * 1000;
 	
 	protected Freetalk mFreetalk;
 	
@@ -51,8 +52,7 @@ public class PersistentTaskManager implements Runnable {
 			Logger.debug(this, "Task manager loop running...");
 
 			long now = CurrentTimeUTC.getInMillis();
-			deleteExpiredTasks(now);
-			proccessTasks(now);
+			proccessTasks(getPendingTasks(now), now);
 			
 			Logger.debug(this, "Task manager loop finished.");
 
@@ -115,18 +115,19 @@ public class PersistentTaskManager implements Runnable {
 		}
 	}
 	
+	/**
+	 * @param query A query which must return an resulting ObjectSet of PersistentTask.
+	 * @param time The current UTC time. If the given query is time-dependent, the same time must be used there!
+	 */
 	@SuppressWarnings("unchecked")
-	protected void proccessTasks(long currentTime) {
-		Query q = mDB.query();
+	protected void proccessTasks(Query query, long time) {
+		
+		deleteExpiredTasks(time);
 		
 		synchronized(mFreetalk.getIdentityManager()) {
 		synchronized(mFreetalk.getMessageManager()) {
 		synchronized(this) {
-		
-		q.constrain(PersistentTask.class);
-		q.descend("mNextProcessingTime").constrain(currentTime).smaller();
-		q.descend("mNextProcessingTime").orderAscending();
-		ObjectSet<PersistentTask> pendingTasks = q.execute();
+		ObjectSet<PersistentTask> pendingTasks = query.execute();
 		
 		for(PersistentTask task : pendingTasks) {
 			try {
@@ -163,6 +164,21 @@ public class PersistentTaskManager implements Runnable {
 			default:
 				throw new DuplicateTaskException(id, result.size());
 		}
+	}
+	
+	private Query getPendingTasks(long currentTime) {
+		Query q = mDB.query();
+		q.constrain(PersistentTask.class);
+		q.descend("mNextProcessingTime").constrain(currentTime).smaller();
+		q.descend("mNextProcessingTime").orderAscending();
+		return q;
+	}
+	
+	private Query getOwnMessageTasks(FTOwnIdentity owner) {
+		Query q = mDB.query();
+		q.constrain(OwnMessageTask.class);
+		q.descend("mOwner").constrain(owner).identity();
+		return q;
 	}
 	
 	/**
@@ -212,6 +228,16 @@ public class PersistentTaskManager implements Runnable {
 				DBUtil.rollbackAndThrow(mDB, this, e);
 			}
 		}
+	}
+
+	/**
+	 * Called by the {@link MessageManager} when an own message was posted.
+	 * 
+	 * Attention: This function locks the IdentityManager and the MessageManager, therefore the message manager should not lock itself prior to calling it if it
+	 * does not lock the identity manager before.
+	 */
+	public void onOwnMessagePosted(OwnMessage message) {
+		proccessTasks(getOwnMessageTasks((FTOwnIdentity)message.getAuthor()), CurrentTimeUTC.getInMillis());
 	}
 
 }
