@@ -41,7 +41,7 @@ public final class ThreadPage extends WebPageImpl {
     public ThreadPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchMessageException, NoSuchBoardException {
         super(myWebInterface, viewer, request);
         mBoard = mFreetalk.getMessageManager().getBoardByName(request.getParam("board"));
-        mThread = mBoard.getThreadReference(request.getParam("id"));
+        mThread = mBoard.getThreadLink(request.getParam("id"));
     }
 
     public final void make() {

@@ -26,7 +26,7 @@ public class NewReplyPage extends WebPageImpl {
 	public NewReplyPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchBoardException, NoSuchMessageException {
 		super(myWebInterface, viewer, request);
 		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getPartAsString("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
-		mParentThread = mBoard.getThreadReference(request.getPartAsString("ParentThreadID", 128));
+		mParentThread = mBoard.getThreadLink(request.getPartAsString("ParentThreadID", 128));
 		mParentMessage = mFreetalk.getMessageManager().get(request.getPartAsString("ParentMessageID", 128)); /* TODO: adapt to maximal ID length when it has been decided */
 	}
 
