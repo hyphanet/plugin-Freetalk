@@ -74,9 +74,6 @@ public final class IntroduceIdentityPage extends TaskPage {
 	protected void showPuzzles() throws RedirectException {
 		HTMLNode contentBox = addAlertBox("Introduce your identity");
 		
-		contentBox.addChild("p", "You have not received enough trust values from other identities: Your messages will not be seen by others." +
-		" You have to solve the following puzzles to get trusted by other identities, then your messages will be visible to the most identities: ");
-
 		List<String> puzzleIDs = null;
 		try {
 			puzzleIDs = mIdentityManager.getIntroductionPuzzles((WoTOwnIdentity)mOwnIdentity, mNumberOfPuzzles);
@@ -87,8 +84,13 @@ public final class IntroduceIdentityPage extends TaskPage {
 			return;
 		}
 
-		if(puzzleIDs.size() == 0 ) {
-			contentBox.addChild("p", "No puzzles were downloaded yet, sorry. Please give the WoT plugin some time to retrieve puzzles.");
+		if(puzzleIDs.size() > 0 ) {
+			contentBox.addChild("p", "You have not received enough trust values from other identities: Your messages will not be seen by anyone." +
+			" You have to solve the following puzzles to get trusted by other identities, then your messages will be visible to the most identities: ");
+		} else {
+			contentBox.addChild("p", "You have not received enough trust values from other identities: Your messages will not be seen by anyone.");
+			contentBox.addChild("p", "For your messages to become visible to others, you will have to solve so-called 'introduction puzzles'. Freetalk will" +
+					" show them to you as soon as they have been downloaded. This will take about 15 minutes.");
 			return;
 		}
 
