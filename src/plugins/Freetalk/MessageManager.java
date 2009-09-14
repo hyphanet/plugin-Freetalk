@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import plugins.Freetalk.Message.Attachment;
@@ -24,7 +25,7 @@ import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
-import freenet.support.Executor;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
 
 /**
@@ -36,32 +37,111 @@ import freenet.support.Logger;
  */
 public abstract class MessageManager implements Runnable {
 
-	protected ExtObjectContainer db;
+	protected final IdentityManager mIdentityManager;
 	
-	protected Executor mExecutor;
+	protected final ExtObjectContainer db;
+	
+	protected final PluginRespirator mPluginRespirator;
+	
 
-	protected IdentityManager mIdentityManager;
+	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
+	
+	private static final int STARTUP_DELAY = 3 * 60 * 1000;
+	private static final int THREAD_PERIOD = 15 * 60 * 1000;
+	
+	private volatile boolean isRunning = false;
+	private volatile boolean shutdownFinished = false;
+	private Thread mThread;
 
-	public MessageManager(ExtObjectContainer myDB, Executor myExecutor, IdentityManager myIdentityManager) {
+	public MessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager, PluginRespirator myPluginRespirator) {
 		assert(myDB != null);
-		assert(myExecutor != null);
 		assert(myIdentityManager != null);
-
+		assert(myPluginRespirator != null);		
+		
 		db = myDB;
-		mExecutor = myExecutor;
 		mIdentityManager = myIdentityManager;
+		mPluginRespirator = myPluginRespirator;
+		
+		// It might happen that Freetalk is shutdown after a message has been downloaded and before addMessagesToBoards was called:
+		// Then the message will still be stored but not visible in the boards because storing a message and adding it to boards are separate transactions.
+		// Therefore, we must call addMessagesToBoards during startup.
+		addMessagesToBoards();
+		
+		isRunning = true;
+		
+		// FIXME: You should avoid calling methods in constructors that might lead to the object 
+		// being registered and then called back to before the fields have been written.
+		mPluginRespirator.getNode().executor.execute(this, "FT Message Manager");
 	}
 	
 	/**
 	 * For being used in JUnit tests to run without a node.
 	 */
-	public MessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager) {
+	protected MessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager) {
 		assert(myDB != null);
 		assert(myIdentityManager != null);
 		
 		db = myDB;
-		mExecutor = null;
 		mIdentityManager = myIdentityManager;
+		mPluginRespirator = null;
+	}
+	
+	public void run() {
+		Logger.debug(this, "Message manager started.");
+		mThread = Thread.currentThread();
+		
+		Random random = mPluginRespirator.getNode().fastWeakRandom;
+		
+		try {
+			Logger.debug(this, "Waiting for the node to start up...");
+			Thread.sleep(STARTUP_DELAY/2 + random.nextInt(STARTUP_DELAY));
+		}
+		catch (InterruptedException e)
+		{
+			mThread.interrupt();
+		}
+		
+		try {
+			while(isRunning) {
+				Logger.debug(this, "Message manager loop running...");
+				
+				Logger.debug(this, "Message manager loop finished.");
+
+				try {
+					Thread.sleep(THREAD_PERIOD/2 + random.nextInt(THREAD_PERIOD));  // TODO: Maybe use a Ticker implementation instead?
+				}
+				catch (InterruptedException e)
+				{
+					mThread.interrupt();
+					Logger.debug(this, "Message manager loop interrupted!");
+				}
+			}
+		}
+		
+		finally {
+			synchronized (this) {
+				shutdownFinished = true;
+				Logger.debug(this, "Message manager thread exiting.");
+				notify();
+			}
+		}
+	}
+
+	public void terminate() {
+		Logger.debug(this, "Stopping the message manager..."); 
+		isRunning = false;
+		mThread.interrupt();
+		synchronized(this) {
+			while(!shutdownFinished) {
+				try {
+					wait();
+				}
+				catch (InterruptedException e) {
+					Thread.interrupted();
+				}
+			}
+		}
+		Logger.debug(this, "Stopped the message manager.");
 	}
 	
 	/**
@@ -225,18 +305,11 @@ public abstract class MessageManager implements Runnable {
 			Logger.debug(this, "Downloaded a message which we already have: " + message.getURI());
 		}
 		catch(NoSuchMessageException e) {
-		
-			// FIXME: This code produces deadlocks: We have to lock the Board before obtaining db.lock() because Board.addMessage locks the board
-			// This will require us to split up the transaction in one transaction per board, we then will need special code to delete the message if one of
-			// the transactions fails. Eww :|
 			
 			synchronized(db.lock()) {
 				try {
 					message.initializeTransient(db, this);
 					message.storeWithoutCommit();
-
-					for(Board board : message.getBoards())
-						board.addMessage(message);
 
 					for(MessageReference ref : getAllReferencesToMessage(message.getID()))
 						ref.setMessageWasDownloadedFlag();
@@ -245,6 +318,49 @@ public abstract class MessageManager implements Runnable {
 				}
 				catch(Exception ex) {
 					db.rollback(); Logger.error(this, "ROLLED BACK!", ex);
+				}
+			}
+			
+			addMessagesToBoards();
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private synchronized void addMessagesToBoards() {
+		Query q = db.query();
+		q.constrain(Message.class);
+		q.descend("mWasLinkedIn").constrain(false);
+		q.constrain(OwnMessage.class).not();
+		ObjectSet<Message> invisibleMessages = q.execute();
+		
+		for(Message message : invisibleMessages) {
+			message.initializeTransient(db, this);
+			
+			boolean allSuccessful = true;
+			
+			for(Board board : message.getBoards()) {
+				synchronized(board) {
+				synchronized(message) {
+				synchronized(db.lock()) {
+					try {
+						board.addMessage(message);
+						db.commit(); Logger.debug(this, "COMMITED.");
+					}
+					catch(RuntimeException e) {
+						allSuccessful = false;
+						db.rollback(); Logger.error(this, "ROLLED BACK: Adding message to board failed", e);
+					}
+				}
+				}
+				}
+			}
+			
+			if(allSuccessful) {
+				synchronized(message) {
+				synchronized(db.lock()) {
+					message.setLinkedIn(true);
+					message.storeAndCommit();
+				}
 				}
 			}
 		}
@@ -732,8 +848,6 @@ public abstract class MessageManager implements Runnable {
 //			return mIdentityManager.anyOwnIdentityWantsMessagesFrom(author);
 //		}
 //	}
-	
-	public abstract void terminate();
 
 	public IdentityManager getIdentityManager() {
 		return mIdentityManager;
