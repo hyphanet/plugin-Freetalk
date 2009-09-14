@@ -629,8 +629,13 @@ public abstract class Message {
 	
 	public synchronized void storeAndCommit() {
 		synchronized(db.lock()) {
-			storeWithoutCommit();
-			db.commit(); Logger.debug(this, "COMMITED.");
+			try {
+				storeWithoutCommit();
+				db.commit(); Logger.debug(this, "COMMITED.");
+			}
+			catch(RuntimeException e) {
+				DBUtil.rollbackAndThrow(db, this, e);
+			}
 		}
 	}
 	
