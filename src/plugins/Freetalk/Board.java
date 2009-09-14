@@ -253,7 +253,7 @@ public final class Board implements Comparable<Board> {
     	try {
     		// If there was a ghost thread reference for the new message, we associate the message with it - even if it is no thread:
     		// People are allowed to reply to non-threads as if they were threads, which results in a 'forked' thread.
-    		ghostRef = getThreadReference(newMessage.getID());
+    		ghostRef = getThreadLink(newMessage.getID());
     		ghostRef.setMessage(newMessage);
     		ghostRef.storeWithoutCommit(db);
     		
@@ -286,9 +286,16 @@ public final class Board implements Comparable<Board> {
     		parentThreadRef.storeWithoutCommit(db);
     		
     		// 4. Store a BoardReplyLink for the new message
-    		BoardReplyLink messageRef = new BoardReplyLink(this, newMessage, getFreeMessageIndex());
-    		messageRef.storeWithoutCommit(db);
-    		
+    		BoardReplyLink messageRef;
+    		try {
+    			// If addMessage() was called already for the given message (this might happen due to transaction management of the message manager), we must
+    			// use the already stored reply link for the message.
+    			messageRef = getReplyLink(newMessage);
+    		}
+    		catch(NoSuchMessageException e) {
+    			messageRef = new BoardReplyLink(this, newMessage, getFreeMessageIndex());
+    			messageRef.storeWithoutCommit(db);
+    		}
     		
     		// 5. Try to find the new message's parent message and tell it about it's parent message if it exists.
     		try {
@@ -327,7 +334,7 @@ public final class Board implements Comparable<Board> {
     	
     	try {
     		// Check whether the message was listed as a thread.
-    		BoardThreadLink threadLink = getThreadReference(message.getID());
+    		BoardThreadLink threadLink = getThreadLink(message.getID());
     		
     		// If it was listed as a thread and had no replies, we can delete it's ThreadLink.
     		// We do not delete the ThreadLink if it has replies already: We want the replies to stay visible and therefore the ThreadLink has to be kept,
@@ -344,7 +351,7 @@ public final class Board implements Comparable<Board> {
     	
     	if(message.isThread() == false) {
 			try {
-				getMessageReference(message).deleteWithoutCommit(db);
+				getReplyLink(message).deleteWithoutCommit(db);
 			} catch (NoSuchMessageException e) {
 				Logger.error(this, "Should not happen: deleteMessage() called for a reply message which does not exist in this Board.", e);
 				throw e;
@@ -390,7 +397,7 @@ public final class Board implements Comparable<Board> {
     }
     
     @SuppressWarnings("unchecked")
-	public synchronized BoardReplyLink getMessageReference(Message message) throws NoSuchMessageException {
+	public synchronized BoardReplyLink getReplyLink(Message message) throws NoSuchMessageException {
         Query q = db.query();
         q.constrain(BoardReplyLink.class);
         q.descend("mMessage").constrain(message).identity();
@@ -409,7 +416,7 @@ public final class Board implements Comparable<Board> {
     }
     
     @SuppressWarnings("unchecked")
-	public synchronized BoardThreadLink getThreadReference(String threadID) throws NoSuchMessageException {
+	public synchronized BoardThreadLink getThreadLink(String threadID) throws NoSuchMessageException {
         Query q = db.query();
         q.constrain(BoardThreadLink.class);
         q.descend("mBoard").constrain(this).identity();
@@ -452,7 +459,7 @@ public final class Board implements Comparable<Board> {
 
     	try {
     		// The parent thread was downloaded and marked as a thread already, we return its BoardThreadLink
-    		return getThreadReference(parentThreadID);
+    		return getThreadLink(parentThreadID);
     	}
     	catch(NoSuchMessageException e) {
     		// There is no thread reference for the parent thread yet. Either it was not downloaded yet or it was downloaded but is no thread.
