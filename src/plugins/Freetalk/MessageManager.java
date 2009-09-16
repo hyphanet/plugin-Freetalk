@@ -19,7 +19,6 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
-import plugins.Freetalk.tasks.PersistentTaskManager;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -443,9 +442,6 @@ public abstract class MessageManager implements Runnable {
 						query.constrain(MessageList.MessageReference.class);
 						query.constrain(OwnMessageList.OwnMessageReference.class).not();
 						query.descend("mMessageID").constrain(id);
-						/* FIXME: This function should only return MessageReferences which are for a board which an OwnIdentity wants to read and from 
-						 * as specified above. This has to be implemented yet. */
-						/* FIXME: Order the message references randomly with some trick. */
 						iter = query.execute().iterator();
 					}
 
