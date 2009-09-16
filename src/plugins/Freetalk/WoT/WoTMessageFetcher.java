@@ -46,11 +46,10 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	private static final int MAX_PARALLEL_MESSAGE_FETCH_COUNT = 16;
 	
 	/**
-	 * If a message download succeeds/fails and there are less parallel downloads than this constant, the sleeping loop of the fetch thread
-	 * is interrupted by onSuccess/onFailure so that it starts new downloads. Do not set this too high, otherwise the thread will be interrupted
-	 * too often if there are no more message links in the database.
+	 * If a message download succeeds/fails and there are less parallel downloads than this constant, the onSuccess() / onFailure() method
+	 * will call fetch messages so that new fetches will be started.
 	 */
-	private static final int MIN_PARALLEL_MESSAGE_FETCH_COUNT = 4; 
+	private static final int MIN_PARALLEL_MESSAGE_FETCH_COUNT = 10; 
 	
 	private final Random mRandom;
 	
