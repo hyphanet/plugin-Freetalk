@@ -5,13 +5,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Random;
-import java.util.concurrent.ArrayBlockingQueue;
-
-import com.db4o.ObjectContainer;
 
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageListFetcher;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
+
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -23,6 +23,8 @@ import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestClient;
+import freenet.node.RequestStarter;
+import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
@@ -47,15 +49,30 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
 	private static final int THREAD_PERIOD = 5 * 60 * 1000; /* FIXME: tweak before release */
-	private static final int MAX_PARALLEL_MESSAGELIST_FETCH_COUNT = 64;
+	
+	/**
+	 * How many message lists do we attempt to fetch in parallel? FIXME: This should be configurable.
+	 */
+	private static final int MAX_PARALLEL_MESSAGELIST_FETCH_COUNT = 16;
+	
+	/**
+	 * How many identities do we keep in the LRU Hashtable? The hashtable is a queue which is used to ensure that we fetch message lists from different identities
+	 * and not always from the same ones.
+	 */
+	private static final int IDENTITIES_LRU_QUEUE_SIZE_LIMIT = 1024;
+	
+	/**
+	 * If an identity is not in the queue and therefore a message list fetch is started from that identity, we do not fetch only a single message list from it:
+	 * When the first message list is fetched, a new fetch is started. Multiple message lists are fetched up to the limit of the following constant.
+	 */
+	private static final int MAX_MESSAGELIST_FETCHES_PER_IDENTITY_PER_ROUND = 5; 
 	
 	private final WoTIdentityManager mIdentityManager;
 	private final WoTMessageManager mMessageManager;
 	private final ClientContext clientContext;
 	private final RequestClient mRequestClient;
 	
-	/* FIXME FIXME FIXME: Use LRUQueue instead. ArrayBlockingQueue does not use a Hashset for contains()! */
-	private final ArrayBlockingQueue<WoTIdentity> mIdentities = new ArrayBlockingQueue<WoTIdentity>(MAX_PARALLEL_MESSAGELIST_FETCH_COUNT * 10); /* FIXME: figure out a decent size */
+	private final LRUHashtable<String, Integer> mIdentities = new LRUHashtable<String, Integer>();
 	
 	private final Random mRandom;
 	
@@ -104,16 +121,17 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		
 		ArrayList<WoTIdentity> identitiesToFetchFrom = new ArrayList<WoTIdentity>(MAX_PARALLEL_MESSAGELIST_FETCH_COUNT + 1);
 		
+		// FIXME: Order the identities by date of modification
+		
+		synchronized(mIdentities) {
 		for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
-			synchronized(mIdentities) {
-				if(!mIdentities.contains(identity) && mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
+				if(!mIdentities.containsKey(identity.getID()) && mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
 					identitiesToFetchFrom.add(identity);
-					mIdentities.add(identity);
 					
 					if(identitiesToFetchFrom.size() >= MAX_PARALLEL_MESSAGELIST_FETCH_COUNT)
 						break;
 				}
-			}
+		}
 		}
 		
 		/* mIdentities contains all identities which are available, so we have to flush it. */
@@ -121,14 +139,11 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 			 mIdentities.clear();
 			
 			 for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
-				 synchronized(mIdentities) {
-					 if(mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
-						 identitiesToFetchFrom.add(identity);
-						 mIdentities.add(identity);
-						 
-						if(identitiesToFetchFrom.size() >= MAX_PARALLEL_MESSAGELIST_FETCH_COUNT)
-							break;
-					 }
+				 if(mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
+					 identitiesToFetchFrom.add(identity);
+
+					 if(identitiesToFetchFrom.size() >= MAX_PARALLEL_MESSAGELIST_FETCH_COUNT)
+						 break;
 				 }
 			 }
 		}
@@ -163,6 +178,32 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	 * @param followRedirectsToHigherIndex If true, the USK redirects will be used to download the latest instead of the specified index.
 	 */
 	private void fetchMessageList(WoTIdentity identity, int index, boolean followRedirectsToHigherIndex) throws FetchException {
+		synchronized(mIdentities) {
+			// mIdentities contains up to IDENTITIES_LRU_QUEUE_SIZE_LIMIT identities of which we have recently downloaded MessageLists. This queue is used to ensure
+			// that we download MessageLists from different identities and not always from the same ones. 
+			// The oldest identity falls out of the LRUQueue if it has reached it size limit and therefore MessageList downloads from that one are allowed again.
+				
+			Integer fetchedLists = mIdentities.get(identity.getID());
+		 
+			if(fetchedLists == null) {
+				fetchedLists = 0;
+
+				// We first checked whether the identity was in the queue because if the given identity is already in the pipeline then downloading a list from it
+				// should NOT cause a different identity to fall out - the given identity should be moved to the top and the others should stay in the pipeline.
+				if(mIdentities.size() >= IDENTITIES_LRU_QUEUE_SIZE_LIMIT)
+					mIdentities.popKey();
+			}
+			
+			if(fetchedLists >= MAX_MESSAGELIST_FETCHES_PER_IDENTITY_PER_ROUND) {
+				Logger.debug(this, "Aborting fetching for identity: Fetched " + MAX_MESSAGELIST_FETCHES_PER_IDENTITY_PER_ROUND + " message lists of " + identity);
+				return;
+			}
+			
+			++fetchedLists;
+			
+			mIdentities.push(identity.getID(), fetchedLists); // put this identity at the beginning of the LRUHashtabe	
+		}
+		
 		FreenetURI uri = WoTMessageList.generateURI(identity, index);
 		if(!followRedirectsToHigherIndex)
 			uri = uri.sskForUSK();
@@ -170,9 +211,14 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
 		fetchContext.maxNonSplitfileRetries = 2;
 		ClientGetter g = mClient.fetch(uri, -1, mRequestClient, this, fetchContext);
-		//g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
+		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null);
 		addFetch(g);
 		Logger.debug(this, "Trying to fetch MessageList from " + uri);
+		
+		// Not necessary because it's not a HashSet but a fixed-length queue so the identity will get removed sometime anyway.
+		//catch(RuntimeException e) {
+		//	mIdentities.removeKey(identity);
+		//}
 	}
 
 	@Override
@@ -199,9 +245,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		}
 		finally {
 			Closer.close(inputStream);
-			// TODO: Wire in when build 1210 is released: Closer.close(bucket);
-			if(bucket != null)
-				bucket.free();
+			Closer.close(bucket);
 			removeFetch(state);
 		}
 		
