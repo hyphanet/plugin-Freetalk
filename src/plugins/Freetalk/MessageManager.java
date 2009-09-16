@@ -392,7 +392,9 @@ public abstract class MessageManager implements Runnable {
 	
 	public synchronized void onMessageFetchFailed(MessageReference messageReference, MessageList.MessageFetchFailedReference.Reason reason) {
 		if(reason == MessageList.MessageFetchFailedReference.Reason.DataNotFound) {
-			/* TODO: Handle DNF in some reasonable way. Mark the Messages as unavailable after a certain amount of retries maybe */
+			/* FIXME: Messages with DNF should be marked as failed, and the failed mark should be deleted after a few days. This has to be implemented
+			 * before the official Freetalk release because otherwise someone could spam the message manager queue with unfetchable messages - preventing the
+			 * fetching of any other messages. */
 			return;
 		}
 

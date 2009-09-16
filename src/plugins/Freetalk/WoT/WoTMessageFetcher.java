@@ -45,12 +45,6 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	private static final int THREAD_PERIOD = 5 * 60 * 1000; /* FIXME: tweak before release */
 	private static final int MAX_PARALLEL_MESSAGE_FETCH_COUNT = 16;
 	
-	/**
-	 * If a message download succeeds/fails and there are less parallel downloads than this constant, the onSuccess() / onFailure() method
-	 * will call fetch messages so that new fetches will be started.
-	 */
-	private static final int MIN_PARALLEL_MESSAGE_FETCH_COUNT = 10; 
-	
 	private final Random mRandom;
 	
 	private final RequestClient requestClient;
@@ -67,17 +61,6 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	 */
 	private final HashSet<FreenetURI> mMessages = new HashSet<FreenetURI>(MAX_PARALLEL_MESSAGE_FETCH_COUNT * 2);
 	
-	/**
-	 * The amount of fetches run in the previous iteration of the thread. Used to ensure that onSuccess/onFailure do not cause endless
-	 * "iterate(); nextIteration();" loops.
-	 */
-	private int mPreviousFetchCount = 0;
-	
-	/**
-	 * The amount of fetches run in the current iteration of the thread. Used to ensure that onSuccess/onFailure do not cause endless
-	 * "iterate(); nextIteration();" loops.
-	 */
-	private int mCurrentFetchCount = 0;
 
 	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
@@ -127,7 +110,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 				/* FIXME: Investigate whether this is fair, i.e. whether it will not always try to download the same messages if downloading
 				 * of some of them stalls for so long that the thread re-iterates before onFailure is called which results in the messages
 				 * not being marked as undownloadable. This fairness can be guranteed by either having a THREAD_PERIOD which is high enough (which is 
-				 * difficult because it depends on the node's speed) or randomizing notDownloadedMessageIterator(), */
+				 * difficult because it depends on the node's speed) or randomizing notDownloadedMessageIterator() (the proper solution). */
 				if(fetchCount() >= MAX_PARALLEL_MESSAGE_FETCH_COUNT)
 					break;
 				
@@ -135,11 +118,6 @@ public final class WoTMessageFetcher extends MessageFetcher {
 				fetchMessage(ref.getMessageList(), ref);
 			}
 		}
-
-		mPreviousFetchCount = mCurrentFetchCount;
-		mCurrentFetchCount = fetchCount();
-		
-		Logger.debug(this, "Finished starting message fetches, previous fetch count == " + mPreviousFetchCount + "; current fetch count == " + mCurrentFetchCount);
 	}
 	
 	/**
@@ -185,12 +163,16 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		InputStream inputStream = null;
 		WoTMessageList list = null;
 		
+		boolean fetchMoreMessages = false;
+		
 		try {
 			list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
 			Message message = WoTMessageXML.decode(mMessageManager, inputStream, list, state.getURI());
 			mMessageManager.onMessageReceived(message);
+			
+			fetchMoreMessages = true;
 		}
 		catch (Exception e) {
 			Logger.error(this, "Parsing failed for message " + state.getURI(), e);
@@ -198,6 +180,8 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			if(list != null) {
 				try {
 					mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), MessageList.MessageFetchFailedReference.Reason.ParsingFailed);
+					
+					fetchMoreMessages = true;
 				}
 				catch(NoSuchMessageException ex) {
 					assert(false);
@@ -209,10 +193,12 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			Closer.close(inputStream);
 			Closer.close(bucket);
 			removeFetch(state);
-			
-			if(fetchCount() < MIN_PARALLEL_MESSAGE_FETCH_COUNT && mCurrentFetchCount > mPreviousFetchCount)
-				fetchMessages();
 		}
+		
+		// We only call fetchMessages() if we know that the current message was marked as fetched in the database, otherwise the fetch thread could get stuck
+		// in a busy loop: "fetch(), onSuccess(), fetch(), onSuccess(), ..."
+		if(fetchMoreMessages)
+			fetchMessages();
 	}
 	
 	@Override
@@ -223,6 +209,10 @@ public final class WoTMessageFetcher extends MessageFetcher {
 					try {
 						WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
 						mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), MessageList.MessageFetchFailedReference.Reason.DataNotFound);
+						
+						// We only call fetchMessages() if we know that the message for which the fetch failed was marked as failed, otherwise the fetch
+						// thread could get stuck in a busy loop: "fetch(), onFailure(), fetch(), onFailure() ..."
+						fetchMessages();
 					} catch (Exception ex) { /* NoSuchMessageList / NoSuchMessage */
 						Logger.error(this, "SHOULD NOT HAPPEN", ex);
 						assert(false);
@@ -244,9 +234,6 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		
 		finally {
 			removeFetch(state);
-		
-			if(e.getMode() != FetchException.CANCELLED && fetchCount() < MIN_PARALLEL_MESSAGE_FETCH_COUNT && mCurrentFetchCount > mPreviousFetchCount)
-				fetchMessages();
 		}
 	}
 	
