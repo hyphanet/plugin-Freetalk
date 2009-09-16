@@ -124,29 +124,29 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		// FIXME: Order the identities by date of modification
 		
 		synchronized(mIdentities) {
-		for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
+			for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
 				if(!mIdentities.contains(identity.getID()) && mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
 					identitiesToFetchFrom.add(identity);
-					
+
 					if(identitiesToFetchFrom.size() >= MAX_PARALLEL_MESSAGELIST_FETCH_COUNT)
 						break;
 				}
-		}
+			}
 		}
 		
 		/* mIdentities contains all identities which are available, so we have to flush it. */
 		if(identitiesToFetchFrom.size() == 0) {
 			Logger.debug(this, "Ran out of identities to fetch from, clearing the LRUQueue...");
-			 mIdentities.clear();
-			
-			 for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
-				 if(mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
-					 identitiesToFetchFrom.add(identity);
+			mIdentities.clear();
 
-					 if(identitiesToFetchFrom.size() >= MAX_PARALLEL_MESSAGELIST_FETCH_COUNT)
-						 break;
-				 }
-			 }
+			for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
+				if(mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
+					identitiesToFetchFrom.add(identity);
+
+					if(identitiesToFetchFrom.size() >= MAX_PARALLEL_MESSAGELIST_FETCH_COUNT)
+						break;
+				}
+			}
 		}
 		
 		for(WoTIdentity identity : identitiesToFetchFrom) {
