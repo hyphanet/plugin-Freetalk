@@ -62,6 +62,12 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	 */
 	private final Hashtable<ClientGetter, String> mMessageLists = new Hashtable<ClientGetter, String>(MAX_PARALLEL_MESSAGE_FETCH_COUNT * 2);
 	
+	
+	/**
+	 * Contains a list of messages we are currently trying to fetch. Used for preventing parallel fetch attempts of the same message.
+	 */
+	private final HashSet<FreenetURI> mMessages = new HashSet<FreenetURI>(MAX_PARALLEL_MESSAGE_FETCH_COUNT * 2);
+	
 	/**
 	 * The amount of fetches run in the previous iteration of the thread. Used to ensure that onSuccess/onFailure do not cause endless
 	 * "iterate(); nextIteration();" loops.
@@ -113,24 +119,33 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	@Override
 	protected synchronized void iterate() {
 		abortAllTransfers();
-		
+		fetchMessages();
+	}
+	
+	/**
+	 * You have to synchronize on this <code>WoTMessageFetcher</code> when using this function.
+	 */
+	private void fetchMessages() {
 		synchronized(mMessageManager) { 
 			/* TODO: Obtain WoTMessageLists only, not all. */
 			Iterator<MessageList.MessageReference> iter = mMessageManager.notDownloadedMessageIterator();
 			while(iter.hasNext()) {
-				MessageList.MessageReference ref = iter.next();
-				fetchMessage(ref.getMessageList(), ref);
-				
 				/* FIXME: Investigate whether this is fair, i.e. whether it will not always try to download the same messages if downloading
 				 * of some of them stalls for so long that the thread re-iterates before onFailure is called which results in the messages
-				 * not being marked as undownloadable. */
-				if(fetchCount() > MAX_PARALLEL_MESSAGE_FETCH_COUNT)
+				 * not being marked as undownloadable. This fairness can be guranteed by either having a THREAD_PERIOD which is high enough (which is 
+				 * difficult because it depends on the node's speed) or randomizing notDownloadedMessageIterator(), */
+				if(fetchCount() >= MAX_PARALLEL_MESSAGE_FETCH_COUNT)
 					break;
+				
+				MessageList.MessageReference ref = iter.next();
+				fetchMessage(ref.getMessageList(), ref);
 			}
 		}
 
 		mPreviousFetchCount = mCurrentFetchCount;
 		mCurrentFetchCount = fetchCount();
+		
+		Logger.debug(this, "Finished starting message fetches, previous fetch count == " + mPreviousFetchCount + "; current fetch count == " + mCurrentFetchCount);
 	}
 	
 	/**
@@ -149,20 +164,23 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	 * You have to synchronize on this <code>WoTMessageFetcher</code> when using this function.
 	 */
 	private void fetchMessage(MessageList list, FreenetURI uri) throws FetchException {
-		/* TODO: If a single message is posted to multiple boards, a MessageList.MessageReference is stored for each boards.
-		 * Because we query the MessageManager for MessageReference objects, it might happen that this function is called twice
-		 * for a single message. On the one hand, because of this we should check whether we are already downloading the given URI.
-		 * On the other hand, most messages will be posted to only a single board so the overhead of creating a HashSet<FreenetURI>
-		 * might not be worthwhile. The MessageManager will ignore duplicates of already downloaded messages anyway. */
-		
-		FetchContext fetchContext = mClient.getFetchContext();
-		fetchContext.maxSplitfileBlockRetries = 2;
-		fetchContext.maxNonSplitfileRetries = 2;
-		ClientGetter g = mClient.fetch(uri, -1, requestClient, this, fetchContext);
-		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null);
-		addFetch(g);
-		mMessageLists.put(g, list.getID());
-		Logger.debug(this, "Trying to fetch message from " + uri);
+		if(mMessages.add(uri) == false)// The message is already being fetched.
+			return;
+
+		try {
+			FetchContext fetchContext = mClient.getFetchContext();
+			fetchContext.maxSplitfileBlockRetries = 2;
+			fetchContext.maxNonSplitfileRetries = 2;
+			ClientGetter g = mClient.fetch(uri, -1, requestClient, this, fetchContext);
+			g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null);
+			addFetch(g);
+			mMessageLists.put(g, list.getID());
+			Logger.debug(this, "Trying to fetch message from " + uri);
+		}
+		catch(RuntimeException e) {
+			mMessages.remove(uri);
+			throw e;
+		}
 	}
 
 	@Override
@@ -199,7 +217,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			removeFetch(state);
 			
 			if(fetchCount() < MIN_PARALLEL_MESSAGE_FETCH_COUNT && mCurrentFetchCount > mPreviousFetchCount)
-				nextIteration();
+				fetchMessages();
 		}
 	}
 	
@@ -233,8 +251,8 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		finally {
 			removeFetch(state);
 		
-			if(fetchCount() < MIN_PARALLEL_MESSAGE_FETCH_COUNT && mCurrentFetchCount > mPreviousFetchCount)
-				nextIteration();
+			if(e.getMode() != FetchException.CANCELLED && fetchCount() < MIN_PARALLEL_MESSAGE_FETCH_COUNT && mCurrentFetchCount > mPreviousFetchCount)
+				fetchMessages();
 		}
 	}
 	
@@ -245,6 +263,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	protected void abortAllTransfers() {
 		super.abortAllTransfers();
 		mMessageLists.clear();
+		mMessages.clear();
 	}
 	
 	/**
@@ -254,6 +273,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	protected void removeFetch(ClientGetter g) {
 		super.removeFetch(g);
 		mMessageLists.remove(g);
+		mMessages.remove(g.getURI());
 	}
 	
 	
