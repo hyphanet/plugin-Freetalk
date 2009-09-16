@@ -433,6 +433,9 @@ public class WebInterface {
 		}
 
 		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+			
+			// ATTENTION: The same code is used in WoT's WebInterface.java. Please synchronize any changes which happen there.
+			
 			WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 			
 			Bucket dataBucket = null;
