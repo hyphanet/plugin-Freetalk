@@ -101,9 +101,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	protected synchronized void iterate() {
 		abortAllTransfers();
 		
-		/* FIXME: I think the counterpart of this synchronized() (which ensures that MessageLists are not created when this lock is help) 
-		 * might be missing. Check through the other code and add it where it's needed. */
-		synchronized(MessageList.class) { 
+		synchronized(mMessageManager) { 
 			/* TODO: Obtain WoTMessageLists only, not all. */
 			Iterator<MessageList.MessageReference> iter = mMessageManager.notDownloadedMessageIterator();
 			while(iter.hasNext()) {
@@ -112,8 +110,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 				
 				/* FIXME: Investigate whether this is fair, i.e. whether it will not always try to download the same messages if downloading
 				 * of some of them stalls for so long that the thread re-iterates before onFailure is called which results in the messages
-				 * not being marked as undownloadable. (Currently, we do not mark messages as undownloadable anyway! However, onFailure
-				 * should do that in the future) */
+				 * not being marked as undownloadable. */
 				if(fetchCount() > MAX_PARALLEL_MESSAGE_FETCH_COUNT)
 					break;
 			}
