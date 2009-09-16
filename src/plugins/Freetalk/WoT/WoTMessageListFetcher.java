@@ -24,7 +24,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
-import freenet.support.LRUHashtable;
+import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
@@ -60,19 +60,14 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	 * and not always from the same ones.
 	 */
 	private static final int IDENTITIES_LRU_QUEUE_SIZE_LIMIT = 1024;
-	
-	/**
-	 * If an identity is not in the queue and therefore a message list fetch is started from that identity, we do not fetch only a single message list from it:
-	 * When the first message list is fetched, a new fetch is started. Multiple message lists are fetched up to the limit of the following constant.
-	 */
-	private static final int MAX_MESSAGELIST_FETCHES_PER_IDENTITY_PER_ROUND = 5; 
+
 	
 	private final WoTIdentityManager mIdentityManager;
 	private final WoTMessageManager mMessageManager;
 	private final ClientContext clientContext;
 	private final RequestClient mRequestClient;
 	
-	private final LRUHashtable<String, Integer> mIdentities = new LRUHashtable<String, Integer>();
+	private final LRUQueue<String> mIdentities = new LRUQueue<String>();
 	
 	private final Random mRandom;
 	
@@ -115,7 +110,17 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		return THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
 	}
 
-	@Override
+	/**
+	 * Starts fetches of MessageLists from MAX_PARALLEL_MESSAGELIST_FETCH_COUNT different identities. For each identity, it is attempted to start a fetch
+	 * of the latest news message list (by allowing USK redirects) and a fetch of an old message list.
+	 * 
+	 * The identities are put in a LRU queue, so in the next iteration, fetches will not be allowed from identities of the previous iteration.
+	 *  
+	 * Further, for each succeeded/failed MessageList fetch, the onSuccess() / onFailure() method starts a new fetch from the same identity.
+	 * 
+	 * Therefore, each identity for which fetches are started in iterate() gets the chance to get as many message lists downloaded as the node can fetch within
+	 * the THREAD_PERIOD timespan.
+	 */
 	protected synchronized void iterate() {
 		abortAllTransfers();
 		
@@ -125,7 +130,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		
 		synchronized(mIdentities) {
 		for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
-				if(!mIdentities.containsKey(identity.getID()) && mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
+				if(!mIdentities.contains(identity.getID()) && mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
 					identitiesToFetchFrom.add(identity);
 					
 					if(identitiesToFetchFrom.size() >= MAX_PARALLEL_MESSAGELIST_FETCH_COUNT)
@@ -136,6 +141,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		
 		/* mIdentities contains all identities which are available, so we have to flush it. */
 		if(identitiesToFetchFrom.size() == 0) {
+			Logger.debug(this, "Ran out of identities to fetch from, clearing the LRUQueue...");
 			 mIdentities.clear();
 			
 			 for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
@@ -182,26 +188,18 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 			// mIdentities contains up to IDENTITIES_LRU_QUEUE_SIZE_LIMIT identities of which we have recently downloaded MessageLists. This queue is used to ensure
 			// that we download MessageLists from different identities and not always from the same ones. 
 			// The oldest identity falls out of the LRUQueue if it has reached it size limit and therefore MessageList downloads from that one are allowed again.
-				
-			Integer fetchedLists = mIdentities.get(identity.getID());
+			
+			// We do not disallow fetches from the given identity if it is in the LRUQueue: This is done by iterate() which iterates with a delay of THREAD_PERIOD.
+			// - By not disallowing the fetches from the given identity here, we can make onSuccess()/onFailure() download the next message list of the identity. 
 		 
-			if(fetchedLists == null) {
-				fetchedLists = 0;
-
+			if(mIdentities.size() >= IDENTITIES_LRU_QUEUE_SIZE_LIMIT) {
 				// We first checked whether the identity was in the queue because if the given identity is already in the pipeline then downloading a list from it
 				// should NOT cause a different identity to fall out - the given identity should be moved to the top and the others should stay in the pipeline.
-				if(mIdentities.size() >= IDENTITIES_LRU_QUEUE_SIZE_LIMIT)
-					mIdentities.popKey();
+				if(!mIdentities.contains(identity.getID()))
+					mIdentities.pop();
 			}
 			
-			if(fetchedLists >= MAX_MESSAGELIST_FETCHES_PER_IDENTITY_PER_ROUND) {
-				Logger.debug(this, "Aborting fetching for identity: Fetched " + MAX_MESSAGELIST_FETCHES_PER_IDENTITY_PER_ROUND + " message lists of " + identity);
-				return;
-			}
-			
-			++fetchedLists;
-			
-			mIdentities.push(identity.getID(), fetchedLists); // put this identity at the beginning of the LRUHashtabe	
+			mIdentities.push(identity.getID()); // put this identity at the beginning of the LRUQueue
 		}
 		
 		FreenetURI uri = WoTMessageList.generateURI(identity, index);
