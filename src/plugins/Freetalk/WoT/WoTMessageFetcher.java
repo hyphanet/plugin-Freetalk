@@ -61,6 +61,18 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	 * message which is being fetched belongs.
 	 */
 	private final Hashtable<ClientGetter, String> mMessageLists = new Hashtable<ClientGetter, String>(MAX_PARALLEL_MESSAGE_FETCH_COUNT * 2);
+	
+	/**
+	 * The amount of fetches run in the previous iteration of the thread. Used to ensure that onSuccess/onFailure do not cause endless
+	 * "iterate(); nextIteration();" loops.
+	 */
+	private int mPreviousFetchCount = 0;
+	
+	/**
+	 * The amount of fetches run in the current iteration of the thread. Used to ensure that onSuccess/onFailure do not cause endless
+	 * "iterate(); nextIteration();" loops.
+	 */
+	private int mCurrentFetchCount = 0;
 
 	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
@@ -116,6 +128,9 @@ public final class WoTMessageFetcher extends MessageFetcher {
 					break;
 			}
 		}
+
+		mPreviousFetchCount = mCurrentFetchCount;
+		mCurrentFetchCount = fetchCount();
 	}
 	
 	/**
@@ -183,11 +198,8 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			Closer.close(bucket);
 			removeFetch(state);
 			
-			/* FIXME: this will wake up the loop over and over again. we need to store the previous parallel fetch count and if waking
-			 * up does not increase the fetch count do not wake up again 
-			if(fetchCount() < MIN_PARALLEL_MESSAGE_FETCH_COUNT)
+			if(fetchCount() < MIN_PARALLEL_MESSAGE_FETCH_COUNT && mCurrentFetchCount > mPreviousFetchCount)
 				nextIteration();
-			*/
 		}
 	}
 	
@@ -221,11 +233,8 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		finally {
 			removeFetch(state);
 		
-			/* FIXME: this will wake up the loop over and over again. we need to store the previous parallel fetch count and if waking
-			 * up does not increase the fetch count do not wake up again
-			if(fetchCount() < MIN_PARALLEL_MESSAGE_FETCH_COUNT)
+			if(fetchCount() < MIN_PARALLEL_MESSAGE_FETCH_COUNT && mCurrentFetchCount > mPreviousFetchCount)
 				nextIteration();
-			*/
 		}
 	}
 	
