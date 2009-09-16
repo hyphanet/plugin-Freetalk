@@ -70,12 +70,6 @@ public abstract class MessageManager implements Runnable {
 		// Then the message will still be stored but not visible in the boards because storing a message and adding it to boards are separate transactions.
 		// Therefore, we must call addMessagesToBoards during startup.
 		addMessagesToBoards();
-		
-		isRunning = true;
-		
-		// FIXME: You should avoid calling methods in constructors that might lead to the object 
-		// being registered and then called back to before the fields have been written.
-		mPluginRespirator.getNode().executor.execute(this, "FT Message Manager");
 	}
 	
 	/**
@@ -94,6 +88,7 @@ public abstract class MessageManager implements Runnable {
 	public void run() {
 		Logger.debug(this, "Message manager started.");
 		mThread = Thread.currentThread();
+		isRunning = true;
 		
 		Random random = mPluginRespirator.getNode().fastWeakRandom;
 		

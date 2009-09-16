@@ -130,19 +130,24 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		mTaskManager = new PersistentTaskManager(db, this);
 		
 		executor.execute(mIdentityManager, "FT Identity Manager");
+		executor.execute(mMessageManager, "FT Message Manager");
 		executor.execute(mTaskManager, "FT PersistentTaskManager");
 		
 		Logger.debug(this, "Creating message fetcher...");
 		mMessageFetcher = new WoTMessageFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT Message Fetcher", mIdentityManager, mMessageManager);
+		mMessageFetcher.start();
 		
 		Logger.debug(this, "Creating message inserter...");
 		mMessageInserter = new WoTMessageInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT Message Inserter", mIdentityManager, mMessageManager);
+		mMessageInserter.start();
 		
 		Logger.debug(this, "Creating message list fetcher...");
 		mMessageListFetcher = new WoTMessageListFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT MessageList Fetcher", mIdentityManager, mMessageManager);
+		mMessageListFetcher.start();
 		
 		Logger.debug(this, "Creating message list inserter...");
 		mMessageListInserter = new WoTMessageListInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT MessageList Inserter", mIdentityManager, mMessageManager);
+		mMessageListInserter.start();
 
 		Logger.debug(this, "Creating FCP interface...");
 		mFCPInterface = new FCPInterface(this);

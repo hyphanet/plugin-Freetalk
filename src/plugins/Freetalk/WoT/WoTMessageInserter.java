@@ -67,7 +67,6 @@ public final class WoTMessageInserter extends MessageInserter {
 		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
 		mRequestClient = mMessageManager.mRequestClient;
-		start();
 	}
 
 	@Override
