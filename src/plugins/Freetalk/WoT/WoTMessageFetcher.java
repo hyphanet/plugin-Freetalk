@@ -27,6 +27,7 @@ import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestClient;
+import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
@@ -42,7 +43,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	
 	private static final int STARTUP_DELAY = 1 * 60 * 1000;
 	private static final int THREAD_PERIOD = 5 * 60 * 1000; /* FIXME: tweak before release */
-	private static final int MAX_PARALLEL_MESSAGE_FETCH_COUNT = 64;
+	private static final int MAX_PARALLEL_MESSAGE_FETCH_COUNT = 16;
 	
 	/**
 	 * If a message download succeeds/fails and there are less parallel downloads than this constant, the sleeping loop of the fetch thread
@@ -143,7 +144,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		fetchContext.maxSplitfileBlockRetries = 2;
 		fetchContext.maxNonSplitfileRetries = 2;
 		ClientGetter g = mClient.fetch(uri, -1, requestClient, this, fetchContext);
-		//g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
+		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null);
 		addFetch(g);
 		mMessageLists.put(g, list.getID());
 		Logger.debug(this, "Trying to fetch message from " + uri);
@@ -179,10 +180,8 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		}
 		finally {
 			Closer.close(inputStream);
-			// TODO: Wire in when build 1210 is released: Closer.close(bucket);
-			if(bucket != null)
-				bucket.free();
-			removeFetch(state); /* FIXME: This was in the try{} block somewhere else in the FT/WoT code. Move it to finally{} there, too */
+			Closer.close(bucket);
+			removeFetch(state);
 			
 			/* FIXME: this will wake up the loop over and over again. we need to store the previous parallel fetch count and if waking
 			 * up does not increase the fetch count do not wake up again 
