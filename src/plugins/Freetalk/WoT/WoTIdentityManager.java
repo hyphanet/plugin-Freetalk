@@ -47,7 +47,6 @@ import freenet.support.io.NativeThread;
 public class WoTIdentityManager extends IdentityManager {
 	
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
-	private static final int STARTUP_DELAY = 30 * 1000;
 	private static final int THREAD_PERIOD = 5 * 60 * 1000;
 	
 	/** The amount of time between each attempt to connect to the WoT plugin */
@@ -78,12 +77,6 @@ public class WoTIdentityManager extends IdentityManager {
 		mIsUnitTest = false;
 		
 		mFreetalk = myFreetalk;
-		
-		isRunning = true;
-		
-		// FIXME: You should avoid calling methods in constructors that might lead to the object 
-		// being registered and then called back to before the fields have been written.
-		mExecutor.execute(this, "FT Identity Manager");
 	}
 	
 	/**
@@ -672,13 +665,8 @@ public class WoTIdentityManager extends IdentityManager {
 	public void run() { 
 		Logger.debug(this, "Identity manager started.");
 		mThread = Thread.currentThread();
-		
-		try {
-			Thread.sleep(STARTUP_DELAY);
-		} catch (InterruptedException e) {
-			mThread.interrupt();
-		}
-		
+		isRunning = true;
+		 
 		long nextIdentityRequestTime = 0;
 		
 		Random random = mFreetalk.getPluginRespirator().getNode().fastWeakRandom;
