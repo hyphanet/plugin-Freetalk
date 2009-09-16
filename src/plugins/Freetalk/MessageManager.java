@@ -812,7 +812,7 @@ public abstract class MessageManager implements Runnable {
 		Query query = db.query();
 		query.constrain(Message.class);
 		query.constrain(OwnMessage.class).not();
-		query.descend("mAuthor").constrain(author); // FIXME: add .identity() here. Test whether the function still works. It should. Semantically we NEED the .identity()
+		query.descend("mAuthor").constrain(author).identity();
 		ObjectSet<Message> result = query.execute();
 		return result;
 	}
