@@ -33,6 +33,7 @@ import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.FredPluginWithClassLoader;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -114,6 +115,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 //		db.commit(); Logger.debug(this, "COMMITED.");
 //		Logger.debug(this, "Database wiped.");
 		
+		Executor executor = mPluginRespirator.getNode().executor;
+		
 		Logger.debug(this, "Creating Web interface...");
 		mWebInterface = new WebInterface(this);
 		
@@ -125,7 +128,9 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		
 		Logger.debug(this, "Creating task manager...");
 		mTaskManager = new PersistentTaskManager(db, this);
-		mPluginRespirator.getNode().executor.execute(mTaskManager, "FT PersistentTaskManager");
+		
+		executor.execute(mIdentityManager, "FT Identity Manager");
+		executor.execute(mTaskManager, "FT PersistentTaskManager");
 		
 		Logger.debug(this, "Creating message fetcher...");
 		mMessageFetcher = new WoTMessageFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT Message Fetcher", mIdentityManager, mMessageManager);
