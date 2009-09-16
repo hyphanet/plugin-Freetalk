@@ -9,6 +9,7 @@ import java.util.Iterator;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.clients.http.RedirectException;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -67,7 +68,14 @@ public final class BoardsPage extends WebPageImpl {
 				row.addChild("td", new String[] { "align" }, new String[] { "center" }, Integer.toString(board.messageCount()));
 				
 				/* Date of latest message */
-				row.addChild("td", new String[] { "align" }, new String[] { "center" }, board.getLatestMessageDate() == null ? "-" : dateFormat.format(board.getLatestMessageDate()));
+				String latestMessageDate;
+				try {
+					latestMessageDate = dateFormat.format(board.getLatestMessageDate(mOwnIdentity));
+				} catch(NoSuchMessageException e) {
+					latestMessageDate = "-";
+				}
+				
+				row.addChild("td", new String[] { "align" }, new String[] { "center" }, latestMessageDate);
 			}
 		}
 

@@ -124,6 +124,7 @@ public final class FCPInterface implements FredPluginFCP {
         }
     }
 
+    // FIXME: This should take an own identity as parameter and return LatestMessagedate from the view of that own identity
     /**
      * Handle ListBoards command.
      * Send a number of Board messages and finally an EndListBoards message.
@@ -151,9 +152,10 @@ public final class FCPInterface implements FredPluginFCP {
                 if (board.getFirstSeenDate() != null) {
                     sfs.put("FirstSeenDate", board.getFirstSeenDate().getTime());
                 }
-                if (board.getLatestMessageDate() != null) {
-                    sfs.put("LatestMessageDate", board.getLatestMessageDate().getTime());
-                }
+                try {
+                    sfs.put("LatestMessageDate", board.getLatestMessageDate(null).getTime());
+                } catch(NoSuchMessageException e) { }
+               
 
                 replysender.send(sfs);
             }

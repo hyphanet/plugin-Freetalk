@@ -53,8 +53,6 @@ public final class Board implements Comparable<Board> {
 
     private final Date mFirstSeenDate;
 
-    private Date mLatestMessageDate;
-
 
     /* References to objects of the plugin, not stored in the database. */
 
@@ -70,7 +68,7 @@ public final class Board implements Comparable<Board> {
     }
     
     public static String[] getMessageReferenceIndexedFields() { /* TODO: ugly! find a better way */
-    	return new String[] { "mBoard", "mMessage", "mMessageIndex" };
+    	return new String[] { "mBoard", "mMessage", "mMessageIndex", "mMessageDate" };
     }
 
     public static String[] getBoardReplyLinkIndexedFields() { /* TODO: ugly! find a better way */
@@ -101,7 +99,6 @@ public final class Board implements Comparable<Board> {
         mID = UUID.randomUUID().toString();
         mName = newName.toLowerCase();
         mFirstSeenDate = CurrentTimeUTC.get();
-        mLatestMessageDate = null;
     }
 
     /**
@@ -207,8 +204,30 @@ public final class Board implements Comparable<Board> {
         return mFirstSeenDate;
     }
 
-    public synchronized Date getLatestMessageDate() {
-        return mLatestMessageDate;
+    @SuppressWarnings("unchecked")
+	public synchronized Date getLatestMessageDate(FTOwnIdentity viewer) throws NoSuchMessageException {
+        Query q = db.query();
+        q.constrain(MessageReference.class);
+        q.descend("mBoard").constrain(this);
+        q.descend("mMessageDate").orderDescending();
+        ObjectSet<MessageReference> allMessages = q.execute();
+        
+        if(viewer != null) {
+	        for(MessageReference ref : allMessages) {
+	        	final Message message = ref.getMessage();
+	        	if(message != null && viewer.wantsMessagesFrom(message.getAuthor()))
+	        		return message.getDate();
+	        }
+        } else {
+        	for(MessageReference ref : allMessages) {
+        		final Message message = ref.getMessage();
+        		if(message != null)
+        			return message.getDate();
+        	}
+        }
+        
+        
+        throw new NoSuchMessageException();
     }
 
     public synchronized String getDescription(FTOwnIdentity viewer) {
@@ -313,10 +332,6 @@ public final class Board implements Comparable<Board> {
 
     		linkThreadRepliesToNewParent(parentThreadRef.getThreadID(), newMessage);
     	}
-    	
-    	// Finally, we must update the latest message date of this board.
-    	if(mLatestMessageDate == null || newMessage.getDate().after(mLatestMessageDate))
-    		mLatestMessageDate = newMessage.getDate();
 
     	storeWithoutCommit();
     }
