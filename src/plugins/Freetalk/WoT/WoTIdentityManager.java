@@ -52,6 +52,15 @@ public class WoTIdentityManager extends IdentityManager {
 	/** The amount of time between each attempt to connect to the WoT plugin */
 	private static final int WOT_RECONNECT_DELAY = 5 * 1000; 
 	
+	/** The minimal amount of time between fetching identities */
+	private static final int MINIMAL_IDENTITY_FETCH_DELAY = 1000;
+	
+	/** The minimal amount of time between fetching own identities */
+	private static final int MINIMAL_OWN_IDENTITY_FETCH_DELAY = 1000;
+	
+	private long mLastIdentityFetchTime = 0;
+	private long mLastOwnIdentityFetchTime = 0;
+	
 	/** If true, this identity manager is being use in a unit test - it will return 0 for any score / trust value then */
 	private final boolean mIsUnitTest;
 	
@@ -472,6 +481,12 @@ public class WoTIdentityManager extends IdentityManager {
 		if(mTalker == null)
 			throw new PluginNotFoundException();
 		
+		long now = CurrentTimeUTC.getInMillis();
+		if((now - mLastIdentityFetchTime) < MINIMAL_IDENTITY_FETCH_DELAY)
+			return;
+		
+		mLastIdentityFetchTime = now;
+		
 		Logger.debug(this, "Requesting identities with positive score from WoT ...");
 		SimpleFieldSet p1 = new SimpleFieldSet(true);
 		p1.putOverwrite("Message", "GetIdentitiesByScore");
@@ -485,6 +500,12 @@ public class WoTIdentityManager extends IdentityManager {
 	 * @throws Exception 
 	 */
 	private synchronized void fetchOwnIdentities() throws Exception {
+		long now = CurrentTimeUTC.getInMillis();
+		if((now - mLastOwnIdentityFetchTime) < MINIMAL_OWN_IDENTITY_FETCH_DELAY)
+			return;
+		
+		mLastOwnIdentityFetchTime = now;
+		
 		Logger.debug(this, "Requesting own identities from WoT ...");
 		SimpleFieldSet p2 = new SimpleFieldSet(true);
 		p2.putOverwrite("Message","GetOwnIdentities");
