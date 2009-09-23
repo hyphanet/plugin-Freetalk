@@ -321,7 +321,7 @@ public class WoTIdentityManager extends IdentityManager {
 		request.putOverwrite("Identity", trustee.getID());
 		try {
 			SimpleFieldSet answer = sendFCPMessageBlocking(request, null, "Identities").params;
-			for(int idx = 1; ; idx++) {
+			for(int idx = 0; ; idx++) {
 				String id = answer.get("Identity"+idx);
 				if(id == null || id.equals("")) /* FIXME: Figure out whether the second condition is necessary */
 					break;
@@ -399,7 +399,7 @@ public class WoTIdentityManager extends IdentityManager {
 		try {
 			SimpleFieldSet result = sendFCPMessageBlocking(params, null, "IntroductionPuzzles").params;
 			
-			for(int idx = 1; ; idx++) {
+			for(int idx = 0; ; idx++) {
 				String id = result.get("Puzzle" + idx);
 				
 				if(id == null || id.equals("")) /* FIXME: Figure out whether the second condition is necessary */
@@ -538,7 +538,7 @@ public class WoTIdentityManager extends IdentityManager {
 		
 		final PersistentTaskManager taskManager = mFreetalk.getTaskManager();
 	
-		for(int idx = 1; ; idx++) {
+		for(int idx = 0; ; idx++) {
 			String identityID = params.get("Identity"+idx);
 			if(identityID == null || identityID.equals("")) /* FIXME: Figure out whether the second condition is necessary */
 				break;
