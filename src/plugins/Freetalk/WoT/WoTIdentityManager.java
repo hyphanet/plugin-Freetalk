@@ -136,7 +136,9 @@ public class WoTIdentityManager extends IdentityManager {
 		
 		synchronized(db.lock()) {
 			try {
+				identity.initializeTransient(db, this);
 				identity.storeWithoutCommit();
+				onIdentityCreated(identity);
 				db.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
@@ -172,6 +174,7 @@ public class WoTIdentityManager extends IdentityManager {
 			try {
 				identity.initializeTransient(db, this);
 				identity.storeWithoutCommit();
+				onIdentityCreated(identity);
 				db.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
