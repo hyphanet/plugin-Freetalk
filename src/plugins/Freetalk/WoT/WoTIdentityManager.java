@@ -266,7 +266,10 @@ public class WoTIdentityManager extends IdentityManager {
 		}
 	}
 
-	protected synchronized String getProperty(FTOwnIdentity treeOwner, FTIdentity target, String property) throws Exception {
+	/**
+	 * Not synchronized, the involved identities might be deleted during the query - which is not really a problem.
+	 */
+	private String getProperty(FTOwnIdentity treeOwner, FTIdentity target, String property) throws Exception {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "GetIdentity");
 		sfs.putOverwrite("TreeOwner", treeOwner.getID());
@@ -275,6 +278,9 @@ public class WoTIdentityManager extends IdentityManager {
 		return sendFCPMessageBlocking(sfs, null, "Identity").params.get(property);
 	}
 
+	/**
+	 * Not synchronized, the involved identities might be deleted during the query - which is not really a problem.
+	 */
 	public int getScore(WoTOwnIdentity treeOwner, WoTIdentity target) throws NotInTrustTreeException, Exception {
 		if(mIsUnitTest)
 			return 0;
@@ -287,6 +293,9 @@ public class WoTIdentityManager extends IdentityManager {
 		return Integer.parseInt(score);
 	}
 
+	/**
+	 * Not synchronized, the involved identities might be deleted during the query - which is not really a problem.
+	 */
 	public int getTrust(WoTOwnIdentity treeOwner, WoTIdentity target) throws NotTrustedException, Exception {
 		if(mIsUnitTest)
 			return 0;
@@ -299,7 +308,11 @@ public class WoTIdentityManager extends IdentityManager {
 		return Integer.parseInt(trust);
 	}
 
-	public synchronized void setTrust(FTOwnIdentity treeOwner, FTIdentity identity, int trust, String comment) throws Exception {
+	/**
+	 * Not synchronized, the involved identities might be deleted during the query or some other WoT client might modify the trust value
+	 * during the query - which is not really a problem, you should not be modifying trust values of your own identity with multiple clients simultaneously.
+	 */
+	public void setTrust(FTOwnIdentity treeOwner, FTIdentity identity, int trust, String comment) throws Exception {
 		SimpleFieldSet request = new SimpleFieldSet(true);
 		request.putOverwrite("Message", "SetTrust");
 		request.putOverwrite("Truster", treeOwner.getID());
@@ -310,7 +323,10 @@ public class WoTIdentityManager extends IdentityManager {
 		sendFCPMessageBlocking(request, null, "TrustSet");
 	}
 
-	public synchronized List<WoTTrust> getReceivedTrusts(FTIdentity trustee) throws Exception {
+	/**
+	 * Not synchronized, the involved identity might be deleted during the query - which is not really a problem.
+	 */
+	public List<WoTTrust> getReceivedTrusts(FTIdentity trustee) throws Exception {
 		List<WoTTrust> result = new ArrayList<WoTTrust>();
 		if(mTalker == null)
 			throw new WoTDisconnectedException();
@@ -338,7 +354,10 @@ public class WoTIdentityManager extends IdentityManager {
 		return result;
 	}
 	
-	public synchronized int getReceivedTrustsCount(FTIdentity trustee) throws Exception {
+	/**
+	 * Not synchronized, the involved identity might be deleted during the query - which is not really a problem.
+	 */
+	public int getReceivedTrustsCount(FTIdentity trustee) throws Exception {
 		if(mTalker == null)
 			throw new WoTDisconnectedException();
 		
