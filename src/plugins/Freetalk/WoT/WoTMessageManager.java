@@ -142,8 +142,6 @@ public class WoTMessageManager extends MessageManager {
 		synchronized(db.lock()) {
 			try {
 				WoTOwnMessage message = (WoTOwnMessage) getOwnMessage(id);
-				if(message == null)
-					throw new NoSuchMessageException(id);
 
 				message.markAsInserted(realURI);
 				addMessageToMessageList(message);
