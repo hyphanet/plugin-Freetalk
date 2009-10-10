@@ -273,7 +273,7 @@ public class WoTMessageManager extends MessageManager {
 		query.constrain(WoTMessageList.class);
 		query.constrain(WoTOwnMessageList.class).not();
 		query.descend("mAuthor").constrain(identity).identity();
-		query.descend("mIndex").orderDescending(); /* FIXME: This is inefficient! Use a native query instead, we just need to find the maximum */
+		query.descend("mIndex").orderDescending(); // FIXME: This is inefficient!
 		ObjectSet<WoTMessageList> result = query.execute();
 		
 		if(result.size() == 0)
@@ -288,7 +288,7 @@ public class WoTMessageManager extends MessageManager {
 		query.constrain(WoTMessageList.class);
 		query.constrain(WoTOwnMessageList.class).not();
 		query.descend("mAuthor").constrain(identity).identity();
-		query.descend("mIndex").orderDescending(); /* FIXME: This is inefficient! Use a native query instead */
+		query.descend("mIndex").orderDescending(); // FIXME: This is inefficient!
 		ObjectSet<WoTMessageList> result = query.execute();
 		
 		if(result.size() == 0)
@@ -316,7 +316,7 @@ public class WoTMessageManager extends MessageManager {
 		/* We query for WoTMessageList and not WoTOwnMessageList because the user might have deleted his own messages or lost his database */
 		q.constrain(WoTMessageList.class);
 		q.descend("mAuthor").constrain(messageAuthor).identity();
-		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
+		q.descend("mIndex").orderDescending(); // FIXME: This is inefficient!
 		ObjectSet<WoTMessageList> result = q.execute();
 		
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;
