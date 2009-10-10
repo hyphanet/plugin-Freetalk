@@ -59,18 +59,6 @@ public class Board implements Comparable<Board> {
     public static String[] getIndexedFields() {
         return new String[] { "mID", "mName" };
     }
-    
-    public static String[] getMessageReferenceIndexedFields() { /* TODO: ugly! find a better way */
-    	return new String[] { "mBoard", "mMessage", "mMessageIndex", "mMessageDate" };
-    }
-
-    public static String[] getBoardReplyLinkIndexedFields() { /* TODO: ugly! find a better way */
-        return new String[] { "mThreadID" };
-    }
-    
-    public static String[] getBoardThreadLinkIndexedFields() { /* TODO: ugly! find a better way */
-    	return new String[] { "mThreadID" };
-    }
 
     public static String[] getAllowedLanguageCodes() {
         return Locale.getISOLanguages();

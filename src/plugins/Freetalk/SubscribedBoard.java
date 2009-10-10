@@ -15,7 +15,7 @@ import com.db4o.query.Query;
 import freenet.support.Logger;
 
 public final class SubscribedBoard extends Board {
-	
+
 	private final FTOwnIdentity mSubscriber;
 
 
@@ -496,6 +496,18 @@ public final class SubscribedBoard extends Board {
         }
        
         return q.execute();
+    }
+    
+    public static String[] getMessageReferenceIndexedFields() { /* TODO: ugly! find a better way */
+    	return new String[] { "mBoard", "mMessage", "mMessageIndex", "mMessageDate" };
+    }
+
+    public static String[] getBoardReplyLinkIndexedFields() { /* TODO: ugly! find a better way */
+        return new String[] { "mThreadID" };
+    }
+    
+    public static String[] getBoardThreadLinkIndexedFields() { /* TODO: ugly! find a better way */
+    	return new String[] { "mThreadID" };
     }
 
     public static abstract class MessageReference {
