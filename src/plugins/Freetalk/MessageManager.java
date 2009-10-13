@@ -209,10 +209,14 @@ public abstract class MessageManager implements Runnable {
 					message.initializeTransient(db, this);
 
 					for(Board board : message.getBoards()) {
-						try {
-							board.deleteMessage(message);
-						} catch (NoSuchMessageException e) {
-							throw new RuntimeException(e);
+						Iterator<SubscribedBoard> iter = subscribedBoardIterator(board.getName());
+						while(iter.hasNext()){
+							SubscribedBoard subscribedBoard = iter.next();
+							
+							try {
+								subscribedBoard.deleteMessage(message);
+							} catch (NoSuchMessageException e) {
+							}
 						}
 					}
 
@@ -233,6 +237,12 @@ public abstract class MessageManager implements Runnable {
 					for(OwnMessageList messageList : getOwnMessageListsBy((FTOwnIdentity)identity)) {
 						messageList.initializeTransient(db, this);
 						messageList.deleteWithoutCommit();
+					}
+					
+					Iterator<SubscribedBoard> iter = subscribedBoardIterator((FTOwnIdentity)identity);
+					while(iter.hasNext()) {
+						SubscribedBoard board = iter.next();
+						board.deleteWithoutCommit();
 					}
 				}
 				db.commit(); Logger.debug(this, "COMMITED: Messages and message lists deleted for " + identity);
@@ -338,25 +348,31 @@ public abstract class MessageManager implements Runnable {
 			boolean allSuccessful = true;
 			
 			for(Board board : message.getBoards()) {
-				synchronized(board) {
-				synchronized(message) {
-				synchronized(db.lock()) {
-					try {
-						board.addMessage(message);
-						db.commit(); Logger.debug(this, "COMMITED.");
+				Iterator<SubscribedBoard> iter = subscribedBoardIterator(board.getName());
+				while(iter.hasNext()){
+					SubscribedBoard subscribedBoard = iter.next();
+					synchronized(subscribedBoard) {
+					synchronized(message) {
+					synchronized(db.lock()) {
+						try {
+							subscribedBoard.addMessage(message);
+							db.commit(); Logger.debug(this, "COMMITED.");
+						}
+						catch(RuntimeException e) {
+							allSuccessful = false;
+							db.rollback(); Logger.error(this, "ROLLED BACK: Adding message to board failed", e);
+						}
 					}
-					catch(RuntimeException e) {
-						allSuccessful = false;
-						db.rollback(); Logger.error(this, "ROLLED BACK: Adding message to board failed", e);
-					}
 				}
 				}
-				}
+			}
 			}
 			
 			if(allSuccessful) {
 				synchronized(message) {
 				synchronized(db.lock()) {
+					// FIXME: This is WRONG: it only works if the list of subscribed boards stays constant. We need separate code in boards for storing a list
+					// of messages.
 					message.setLinkedIn(true);
 					message.storeAndCommit();
 				}
@@ -575,6 +591,7 @@ public abstract class MessageManager implements Runnable {
 		
 		Query query = db.query();
 		query.constrain(Board.class);
+		query.constrain(SubscribedBoard.class).not();
 		query.descend("mName").constrain(name);
 		ObjectSet<Board> result = query.execute();
 
@@ -631,20 +648,42 @@ public abstract class MessageManager implements Runnable {
 	@SuppressWarnings("unchecked")
 	protected Iterator<Board> generalBoardIterator(final Query q) {
 		return new Iterator<Board>() {
-			private Iterator<Board> iter = q.execute().iterator();
+			private final Iterator<Board> iter = q.execute().iterator();
 			
 			public boolean hasNext() {
 				return iter.hasNext();
 			}
 
 			public Board next() {
-				Board next = iter.next();
+				final Board next = iter.next();
 				next.initializeTransient(db, MessageManager.this);
 				return next;
 			}
 
 			public void remove() {
-				throw new UnsupportedOperationException("Boards cannot be deleted yet.");
+				throw new UnsupportedOperationException("Boards cannot be deleted here.");
+			}
+			
+		};
+	}
+	
+	@SuppressWarnings("unchecked")
+	protected Iterator<SubscribedBoard> generalSubscribedBoardIterator(final Query q) {
+		return new Iterator<SubscribedBoard>() {
+			private final Iterator<SubscribedBoard> iter = q.execute().iterator();
+			
+			public boolean hasNext() {
+				return iter.hasNext();
+			}
+
+			public SubscribedBoard next() {
+				final SubscribedBoard next = iter.next();
+				next.initializeTransient(db, MessageManager.this);
+				return next;
+			}
+
+			public void remove() {
+				throw new UnsupportedOperationException("Boards cannot be deleted here.");
 			}
 			
 		};
@@ -656,6 +695,7 @@ public abstract class MessageManager implements Runnable {
 	public synchronized Iterator<Board> boardIterator() {
 		Query query = db.query();
 		query.constrain(Board.class);
+		query.constrain(SubscribedBoard.class).not();
 		query.descend("mName").orderDescending();
 		return generalBoardIterator(query);
 	}
@@ -663,12 +703,93 @@ public abstract class MessageManager implements Runnable {
 	/**
 	 * Get an iterator of boards which were first seen after the given Date, sorted ascending by the date they were first seen at.
 	 */
-	public synchronized Iterator<Board> boardIteratorSortedByDate(final Date seenAfter) {
+	public synchronized Iterator<SubscribedBoard> subscribedBoardIteratorSortedByDate(FTOwnIdentity subscriber, final Date seenAfter) {
 		Query query = db.query();
-		query.constrain(Board.class);
+		query.constrain(SubscribedBoard.class);
 		query.descend("mFirstSeenDate").constrain(seenAfter).greater();
 		query.descend("mFirstSeenDate").orderAscending();
-		return generalBoardIterator(query);
+		return generalSubscribedBoardIterator(query);
+	}
+	
+	public synchronized Iterator<SubscribedBoard> subscribedBoardIterator(FTOwnIdentity subscriber) {
+		Query query = db.query();
+		query.constrain(SubscribedBoard.class);
+		query.descend("mSubscriber").constrain(subscriber).identity();
+		query.descend("mName").orderDescending();
+		return generalSubscribedBoardIterator(query);
+	}
+	
+	private Iterator<SubscribedBoard> subscribedBoardIterator(String boardName) {
+    	Query q = db.query();
+    	q.constrain(SubscribedBoard.class);
+    	q.descend("mName").constrain(boardName);
+    	return generalSubscribedBoardIterator(q);
+    }
+	
+    @SuppressWarnings("unchecked")
+	public synchronized SubscribedBoard getSubscription(FTOwnIdentity subscriber, String boardName) throws NoSuchBoardException {
+    	Query q = db.query();
+    	q.constrain(SubscribedBoard.class);
+    	q.descend("mName").constrain(boardName);
+    	q.descend("mSubscriber").constrain(subscriber).identity();
+    	ObjectSet<SubscribedBoard> result = q.execute();
+    	
+    	switch(result.size()) {
+    		case 1:
+    			SubscribedBoard board = result.next();
+    			board.initializeTransient(db, this);
+    			return board;
+    		case 0: throw new NoSuchBoardException(boardName);
+    		default: throw new DuplicateBoardException(boardName);
+    	}
+    }
+    
+	
+	public SubscribedBoard subscribeToBoard(FTOwnIdentity subscriber, String boardName) throws Exception {
+		synchronized(mIdentityManager) {
+			subscriber = mIdentityManager.getOwnIdentity(subscriber.getID()); // Ensure that the identity still exists so the caller does not have to synchronize.
+
+			synchronized(this) {
+				getOrCreateBoard(boardName);
+
+				try {
+					return getSubscription(subscriber, boardName);
+				}
+				catch(NoSuchBoardException e) {
+					synchronized(db.lock()) {
+						try {
+							SubscribedBoard board = new SubscribedBoard(boardName, subscriber);
+							board.initializeTransient(db, this);
+							board.storeWithoutCommit();
+							db.commit(); Logger.debug(this, "COMMITED.");
+
+							return board;
+						}
+						catch(Exception error) {
+							db.rollback(); Logger.error(this, "subscribeToBoard failed", error);
+							throw error;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * You have to synchronize on the IdentityManager which was used to obtain the subscriber while calling this function. 
+	 */
+	public synchronized void unsubscribeFromBoard(FTOwnIdentity subscriber, String boardName) throws NoSuchBoardException {
+		SubscribedBoard board = getSubscription(subscriber, boardName);
+		
+		synchronized(db.lock()) {
+			try {
+				board.deleteWithoutCommit();
+				db.commit(); Logger.debug(this, "COMMITED");
+			}
+			catch(RuntimeException e) {
+				DBUtil.rollbackAndThrow(db, this, e);
+			}
+		}
 	}
 	
 	/**
@@ -833,19 +954,6 @@ public abstract class MessageManager implements Runnable {
 		query.descend("mAuthor").constrain(author).identity();
 		return query.execute();
 	}
-	
-	/**
-	 * Returns true if the message was not downloaded yet and any of the FTOwnIdentity wants the message.
-	 */
-//	protected synchronized boolean shouldDownloadMessage(FreenetURI uri, FTIdentity author) {
-//		try {
-//			get(uri);
-//			return false;
-//		}
-//		catch(NoSuchMessageException e) {
-//			return mIdentityManager.anyOwnIdentityWantsMessagesFrom(author);
-//		}
-//	}
 
 	public IdentityManager getIdentityManager() {
 		return mIdentityManager;
