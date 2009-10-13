@@ -46,6 +46,7 @@ public class Board implements Comparable<Board> {
 
     private final Date mFirstSeenDate;
     
+    /** True if at least one {@link SubscribedBoard} for this Board exists, i.e. if we should download messages of this board. */
     private boolean mHasSubscriptions;
 
 
@@ -194,10 +195,20 @@ public class Board implements Comparable<Board> {
         return mFirstSeenDate;
     }
     
+    /**
+     * @return Returns true if at least one {@link SubscribedBoard} for this board exists, i.e. if we should download messages for this board.
+     */
     public boolean hasSubscriptions() {
     	return mHasSubscriptions;
     }
     
+    /**
+     * Set the "has subscriptions" flag (see {@link hasSubscriptions}) of this board.
+     * 
+     * This function must be called by the {@link MessageManager} when the amount of {@link SubscribedBoard} objects for this board changes from zero to positive
+     * or positive to zero because the "has subscriptions" flag is a cached boolean and therefore is NOT auto-updated by the database when you delete the last
+     * {@link SubscribedBoard} object or create the first one. 
+     */
 	protected void setHasSubscriptions(boolean hasSubscriptions) {
 		mHasSubscriptions = hasSubscriptions;
 	}
