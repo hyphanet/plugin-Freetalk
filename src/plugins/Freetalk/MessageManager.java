@@ -17,6 +17,7 @@ import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.DuplicateMessageListException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
 
@@ -755,7 +756,7 @@ public abstract class MessageManager implements Runnable {
     }
     
 	
-	public SubscribedBoard subscribeToBoard(FTOwnIdentity subscriber, String boardName) throws Exception {
+	public SubscribedBoard subscribeToBoard(FTOwnIdentity subscriber, String boardName) throws InvalidParameterException, NoSuchIdentityException {
 		synchronized(mIdentityManager) {
 			subscriber = mIdentityManager.getOwnIdentity(subscriber.getID()); // Ensure that the identity still exists so the caller does not have to synchronize.
 
@@ -782,9 +783,13 @@ public abstract class MessageManager implements Runnable {
 
 							return subscribedBoard;
 						}
-						catch(Exception error) {
+						catch(RuntimeException error) {
 							db.rollback(); Logger.error(this, "subscribeToBoard failed", error);
 							throw error;
+						}
+						catch(InvalidParameterException error) {
+							db.rollback(); Logger.error(this, "subscribeToBoard failed", error);
+							throw error;							
 						}
 					}
 				}
