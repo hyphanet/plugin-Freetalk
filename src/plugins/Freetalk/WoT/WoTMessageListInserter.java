@@ -9,12 +9,14 @@ import java.util.Random;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
-import com.db4o.ObjectContainer;
-
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageListInserter;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
+
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -33,8 +35,8 @@ import freenet.support.io.NativeThread;
 
 public final class WoTMessageListInserter extends MessageListInserter {
 	
-	private static final int STARTUP_DELAY = 1 * 60 * 1000;
-	private static final int THREAD_PERIOD = 5 * 60 * 1000; /* FIXME: tweak before release */
+	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 1000) : (1 * 60 * 1000); // FIXME: Tweak before release.
+	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (2 * 60 * 1000) : (5 * 60 * 1000); // FIXME: Tweak before release.
 	private static final int MAX_PARALLEL_MESSAGELIST_INSERT_COUNT = 8;
 
 	private final WoTMessageManager mMessageManager;

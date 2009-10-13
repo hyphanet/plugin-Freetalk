@@ -10,6 +10,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Random;
 
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageFetcher;
 import plugins.Freetalk.MessageList;
@@ -41,8 +42,9 @@ import freenet.support.io.NativeThread;
  */
 public final class WoTMessageFetcher extends MessageFetcher {
 	
-	private static final int STARTUP_DELAY = 1 * 60 * 1000;
-	private static final int THREAD_PERIOD = 5 * 60 * 1000; /* FIXME: tweak before release */
+	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (3 * 60 * 1000);
+	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (3 * 60 * 1000) : (5 * 60 * 1000); /* FIXME: tweak before release */
+	
 	private static final int MAX_PARALLEL_MESSAGE_FETCH_COUNT = 16;
 	
 	private final Random mRandom;

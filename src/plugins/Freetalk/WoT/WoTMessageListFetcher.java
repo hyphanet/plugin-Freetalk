@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Random;
 
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageListFetcher;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
@@ -47,8 +48,8 @@ import freenet.support.io.NativeThread;
  */
 public final class WoTMessageListFetcher extends MessageListFetcher {
 
-	private static final int STARTUP_DELAY = 1 * 60 * 1000;
-	private static final int THREAD_PERIOD = 5 * 60 * 1000; /* FIXME: tweak before release */
+	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 1000) : (1 * 60 * 1000);	// FIXME: tweak before release
+	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (3 * 60 * 1000) : (5 * 60 * 1000);	// FIXME: tweak before release
 	
 	/**
 	 * How many message lists do we attempt to fetch in parallel? FIXME: This should be configurable.

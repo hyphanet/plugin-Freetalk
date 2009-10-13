@@ -46,8 +46,8 @@ import freenet.support.io.NativeThread;
  */
 public class WoTIdentityManager extends IdentityManager {
 	
-	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
-	private static final int THREAD_PERIOD = 5 * 60 * 1000;
+	/* FIXME: This really has to be tweaked before release. */  
+	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (30 * 1000) : (5 * 60 * 1000);
 	
 	/** The amount of time between each attempt to connect to the WoT plugin */
 	private static final int WOT_RECONNECT_DELAY = 5 * 1000; 
