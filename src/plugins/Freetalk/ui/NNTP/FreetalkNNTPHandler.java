@@ -30,6 +30,7 @@ import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.OwnMessage;
+import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.support.Logger;
@@ -266,7 +267,9 @@ public class FreetalkNNTPHandler implements Runnable {
         // FIXME: look up by "NNTP name"
         try {
             String boardName = FreetalkNNTPGroup.groupToBoardName(name);
-            Board board = mMessageManager.getBoardByName(boardName);
+            // FIXME: The "null" breaks everything! We need to pass the own identity which is is specified as NNTP user. I have no time for fixing this
+            // right now because the NNTP server is broken anyway.
+            SubscribedBoard board = mMessageManager.getSubscription(null, boardName);
             currentGroup = new FreetalkNNTPGroup(board);
             synchronized (board) {
                 currentMessageNum = currentGroup.firstMessage();
@@ -316,7 +319,9 @@ public class FreetalkNNTPHandler implements Runnable {
         if (name != null) {
             try {
                 String boardName = FreetalkNNTPGroup.groupToBoardName(name);
-                Board board = mMessageManager.getBoardByName(boardName);
+                // FIXME: The "null" breaks everything! We need to pass the own identity which is is specified as NNTP user. I have no time for fixing this
+                // right now because the NNTP server is broken anyway.
+                SubscribedBoard board = mMessageManager.getSubscription(null, boardName);
                 currentGroup = new FreetalkNNTPGroup(board);
             }
             catch (NoSuchBoardException e) {
@@ -339,9 +344,9 @@ public class FreetalkNNTPHandler implements Runnable {
             if (end == -1)
                 end = currentGroup.lastMessage();
 
-            List<Board.MessageReference> messages = currentGroup.getBoard().getAllMessages(true);
+            List<SubscribedBoard.MessageReference> messages = currentGroup.getBoard().getAllMessages(true);
 
-            for (Iterator<Board.MessageReference> i = messages.iterator(); i.hasNext(); ) {
+            for (Iterator<SubscribedBoard.MessageReference> i = messages.iterator(); i.hasNext(); ) {
                 int index = i.next().getIndex();
                 if (index > end)
                     break;
@@ -359,8 +364,11 @@ public class FreetalkNNTPHandler implements Runnable {
     private void listActiveGroups(String pattern) {
         // FIXME: filter by wildmat
         printStatusLine("215 List of newsgroups follows:");
-        for (Iterator<Board> i = mMessageManager.boardIterator(); i.hasNext(); ) {
-            Board board = i.next();
+        // FIXME: The "null" breaks everything! We need to pass the own identity which is is specified as NNTP user. I have no time for fixing this
+        // right now because the NNTP server is broken anyway.
+
+        for (Iterator<SubscribedBoard> i = mMessageManager.subscribedBoardIterator(null); i.hasNext(); ) {
+            SubscribedBoard board = i.next();
             FreetalkNNTPGroup group = new FreetalkNNTPGroup(board);
             printTextResponseLine(group.getName()
                     + " " + group.lastMessage()
@@ -392,9 +400,12 @@ public class FreetalkNNTPHandler implements Runnable {
         if (gmt)
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
 
+        // FIXME: The "null" breaks everything! We need to pass the own identity which is is specified as NNTP user. I have no time for fixing this
+        // right now because the NNTP server is broken anyway.
+        
         Date date = df.parse(datestr, new ParsePosition(0));
-        for (Iterator<Board> i = mMessageManager.boardIteratorSortedByDate(date); i.hasNext(); ) {
-            Board board = i.next();
+        for (Iterator<SubscribedBoard> i = mMessageManager.subscribedBoardIteratorSortedByDate(null, date); i.hasNext(); ) {
+            SubscribedBoard board = i.next();
             FreetalkNNTPGroup group = new FreetalkNNTPGroup(board);
             printTextResponseLine(board.getName()
                     + " " + group.lastMessage()

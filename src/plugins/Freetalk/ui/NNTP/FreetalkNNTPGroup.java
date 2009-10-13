@@ -6,8 +6,8 @@ package plugins.Freetalk.ui.NNTP;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import plugins.Freetalk.Board;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 /**
@@ -17,9 +17,9 @@ import plugins.Freetalk.exceptions.NoSuchMessageException;
  * @author Benjamin Moody
  */
 public class FreetalkNNTPGroup {
-    private final Board board;
+    private final SubscribedBoard board;
 
-    public FreetalkNNTPGroup(Board board) {
+    public FreetalkNNTPGroup(SubscribedBoard board) {
         this.board = board;
     }
 
@@ -43,7 +43,7 @@ public class FreetalkNNTPGroup {
     /**
      * Get the FTBoard object associated with this group.
      */
-    public Board getBoard() {
+    public SubscribedBoard getBoard() {
         return board;
     }
 
