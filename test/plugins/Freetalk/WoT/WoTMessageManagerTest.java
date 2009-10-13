@@ -16,8 +16,9 @@ import java.util.UUID;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.DatabaseBasedTest;
 import plugins.Freetalk.MessageList;
-import plugins.Freetalk.Board.BoardThreadLink;
-import plugins.Freetalk.Board.MessageReference;
+import plugins.Freetalk.SubscribedBoard;
+import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
+import plugins.Freetalk.SubscribedBoard.MessageReference;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -34,7 +35,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 	private WoTOwnIdentity[] mOwnIdentities;
 	
 	private Set<Board> mBoards;
-	private Board mBoard;
+	private SubscribedBoard mBoard;
 
 	private int mMessageListIndex = 0;
 	
@@ -94,8 +95,8 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		db.commit();
 	}
 	
-	private void constructBoards() throws InvalidParameterException {
-		mBoard = mMessageManager.getOrCreateBoard("en.test");
+	private void constructBoards() throws Exception {
+		mBoard = mMessageManager.subscribeToBoard(mOwnIdentities[0], "en.test");
 		
 		mBoards = new HashSet<Board>();
 		mBoards.add(mBoard);
@@ -142,7 +143,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		
 		Iterator<String> expectedThreads = mThreads.iterator();
 	
-		for(BoardThreadLink ref : mBoard.getThreads(mOwnIdentities[0])) {
+		for(BoardThreadLink ref : mBoard.getThreads()) {
 			// Verify that the thread exists
 			assertTrue(expectedThreads.hasNext());
 			
@@ -160,7 +161,11 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 				assertTrue(expectedReplies.hasNext());
 				assertEquals(expectedReplies.next(), replyRef.getMessage().getID());
 			}
+			
+			assertFalse(expectedReplies.hasNext());
 		}
+		
+		assertFalse(expectedThreads.hasNext());
 	}
 
 	
@@ -289,11 +294,11 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 	 * TODO: Also check whether deleting MessageFetchFailedReference and MessageListFetchFailedReference works.
 	 */
 	public void testOnIdentityDeletion() throws MalformedURLException, InvalidParameterException, NoSuchIdentityException, NoSuchMessageException {
-		WoTMessage thread0 = createTestMessage(mOwnIdentities[0], null, null);
+		WoTMessage thread0 = createTestMessage(mOwnIdentities[1], null, null);
 		mMessageManager.onMessageReceived(thread0);
 		mThreads.addFirst(thread0.getID()); // Single empty thread
 		
-		WoTMessage thread0reply0 = createTestMessage(mOwnIdentities[0], thread0, thread0.getURI());
+		WoTMessage thread0reply0 = createTestMessage(mOwnIdentities[1], thread0, thread0.getURI());
 		mMessageManager.onMessageReceived(thread0reply0); //First thread receives 1 reply, should be moved to top now
 		mReplies.put(thread0.getID(), new LinkedList<String>());
 		mReplies.get(thread0.getID()).addLast(thread0reply0.getID()); 
@@ -303,7 +308,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		// Fork a new thread off thread0 by creating a reply to it. The reply should not be deleted because it's from a different identity.
 		// After deletion of the author of thread0reply0 thread1 should still be visible, as a ghost thread now. See Board.deleteMessage().
 		WoTMessage thread1 = thread0reply0;
-		WoTMessage thread1reply0 = createTestMessage(mOwnIdentities[1], thread1, thread1.getURI());
+		WoTMessage thread1reply0 = createTestMessage(mOwnIdentities[0], thread1, thread1.getURI());
 		mMessageManager.onMessageReceived(thread1reply0);
 		mThreads.addFirst(thread1.getID());
 		mReplies.put(thread1.getID(), new LinkedList<String>());
@@ -311,14 +316,14 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		verifyStructure();
 	
 		{ // This thread should not be deleted because it's from a different identity.
-			WoTMessage thread2 = createTestMessage(mOwnIdentities[1], null, null); 	
+			WoTMessage thread2 = createTestMessage(mOwnIdentities[0], null, null); 	
 			mMessageManager.onMessageReceived(thread2);	
 			mThreads.addFirst(thread2.getID()); // Two empty threads, onMessageReceived called in chronological order
 			verifyStructure(); 
 		}
 		
-		mMessageManager.onIdentityDeletion(mOwnIdentities[0]);
-		mOwnIdentities[0].deleteWithoutCommit();
+		mMessageManager.onIdentityDeletion(mOwnIdentities[1]);
+		mOwnIdentities[1].deleteWithoutCommit();
 		db.commit();
 		
 		// onIdentityDeletion should have deleted that thread because it only contains messages from the deleted identity.
