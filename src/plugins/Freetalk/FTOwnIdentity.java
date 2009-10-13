@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import java.util.Iterator;
-
 import freenet.keys.FreenetURI;
 
 /**
@@ -17,9 +15,4 @@ public interface FTOwnIdentity extends FTIdentity {
 	
 	public boolean wantsMessagesFrom(FTIdentity identity);
 
-	public void subscribeToBoard(Board board);
-	
-	public void unsubscribeFromBoard(Board board);
-	
-	public Iterator<Board> subscribedBoardsIterator();
 }
