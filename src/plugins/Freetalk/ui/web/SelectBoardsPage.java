@@ -143,7 +143,7 @@ public class SelectBoardsPage extends WebPageImpl {
 				} catch(NoSuchBoardException e) {
 					// We are not subscribed to that board so we cannot fill all cells with information.
 					
-					nameCell.addChild(board.getName());
+					nameCell.addChild("#", board.getName());
 					latestMessageCell.addChild("#", "-");
 					messageCountCell.addChild("#", "-");
 					
