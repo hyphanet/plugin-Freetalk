@@ -50,7 +50,8 @@ public class WebInterface {
 	
 	// Visible
 	private final WebInterfaceToadlet homeToadlet;
-	private final WebInterfaceToadlet messagesToadlet;
+	private final WebInterfaceToadlet subscribedBoardsToadlet;
+	private final WebInterfaceToadlet selectBoardsToadlet;
 	private final WebInterfaceToadlet identitiesToadlet;
 	private final WebInterfaceToadlet logOutToadlet;
 	
@@ -86,9 +87,9 @@ public class WebInterface {
 
 	}
 	
-	class MessagesWebInterfaceToadlet extends WebInterfaceToadlet {
+	class SubscribedBoardsWebInterfaceToadlet extends WebInterfaceToadlet {
 
-		protected MessagesWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+		protected SubscribedBoardsWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
 
@@ -97,6 +98,26 @@ public class WebInterface {
 			if(!mFreetalk.wotConnected())
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
 			return new BoardsPage(webInterface, getLoggedInOwnIdentity(), req);
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && webInterface.getLoggedInOwnIdentity() != null;
+		}
+		
+	}
+	
+	class SelectBoardsWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected SelectBoardsWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			return new SelectBoardsPage(webInterface, getLoggedInOwnIdentity(), req);
 		}
 		
 		@Override
@@ -170,7 +191,7 @@ public class WebInterface {
 				throw new RedirectException(logIn);
 			}
 
-			writeTemporaryRedirect(ctx, "Login successful, redirecting to the board overview", Freetalk.PLUGIN_URI + "/messages");
+			writeTemporaryRedirect(ctx, "Login successful, redirecting to the board overview", Freetalk.PLUGIN_URI + "/SubscribedBoards");
 		}
 
 		@Override
@@ -293,7 +314,7 @@ public class WebInterface {
 		
 		@Override
 		public Toadlet showAsToadlet() {
-			return messagesToadlet;
+			return subscribedBoardsToadlet;
 		}
 		
 		@Override
@@ -325,7 +346,7 @@ public class WebInterface {
 		
 		@Override
 		public Toadlet showAsToadlet() {
-			return messagesToadlet;
+			return subscribedBoardsToadlet;
 		}
 		
 		@Override
@@ -358,7 +379,7 @@ public class WebInterface {
 		
 		@Override
 		public Toadlet showAsToadlet() {
-			return messagesToadlet;
+			return subscribedBoardsToadlet;
 		}
 		
 		@Override
@@ -391,7 +412,7 @@ public class WebInterface {
 		
 		@Override
 		public Toadlet showAsToadlet() {
-			return messagesToadlet;
+			return subscribedBoardsToadlet;
 		}
 		
 		@Override
@@ -416,7 +437,7 @@ public class WebInterface {
 		
 		@Override
 		public Toadlet showAsToadlet() {
-			return messagesToadlet;
+			return subscribedBoardsToadlet;
 		}
 		
 		@Override
@@ -519,13 +540,15 @@ public class WebInterface {
 		// Visible pages
 		logInToadlet = new LogInWebInterfaceToadlet(null, this, clientCore, "LogIn");
 		homeToadlet = new HomeWebInterfaceToadlet(null, this, clientCore, "");
-		messagesToadlet = new MessagesWebInterfaceToadlet(null, this, clientCore, "messages");
+		subscribedBoardsToadlet = new SubscribedBoardsWebInterfaceToadlet(null, this, clientCore, "SubscribedBoards");
+		selectBoardsToadlet = new SelectBoardsWebInterfaceToadlet(null, this, clientCore, "SelectBoards");
 		identitiesToadlet = new IdentitiesWebInterfaceToadlet(null, this, clientCore, "identities");
 		logOutToadlet = new LogOutWebInterfaceToadlet(null, this, clientCore, "LogOut");
 		
 		container.register(homeToadlet, "Discussion", Freetalk.PLUGIN_URI+"/", true, "Log in", "Log in", false, logInToadlet);
 		container.register(homeToadlet, "Discussion", Freetalk.PLUGIN_URI+"/", true, "Home", "Home page", false, homeToadlet);
-		container.register(messagesToadlet, "Discussion", Freetalk.PLUGIN_URI+"/messages", true, "Boards", "View all boards", false, messagesToadlet);
+		container.register(subscribedBoardsToadlet, "Discussion", Freetalk.PLUGIN_URI+"/SubscribedBoards", true, "Your Boards", "View your subscribed boards", false, subscribedBoardsToadlet);
+		container.register(selectBoardsToadlet, "Discussion", Freetalk.PLUGIN_URI+"/SelectBoards", true, "Select Boards", "Chose the boards which you want to read", false, selectBoardsToadlet);
 		container.register(identitiesToadlet, "Discussion", Freetalk.PLUGIN_URI+"/identities", true, "Identities", "Manage your own and known identities", false, identitiesToadlet);
 		container.register(logOutToadlet, "Discussion", Freetalk.PLUGIN_URI+"/LogOut", true, "Log out", "Log out", false, logOutToadlet);
 		
@@ -572,7 +595,8 @@ public class WebInterface {
 		ToadletContainer container = mFreetalk.getPluginRespirator().getToadletContainer();
 		for(Toadlet t : new Toadlet[] { 
 				homeToadlet,
-				messagesToadlet,
+				subscribedBoardsToadlet,
+				selectBoardsToadlet,
 				identitiesToadlet,
 				logOutToadlet,
 				logInToadlet,
