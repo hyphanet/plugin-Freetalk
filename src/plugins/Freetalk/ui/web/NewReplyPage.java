@@ -11,7 +11,8 @@ import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageURI;
 import plugins.Freetalk.Quoting;
-import plugins.Freetalk.Board.BoardThreadLink;
+import plugins.Freetalk.SubscribedBoard;
+import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.support.HTMLNode;
@@ -19,13 +20,14 @@ import freenet.support.api.HTTPRequest;
 
 public class NewReplyPage extends WebPageImpl {
 
-	private final Board mBoard;
+	private final SubscribedBoard mBoard;
 	private final BoardThreadLink mParentThread;
 	private final Message mParentMessage;
 
 	public NewReplyPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchBoardException, NoSuchMessageException {
 		super(myWebInterface, viewer, request);
-		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getPartAsString("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
+		mBoard = mFreetalk.getMessageManager().getSubscription(mOwnIdentity, request.getPartAsString("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
+		
 		mParentThread = mBoard.getThreadLink(request.getPartAsString("ParentThreadID", 128));
 		mParentMessage = mFreetalk.getMessageManager().get(request.getPartAsString("ParentMessageID", 128)); /* TODO: adapt to maximal ID length when it has been decided */
 	}

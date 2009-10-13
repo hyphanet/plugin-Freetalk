@@ -6,14 +6,14 @@ package plugins.Freetalk.ui.web;
 import java.text.DateFormat;
 import java.util.List;
 
-import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
-import plugins.Freetalk.Board.BoardReplyLink;
-import plugins.Freetalk.Board.BoardThreadLink;
-import plugins.Freetalk.Board.MessageReference;
+import plugins.Freetalk.SubscribedBoard;
+import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
+import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
+import plugins.Freetalk.SubscribedBoard.MessageReference;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
@@ -33,15 +33,15 @@ import freenet.support.api.HTTPRequest;
  */
 public final class ThreadPage extends WebPageImpl {
 
-    private final Board mBoard;
+    private final SubscribedBoard mBoard;
     private final BoardThreadLink mThread;
 
     private static final DateFormat mLocalDateFormat = DateFormat.getDateTimeInstance();
 
     public ThreadPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchMessageException, NoSuchBoardException {
         super(myWebInterface, viewer, request);
-        mBoard = mFreetalk.getMessageManager().getBoardByName(request.getParam("board"));
-        mThread = mBoard.getThreadLink(request.getParam("id"));
+        mBoard = mFreetalk.getMessageManager().getSubscription(mOwnIdentity, request.getParam("board"));
+        mThread = mBoard.getThreadLink(request.getParam("id")); // FIXME: Synchronization is lacking.
     }
 
     public final void make() {
@@ -250,11 +250,11 @@ public final class ThreadPage extends WebPageImpl {
      * @param firstMessageInThread The thread itself if it was downloaded already, if not, the first reply
      * @param threadID
      */
-    public static void addBreadcrumb(BreadcrumbTrail trail, Board board, BoardThreadLink myThread) {
+    public static void addBreadcrumb(BreadcrumbTrail trail, SubscribedBoard board, BoardThreadLink myThread) {
         Message firstMessage = myThread.getMessage();
         
         if(firstMessage == null) { // The thread was not downloaded yet, we use it's first reply for obtaining the information in the breadcrumb
-        	for(BoardReplyLink ref : board.getAllThreadReplies(myThread.getThreadID(), true)) {
+        	for(BoardReplyLink ref : board.getAllThreadReplies(myThread.getThreadID(), true)) { // FIXME: Synchronization is lacking.
         		firstMessage = ref.getMessage();
         		break;
         	}

@@ -9,8 +9,9 @@ import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
-import plugins.Freetalk.Board.BoardReplyLink;
-import plugins.Freetalk.Board.BoardThreadLink;
+import plugins.Freetalk.SubscribedBoard;
+import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
+import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
@@ -20,17 +21,17 @@ import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
 /**
- * Displays the content messages of a board.
+ * Displays the content messages of a subscribed board.
  * 
  * @author xor (xor@freenetproject.org)
  */
 public final class BoardPage extends WebPageImpl {
 
-	private final Board mBoard;
+	private final SubscribedBoard mBoard;
 	
 	public BoardPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchBoardException {
 		super(myWebInterface, viewer, request);
-		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getParam("name"));
+		mBoard = mFreetalk.getMessageManager().getSubscription(viewer, request.getParam("name"));
 	}
 
 	public final void make() {
@@ -66,7 +67,7 @@ public final class BoardPage extends WebPageImpl {
 		HTMLNode table = threadsTable.addChild("tbody");
 		
 		synchronized(mBoard) {
-			for(BoardThreadLink threadReference : mBoard.getThreads(mOwnIdentity)) {
+			for(BoardThreadLink threadReference : mBoard.getThreads()) {
 				Message thread = threadReference.getMessage();
 
 				row = table.addChild("tr");
@@ -121,7 +122,7 @@ public final class BoardPage extends WebPageImpl {
 
 				/* Reply count */
 				row.addChild("td", new String[] { "align" }, new String[] { "center" }, 
-						Integer.toString(mBoard.threadReplyCount(mOwnIdentity, threadReference.getThreadID())));
+						Integer.toString(mBoard.threadReplyCount(threadReference.getThreadID())));
 			}
 		}
 	}
