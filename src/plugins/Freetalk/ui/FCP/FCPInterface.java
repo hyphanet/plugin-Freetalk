@@ -16,10 +16,11 @@ import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
-import plugins.Freetalk.Board.BoardReplyLink;
-import plugins.Freetalk.Board.BoardThreadLink;
-import plugins.Freetalk.Board.MessageReference;
+import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.Message.Attachment;
+import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
+import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
+import plugins.Freetalk.SubscribedBoard.MessageReference;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.InvalidParameterException;
@@ -123,8 +124,16 @@ public final class FCPInterface implements FredPluginFCP {
             }
         }
     }
+    
+    // TODO: Use this function everywhere, it will make the code much easier to read.
+    private String getMandatoryParameter(final SimpleFieldSet sfs, final String name) throws InvalidParameterException {
+    	final String result = sfs.get(name);
+    	if(result == null)
+    		throw new IllegalArgumentException("Missing mandatory parameter: " + name);
+    	
+    	return result;
+    }
 
-    // FIXME: This should take an own identity as parameter and return LatestMessagedate from the view of that own identity
     /**
      * Handle ListBoards command.
      * Send a number of Board messages and finally an EndListBoards message.
@@ -133,9 +142,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Format of reply:
      *   Message=Board
      *   Name=name
-     *   MessageCount=123
      *   FirstSeenDate=utcMillis      (optional)
-     *   LatestMessageDate=utcMillis  (optional)
      */
     private void handleListBoards(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException
@@ -148,14 +155,7 @@ public final class FCPInterface implements FredPluginFCP {
                 final SimpleFieldSet sfs = new SimpleFieldSet(true);
                 sfs.putOverwrite("Message", "Board");
                 sfs.putOverwrite("Name", board.getName());
-                sfs.put("MessageCount", board.messageCount());
-                if (board.getFirstSeenDate() != null) {
-                    sfs.put("FirstSeenDate", board.getFirstSeenDate().getTime());
-                }
-                try {
-                    sfs.put("LatestMessageDate", board.getLatestMessageDate(null).getTime());
-                } catch(NoSuchMessageException e) { }
-               
+                sfs.put("FirstSeenDate", board.getFirstSeenDate().getTime());
 
                 replysender.send(sfs);
             }
@@ -165,6 +165,8 @@ public final class FCPInterface implements FredPluginFCP {
         sfs.putOverwrite("Message", "EndListBoards");
         replysender.send(sfs);
     }
+    
+    // FIXME: Implement ListSubscribedBoards
 
     /**
      * Handle ListThreads command.
@@ -196,15 +198,15 @@ public final class FCPInterface implements FredPluginFCP {
             throw new InvalidParameterException("OwnIdentityID parameter not specified");
         }
 
-        final FTOwnIdentity ownIdentity = mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID); // throws exception when not found
-        final Board board = mFreetalk.getMessageManager().getBoardByName(boardName); // throws exception when not found
+        //throws exception when not found
+        final SubscribedBoard board = mFreetalk.getMessageManager().getSubscription(mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID), boardName);
 
-        synchronized(board) { /* FIXME: Is this enough synchronization or should we lock the message manager? */
-            for(BoardThreadLink threadReference : board.getThreads(ownIdentity)) {
+        synchronized(board) {
+            for(BoardThreadLink threadReference : board.getThreads()) {
                 final SimpleFieldSet sfs = new SimpleFieldSet(true);
                 sfs.putOverwrite("Message", "MessageThread");
                 sfs.putOverwrite("ID", threadReference.getThreadID());
-                sfs.put("ReplyCount", board.threadReplyCount(ownIdentity, threadReference.getThreadID()));
+                sfs.put("ReplyCount", board.threadReplyCount(threadReference.getThreadID()));
                 sfs.put("LastReplyDate", threadReference.getLastReplyDate().getTime());
                 
                 final Message thread = threadReference.getMessage();
@@ -237,6 +239,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Format of request:
      *   Message=ListMessages
      *   BoardName=abc
+     *   OwnIdentityID=ID
      *
      *   (only one SortByMessageXXX is allowed to be true)
      *   SortByMessageIndexAscending=true|false   (Optional, default is false)
@@ -251,12 +254,15 @@ public final class FCPInterface implements FredPluginFCP {
      */
     private void handleListMessages(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchMessageException,
-    UnsupportedEncodingException
+    UnsupportedEncodingException, NoSuchIdentityException
     {
         final String boardName = params.get("BoardName");
         if (boardName == null) {
             throw new InvalidParameterException("Boardname parameter not specified");
         }
+        
+        final String ownIdentityID = getMandatoryParameter(params, "OwnIdentityID");
+        
         final boolean sortByMessageIndexAscending = Boolean.parseBoolean(params.get("SortByMessageIndexAscending"));
         final boolean sortByMessageDateAscending = Boolean.parseBoolean(params.get("SortByMessageDateAscending"));
         if (sortByMessageIndexAscending && sortByMessageDateAscending) {
@@ -279,10 +285,11 @@ public final class FCPInterface implements FredPluginFCP {
             throw new InvalidParameterException("MinimumMessageIndex and MinimumMessageDate must not be specified together");
         }
         final boolean includeMessageText = Boolean.parseBoolean(params.get("IncludeMessageText"));
+        
+        //throws exception when not found
+        final SubscribedBoard board = mFreetalk.getMessageManager().getSubscription(mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID), boardName);
 
-        final Board board = mFreetalk.getMessageManager().getBoardByName(boardName); // throws exception when not found
-
-        synchronized(board) {  /* FIXME: Is this enough synchronization or should we lock the message manager? */
+        synchronized(board) {
 
             final List<MessageReference> messageRefList;
             if (minimumMessageIndex > 0) {
@@ -312,6 +319,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Format of request:
      *   Message=ListThreadMessages
      *   BoardName=abc
+     *   OwnIdentityID=ID
      *   ThreadID=ID                     (optional, if not specified retrieves all Messages of Board)
      *   SortByMessageIndexAscending=true|false   (Optional, default is false)
      *   IncludeMessageText=true|false   (optional, default is false)
@@ -319,17 +327,21 @@ public final class FCPInterface implements FredPluginFCP {
      */
     private void handleListThreadMessages(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchMessageException,
-    UnsupportedEncodingException
+    UnsupportedEncodingException, NoSuchIdentityException
     {
         final String boardName = params.get("BoardName");
         if (boardName == null) {
             throw new InvalidParameterException("Boardname parameter not specified");
         }
+        
+        final String ownIdentityID = getMandatoryParameter(params, "OwnIdentityID");
+        
         final String threadID = params.get("ThreadID");
         final boolean sortByMessageIndexAscending = Boolean.parseBoolean(params.get("SortByMessageIndexAscending"));
         final boolean includeMessageText = Boolean.parseBoolean(params.get("IncludeMessageText"));
 
-        final Board board = mFreetalk.getMessageManager().getBoardByName(boardName); // throws exception when not found
+        //throws exception when not found
+        final SubscribedBoard board = mFreetalk.getMessageManager().getSubscription(mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID), boardName);
 
         synchronized(board) {  /* FIXME: Is this enough synchronization or should we lock the message manager? */
 
@@ -363,6 +375,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Format of request:
      *   Message=GetMessage
      *   BoardName=abc
+     *   OwnIdentityID=ID
      *   MessageIndex=123                (message index in board)
      *   IncludeMessageText=true|false   (optional, default is false)
      * Format of reply: see sendSingleMessage()
@@ -372,22 +385,23 @@ public final class FCPInterface implements FredPluginFCP {
      *   Description=Unknown message ID abc
      *   OR
      *   Description=Unknown board: abc
+     * @throws InvalidParameterException 
+     * @throws NoSuchIdentityException 
+     * @throws NoSuchBoardException 
+     * @throws NoSuchMessageException 
+     * @throws PluginNotFoundException 
+     * @throws UnsupportedEncodingException 
      */
     private void handleGetMessage(final PluginReplySender replysender, final SimpleFieldSet params)
-    throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchMessageException,
-    UnsupportedEncodingException
+    	throws InvalidParameterException, NoSuchBoardException, NoSuchIdentityException, NoSuchMessageException,
+    		UnsupportedEncodingException, PluginNotFoundException
     {
         final String boardName = params.get("BoardName");
         if (boardName == null) {
             throw new InvalidParameterException("Boardname parameter not specified");
         }
-
-        final Board specifiedBoard;
-        try {
-            specifiedBoard = mFreetalk.getMessageManager().getBoardByName(boardName);
-        } catch(final NoSuchBoardException e) {
-            throw new InvalidParameterException("Board '"+boardName+"' does not exist");
-        }
+        
+        final String ownIdentityID = getMandatoryParameter(params, "OwnIdentityID");
 
         final String messageIndexString = params.get("MessageIndex");
         if (messageIndexString == null) {
@@ -402,7 +416,10 @@ public final class FCPInterface implements FredPluginFCP {
 
         final boolean includeMessageText = Boolean.parseBoolean(params.get("IncludeMessageText"));
 
-        final Message message = specifiedBoard.getMessageByIndex(messageIndex); // throws exception when not found
+        //throws exception when not found
+        final SubscribedBoard board = mFreetalk.getMessageManager().getSubscription(mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID), boardName);
+        
+        final Message message = board.getMessageByIndex(messageIndex); // throws exception when not found
 
         sendSingleMessage(replysender, message, messageIndex, includeMessageText);
     }
