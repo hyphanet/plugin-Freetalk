@@ -2,10 +2,10 @@ package plugins.Freetalk;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 
 import plugins.Freetalk.exceptions.DuplicateMessageException;
+import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.ObjectSet;
@@ -14,38 +14,66 @@ import com.db4o.query.Query;
 
 import freenet.support.Logger;
 
+/**
+ * A SubscribedBoard is a {@link Board} which only stores messages which the subscriber (a {@link FTOwnIdentity}) wants to read,
+ * according to the implementation of {@link FTOwnIdentity.wantsMessagesFrom}.
+ */
 public final class SubscribedBoard extends Board {
 
 	private final FTOwnIdentity mSubscriber;
+	
+	/**
+	 * The description which the subscriber has specified for this Board. Null if he has not specified any.
+	 */
+	private String mDescription = null;
 
+	
+	public SubscribedBoard(String myName, FTOwnIdentity mySubscriber) throws InvalidParameterException {
+		super(myName);
+		
+		if(mySubscriber == null)
+			throw new NullPointerException();
+		
+		mSubscriber = mySubscriber;
+	}
+
+	
+	protected void deleteWithoutCommit() {
+		// TODO: When deleting a subscribed board, check whether the objects of class Message are being used by a subscribed board of another own identity.
+		// If not, delete the messages.
+		try {
+			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			
+			for(MessageReference ref : getAllMessages(false))
+				ref.deleteWithoutCommit(db);
+
+			DBUtil.checkedDelete(db, this);
+		}
+		catch(RuntimeException e) {
+			DBUtil.rollbackAndThrow(db, this, e);
+		}
+
+	}
 
     public synchronized String getDescription() {
-        /* TODO: Implement: Use the description which most of the subscriber's trustees have chosen. */
-        return "";
+        return mDescription != null ? mDescription : super.getDescription(mSubscriber);
     }
     
     @SuppressWarnings("unchecked")
-	public synchronized Date getLatestMessageDate(FTOwnIdentity viewer) throws NoSuchMessageException {
+	public synchronized Date getLatestMessageDate() throws NoSuchMessageException {
+    	// TODO: We can probably cache the latest message date in this SubscribedBoard object.
+    	
         Query q = db.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this);
         q.descend("mMessageDate").orderDescending();
         ObjectSet<MessageReference> allMessages = q.execute();
-        
-        if(viewer != null) {
-	        for(MessageReference ref : allMessages) {
-	        	final Message message = ref.getMessage();
-	        	if(message != null && viewer.wantsMessagesFrom(message.getAuthor()))
-	        		return message.getDate();
-	        }
-        } else {
-        	for(MessageReference ref : allMessages) {
-        		final Message message = ref.getMessage();
-        		if(message != null)
-        			return message.getDate();
-        	}
+
+        for(MessageReference ref : allMessages) {
+        	final Message message = ref.getMessage();
+        	if(message != null)
+        		return message.getDate();
         }
-        
         
         throw new NoSuchMessageException();
     }
@@ -57,12 +85,21 @@ public final class SubscribedBoard extends Board {
      * 
      * Does not store the message, you have to do this before!
      */
-    protected synchronized void addMessage(Message newMessage) {        
+    protected synchronized void addMessage(Message newMessage) {
+    	if(!mSubscriber.wantsMessagesFrom(newMessage.getAuthor())) {
+    		// FIXME: Store a UnwantedMessageLink object for the message and periodically check whether the trust value of the author changed to positive
+    		// - then we need to add the unwanted messages of that author.
+    		return;
+    	}
+    	
     	if(newMessage instanceof OwnMessage) {
     		/* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
     		 * successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
     		throw new IllegalArgumentException("Adding OwnMessages to a board is not allowed.");
     	}
+    	
+    	if(super.contains(newMessage) == false)
+    		throw new IllegalArgumentException("addMessage called with a message which was not posted to this board (" + getName() + "): " + newMessage);
     	
     	BoardThreadLink ghostRef = null;
     	
@@ -97,8 +134,8 @@ public final class SubscribedBoard extends Board {
     		if(parentThread != null)
     			newMessage.setThread(parentThread);
     		
-    		// 3. Update the last reply date of the parent thread
-    		parentThreadRef.updateLastReplyDate(newMessage.getDate());
+    		// 3. Tell the parent thread that a new message was added. This updates the last reply date and the "was read"-flag of the thread.
+    		parentThreadRef.onMessageAdded(newMessage);
     		parentThreadRef.storeWithoutCommit(db);
     		
     		// 4. Store a BoardReplyLink for the new message
@@ -132,6 +169,7 @@ public final class SubscribedBoard extends Board {
 
     	storeWithoutCommit();
     }
+
     
     /**
      * Called by the {@link MessageManager} before a {@link Message} object is deleted from the database.
@@ -149,10 +187,13 @@ public final class SubscribedBoard extends Board {
     		BoardThreadLink threadLink = getThreadLink(message.getID());
     		
     		// If it was listed as a thread and had no replies, we can delete it's ThreadLink.
-    		// We do not delete the ThreadLink if it has replies already: We want the replies to stay visible and therefore the ThreadLink has to be kept,
-    		// db4o will set it's mMessage field to null after the message was deleted so it will become a ghost thread reference.
-	    	if(getAllThreadReplies(message.getID(), false).size() == 0)
+	    	if(threadReplyCount(message.getID()) == 0) {
 	    		threadLink.deleteWithoutCommit(db);
+	    	} else {
+	    		// We do not delete the ThreadLink if it has replies already: We want the replies to stay visible and therefore the ThreadLink has to be kept,
+	    		// so we mark it as a ghost thread.
+	    		threadLink.removeThreadMessage();
+	    	}
     	}
     	catch(NoSuchMessageException e) { // getThreadReference failed
     		if(message.isThread()) {
@@ -163,7 +204,26 @@ public final class SubscribedBoard extends Board {
     	
     	if(message.isThread() == false) {
 			try {
-				getReplyLink(message).deleteWithoutCommit(db);
+				final String parentThreadID;
+				
+				{ // Delete the reply itself.
+					BoardReplyLink replyLink = getReplyLink(message);
+					parentThreadID = replyLink.getThreadID();
+					replyLink.deleteWithoutCommit(db);
+				}
+				
+				// Update the parent thread of the reply
+				
+				final BoardThreadLink threadLink = getThreadLink(parentThreadID);
+				
+				if(threadLink.getMessage() == null && threadReplyCount(parentThreadID) == 0) {
+					// If the thread itself is a ghost thread and it has no more replies, we must delete it:
+					// It might happen that the caller first calls deleteMessage(thread) and then deleteMessage(all replies). The call to
+					// deleteMessage(thread) did not delete the thread because it still had replies. Now it has no more replies and we must delete it.
+					threadLink.deleteWithoutCommit(db);
+				} else {
+					threadLink.onMessageRemoved(message);
+				}
 			} catch (NoSuchMessageException e) {
 				Logger.error(this, "Should not happen: deleteMessage() called for a reply message which does not exist in this Board.", e);
 				throw e;
@@ -212,6 +272,7 @@ public final class SubscribedBoard extends Board {
 	public synchronized BoardReplyLink getReplyLink(Message message) throws NoSuchMessageException {
         Query q = db.query();
         q.constrain(BoardReplyLink.class);
+        q.descend("mBoard").constrain(this).identity();
         q.descend("mMessage").constrain(message).identity();
         ObjectSet<BoardReplyLink> results = q.execute();
         
@@ -304,61 +365,22 @@ public final class SubscribedBoard extends Board {
 
 
     /**
-     * Get all threads in the board. The view is specified to the FTOwnIdentity displaying it, therefore you have to pass one as parameter.
+     * Get all threads in the board. The view is specified to the FTOwnIdentity who has subscribed to this board.
      * The transient fields of the returned messages will be initialized already.
      * @param identity The identity viewing the board.
      * @return An iterator of the message which the identity will see (based on its trust levels).
      */
     @SuppressWarnings("unchecked")
-    public synchronized Iterable<BoardThreadLink> getThreads(final FTOwnIdentity identity) {
-    	return new Iterable<BoardThreadLink>() {
-		public Iterator<BoardThreadLink> iterator() {
-        return new Iterator<BoardThreadLink>() {
-            private final FTOwnIdentity mIdentity = identity;
-            private final Iterator<BoardThreadLink> iter;
-            private BoardThreadLink next;
-
-            {
-                Query q = db.query();
-                q.constrain(BoardThreadLink.class);
-                q.descend("mBoard").constrain(Board.this).identity();
-                q.descend("mLastReplyDate").orderDescending();
-                               
-                iter = q.execute().iterator();
-                next = iter.hasNext() ? iter.next() : null;
-            }
-
-            public boolean hasNext() {
-                for(; next != null; next = iter.hasNext() ? iter.next() : null)
-                {
-                	if(next.getMessage() == null)
-                		return true; // FIXME: Get the author from the message ID 
-                	
-                    if(mIdentity.wantsMessagesFrom(next.getMessage().getAuthor()))
-                        return true;
-                }
-                return false;
-            }
-
-            public BoardThreadLink next() {
-                BoardThreadLink result = hasNext() ? next : null;
-                next = iter.hasNext() ? iter.next() : null;
-                return result;
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-		};
-    	}
-        };
+    public synchronized ObjectSet<BoardThreadLink> getThreads() {
+    	Query q = db.query();
+    	q.constrain(BoardThreadLink.class);
+    	q.descend("mBoard").constrain(SubscribedBoard.this).identity();
+    	q.descend("mLastReplyDate").orderDescending();
+    	return q.execute();
     }
 
-
-    /* FIXME: This function returns all messages, not only the ones which the viewer wants to see. Convert the function to an iterator
-     * which picks threads chosen by the viewer, see threadIterator() for how to do this */
     @SuppressWarnings("unchecked")
-    public synchronized List<MessageReference> getAllMessages(final boolean sortByMessageIndexAscending) {
+    public synchronized ObjectSet<MessageReference> getAllMessages(final boolean sortByMessageIndexAscending) {
         Query q = db.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
@@ -372,16 +394,18 @@ public final class SubscribedBoard extends Board {
     public synchronized int getMessageIndex(Message message) throws NoSuchMessageException {
         Query q = db.query();
         q.constrain(MessageReference.class);
+        q.descend("mBoard").constrain(this).identity();
         q.descend("mMessage").constrain(message).identity();
         ObjectSet<MessageReference> result = q.execute();
 
         if(result.size() == 0)
             throw new NoSuchMessageException(message.getID());
+        
+        // FIXME: This does not handle forked threads and does not check for duplicate indices!
 
         return result.next().getIndex();
     }
 
-    /* FIXME: This function counts all messages, not only the ones which the viewer wants to see. */
     public synchronized int getLastMessageIndex() {
         return getFreeMessageIndex() - 1;
     }
@@ -463,7 +487,6 @@ public final class SubscribedBoard extends Board {
     /**
      * Get the number of messages in this board.
      */
-    /* FIXME: This function counts all messages, not only the ones which the viewer wants to see. */
     public synchronized int messageCount() {
         Query q = db.query();
         q.constrain(MessageReference.class);
@@ -474,18 +497,15 @@ public final class SubscribedBoard extends Board {
     /**
      * Get the number of replies to the given thread.
      */
-    /* FIXME: This function counts all replies, not only the ones which the viewer wants to see. */
-    public synchronized int threadReplyCount(FTOwnIdentity viewer, String threadID) {
+    public synchronized int threadReplyCount(String threadID) {
         return getAllThreadReplies(threadID, false).size();
     }
 
     /**
      * Get all replies to the given thread, sorted ascending by date if requested
      */
-    // FIXME: This function returns all replies, not only the ones which the viewer wants to see. Convert the function to an iterator
-    // which picks threads chosen by the viewer, see threadIterator() for how to do this.
     @SuppressWarnings("unchecked")
-    public synchronized List<BoardReplyLink> getAllThreadReplies(String threadID, final boolean sortByDateAscending) {
+    public synchronized ObjectSet<BoardReplyLink> getAllThreadReplies(String threadID, final boolean sortByDateAscending) {
         Query q = db.query();
         q.constrain(BoardReplyLink.class);
         q.descend("mBoard").constrain(this).identity();
@@ -509,10 +529,33 @@ public final class SubscribedBoard extends Board {
     public static String[] getBoardThreadLinkIndexedFields() { /* TODO: ugly! find a better way */
     	return new String[] { "mThreadID" };
     }
+    
+//    public static final class UnwantedMessageLink {
+//    	
+//    	protected final SubscribedBoard mBoard;
+//    	
+//    	protected final Message mMessage;
+//    	
+//    	protected final FTIdentity mAuthor;
+//    
+//    	
+//    	private UnwantedMessageLink(SubscribedBoard myBoard, Message myMessage) {
+//    		if(myBoard == null) throw new NullPointerException();
+//    		if(myMessage == null) throw new NullPointerException();
+//    		
+//    		mBoard = myBoard;
+//    		mMessage = myMessage;
+//    		mAuthor = mMessage.getAuthor();
+//    	}
+//    	
+//    }
 
+    // FIXME: This class was made static so that it does not store an internal reference to it's Board object because we store that reference in mBoard already,
+    // for being able to access it with db4o queries. Reconsider whether it should really be static: It would be nice if db4o did store an index on mMessageIndex
+    // *per-board*, and not just a global index - the message index is board-local anyway! Does db4o store a per-board index if the class is not static???
     public static abstract class MessageReference {
     	
-    	protected final Board mBoard;
+    	protected final SubscribedBoard mBoard;
     	
     	protected Message mMessage;
     	
@@ -520,8 +563,10 @@ public final class SubscribedBoard extends Board {
     	
     	protected final int mMessageIndex;
 
+    	private boolean mWasRead = false;
     	
-    	private MessageReference(Board myBoard, int myMessageIndex) {
+    	
+    	private MessageReference(SubscribedBoard myBoard, int myMessageIndex) {
         	if(myBoard == null)
         		throw new NullPointerException();
         	
@@ -533,7 +578,7 @@ public final class SubscribedBoard extends Board {
     		assert(mMessageIndex >= mBoard.getFreeMessageIndex());
     	}
 
-		private MessageReference(Board myBoard, Message myMessage, int myMessageIndex) {
+		private MessageReference(SubscribedBoard myBoard, Message myMessage, int myMessageIndex) {
     		this(myBoard, myMessageIndex);
     		
     		if(myMessage == null)
@@ -558,6 +603,18 @@ public final class SubscribedBoard extends Board {
         public int getIndex() {
         	return mMessageIndex;
         }
+        
+		public boolean wasRead() {
+			return mWasRead;
+		}
+		
+		public synchronized void markAsRead() {
+			mWasRead = true;
+		}
+		
+		public synchronized void markAsUnread() { 
+			mWasRead = false;
+		}
         
         /**
          * Does not provide synchronization, you have to lock the MessageManager, this Board and then the database before calling this function.
@@ -585,19 +642,16 @@ public final class SubscribedBoard extends Board {
 			
 		}
     }
-
     
-    // FIXME: This class was made static so that it does not store an internal reference to it's Board object because we store that reference in mBoard already,
-    // for being able to access it with db4o queries. Reconsider whether it should really be static: It would be nice if db4o did store an index on mMessageIndex
-    // *per-board*, and not just a global index - the message index is board-local anyway! Does db4o store a per-board index if the class is not static???
     /**
      * Helper class to associate messages with boards in the database
      */
     public static class BoardReplyLink extends MessageReference { /* TODO: This is only public for configuring db4o. Find a better way */
         
         private final String mThreadID;
+        
 
-        protected BoardReplyLink(Board myBoard, Message myMessage, int myIndex) {
+        protected BoardReplyLink(SubscribedBoard myBoard, Message myMessage, int myIndex) {
         	super(myBoard, myMessage, myIndex);
             
             try {
@@ -612,6 +666,10 @@ public final class SubscribedBoard extends Board {
         public String getThreadID() {
         	return mThreadID;
         }
+        
+		public synchronized Date getDate() {
+			return mMessageDate;
+		}
 
     }
     
@@ -621,8 +679,10 @@ public final class SubscribedBoard extends Board {
         
     	private Date mLastReplyDate;
     	
+    	private boolean mWasThreadRead = false;
     	
-    	protected BoardThreadLink(Board myBoard, Message myThread, int myMessageIndex) {
+    	
+    	protected BoardThreadLink(SubscribedBoard myBoard, Message myThread, int myMessageIndex) {
     		super(myBoard, myThread, myMessageIndex);
     		
     		if(myThread == null)
@@ -631,12 +691,12 @@ public final class SubscribedBoard extends Board {
     		mThreadID = mMessage.getID();
     		mLastReplyDate = myThread.getDate();
     	}
-    	
-    	/**
+
+		/**
     	 * @param myLastReplyDate The date of the last reply to this thread. This parameter must be specified at creation to prevent threads from being hidden if
     	 * 							the user of this constructor forgot to call updateLastReplyDate() - thread display is sorted descending by reply date!
     	 */
-    	protected BoardThreadLink(Board myBoard, String myThreadID, Date myLastReplyDate, int myMessageIndex) {
+    	protected BoardThreadLink(SubscribedBoard myBoard, String myThreadID, Date myLastReplyDate, int myMessageIndex) {
     		super(myBoard, myMessageIndex);
     		
     		if(myThreadID == null)
@@ -647,10 +707,45 @@ public final class SubscribedBoard extends Board {
     		mThreadID = myThreadID;
     		mLastReplyDate = myLastReplyDate;
     	}
-		
-		protected synchronized void updateLastReplyDate(Date newDate) {
+    	
+    	protected synchronized void onMessageAdded(Message newMessage) {
+    		mWasThreadRead = false;
+    		
+    		Date newDate = newMessage.getDate();
 			if(newDate.after(mLastReplyDate))
 				mLastReplyDate = newDate;
+		}
+    	
+    	protected void onMessageRemoved(Message removedMessage) {
+    		if(removedMessage.getDate().before(mLastReplyDate))
+    			return;
+    		
+    		synchronized(mBoard) {
+    			synchronized(this) {
+    	    		// TODO: This assumes that getAllThreadReplies() obtains the sorted order using an index. This is not the case right now. If we do not
+    	    		// optimize getAllThreadReplies() we should just iterate over the unsorted replies list and do maximum search.
+    				
+    				ObjectSet<BoardReplyLink> replies = mBoard.getAllThreadReplies(mThreadID, true);
+    				int replyCount = replies.size();
+    				
+    				mLastReplyDate = replyCount > 0 ? replies.get(replyCount-1).getDate() : mMessageDate;
+    			}
+    		}
+
+    		// TODO: I decided not to change the "therad was read flag:" If the thread was unread before, then it is probably still unread now.
+    		// If it was read before, removing a message won't change that.
+    	}
+    	
+    	
+    	public synchronized void removeThreadMessage() {
+    		mMessage = null;
+    		
+    		// TODO: This assumes that getAllThreadReplies() obtains the sorted order using an index. This is not the case right now. If we do not
+    		// optimize getAllThreadReplies() we should just iterate over the unsorted replies list and do minimum search.
+    		for(BoardReplyLink reply : mBoard.getAllThreadReplies(mThreadID, true)) {
+    			mLastReplyDate = reply.getDate();
+    			return;
+    		}
 		}
 		
 		public synchronized Date getLastReplyDate() {
@@ -678,39 +773,23 @@ public final class SubscribedBoard extends Board {
 			
 			mMessage = myThread;
 			
-			updateLastReplyDate(myThread.getDate());
+			markAsUnread(); // Mark the thread message itself as unread (not the whole thread).
+			
+			onMessageAdded(myThread); // This also marks the whole thread as unread.
 		}
-	
+		
+		public boolean wasThreadRead() {
+			return mWasThreadRead;
+		}
+		
+		public void markThreadAsRead() {
+			mWasThreadRead = true;
+		}
+		
+		public void markThreadAsUnread() {
+			mWasThreadRead = false;
+		}
+		
     }
 
-    
-    private final static class ThreadWasReadMarker {
-    	
-    	private final String mID;
-    	
-    	private final FTOwnIdentity mReader;
-    	
-    	private final BoardThreadLink mThread;
-    	
-    	
-    	protected ThreadWasReadMarker(FTOwnIdentity viewer, BoardThreadLink thread) {
-    		mID = calculateID(viewer, thread, replyCount);
-    		mReader = viewer;
-    		mMessage = thread;
-    		mReplyCount = replyCount;
-    	}
-    	
-    	protected static String calculateID(FTOwnIdentity viewer, Message thread, int replyCount) {
-    		return Integer.toString(replyCount) + "@" + thread.getID() + "@" + viewer.getID();
-    	}
-    	
-    }
-    
-    public synchronized void setThreadReadStatus(FTOwnIdentity viewer, Message thread, int replyCount, boolean wasRead) {
-    	
-    }
-    
-    public synchronized boolean threadWasRead(FTOwnIdentity viewer, Message thread) {
-    	return false;
-    }
 }
