@@ -108,6 +108,7 @@ public class Board implements Comparable<Board> {
     	}
     }
 
+
     /**
      * Check if a board name is valid.
      *
@@ -180,28 +181,34 @@ public class Board implements Comparable<Board> {
     public String getName() {
         return mName;
     }
+    
+    public String getDescription(FTOwnIdentity viewer) {
+		// TODO: Implement: Use the description which most of the known identities have chosen.
+		return "";
+    }
 
     public Date getFirstSeenDate() {
         return mFirstSeenDate;
     }
 
     /**
-     * @return An NNTP-conform representation of the name of the board.
-     */
-    /*
-	public String getNameNNTP() {
-		// FIXME: Implement.
-		return mName;
-	}
-     */
-
-    /**
-     * Compare boards by comparing their names; provided so we can
-     * sort an array of boards.
+     * Compare boards by comparing their names; provided so we can sort an array of boards.
      */
     public int compareTo(Board b) {
         return getName().compareTo(b.getName());
     }
+    
+    /**
+     * Returns true if the given {@link Message} has this board's name listed in it's target board names.
+     * Does not check whether the {@link Board} object referenced by the message is equal to this {@link Board} object!
+     */
+    public boolean contains(Message message) {
+    	for(Board board : message.getBoards()) {
+    		if(mName.equals(board.getName()))
+    			return true;
+    	}
+    	
+    	return false;
+    }
 
- 
 }
