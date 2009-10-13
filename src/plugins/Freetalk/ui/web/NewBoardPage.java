@@ -32,7 +32,7 @@ public final class NewBoardPage extends WebPageImpl {
 				HTMLNode successBox = addContentBox("Board was created");
 				successBox.addChild("div", "The board "); /* TODO: I have no idea how to make this text appear in one line without removing the <u> */
 				successBox.addChild("u").addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + board.getName(), board.getName()));
-				successBox.addChild("div", " was successfully created.");
+				successBox.addChild("div", " was successfully created. You have been subscribed to it.");
 				makeNewBoardPage("en", "");
 			} catch (Exception e) {
 				HTMLNode alertBox = addAlertBox("The board could not be created");
