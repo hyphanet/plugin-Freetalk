@@ -6,7 +6,7 @@ package plugins.Freetalk.ui.web;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
-import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.SubscribedBoard;
 import freenet.clients.http.RedirectException;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -20,6 +20,7 @@ public final class NewBoardPage extends WebPageImpl {
 	public void make() throws RedirectException {
 		if(mOwnIdentity == null)
 			throw new RedirectException(logIn);
+		
 		if(mRequest.isPartSet("CreateBoard")) {
 		    final int boardLanguageLength = 8;
 		    final int maxBoardNameLength = Board.MAX_BOARDNAME_TEXT_LENGTH - boardLanguageLength - 1; // +1 for the '.'
@@ -27,13 +28,13 @@ public final class NewBoardPage extends WebPageImpl {
 			String boardName = mRequest.getPartAsString("BoardName", maxBoardNameLength);
 			
 			try {
-				Board board = mFreetalk.getMessageManager().getOrCreateBoard(boardLanguage + "." + boardName);
+				SubscribedBoard board = mFreetalk.getMessageManager().subscribeToBoard(mOwnIdentity, boardLanguage + "." + boardName);
 				HTMLNode successBox = addContentBox("Board was created");
 				successBox.addChild("div", "The board "); /* TODO: I have no idea how to make this text appear in one line without removing the <u> */
 				successBox.addChild("u").addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + board.getName(), board.getName()));
 				successBox.addChild("div", " was successfully created.");
 				makeNewBoardPage("en", "");
-			} catch (InvalidParameterException e) {
+			} catch (Exception e) {
 				HTMLNode alertBox = addAlertBox("The board could not be created");
 				alertBox.addChild("div", e.getMessage());
 				
