@@ -701,6 +701,16 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 	/**
+	 * Get all boards which are being subscribed to by at least one {@link FTOwnIdentity}, i.e. the boards from which we should download messages.
+	 */
+	public synchronized Iterator<Board> boardWithSubscriptionsIterator() {
+		Query query = db.query();
+		query.constrain(Board.class);
+		query.descend("mHasSubscriptions").constrain(true);
+		return generalBoardIterator(query);
+	}
+	
+	/**
 	 * Get an iterator of boards which were first seen after the given Date, sorted ascending by the date they were first seen at.
 	 */
 	public synchronized Iterator<SubscribedBoard> subscribedBoardIteratorSortedByDate(FTOwnIdentity subscriber, final Date seenAfter) {
@@ -750,7 +760,7 @@ public abstract class MessageManager implements Runnable {
 			subscriber = mIdentityManager.getOwnIdentity(subscriber.getID()); // Ensure that the identity still exists so the caller does not have to synchronize.
 
 			synchronized(this) {
-				getOrCreateBoard(boardName);
+				Board board = getOrCreateBoard(boardName);
 
 				try {
 					return getSubscription(subscriber, boardName);
@@ -758,12 +768,19 @@ public abstract class MessageManager implements Runnable {
 				catch(NoSuchBoardException e) {
 					synchronized(db.lock()) {
 						try {
-							SubscribedBoard board = new SubscribedBoard(boardName, subscriber);
-							board.initializeTransient(db, this);
-							board.storeWithoutCommit();
+							SubscribedBoard subscribedBoard = new SubscribedBoard(boardName, subscriber);
+							subscribedBoard.initializeTransient(db, this);
+							subscribedBoard.storeWithoutCommit();
+							
+							if(board.hasSubscriptions() == false) {
+								Logger.debug(this, "First subscription received for board " + board + ", setting it's HasSubscriptions flag.");
+								board.setHasSubscriptions(true);
+								board.storeWithoutCommit();
+							}
+							
 							db.commit(); Logger.debug(this, "COMMITED.");
 
-							return board;
+							return subscribedBoard;
 						}
 						catch(Exception error) {
 							db.rollback(); Logger.error(this, "subscribeToBoard failed", error);
@@ -779,11 +796,19 @@ public abstract class MessageManager implements Runnable {
 	 * You have to synchronize on the IdentityManager which was used to obtain the subscriber while calling this function. 
 	 */
 	public synchronized void unsubscribeFromBoard(FTOwnIdentity subscriber, String boardName) throws NoSuchBoardException {
-		SubscribedBoard board = getSubscription(subscriber, boardName);
+		SubscribedBoard subscribedBoard = getSubscription(subscriber, boardName);
 		
 		synchronized(db.lock()) {
 			try {
-				board.deleteWithoutCommit();
+				subscribedBoard.deleteWithoutCommit();
+				
+				if(subscribedBoardIterator(subscribedBoard.getName()).hasNext() == false) {
+					Board board = getBoardByName(subscribedBoard.getName());
+					Logger.debug(this, "Last subscription to board " + board + " removed, clearing it's HasSubscriptions flag.");
+					board.setHasSubscriptions(false);
+					board.storeWithoutCommit();
+				}
+				
 				db.commit(); Logger.debug(this, "COMMITED");
 			}
 			catch(RuntimeException e) {
@@ -846,13 +871,14 @@ public abstract class MessageManager implements Runnable {
 			private Iterator<MessageList.MessageReference> iter;
 
 			{
+				// TODO: This query is very slow!
 				Query query = db.query();
 				query.constrain(MessageList.MessageReference.class);
 				query.constrain(OwnMessageList.OwnMessageReference.class).not();
+				query.descend("mBoard").descend("mHasSubscriptions").constrain(true);
 				query.descend("iWasDownloaded").constrain(false);
-				/* FIXME: This function should only return MessageReferences which are for a board which an OwnIdentity wants to read and from 
-				 * as specified above. This has to be implemented yet. */
 				/* FIXME: Order the message references randomly with some trick. */
+				
 				iter = query.execute().iterator();
 			}
 

@@ -45,6 +45,8 @@ public class Board implements Comparable<Board> {
     private final String mName;
 
     private final Date mFirstSeenDate;
+    
+    private boolean mHasSubscriptions;
 
 
     /* References to objects of the plugin, not stored in the database. */
@@ -80,6 +82,7 @@ public class Board implements Comparable<Board> {
         mID = UUID.randomUUID().toString();
         mName = newName.toLowerCase();
         mFirstSeenDate = CurrentTimeUTC.get();
+        mHasSubscriptions = false;
     }
 
     /**
@@ -190,6 +193,14 @@ public class Board implements Comparable<Board> {
     public Date getFirstSeenDate() {
         return mFirstSeenDate;
     }
+    
+    public boolean hasSubscriptions() {
+    	return mHasSubscriptions;
+    }
+    
+	protected void setHasSubscriptions(boolean hasSubscriptions) {
+		mHasSubscriptions = hasSubscriptions;
+	}
 
     /**
      * Compare boards by comparing their names; provided so we can sort an array of boards.
