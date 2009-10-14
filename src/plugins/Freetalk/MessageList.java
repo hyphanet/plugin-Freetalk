@@ -19,7 +19,6 @@ import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
-import freenet.support.Logger;
 
 /**
  * A <code>MessageList</code> contains a list of <code>MessageReference</code> objects.
@@ -487,17 +486,5 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		
 		throw new NoSuchMessageException();
 	}
-	
-	/*
-	public synchronized void markAsDownloaded(FreenetURI uri) {
-		// TODO: Figure out whether MessageLists are usually large enough so that we can gain speed by using a Hashtable instead of ArrayList
-		for(MessageReference ref : mMessages) {
-			if(ref.getURI().equals(uri)) {
-				ref.markAsDownloaded();
-				return;
-			}
-		}
-	}
-	*/
-	
+
 }
