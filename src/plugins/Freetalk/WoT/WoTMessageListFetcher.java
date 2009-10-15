@@ -165,13 +165,13 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	 * @throws FetchException 
 	 */
 	private void fetchMessageLists(WoTIdentity identity) throws FetchException {
-		int newIndex = mMessageManager.getUnavailableNewMessageListIndex(identity);
+		int newIndex = mMessageManager.getUnavailableNewMessageListIndex(identity); // FIXME: The identity might have been deleted, synchronize!
 		fetchMessageList(identity, newIndex, true);
 		
 		if(newIndex > 0) {
-			int oldIndex = mMessageManager.getUnavailableOldMessageListIndex(identity);
+			int oldIndex = mMessageManager.getUnavailableOldMessageListIndex(identity); // FIXME: The identity might have been deleted, synchronize!
 			if(oldIndex != newIndex)
-				fetchMessageList(identity, mMessageManager.getUnavailableOldMessageListIndex(identity), false);
+				fetchMessageList(identity, oldIndex, false); 
 		}
 	}
 
@@ -224,7 +224,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		WoTIdentity identity = null;
 		
 		try {
-			identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI());
+			identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI()); // FIXME: Synchronize, the identity must exist in onMessageListReceived.
 			bucket = result.asBucket();			
 			inputStream = bucket.getInputStream();
 			WoTMessageList list = WoTMessageListXML.decode(mMessageManager, identity, state.getURI(), inputStream);
@@ -259,7 +259,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 				case FetchException.DATA_NOT_FOUND:
 					WoTIdentity identity;
 					try {
-						identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI());
+						identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI()); // FIXME: The identity might be deleted, synchronize!
 						mMessageManager.onMessageListFetchFailed(identity, state.getURI(), MessageList.MessageListFetchFailedReference.Reason.DataNotFound);
 					} catch (NoSuchIdentityException ex) {
 						Logger.error(this, "SHOULD NOT HAPPEN", ex);
