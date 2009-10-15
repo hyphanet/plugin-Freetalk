@@ -25,6 +25,7 @@ public final class Welcome extends WebPageImpl {
 			throw new RedirectException(logIn);
 		makeWelcomeBox();
 		makeOverviewBox();
+		new BoardsPage(mWebInterface, mOwnIdentity, mRequest).addToPage(mContentNode);
 	}
 	
 	private final void makeWelcomeBox() {
