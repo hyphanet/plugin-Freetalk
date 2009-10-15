@@ -661,13 +661,9 @@ public final class FCPInterface implements FredPluginFCP {
             synchronized(mFreetalk.getMessageManager()) {
 
                 try {
-                    board = mFreetalk.getMessageManager().getBoardByName(boardName);
-                } catch (final NoSuchBoardException e) {
-                    board = null;
-                }
-
-                if (board != null) {
+                    mFreetalk.getMessageManager().getBoardByName(boardName);
                     throw new InvalidParameterException("Board with same name already exists");
+                } catch (final NoSuchBoardException e) {
                 }
 
                 board = mFreetalk.getMessageManager().getOrCreateBoard(boardName);
