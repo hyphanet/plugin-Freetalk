@@ -349,36 +349,33 @@ public abstract class MessageManager implements Runnable {
 			boolean allSuccessful = true;
 			
 			for(Board board : message.getBoards()) {
-				Iterator<SubscribedBoard> iter = subscribedBoardIterator(board.getName());
-				while(iter.hasNext()){
-					SubscribedBoard subscribedBoard = iter.next();
-					synchronized(subscribedBoard) {
-					synchronized(message) {
-					synchronized(db.lock()) {
-						try {
-							subscribedBoard.addMessage(message);
-							db.commit(); Logger.debug(this, "COMMITED.");
-						}
-						catch(RuntimeException e) {
-							allSuccessful = false;
-							db.rollback(); Logger.error(this, "ROLLED BACK: Adding message to board failed", e);
-						}
+				synchronized(board) {
+				synchronized(message) {
+				synchronized(db.lock()) {
+					try {
+						board.addMessage(message);
+						db.commit(); Logger.debug(this, "COMMITED.");
+					}
+					catch(RuntimeException e) {
+						allSuccessful = false;
+						db.rollback(); Logger.error(this, "ROLLED BACK: Adding message to board failed", e);
 					}
 				}
 				}
-			}
+				}
+
 			}
 			
 			if(allSuccessful) {
 				synchronized(message) {
 				synchronized(db.lock()) {
-					// FIXME: This is WRONG: it only works if the list of subscribed boards stays constant. We need separate code in boards for storing a list
-					// of messages.
 					message.setLinkedIn(true);
 					message.storeAndCommit();
 				}
 				}
 			}
+			
+			// FIXME XXX: Now the messages are stored in the Boards but not in the subscribed boards. Next step is to push them to the subscribed boards.
 		}
 	}
 	
@@ -728,6 +725,13 @@ public abstract class MessageManager implements Runnable {
 		query.descend("mSubscriber").constrain(subscriber).identity();
 		query.descend("mName").orderDescending();
 		return generalSubscribedBoardIterator(query);
+	}
+	
+	private Iterator<Board> boardAndSubscribedBoardIterator(String boardName) {
+    	Query q = db.query();
+    	q.constrain(Board.class);
+    	q.descend("mName").constrain(boardName);
+    	return generalBoardIterator(q);
 	}
 	
 	private Iterator<SubscribedBoard> subscribedBoardIterator(String boardName) {

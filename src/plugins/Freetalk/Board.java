@@ -9,11 +9,16 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.UUID;
 
+import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 
+import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
+import com.db4o.query.Query;
 
 import freenet.support.CurrentTimeUTC;
+import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 
 /**
@@ -231,6 +236,122 @@ public class Board implements Comparable<Board> {
     	}
     	
     	return false;
+    }
+    
+    public static final class BoardMessageLink {
+    	
+    	private final Board mBoard;
+    	
+    	private final Message mMessage;
+    	
+    	private final FTIdentity mAuthor;
+    	
+    	private BoardMessageLink(Board myBoard, Message myMessage) {
+    		if(myBoard == null) throw new NullPointerException();
+    		if(myMessage == null) throw new NullPointerException();
+    		
+    		mBoard = myBoard;
+    		mMessage = myMessage;
+    		mAuthor = myMessage.getAuthor();
+    	}
+    	
+    	public static String[] getIndexedFields() {
+    		return new String[] { "mBoard" , "mMessage" };
+    	}
+    	
+    	public Board getBoard() {
+    		return mBoard;
+    	}
+    	
+    	public Message getMessage() {
+    		return mMessage;
+    	}
+    	
+    	public FTIdentity getAuthor() {
+    		return mAuthor;
+    	}
+    	
+
+        /**
+         * Does not provide synchronization, you have to lock the MessageManager, this Board and then the database before calling this function.
+         */
+        protected void storeWithoutCommit(ExtObjectContainer db) {
+        	try {
+        		DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+
+        		db.store(this);
+        	}
+        	catch(RuntimeException e) {
+        		DBUtil.rollbackAndThrow(db, this, e);
+        	}
+        }
+        
+    	protected void deleteWithoutCommit(ExtObjectContainer db) {
+    		try {
+    			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+    			
+    			DBUtil.checkedDelete(db, this);
+    		}
+    		catch(RuntimeException e) {
+        		DBUtil.rollbackAndThrow(db, this, e);
+        	}
+			
+		}
+    	
+    }
+    
+    @SuppressWarnings("unchecked")
+	protected ObjectSet<BoardMessageLink> getAllMessages() {
+    	Query q = db.query();
+    	q.constrain(BoardMessageLink.class);
+    	q.descend("mBoard").constrain(this).identity();
+    	return q.execute();
+    }
+    
+    @SuppressWarnings("unchecked")
+	protected BoardMessageLink getMessageLink(Message message) throws NoSuchMessageException {
+    	Query q = db.query();
+    	q.constrain(BoardMessageLink.class);
+    	q.descend("mMessage").constrain(message).identity();
+    	q.descend("mBoard").constrain(this).identity();
+    	ObjectSet<BoardMessageLink> messageLinks = q.execute();
+    	
+    	switch(messageLinks.size()) {
+    		case 0: throw new NoSuchMessageException(message.getID());
+    		case 1: return messageLinks.next();
+    		default: throw new DuplicateMessageException(message.getID());
+    	}
+    }
+    
+    /**
+     * Called by the {@link MessageManager} when a new message was fetched.
+     * Stores any messages in this board, does not check whether any {@link FTOwnIdentity} actually wants the messages.
+     * 
+     * The purpose of this is:
+     * - that the message manager can fill a new {@link SubscribedBoard} with already downloaded messages from it's parent {@link Board}
+     * - that the message manager can tell existing subscribed boards to pull new messages from their parent boards. 
+     */
+    protected synchronized void addMessage(Message newMessage) {
+    	if(newMessage instanceof OwnMessage) {
+    		// We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
+    		// successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug
+    		throw new IllegalArgumentException("Adding OwnMessages to a board is not allowed.");
+    	}
+    	
+    	if(contains(newMessage) == false)
+    		throw new IllegalArgumentException("addMessage called with a message which was not posted to this board (" + getName() + "): " + newMessage);
+    	
+    	try {
+    		getMessageLink(newMessage);
+    		Logger.error(this, "addMessage() called for already existing message: " + newMessage);
+    	}
+    	catch(NoSuchMessageException e) {
+    		new BoardMessageLink(this, newMessage).storeWithoutCommit(db);
+    	}
+    }
+    
+    protected synchronized void deleteMessage(Message message) throws NoSuchMessageException {
+    	getMessageLink(message).deleteWithoutCommit(db);
     }
 
 }

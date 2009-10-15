@@ -85,7 +85,7 @@ public final class SubscribedBoard extends Board {
      * 
      * Does not store the message, you have to do this before!
      */
-    protected synchronized void addMessage(Message newMessage) {
+    protected synchronized final void addMessage(Message newMessage) {
     	if(!mSubscriber.wantsMessagesFrom(newMessage.getAuthor())) {
     		// FIXME: Store a UnwantedMessageLink object for the message and periodically check whether the trust value of the author changed to positive
     		// - then we need to add the unwanted messages of that author.
