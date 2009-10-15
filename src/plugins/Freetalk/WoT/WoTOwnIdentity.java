@@ -3,12 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.TreeMap;
 
-import plugins.Freetalk.Board;
 import plugins.Freetalk.DBUtil;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
@@ -24,8 +21,6 @@ import freenet.keys.FreenetURI;
 public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	
 	/* Attributes, stored in the database. */
-
-	private final LinkedList<Board> mSubscribedBoards = new LinkedList<Board>();
 
 	private final FreenetURI mInsertURI;
 
@@ -61,26 +56,6 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 		return mAssessed.get(message.getID()).booleanValue();
 	}
 
-	public synchronized void subscribeToBoard(Board board) {
-		if(mSubscribedBoards.contains(board)) {
-			assert(false); /* TODO: Add logging / check whether this should be allowed to happen */
-			return;
-		}
-		mSubscribedBoards.add(board);
-		
-		storeWithoutCommit();
-	}
-
-	public synchronized void unsubscribeFromBoard(Board board) {
-		mSubscribedBoards.remove(board);
-		
-		storeWithoutCommit();
-	}
-
-	public synchronized Iterator<Board> subscribedBoardsIterator() {
-		return mSubscribedBoards.iterator();
-	}
-
 	public boolean wantsMessagesFrom(FTIdentity identity) {
 		if(!(identity instanceof WoTIdentity))
 			throw new IllegalArgumentException();
@@ -112,7 +87,6 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 
 			// TODO: As soon as we have a unit test which checks whether the content of subscribed boards gets stored, specify a depth here. Probably 1
-			db.store(mSubscribedBoards);
 			db.store(mInsertURI);
 			db.store(mAssessed);
 			super.storeWithoutCommit();
@@ -131,7 +105,6 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 			
 			DBUtil.checkedDelete(db, mAssessed);
 			mInsertURI.removeFrom(db);
-			DBUtil.checkedDelete(db, mSubscribedBoards);
 		}
 		catch(RuntimeException e) {
 			DBUtil.rollbackAndThrow(db, this, e);

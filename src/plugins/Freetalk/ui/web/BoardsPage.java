@@ -87,7 +87,7 @@ public final class BoardsPage extends WebPageImpl {
 				.addChild("a", "href", Freetalk.PLUGIN_URI + "/SelectBoards?identity=" + mOwnIdentity.getID())
 				.addChild("#", "select which ones you want to read.");
 		} else {
-			boardsBox.addChild("p", "You can subscribe to more boards ")
+			boardsBox.addChild("p", "You can subscribe to more boards or unsubscribe from the current ones ")
 				.addChild("a", "href", Freetalk.PLUGIN_URI + "/SelectBoards?identity=" + mOwnIdentity.getID())
 				.addChild("#", "here.");			
 		}
