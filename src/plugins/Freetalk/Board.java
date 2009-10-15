@@ -53,6 +53,8 @@ public class Board implements Comparable<Board> {
     
     /** True if at least one {@link SubscribedBoard} for this Board exists, i.e. if we should download messages of this board. */
     private boolean mHasSubscriptions;
+    
+    private int mNextFreeMessageIndex = 1;
 
 
     /* References to objects of the plugin, not stored in the database. */
@@ -244,15 +246,21 @@ public class Board implements Comparable<Board> {
     	
     	private final Message mMessage;
     	
+    	private final int mMessageIndex;
+    	
     	private final FTIdentity mAuthor;
     	
-    	private BoardMessageLink(Board myBoard, Message myMessage) {
+    	private BoardMessageLink(Board myBoard, Message myMessage, int myIndex) {
     		if(myBoard == null) throw new NullPointerException();
     		if(myMessage == null) throw new NullPointerException();
+    		if(myIndex <= 0) throw new IllegalArgumentException();
     		
     		mBoard = myBoard;
     		mMessage = myMessage;
+    		mMessageIndex = myIndex;
     		mAuthor = myMessage.getAuthor();
+    		
+    		assert(mMessageIndex == (mBoard.mNextFreeMessageIndex-1));
     	}
     	
     	public static String[] getIndexedFields() {
@@ -264,7 +272,12 @@ public class Board implements Comparable<Board> {
     	}
     	
     	public Message getMessage() {
+    		mMessage.initializeTransient(mBoard.db, mBoard.mMessageManager);
     		return mMessage;
+    	}
+    	
+    	public int getMessageIndex() {
+    		return mMessageIndex;
     	}
     	
     	public FTIdentity getAuthor() {
@@ -301,15 +314,7 @@ public class Board implements Comparable<Board> {
     }
     
     @SuppressWarnings("unchecked")
-	protected ObjectSet<BoardMessageLink> getAllMessages() {
-    	Query q = db.query();
-    	q.constrain(BoardMessageLink.class);
-    	q.descend("mBoard").constrain(this).identity();
-    	return q.execute();
-    }
-    
-    @SuppressWarnings("unchecked")
-	protected BoardMessageLink getMessageLink(Message message) throws NoSuchMessageException {
+	private BoardMessageLink getMessageLink(Message message) throws NoSuchMessageException {
     	Query q = db.query();
     	q.constrain(BoardMessageLink.class);
     	q.descend("mMessage").constrain(message).identity();
@@ -321,6 +326,24 @@ public class Board implements Comparable<Board> {
     		case 1: return messageLinks.next();
     		default: throw new DuplicateMessageException(message.getID());
     	}
+    }
+    
+    
+    /**
+     * @return Returns the next free message index and increments the internal free message index counter - therefore, the message index will be taken even if
+     * 	you do not store any message with it. This ensures that deleting the head message cannot cause it's index to be associated with a new, different message.
+     */
+	protected synchronized int takeFreeMessageIndex() {
+		return mNextFreeMessageIndex++;
+    }
+    
+    @SuppressWarnings("unchecked")
+    protected ObjectSet<BoardMessageLink> getMessagesAfterIndex(int index) {
+        Query q = db.query();
+        q.constrain(BoardMessageLink.class);
+        q.descend("mBoard").constrain(this).identity();
+        q.descend("mMessageIndex").constrain(index).greater();
+        return q.execute();
     }
     
     /**
@@ -346,7 +369,7 @@ public class Board implements Comparable<Board> {
     		Logger.error(this, "addMessage() called for already existing message: " + newMessage);
     	}
     	catch(NoSuchMessageException e) {
-    		new BoardMessageLink(this, newMessage).storeWithoutCommit(db);
+    		new BoardMessageLink(this, newMessage, takeFreeMessageIndex()).storeWithoutCommit(db);
     	}
     }
     
