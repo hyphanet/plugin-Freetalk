@@ -792,7 +792,7 @@ public abstract class MessageManager implements Runnable {
 			subscriber = mIdentityManager.getOwnIdentity(subscriber.getID()); // Ensure that the identity still exists so the caller does not have to synchronize.
 
 			synchronized(this) {
-				Board board = getOrCreateBoard(boardName);
+				Board board = getBoardByName(boardName);
 
 				try {
 					return getSubscription(subscriber, boardName);

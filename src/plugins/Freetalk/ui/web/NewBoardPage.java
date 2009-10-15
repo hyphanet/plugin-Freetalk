@@ -26,12 +26,14 @@ public final class NewBoardPage extends WebPageImpl {
 		    final int maxBoardNameLength = Board.MAX_BOARDNAME_TEXT_LENGTH - boardLanguageLength - 1; // +1 for the '.'
 		    String boardLanguage = mRequest.getPartAsString("BoardLanguage", boardLanguageLength);
 			String boardName = mRequest.getPartAsString("BoardName", maxBoardNameLength);
+			String fullBoardName = boardLanguage + "." + boardName;
 			
 			try {
-				SubscribedBoard board = mFreetalk.getMessageManager().subscribeToBoard(mOwnIdentity, boardLanguage + "." + boardName);
+				mFreetalk.getMessageManager().getOrCreateBoard(fullBoardName);
+				SubscribedBoard subscribedBoard = mFreetalk.getMessageManager().subscribeToBoard(mOwnIdentity, fullBoardName);
 				HTMLNode successBox = addContentBox("Board was created");
 				successBox.addChild("div", "The board "); /* TODO: I have no idea how to make this text appear in one line without removing the <u> */
-				successBox.addChild("u").addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + board.getName(), board.getName()));
+				successBox.addChild("u").addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + subscribedBoard.getName(), subscribedBoard.getName()));
 				successBox.addChild("div", " was successfully created. You have been subscribed to it.");
 				makeNewBoardPage("en", "");
 			} catch (Exception e) {
