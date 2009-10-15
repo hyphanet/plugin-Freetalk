@@ -69,8 +69,9 @@ public abstract class MessageManager implements Runnable {
 		
 		// It might happen that Freetalk is shutdown after a message has been downloaded and before addMessagesToBoards was called:
 		// Then the message will still be stored but not visible in the boards because storing a message and adding it to boards are separate transactions.
-		// Therefore, we must call addMessagesToBoards during startup.
+		// Therefore, we must call addMessagesToBoards (and synchronizeSubscribedBoards) during startup.
 		addMessagesToBoards();
+		synchronizeSubscribedBoards();
 	}
 	
 	/**
@@ -331,7 +332,10 @@ public abstract class MessageManager implements Runnable {
 				}
 			}
 			
+			// TODO: Instead of calling it immediately, schedule it to be executed in a few seconds. So if we receive a bunch of messages at once, they'll
+			// be bulk-added.
 			addMessagesToBoards();
+			synchronizeSubscribedBoards();
 		}
 	}
 	
@@ -374,8 +378,33 @@ public abstract class MessageManager implements Runnable {
 				}
 				}
 			}
+		}
+	}
+	
+	private synchronized void synchronizeSubscribedBoards() {
+		Iterator<SubscribedBoard> iter = subscribedBoardIterator();
+		
+		while(iter.hasNext()) {
+			SubscribedBoard board = iter.next();
 			
-			// FIXME XXX: Now the messages are stored in the Boards but not in the subscribed boards. Next step is to push them to the subscribed boards.
+			
+			// No need to lock the parent board because we do not modify it and we've locked the MessageManager which prevents writes to the parent board.
+			// synchronized(board.getParentBoard()) {
+			synchronized(board) {
+			synchronized(db.lock()) {
+				try {
+					board.synchronizeWithoutCommit();
+					db.commit(); Logger.debug(this, "COMMITED.");
+				}
+				catch(Exception e) {
+					db.rollback();
+					Logger.error(this, "Board synchronization failed", e);
+				}
+			}
+			}
+			// }
+			
+			Thread.yield();
 		}
 	}
 	
@@ -708,6 +737,11 @@ public abstract class MessageManager implements Runnable {
 		return generalBoardIterator(query);
 	}
 	
+	public synchronized Iterator<SubscribedBoard> subscribedBoardIterator() {
+		Query query = db.query();
+		query.constrain(SubscribedBoard.class);
+		return generalSubscribedBoardIterator(query);
+	}
 	/**
 	 * Get an iterator of boards which were first seen after the given Date, sorted ascending by the date they were first seen at.
 	 */
@@ -725,13 +759,6 @@ public abstract class MessageManager implements Runnable {
 		query.descend("mSubscriber").constrain(subscriber).identity();
 		query.descend("mName").orderDescending();
 		return generalSubscribedBoardIterator(query);
-	}
-	
-	private Iterator<Board> boardAndSubscribedBoardIterator(String boardName) {
-    	Query q = db.query();
-    	q.constrain(Board.class);
-    	q.descend("mName").constrain(boardName);
-    	return generalBoardIterator(q);
 	}
 	
 	private Iterator<SubscribedBoard> subscribedBoardIterator(String boardName) {
@@ -773,9 +800,10 @@ public abstract class MessageManager implements Runnable {
 				catch(NoSuchBoardException e) {
 					synchronized(db.lock()) {
 						try {
-							SubscribedBoard subscribedBoard = new SubscribedBoard(boardName, subscriber);
+							SubscribedBoard subscribedBoard = new SubscribedBoard(board, subscriber);
 							subscribedBoard.initializeTransient(db, this);
 							subscribedBoard.storeWithoutCommit();
+							subscribedBoard.synchronizeWithoutCommit();
 							
 							if(board.hasSubscriptions() == false) {
 								Logger.debug(this, "First subscription received for board " + board + ", setting it's HasSubscriptions flag.");
