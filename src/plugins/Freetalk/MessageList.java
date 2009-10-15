@@ -40,6 +40,11 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	protected int mIndex; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
 	
 	
+	public static String[] getIndexedFields() {
+		return new String[] { "mID", "mAuthor", "mIndex" };
+	}
+	
+	
 	/**
 	 * Stores the <code>FreenetURI</code> and the <code>Board</code> of a not downloaded message. If a message is posted to multiple boards, a
 	 * <code>MessageReference</code> is stored for each board. This is done to allow querying the database for <code>MessageReference</code>
@@ -57,6 +62,10 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		private final Board mBoard;
 		
 		private boolean iWasDownloaded = false;
+		
+		public static String[] getIndexedFields() {
+			return new String[] { "mMessageID", "mBoard", "iWasDownloaded" };
+		}
 		
 		public MessageReference(String newMessageID, FreenetURI newURI, Board myBoard) {
 			if(newMessageID == null || newURI == null || (myBoard == null && !(this instanceof OwnMessageList.OwnMessageReference)))

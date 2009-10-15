@@ -48,7 +48,7 @@ public class WoTIdentity implements FTIdentity {
 	
 	/** Get a list of fields which the database should create an index on. */
 	public static String[] getIndexedFields() {
-		return new String[] { "mID", "mRequestURI" };
+		return new String[] { "mID" };
 	}
 
 	public WoTIdentity(String myID, FreenetURI myRequestURI, String myNickname) {

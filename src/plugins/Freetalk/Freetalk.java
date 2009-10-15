@@ -172,6 +172,12 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		for(String f : Message.getIndexedFields())
 			dbCfg.objectClass(Message.class).objectField(f).indexed(true);
 		
+		for(String f : MessageList.getIndexedFields())
+			dbCfg.objectClass(MessageList.class).objectField(f).indexed(true);
+		
+		for(String f: MessageList.MessageReference.getIndexedFields())
+			dbCfg.objectClass(MessageList.MessageReference.class).objectField(f).indexed(true);
+		
 		dbCfg.objectClass(MessageList.MessageListFetchFailedReference.class).persistStaticFieldValues(); /* Make it store enums */
 		dbCfg.objectClass(MessageList.MessageFetchFailedReference.class).persistStaticFieldValues(); /* Make it store enums */
 		

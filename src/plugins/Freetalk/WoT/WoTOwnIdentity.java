@@ -16,7 +16,6 @@ import plugins.Freetalk.Message;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import plugins.Freetalk.exceptions.NotTrustedException;
 import freenet.keys.FreenetURI;
-import freenet.support.Logger;
 
 /**
  * @author xor
@@ -36,8 +35,7 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	public static String[] getIndexedFields() {
 		/* FIXME: Figure out whether indexed fields are inherited from parent classes. Otherwise we would have to also list the indexed fields
 		 * of WoTIdentity here. */
-		/* FIXME: Figure out whether we really need lookups by insert URI. If not, remove the index */
-		return new String[] { "mInsertURI" }; 
+		return new String[] {  }; 
 	}
 
 	public WoTOwnIdentity(String myID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
