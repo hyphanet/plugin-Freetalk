@@ -303,8 +303,7 @@ public final class FCPInterface implements FredPluginFCP {
             // send all messages
             for(final MessageReference reference : messageRefList) {
                 final Message msg = reference.getMessage();
-                final int messageIndex = board.getMessageIndex(msg); // throws exception when not found
-                sendSingleMessage(replysender, msg, messageIndex, includeMessageText);
+                sendSingleMessage(replysender, msg, reference.getIndex(), includeMessageText);
             }
         }
 
@@ -343,14 +342,14 @@ public final class FCPInterface implements FredPluginFCP {
         //throws exception when not found
         final SubscribedBoard board = mFreetalk.getMessageManager().getSubscription(mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID), boardName);
 
-        synchronized(board) {  /* FIXME: Is this enough synchronization or should we lock the message manager? */
+        synchronized(board) {
 
+        	final BoardThreadLink threadLink = board.getThreadLink(threadID);
             final List<BoardReplyLink> messageRefList;
             final Message thread = mFreetalk.getMessageManager().get(threadID); // throws exception when not found
             {
                 // send thread root message
-                final int messageIndex = board.getMessageIndex(thread); // throws exception when not found
-                sendSingleMessage(replysender, thread, messageIndex, includeMessageText);
+                sendSingleMessage(replysender, thread, threadLink.getIndex(), includeMessageText);
             }
 
             /* FIXME: This actually sorts by date! Is the sorting by message index needed anyway?? */
@@ -359,8 +358,7 @@ public final class FCPInterface implements FredPluginFCP {
             // send all messages of thread
             for(final MessageReference reference : messageRefList) {
                 final Message msg = reference.getMessage();
-                final int messageIndex = board.getMessageIndex(msg); // throws exception when not found
-                sendSingleMessage(replysender, msg, messageIndex, includeMessageText);
+                sendSingleMessage(replysender, msg, reference.getIndex(), includeMessageText);
             }
         }
 

@@ -22,20 +22,33 @@ public final class SubscribedBoard extends Board {
 
 	private final FTOwnIdentity mSubscriber;
 	
+	private Board mParentBoard;
+	
 	/**
 	 * The description which the subscriber has specified for this Board. Null if he has not specified any.
 	 */
 	private String mDescription = null;
+	
+	/**
+	 * Index of the latest message which this board has pulled from it's parent board. 
+	 */
+	private int	mHighestSynchronizedParentMessageIndex = 0;
 
 	
-	public SubscribedBoard(String myName, FTOwnIdentity mySubscriber) throws InvalidParameterException {
-		super(myName);
+	public SubscribedBoard(Board myParentBoard, FTOwnIdentity mySubscriber) throws InvalidParameterException {
+		super(myParentBoard.getName());
 		
-		if(mySubscriber == null)
-			throw new NullPointerException();
+		if(myParentBoard == null) throw new NullPointerException();
+		if(mySubscriber == null) throw new NullPointerException();
 		
+		mParentBoard = myParentBoard;
 		mSubscriber = mySubscriber;
 	}
+	
+    protected void initializeTransient(ExtObjectContainer myDB, MessageManager myMessageManager) {
+    	super.initializeTransient(myDB, myMessageManager);
+    	mParentBoard.initializeTransient(myDB, myMessageManager);
+    }
 
 	
 	protected void deleteWithoutCommit() {
@@ -53,6 +66,10 @@ public final class SubscribedBoard extends Board {
 			DBUtil.rollbackAndThrow(db, this, e);
 		}
 
+	}
+	
+	protected Board getParentBoard() {
+		return mParentBoard;
 	}
 
     public synchronized String getDescription() {
@@ -79,11 +96,25 @@ public final class SubscribedBoard extends Board {
     }
     
     /**
-     * Called by the {@link MessageManager} to add a just received message to the board.
+     * Called by the {@link MessageManager} when the parent board has received new messages.
+     * Does not delete messages, only adds new messages.
+     */
+    protected synchronized final void synchronizeWithoutCommit() {
+    	for(Board.BoardMessageLink messageLink : mParentBoard.getMessagesAfterIndex(mHighestSynchronizedParentMessageIndex)) {
+    		addMessage(messageLink.getMessage());
+    		mHighestSynchronizedParentMessageIndex = messageLink.getMessageIndex();
+    	}
+    	
+    	storeWithoutCommit();
+    }
+    
+    /**
      * The job for this function is to find the right place in the thread-tree for the new message and to move around older messages
      * if a parent message of them is received.
      * 
      * Does not store the message, you have to do this before!
+     * 
+     * Only to be used by the SubscribedBoard itself, the MessageManager should use {@link synchronizeWithoutCommit}. 
      */
     protected synchronized final void addMessage(Message newMessage) {
     	if(!mSubscriber.wantsMessagesFrom(newMessage.getAuthor())) {
@@ -115,7 +146,7 @@ public final class SubscribedBoard extends Board {
     	catch(NoSuchMessageException e) {
     		// If there was no ghost reference, we must store a BoardThreadLink if the new message is a thread 
 			if(newMessage.isThread()) {
-	    		BoardThreadLink threadRef = new BoardThreadLink(this, newMessage, getFreeMessageIndex());
+	    		BoardThreadLink threadRef = new BoardThreadLink(this, newMessage, takeFreeMessageIndex());
 	    		threadRef.storeWithoutCommit(db);
 	    		
 	    		// We do not call linkThreadRepliesToNewParent() here because if there was no ghost reference for the new message this means that no replies to
@@ -146,7 +177,7 @@ public final class SubscribedBoard extends Board {
     			messageRef = getReplyLink(newMessage);
     		}
     		catch(NoSuchMessageException e) {
-    			messageRef = new BoardReplyLink(this, newMessage, getFreeMessageIndex());
+    			messageRef = new BoardReplyLink(this, newMessage, takeFreeMessageIndex());
     			messageRef.storeWithoutCommit(db);
     		}
     		
@@ -350,13 +381,13 @@ public final class SubscribedBoard extends Board {
     			// that message. The parent thread message will still be displayed as a reply to it's original thread, but it will also appear as a new thread
     			// which is the parent of the message which was passed to this function.
 
-    			BoardThreadLink parentThreadRef = new BoardThreadLink(this, parentThread, getFreeMessageIndex()); 
+    			BoardThreadLink parentThreadRef = new BoardThreadLink(this, parentThread, takeFreeMessageIndex()); 
     			parentThreadRef.storeWithoutCommit(db);
     			return parentThreadRef;
     		}
     		catch(NoSuchMessageException ex) { 
     			// The message manager did not find the parentThreadID, so the parent thread was not downloaded yet, we create a ghost thread reference for it.
-    			BoardThreadLink ghostThreadRef = new BoardThreadLink(this, parentThreadID, newMessage.getDate(), getFreeMessageIndex());
+    			BoardThreadLink ghostThreadRef = new BoardThreadLink(this, parentThreadID, newMessage.getDate(), takeFreeMessageIndex());
     			ghostThreadRef.storeWithoutCommit(db);
     			return ghostThreadRef;
     		}		
@@ -374,7 +405,7 @@ public final class SubscribedBoard extends Board {
     public synchronized ObjectSet<BoardThreadLink> getThreads() {
     	Query q = db.query();
     	q.constrain(BoardThreadLink.class);
-    	q.descend("mBoard").constrain(SubscribedBoard.this).identity();
+    	q.descend("mBoard").constrain(SubscribedBoard.this).identity(); // FIXME: Benchmark whether switching the order of those two constrains makes it faster.
     	q.descend("mLastReplyDate").orderDescending();
     	return q.execute();
     }
@@ -391,23 +422,17 @@ public final class SubscribedBoard extends Board {
     }
 
     @SuppressWarnings("unchecked")
-    public synchronized int getMessageIndex(Message message) throws NoSuchMessageException {
+	public synchronized int getLastMessageIndex() throws NoSuchMessageException {
         Query q = db.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
-        q.descend("mMessage").constrain(message).identity();
+        q.descend("mMessageIndex").orderDescending();
         ObjectSet<MessageReference> result = q.execute();
-
-        if(result.size() == 0)
-            throw new NoSuchMessageException(message.getID());
         
-        // FIXME: This does not handle forked threads and does not check for duplicate indices!
-
+        if(result.size() == 0)
+        	throw new NoSuchMessageException();
+        
         return result.next().getIndex();
-    }
-
-    public synchronized int getLastMessageIndex() {
-        return getFreeMessageIndex() - 1;
     }
 
     @SuppressWarnings("unchecked")
@@ -420,7 +445,9 @@ public final class SubscribedBoard extends Board {
         
         switch(result.size()) {
 	        case 1:
-	        	return result.next().getMessage();
+	        	Message message = result.next().getMessage();
+	        	message.initializeTransient(db, mMessageManager);
+	        	return message;
 	        case 0:
 	            throw new NoSuchMessageException();
 	        default:
@@ -468,20 +495,6 @@ public final class SubscribedBoard extends Board {
             q.descend("mMessageDate").orderAscending();
         }
         return q.execute();
-    }
-
-    /**
-     * Get the next free NNTP index for a message. Please synchronize on this Board when creating a message, this method
-     * does not and cannot provide synchronization as creating a message is no atomic operation.
-     */
-    @SuppressWarnings("unchecked")
-    private int getFreeMessageIndex() {
-        Query q = db.query();
-        q.constrain(MessageReference.class);
-        q.descend("mBoard").constrain(this).identity();
-        q.descend("mMessageIndex").orderDescending(); /* FIXME: Use a db4o native query to find the maximum instead of sorting. O(n) vs. O(n log(n))! */
-        ObjectSet<MessageReference> result = q.execute();
-        return result.size() == 0 ? 1 : result.next().getIndex()+1;
     }
 
     /**
@@ -575,7 +588,10 @@ public final class SubscribedBoard extends Board {
     		mMessageDate = null;
     		mMessageIndex = myMessageIndex;
     		
-    		assert(mMessageIndex >= mBoard.getFreeMessageIndex());
+    		try {
+				assert(mMessageIndex > mBoard.getLastMessageIndex());
+			} catch (NoSuchMessageException e) {
+			}
     	}
 
 		private MessageReference(SubscribedBoard myBoard, Message myMessage, int myMessageIndex) {

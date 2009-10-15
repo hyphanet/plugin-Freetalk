@@ -72,7 +72,12 @@ public class FreetalkNNTPGroup {
      * Get the last valid message number.
      */
     public int lastMessage() {
-        return board.getLastMessageIndex();
+    	try {
+    		return board.getLastMessageIndex();
+    	}
+    	catch(NoSuchMessageException e) {
+    		return 0; // FIXME: Does NNTP expect this if there are no messages??
+    	}
     }
 
     /**
