@@ -787,7 +787,7 @@ public abstract class MessageManager implements Runnable {
     }
     
 	
-	public SubscribedBoard subscribeToBoard(FTOwnIdentity subscriber, String boardName) throws InvalidParameterException, NoSuchIdentityException {
+	public SubscribedBoard subscribeToBoard(FTOwnIdentity subscriber, String boardName) throws InvalidParameterException, NoSuchIdentityException, NoSuchBoardException {
 		synchronized(mIdentityManager) {
 			subscriber = mIdentityManager.getOwnIdentity(subscriber.getID()); // Ensure that the identity still exists so the caller does not have to synchronize.
 
