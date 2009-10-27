@@ -13,8 +13,8 @@ import freenet.support.api.HTTPRequest;
 
 public final class LogInPage extends WebPageImpl {
 
-	public LogInPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) {
-		super(myWebInterface, viewer, request);
+	public LogInPage(WebInterface myWebInterface, HTTPRequest request) {
+		super(myWebInterface, null, request);
 		// TODO Auto-generated constructor stub
 	}
 
