@@ -27,7 +27,6 @@ public class SelectBoardsPage extends WebPageImpl {
 		// TODO Auto-generated constructor stub
 	}
 
-	@Override
 	public void make() throws RedirectException {
 		if(mOwnIdentity == null)
 			throw new RedirectException(logIn);
