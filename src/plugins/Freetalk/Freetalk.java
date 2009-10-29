@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import plugins.Freetalk.MessageList.MessageFetchFailedMarker;
+import plugins.Freetalk.MessageList.MessageListFetchFailedMarker;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTMessageFetcher;
@@ -54,8 +56,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	public static final String PLUGIN_TITLE = "Freetalk-testing"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
 	public static final String WOT_NAME = "plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "Freetalk";
-	public static final String DATABASE_FILENAME = "freetalk-testing-8.db4o";
-	public static final int DATABASE_FORMAT_VERSION = -92;
+	public static final String DATABASE_FILENAME = "freetalk-testing-9.db4o";
+	public static final int DATABASE_FORMAT_VERSION = -91;
 
 	/* References from the node */
 	
@@ -169,6 +171,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		dbCfg.exceptionsOnNotStorable(true);
 		dbCfg.activationDepth(5); /* FIXME: Figure out a reasonable value */
 		
+		// TODO: Replace all these loops with one single loop which uses reflection!
+		
 		for(String f : Message.getIndexedFields())
 			dbCfg.objectClass(Message.class).objectField(f).indexed(true);
 		
@@ -178,8 +182,17 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		for(String f: MessageList.MessageReference.getIndexedFields())
 			dbCfg.objectClass(MessageList.MessageReference.class).objectField(f).indexed(true);
 		
-		dbCfg.objectClass(MessageList.MessageListFetchFailedReference.class).persistStaticFieldValues(); /* Make it store enums */
-		dbCfg.objectClass(MessageList.MessageFetchFailedReference.class).persistStaticFieldValues(); /* Make it store enums */
+		dbCfg.objectClass(FetchFailedMarker.class).persistStaticFieldValues(); /* Make it store enums */
+		
+		for(String f : FetchFailedMarker.getIndexedFields())
+			dbCfg.objectClass(FetchFailedMarker.class).objectField(f).indexed(true);
+		
+		for(String f : MessageFetchFailedMarker.getIndexedFields())
+			dbCfg.objectClass(MessageFetchFailedMarker.class).objectField(f).indexed(true);
+		
+		for(String f : MessageListFetchFailedMarker.getIndexedFields())
+			dbCfg.objectClass(MessageListFetchFailedMarker.class).objectField(f).indexed(true);
+			
 		
 		for(String f : Board.getIndexedFields()) {
 			dbCfg.objectClass(Board.class).objectField(f).indexed(true);
