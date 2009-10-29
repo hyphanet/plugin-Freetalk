@@ -60,7 +60,7 @@ public abstract class MessageManager implements Runnable {
 	// FIXME: Adjust these before release:
 	
 	public static final long MINIMAL_MESSAGE_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) :  (1 * 24 * 60 * 60 * 1000); // TODO: Make configurable.
-	public static final long MAXIMAL_MESSAGE_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (7 * 14 * 60 *60 * 1000); // TODO: Make configurable
+	public static final long MAXIMAL_MESSAGE_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (7 * 24 * 60 *60 * 1000); // TODO: Make configurable
 	public static final long MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (1 * 24 * 60 * 60 * 1000); // TODO: Make configurable.
 	public static final long MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000); 
 	
