@@ -3,17 +3,15 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.exceptions;
 
-
-public class NoSuchMessageException extends NoSuchObjectException {
+public class NoSuchObjectException extends Exception {
 
 	private static final long serialVersionUID = 1L;
 	
-	public NoSuchMessageException() {
+	public NoSuchObjectException() {
 		super();
 	}
-	
-	public NoSuchMessageException(String id) {
-		super("Unknown message ID " + id);
-	}
 
+	public NoSuchObjectException(String message) {
+		super(message);
+	}
 }

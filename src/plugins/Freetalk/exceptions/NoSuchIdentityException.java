@@ -4,7 +4,7 @@
 package plugins.Freetalk.exceptions;
 
 
-public class NoSuchIdentityException extends Exception {
+public class NoSuchIdentityException extends NoSuchObjectException {
 
 	private static final long serialVersionUID = 1L;
 
