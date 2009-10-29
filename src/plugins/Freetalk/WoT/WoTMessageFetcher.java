@@ -10,6 +10,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Random;
 
+import plugins.Freetalk.FetchFailedMarker;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageFetcher;
@@ -181,7 +182,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		
 			if(list != null) {
 				try {
-					mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), MessageList.MessageFetchFailedReference.Reason.ParsingFailed);
+					mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), FetchFailedMarker.Reason.ParsingFailed);
 					
 					fetchMoreMessages = true;
 				}
@@ -189,6 +190,9 @@ public final class WoTMessageFetcher extends MessageFetcher {
 					assert(false);
 					Logger.error(this, "SHOULD NOT HAPPEN", ex);
 				}
+			} else {
+				// This is not really an error, the MessageFetcher is not being told when a MessageList is deleted
+				Logger.normal(this, "Downloaded a message for a non-existant MessageList: " + state.getURI());
 			}
 		}
 		finally {
@@ -209,8 +213,9 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			switch(e.getMode()) {
 				case FetchException.DATA_NOT_FOUND:
 					try {
+						// FIXME: Synchronization!
 						WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
-						mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), MessageList.MessageFetchFailedReference.Reason.DataNotFound);
+						mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), FetchFailedMarker.Reason.DataNotFound);
 						
 						// We only call fetchMessages() if we know that the message for which the fetch failed was marked as failed, otherwise the fetch
 						// thread could get stuck in a busy loop: "fetch(), onFailure(), fetch(), onFailure() ..."
@@ -220,7 +225,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 						assert(false);
 					}
 					finally {
-						Logger.error(this, "DNF for message " + state.getURI());
+						Logger.normal(this, "DNF for message " + state.getURI());
 					}
 					break;
 					
