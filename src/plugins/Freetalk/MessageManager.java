@@ -11,12 +11,16 @@ import java.util.Random;
 import java.util.Set;
 
 import plugins.Freetalk.Message.Attachment;
+import plugins.Freetalk.MessageList.MessageFetchFailedMarker;
+import plugins.Freetalk.MessageList.MessageListFetchFailedMarker;
 import plugins.Freetalk.MessageList.MessageReference;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
+import plugins.Freetalk.exceptions.DuplicateFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.DuplicateMessageListException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
+import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
@@ -27,6 +31,7 @@ import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 
 /**
@@ -49,8 +54,15 @@ public abstract class MessageManager implements Runnable {
 
 	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
 	
-	private static final int STARTUP_DELAY = 3 * 60 * 1000;
-	private static final int THREAD_PERIOD = 15 * 60 * 1000;
+	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (3 * 60 * 1000);
+	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (15 * 60 * 1000);
+	
+	// FIXME: Adjust these before release:
+	
+	public static final long MINIMAL_MESSAGE_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) :  (1 * 24 * 60 * 60 * 1000); // TODO: Make configurable.
+	public static final long MAXIMAL_MESSAGE_FETCH_RETRY_DELY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (7 * 14 * 60 *60 * 1000); // TODO: Make configurable
+	public static final long MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (1 * 24 * 60 * 60 * 1000); // TODO: Make configurable.
+	public static final long MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000); 
 	
 	private volatile boolean isRunning = false;
 	private volatile boolean shutdownFinished = false;
@@ -106,6 +118,8 @@ public abstract class MessageManager implements Runnable {
 		try {
 			while(isRunning) {
 				Logger.debug(this, "Message manager loop running...");
+				
+				clearExpiredFetchFailedMarkers();
 				
 				Logger.debug(this, "Message manager loop finished.");
 
@@ -322,8 +336,14 @@ public abstract class MessageManager implements Runnable {
 					message.initializeTransient(db, this);
 					message.storeWithoutCommit();
 
-					for(MessageReference ref : getAllReferencesToMessage(message.getID()))
+					for(MessageReference ref : getAllReferencesToMessage(message.getID())) {
+						try {
+							getMessageFetchFailedMarker(ref).deleteWithoutCommit();
+							Logger.debug(this, "Deleted a FetchFailedMarker for the message.");
+						} catch(NoSuchFetchFailedMarkerException e1) { }
+						
 						ref.setMessageWasDownloadedFlag();
+					}
 
 					db.commit(); Logger.debug(this, "COMMITED.");
 				}
@@ -409,13 +429,40 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 	public synchronized void onMessageListReceived(MessageList list) {
+		MessageListFetchFailedMarker marker;
+		MessageList ghostList;
+
 		try {
-			getMessageList(list.getID());
-			Logger.debug(this, "Downloaded a MessageList which we already have: " + list.getURI());
+			marker = getMessageListFetchFailedMarker(list.getID());
 		}
-		catch(NoSuchMessageListException e) {
-			synchronized(db.lock()) {
+		catch(NoSuchFetchFailedMarkerException e) {
+			marker = null;
+		}
+		
+		try {
+			ghostList = getMessageList(list.getID());
+			
+			if(marker == null) {
+				Logger.debug(this, "Downloaded a MessageList which we already have: " + list.getURI());
+				return;
+			}
+
+		} catch(NoSuchMessageListException e) {
+			ghostList = null;
+		}
+
+		synchronized(db.lock()) {
 				try {
+					if(marker != null) {
+						marker.deleteWithoutCommit();
+						Logger.debug(this, "Deleted a FetchFailedMarker for the MessageList.");
+						
+						if(ghostList != null) {
+							Logger.error(this, "MessageList was fetched even though a ghost list existed for it! Deleting the ghost list: " + ghostList);
+							ghostList.deleteWithoutCommit();
+						}
+					}
+					
 					list.initializeTransient(db, this);
 					list.storeWithoutCommit();
 					db.commit(); Logger.debug(this, "COMMITED.");
@@ -423,45 +470,184 @@ public abstract class MessageManager implements Runnable {
 				catch(RuntimeException ex) {
 					db.rollback(); Logger.error(this, "ROLLED BACK!", ex);
 				}
-			}
 		}
 	}
 	
 	/**
 	 * Abstract because we need to store an object of a child class of MessageList which is chosen dependent on which implementation of the
-	 * messging system we are using.
+	 * messaging system we are using.
 	 */
-	public abstract void onMessageListFetchFailed(FTIdentity author, FreenetURI uri, MessageList.MessageListFetchFailedReference.Reason reason);
+	public abstract void onMessageListFetchFailed(FTIdentity author, FreenetURI uri, FetchFailedMarker.Reason reason);
 	
-	public synchronized void onMessageFetchFailed(MessageReference messageReference, MessageList.MessageFetchFailedReference.Reason reason) {
-		if(reason == MessageList.MessageFetchFailedReference.Reason.DataNotFound) {
-			/* FIXME: Messages with DNF should be marked as failed, and the failed mark should be deleted after a few days. This has to be implemented
-			 * before the official Freetalk release because otherwise someone could spam the message manager queue with unfetchable messages - preventing the
-			 * fetching of any other messages. */
-			return;
-		}
-
+	public synchronized void onMessageFetchFailed(MessageReference messageReference, FetchFailedMarker.Reason reason) {
 		try {
 			get(messageReference.getMessageID());
 			Logger.debug(this, "Trying to mark a message as 'downlod failed' which we actually have: " + messageReference.getURI());
 		}
 		catch(NoSuchMessageException e) {
 			synchronized(db.lock()) {
-			try {
-				MessageList.MessageFetchFailedReference failedMarker = new MessageList.MessageFetchFailedReference(messageReference, reason);
-				failedMarker.initializeTransient(db);
-				failedMarker.storeWithoutCommit();
+			try {				
+				Date date = CurrentTimeUTC.get();
 				
-				for(MessageReference r : getAllReferencesToMessage(messageReference.getMessageID()))
-					r.setMessageWasDownloadedFlag();
+				for(MessageReference ref : getAllReferencesToMessage(messageReference.getMessageID())) {
+					MessageList.MessageFetchFailedMarker failedMarker;
+					
+					try {
+						failedMarker = getMessageFetchFailedMarker(ref);
+						failedMarker.setReason(reason);
+						failedMarker.incrementNumberOfRetries();
+						Date dateOfNextRetry = calculateDateOfNextMessageFetchRetry(failedMarker.getReason(), date, failedMarker.getNumberOfRetries());
+						failedMarker.setDateOfNextRetry(dateOfNextRetry);
+						
+					} catch(NoSuchFetchFailedMarkerException e1) {
+						Date dateOfNextRetry = calculateDateOfNextMessageFetchRetry(reason, date, 0);
+						failedMarker = new MessageList.MessageFetchFailedMarker(ref, reason, date, dateOfNextRetry);
+						failedMarker.initializeTransient(db, this);
+					}
+					
+					failedMarker.storeWithoutCommit();
 				
-				Logger.debug(this, "Marked message as download failed with reason " + reason + ": " +  messageReference.getURI());
+					ref.setMessageWasDownloadedFlag();
+					
+					Logger.debug(this, "Marked message as download failed with reason " + reason + " (next retry is at " + failedMarker.getDateOfNextRetry()
+							+ ", number of retries: " + failedMarker.getNumberOfRetries() + "): "
+							+  messageReference.getURI());
+				}
+				
+				
 				db.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException ex) {
 				db.rollback();
 				Logger.error(this, "ROLLED BACK: Exception while marking a not-downloadable messge", ex);
 			}
+			}
+		}
+	}
+	
+	protected Date calculateDateOfNextMessageFetchRetry(FetchFailedMarker.Reason reason, Date now, int numberOfRetries) {
+		switch(reason) {
+			case DataNotFound:
+				return new Date(now.getTime() + Math.max(MINIMAL_MESSAGE_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGE_FETCH_RETRY_DELY));
+			case ParsingFailed:
+				return new Date(0);
+			default:
+				return new Date(now.getTime()  + MINIMAL_MESSAGE_FETCH_RETRY_DELAY);
+		}
+	}
+	
+	protected Date calculateDateOfNextMessageListFetchRetry(FetchFailedMarker.Reason reason, Date now, int numberOfRetries) {
+		switch(reason) {
+			case DataNotFound:
+				return new Date(now.getTime()  + Math.max(MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY));
+			case ParsingFailed:
+				return new Date(0);
+			default:
+				return new Date(now.getTime()  + MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY);
+		}		
+	}
+	
+	private Iterable<FetchFailedMarker> getFetchFailedMarkers(final Date now) {
+		return new Iterable<FetchFailedMarker>() {
+			@SuppressWarnings("unchecked")
+			public Iterator<FetchFailedMarker> iterator() {
+				return new Iterator<FetchFailedMarker>() {
+					private Iterator<FetchFailedMarker> iter;
+
+					{
+						Query query = db.query();
+						query.constrain(FetchFailedMarker.class);
+						query.descend("mDateOfNextRetry").constrain(now).greater().not();
+						iter = query.execute().iterator();
+					}
+
+					public boolean hasNext() {
+						return iter.hasNext();
+					}
+
+					public FetchFailedMarker next() {
+						FetchFailedMarker next = iter.next();
+						next.initializeTransient(db, MessageManager.this);
+						return next;
+					}
+
+					public void remove() {
+						throw new UnsupportedOperationException();
+					}
+				};
+			}
+		};
+	}
+	
+	private MessageFetchFailedMarker getMessageFetchFailedMarker(MessageReference ref) throws NoSuchFetchFailedMarkerException {
+		Query q = db.query();
+		q.constrain(MessageFetchFailedMarker.class);
+		q.descend("mMessageReference").constrain(ref).identity();
+		@SuppressWarnings("unchecked")
+		ObjectSet<MessageFetchFailedMarker> markers = q.execute();
+		
+		switch(markers.size()) {
+			case 1:
+				MessageFetchFailedMarker result = markers.next();
+				result.initializeTransient(db, this);
+				return result;
+			case 0:
+				throw new NoSuchFetchFailedMarkerException(ref.toString());
+			default:
+				throw new DuplicateFetchFailedMarkerException(ref.toString());
+		}
+	}
+	
+	protected MessageListFetchFailedMarker getMessageListFetchFailedMarker(String messageListID) throws NoSuchFetchFailedMarkerException {
+		Query q = db.query();
+		q.constrain(MessageListFetchFailedMarker.class);
+		q.descend("mMessageListID").constrain(messageListID);
+		@SuppressWarnings("unchecked")
+		ObjectSet<MessageListFetchFailedMarker> markers = q.execute();
+		
+		switch(markers.size()) {
+			case 1:
+				MessageListFetchFailedMarker result = markers.next();
+				result.initializeTransient(db, this);
+				return result;
+			case 0:
+				throw new NoSuchFetchFailedMarkerException(messageListID);
+			default:
+				throw new DuplicateFetchFailedMarkerException(messageListID);
+		}
+	}
+	
+	private synchronized void clearExpiredFetchFailedMarkers() {
+		Logger.debug(this, "Clearing expired FetchFailedMarkers...");
+	
+		Date now = CurrentTimeUTC.get();
+		
+		for(FetchFailedMarker marker : getFetchFailedMarkers(now)) {
+			synchronized(db.lock()) {
+				try {
+					if(marker instanceof MessageFetchFailedMarker) {
+						MessageFetchFailedMarker m = (MessageFetchFailedMarker)marker;
+						MessageReference ref = m.getMessageReference();
+						ref.clearMessageWasDownloadedFlag();
+					} else if(marker instanceof MessageListFetchFailedMarker) {
+						MessageListFetchFailedMarker m = (MessageListFetchFailedMarker)marker;
+						try {
+							getMessageList(m.getMessageListID()).deleteWithoutCommit();
+							m.storeWithoutCommit(); // MessageList.deleteWithoutCommit deletes it.
+						}
+						catch(NoSuchMessageListException e) {
+							// The marker was already processed.
+						}
+					} else
+						Logger.error(this, "Unknown FetchFailedMarker type: " + marker);
+					
+					Logger.debug(this, "Cleared marker " + marker);
+					db.commit(); Logger.debug(this, "COMMITED!");
+				}
+				catch(RuntimeException e) {
+					db.rollback();
+					Logger.error(this, "ROLLED BACK: Exception while clearing a FetchFailedMarker ", e);
+				}
 			}
 		}
 	}

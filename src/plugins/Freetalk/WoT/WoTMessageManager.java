@@ -11,6 +11,7 @@ import java.util.Set;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.FetchFailedMarker;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
@@ -18,6 +19,7 @@ import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.MessageURI;
 import plugins.Freetalk.Message.Attachment;
+import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import plugins.Freetalk.tasks.PersistentTaskManager;
@@ -108,34 +110,57 @@ public class WoTMessageManager extends MessageManager {
 		}
 	}
 	
-	public synchronized void onMessageListFetchFailed(FTIdentity author, FreenetURI uri, MessageList.MessageListFetchFailedReference.Reason reason) {
-		if(reason == MessageList.MessageListFetchFailedReference.Reason.DataNotFound) {
-			/* TODO: Handle DNF in some reasonable way. Mark the MessageLists as unavailable after a certain amount of retries maybe */
-			return;
-		} 
+	public synchronized void onMessageListFetchFailed(FTIdentity author, FreenetURI uri, FetchFailedMarker.Reason reason) {
+		WoTMessageList ghostList = new WoTMessageList(author, uri);
+		MessageList.MessageListFetchFailedMarker marker;
 		
-		WoTMessageList list = new WoTMessageList(author, uri);
-		try {
-			getMessageList(list.getID());
-			Logger.debug(this, "Download failed of a MessageList which we already have: " + list.getURI());
-		}
-		catch(NoSuchMessageListException e) {
+			try {
+				getMessageList(ghostList.getID());
+				Logger.error(this, "Download failed of a MessageList which we already have: " + ghostList.getURI());
+				return;
+			}
+			catch(NoSuchMessageListException e1) {
+				try {
+					marker = getMessageListFetchFailedMarker(ghostList.getID());
+				} catch(NoSuchFetchFailedMarkerException e) {
+					marker = null;
+				}
+			}
+			
 			synchronized(db.lock()) {
 				try {
-					list.initializeTransient(db, this);
-					list.storeWithoutCommit();
-					MessageList.MessageListFetchFailedReference ref = new MessageList.MessageListFetchFailedReference(list, reason);
-					ref.initializeTransient(db);
-					ref.storeWithoutCommit();
+					Date date = CurrentTimeUTC.get();
+					Date dateOfNextRetry;
+
+					ghostList.initializeTransient(db, this);
+					ghostList.storeWithoutCommit();
+					
+					if(marker == null) {
+						dateOfNextRetry = calculateDateOfNextMessageListFetchRetry(reason, date, 0);
+						marker = new MessageList.MessageListFetchFailedMarker(ghostList, reason, date, dateOfNextRetry);
+						marker.initializeTransient(db, this);
+					} else  {
+						marker.setReason(reason);
+						marker.incrementNumberOfRetries();
+						dateOfNextRetry = calculateDateOfNextMessageListFetchRetry(reason, date, marker.getNumberOfRetries());
+						marker.setDateOfNextRetry(dateOfNextRetry);
+					}
+				
+					marker.storeWithoutCommit();
+					
+					Logger.debug(this, "Marked MessageList as download failed with reason " + reason + " (next retry is at " + dateOfNextRetry
+							+ ", number of retries: " + marker.getNumberOfRetries() + "): "
+							+  ghostList);
+					
 					db.commit();
-					Logger.debug(this, "COMMITED: arked message list as download failed with reason " + reason + ": " +  uri);
+					Logger.debug(this, "COMMITED.");
 				}
 				catch(Exception ex) {
 					db.rollback();
 					Logger.error(this, "ROLLED BACK: Error while marking a message list as 'download failed'", ex);
 				}
 			}
-		}
+
 	}
 	
 	public synchronized void onOwnMessageInserted(String id, FreenetURI realURI) throws NoSuchMessageException {
