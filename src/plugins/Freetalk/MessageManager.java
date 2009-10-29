@@ -60,7 +60,7 @@ public abstract class MessageManager implements Runnable {
 	// FIXME: Adjust these before release:
 	
 	public static final long MINIMAL_MESSAGE_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) :  (1 * 24 * 60 * 60 * 1000); // TODO: Make configurable.
-	public static final long MAXIMAL_MESSAGE_FETCH_RETRY_DELY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (7 * 14 * 60 *60 * 1000); // TODO: Make configurable
+	public static final long MAXIMAL_MESSAGE_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (7 * 14 * 60 *60 * 1000); // TODO: Make configurable
 	public static final long MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (1 * 24 * 60 * 60 * 1000); // TODO: Make configurable.
 	public static final long MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000); 
 	
@@ -528,9 +528,9 @@ public abstract class MessageManager implements Runnable {
 	protected Date calculateDateOfNextMessageFetchRetry(FetchFailedMarker.Reason reason, Date now, int numberOfRetries) {
 		switch(reason) {
 			case DataNotFound:
-				return new Date(now.getTime() + Math.max(MINIMAL_MESSAGE_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGE_FETCH_RETRY_DELY));
+				return new Date(now.getTime() + Math.max(MINIMAL_MESSAGE_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGE_FETCH_RETRY_DELAY));
 			case ParsingFailed:
-				return new Date(0);
+				return new Date(Long.MAX_VALUE);
 			default:
 				return new Date(now.getTime()  + MINIMAL_MESSAGE_FETCH_RETRY_DELAY);
 		}
@@ -541,7 +541,7 @@ public abstract class MessageManager implements Runnable {
 			case DataNotFound:
 				return new Date(now.getTime()  + Math.max(MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY));
 			case ParsingFailed:
-				return new Date(0);
+				return new Date(Long.MAX_VALUE);
 			default:
 				return new Date(now.getTime()  + MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY);
 		}		
