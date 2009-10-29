@@ -6,8 +6,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Random;
 
+import plugins.Freetalk.FetchFailedMarker;
 import plugins.Freetalk.Freetalk;
-import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageListFetcher;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 
@@ -234,7 +234,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 			Logger.error(this, "Parsing failed for MessageList " + state.getURI(), e);
 
 			if(identity != null) {
-				mMessageManager.onMessageListFetchFailed(identity, state.getURI(), MessageList.MessageListFetchFailedReference.Reason.ParsingFailed);
+				mMessageManager.onMessageListFetchFailed(identity, state.getURI(), FetchFailedMarker.Reason.ParsingFailed);
 			}
 		}
 		finally {
@@ -260,7 +260,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 					WoTIdentity identity;
 					try {
 						identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI()); // FIXME: The identity might be deleted, synchronize!
-						mMessageManager.onMessageListFetchFailed(identity, state.getURI(), MessageList.MessageListFetchFailedReference.Reason.DataNotFound);
+						mMessageManager.onMessageListFetchFailed(identity, state.getURI(), FetchFailedMarker.Reason.DataNotFound);
 					} catch (NoSuchIdentityException ex) {
 						Logger.error(this, "SHOULD NOT HAPPEN", ex);
 					}
