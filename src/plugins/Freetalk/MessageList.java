@@ -5,6 +5,7 @@ package plugins.Freetalk;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -136,6 +137,15 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			iWasDownloaded = true;
 			storeWithoutCommit();
 		}
+		
+		/**
+		 * Marks the MessageReference as not downloaded and stores the change in the database, without committing the transaction.
+		 */
+		public synchronized void clearMessageWasDownloadedFlag() {
+			assert(iWasDownloaded == true);
+			iWasDownloaded = false;
+			storeWithoutCommit();
+		}
 
 		public MessageList getMessageList() {
 			db.activate(this, 3);
@@ -151,142 +161,44 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		
 	}
 	
-	/**
-	 * When a message list fetch fails we need to mark the message list as fetched to prevent the failed message list from getting into the
-	 * fetch queue over and over again. An attacker could insert many message list which have unparseable XML to fill up everyone's fetch queue
-	 * otherwise, this would be a denial of service.
-	 * 
-	 * When marking a message list as fetched even though the fetch failed, we store a MessageListFetchFailedReference so that we can try to 
-	 * fetch the message list again in the future. For example when the user installs a new version of the plugin we can fetch all messages list
-	 * again with failed XML parsing if the new version has fixed a bug in the XML parser.
-	 */
-	public static class MessageListFetchFailedReference {
+	public static final class MessageListFetchFailedMarker extends FetchFailedMarker {
 
-		private final MessageList mMessageList;
-
-		public static enum Reason {
-			Unknown,
-			DataNotFound,
-			ParsingFailed
-		}
-
-		private final Reason mReason;
+		private final String mMessageListID;
 		
-		public MessageListFetchFailedReference(MessageList myMessageList, Reason myReason) {
-			if(myMessageList == null || myReason == null)
-				throw new IllegalArgumentException();
+		public static String[] getIndexedFields() {
+			return new String[] { "mMessageListID" };
+		}
+		
+		public MessageListFetchFailedMarker(MessageList myMessageList, Reason myReason, Date myDate, Date myDateOfNextRetry) {
+			super(myReason, myDate, myDateOfNextRetry);
 			
-			mMessageList = myMessageList;
-			mReason = myReason;
-		}
-	
-		private transient ExtObjectContainer db;
-
-		public void initializeTransient(ExtObjectContainer myDB) {
-			db = myDB;
+			mMessageListID = myMessageList.getID();
 		}
 
-		public void storeWithoutCommit() {
-			try {
-				DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
-				
-				// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
-				
-				db.store(this);
-			}
-			catch(RuntimeException e) {
-				DBUtil.rollbackAndThrow(db, this, e);
-			}
+		public String getMessageListID() {
+			return mMessageListID;
 		}
 		
-		protected void deleteWithoutCommit() {
-			try {
-				DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
-				
-				DBUtil.checkedDelete(db, this);
-			}
-			catch(RuntimeException e) {
-				DBUtil.rollbackAndThrow(db, this, e);
-			}
-		}
-		
-		public MessageList getMessageList() {
-			return mMessageList;
-		}
-	
-		public Reason getReason() {
-			return mReason;
-		}
-
 	}
-	
-	/**
-	 * When a message fetch fails we need to mark the message reference as fetched to prevent the failed message from getting into the
-	 * fetch queue over and over again. An attacker could insert many messages which have unparseable XML to fill up everyone's fetch queue
-	 * otherwise, this would be a denial of service.
-	 * 
-	 * When marking a message as fetched even though the fetch failed, we store a MessageFetchFailedReference so that we can try to 
-	 * fetch the message again in the future. For example when the user installs a new version of the plugin we can fetch all messages
-	 * again with failed XML parsing if the new version has fixed a bug in the XML parser.
-	 */
-	public static class MessageFetchFailedReference {
+
+	public static class MessageFetchFailedMarker extends FetchFailedMarker {
 
 		private final MessageReference mMessageReference;
-
-		public static enum Reason {
-			Unknown,
-			DataNotFound,
-			ParsingFailed
-		}
-
-		private final Reason mReason;
 		
-		public MessageFetchFailedReference(MessageReference myMessageReference, Reason myReason) {
-			if(myMessageReference == null || myReason == null)
-				throw new IllegalArgumentException();
+		public static String[] getIndexedFields() {
+			return new String[] { "mMessageReference" };
+		}
+		
+		public MessageFetchFailedMarker(MessageReference myMessageReference, Reason myReason, Date myDate, Date myDateOfNextRetry) {
+			super(myReason, myDate, myDateOfNextRetry);
 			
 			mMessageReference = myMessageReference;
-			mReason = myReason;
-		}
-	
-		private transient ExtObjectContainer db;
-
-		protected void initializeTransient(ExtObjectContainer myDB) {
-			db = myDB;
 		}
 
-		protected void storeWithoutCommit() {
-			try {
-				DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
-				
-				// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
-				
-				db.store(this);
-			}
-			catch(RuntimeException e) {
-				DBUtil.rollbackAndThrow(db, this, e);
-			}
-		}
-		
-		protected void deleteWithoutCommit() {
-			try {
-				DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
-				
-				DBUtil.checkedDelete(db, this);
-			}
-			catch(RuntimeException e) {
-				DBUtil.rollbackAndThrow(db, this, e);
-			}
-		}
-		
 		public MessageReference getMessageReference() {
+			mMessageReference.initializeTransient(mDB);
 			return mMessageReference;
 		}
-	
-		public Reason getReason() {
-			return mReason;
-		}
-
 	}
 
 	
@@ -402,29 +314,33 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
 			
 			{ // First we have to delete the objects of type MessageListFetchFailedReference because this MessageList needs to exist in the db so we can query them
+				// TODO: This requires that we have locked the MessageManager, which is currently the case for every call to deleteWithoutCommit()
+				// However, we should move the code elsewhere to ensure the locking...
 				Query query = db.query();
-				query.constrain(MessageListFetchFailedReference.class);
-				query.descend("mMessageList").constrain(this).identity();
+				query.constrain(MessageListFetchFailedMarker.class);
+				query.descend("mMessageListID").constrain(getID());
 				
-				for(MessageListFetchFailedReference failedRef : (ObjectSet<MessageListFetchFailedReference>)query.execute()) {
-					failedRef.initializeTransient(db);
+				for(MessageListFetchFailedMarker failedRef : (ObjectSet<MessageListFetchFailedMarker>)query.execute()) {
+					failedRef.initializeTransient(db, mMessageManager);
 					failedRef.deleteWithoutCommit();
 				}
 			}
 			
 			
 			// Then we delete our list of MessageReferences before we delete each of it's MessageReferences 
-			// - less work of db4o, it does not have to null all the pointers to dhem.
+			// - less work of db4o, it does not have to null all the pointers to them.
 			DBUtil.checkedDelete(db, mMessages);
 			
 			for(MessageReference ref : mMessages) {
+				// TODO: This requires that we have locked the MessageManager, which is currently the case for every call to deleteWithoutCommit()
+				// However, we should move the code elsewhere to ensure the locking...
 				Query query = db.query();
-				query.constrain(MessageFetchFailedReference.class);
+				query.constrain(MessageFetchFailedMarker.class);
 				query.descend("mMessageReference").constrain(ref).identity();
 				
 				// Before deleting the MessageReference itself, we must delete any MessageFetchFailedReference objects which point to it. 
-				for(MessageFetchFailedReference failedRef : (ObjectSet<MessageFetchFailedReference>)query.execute()) {
-					failedRef.initializeTransient(db);
+				for(MessageFetchFailedMarker failedRef : (ObjectSet<MessageFetchFailedMarker>)query.execute()) {
+					failedRef.initializeTransient(db, mMessageManager);
 					failedRef.deleteWithoutCommit();
 				}
 				
