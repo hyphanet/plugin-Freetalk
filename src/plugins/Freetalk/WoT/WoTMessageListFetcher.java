@@ -261,13 +261,13 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 					// must have existed but has fallen out of Freenet, we mark it as DNF so it does not spam the request queue.
 					if(state.getURI().isSSK()) { 
 						Logger.debug(this, "DNF for old MessageList " + state.getURI());
-					WoTIdentity identity;
-					try {
-						identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI()); // FIXME: The identity might be deleted, synchronize!
-						mMessageManager.onMessageListFetchFailed(identity, state.getURI(), FetchFailedMarker.Reason.DataNotFound);
-					} catch (NoSuchIdentityException ex) {
-						Logger.error(this, "SHOULD NOT HAPPEN", ex);
-					}
+						WoTIdentity identity;
+						try {
+							identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI()); // FIXME: The identity might be deleted, synchronize!
+							mMessageManager.onMessageListFetchFailed(identity, state.getURI(), FetchFailedMarker.Reason.DataNotFound);
+						} catch (NoSuchIdentityException ex) {
+							Logger.error(this, "SHOULD NOT HAPPEN", ex);
+						}
 					} else { // The requested MessageList was a new USK index (higher than the latest known) and does not exist yet => Do not mark as DNF.
 						Logger.debug(this, "DNF for new MessageList " + state.getURI());
 					}
