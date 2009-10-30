@@ -54,7 +54,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	/**
 	 * How many message lists do we attempt to fetch in parallel? FIXME: This should be configurable.
 	 */
-	private static final int MAX_PARALLEL_MESSAGELIST_FETCH_COUNT = 16;
+	private static final int MAX_PARALLEL_MESSAGELIST_FETCH_COUNT = Freetalk.FAST_DEBUG_MODE ? 64 : 16;
 	
 	/**
 	 * How many identities do we keep in the LRU Hashtable? The hashtable is a queue which is used to ensure that we fetch message lists from different identities
@@ -257,6 +257,10 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		try {
 			switch(e.getMode()) {
 				case FetchException.DATA_NOT_FOUND:
+					// We requested an old MessageList, i.e. it's index is lower than the index of the latest known MessageList, so the requested MessageList
+					// must have existed but has fallen out of Freenet, we mark it as DNF so it does not spam the request queue.
+					if(state.getURI().isSSK()) { 
+						Logger.debug(this, "DNF for old MessageList " + state.getURI());
 					WoTIdentity identity;
 					try {
 						identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI()); // FIXME: The identity might be deleted, synchronize!
@@ -264,8 +268,10 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 					} catch (NoSuchIdentityException ex) {
 						Logger.error(this, "SHOULD NOT HAPPEN", ex);
 					}
+					} else { // The requested MessageList was a new USK index (higher than the latest known) and does not exist yet => Do not mark as DNF.
+						Logger.debug(this, "DNF for new MessageList " + state.getURI());
+					}
 					
-					Logger.debug(this, "DNF for MessageList " + state.getURI());
 					break;
 				
 				case FetchException.PERMANENT_REDIRECT:
