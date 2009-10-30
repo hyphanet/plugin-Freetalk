@@ -148,7 +148,7 @@ public class WoTMessageManager extends MessageManager {
 				
 					marker.storeWithoutCommit();
 					
-					Logger.debug(this, "Marked MessageList as download failed with reason " + reason + " (next retry is at " + dateOfNextRetry
+					Logger.normal(this, "Marked MessageList as download failed with reason " + reason + " (next retry is at " + dateOfNextRetry
 							+ ", number of retries: " + marker.getNumberOfRetries() + "): "
 							+  ghostList);
 					

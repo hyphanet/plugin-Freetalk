@@ -339,7 +339,7 @@ public abstract class MessageManager implements Runnable {
 					for(MessageReference ref : getAllReferencesToMessage(message.getID())) {
 						try {
 							getMessageFetchFailedMarker(ref).deleteWithoutCommit();
-							Logger.debug(this, "Deleted a FetchFailedMarker for the message.");
+							Logger.normal(this, "Deleted a FetchFailedMarker for the message.");
 						} catch(NoSuchFetchFailedMarkerException e1) { }
 						
 						ref.setMessageWasDownloadedFlag();
@@ -455,7 +455,7 @@ public abstract class MessageManager implements Runnable {
 				try {
 					if(marker != null) {
 						marker.deleteWithoutCommit();
-						Logger.debug(this, "Deleted a FetchFailedMarker for the MessageList.");
+						Logger.normal(this, "Deleted a FetchFailedMarker for the MessageList.");
 						
 						if(ghostList != null) {
 							Logger.error(this, "MessageList was fetched even though a ghost list existed for it! Deleting the ghost list: " + ghostList);
@@ -509,7 +509,7 @@ public abstract class MessageManager implements Runnable {
 				
 					ref.setMessageWasDownloadedFlag();
 					
-					Logger.debug(this, "Marked message as download failed with reason " + reason + " (next retry is at " + failedMarker.getDateOfNextRetry()
+					Logger.normal(this, "Marked message as download failed with reason " + reason + " (next retry is at " + failedMarker.getDateOfNextRetry()
 							+ ", number of retries: " + failedMarker.getNumberOfRetries() + "): "
 							+  messageReference.getURI());
 				}
@@ -618,9 +618,11 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 	private synchronized void clearExpiredFetchFailedMarkers() {
-		Logger.debug(this, "Clearing expired FetchFailedMarkers...");
+		Logger.normal(this, "Clearing expired FetchFailedMarkers...");
 	
 		Date now = CurrentTimeUTC.get();
+		
+		int amount = 0;
 		
 		for(FetchFailedMarker marker : getFetchFailedMarkers(now)) {
 			synchronized(db.lock()) {
@@ -641,6 +643,8 @@ public abstract class MessageManager implements Runnable {
 					} else
 						Logger.error(this, "Unknown FetchFailedMarker type: " + marker);
 					
+					++amount;
+					
 					Logger.debug(this, "Cleared marker " + marker);
 					db.commit(); Logger.debug(this, "COMMITED!");
 				}
@@ -650,6 +654,13 @@ public abstract class MessageManager implements Runnable {
 				}
 			}
 		}
+		
+		// FIXME: Remove before release
+		
+		Query q = db.query();
+		q.constrain(FetchFailedMarker.class);
+		q.descend("mDateOfNextRetry").constrain(now).greater();
+		Logger.normal(this, "Finished clearing " + amount + " expired FetchFailedMarkers, amount of non-expired markers: " + q.execute().size());
 	}
 	
 	/**
