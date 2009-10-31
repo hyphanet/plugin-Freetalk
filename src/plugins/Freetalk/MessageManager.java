@@ -666,7 +666,6 @@ public abstract class MessageManager implements Runnable {
 		q.constrain(MessageListFetchFailedMarker.class);
 		q.descend("mDateOfNextRetry").constrain(now).greater();
 		ObjectSet<MessageListFetchFailedMarker> markers = q.execute();
-		int markedMessageListCount = markers.size();
 		
 		for(MessageListFetchFailedMarker marker : markers) {
 			try {
@@ -674,16 +673,6 @@ public abstract class MessageManager implements Runnable {
 			} catch(NoSuchMessageListException e) {
 				Logger.error(this, "Invalid MessageListFetchFailedMarker: Date of next retry is in future but there is no ghost message list for it: " + marker);
 			}
-		}
-			
-		q = db.query();
-		q.constrain(MessageList.class);
-		q.descend("mMessages").descend("size").constrain(0);
-		int ghostMessageListCount = q.execute().size();
-		
-		if(markedMessageListCount != ghostMessageListCount) {
-			Logger.error(this, "Amount of non-expired MessageListFetchFailed markers: " + q.execute().size());
-			Logger.error(this, "Amount of empty message lists: " + q.execute().size());
 		}
 	}
 	
