@@ -62,6 +62,13 @@ public class FetchFailedMarker {
 	public Date getDate() {
 		return mDate;
 	}
+
+	/**
+	 * NOT synchronized! Lock the MessageManager when working on FetchFailedMarker objects.
+	 */
+	public void setDate(Date newDate) {
+		mDate = newDate;
+	}
 	
 	/**
 	 * NOT synchronized! Lock the MessageManager when working on FetchFailedMarker objects.
