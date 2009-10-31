@@ -15,14 +15,21 @@ import java.util.UUID;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.DatabaseBasedTest;
+import plugins.Freetalk.FetchFailedMarker;
 import plugins.Freetalk.MessageList;
+import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.SubscribedBoard;
+import plugins.Freetalk.MessageList.MessageListFetchFailedMarker;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
 import plugins.Freetalk.SubscribedBoard.MessageReference;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
+
+import com.db4o.ObjectSet;
+import com.db4o.query.Query;
+
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 
@@ -344,5 +351,97 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 			fail("onIdentityDeletion() did not delete a MessageLis objectt!");
 		}
 		catch(NoSuchMessageListException e) { }
+	}
+	
+	public void testOnMessageFetchFailed() {
+		
+	}
+	
+	@SuppressWarnings("unchecked")
+	public void testOnMessageListFetchFailed() {
+		WoTOwnIdentity author = mOwnIdentities[0];
+		Query q;
+		ObjectSet<FetchFailedMarker> markers;
+		ObjectSet<MessageList> messageLists;
+		MessageListFetchFailedMarker marker;
+		
+		q = db.query();
+		q.constrain(FetchFailedMarker.class);
+		assertEquals(0, q.execute().size());
+		
+		q = db.query();
+		q.constrain(MessageList.class);
+		assertEquals(0, q.execute().size());
+		
+		mMessageManager.onMessageListFetchFailed(author, WoTMessageList.assembleURI(author.getRequestURI(), 1), FetchFailedMarker.Reason.DataNotFound);
+		mMessageManager.clearExpiredFetchFailedMarkers();
+		
+		q = db.query();
+		q.constrain(FetchFailedMarker.class);
+		markers = q.execute();
+		assertEquals(1, markers.size());
+		
+		marker = (MessageListFetchFailedMarker)markers.next();
+		
+		assertTrue((CurrentTimeUTC.getInMillis() - marker.getDate().getTime()) < 10 * 1000);
+		assertEquals(marker.getDate().getTime() + MessageManager.MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY, marker.getDateOfNextRetry().getTime());
+		
+		q = db.query();
+		q.constrain(MessageList.class);
+		messageLists = q.execute();
+		assertEquals(1, messageLists.size());
+		assertEquals(messageLists.next().getID(), marker.getMessageListID());
+		
+		// Now we simulate a retry of the message list fetch
+		
+		marker.setDateOfNextRetry(marker.getDate());
+		marker.storeWithoutCommit(); db.commit();
+				
+		mMessageManager.clearExpiredFetchFailedMarkers();
+		
+		q = db.query();
+		q.constrain(FetchFailedMarker.class);
+		markers = q.execute();
+		assertEquals(1, markers.size());
+		assertEquals(marker, markers.next());
+		
+		q = db.query();
+		q.constrain(MessageList.class);
+		messageLists = q.execute();
+		assertEquals(0, messageLists.size());
+		
+		mMessageManager.onMessageListFetchFailed(author, WoTMessageList.assembleURI(author.getRequestURI(), 1), FetchFailedMarker.Reason.DataNotFound);
+		
+		q = db.query();
+		q.constrain(FetchFailedMarker.class);
+		markers = q.execute();
+		assertEquals(1, markers.size());
+		assertEquals(marker, markers.next());
+		assertTrue((CurrentTimeUTC.getInMillis() - marker.getDate().getTime()) < 10 * 1000);
+		assertEquals(marker.getDate().getTime() + Math.max(MessageManager.MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY*2, MessageManager.MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY),
+					marker.getDateOfNextRetry().getTime());
+		assertEquals(1, marker.getNumberOfRetries());
+		
+		q = db.query();
+		q.constrain(MessageList.class);
+		messageLists = q.execute();
+		assertEquals(1, messageLists.size());
+		assertEquals(messageLists.next().getID(), marker.getMessageListID());
+		
+		// Simulate failure with existing marker and existing ghost message list, i.e. the message list fetcher tried to fetch even though it shouldn't.
+		
+		mMessageManager.onMessageListFetchFailed(author, WoTMessageList.assembleURI(author.getRequestURI(), 1), FetchFailedMarker.Reason.DataNotFound);
+		
+		q = db.query();
+		q.constrain(FetchFailedMarker.class);
+		markers = q.execute();
+		assertEquals(1, markers.size());
+		assertEquals(marker, markers.next());
+		
+		q = db.query();
+		q.constrain(MessageList.class);
+		messageLists = q.execute();
+		assertEquals(1, messageLists.size());
+		assertEquals(messageLists.next().getID(), marker.getMessageListID());
 	}
 }

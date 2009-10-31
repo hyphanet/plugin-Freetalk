@@ -64,6 +64,13 @@ public class WoTMessageManager extends MessageManager {
 		
 		mRequestClient = null;
 	}
+	
+	/**
+	 * Only for being used by the MessageManager itself and by unit tests.
+	 */
+	protected synchronized void clearExpiredFetchFailedMarkers() {
+		super.clearExpiredFetchFailedMarkers();
+	}
 
 	public WoTOwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, 
 			FTOwnIdentity myAuthor, String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
@@ -143,6 +150,7 @@ public class WoTMessageManager extends MessageManager {
 						marker.setReason(reason);
 						marker.incrementNumberOfRetries();
 						dateOfNextRetry = calculateDateOfNextMessageListFetchRetry(reason, date, marker.getNumberOfRetries());
+						marker.setDate(date);
 						marker.setDateOfNextRetry(dateOfNextRetry);
 					}
 				
