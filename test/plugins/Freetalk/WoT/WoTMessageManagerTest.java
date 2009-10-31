@@ -418,7 +418,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		assertEquals(1, markers.size());
 		assertEquals(marker, markers.next());
 		assertTrue((CurrentTimeUTC.getInMillis() - marker.getDate().getTime()) < 10 * 1000);
-		assertEquals(marker.getDate().getTime() + Math.max(MessageManager.MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY*2, MessageManager.MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY),
+		assertEquals(marker.getDate().getTime() + Math.min(MessageManager.MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY*2, MessageManager.MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY),
 					marker.getDateOfNextRetry().getTime());
 		assertEquals(1, marker.getNumberOfRetries());
 		
