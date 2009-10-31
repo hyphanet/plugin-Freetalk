@@ -497,8 +497,8 @@ public abstract class MessageManager implements Runnable {
 						failedMarker.setReason(reason);
 						failedMarker.incrementNumberOfRetries();
 						Date dateOfNextRetry = calculateDateOfNextMessageFetchRetry(failedMarker.getReason(), date, failedMarker.getNumberOfRetries());
+						failedMarker.setDate(date);
 						failedMarker.setDateOfNextRetry(dateOfNextRetry);
-						
 					} catch(NoSuchFetchFailedMarkerException e1) {
 						Date dateOfNextRetry = calculateDateOfNextMessageFetchRetry(reason, date, 0);
 						failedMarker = new MessageList.MessageFetchFailedMarker(ref, reason, date, dateOfNextRetry);
@@ -528,7 +528,7 @@ public abstract class MessageManager implements Runnable {
 	protected Date calculateDateOfNextMessageFetchRetry(FetchFailedMarker.Reason reason, Date now, int numberOfRetries) {
 		switch(reason) {
 			case DataNotFound:
-				return new Date(now.getTime() + Math.max(MINIMAL_MESSAGE_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGE_FETCH_RETRY_DELAY));
+				return new Date(now.getTime() + Math.min(MINIMAL_MESSAGE_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGE_FETCH_RETRY_DELAY));
 			case ParsingFailed:
 				return new Date(Long.MAX_VALUE);
 			default:
@@ -539,7 +539,7 @@ public abstract class MessageManager implements Runnable {
 	protected Date calculateDateOfNextMessageListFetchRetry(FetchFailedMarker.Reason reason, Date now, int numberOfRetries) {
 		switch(reason) {
 			case DataNotFound:
-				return new Date(now.getTime()  + Math.max(MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY));
+				return new Date(now.getTime()  + Math.min(MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY));
 			case ParsingFailed:
 				return new Date(Long.MAX_VALUE);
 			default:
@@ -617,7 +617,10 @@ public abstract class MessageManager implements Runnable {
 		}
 	}
 	
-	private synchronized void clearExpiredFetchFailedMarkers() {
+	/**
+	 * Only for being used by the MessageManager itself and by unit tests.
+	 */
+	protected synchronized void clearExpiredFetchFailedMarkers() {
 		Logger.normal(this, "Clearing expired FetchFailedMarkers...");
 	
 		Date now = CurrentTimeUTC.get();
@@ -655,12 +658,22 @@ public abstract class MessageManager implements Runnable {
 			}
 		}
 		
-		// FIXME: Remove before release
+		Logger.normal(this, "Finished clearing " + amount + " expired FetchFailedMarkers.");
 		
+		// FIXME: Remove before release
+
 		Query q = db.query();
-		q.constrain(FetchFailedMarker.class);
+		q.constrain(MessageListFetchFailedMarker.class);
 		q.descend("mDateOfNextRetry").constrain(now).greater();
-		Logger.normal(this, "Finished clearing " + amount + " expired FetchFailedMarkers, amount of non-expired markers: " + q.execute().size());
+		ObjectSet<MessageListFetchFailedMarker> markers = q.execute();
+		
+		for(MessageListFetchFailedMarker marker : markers) {
+			try {
+				getMessageList(marker.getMessageListID());
+			} catch(NoSuchMessageListException e) {
+				Logger.error(this, "Invalid MessageListFetchFailedMarker: Date of next retry is in future but there is no ghost message list for it: " + marker);
+			}
+		}
 	}
 	
 	/**
