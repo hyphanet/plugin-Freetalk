@@ -528,7 +528,7 @@ public abstract class MessageManager implements Runnable {
 	protected Date calculateDateOfNextMessageFetchRetry(FetchFailedMarker.Reason reason, Date now, int numberOfRetries) {
 		switch(reason) {
 			case DataNotFound:
-				return new Date(now.getTime() + Math.max(MINIMAL_MESSAGE_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGE_FETCH_RETRY_DELAY));
+				return new Date(now.getTime() + Math.min(MINIMAL_MESSAGE_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGE_FETCH_RETRY_DELAY));
 			case ParsingFailed:
 				return new Date(Long.MAX_VALUE);
 			default:
@@ -539,7 +539,7 @@ public abstract class MessageManager implements Runnable {
 	protected Date calculateDateOfNextMessageListFetchRetry(FetchFailedMarker.Reason reason, Date now, int numberOfRetries) {
 		switch(reason) {
 			case DataNotFound:
-				return new Date(now.getTime()  + Math.max(MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY));
+				return new Date(now.getTime()  + Math.min(MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY));
 			case ParsingFailed:
 				return new Date(Long.MAX_VALUE);
 			default:
