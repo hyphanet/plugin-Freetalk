@@ -104,16 +104,20 @@ public final class FCPInterface implements FredPluginFCP {
                 handleCreateBoard(replysender, params);
             } else if (message.equals("CreateOwnIdentity")) {
                 handleCreateOwnIdentity(replysender, params);
-
-            } else if (message.equals("Status")) {
+            } else if (message.equals("SubscribeToBoard")) {
+            	handleSubscribeToBoard(replysender, params);
+        	} else if (message.equals("UnsubscribeFromBoard")) {
+            	handleUnsubscribeFromBoard(replysender, params);
+        	}
+            else if (message.equals("Status")) {
                 handleStatus(replysender, params);
-
             } else if (message.equals("Ping")) {
                 handlePing(replysender, params);
             } else {
                 throw new Exception("Unknown message (" + message + ")");
             }
-        } catch (final Exception e) {
+        }
+        catch (final Exception e) {
             Logger.error(this, e.toString());
             try {
                 if (!(e instanceof PluginNotFoundException)) {
@@ -543,6 +547,38 @@ public final class FCPInterface implements FredPluginFCP {
         replysender.send(sfs);
     }
 
+    /**
+    * Handle SubscribeToBoard command.
+    * Format of request:
+    *   BoardName=abc
+    *   ID=id
+     * @throws InvalidParameterException 
+    */
+    
+    private void handleSubscribeToBoard(final PluginReplySender replysender, final SimpleFieldSet params) throws InvalidParameterException, NoSuchIdentityException, NoSuchBoardException
+    {
+        final String boardName = getMandatoryParameter(params, "BoardName");
+        final String ownIdentityID = getMandatoryParameter(params, "ID");
+    	mFreetalk.getMessageManager().subscribeToBoard(mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID), boardName);
+    }
+
+
+    /**
+     * Handle UnsubscribeFromBoard command.
+     * Format of request:
+     *   BoardName=abc
+     *   ID=id
+     * @throws InvalidParameterException 
+     */
+     
+     private void handleUnsubscribeFromBoard(final PluginReplySender replysender, final SimpleFieldSet params) throws InvalidParameterException, NoSuchIdentityException, NoSuchBoardException
+     {
+         final String boardName = getMandatoryParameter(params, "BoardName");
+         final String ownIdentityID = getMandatoryParameter(params, "ID");
+     	mFreetalk.getMessageManager().unsubscribeFromBoard(mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID), boardName);
+     }
+
+    
     /**
      * Handle CreateOwnIdentity command.
      * Format of request:
