@@ -56,8 +56,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	public static final String PLUGIN_TITLE = "Freetalk-testing"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
 	public static final String WOT_NAME = "plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "Freetalk";
-	public static final String DATABASE_FILENAME = "freetalk-testing-9.db4o";
-	public static final int DATABASE_FORMAT_VERSION = -91;
+	public static final String DATABASE_FILENAME = "freetalk-testing-10.db4o";
+	public static final int DATABASE_FORMAT_VERSION = -90;
 
 	/* References from the node */
 	

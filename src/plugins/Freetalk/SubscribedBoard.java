@@ -157,7 +157,7 @@ public final class SubscribedBoard extends Board {
     	catch(NoSuchMessageException e) {
     		// If there was no ghost reference, we must store a BoardThreadLink if the new message is a thread 
 			if(newMessage.isThread()) {
-	    		BoardThreadLink threadRef = new BoardThreadLink(this, newMessage, takeFreeMessageIndex());
+	    		BoardThreadLink threadRef = new BoardThreadLink(this, newMessage, takeFreeMessageIndexWithoutCommit());
 	    		threadRef.storeWithoutCommit(db);
 	    		
 	    		// We do not call linkThreadRepliesToNewParent() here because if there was no ghost reference for the new message this means that no replies to
@@ -188,7 +188,7 @@ public final class SubscribedBoard extends Board {
     			messageRef = getReplyLink(newMessage);
     		}
     		catch(NoSuchMessageException e) {
-    			messageRef = new BoardReplyLink(this, newMessage, takeFreeMessageIndex());
+    			messageRef = new BoardReplyLink(this, newMessage, takeFreeMessageIndexWithoutCommit());
     			messageRef.storeWithoutCommit(db);
     		}
     		
@@ -392,13 +392,13 @@ public final class SubscribedBoard extends Board {
     			// that message. The parent thread message will still be displayed as a reply to it's original thread, but it will also appear as a new thread
     			// which is the parent of the message which was passed to this function.
 
-    			BoardThreadLink parentThreadRef = new BoardThreadLink(this, parentThread, takeFreeMessageIndex()); 
+    			BoardThreadLink parentThreadRef = new BoardThreadLink(this, parentThread, takeFreeMessageIndexWithoutCommit()); 
     			parentThreadRef.storeWithoutCommit(db);
     			return parentThreadRef;
     		}
     		catch(NoSuchMessageException ex) { 
     			// The message manager did not find the parentThreadID, so the parent thread was not downloaded yet, we create a ghost thread reference for it.
-    			BoardThreadLink ghostThreadRef = new BoardThreadLink(this, parentThreadID, newMessage.getDate(), takeFreeMessageIndex());
+    			BoardThreadLink ghostThreadRef = new BoardThreadLink(this, parentThreadID, newMessage.getDate(), takeFreeMessageIndexWithoutCommit());
     			ghostThreadRef.storeWithoutCommit(db);
     			return ghostThreadRef;
     		}		

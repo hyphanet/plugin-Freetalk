@@ -336,8 +336,10 @@ public class Board implements Comparable<Board> {
      * @return Returns the next free message index and increments the internal free message index counter - therefore, the message index will be taken even if
      * 	you do not store any message with it. This ensures that deleting the head message cannot cause it's index to be associated with a new, different message.
      */
-	protected synchronized int takeFreeMessageIndex() {
-		return mNextFreeMessageIndex++;
+	protected synchronized int takeFreeMessageIndexWithoutCommit() {
+		int result = mNextFreeMessageIndex++;
+		storeWithoutCommit();
+		return result;
     }
     
     @SuppressWarnings("unchecked")
@@ -372,7 +374,7 @@ public class Board implements Comparable<Board> {
     		Logger.error(this, "addMessage() called for already existing message: " + newMessage);
     	}
     	catch(NoSuchMessageException e) {
-    		new BoardMessageLink(this, newMessage, takeFreeMessageIndex()).storeWithoutCommit(db);
+    		new BoardMessageLink(this, newMessage, takeFreeMessageIndexWithoutCommit()).storeWithoutCommit(db);
     	}
     }
     
