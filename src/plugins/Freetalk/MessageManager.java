@@ -255,6 +255,9 @@ public abstract class MessageManager implements Runnable {
 						messageList.deleteWithoutCommit();
 					}
 					
+					// FIXME: We do not lock the boards. Ensure that the UI cannot re-use the board by calling storeAndCommit somewhere even though the board
+					// has been deleted. This can be ensured by having isStored() checks in all storeAndCommit() functions which use boards.
+					
 					Iterator<SubscribedBoard> iter = subscribedBoardIterator((FTOwnIdentity)identity);
 					while(iter.hasNext()) {
 						SubscribedBoard board = iter.next();
@@ -665,6 +668,7 @@ public abstract class MessageManager implements Runnable {
 		Query q = db.query();
 		q.constrain(MessageListFetchFailedMarker.class);
 		q.descend("mDateOfNextRetry").constrain(now).greater();
+		@SuppressWarnings("unchecked")
 		ObjectSet<MessageListFetchFailedMarker> markers = q.execute();
 		
 		for(MessageListFetchFailedMarker marker : markers) {
@@ -674,6 +678,14 @@ public abstract class MessageManager implements Runnable {
 				Logger.error(this, "Invalid MessageListFetchFailedMarker: Date of next retry is in future but there is no ghost message list for it: " + marker);
 			}
 		}
+		
+		Logger.normal(this, "Number of non-expired MessageListFetchFailedMarker: " + markers.size());
+		
+		q = db.query();
+		q.constrain(MessageFetchFailedMarker.class);
+		q.descend("mDateOfNextRetry").constrain(now).greater();
+		
+		Logger.normal(this, "Number of non-expired MessageFetchFailedMarker: " + q.execute().size());
 	}
 	
 	/**
@@ -1045,6 +1057,7 @@ public abstract class MessageManager implements Runnable {
 	public synchronized void unsubscribeFromBoard(FTOwnIdentity subscriber, String boardName) throws NoSuchBoardException {
 		SubscribedBoard subscribedBoard = getSubscription(subscriber, boardName);
 		
+		synchronized(subscribedBoard) {
 		synchronized(db.lock()) {
 			try {
 				subscribedBoard.deleteWithoutCommit();
@@ -1061,6 +1074,7 @@ public abstract class MessageManager implements Runnable {
 			catch(RuntimeException e) {
 				DBUtil.rollbackAndThrow(db, this, e);
 			}
+		}
 		}
 	}
 	
