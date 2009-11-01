@@ -82,9 +82,13 @@ public final class BoardPage extends WebPageImpl {
 						break;
 					}
 				}
-				threadTitle = maxLength(threadTitle, 40); // TODO: Adjust
+				threadTitle = maxLength(threadTitle, 70); // TODO: Adjust
 
 				HTMLNode titleCell = row.addChild("td", new String[] { "align" }, new String[] { "left" });
+				
+				if(threadReference.wasThreadRead() == false)
+					titleCell = titleCell.addChild("b");
+				
 				titleCell.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showThread?identity=" + mOwnIdentity.getID() + 
 						"&board=" + mBoard.getName() + "&id=" + threadReference.getThreadID(), threadTitle));
 
