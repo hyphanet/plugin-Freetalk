@@ -358,8 +358,11 @@ public class Board implements Comparable<Board> {
      * The purpose of this is:
      * - that the message manager can fill a new {@link SubscribedBoard} with already downloaded messages from it's parent {@link Board}
      * - that the message manager can tell existing subscribed boards to pull new messages from their parent boards. 
+     * 
+     * @throws IllegalArgumentException When trying to add a message which does not belong to this board or trying to add an OwnMessage.
+     * @throws RuntimeException If storing this Board to the database fails. 
      */
-    protected synchronized void addMessage(Message newMessage) {
+    protected synchronized void addMessage(Message newMessage) throws Exception {
     	if(newMessage instanceof OwnMessage) {
     		// We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
     		// successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug

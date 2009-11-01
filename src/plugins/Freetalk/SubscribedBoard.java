@@ -109,8 +109,10 @@ public final class SubscribedBoard extends Board {
     /**
      * Called by the {@link MessageManager} when the parent board has received new messages.
      * Does not delete messages, only adds new messages.
+     * 
+     * @throws Exception If one of the addMessage calls fails. 
      */
-    protected synchronized final void synchronizeWithoutCommit() {
+    protected synchronized final void synchronizeWithoutCommit() throws Exception {
     	for(Board.BoardMessageLink messageLink : mParentBoard.getMessagesAfterIndex(mHighestSynchronizedParentMessageIndex)) {
     		addMessage(messageLink.getMessage());
     		mHighestSynchronizedParentMessageIndex = messageLink.getMessageIndex();
@@ -126,18 +128,15 @@ public final class SubscribedBoard extends Board {
      * Does not store the message, you have to do this before!
      * 
      * Only to be used by the SubscribedBoard itself, the MessageManager should use {@link synchronizeWithoutCommit}. 
+     * 
+     * @throws Exception If wantsMessagesFrom(author of newMessage) fails. 
      */
-    protected synchronized final void addMessage(Message newMessage) {
-    	try {
+    protected synchronized final void addMessage(Message newMessage) throws Exception {
     	if(!mSubscriber.wantsMessagesFrom(newMessage.getAuthor())) {
     		// FIXME: Store a UnwantedMessageLink object for the message and periodically check whether the trust value of the author changed to positive
     		// - then we need to add the unwanted messages of that author.
     		Logger.error(this, "Ignoring message from " + newMessage.getAuthor().getNickname() + " because " + mSubscriber.getNickname() + " does not his messages.");
     		return;
-    	}
-    	}
-    	catch(Exception e) {
-    		throw new RuntimeException(e);
     	}
     	
     	if(newMessage instanceof OwnMessage) {
