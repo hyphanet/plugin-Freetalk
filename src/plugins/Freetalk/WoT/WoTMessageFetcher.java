@@ -114,8 +114,10 @@ public final class WoTMessageFetcher extends MessageFetcher {
 				 * of some of them stalls for so long that the thread re-iterates before onFailure is called which results in the messages
 				 * not being marked as undownloadable. This fairness can be guranteed by either having a THREAD_PERIOD which is high enough (which is 
 				 * difficult because it depends on the node's speed) or randomizing notDownloadedMessageIterator() (the proper solution). */
-				if(fetchCount() >= MAX_PARALLEL_MESSAGE_FETCH_COUNT)
+				if(fetchCount() >= MAX_PARALLEL_MESSAGE_FETCH_COUNT) {
+					Logger.debug(this, "Got " + fetchCount() + "fetches, not fetching any more.");
 					break;
+				}
 				
 				MessageList.MessageReference ref = iter.next();
 				fetchMessage(ref.getMessageList(), ref);
