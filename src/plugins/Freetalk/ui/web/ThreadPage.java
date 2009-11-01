@@ -33,33 +33,57 @@ import freenet.support.api.HTTPRequest;
  */
 public final class ThreadPage extends WebPageImpl {
 
-    private final SubscribedBoard mBoard;
-    private final BoardThreadLink mThread;
+    private final String mBoardName;
+    private final String mThreadID;
 
     private static final DateFormat mLocalDateFormat = DateFormat.getDateTimeInstance();
 
     public ThreadPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchMessageException, NoSuchBoardException {
         super(myWebInterface, viewer, request);
-        mBoard = mFreetalk.getMessageManager().getSubscription(mOwnIdentity, request.getParam("board"));
-        mThread = mBoard.getThreadLink(request.getParam("id")); // FIXME: Synchronization is lacking.
+        mBoardName = request.getParam("board");
+        mThreadID = request.getParam("id");
     }
 
     public final void make() {
         makeBreadcrumbs();
+        try {
         synchronized (mLocalDateFormat) {
-            synchronized(mBoard) {
+        	final SubscribedBoard mBoard = mFreetalk.getMessageManager().getSubscription(mOwnIdentity, mBoardName);
+        	
+        	// Normally, we would have to lock the MessageManager because we call storeAndCommit() on MessageReference objects:
+        	// The board might be deleted between getSubscription() and the synchronized(mBoard) - the storeAndCommit() would result in orphan objects.
+        	// BUT MessageReference.storeAndCommit() does a db.isStored() check and throws if the MessageReference is not stored anymore.
+        	
+        	synchronized(mBoard) {
+            	final BoardThreadLink mThread = mBoard.getThreadLink(mThreadID);
+            	
             	if(mThread.getMessage() != null) {
             		if(mThread.getMessage().isThread() == false)
             			addThreadIsNoThreadWarning();
 
-            		addMessageBox(mThread.getMessage());
+            		addMessageBox(mThread);
             	}
             	else
             		addThreadNotDownloadedWarning();
+            	
+        		if(!mThread.wasThreadRead()) {
+        			mThread.markAsRead();
+        			mThread.markThreadAsRead();
+            		mThread.storeAndCommit();
+        		}
 
-                for(MessageReference reference : mBoard.getAllThreadReplies(mThread.getThreadID(), true))
-                    addMessageBox(reference.getMessage());
+                for(MessageReference reference : mBoard.getAllThreadReplies(mThread.getThreadID(), true)) {
+                    addMessageBox(reference);
+                    
+                    if(!reference.wasRead()) {
+                    	reference.markAsRead();
+                    	reference.storeAndCommit();
+                    }
+                }
             }
+        }
+        } catch(Exception e) {
+        	addAlertBox("The thread could not be displayed").addChild("#", e.toString());
         }
     }
     
@@ -83,7 +107,9 @@ public final class ThreadPage extends WebPageImpl {
     }
 
     /* You have to synchronize on mLocalDateFormat when using this function */
-    private void addMessageBox(Message message) {
+    private void addMessageBox(MessageReference ref) {
+    	Message message = ref.getMessage();
+    	
         HTMLNode table = mContentNode.addChild("table", new String[] {"border", "width" }, new String[] { "0", "100%" });
         HTMLNode row = table.addChild("tr");
         HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width" }, new String[] { "left", "top", "2", "15%" }, "");
@@ -128,7 +154,8 @@ public final class ThreadPage extends WebPageImpl {
         
         authorNode.addChild("#", "Your trust: "+trust);
 
-        HTMLNode title = row.addChild("td", "align", "left", "");
+        HTMLNode title = row.addChild(ref.wasRead() ? "td" : "th", "align", "left", "");
+        
         title.addChild("span", "style", "float:right", mLocalDateFormat.format(message.getDate()));
         if(((WoTOwnIdentity)mOwnIdentity).getAssessed(message) == false) {
             addModButton(title, message, 10, "+");
