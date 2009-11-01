@@ -87,6 +87,8 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			try {
 				DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
 				
+				DBUtil.throwIfNotStored(db, mMessageList);
+				
 				// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 
 				db.store(mURI);
@@ -181,7 +183,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		
 	}
 
-	public static class MessageFetchFailedMarker extends FetchFailedMarker {
+	public static final class MessageFetchFailedMarker extends FetchFailedMarker {
 
 		private final MessageReference mMessageReference;
 		
@@ -193,6 +195,11 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			super(myReason, myDate, myDateOfNextRetry);
 			
 			mMessageReference = myMessageReference;
+		}
+		
+		public void storeWithoutCommit() {
+			DBUtil.throwIfNotStored(mDB, mMessageReference);
+			super.storeWithoutCommit();
 		}
 
 		public MessageReference getMessageReference() {
@@ -293,6 +300,8 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	public synchronized void storeWithoutCommit() {
 		try {
 			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			
+			DBUtil.throwIfNotStored(db, mAuthor);
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 			

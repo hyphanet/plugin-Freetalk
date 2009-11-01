@@ -22,6 +22,18 @@ public class DBUtil {
 		}
 	}
 	
+	public static void throwIfNotStored(ExtObjectContainer db, Object object) {
+		if(object == null) {
+			Logger.error(DBUtil.class, "Mandatory object is null!");
+			throw new RuntimeException("Mandatory object is null!"); 
+		}
+		
+		if(!db.isStored(object)) {
+			Logger.error(object, "Mandatory object is not stored!");
+			throw new RuntimeException("Mandatory object is not stored!");
+		}
+	}
+	
 	public static void checkedDelete(ExtObjectContainer db, Object object) {
 		if(db.isStored(object))
 			db.delete(object);

@@ -643,8 +643,7 @@ public abstract class Message {
 		try {
 			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
 			
-			if(mAuthor == null)
-				throw new RuntimeException("Trying to store a message with mAuthor == null");
+			DBUtil.throwIfNotStored(db, mAuthor);
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 

@@ -84,6 +84,8 @@ public abstract class PersistentTask {
 	public void storeWithoutCommit() {
 		try {
 			DBUtil.checkedActivate(mDB, this, 3); // TODO: Figure out a suitable depth.
+			
+			DBUtil.throwIfNotStored(mDB, mOwner);
 
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 			

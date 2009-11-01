@@ -291,6 +291,9 @@ public class Board implements Comparable<Board> {
         protected void storeWithoutCommit(ExtObjectContainer db) {
         	try {
         		DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+        		DBUtil.throwIfNotStored(db, mBoard);
+        		DBUtil.throwIfNotStored(db, mMessage);
+        		DBUtil.throwIfNotStored(db, mAuthor);
 
         		db.store(this);
         	}
