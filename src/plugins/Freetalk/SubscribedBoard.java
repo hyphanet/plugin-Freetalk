@@ -49,6 +49,12 @@ public final class SubscribedBoard extends Board {
     	super.initializeTransient(myDB, myMessageManager);
     	mParentBoard.initializeTransient(myDB, myMessageManager);
     }
+    
+    protected void storeWithoutCommit() {
+    	DBUtil.throwIfNotStored(db, mSubscriber);
+    	DBUtil.throwIfNotStored(db, mParentBoard);
+    	super.storeWithoutCommit();
+    }
 
 	
 	protected void deleteWithoutCommit() {
@@ -563,9 +569,6 @@ public final class SubscribedBoard extends Board {
 //    	
 //    }
 
-    // FIXME: This class was made static so that it does not store an internal reference to it's Board object because we store that reference in mBoard already,
-    // for being able to access it with db4o queries. Reconsider whether it should really be static: It would be nice if db4o did store an index on mMessageIndex
-    // *per-board*, and not just a global index - the message index is board-local anyway! Does db4o store a per-board index if the class is not static???
     public static abstract class MessageReference {
     	
     	protected final SubscribedBoard mBoard;
@@ -605,7 +608,7 @@ public final class SubscribedBoard extends Board {
     	}
     	
         /** Get the message to which this reference points */
-        public synchronized Message getMessage() {
+        public Message getMessage() {
             /* We do not have to initialize mBoard and can assume that it is initialized because a MessageReference will only be loaded
              * by the board it belongs to. */
         	mBoard.db.activate(this, 3); // FIXME: Figure out a reasonable depth
@@ -624,11 +627,11 @@ public final class SubscribedBoard extends Board {
 			return mWasRead;
 		}
 		
-		public synchronized void markAsRead() {
+		public void markAsRead() {
 			mWasRead = true;
 		}
 		
-		public synchronized void markAsUnread() { 
+		public void markAsUnread() { 
 			mWasRead = false;
 		}
         
@@ -638,6 +641,8 @@ public final class SubscribedBoard extends Board {
         protected void storeWithoutCommit(ExtObjectContainer db) {
         	try {
         		DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+        		DBUtil.throwIfNotStored(db, mBoard);
+        		if(mMessage != null) DBUtil.throwIfNotStored(db, mMessage);
 
         		db.store(this);
         	}
@@ -645,6 +650,24 @@ public final class SubscribedBoard extends Board {
         		DBUtil.rollbackAndThrow(db, this, e);
         	}
         }
+        
+        /**
+         * Does not provide synchronization, you have to lock this Board before calling this function.
+         */
+        public void storeAndCommit() {
+        	ExtObjectContainer db = mBoard.db;
+        	
+        	synchronized(db.lock()) {
+        		try {
+	        		storeWithoutCommit(db);
+	        		db.commit(); Logger.debug(this, "COMMITED.");
+        		}
+        		catch(RuntimeException e) {
+        			DBUtil.rollbackAndThrow(db, this, e);
+        		}
+        	}
+        }
+        
         
     	protected void deleteWithoutCommit(ExtObjectContainer db) {
     		try {
@@ -683,7 +706,7 @@ public final class SubscribedBoard extends Board {
         	return mThreadID;
         }
         
-		public synchronized Date getDate() {
+		public Date getDate() {
 			return mMessageDate;
 		}
 
@@ -724,7 +747,7 @@ public final class SubscribedBoard extends Board {
     		mLastReplyDate = myLastReplyDate;
     	}
     	
-    	protected synchronized void onMessageAdded(Message newMessage) {
+    	protected void onMessageAdded(Message newMessage) {
     		mWasThreadRead = false;
     		
     		Date newDate = newMessage.getDate();
@@ -737,7 +760,6 @@ public final class SubscribedBoard extends Board {
     			return;
     		
     		synchronized(mBoard) {
-    			synchronized(this) {
     	    		// TODO: This assumes that getAllThreadReplies() obtains the sorted order using an index. This is not the case right now. If we do not
     	    		// optimize getAllThreadReplies() we should just iterate over the unsorted replies list and do maximum search.
     				
@@ -745,7 +767,6 @@ public final class SubscribedBoard extends Board {
     				int replyCount = replies.size();
     				
     				mLastReplyDate = replyCount > 0 ? replies.get(replyCount-1).getDate() : mMessageDate;
-    			}
     		}
 
     		// TODO: I decided not to change the "therad was read flag:" If the thread was unread before, then it is probably still unread now.
@@ -753,7 +774,7 @@ public final class SubscribedBoard extends Board {
     	}
     	
     	
-    	public synchronized void removeThreadMessage() {
+    	public void removeThreadMessage() {
     		mMessage = null;
     		
     		// TODO: This assumes that getAllThreadReplies() obtains the sorted order using an index. This is not the case right now. If we do not
@@ -764,7 +785,7 @@ public final class SubscribedBoard extends Board {
     		}
 		}
 		
-		public synchronized Date getLastReplyDate() {
+		public Date getLastReplyDate() {
 			return mLastReplyDate;
 		}
     	
@@ -772,15 +793,14 @@ public final class SubscribedBoard extends Board {
 			return mThreadID;
 		}
 		
-		@Override
-		public synchronized Message getMessage() {
+		public Message getMessage() {
 			if(mMessage == null)
 				return null;
 			
 			return super.getMessage();
 		}
 		
-		public synchronized void setMessage(Message myThread) {
+		public void setMessage(Message myThread) {
 			if(myThread == null)
 				throw new NullPointerException();
 			
