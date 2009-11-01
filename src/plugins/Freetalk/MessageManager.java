@@ -221,10 +221,19 @@ public abstract class MessageManager implements Runnable {
 	public synchronized void onIdentityDeletion(FTIdentity identity) {
 		synchronized(db.lock()) {
 			try {
+				// FIXME: We do not lock the boards. Ensure that the UI cannot re-use the board by calling storeAndCommit somewhere even though the board
+				// has been deleted. This can be ensured by having isStored() checks in all storeAndCommit() functions which use boards.
+				
 				for(Message message : getMessagesBy(identity)) {
 					message.initializeTransient(db, this);
 
 					for(Board board : message.getBoards()) {
+						try {
+							board.deleteMessage(message);
+						} catch (NoSuchMessageException e) {
+							// The message was not added to the board yet, this is normal
+						}
+						
 						Iterator<SubscribedBoard> iter = subscribedBoardIterator(board.getName());
 						while(iter.hasNext()){
 							SubscribedBoard subscribedBoard = iter.next();
@@ -232,6 +241,7 @@ public abstract class MessageManager implements Runnable {
 							try {
 								subscribedBoard.deleteMessage(message);
 							} catch (NoSuchMessageException e) {
+								// The message was not added to the board yet, this is normal
 							}
 						}
 					}
