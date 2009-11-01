@@ -41,14 +41,16 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		
 		mMessageManager = new WoTMessageManager(db, null);
 		
-		Board myBoard = new Board("en.board1");
+		Board myBoard = mMessageManager.getOrCreateBoard("en.board1");
 		HashSet<Board> myBoards = new HashSet<Board>();
 		myBoards.add(myBoard);
-		myBoards.add(new Board("en.board2"));
+		myBoards.add(mMessageManager.getOrCreateBoard("en.board2"));
 		
 		FreenetURI authorRequestSSK = new FreenetURI("SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/");
 		FreenetURI authorInsertSSK = new FreenetURI("SSK@Ykhv0x0K8jtrgOlqWVS4S2Jvmnm64zv5voNjMfz1nYI,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQECAAE/");
 		WoTIdentity myAuthor = new WoTOwnIdentity(WoTIdentity.getIDFromURI(authorRequestSSK), authorRequestSSK, authorInsertSSK, "Nickname");
+		myAuthor.initializeTransient(db, null);
+		myAuthor.storeAndCommit();
 		
 		FreenetURI myThreadRealURI = new FreenetURI("CHK@7qMS7LklYIhbZ88i0~u97lxrLKS2uxNwZWQOjPdXnJw,IlA~FSjWW2mPWlzWx7FgpZbBErYdLkqie1uSrcN~LbM,AAIA--8");
 		String myThreadID = "afe6519b-7fb2-4533-b172-1f966e79d127" + "@" + myAuthor.getID();
@@ -62,6 +64,9 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 			messageReferences.add(new MessageList.MessageReference(myMessageID, mMessageRealURI, board));
 		}
 		WoTMessageList messageList = new WoTMessageList(myAuthor, WoTMessageList.assembleURI(authorRequestSSK, 123), messageReferences);
+		messageList.initializeTransient(db, mMessageManager);
+		messageList.storeWithoutCommit();
+		db.commit();
 		mMessageListID = messageList.getID();
 		
 		List<Attachment> attachments = new ArrayList<Attachment>();

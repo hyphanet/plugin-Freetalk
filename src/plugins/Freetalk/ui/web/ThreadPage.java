@@ -33,29 +33,30 @@ import freenet.support.api.HTTPRequest;
  */
 public final class ThreadPage extends WebPageImpl {
 
-    private final String mBoardName;
+    private final SubscribedBoard mBoard;
     private final String mThreadID;
+    private BoardThreadLink mThread;
 
     private static final DateFormat mLocalDateFormat = DateFormat.getDateTimeInstance();
 
     public ThreadPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchMessageException, NoSuchBoardException {
         super(myWebInterface, viewer, request);
-        mBoardName = request.getParam("board");
+        mBoard = mFreetalk.getMessageManager().getSubscription(mOwnIdentity, request.getParam("board"));
         mThreadID = request.getParam("id");
     }
 
     public final void make() {
-        makeBreadcrumbs();
         try {
         synchronized (mLocalDateFormat) {
-        	final SubscribedBoard mBoard = mFreetalk.getMessageManager().getSubscription(mOwnIdentity, mBoardName);
         	
         	// Normally, we would have to lock the MessageManager because we call storeAndCommit() on MessageReference objects:
         	// The board might be deleted between getSubscription() and the synchronized(mBoard) - the storeAndCommit() would result in orphan objects.
         	// BUT MessageReference.storeAndCommit() does a db.isStored() check and throws if the MessageReference is not stored anymore.
         	
         	synchronized(mBoard) {
-            	final BoardThreadLink mThread = mBoard.getThreadLink(mThreadID);
+            	mThread = mBoard.getThreadLink(mThreadID);
+            	
+            	makeBreadcrumbs();
             	
             	if(mThread.getMessage() != null) {
             		if(mThread.getMessage().isThread() == false)
@@ -82,8 +83,14 @@ public final class ThreadPage extends WebPageImpl {
                 }
             }
         }
-        } catch(Exception e) {
-        	addAlertBox("The thread could not be displayed").addChild("#", e.toString());
+        } catch(NoSuchMessageException e) {
+        	makeBreadcrumbs();
+        	HTMLNode alertBox = addAlertBox("The thread could not be displayed");
+        	alertBox.addChild("p", "It was deleted while you requested it.");
+        	HTMLNode p = alertBox.addChild("p");
+        	
+        	p.addChild("#", "Go back to ");
+        	p.addChild("a", "href", BoardPage.getURI(mBoard)).addChild("#", mBoard.getName()); 
         }
     }
     
@@ -266,7 +273,8 @@ public final class ThreadPage extends WebPageImpl {
         Welcome.addBreadcrumb(trail);
         BoardsPage.addBreadcrumb(trail);
         BoardPage.addBreadcrumb(trail, mBoard);
-        ThreadPage.addBreadcrumb(trail, mBoard, mThread);
+        if(mThread != null)
+        	ThreadPage.addBreadcrumb(trail, mBoard, mThread);
         mContentNode.addChild(trail.getHTMLNode());
     }
 

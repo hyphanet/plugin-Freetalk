@@ -44,17 +44,28 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 	public void setUp() throws Exception {
 		super.setUp();
 		
-		HashSet<Board> myBoards1 = new HashSet<Board>(); myBoards1.add(new Board("en.board1")); myBoards1.add(new Board("en.board2"));
-		HashSet<Board> myBoards2 = new HashSet<Board>(); myBoards2.add(new Board("en.board3")); myBoards2.add(new Board("en.board4"));
-		HashSet<Board> myBoards3 = new HashSet<Board>(); myBoards3.add(new Board("en.board5")); myBoards3.add(new Board("en.board6"));
+		mMessageManager = new WoTMessageManager(db, null);
+		
+		HashSet<Board> myBoards1 = new HashSet<Board>();
+			myBoards1.add(mMessageManager.getOrCreateBoard("en.board1"));
+			myBoards1.add(mMessageManager.getOrCreateBoard("en.board2"));
+			
+		HashSet<Board> myBoards2 = new HashSet<Board>();
+			myBoards2.add(mMessageManager.getOrCreateBoard("en.board3"));
+			myBoards2.add(mMessageManager.getOrCreateBoard("en.board4"));
+		
+		HashSet<Board> myBoards3 = new HashSet<Board>();
+			myBoards3.add(mMessageManager.getOrCreateBoard("en.board5"));
+			myBoards3.add(mMessageManager.getOrCreateBoard("en.board6"));
 		
 		FreenetURI authorRequestSSK = new FreenetURI("SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/");
 		FreenetURI authorInsertSSK = new FreenetURI("SSK@Ykhv0x0K8jtrgOlqWVS4S2Jvmnm64zv5voNjMfz1nYI,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQECAAE/");
 		String authorID = WoTIdentity.getIDFromURI(authorRequestSSK);
 		WoTOwnIdentity myAuthor = new WoTOwnIdentity(authorID, authorRequestSSK, authorInsertSSK, "Nickname");
+		myAuthor.initializeTransient(db, null);
+		myAuthor.storeAndCommit();
 		
-		mMessageManager = new WoTMessageManager(db, null);
-		
+
 		WoTOwnMessage[] messages = new WoTOwnMessage[] {
 			mMessageManager.postMessage(null, null, myBoards1, null, myAuthor, "title1", new Date(2009-1900, 06-1, 01), "text1", null),
 			mMessageManager.postMessage(null, null, myBoards2, null, myAuthor, "title2", new Date(2008-1900, 05-1, 02), "text2", null),

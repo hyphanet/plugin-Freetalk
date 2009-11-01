@@ -140,6 +140,10 @@ public final class BoardPage extends WebPageImpl {
 	}
 
 	public static void addBreadcrumb(BreadcrumbTrail trail, Board board) {
-		trail.addBreadcrumbInfo(board.getName(), Freetalk.PLUGIN_URI + "/showBoard?name=" + board.getName());
+		trail.addBreadcrumbInfo(board.getName(), getURI(board));
+	}
+	
+	public static String getURI(Board board) {
+		return Freetalk.PLUGIN_URI + "/showBoard?name=" + board.getName();
 	}
 }

@@ -87,7 +87,8 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			try {
 				DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
 				
-				DBUtil.throwIfNotStored(db, mMessageList);
+				// We cannot throwIfNotStored because MessageReference objects are usually created within the same transaction of creating the MessageList
+				//DBUtil.throwIfNotStored(db, mMessageList);
 				
 				// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 
@@ -304,13 +305,13 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			DBUtil.throwIfNotStored(db, mAuthor);
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
+			db.store(this);
 			
 			for(MessageReference ref : mMessages) {
 				ref.initializeTransient(db);
 				ref.storeWithoutCommit();
 			}
 			db.store(mMessages, 1);
-			db.store(this);
 		}
 		catch(RuntimeException e) {
 			DBUtil.rollbackAndThrow(db, this, e);
