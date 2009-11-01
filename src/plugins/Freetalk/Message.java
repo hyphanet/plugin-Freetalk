@@ -643,7 +643,13 @@ public abstract class Message {
 		try {
 			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
 			
+			for(Board board : mBoards)
+				DBUtil.throwIfNotStored(db, board);
+			
 			DBUtil.throwIfNotStored(db, mAuthor);
+			
+			if(mMessageList != null)
+				DBUtil.throwIfNotStored(db, mMessageList);
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 
