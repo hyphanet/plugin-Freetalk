@@ -13,6 +13,9 @@ public interface FTOwnIdentity extends FTIdentity {
 	
 	public FreenetURI getInsertURI();
 	
-	public boolean wantsMessagesFrom(FTIdentity identity);
+	/**
+	 * @throws Exception If the decision cannot be made right now. Practically this means that the connection to the WoT plugin is not working right now.
+	 */
+	public boolean wantsMessagesFrom(FTIdentity identity) throws Exception;
 
 }

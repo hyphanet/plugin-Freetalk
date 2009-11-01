@@ -92,8 +92,12 @@ public abstract class IdentityManager implements PrioRunnable {
 		while (iter.hasNext()) {
 			noOwnIdentities = false;
 			FTOwnIdentity oid = iter.next();
-			if (oid.wantsMessagesFrom(identity))
-				return true;
+			try {
+				if (oid.wantsMessagesFrom(identity))
+					return true;
+			} catch(Exception e) {
+				Logger.error(this, "anyOwnIdentityWantsMessagesFrom: wantsMessagesFrom() failed, skipping the current FTOwnIdentity.", e);
+			}
 		}
 
 		return noOwnIdentities ? true : false;

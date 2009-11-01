@@ -56,14 +56,14 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 		return mAssessed.get(message.getID()).booleanValue();
 	}
 
-	public boolean wantsMessagesFrom(FTIdentity identity) {
+	public boolean wantsMessagesFrom(FTIdentity identity) throws Exception {
 		if(!(identity instanceof WoTIdentity))
 			throw new IllegalArgumentException();
 		
 		try {
 			return getScoreFor((WoTIdentity)identity) >= 0;	/* FIXME: this has to be configurable */
 		}
-		catch(Exception e) {
+		catch(NotInTrustTreeException e) {
 			return false;
 		}
 	}

@@ -128,10 +128,16 @@ public final class SubscribedBoard extends Board {
      * Only to be used by the SubscribedBoard itself, the MessageManager should use {@link synchronizeWithoutCommit}. 
      */
     protected synchronized final void addMessage(Message newMessage) {
+    	try {
     	if(!mSubscriber.wantsMessagesFrom(newMessage.getAuthor())) {
     		// FIXME: Store a UnwantedMessageLink object for the message and periodically check whether the trust value of the author changed to positive
     		// - then we need to add the unwanted messages of that author.
+    		Logger.error(this, "Ignoring message from " + newMessage.getAuthor().getNickname() + " because " + mSubscriber.getNickname() + " does not his messages.");
     		return;
+    	}
+    	}
+    	catch(Exception e) {
+    		throw new RuntimeException(e);
     	}
     	
     	if(newMessage instanceof OwnMessage) {
