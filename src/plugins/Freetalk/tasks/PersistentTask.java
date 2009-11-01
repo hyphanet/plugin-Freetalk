@@ -85,7 +85,8 @@ public abstract class PersistentTask {
 		try {
 			DBUtil.checkedActivate(mDB, this, 3); // TODO: Figure out a suitable depth.
 			
-			DBUtil.throwIfNotStored(mDB, mOwner);
+			// We cannot throw because PersistentTasks are usually created within the transaction which is used to create the owner.
+			//DBUtil.throwIfNotStored(mDB, mOwner);
 
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 			
