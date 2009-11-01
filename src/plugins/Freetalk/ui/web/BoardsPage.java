@@ -9,6 +9,7 @@ import java.util.Iterator;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.SubscribedBoard;
+import plugins.Freetalk.SubscribedBoard.MessageReference;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.clients.http.RedirectException;
 import freenet.support.HTMLNode;
@@ -72,13 +73,16 @@ public final class BoardsPage extends WebPageImpl {
 				
 				/* Date of latest message */
 				String latestMessageDate;
+				boolean containsNewUnreadMessages = false;
 				try {
-					latestMessageDate = dateFormat.format(board.getLatestMessageDate());
+					MessageReference latestMessage = board.getLatestMessage();
+					latestMessageDate = dateFormat.format(latestMessage.getMessageDate());
+					containsNewUnreadMessages = (latestMessage.wasRead() == false);
 				} catch(NoSuchMessageException e) {
 					latestMessageDate = "-";
 				}
 				
-				row.addChild("td", new String[] { "align" }, new String[] { "center" }, latestMessageDate);
+				row.addChild(containsNewUnreadMessages ? "th" : "td", new String[] { "align" }, new String[] { "center" }, latestMessageDate);
 			}
 		}
 

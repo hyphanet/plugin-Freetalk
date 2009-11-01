@@ -82,8 +82,13 @@ public final class SubscribedBoard extends Board {
         return mDescription != null ? mDescription : super.getDescription(mSubscriber);
     }
     
+    /**
+     * Gets the reference to the latest message. Does not return ghost thread references - therefore, the returned MessageReference will always
+     * point to a valid Message object.
+     * @throws NoSuchMessageException If the board is empty.
+     */
     @SuppressWarnings("unchecked")
-	public synchronized Date getLatestMessageDate() throws NoSuchMessageException {
+	public synchronized MessageReference getLatestMessage() throws NoSuchMessageException {
     	// TODO: We can probably cache the latest message date in this SubscribedBoard object.
     	
         Query q = db.query();
@@ -92,10 +97,10 @@ public final class SubscribedBoard extends Board {
         q.descend("mMessageDate").orderDescending();
         ObjectSet<MessageReference> allMessages = q.execute();
 
+        // Do not use a constrain() because the case where the latest message has no message object should not happen very often.
         for(MessageReference ref : allMessages) {
-        	final Message message = ref.getMessage();
-        	if(message != null)
-        		return message.getDate();
+        	if(ref.getMessage() != null)
+        		return ref;
         }
         
         throw new NoSuchMessageException();
@@ -614,6 +619,10 @@ public final class SubscribedBoard extends Board {
         	mBoard.db.activate(this, 3); // FIXME: Figure out a reasonable depth
         	mMessage.initializeTransient(mBoard.db, mBoard.mMessageManager);
             return mMessage;
+        }
+        
+        public Date getMessageDate() {
+        	return mMessageDate;
         }
         
         /** Get an unique index number of this message in the board where which the query for the message was executed.

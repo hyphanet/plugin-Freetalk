@@ -95,7 +95,7 @@ public class SelectBoardsPage extends WebPageImpl {
 			
 			while(boards.hasNext()) {
 				Board board = boards.next();
-				row = boardsTable.addChild("tr");
+				row = boardsTable.addChild("tr", "id", board.getName());
 
 				// Name
 				
@@ -128,14 +128,14 @@ public class SelectBoardsPage extends WebPageImpl {
 							board.getName()));
 					
 					try {
-						latestMessageCell.addChild("#", dateFormat.format(subscribedBoard.getLatestMessageDate()));
+						latestMessageCell.addChild("#", dateFormat.format(subscribedBoard.getLatestMessage().getMessageDate()));
 					} catch(NoSuchMessageException e) {
 						latestMessageCell.addChild("#", "-");
 					}
 					
 					messageCountCell.addChild("#", Integer.toString(subscribedBoard.messageCount()));
 					
-					HTMLNode unsubscribeForm = addFormChild(unsubscribeCell, Freetalk.PLUGIN_URI + "/SelectBoards", "Unsubscribe");
+					HTMLNode unsubscribeForm = addFormChild(unsubscribeCell, Freetalk.PLUGIN_URI + "/SelectBoards" + "#" + board.getName(), "Unsubscribe");
 					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID()});
 					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "BoardName", board.getName()});
 					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "submit", "Unsubscribe", "Unsubscribe" });
@@ -146,7 +146,7 @@ public class SelectBoardsPage extends WebPageImpl {
 					latestMessageCell.addChild("#", "-");
 					messageCountCell.addChild("#", "-");
 					
-					HTMLNode subscribeForm = addFormChild(subscribeCell, Freetalk.PLUGIN_URI + "/SelectBoards", "Subscribe");
+					HTMLNode subscribeForm = addFormChild(subscribeCell, Freetalk.PLUGIN_URI + "/SelectBoards" + "#" + board.getName(), "Subscribe");
 					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID()});
 					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "BoardName", board.getName()});
 					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "submit", "Subscribe", "Subscribe" });
