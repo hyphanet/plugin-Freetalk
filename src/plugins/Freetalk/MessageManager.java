@@ -119,7 +119,15 @@ public abstract class MessageManager implements Runnable {
 			while(isRunning) {
 				Logger.debug(this, "Message manager loop running...");
 				
+				// Must be called periodically because it is not called on demand.
 				clearExpiredFetchFailedMarkers();
+				
+				// Is called on demand, normally does not fail, but we call it to make sure.
+				addMessagesToBoards();
+				
+				// Is called on demand and CAN fail because SubscribedBoard.addeMessage() tries to query the Score of the author from WoT and this can
+				// fail due to connectivity issues (and currently most likely due to bugs in PluginTalker and especially BlockingPluginTalker!)
+				synchronizeSubscribedBoards();
 				
 				Logger.debug(this, "Message manager loop finished.");
 
@@ -367,18 +375,24 @@ public abstract class MessageManager implements Runnable {
 			
 			// TODO: Instead of calling it immediately, schedule it to be executed in a few seconds. So if we receive a bunch of messages at once, they'll
 			// be bulk-added.
-			addMessagesToBoards();
-			synchronizeSubscribedBoards();
+			if(addMessagesToBoards())
+				synchronizeSubscribedBoards();
 		}
 	}
 	
+	/**
+	 * 
+	 * @return True if there was at least one message which was linked in. False if no new messages were discovered.
+	 */
 	@SuppressWarnings("unchecked")
-	private synchronized void addMessagesToBoards() {
+	private synchronized boolean addMessagesToBoards() {
 		Query q = db.query();
 		q.constrain(Message.class);
 		q.descend("mWasLinkedIn").constrain(false);
 		q.constrain(OwnMessage.class).not();
 		ObjectSet<Message> invisibleMessages = q.execute();
+		
+		boolean addedMessages = false;
 		
 		for(Message message : invisibleMessages) {
 			message.initializeTransient(db, this);
@@ -392,15 +406,15 @@ public abstract class MessageManager implements Runnable {
 					try {
 						board.addMessage(message);
 						db.commit(); Logger.debug(this, "COMMITED.");
+						addedMessages = true;
 					}
-					catch(RuntimeException e) {
+					catch(Exception e) {
 						allSuccessful = false;
-						db.rollback(); Logger.error(this, "ROLLED BACK: Adding message to board failed", e);
+						db.rollback(); Logger.error(this, "ROLLED BACK: Adding message to board failed", e);						
 					}
 				}
 				}
 				}
-
 			}
 			
 			if(allSuccessful) {
@@ -412,6 +426,8 @@ public abstract class MessageManager implements Runnable {
 				}
 			}
 		}
+		
+		return addedMessages;
 	}
 	
 	private synchronized void synchronizeSubscribedBoards() {
@@ -1047,13 +1063,13 @@ public abstract class MessageManager implements Runnable {
 
 							return subscribedBoard;
 						}
-						catch(RuntimeException error) {
-							db.rollback(); Logger.error(this, "subscribeToBoard failed", error);
-							throw error;
-						}
 						catch(InvalidParameterException error) {
 							db.rollback(); Logger.error(this, "subscribeToBoard failed", error);
 							throw error;							
+						}
+						catch(Exception error) {
+							db.rollback(); Logger.error(this, "subscribeToBoard failed", error);
+							throw new RuntimeException(error);
 						}
 					}
 				}
