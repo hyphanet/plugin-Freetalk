@@ -168,7 +168,6 @@ public class WoTMessageManager extends MessageManager {
 					Logger.error(this, "ROLLED BACK: Error while marking a message list as 'download failed'", ex);
 				}
 			}
-
 	}
 	
 	public synchronized void onOwnMessageInserted(String id, FreenetURI realURI) throws NoSuchMessageException {
@@ -343,17 +342,17 @@ public class WoTMessageManager extends MessageManager {
 	}
 
 	/**
-	 * Get the next free index for an WoTOwnMessageList. You have to synchronize on this WoTMessageManager while creating an WoTOwnMessageList, this
+	 * Get the next free index for an OwnMessageList. You have to synchronize on this MessageManager while creating an OwnMessageList, this
 	 * function does not provide synchronization.
 	 */
 	@SuppressWarnings("unchecked")
 	public int getFreeOwnMessageListIndex(WoTOwnIdentity messageAuthor)  {
 		Query q = db.query();
-		/* We query for WoTMessageList and not WoTOwnMessageList because the user might have deleted his own messages or lost his database */
-		q.constrain(WoTMessageList.class);
+		/* We query for MessageList and not OwnMessageList because the user might have deleted his own messages or lost his database */
+		q.constrain(MessageList.class);
 		q.descend("mAuthor").constrain(messageAuthor).identity();
 		q.descend("mIndex").orderDescending(); // FIXME: This is inefficient!
-		ObjectSet<WoTMessageList> result = q.execute();
+		ObjectSet<MessageList> result = q.execute();
 		
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
