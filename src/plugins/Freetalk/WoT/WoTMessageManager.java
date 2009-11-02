@@ -172,10 +172,10 @@ public class WoTMessageManager extends MessageManager {
 	}
 	
 	public synchronized void onOwnMessageInserted(String id, FreenetURI realURI) throws NoSuchMessageException {
+		WoTOwnMessage message = (WoTOwnMessage) getOwnMessage(id);
+		synchronized(message) {
 		synchronized(db.lock()) {
 			try {
-				WoTOwnMessage message = (WoTOwnMessage) getOwnMessage(id);
-
 				message.markAsInserted(realURI);
 				addMessageToMessageList(message);
 				db.commit(); Logger.debug(this, "COMMITED.");
@@ -184,6 +184,7 @@ public class WoTMessageManager extends MessageManager {
 				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
 				throw e;
 			}
+		}
 		}
 	}
 	
@@ -199,6 +200,7 @@ public class WoTMessageManager extends MessageManager {
 		
 		for(WoTOwnMessageList list : generalGetOwnMessageListIterable(query)) {
 			try {
+				// FIXME: list.addMessage is synchronized and the caller of this function synchronizes on db.lock() - wrong order! This could cause deadlocks.
 				list.addMessage(message);
 				Logger.debug(this, "Added own message " + message + " to list " + list);
 				return;
@@ -212,6 +214,7 @@ public class WoTMessageManager extends MessageManager {
 		WoTOwnIdentity author = (WoTOwnIdentity)message.getAuthor();
 		WoTOwnMessageList list = new WoTOwnMessageList(author, getFreeOwnMessageListIndex(author));
 		list.initializeTransient(db, this);
+		// FIXME: list.addMessage is synchronized and the caller of this function synchronizes on db.lock() - wrong order! This could cause deadlocks.
 		list.addMessage(message);
 		list.storeWithoutCommit();
 		Logger.debug(this, "Found no list with free space, created the new list " + list.getID() + " for own message " + message.getID());
@@ -340,7 +343,7 @@ public class WoTMessageManager extends MessageManager {
 	}
 
 	/**
-	 * Get the next free index for an WoTOwnMessageList. You have to synchronize on WoTOwnMessageList.class while creating an WoTOwnMessageList, this
+	 * Get the next free index for an WoTOwnMessageList. You have to synchronize on this WoTMessageManager while creating an WoTOwnMessageList, this
 	 * function does not provide synchronization.
 	 */
 	@SuppressWarnings("unchecked")
