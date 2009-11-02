@@ -79,6 +79,10 @@ public final class WebInterface {
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+			
+			if(!mSessionManager.sessionExists(context))
+				throw new RedirectException(logIn);
+			
 			return new Welcome(webInterface, getLoggedInOwnIdentity(context), req);
 		}
 
@@ -194,7 +198,7 @@ public final class WebInterface {
 				throw new RedirectException(logIn);
 			}
 
-			writeTemporaryRedirect(ctx, "Login successful, redirecting to the board overview", Freetalk.PLUGIN_URI + "/SubscribedBoards");
+			writeTemporaryRedirect(ctx, "Login successful, redirecting to home page", Freetalk.PLUGIN_URI + "/");
 		}
 
 		@Override
@@ -203,11 +207,6 @@ public final class WebInterface {
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
 
 			return new LogInPage(webInterface , req);
-		}
-		
-		@Override
-		public Toadlet showAsToadlet() {
-			return homeToadlet;
 		}
 		
 		@Override
@@ -551,8 +550,8 @@ public final class WebInterface {
 		identitiesToadlet = new IdentitiesWebInterfaceToadlet(null, this, clientCore, "identities");
 		logOutToadlet = new LogOutWebInterfaceToadlet(null, this, clientCore, "LogOut");
 		
-		container.register(logInToadlet, "Discussion", Freetalk.PLUGIN_URI+"/", true, "Log in", "Log in", false, logInToadlet);
-		container.register(homeToadlet, "Discussion", Freetalk.PLUGIN_URI+"/Home", true, "Home", "Home page", false, homeToadlet);
+		container.register(homeToadlet, "Discussion", Freetalk.PLUGIN_URI+"/", true, "Home", "Home page", false, homeToadlet);
+		container.register(logInToadlet, "Discussion", Freetalk.PLUGIN_URI+"/LogIn", true, "Log in", "Log in", false, logInToadlet);
 		container.register(subscribedBoardsToadlet, "Discussion", Freetalk.PLUGIN_URI+"/SubscribedBoards", true, "Your Boards", "View your subscribed boards", false, subscribedBoardsToadlet);
 		container.register(selectBoardsToadlet, "Discussion", Freetalk.PLUGIN_URI+"/SelectBoards", true, "Select Boards", "Chose the boards which you want to read", false, selectBoardsToadlet);
 		container.register(identitiesToadlet, "Discussion", Freetalk.PLUGIN_URI+"/identities", true, "Identities", "Manage your own and known identities", false, identitiesToadlet);
