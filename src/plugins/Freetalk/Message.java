@@ -648,7 +648,8 @@ public abstract class Message {
 			
 			DBUtil.throwIfNotStored(db, mAuthor);
 			
-			if(mMessageList != null)
+			// The MessageLists of OwnMessages are created within the same transaction as the storeAndCommit so we cannot do throwIfNotStored for them.
+			if(mMessageList != null && !(this instanceof OwnMessage))
 				DBUtil.throwIfNotStored(db, mMessageList);
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
