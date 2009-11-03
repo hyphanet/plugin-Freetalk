@@ -15,7 +15,7 @@ public final class LogInPage extends WebPageImpl {
 
 	public LogInPage(WebInterface myWebInterface, HTTPRequest request) {
 		super(myWebInterface, null, request);
-		// TODO Auto-generated constructor stub
+
 	}
 
 	public void make() throws RedirectException {
@@ -52,6 +52,12 @@ public final class LogInPage extends WebPageImpl {
 			selectBox.addChild("option", "value", ownIdentity.getID(), ownIdentity.getShortestUniqueName(40));
 		}
 		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Log in" });
+	}
+	
+	protected static final void addLoginButton(WebPageImpl page, HTMLNode contentNode, FTOwnIdentity identity) {
+		HTMLNode logInForm = page.addFormChild(contentNode, Freetalk.PLUGIN_URI + "/LogIn", "LogIn");
+		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", identity.getID() });
+		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Log in" });
 	}
 	
 	private void makeCreateIdentityBox() {

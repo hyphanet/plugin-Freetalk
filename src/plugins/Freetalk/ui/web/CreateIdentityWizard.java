@@ -11,8 +11,9 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 public class CreateIdentityWizard extends WebPageImpl {
-
+	
 	/* Step 1: Choose URI */
+	private Boolean mGenerateRandomSSK = null; 
 	private FreenetURI[] mIdentityURI = null; /*
 											 * insert URI at index 0 and request
 											 * URI at index 1
@@ -44,43 +45,41 @@ public class CreateIdentityWizard extends WebPageImpl {
 	 * readable: Maybe separate it into several functions
 	 */
 	private void makeCreateIdentityBox() {
-		HTMLNode createBox = addContentBox("Create an own identity");
-		HTMLNode createForm = addFormChild(createBox, Freetalk.PLUGIN_URI + "/CreateIdentity", "CreateIdentity");
+		HTMLNode wizardBox = addContentBox("Create an own identity");
+		HTMLNode backForm = addFormChild(wizardBox, Freetalk.PLUGIN_URI + "/CreateIdentity", "CreateIdentity");
+		HTMLNode createForm = addFormChild(wizardBox, Freetalk.PLUGIN_URI + "/CreateIdentity", "CreateIdentity");
 		
-		boolean randomSSK = false;
 		Exception requestURIproblem = null;
 		Exception insertURIproblem = null;
 		Exception nicknameProblem = null;
 		
 		/* ======== Stage 1: Parse the passed form data ====================================================================================== */
 		
-		int previousStep = mRequest.isPartSet("Step") ? Integer.parseInt(mRequest.getPartAsString("Step", 1)) : 0;
+		int requestedStep = mRequest.isPartSet("Step") ? Integer.parseInt(mRequest.getPartAsString("Step", 1)) : 1;
 		
 		/* Parse the "Generate random SSK?" boolean specified in step 1 */
-		if(mRequest.isPartSet("GenerateRandomSSK")) {
-			randomSSK = mRequest.getPartAsString("GenerateRandomSSK", 5).equals("true");
-			if(randomSSK)
-				mIdentityURI = mFreetalk.getPluginRespirator().getHLSimpleClient().generateKeyPair("");
-		}
-		
+		if(mRequest.isPartSet("GenerateRandomSSK"))
+			mGenerateRandomSSK = mRequest.getPartAsString("GenerateRandomSSK", 5).equals("true");
+
 		/* Parse the URI specified in step 1 */
 		if(mRequest.isPartSet("RequestURI") && mRequest.isPartSet("InsertURI")) {
-			assert(randomSSK == false);
-			
 			mIdentityURI = new FreenetURI[2];
-			
+
 			try { mIdentityURI[0] = new FreenetURI(mRequest.getPartAsString("InsertURI", 256)); }
 			catch(Exception e) { insertURIproblem = e; }
-			
+
 			try { mIdentityURI[1] = new FreenetURI(mRequest.getPartAsString("RequestURI", 256)); }
 			catch(Exception e) { requestURIproblem = e; }
-			
+
 			if(insertURIproblem != null || requestURIproblem != null)
 				mIdentityURI = null;
-			
+
 			/* FIXME: Check whether the URI pair is correct, i.e. if the insert URI really is one, if the request URI really is one and
 			 * if the two belong together. How to do this? */
 		}
+
+		if(mGenerateRandomSSK != null && mGenerateRandomSSK && mIdentityURI == null)
+			mIdentityURI = mFreetalk.getPluginRespirator().getHLSimpleClient().generateKeyPair("");
 		
 		/* Parse the nickname specified in step 2 */
 		if(mRequest.isPartSet("Nickname")) {
@@ -95,66 +94,86 @@ public class CreateIdentityWizard extends WebPageImpl {
 		}
 		
 		/* Parse the preferences specified in step 3 */
-		if(previousStep == 3) { /* We cannot just use isPartSet("PublishTrustList") because it won't be set if the checkbox is unchecked */
+		if(requestedStep > 3) { /* We cannot just use isPartSet("PublishTrustList") because it won't be set if the checkbox is unchecked */
 			if(mRequest.isPartSet("PublishTrustList"))
 				mIdentityPublishesTrustList = mRequest.getPartAsString("PublishTrustList", 5).equals("true");
 			else
 				mIdentityPublishesTrustList = false;
 		}
 		
+		/* ======== Stage 2: Check for missing data and correct requestedStep  =============================================================== */
 		
-		/* ======== Stage 2: Display the wizard stage at which we are ======================================================================== */
+		if(requestedStep > 1 && mIdentityURI == null) {
+			requestedStep = 1;
+		} else if(requestedStep > 2 && mIdentityNickname == null) {
+			requestedStep = 2;
+		} else if(requestedStep > 3 && mIdentityPublishesTrustList == null) {
+			requestedStep = 3;
+		}
+		
+		/* ======== Stage 3: Display the wizard stage at which we are ======================================================================== */
 		
 		/* Step 1: URI */
-		if(mIdentityURI == null) {
+		if(requestedStep == 1) {
+			addHiddenFormData(createForm, requestedStep, requestedStep + 1);
+			
 			HTMLNode chooseURIbox = getContentBox("Step 1 of 3: Choose the SSK URI");
 			createForm.addChild(chooseURIbox);
 			
 			chooseURIbox.addChild("p", "The SSK URI of your identity is a public-private keypair which uniquely identifies your identity " +
 					"on the network. You can either let Freenet generate a new, random one for you or enter an existing SSK URI pair - for " +
 					"example if you own a Freesite you can re-use it's URI to show others that your identity belongs to your Freesite.");
+			
+			HTMLNode randomRadio = chooseURIbox.addChild("p");
+			HTMLNode notRandomRadio = chooseURIbox.addChild("p");
+			
 		
-			if(!mRequest.isPartSet("GenerateRandomSSK")) {
-				HTMLNode p = chooseURIbox.addChild("p");
-				p.addChild("input", 	new String[] { "type", "name", "value" , "checked"},
-										new String[] { "radio", "GenerateRandomSSK" , "true", "checked"});
-				p.addChild("#", "Generate a new, random SSK keypair for the identity.");
-				
-				p = chooseURIbox.addChild("p");
-				p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "GenerateRandomSSK" , "false"});
-				p.addChild("#", "I want to use an existing SSK URI keypair for the identity.");
+			if(mGenerateRandomSSK == null || mGenerateRandomSSK == true) {
+				randomRadio.addChild("input", 	new String[] { "type", "name", "value" , "checked"},
+												new String[] { "radio", "GenerateRandomSSK" , "true", "checked"});
+								
+				notRandomRadio.addChild("input",	new String[] { "type", "name", "value" },
+													new String[] { "radio", "GenerateRandomSSK" , "false"});
 			} else {
-				assert(randomSSK == false);
-				
-				HTMLNode p = chooseURIbox.addChild("p");
-				p.addChild("input", new String[] { "type", "name", "value", "checked"},
-									new String[] { "radio", "GenerateRandomSSK" , "false", "checked"});
-				p.addChild("#", "I want to use an existing SSK URI keypair for the identity.");
 
+				randomRadio.addChild("input", 	new String[] { "type", "name", "value"},
+												new String[] { "radio", "GenerateRandomSSK" , "true",});
+				
+				notRandomRadio.addChild("input",	new String[] { "type", "name", "value", "checked"},
+													new String[] { "radio", "GenerateRandomSSK" , "false", "checked"});
+			}
+			
+			randomRadio.addChild("#", "Generate a new, random SSK keypair for the identity.");
+			notRandomRadio.addChild("#", "I want to use an existing SSK URI keypair for the identity.");
+
+			if(mGenerateRandomSSK != null && mGenerateRandomSSK == false) {
+				HTMLNode enterParagraph = notRandomRadio.addChild("p", "Please enter the SSK URI pair:");
+				
 				if(requestURIproblem != null) {
-					p.addChild("p", "style", "color: red;")
-					.addChild("#", "Request URI error: " + requestURIproblem.getLocalizedMessage());
+					enterParagraph.addChild("br");
+					enterParagraph.addChild("div", "style", "color: red;", "Request URI error: " + requestURIproblem.getLocalizedMessage());
 				}
 				
 				if(insertURIproblem != null) {
-					p.addChild("p", "style", "color: red;").
-					addChild("#", "Insert URI error: " + insertURIproblem.getLocalizedMessage());
+					enterParagraph.addChild("br");
+					enterParagraph.addChild("div", "style", "color: red;", "Insert URI error: " + insertURIproblem.getLocalizedMessage());
 				}
+			
+				enterParagraph.addChild("br");
+				enterParagraph.addChild("#", "Request URI: ");
+				enterParagraph.addChild("input",	new String[] { "type", "name", "size", "value" },
+													new String[] { "text", "RequestURI", "70", mRequest.getPartAsString("RequestURI", 256) });
 
-				p.addChild("#", "Please enter the SSK URI pair:");
-				p.addChild("br"); chooseURIbox.addChild("#", "Request URI: ");
-				p.addChild("input",	new String[] { "type", "name", "size", "value" },
-									new String[] { "text", "RequestURI", "70", mRequest.getPartAsString("RequestURI", 256) });
-
-				p.addChild("br"); chooseURIbox.addChild("#", "Insert URI: ");
-				p.addChild("input",	new String[] { "type", "name", "size", "value" },
-									new String[] { "text", "InsertURI", "70", mRequest.getPartAsString("InsertURI", 256) });
+				enterParagraph.addChild("br");
+				enterParagraph.addChild("#", "Insert URI: ");
+				enterParagraph.addChild("input",	new String[] { "type", "name", "size", "value" },
+													new String[] { "text", "InsertURI", "70", mRequest.getPartAsString("InsertURI", 256) });
 			}
 		}
 		
 		/* Step 2: Nickname */
-		if(mIdentityURI != null && mIdentityNickname == null) {
-			addHiddenFormData(createForm, "2");
+		else if(requestedStep == 2 ) {
+			addHiddenFormData(createForm, requestedStep, requestedStep + 1);
 			
 			HTMLNode chooseNameBox = getContentBox("Step 2 of 3: Choose the Nickname");
 			createForm.addChild(chooseNameBox);
@@ -175,8 +194,8 @@ public class CreateIdentityWizard extends WebPageImpl {
 		}
 		
 		/* Step 3: Preferences */
-		if(mIdentityURI != null && mIdentityNickname != null && mIdentityPublishesTrustList == null) {
-			addHiddenFormData(createForm, "3");
+		else if(requestedStep == 3) {
+			addHiddenFormData(createForm, requestedStep, requestedStep + 1);
 			
 			HTMLNode choosePrefsBox = getContentBox("Step 3 of 3: Choose your preferences");
 			createForm.addChild(choosePrefsBox);
@@ -203,23 +222,27 @@ public class CreateIdentityWizard extends WebPageImpl {
 					"correlate.");
 			
 			p = tlBox.addChild("p");
+			// Do not get checked state from the form data because if a checkbox is not checked then its form data is not set
 			p.addChild("input",	new String[] { "type", "name", "value", "checked" },
 								new String[] { "checkbox", "PublishTrustList", "true", "checked"});
 			p.addChild("#", "Publish the trust list of the identitiy");
 		}
 		
-		if(mIdentityURI != null && mIdentityNickname != null && mIdentityPublishesTrustList != null) {
-			addHiddenFormData(createForm, "4");
+		/* Step 4: Create the identity */
+		else if(requestedStep == 4) {
+			addHiddenFormData(createForm, requestedStep, requestedStep);
 			
 			try {
 				WoTOwnIdentity id = (WoTOwnIdentity)mFreetalk.getIdentityManager().createOwnIdentity(mIdentityNickname,
 						mIdentityPublishesTrustList, true, mIdentityURI[1], mIdentityURI[0]);
 						
 				HTMLNode summaryBox = getContentBox("Identity created");
-				createForm.addChild(summaryBox);
+				wizardBox.addChild(summaryBox);
 				
-				summaryBox.addChild("a", "href", Freetalk.PLUGIN_URI + "/LogIn?OwnIdentityID=" + id.getID(),
-						"Your identity was successfully created. You can log in with it now."); 
+				summaryBox.addChild("p", "Your identity was successfully created. You can log in with it now.");
+				LogInPage.addLoginButton(this, summaryBox, id);
+				
+				return;
 			}
 			catch(Exception e) {
 				HTMLNode errorBox = getAlertBox("Sorry, there was a problem creating your identity");
@@ -227,12 +250,18 @@ public class CreateIdentityWizard extends WebPageImpl {
 				
 				errorBox.addChild("p", e.getLocalizedMessage());
 			}
-			
-			return; /* TODO: Instead of just returning, provide a "Go back" button if creation fails, etc. */
 		}
 
 
-		createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Continue" });
+		if(requestedStep > 1) { // Step 4 (create the identity) will return; if it was successful so also display "Back" for it
+			addHiddenFormData(backForm, requestedStep, requestedStep - 1);
+			backForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Back" });
+		}
+		
+		if(requestedStep < 4)
+			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Continue" });
+		else // There was an error creating the identity
+			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Try to create it again" });
 	}
 
 	/**
@@ -242,23 +271,37 @@ public class CreateIdentityWizard extends WebPageImpl {
 	 * @param myForm
 	 *            The HTMLNode of the parent form.
 	 */
-	private void addHiddenFormData(HTMLNode myForm, String step) {
-		myForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "Step", step});
+	private void addHiddenFormData(HTMLNode myForm, int currentStep, int nextStep) {
+		myForm.addChild("input", new String[] { "type", "name", "value" },
+								 new String[] { "hidden", "Step", Integer.toString(nextStep)});
 		
-		if(mIdentityURI != null) {
-			myForm.addChild("input",	new String[] { "type", "name", "value" },
-										new String[] { "hidden", "InsertURI", mIdentityURI[0].toString() });
-			myForm.addChild("input",	new String[] { "type", "name", "value" },
-										new String[] { "hidden", "RequestURI", mIdentityURI[1].toString() });
+		boolean backStep = nextStep < currentStep;
+		
+		if(backStep || currentStep != 1) { // Do not overwrite the visible fields with hidden fields.
+			if(mGenerateRandomSSK != null) {
+				myForm.addChild("input",	new String[] { "type", "name", "value" },
+											new String[] { "hidden", "GenerateRandomSSK", mGenerateRandomSSK.toString() });
+			}
+			
+			if(mIdentityURI != null) {
+				myForm.addChild("input",	new String[] { "type", "name", "value" },
+											new String[] { "hidden", "InsertURI", mIdentityURI[0].toString() });
+				myForm.addChild("input",	new String[] { "type", "name", "value" },
+											new String[] { "hidden", "RequestURI", mIdentityURI[1].toString() });
+			}
 		}
 
-		if(mIdentityNickname != null) {
-			myForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "Nickname", mIdentityNickname });
+		if(backStep || currentStep != 2) { // Do not overwrite the visible fields with hidden fields
+			if(mIdentityNickname != null) {
+				myForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "Nickname", mIdentityNickname });
+			}
 		}
 
-		if(mIdentityPublishesTrustList != null) {
-			myForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "PublishTrustList",
-					mIdentityPublishesTrustList.toString() });
+		if(backStep || currentStep != 3) { // Do not overwrite the visible fields with hidden fields
+			if(mIdentityPublishesTrustList != null) {
+				myForm.addChild("input",	new String[] { "type", "name", "value" },
+											new String[] { "hidden", "PublishTrustList", mIdentityPublishesTrustList.toString() });
+			}
 		}
 	}
 
