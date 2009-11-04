@@ -57,28 +57,28 @@ public class PluginTalkerBlocking implements FredPluginTalker {
 		// So we must use two different locks: One for enforcing "one request at once" and one for wait/notifyAll.
 		
 		synchronized(mLock) { 
-		mResult = null;
-		mWaitingForResult = true;
-		mTalker.send(params, data);
+			mResult = null;
+			mWaitingForResult = true;
+			mTalker.send(params, data);
 
-		long startTime = System.currentTimeMillis();
-		
-		while (mResult == null) {
-			try {
-				mLock.wait(TIMEOUT);
-			} catch (InterruptedException e) {
+			long startTime = System.currentTimeMillis();
+
+			while (mResult == null) {
+				try {
+					mLock.wait(TIMEOUT);
+				} catch (InterruptedException e) {
+				}
+
+				if(mResult == null && (System.currentTimeMillis() - startTime) >= TIMEOUT) {
+					mWaitingForResult = false;
+					throw new PluginNotFoundException("Timeout while waiting for reply from target plugin, message was: " + params);
+				}
 			}
-			
-			if(mResult == null && (System.currentTimeMillis() - startTime) >= TIMEOUT) {
-				mWaitingForResult = false;
-				throw new PluginNotFoundException("Timeout while waiting for reply from target plugin, message was: " + params);
-			}
-		}
-		
-		Result result = mResult;
-		mWaitingForResult = false;
-		mResult = null;
-		return result;
+
+			Result result = mResult;
+			mWaitingForResult = false;
+			mResult = null;
+			return result;
 		}
 	}
 
@@ -91,18 +91,18 @@ public class PluginTalkerBlocking implements FredPluginTalker {
 		// I'm marking this as TODO and not as FIXME because timeouts should only happen when something is wrong anyway.
 		
 		synchronized(mLock) { // Synchronized for notifyAll()
-		if(!mWaitingForResult) {
-			Logger.error(this, "sendBlocking() received onReply too late: " + params);
-			return;
-		}
-			
-		if(mResult != null) {
-			Logger.error(this, "sendBlocking() called for a FCP function which sends more than 1 reply, second reply was: " + params);
-			return;
-		}
-		
-		mResult = new Result(params, data);
-		mLock.notifyAll();
+			if(!mWaitingForResult) {
+				Logger.error(this, "sendBlocking() received onReply too late: " + params);
+				return;
+			}
+
+			if(mResult != null) {
+				Logger.error(this, "sendBlocking() called for a FCP function which sends more than 1 reply, second reply was: " + params);
+				return;
+			}
+
+			mResult = new Result(params, data);
+			mLock.notifyAll();
 		}
 	}
 } 
