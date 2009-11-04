@@ -48,6 +48,7 @@ public final class SubscribedBoard extends Board {
     protected void initializeTransient(ExtObjectContainer myDB, MessageManager myMessageManager) {
     	super.initializeTransient(myDB, myMessageManager);
     	mParentBoard.initializeTransient(myDB, myMessageManager);
+    	mSubscriber.initializeTransient(myDB, myMessageManager.getIdentityManager());
     }
     
     protected void storeWithoutCommit() {
