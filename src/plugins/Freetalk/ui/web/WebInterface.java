@@ -538,7 +538,7 @@ public final class WebInterface {
 		
 		mSessionManager = new SessionManager(myURI, logIn);
 		
-		mPageMaker.addNavigationCategory(Freetalk.PLUGIN_URI+"/", "Discussion", "Message boards", mFreetalk);
+		mPageMaker.addNavigationCategory(Freetalk.PLUGIN_URI+"/", "Discussion", "Message boards", mFreetalk, 1);
 		
 		NodeClientCore clientCore = mFreetalk.getPluginRespirator().getNode().clientCore;
 		
