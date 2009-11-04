@@ -305,13 +305,17 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			DBUtil.throwIfNotStored(db, mAuthor);
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
-			db.store(this);
+			
+			// mMessages contains MessageReference objects which keep a reference to this MessageList object
+			// AND this MessageList keeps a reference to mMessages - so there are mutual references. We first store mMessages because it's
+			// the more complex structure. FIXME: I hope that the implicit storage of this MessageList by ref.storeWithoutCommit() does not hurt?
 			
 			for(MessageReference ref : mMessages) {
 				ref.initializeTransient(db);
 				ref.storeWithoutCommit();
 			}
 			db.store(mMessages, 1);
+			db.store(this);
 		}
 		catch(RuntimeException e) {
 			DBUtil.rollbackAndThrow(db, this, e);
