@@ -13,7 +13,13 @@ import freenet.support.api.Bucket;
 
 public class PluginTalkerBlocking implements FredPluginTalker {
 	
+	public static final long TIMEOUT = 10 * 1000;
+	
 	private PluginTalker mTalker;
+	
+	private final Object mLock = new Object();
+	
+	private volatile boolean mWaitingForResult = false;
         
 	private volatile Result mResult = null;
 
@@ -39,30 +45,65 @@ public class PluginTalkerBlocking implements FredPluginTalker {
 	 */
 	public synchronized Result sendBlocking(SimpleFieldSet params, Bucket data) throws PluginNotFoundException {
 		assert(mResult == null);
+		assert(mWaitingForResult == false);
 		
+		// The "synchronized" prefix of sendBlocking ensures that only 1 send is running at once. This is necessary because the onReply will not receive
+		// any information which could be used to tell to WHICH request the reply belongs.
+		
+		// We must synchronize on a different lock here: If we used the same lock which locks the entrance of sendBlocking(), onReply would call notifyAll()
+		// which would NOT wake up threads which are in wait() first, it might as well wake up another thread which is waiting to enter sendBlocking.
+		// This would cause another request to be sent while the sendBlocking() of the first request was not finished, the resulting call to onReply() could
+		// overwrite the result of the first request with the result of the second one. Therefore, sendBlocking would return the wrong result.
+		// So we must use two different locks: One for enforcing "one request at once" and one for wait/notifyAll.
+		
+		synchronized(mLock) { 
+		mResult = null;
+		mWaitingForResult = true;
 		mTalker.send(params, data);
 
-		while (mResult == null /* TODO: or timeout */) {
+		long startTime = System.currentTimeMillis();
+		
+		while (mResult == null) {
 			try {
-				wait();
+				mLock.wait(TIMEOUT);
 			} catch (InterruptedException e) {
+			}
+			
+			if(mResult == null && (System.currentTimeMillis() - startTime) >= TIMEOUT) {
+				mWaitingForResult = false;
+				throw new PluginNotFoundException("Timeout while waiting for reply from target plugin, message was: " + params);
 			}
 		}
 		
 		Result result = mResult;
+		mWaitingForResult = false;
 		mResult = null;
 		return result;
+		}
 	}
 
-	/* Synchronized because notifyAll() will otherwise throw IllegalMonitorStateException */
-	public synchronized void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data) {
+	
+	public void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data) {
+		
+		// TODO: This has one more synchronization issue: If an old request times out and it's sendBlocking throws an exception therefore,
+		// the next call to sendBlocking might receive the late answer to the previous call as reply - that is the wrong reply!
+		// What is lacking in the FCP design is a unique ID for each request.
+		// I'm marking this as TODO and not as FIXME because timeouts should only happen when something is wrong anyway.
+		
+		synchronized(mLock) { // Synchronized for notifyAll()
+		if(!mWaitingForResult) {
+			Logger.error(this, "sendBlocking() received onReply too late: " + params);
+			return;
+		}
+			
 		if(mResult != null) {
 			Logger.error(this, "sendBlocking() called for a FCP function which sends more than 1 reply, second reply was: " + params);
 			return;
 		}
 		
 		mResult = new Result(params, data);
-		notifyAll();
+		mLock.notifyAll();
+		}
 	}
 } 
 
