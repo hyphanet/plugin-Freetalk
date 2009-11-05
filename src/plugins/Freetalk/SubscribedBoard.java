@@ -838,6 +838,7 @@ public final class SubscribedBoard extends Board {
 		}
 		
 		public void markThreadAsUnread() {
+			markAsUnread();
 			mWasThreadRead = false;
 		}
 		

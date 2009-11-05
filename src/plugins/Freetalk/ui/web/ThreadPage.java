@@ -6,6 +6,7 @@ package plugins.Freetalk.ui.web;
 import java.text.DateFormat;
 import java.util.List;
 
+import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
@@ -36,13 +37,25 @@ public final class ThreadPage extends WebPageImpl {
     private final SubscribedBoard mBoard;
     private final String mThreadID;
     private BoardThreadLink mThread;
+    private final boolean mMarktThreadAsUnread;
 
     private static final DateFormat mLocalDateFormat = DateFormat.getDateTimeInstance();
 
     public ThreadPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchMessageException, NoSuchBoardException {
         super(myWebInterface, viewer, request);
-        mBoard = mFreetalk.getMessageManager().getSubscription(mOwnIdentity, request.getParam("board"));
-        mThreadID = request.getParam("id");
+        
+        String boardName = request.getParam("BoardName");
+        if(boardName.length() == 0) // Also allow POST requests.
+        	boardName = request.getPartAsString("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH);
+        
+        String threadID = request.getParam("ThreadID");
+        if(threadID.length() == 0)
+        	threadID = request.getPartAsString("ThreadID", 256); // TODO: Use a constant for max thread ID length
+        
+        mMarktThreadAsUnread = mRequest.isPartSet("MarkThreadAsUnread");
+        
+        mBoard = mFreetalk.getMessageManager().getSubscription(mOwnIdentity, boardName);
+        mThreadID = threadID;
     }
 
     public final void make() {
@@ -57,6 +70,11 @@ public final class ThreadPage extends WebPageImpl {
             	mThread = mBoard.getThreadLink(mThreadID);
             	
             	makeBreadcrumbs();
+           
+            	if(mMarktThreadAsUnread && mThread.wasThreadRead()) { // Mark thread as unread if requested.
+        			mThread.markThreadAsUnread();
+        			mThread.storeAndCommit();
+        		}
             	
             	if(mThread.getMessage() != null) {
             		if(mThread.getMessage().isThread() == false)
@@ -65,20 +83,25 @@ public final class ThreadPage extends WebPageImpl {
             		addMessageBox(mThread);
             	}
             	else
-            		addThreadNotDownloadedWarning();
+            		addThreadNotDownloadedWarning(mThread);
             	
-        		if(!mThread.wasThreadRead()) {
-        			mThread.markAsRead();
-        			mThread.markThreadAsRead();
-            		mThread.storeAndCommit();
+        		if(!mMarktThreadAsUnread && !mThread.wasThreadRead()) { // After displaying it to the user, mark it as read 
+	        		mThread.markAsRead();
+	        		mThread.markThreadAsRead();
+	            	mThread.storeAndCommit();
         		}
 
                 for(MessageReference reference : mBoard.getAllThreadReplies(mThread.getThreadID(), true)) {
-                    addMessageBox(reference);
-                    
-                    if(!reference.wasRead()) {
-                    	reference.markAsRead();
-                    	reference.storeAndCommit();
+                	if(mMarktThreadAsUnread && reference.wasRead()) { // If requested, mark the messages of the thread as unread
+                    	reference.markAsUnread();
+                     	reference.storeAndCommit();
+                    }
+                	
+                	addMessageBox(reference);
+
+                    if(!mMarktThreadAsUnread && !reference.wasRead()) { // After displaying the messages to the user, mark them as read
+	                    reference.markAsRead();
+	                   	reference.storeAndCommit();
                     }
                 }
             }
@@ -94,8 +117,24 @@ public final class ThreadPage extends WebPageImpl {
         }
     }
     
-    private void addThreadNotDownloadedWarning() {
-    	addAlertBox("Thread not downloaded").addChild("div", "The parent thread of these messages was not downloaded yet.");
+    private void addThreadNotDownloadedWarning(BoardThreadLink ref) {
+        HTMLNode table = mContentNode.addChild("table", new String[] {"border", "width" }, new String[] { "0", "100%" });
+        HTMLNode row = table.addChild("tr");
+        HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width" }, new String[] { "left", "top", "2", "15%" }, "");
+    	// FIXME: The author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out
+    	// what the proper place for a function "getIdentityIDFromThreadID" is and whether I have already written one which can do that, and if
+    	// yes, where it is.
+        authorNode.addChild("b").addChild("i").addChild("#", "Author unknown");
+
+        HTMLNode title = row.addChild(ref.wasRead() ? "td" : "th", "align", "left", "");
+
+        addMarkThreadAsUnreadButton(title, (BoardThreadLink)ref);
+        
+        title.addChild("b", "Thread not downloaded");
+        
+        row = table.addChild("tr");
+        HTMLNode text = row.addChild("td", "align", "left", "");
+        text.addChild("div", "class", "infobox-error", "The parent thread of these messages was not downloaded yet.");
     }
     
     private void addThreadIsNoThreadWarning() {
@@ -104,8 +143,7 @@ public final class ThreadPage extends WebPageImpl {
     	div.addChild("#", "The author of the second message below replied to the first message stating that it should become a new thread, the first message was"
     			+ " not intended to be a thread by it's author, it was a reply to ");
     	try {
-			div.addChild("a", "href",  Freetalk.PLUGIN_URI + "/showThread?board=" + mBoard.getName() + "&id=" + mThread.getMessage().getThreadID())
-			.addChild("#", "this");
+			div.addChild("a", "href",  getURI(mBoard.getName(), mThread.getMessage().getThreadID())).addChild("#", "this");
 		} catch (NoSuchMessageException e) {
 			throw new IllegalArgumentException("SHOULD NOT HAPPEN");
 		}
@@ -163,13 +201,19 @@ public final class ThreadPage extends WebPageImpl {
 
         HTMLNode title = row.addChild(ref.wasRead() ? "td" : "th", "align", "left", "");
         
-        title.addChild("span", "style", "float:right", mLocalDateFormat.format(message.getDate()));
+        title.addChild("span", "style", "float:right; margin-left:10px", mLocalDateFormat.format(message.getDate()));
+        
+        if(ref instanceof BoardThreadLink)
+        	addMarkThreadAsUnreadButton(title, (BoardThreadLink)ref);
+        
         if(((WoTOwnIdentity)mOwnIdentity).getAssessed(message) == false) {
             addModButton(title, message, 10, "+");
             addModButton(title, message, -10, "-");
             title.addChild("%", "&nbsp;");
         }
         title.addChild("b", maxLength(message.getTitle(),50));
+        
+        
 
         row = table.addChild("tr");
         HTMLNode text = row.addChild("td", "align", "left", "");
@@ -247,6 +291,17 @@ public final class ThreadPage extends WebPageImpl {
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "TrustChange", String.valueOf(change)});
         newReplyForm.addChild("input", new String[] {"type", "name", "value", "style"}, new String[] {"submit", "submit", label, "width:2em" });
     }
+    
+    private void addMarkThreadAsUnreadButton(final HTMLNode title, final BoardThreadLink ref) {
+    	HTMLNode span = title.addChild("span", "style", "float:right");
+    	
+        HTMLNode markAsUnreadButton = addFormChild(span, Freetalk.PLUGIN_URI + "/showThread", "ThreadPage");
+        markAsUnreadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
+        markAsUnreadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
+        markAsUnreadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ThreadID", mThread.getThreadID()});
+        markAsUnreadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "MarkThreadAsUnread", "true"});
+        markAsUnreadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", "Mark as unread" });
+    }
 
     private void addDebugInfo(HTMLNode messageBox, Message message) {
         messageBox = messageBox.addChild("font", new String[] { "size" }, new String[] { "-2" });
@@ -277,6 +332,14 @@ public final class ThreadPage extends WebPageImpl {
         	ThreadPage.addBreadcrumb(trail, mBoard, mThread);
         mContentNode.addChild(trail.getHTMLNode());
     }
+    
+    public static String getURI(final SubscribedBoard board, final BoardThreadLink thread) {
+    	return getURI(board.getName(), thread.getThreadID());
+    }
+    
+    public static String getURI(final String boardName, final String threadID) {
+    	return Freetalk.PLUGIN_URI + "/showThread?BoardName=" + boardName + "&ThreadID=" + threadID;
+    }
 
     /**
      * 
@@ -295,6 +358,6 @@ public final class ThreadPage extends WebPageImpl {
         	}
         }
         
-        trail.addBreadcrumbInfo(maxLength(firstMessage.getTitle(),30), Freetalk.PLUGIN_URI + "/showThread?board=" + board.getName() + "&id=" + myThread.getThreadID());
+        trail.addBreadcrumbInfo(maxLength(firstMessage.getTitle(),30), getURI(board, myThread));
     }
 }
