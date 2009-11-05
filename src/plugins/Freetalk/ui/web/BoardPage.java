@@ -89,8 +89,7 @@ public final class BoardPage extends WebPageImpl {
 				if(threadReference.wasThreadRead() == false)
 					titleCell = titleCell.addChild("b");
 				
-				titleCell.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showThread?identity=" + mOwnIdentity.getID() + 
-						"&board=" + mBoard.getName() + "&id=" + threadReference.getThreadID(), threadTitle));
+				titleCell.addChild(new HTMLNode("a", "href", ThreadPage.getURI(mBoard, threadReference), threadTitle));
 
 				/* Author */
             	// FIXME: The author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out

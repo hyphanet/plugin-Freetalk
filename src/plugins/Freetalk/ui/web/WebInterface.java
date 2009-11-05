@@ -253,7 +253,9 @@ public final class WebInterface {
 				// FIXME: provide error message
 			}
 
-			writeTemporaryRedirect(ctx, "Changing trust succesful, redirecting to thread", Freetalk.PLUGIN_URI + "/showThread?board=" + request.getPartAsString("BoardName", 64) + "&id=" + request.getPartAsString("ThreadID", 128));
+			// TODO: This should not use the names of the parts directly, they should be encapsulated in ThreadPage!
+			writeTemporaryRedirect(ctx, "Changing trust succesful, redirecting to thread",
+					ThreadPage.getURI(request.getPartAsString("BoardName", 64), request.getPartAsString("ThreadID", 128)));
 		}
 
 		@Override

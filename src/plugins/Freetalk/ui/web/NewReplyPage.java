@@ -62,13 +62,10 @@ public class NewReplyPage extends WebPageImpl {
 				HTMLNode successBox = addContentBox("Reply created");
 				successBox.addChild("p", "The reply was put into your outbox. Freetalk will upload it after some time."); 
 				
-				successBox.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showThread?identity=" + mOwnIdentity.getID() + 
-						"&board=" + mBoard.getName() + "&id=" + mParentThread.getThreadID(),
-				"Go back to parent thread"));
+				successBox.addChild(new HTMLNode("a", "href", ThreadPage.getURI(mBoard, mParentThread), "Go back to parent thread"));
 				successBox.addChild("br");
 				
-				successBox.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + mBoard.getName(),
-						"Go back to " + mBoard.getName()));
+				successBox.addChild(new HTMLNode("a", "href", BoardPage.getURI(mBoard), "Go back to " + mBoard.getName()));
 			} catch (Exception e) {
 				HTMLNode alertBox = addAlertBox("The reply could not be created.");
 				alertBox.addChild("div", e.getMessage());
