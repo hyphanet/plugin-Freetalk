@@ -193,14 +193,8 @@ public final class FCPInterface implements FredPluginFCP {
     private void handleListThreads(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchIdentityException
     {
-        final String boardName = params.get("BoardName");
-        if (boardName == null) {
-            throw new InvalidParameterException("Boardname parameter not specified");
-        }
-        final String ownIdentityID = params.get("OwnIdentityID");
-        if (ownIdentityID == null) {
-            throw new InvalidParameterException("OwnIdentityID parameter not specified");
-        }
+        final String boardName = getMandatoryParameter(params, "BoardName");
+        final String ownIdentityID = getMandatoryParameter(params, "OwnIdentityID");
 
         //throws exception when not found
         final SubscribedBoard board = mFreetalk.getMessageManager().getSubscription(mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID), boardName);
@@ -260,11 +254,7 @@ public final class FCPInterface implements FredPluginFCP {
     throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchMessageException,
     UnsupportedEncodingException, NoSuchIdentityException
     {
-        final String boardName = params.get("BoardName");
-        if (boardName == null) {
-            throw new InvalidParameterException("Boardname parameter not specified");
-        }
-        
+        final String boardName = getMandatoryParameter(params, "BoardName");
         final String ownIdentityID = getMandatoryParameter(params, "OwnIdentityID");
         
         final boolean sortByMessageIndexAscending = Boolean.parseBoolean(params.get("SortByMessageIndexAscending"));
@@ -332,11 +322,7 @@ public final class FCPInterface implements FredPluginFCP {
     throws PluginNotFoundException, InvalidParameterException, NoSuchBoardException, NoSuchMessageException,
     UnsupportedEncodingException, NoSuchIdentityException
     {
-        final String boardName = params.get("BoardName");
-        if (boardName == null) {
-            throw new InvalidParameterException("Boardname parameter not specified");
-        }
-        
+        final String boardName = getMandatoryParameter(params, "BoardName");
         final String ownIdentityID = getMandatoryParameter(params, "OwnIdentityID");
         
         final String threadID = params.get("ThreadID");
@@ -398,17 +384,10 @@ public final class FCPInterface implements FredPluginFCP {
     	throws InvalidParameterException, NoSuchBoardException, NoSuchIdentityException, NoSuchMessageException,
     		UnsupportedEncodingException, PluginNotFoundException
     {
-        final String boardName = params.get("BoardName");
-        if (boardName == null) {
-            throw new InvalidParameterException("Boardname parameter not specified");
-        }
-        
+        final String boardName = getMandatoryParameter(params, "BoardName");
         final String ownIdentityID = getMandatoryParameter(params, "OwnIdentityID");
 
-        final String messageIndexString = params.get("MessageIndex");
-        if (messageIndexString == null) {
-            throw new InvalidParameterException("MessageIndex parameter not specified");
-        }
+        final String messageIndexString = getMandatoryParameter(params, "MessageIndex");
         final int messageIndex;
         try {
             messageIndex = Integer.parseInt(messageIndexString);
@@ -685,10 +664,7 @@ public final class FCPInterface implements FredPluginFCP {
     throws PluginNotFoundException, InvalidParameterException
     {
         try {
-            final String boardName = params.get("BoardName");
-            if (boardName == null || boardName.length() == 0) {
-                throw new InvalidParameterException("BoardName parameter not specified");
-            }
+            final String boardName = getMandatoryParameter(params, "BoardName");
             if (!Board.isNameValid(boardName)) {
                 throw new InvalidParameterException("BoardName parameter is not valid");
             }
