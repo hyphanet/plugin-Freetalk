@@ -91,7 +91,9 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 				//DBUtil.throwIfNotStored(db, mMessageList);
 				
 				// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
-
+				if(mURI == null)
+					throw new NullPointerException("Should not happen: URI is null for " + this);
+				
 				db.store(mURI);
 				db.store(this);
 			}
@@ -106,7 +108,10 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 				
 				DBUtil.checkedDelete(db, this);
 				
-				mURI.removeFrom(db);
+				if(mURI != null)
+					mURI.removeFrom(db);
+				else
+					Logger.error(this, "Should not happen: URI is null for " + this);
 			}
 			catch(RuntimeException e) {
 				DBUtil.rollbackAndThrow(db, this, e);
