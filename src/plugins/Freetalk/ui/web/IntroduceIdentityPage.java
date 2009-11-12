@@ -2,6 +2,7 @@ package plugins.Freetalk.ui.web;
 
 import java.util.List;
 
+import plugins.Freetalk.Config;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
@@ -75,20 +76,30 @@ public final class IntroduceIdentityPage extends TaskPage {
 		HTMLNode contentBox = addAlertBox("Introduce your identity");
 		
 		List<String> puzzleIDs = null;
+		int trusterCount = 0;
+		
 		try {
 			puzzleIDs = mIdentityManager.getIntroductionPuzzles((WoTOwnIdentity)mOwnIdentity, mNumberOfPuzzles);
+			trusterCount = mIdentityManager.getReceivedTrustsCount((WoTOwnIdentity)mOwnIdentity);
 		} catch (Exception e) {
 			Logger.error(this, "getIntroductionPuzzles() failed", e);
 
 			new ErrorPage(mWebInterface, mOwnIdentity, mRequest, "Obtaining puzzles failed", e.getMessage()).addToPage(contentBox);
 			return;
 		}
-
-		if(puzzleIDs.size() > 0 ) {
-			contentBox.addChild("p", "You have not received enough trust values from other identities: Your messages will not be seen by anyone." +
-			" You have to solve the following puzzles to get trusted by other identities, then your messages will be visible to the most identities: ");
+		
+		HTMLNode p;
+		
+		if(trusterCount > 0) {
+			p = contentBox.addChild("p", "You have received less than " + mFreetalk.getConfig().getInt(Config.MINIMUM_TRUSTER_COUNT) + 
+				" trust values from other identities: Your messages might not be seen by everyone.");
 		} else {
-			contentBox.addChild("p", "You have not received enough trust values from other identities: Your messages will not be seen by anyone.");
+			p = contentBox.addChild("p", "You have received no trust values from other identities: Your messages will not be seen by anyone!");
+		}
+				
+		if(puzzleIDs.size() > 0 ) {
+			p.addChild("#", " You have to solve the following puzzles to get trusted by other identities, then your messages will be visible to the most identities:");
+		} else {
 			contentBox.addChild("p", "For your messages to become visible to others, you will have to solve so-called 'introduction puzzles'. Freetalk will" +
 					" show them to you as soon as they have been downloaded. This will take about 15 minutes.");
 			return;
