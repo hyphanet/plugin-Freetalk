@@ -84,6 +84,8 @@ public final class FCPInterface implements FredPluginFCP {
 
             if (message.equals("ListBoards")) {
                 handleListBoards(replysender, params);
+            } else if (message.equals("ListSubscribedBoards")) {
+                handleListSubscribedBoards(replysender, params);
             } else if (message.equals("ListOwnIdentities")) {
                 handleListOwnIdentities(replysender, params);
             } else if (message.equals("ListKnownIdentities")) {
@@ -129,7 +131,6 @@ public final class FCPInterface implements FredPluginFCP {
         }
     }
     
-    // TODO: Use this function everywhere, it will make the code much easier to read.
     private String getMandatoryParameter(final SimpleFieldSet sfs, final String name) throws InvalidParameterException {
     	final String result = sfs.get(name);
     	if(result == null) {
@@ -146,6 +147,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Format of reply:
      *   Message=Board
      *   Name=name
+     *   ID=id                        a unique ID that could have changed for the same board name. In this case the board is new, old was deleted.
      *   FirstSeenDate=utcMillis      (optional)
      */
     private void handleListBoards(final PluginReplySender replysender, final SimpleFieldSet params)
@@ -158,6 +160,7 @@ public final class FCPInterface implements FredPluginFCP {
 
                 final SimpleFieldSet sfs = new SimpleFieldSet(true);
                 sfs.putOverwrite("Message", "Board");
+                sfs.putOverwrite("ID", board.getID());
                 sfs.putOverwrite("Name", board.getName());
                 sfs.put("FirstSeenDate", board.getFirstSeenDate().getTime());
 
@@ -169,12 +172,54 @@ public final class FCPInterface implements FredPluginFCP {
         sfs.putOverwrite("Message", "EndListBoards");
         replysender.send(sfs);
     }
-    
-    // FIXME: Implement ListSubscribedBoards
 
     /**
+     * Handle ListSubscribedBoards command. Retrieves all Boards the specified OwnIdentityID is subscribed to.
+     * Sends a number of SubscribedBoard messages and finally an EndListSubscribedBoards message.
+     * 
+     * Format of request:
+     *   Message=ListSubscribedBoards
+     *   OwnIdentityID=ID
+     * Format of reply:
+     *   Message=SubscribedBoard
+     *   Name=name
+     *   ID=id                        a unique ID that could have changed for the same board name. In this case the board is new, old was deleted.
+     *   FirstSeenDate=utcMillis      (optional)
+     *   Description=txt              (optional)
+     */
+    private void handleListSubscribedBoards(final PluginReplySender replysender, final SimpleFieldSet params)
+    throws PluginNotFoundException, InvalidParameterException, NoSuchIdentityException
+    {
+        final String ownIdentityID = getMandatoryParameter(params, "OwnIdentityID");
+        FTOwnIdentity ownIdentity = mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID);
+        
+        synchronized(mFreetalk.getMessageManager()) {
+            final Iterator<SubscribedBoard> boards = mFreetalk.getMessageManager().subscribedBoardIterator(ownIdentity);
+            while(boards.hasNext()) {
+                final SubscribedBoard board = boards.next();
+                
+                final SimpleFieldSet sfs = new SimpleFieldSet(true);
+                sfs.putOverwrite("Message", "SubscribedBoard");
+                sfs.putOverwrite("Name", board.getName());
+                sfs.putOverwrite("ID", board.getID());
+                sfs.put("FirstSeenDate", board.getFirstSeenDate().getTime());
+                String desc = board.getDescription();
+                if (desc != null) {
+                    sfs.putOverwrite("Description", desc);
+                }
+                
+                replysender.send(sfs);
+            }
+        }
+        
+        final SimpleFieldSet sfs = new SimpleFieldSet(true);
+        sfs.putOverwrite("Message", "EndListSubscribedBoards");
+        replysender.send(sfs);
+    }
+    
+    /**
      * Handle ListThreads command.
-     * Send a number of KnownIdentity messages and finally an EndListKnownIdentities message.
+     * Sends a number of MessageThread messages and finally an EndListThreads message.
      * Format of request:
      *   Message=ListThreads
      *   BoardName=abc
@@ -362,7 +407,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Send the requested Message.
      * Format of request:
      *   Message=GetMessage
-     *   BoardName=abc
+     *   BoardID=abc
      *   OwnIdentityID=ID
      *   MessageIndex=123                (message index in board)
      *   IncludeMessageText=true|false   (optional, default is false)
@@ -506,6 +551,7 @@ public final class FCPInterface implements FredPluginFCP {
      *   Nickname=name
      *   FreetalkAddress=freetalkAddr
      */
+    // FIXME: remove before release, exposes ALL own identities!
     private void handleListOwnIdentities(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException
     {
@@ -685,6 +731,7 @@ public final class FCPInterface implements FredPluginFCP {
             sfs.putOverwrite("Message", "CreateBoardReply");
             sfs.putOverwrite("BoardCreated", "true");
             sfs.putOverwrite("StoredBoardName", board.getName());
+            sfs.putOverwrite("ID", board.getID());
             replysender.send(sfs);
 
         } catch(final Exception e) {
