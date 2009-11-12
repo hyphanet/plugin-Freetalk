@@ -20,6 +20,7 @@ import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
+import freenet.support.Logger;
 
 /**
  * A <code>MessageList</code> contains a list of <code>MessageReference</code> objects.
