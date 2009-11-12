@@ -132,9 +132,9 @@ public final class FCPInterface implements FredPluginFCP {
     // TODO: Use this function everywhere, it will make the code much easier to read.
     private String getMandatoryParameter(final SimpleFieldSet sfs, final String name) throws InvalidParameterException {
     	final String result = sfs.get(name);
-    	if(result == null)
+    	if(result == null) {
     		throw new IllegalArgumentException("Missing mandatory parameter: " + name);
-    	
+    	}
     	return result;
     }
 
@@ -534,7 +534,8 @@ public final class FCPInterface implements FredPluginFCP {
      * @throws InvalidParameterException 
     */
     
-    private void handleSubscribeToBoard(final PluginReplySender replysender, final SimpleFieldSet params) throws InvalidParameterException, NoSuchIdentityException, NoSuchBoardException
+    private void handleSubscribeToBoard(final PluginReplySender replysender, final SimpleFieldSet params) 
+    throws InvalidParameterException, NoSuchIdentityException, NoSuchBoardException
     {
         final String boardName = getMandatoryParameter(params, "BoardName");
         final String ownIdentityID = getMandatoryParameter(params, "ID");
@@ -550,11 +551,12 @@ public final class FCPInterface implements FredPluginFCP {
      * @throws InvalidParameterException 
      */
      
-     private void handleUnsubscribeFromBoard(final PluginReplySender replysender, final SimpleFieldSet params) throws InvalidParameterException, NoSuchIdentityException, NoSuchBoardException
+     private void handleUnsubscribeFromBoard(final PluginReplySender replysender, final SimpleFieldSet params) 
+     throws InvalidParameterException, NoSuchIdentityException, NoSuchBoardException
      {
          final String boardName = getMandatoryParameter(params, "BoardName");
          final String ownIdentityID = getMandatoryParameter(params, "ID");
-     	mFreetalk.getMessageManager().unsubscribeFromBoard(mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID), boardName);
+     	 mFreetalk.getMessageManager().unsubscribeFromBoard(mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID), boardName);
      }
 
     
@@ -580,10 +582,7 @@ public final class FCPInterface implements FredPluginFCP {
     throws PluginNotFoundException
     {
         try {
-            final String nickName = params.get("Nickname");
-            if (nickName == null || nickName.length() == 0) {
-                throw new InvalidParameterException("Nickname parameter not specified");
-            }
+            final String nickName = getMandatoryParameter(params, "Nickname");
             WoTIdentity.validateNickname(nickName); // throws Exception if invalid
 
             boolean publishTrustList = true;
@@ -738,10 +737,7 @@ public final class FCPInterface implements FredPluginFCP {
                 }
 
                 // evaluate targetBoards
-                final String targetBoardsString = params.get("TargetBoards");
-                if (targetBoardsString == null) {
-                    throw new InvalidParameterException("TargetBoards parameter not specified");
-                }
+                final String targetBoardsString = getMandatoryParameter(params, "TargetBoards");
                 final String[] targetBoardsArray = targetBoardsString.split(",");
                 if (targetBoardsArray.length == 0) {
                     throw new InvalidParameterException("Invalid TargetBoards parameter specified");
@@ -779,10 +775,7 @@ public final class FCPInterface implements FredPluginFCP {
                 // FIXME: implement! Currently, all replies to forked threads will go to the original thread!
 
                 // evaluate authorIdentity
-                final String authorIdentityIDString = params.get("AuthorIdentityID");
-                if (authorIdentityIDString == null) {
-                    throw new InvalidParameterException("AuthorIdentityID parameter not specified");
-                }
+                final String authorIdentityIDString = getMandatoryParameter(params, "AuthorIdentityID");
                 final FTOwnIdentity authorIdentity;
                 try {
                     authorIdentity = mFreetalk.getIdentityManager().getOwnIdentity(authorIdentityIDString);
@@ -799,11 +792,8 @@ public final class FCPInterface implements FredPluginFCP {
                 }
                 final List<Attachment> attachments = new ArrayList<Attachment>(attachmentCount);
                 for (int x=1; x <= attachmentCount; x++) {
-                    final String uriString = params.get("FileAttachmentURI."+x);
-                    final String sizeString = params.get("FileAttachmentSize."+x);
-                    if (uriString == null || sizeString == null) {
-                        throw new InvalidParameterException("Invalid FileAttachment specified ("+x+")");
-                    }
+                    final String uriString = getMandatoryParameter(params, "FileAttachmentURI."+x);
+                    final String sizeString = getMandatoryParameter(params, "FileAttachmentSize."+x);
                     long fileSize;
                     FreenetURI freenetUri;
                     try {
@@ -816,10 +806,7 @@ public final class FCPInterface implements FredPluginFCP {
                 }
 
                 // evaluate messageTitle
-                final String messageTitle = params.get("Title");
-                if (messageTitle == null) {
-                    throw new InvalidParameterException("Title parameter not specified");
-                }
+                final String messageTitle = getMandatoryParameter(params, "Title");
                 if (messageTitle.length() > Message.MAX_MESSAGE_TITLE_TEXT_LENGTH) {
                     throw new InvalidParameterException("Message title is longer than 256 characters");
                 }
