@@ -3,10 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.NNTP;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
@@ -32,13 +33,14 @@ import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.support.Logger;
 
 /**
  * Represents a connection to a single NNTP client.
  *
- * @author Benjamin Moody
+ * @author Benjamin Moody, bback
  */
 public class FreetalkNNTPHandler implements Runnable {
 
@@ -46,15 +48,19 @@ public class FreetalkNNTPHandler implements Runnable {
     private MessageManager mMessageManager;
 
     private Socket socket;
-    private PrintStream out;
+    private BufferedWriter out;
+    
+    /** Line ending required by NNTP **/
+    private static final String CRLF = "\r\n";
 
     /** Current board (selected by the GROUP command) */
     private FreetalkNNTPGroup currentGroup;
 
     /** Current message number within the group */
     private int currentMessageNum;
-
-    private final static String CRLF = "\r\n";
+    
+    /** Authenticated FTOwnIdentity **/
+    private FTOwnIdentity authOwnIdentity = null;
 
     /** Date format used by the DATE command */
     private final static SimpleDateFormat serverDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
@@ -89,15 +95,15 @@ public class FreetalkNNTPHandler implements Runnable {
             // ignore
         }
     }
-
+    
     /**
      * Print out a status response (numeric code plus additional
      * information.)
      */
-    private void printStatusLine(String line) {
-        out.print(line);
+    private void printStatusLine(String line) throws IOException {
+        out.write(line);
         // NNTP spec requires all command and response lines end with CR+LF
-        out.print(CRLF);
+        out.write(CRLF);
         out.flush();
     }
 
@@ -106,30 +112,32 @@ public class FreetalkNNTPHandler implements Runnable {
      * if necessary (any line beginning with a dot will have a second
      * dot prepended.)
      */
-    private void printTextResponseLine(String line) {
-        if (line.length() > 0 && line.charAt(0) == '.')
-            out.print(".");
-        out.print(line);
-        out.print(CRLF);
+    private void printTextResponseLine(String line) throws IOException {
+        if (line.length() > 0 && line.charAt(0) == '.') {
+            out.write(".");
+        }
+        out.write(line);
+        out.write(CRLF);
+    }
+    
+    /**
+     * Print a single dot to indicate the end of a text response.
+     */
+    private void endTextResponse() throws IOException {
+        out.write(".");
+        out.write(CRLF);
+        out.flush();
     }
 
     /**
      * Print out a block of text (changing all line terminators to
      * CR+LF and dot-stuffing as necessary.)
      */
-    private void printText(String text) {
+    private void printText(String text) throws IOException {
         String[] lines = FreetalkNNTPArticle.endOfLinePattern.split(text);
         for (int i = 0; i < lines.length; i++) {
             printTextResponseLine(lines[i]);
         }
-    }
-
-    /**
-     * Print a single dot to indicate the end of a text response.
-     */
-    private void endTextResponse() {
-        out.print("." + CRLF);
-        out.flush();
     }
 
     /**
@@ -141,7 +149,7 @@ public class FreetalkNNTPHandler implements Runnable {
      * followed by a dash and a second number, indicating a bounded
      * range.)  Print an error message if it can't be found.
      */
-    private Iterator<FreetalkNNTPArticle> getArticleRangeIterator(String desc, boolean single) {
+    private Iterator<FreetalkNNTPArticle> getArticleRangeIterator(String desc, boolean single) throws IOException {
         if (desc == null) {
             if (currentGroup == null) {
                 printStatusLine("412 No newsgroup selected");
@@ -223,7 +231,7 @@ public class FreetalkNNTPHandler implements Runnable {
     /**
      * Handle the ARTICLE / BODY / HEAD / STAT commands.
      */
-    private void selectArticle(String desc, boolean printHead, boolean printBody) {
+    private void selectArticle(String desc, boolean printHead, boolean printBody) throws IOException {
         Iterator<FreetalkNNTPArticle> iter = getArticleRangeIterator(desc, true);
 
         if (iter == null)
@@ -263,13 +271,13 @@ public class FreetalkNNTPHandler implements Runnable {
     /**
      * Handle the GROUP command.
      */
-    private void selectGroup(String name) {
+    private void selectGroup(String name) throws IOException {
         // FIXME: look up by "NNTP name"
         try {
             String boardName = FreetalkNNTPGroup.groupToBoardName(name);
             // FIXME: The "null" breaks everything! We need to pass the own identity which is is specified as NNTP user. I have no time for fixing this
             // right now because the NNTP server is broken anyway.
-            SubscribedBoard board = mMessageManager.getSubscription(null, boardName);
+            SubscribedBoard board = mMessageManager.getSubscription(authOwnIdentity, boardName);
             currentGroup = new FreetalkNNTPGroup(board);
             synchronized (board) {
                 currentMessageNum = currentGroup.firstMessage();
@@ -287,7 +295,7 @@ public class FreetalkNNTPHandler implements Runnable {
     /**
      * Handle the LISTGROUP command.
      */
-    private void selectGroupWithList(String name, String range) {
+    private void selectGroupWithList(String name, String range) throws IOException {
         Matcher matcher = rangePattern.matcher(range);
 
         if (!matcher.matches()) {
@@ -321,7 +329,7 @@ public class FreetalkNNTPHandler implements Runnable {
                 String boardName = FreetalkNNTPGroup.groupToBoardName(name);
                 // FIXME: The "null" breaks everything! We need to pass the own identity which is is specified as NNTP user. I have no time for fixing this
                 // right now because the NNTP server is broken anyway.
-                SubscribedBoard board = mMessageManager.getSubscription(null, boardName);
+                SubscribedBoard board = mMessageManager.getSubscription(authOwnIdentity, boardName);
                 currentGroup = new FreetalkNNTPGroup(board);
             }
             catch (NoSuchBoardException e) {
@@ -361,13 +369,13 @@ public class FreetalkNNTPHandler implements Runnable {
     /**
      * Handle the LIST / LIST ACTIVE command.
      */
-    private void listActiveGroups(String pattern) {
+    private void listActiveGroups(String pattern) throws IOException {
         // FIXME: filter by wildmat
         printStatusLine("215 List of newsgroups follows:");
         // FIXME: The "null" breaks everything! We need to pass the own identity which is is specified as NNTP user. I have no time for fixing this
         // right now because the NNTP server is broken anyway.
 
-        for (Iterator<SubscribedBoard> i = mMessageManager.subscribedBoardIterator(null); i.hasNext(); ) {
+        for (Iterator<SubscribedBoard> i = mMessageManager.subscribedBoardIterator(authOwnIdentity); i.hasNext(); ) {
             SubscribedBoard board = i.next();
             FreetalkNNTPGroup group = new FreetalkNNTPGroup(board);
             printTextResponseLine(group.getName()
@@ -381,13 +389,13 @@ public class FreetalkNNTPHandler implements Runnable {
     /**
      * Handle the LIST NEWSGROUPS command.
      */
-    private void listGroupDescriptions(String pattern) {
+    private void listGroupDescriptions(String pattern) throws IOException {
         // FIXME: add filtering
         printStatusLine("215 Information follows:");
         for (Iterator<Board> i = mMessageManager.boardIterator(); i.hasNext(); ) {
             Board board = i.next();
             String groupName = FreetalkNNTPGroup.boardToGroupName(board.getName());
-            printTextResponseLine(groupName	+ " " + board.getDescription(null));
+            printTextResponseLine(groupName	+ " " + board.getDescription(authOwnIdentity));
         }
         endTextResponse();
     }
@@ -395,7 +403,7 @@ public class FreetalkNNTPHandler implements Runnable {
     /**
      * Handle the NEWGROUPS command.
      */
-    private void listNewGroupsSince(String datestr, String format, boolean gmt) {
+    private void listNewGroupsSince(String datestr, String format, boolean gmt) throws IOException {
         SimpleDateFormat df = new SimpleDateFormat(format);
         if (gmt)
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -404,7 +412,7 @@ public class FreetalkNNTPHandler implements Runnable {
         // right now because the NNTP server is broken anyway.
         
         Date date = df.parse(datestr, new ParsePosition(0));
-        for (Iterator<SubscribedBoard> i = mMessageManager.subscribedBoardIteratorSortedByDate(null, date); i.hasNext(); ) {
+        for (Iterator<SubscribedBoard> i = mMessageManager.subscribedBoardIteratorSortedByDate(authOwnIdentity, date); i.hasNext(); ) {
             SubscribedBoard board = i.next();
             FreetalkNNTPGroup group = new FreetalkNNTPGroup(board);
             printTextResponseLine(board.getName()
@@ -418,7 +426,7 @@ public class FreetalkNNTPHandler implements Runnable {
     /**
      * Handle the HDR / XHDR command.
      */
-    private void printArticleHeader(String header, String articleDesc) {
+    private void printArticleHeader(String header, String articleDesc) throws IOException {
         Iterator<FreetalkNNTPArticle> iter = getArticleRangeIterator(articleDesc, false);
 
         if (iter != null) {
@@ -440,7 +448,7 @@ public class FreetalkNNTPHandler implements Runnable {
     /**
      * Handle the OVER / XOVER command.
      */
-    private void printArticleOverview(String articleDesc) {
+    private void printArticleOverview(String articleDesc) throws IOException {
         Iterator<FreetalkNNTPArticle> iter = getArticleRangeIterator(articleDesc, false);
 
         if (iter != null) {
@@ -463,7 +471,7 @@ public class FreetalkNNTPHandler implements Runnable {
     /**
      * Handle the LIST HEADERS command.
      */
-    private void printHeaderList() {
+    private void printHeaderList() throws IOException {
         printStatusLine("215 Header list follows");
         // We allow querying any header (:) as well as byte and line counts
         printTextResponseLine(":");
@@ -475,7 +483,7 @@ public class FreetalkNNTPHandler implements Runnable {
     /**
      * Handle the LIST OVERVIEW.FMT command.
      */
-    private void printOverviewFormat() {
+    private void printOverviewFormat() throws IOException {
         printStatusLine("215 Overview format follows");
         printTextResponseLine("Subject:");
         printTextResponseLine("From:");
@@ -488,16 +496,101 @@ public class FreetalkNNTPHandler implements Runnable {
     }
 
     /**
+     * Handle the AUTHINFO command, authenticate provided own identity.
+     * For USER we expect the Freetalk address. We extract the identity ID and lookup it.
+     * 
+     * @param subcmd  Must be USER or PASS  (PASS not yet supported!)
+     * @param value   Value of subcmd
+     */
+    private void handleAuthInfo(String subcmd, String value) throws IOException {
+        /*
+         * For AUTHINFO example see here: http://tools.ietf.org/html/rfc4643#section-2.3.3
+         */
+        
+        // For now, we don't require a PASS
+        if (!subcmd.equalsIgnoreCase("USER")) {
+            printStatusLine("502 Command unavailable");
+            return;
+        }
+
+        // already authenticated?
+        if (authOwnIdentity != null) {
+            printStatusLine("502 Command unavailable");
+            return;
+        }
+        
+        FTOwnIdentity oi = null;
+        try {
+            String id = extractIdFromFreetalkAddress(value);
+            oi = mIdentityManager.getOwnIdentity(id);
+        } catch (NoSuchIdentityException e) {
+        }
+        
+        if (oi == null) {
+            printStatusLine("481 Authentication failed");
+        } else {
+            printStatusLine("281 Authentication accepted");
+            authOwnIdentity = oi; // assign authenticated id
+        }
+    }
+    
+    /**
+     * Extracts the OwnIdentity ID from the input Freetalk address 
+     * @param freetalkAddress freetalk address
+     * @return OwnIdentity ID or null on error
+     */
+    private String extractIdFromFreetalkAddress(String freetalkAddress) {
+        /*
+         * Format of input:
+         *   nickname@_ID_.freetalk
+         * We want the _ID_
+         */
+        final String trailing = ".freetalk";
+        try {
+            // sanity checks
+            if (!freetalkAddress.toLowerCase().endsWith(trailing)) {
+                return null;
+            }
+            int ix = freetalkAddress.indexOf('@');
+            if (ix < 0) {
+                return null;
+            }
+            
+            String id = freetalkAddress.substring(ix+1, freetalkAddress.length()-trailing.length());
+            return id;
+        } catch(Exception ex) {
+            return null;
+        }
+    }
+    
+    /**
+     * Handle the CAPABILITIES command.
+     */
+    private void printCapabilities() throws IOException {
+        printStatusLine("101 Capability list:");
+        printText("VERSION 2");
+        if (authOwnIdentity == null) {
+            printText("AUTHINFO USER"); // we allow this on unsecured connection
+        }
+        printText("READER");
+        printText("POST");
+        printText("HDR");
+        printText("OVER MSGID");
+        printText("LIST ACTIVE NEWSGROUPS HEADERS OVERVIEW.FMT");
+        endTextResponse();
+    }
+    
+    /**
      * Handle the DATE command.
      */
-    private void printDate() {
+    private void printDate() throws IOException {
         Date date = new Date();
         synchronized (serverDateFormat) {
             serverDateFormat.setTimeZone(utcTimeZone);
             printTextResponseLine("111 " + serverDateFormat.format(date));
         }
     }
-
+    
     /**
      * Handle a command from the client.  If the command requires a
      * text data section, this function returns true (and
@@ -522,6 +615,14 @@ public class FreetalkNNTPHandler implements Runnable {
                 printStatusLine("501 Syntax error");
             }
         }
+        else if (command.equalsIgnoreCase("AUTHINFO")) {
+            if (tokens.length == 3) {
+                handleAuthInfo(tokens[1], tokens[2]);
+            }
+            else {
+                printStatusLine("501 Syntax error");
+            }
+        }
         else if (command.equalsIgnoreCase("BODY")) {
             if (tokens.length == 2) {
                 selectArticle(tokens[1], false, true);
@@ -532,6 +633,9 @@ public class FreetalkNNTPHandler implements Runnable {
             else {
                 printStatusLine("501 Syntax error");
             }
+        }
+        else if (command.equalsIgnoreCase("CAPABILITIES")) {
+            printCapabilities();
         }
         else if (command.equalsIgnoreCase("DATE")) {
             printDate();
@@ -678,7 +782,7 @@ public class FreetalkNNTPHandler implements Runnable {
      * address.  Use domain part to disambiguate if we have multiple
      * identities with the same nickname.
      */
-    private FTOwnIdentity getAuthorIdentity(String name, String domain) {
+    private FTOwnIdentity getAuthorIdentity(String name, String domain) throws IOException {
         FTOwnIdentity bestMatch = null;
         boolean matchName = false, matchDomain = false, multiple = false;
 
@@ -719,13 +823,14 @@ public class FreetalkNNTPHandler implements Runnable {
     /**
      * Handle a command that includes a text data block.
      */
-    private synchronized void finishCommand(String line, ByteBuffer text) {
+    private synchronized void finishCommand(String line, ByteBuffer text) throws IOException {
         ArticleParser parser = new ArticleParser();
 
         if (!parser.parseMessage(text)) {
             printStatusLine("441 Unable to parse message");
         }
         else {
+            // FIXME: use authenticated ID or allow to use different IDs to POST?
             FTOwnIdentity myIdentity = getAuthorIdentity(parser.getAuthorName(), parser.getAuthorDomain());
             if (myIdentity == null)
                 return;
@@ -837,7 +942,7 @@ public class FreetalkNNTPHandler implements Runnable {
             String line;
             Charset utf8 = Charset.forName("UTF-8");
 
-            out = new PrintStream(os, false, "UTF-8");
+            out = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
 
             printStatusLine("200 Welcome to Freetalk");
             while (!socket.isClosed()) {
@@ -851,6 +956,11 @@ public class FreetalkNNTPHandler implements Runnable {
         }
         catch (IOException e) {
             Logger.error(this, "Error in NNTP handler: " + e.getMessage());
+            try {
+                socket.close();
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
         }
     }
 }

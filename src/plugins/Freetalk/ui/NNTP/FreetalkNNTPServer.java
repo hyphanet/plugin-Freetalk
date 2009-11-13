@@ -6,7 +6,6 @@ package plugins.Freetalk.ui.NNTP;
 import plugins.Freetalk.Freetalk;
 
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;

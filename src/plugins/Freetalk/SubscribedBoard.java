@@ -463,6 +463,10 @@ public final class SubscribedBoard extends Board {
         switch(result.size()) {
 	        case 1:
 	        	Message message = result.next().getMessage();
+	        	if (message == null) {
+	        	    // FIXME: this should never happen (?) and breaks all callers
+	                throw new NoSuchMessageException();
+	        	}
 	        	message.initializeTransient(db, mMessageManager);
 	        	return message;
 	        case 0:
