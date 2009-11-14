@@ -38,9 +38,9 @@ import freenet.support.io.Closer;
 
 
 /**
- * 
  * @author xor (xor@freenetproject.org)
  * @author saces
+ * @author bback
  */
 public final class WebInterface {
 	
@@ -254,7 +254,7 @@ public final class WebInterface {
 			}
 
 			// TODO: This should not use the names of the parts directly, they should be encapsulated in ThreadPage!
-			writeTemporaryRedirect(ctx, "Changing trust succesful, redirecting to thread",
+			writeTemporaryRedirect(ctx, "Changing trust successful, redirecting to thread",
 					ThreadPage.getURI(request.getPartAsString("BoardName", 64), request.getPartAsString("ThreadID", 128)));
 		}
 
@@ -540,24 +540,24 @@ public final class WebInterface {
 		
 		mSessionManager = new SessionManager(myURI, logIn);
 		
-		mPageMaker.addNavigationCategory(Freetalk.PLUGIN_URI+"/", "Discussion", "Message boards", mFreetalk, 1);
+		mPageMaker.addNavigationCategory(Freetalk.PLUGIN_URI+"/", "WebInterface.DiscussionMenuName", "WebInterface.DiscussionMenuName.Tooltip", mFreetalk, 1);
 		
 		NodeClientCore clientCore = mFreetalk.getPluginRespirator().getNode().clientCore;
 		
 		// Visible pages
-		logInToadlet = new LogInWebInterfaceToadlet(null, this, clientCore, "LogIn");
 		homeToadlet = new HomeWebInterfaceToadlet(null, this, clientCore, "");
+		logInToadlet = new LogInWebInterfaceToadlet(null, this, clientCore, "LogIn");
 		subscribedBoardsToadlet = new SubscribedBoardsWebInterfaceToadlet(null, this, clientCore, "SubscribedBoards");
 		selectBoardsToadlet = new SelectBoardsWebInterfaceToadlet(null, this, clientCore, "SelectBoards");
 		identitiesToadlet = new IdentitiesWebInterfaceToadlet(null, this, clientCore, "identities");
 		logOutToadlet = new LogOutWebInterfaceToadlet(null, this, clientCore, "LogOut");
-		
-		container.register(homeToadlet, "Discussion", Freetalk.PLUGIN_URI+"/", true, "Home", "Home page", false, homeToadlet);
-		container.register(logInToadlet, "Discussion", Freetalk.PLUGIN_URI+"/LogIn", true, "Log in", "Log in", false, logInToadlet);
-		container.register(subscribedBoardsToadlet, "Discussion", Freetalk.PLUGIN_URI+"/SubscribedBoards", true, "Your Boards", "View your subscribed boards", false, subscribedBoardsToadlet);
-		container.register(selectBoardsToadlet, "Discussion", Freetalk.PLUGIN_URI+"/SelectBoards", true, "Select Boards", "Chose the boards which you want to read", false, selectBoardsToadlet);
-		container.register(identitiesToadlet, "Discussion", Freetalk.PLUGIN_URI+"/identities", true, "Identities", "Manage your own and known identities", false, identitiesToadlet);
-		container.register(logOutToadlet, "Discussion", Freetalk.PLUGIN_URI+"/LogOut", true, "Log out", "Log out", false, logOutToadlet);
+
+		container.register(homeToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/", true, "WebInterface.DiscussionMenuItem.Home", "WebInterface.DiscussionMenuItem.Home.Tooltip", false, homeToadlet);
+		container.register(logInToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/LogIn", true, "WebInterface.DiscussionMenuItem.LogIn", "WebInterface.DiscussionMenuItem.LogIn.Tooltip", false, logInToadlet);
+		container.register(subscribedBoardsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/SubscribedBoards", true, "WebInterface.DiscussionMenuItem.SubscribedBoards", "WebInterface.DiscussionMenuItem.SubscribedBoards.Tooltip", false, subscribedBoardsToadlet);
+		container.register(selectBoardsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/SelectBoards", true, "WebInterface.DiscussionMenuItem.SelectBoards", "WebInterface.DiscussionMenuItem.SelectBoards.Tooltip", false, selectBoardsToadlet);
+		container.register(identitiesToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/identities", true, "WebInterface.DiscussionMenuItem.Identities", "WebInterface.DiscussionMenuItem.Identities.Tooltip", false, identitiesToadlet);
+		container.register(logOutToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/LogOut", true, "WebInterface.DiscussionMenuItem.LogOut", "WebInterface.DiscussionMenuItem.LogOut.Tooltip", false, logOutToadlet);
 		
 		// Invisible pages
 		createIdentityToadlet = new CreateIdentityWebInterfaceToadlet(null, this, clientCore, "CreateIdentity");
@@ -611,5 +611,4 @@ public final class WebInterface {
 		}) container.unregister(t);
 		mPageMaker.removeNavigationCategory("Discussion");
 	}
-
 }

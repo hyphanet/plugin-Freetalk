@@ -12,6 +12,9 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 public final class LogInPage extends WebPageImpl {
+    
+    private static final String[] l10nBoldSubstitutionInput = new String[] { "bold", "/bold" };
+    private static final String[] l10nBoldSubstitutionOutput = new String[] { "<b>", "</b>" };
 
 	public LogInPage(WebInterface myWebInterface, HTTPRequest request) {
 		super(myWebInterface, null, request);
@@ -28,16 +31,14 @@ public final class LogInPage extends WebPageImpl {
 		}
 	}
 
-	private final void makeWelcomeBox() { 
-		HTMLNode welcomeBox = addContentBox("Welcome to Freetalk");
-		welcomeBox.addChild("p", "Freetalk is a pseudo-anonymous messaging system based on Freenet. It is very similar to internet forums " +
-				"and newsgroups. Pseudo-anonymous means that you post your messages using an 'identity' which is uniquely identitfied by it's " +
-				"Freetalk address which consists of a nickname and an unique cryptography key.");
-		HTMLNode p = welcomeBox.addChild("p", "Because you can keep the private part of the cryptography key (the insert URI) secret, only you can post under " + 
-				"your Freetalk address, which means that everyone knows that all messages from your identity probably come from the same " + 
-				"author, therefore you are "); p.addChild("b", "pseudo"); p.addChild("#", "-anonymous.");
-		welcomeBox.addChild("p", "But due to the nature of Freenet, nobody will know who is the real person inserting the messages of your identity, which " +
-				"means that you as a real person are still an ").addChild("b", "anonymous author.");
+	private final void makeWelcomeBox() {
+	    HTMLNode aChild;
+		HTMLNode welcomeBox = addContentBox(Freetalk.getBaseL10n().getString("LoginPage.WelcomeHeader"));
+		welcomeBox.addChild("p", Freetalk.getBaseL10n().getString("LoginPage.WelcomeText1"));
+		aChild = welcomeBox.addChild("p"); // allow bold in this section
+		Freetalk.getBaseL10n().addL10nSubstitution(aChild, "LoginPage.WelcomeText2", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		aChild = welcomeBox.addChild("p"); // allow bold in this section
+		Freetalk.getBaseL10n().addL10nSubstitution(aChild, "LoginPage.WelcomeText3", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 	}
 	
 	private final void makeLoginBox() {
