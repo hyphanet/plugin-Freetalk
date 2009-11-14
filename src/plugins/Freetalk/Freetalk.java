@@ -24,8 +24,10 @@ import com.db4o.ext.ExtObjectContainer;
 import com.db4o.reflect.jdk.JdkReflector;
 
 import freenet.clients.http.PageMaker.THEME;
-import freenet.l10n.BaseL10n.LANGUAGE;
+import freenet.l10n.BaseL10n;
+import freenet.l10n.PluginL10n;
 import freenet.pluginmanager.FredPlugin;
+import freenet.pluginmanager.FredPluginBaseL10n;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.pluginmanager.FredPluginRealVersioned;
@@ -43,8 +45,9 @@ import freenet.support.api.Bucket;
 /**
  * @author xor@freenetproject.org
  * @author saces
+ * @author bback
  */
-public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, FredPluginThemed, FredPluginThreadless,
+public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, FredPluginBaseL10n, FredPluginThemed, FredPluginThreadless,
 	FredPluginVersioned, FredPluginRealVersioned, FredPluginWithClassLoader {
 
 	/* Constants */
@@ -65,7 +68,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	
 	private PluginRespirator mPluginRespirator; /* TODO: remove references in other classes so we can make this private */
 
-	private LANGUAGE mLanguage;
+	private static PluginL10n l10n;
 	
 	private THEME mTheme;
 
@@ -383,10 +386,15 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		return Version.getRealVersion();
 	}
 
-	public String getString(String key) {
-		// Logger.error(this, "Request translation for "+key);
-		return key;
-	}
+    /**
+     * This code is only used by FredPluginL10n...
+     * 
+     * @param arg0
+     * @return
+     */
+    public String getString(String arg0) {
+        return Freetalk.getBaseL10n().getString(arg0);
+    }
 
 	/**
 	 * Called by the node during the loading of the plugin. The <code>ClassLoader</code> which was used by the node is passed to db4o
@@ -396,14 +404,62 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		mClassLoader = myClassLoader;
 	}
 	
-	public void setLanguage(LANGUAGE newLanguage) {
-		mLanguage = newLanguage;
-		Logger.debug(this, "Set LANGUAGE to: " + mLanguage.isoCode);
-	}
+    /**
+     * This code is only called during startup or when the user
+     * selects another language in the UI.
+     * @param newLanguage Language to use.
+     */
+    public void setLanguage(final BaseL10n.LANGUAGE newLanguage) {
+        Freetalk.l10n = new PluginL10n(this, newLanguage);
+        Logger.debug(this, "Set LANGUAGE to: " + newLanguage.isoCode);
+    }
 
 	public void setTheme(THEME newTheme) {
 		mTheme = newTheme;
 		Logger.error(this, "Set THEME to: " + mTheme.code);
 	}
 
+    /**
+     * This is where our L10n files are stored.
+     * @return Path of our L10n files.
+     */
+    public String getL10nFilesBasePath() {
+        return "plugins/Freetalk/l10n/";
+    }
+
+    /**
+     * This is the mask of our L10n files : lang_en.l10n, lang_de.10n, ...
+     * @return Mask of the L10n files.
+     */
+    public String getL10nFilesMask() {
+        return "lang_${lang}.l10n";
+    }
+
+    /**
+     * Override L10n files are stored on the disk, their names should be explicit
+     * we put here the plugin name, and the "override" indication. Plugin L10n
+     * override is not implemented in the node yet.
+     * @return Mask of the override L10n files.
+     */
+    public String getL10nOverrideFilesMask() {
+        return "Freetalk_lang_${lang}.override.l10n";
+    }
+
+    /**
+     * Get the ClassLoader of this plugin. This is necessary when getting
+     * resources inside the plugin's Jar, for example L10n files.
+     * @return
+     */
+    public ClassLoader getPluginClassLoader() {
+        return Freetalk.class.getClassLoader();
+    }
+    
+    /**
+     * BaseL10n object can be accessed statically to get L10n data from anywhere.
+     *
+     * @return L10n object.
+     */
+    public static BaseL10n getBaseL10n() {
+        return Freetalk.l10n.getBase();
+    }
 }
