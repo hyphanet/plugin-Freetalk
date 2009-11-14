@@ -40,7 +40,8 @@ import freenet.support.Logger;
 /**
  * Represents a connection to a single NNTP client.
  *
- * @author Benjamin Moody, bback
+ * @author Benjamin Moody
+ * @author bback
  */
 public class FreetalkNNTPHandler implements Runnable {
 
@@ -959,7 +960,6 @@ public class FreetalkNNTPHandler implements Runnable {
             try {
                 socket.close();
             } catch (IOException e1) {
-                e1.printStackTrace();
             }
         }
     }
