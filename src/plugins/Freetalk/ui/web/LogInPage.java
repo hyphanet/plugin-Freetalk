@@ -18,7 +18,6 @@ public final class LogInPage extends WebPageImpl {
 
 	public LogInPage(WebInterface myWebInterface, HTTPRequest request) {
 		super(myWebInterface, null, request);
-
 	}
 
 	public void make() throws RedirectException {
@@ -42,7 +41,7 @@ public final class LogInPage extends WebPageImpl {
 	}
 	
 	private final void makeLoginBox() {
-		HTMLNode loginBox = addContentBox("Log in");
+		HTMLNode loginBox = addContentBox(Freetalk.getBaseL10n().getString("LoginPage.LogInHeader"));
 	
 		Iterator<FTOwnIdentity> iter = mFreetalk.getIdentityManager().ownIdentityIterator();
 		
@@ -52,17 +51,22 @@ public final class LogInPage extends WebPageImpl {
 			FTOwnIdentity ownIdentity = iter.next();
 			selectBox.addChild("option", "value", ownIdentity.getID(), ownIdentity.getShortestUniqueName(40));
 		}
-		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Log in" });
+		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", Freetalk.getBaseL10n().getString("LoginPage.LogInButton") });
 	}
 	
 	protected static final void addLoginButton(WebPageImpl page, HTMLNode contentNode, FTOwnIdentity identity) {
 		HTMLNode logInForm = page.addFormChild(contentNode, Freetalk.PLUGIN_URI + "/LogIn", "LogIn");
 		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", identity.getID() });
-		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Log in" });
+		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", Freetalk.getBaseL10n().getString("LoginPage.LogInButton") });
 	}
 	
 	private void makeCreateIdentityBox() {
-		HTMLNode createIdentityBox = addContentBox("Create an own identity");
-		createIdentityBox.addChild("a", "href", Freetalk.PLUGIN_URI + "/CreateIdentity", "You can create another own identity here");
+		HTMLNode createIdentityBox = addContentBox(Freetalk.getBaseL10n().getString("LoginPage.CreateOwnIdentityHeader"));
+		HTMLNode aChild = createIdentityBox.addChild("p"); 
+        Freetalk.getBaseL10n().addL10nSubstitution(
+                aChild, 
+                "LoginPage.CreateOwnIdentityText", 
+                new String[] { "link", "/link" }, 
+                new String[] { "<a href=\""+Freetalk.PLUGIN_URI+"/CreateIdentity\">", "</a>" });
 	}
 }
