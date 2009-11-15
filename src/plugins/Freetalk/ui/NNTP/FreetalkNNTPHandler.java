@@ -955,8 +955,8 @@ public class FreetalkNNTPHandler implements Runnable {
                 }
             }
         }
-        catch (IOException e) {
-            Logger.error(this, "Error in NNTP handler: " + e.getMessage());
+        catch (Throwable e) {
+            Logger.error(this, "Error in NNTP handler, closing socket: " + e.getMessage());
             try {
                 socket.close();
             } catch (IOException e1) {
