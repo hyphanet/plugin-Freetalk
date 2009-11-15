@@ -35,19 +35,18 @@ public final class BoardsPage extends WebPageImpl {
 	}
 
 	private void makeBoardsList() {
-		HTMLNode boardsBox = addContentBox("Your boards");
+		HTMLNode boardsBox = addContentBox(Freetalk.getBaseL10n().getString("BoardsPage.BoardListHeader"));
 
 		HTMLNode newBoardForm = addFormChild(boardsBox, Freetalk.PLUGIN_URI + "/NewBoard", "NewBoardPage");
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
-		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", "New board" });
-		
+		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", Freetalk.getBaseL10n().getString("BoardsPage.NewBoardButton")});
 
 		HTMLNode boardsTable = boardsBox.addChild("table", "border", "0");
 		HTMLNode row = boardsTable.addChild("tr");
-		row.addChild("th", "Name");
-		row.addChild("th", "Description");
-		row.addChild("th", "Messages");
-		row.addChild("th", "Latest message");
+		row.addChild("th", Freetalk.getBaseL10n().getString("BoardsPage.BoardTableHeader.Name"));
+		row.addChild("th", Freetalk.getBaseL10n().getString("BoardsPage.BoardTableHeader.Description"));
+		row.addChild("th", Freetalk.getBaseL10n().getString("BoardsPage.BoardTableHeader.Messages"));
+		row.addChild("th", Freetalk.getBaseL10n().getString("BoardsPage.BoardTableHeader.LatestMessage"));
 		
 		DateFormat dateFormat = DateFormat.getInstance();
 		
@@ -87,13 +86,19 @@ public final class BoardsPage extends WebPageImpl {
 		}
 
 		if(boardCount == 0) {
-			boardsBox.addChild("p", "You are not subscribed to any boards. Please ")
-				.addChild("a", "href", Freetalk.PLUGIN_URI + "/SelectBoards?identity=" + mOwnIdentity.getID())
-				.addChild("#", "select which ones you want to read.");
+            HTMLNode aChild = boardsBox.addChild("p");
+            Freetalk.getBaseL10n().addL10nSubstitution(
+                    aChild, 
+                    "BoardsPage.NoBoardSubscribed", 
+                    new String[] { "link", "/link" }, 
+                    new String[] { "<a href=\""+Freetalk.PLUGIN_URI+"/SelectBoards?identity="+mOwnIdentity.getID()+"\">", "</a>" });
 		} else {
-			boardsBox.addChild("p", "You can subscribe to more boards or unsubscribe from the current ones ")
-				.addChild("a", "href", Freetalk.PLUGIN_URI + "/SelectBoards?identity=" + mOwnIdentity.getID())
-				.addChild("#", "here.");			
+            HTMLNode aChild = boardsBox.addChild("p");
+            Freetalk.getBaseL10n().addL10nSubstitution(
+                    aChild, 
+                    "BoardsPage.BoardSubscriptions", 
+                    new String[] { "link", "/link" }, 
+                    new String[] { "<a href=\""+Freetalk.PLUGIN_URI+"/SelectBoards?identity="+mOwnIdentity.getID()+"\">", "</a>" });
 		}
 	}
 

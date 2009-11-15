@@ -1,3 +1,11 @@
+BoardsPage.BoardListHeader=Your boards
+BoardsPage.NewBoardButton=New board
+BoardsPage.BoardTableHeader.Name=Name
+BoardsPage.BoardTableHeader.Description=Description
+BoardsPage.BoardTableHeader.Messages=Messages
+BoardsPage.BoardTableHeader.LatestMessage=Latest message
+BoardsPage.NoBoardSubscribed=You are not subscribed to any boards. Please ${link}select which ones you want to read${/link}.
+BoardsPage.BoardSubscriptions=You can subscribe to more boards or unsubscribe from the current ones ${link}here${/link}.
 LoginPage.WelcomeHeader=Welcome to Freetalk
 LoginPage.WelcomeText1=Freetalk is a pseudo-anonymous messaging system based on Freenet. It is very similar to internet forums and newsgroups. Pseudo-anonymous means that you post your messages using an 'identity' which is uniquely identitfied by it's Freetalk address which consists of a nickname and an unique cryptography key.
 LoginPage.WelcomeText2=Because you can keep the private part of the cryptography key (the insert URI) secret, only you can post under your Freetalk address, which means that everyone knows that all messages from your identity probably come from the same author, therefore you are ${bold}pseudo${/bold}-anonymous.
