@@ -1,11 +1,11 @@
 package plugins.Freetalk.ui.web;
 
+import plugins.Freetalk.Freetalk;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
  * A page which tells the user to load the WoT plugin or upgrade it.
- * 
  * 
  * @author xor
  */
@@ -19,19 +19,18 @@ public class WoTIsMissingPage extends WebPageImpl {
 	}
 
 	public void make() {
-		if(mNeedsNewWoT) {
-			HTMLNode box = addAlertBox("Your Web of Trust plugin is outdated");
-			box.addChild("#", "This Freetalk version is incompatible with the WoT plugin version which you have installed."
-					+ " Please upgrade the WoT plugin at ");
-			box.addChild("a", "href", "/plugins").addChild("#", "your Freenet node's plugin page");
-			box.addChild("#", ".");
-			// FIXME: add "by going to the plugins page and pressing 'Reload'" after we have WoT in the official plugins list 
-		} else {
-			HTMLNode box = addAlertBox("Web of Trust plugin is missing");
-			box.addChild("#", "Freetalk needs the 'WoT' plugin to be loaded in your Freenet node. Please go to ");
-			box.addChild("a", "href", "/plugins").addChild("#", "your Freenet node's plugin page");
-			box.addChild("#", " and load the WoT plugin.");
-		}
+        final String[] l10nLinkSubstitutionInput = new String[] { "link", "/link" };
+        final String[] l10nLinkSubstitutionOutput = new String[] { "<a href=\"/plugins\">", "</a>" };
+        
+        if(mNeedsNewWoT) {
+            HTMLNode box = addAlertBox(Freetalk.getBaseL10n().getString("WoTIsMissingPage.WotOutdatedHeader"));
+            HTMLNode aChild = box.addChild("#");
+            Freetalk.getBaseL10n().addL10nSubstitution(aChild, "WoTIsMissingPage.WotOutdatedText", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);
+            // FIXME: add "by going to the plugins page and pressing 'Reload'" after we have WoT in the official plugins list 
+        } else {
+            HTMLNode box = addAlertBox(Freetalk.getBaseL10n().getString("WoTIsMissingPage.WotMissingHeader"));
+            HTMLNode aChild = box.addChild("#");
+            Freetalk.getBaseL10n().addL10nSubstitution(aChild, "WoTIsMissingPage.WotMissingText", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);
+        }
 	}
-
 }

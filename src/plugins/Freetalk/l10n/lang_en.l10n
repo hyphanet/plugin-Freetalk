@@ -51,4 +51,8 @@ Welcome.WelcomeBoxText3=For the newsreader: As the account name, specify the nic
 Welcome.OverviewBoxHeader=Overview
 Welcome.OverviewBoxKnownIdentities=Known Identities
 Welcome.OverviewBoxMessagesWaiting=Messages waiting to be sent
+WoTIsMissingPage.WotOutdatedHeader=Your Web of Trust plugin is outdated
+WoTIsMissingPage.WotOutdatedText=This Freetalk version is incompatible with the WoT plugin version which you have installed.  Please upgrade the WoT plugin at ${link}your Freenet node's plugin page${/link}.
+WoTIsMissingPage.WotMissingHeader=Web of Trust plugin is missing
+WoTIsMissingPage.WotMissingText=Freetalk needs the 'WoT' plugin to be loaded in your Freenet node. Please go to ${link}your Freenet node's plugin page${/link} and load the WoT plugin.
 End
