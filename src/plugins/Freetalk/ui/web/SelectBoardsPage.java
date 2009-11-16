@@ -24,12 +24,12 @@ public class SelectBoardsPage extends WebPageImpl {
 
 	public SelectBoardsPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) {
 		super(myWebInterface, viewer, request);
-		// TODO Auto-generated constructor stub
 	}
 
 	public void make() throws RedirectException {
-		if(mOwnIdentity == null)
+		if(mOwnIdentity == null) {
 			throw new RedirectException(logIn);
+		}
 
 		makeBreadcrumbs();
 		
@@ -68,23 +68,23 @@ public class SelectBoardsPage extends WebPageImpl {
 	}
 	
 	private void makeBoardsList() {
-		HTMLNode boardsBox = addContentBox("Select your boards");
+		HTMLNode boardsBox = addContentBox(Freetalk.getBaseL10n().getString("SelectBoardsPage.SelectBoardsBoxHeader"));
 		
-		boardsBox.addChild("p", "Notice that it may take some time until Freetalk has discovered all boards!");
+		boardsBox.addChild("p", Freetalk.getBaseL10n().getString("SelectBoardsPage.SelectBoardsBoxText"));
 
 		HTMLNode newBoardForm = addFormChild(boardsBox, Freetalk.PLUGIN_URI + "/NewBoard", "NewBoardPage");
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
-		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", "New board" });
+		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", Freetalk.getBaseL10n().getString("SelectBoardsPage.NewBoardButton") });
 		
 		HTMLNode boardsTable = boardsBox.addChild("table", "border", "0");
 		HTMLNode row = boardsTable.addChild("tr");
-		row.addChild("th", "Name");
-		row.addChild("th", "Description");
-		row.addChild("th", "First seen");
-		row.addChild("th", "Latest message");
-		row.addChild("th", "Messages");
-		row.addChild("th", "Subscribe");
-		row.addChild("th", "Unsubscribe");
+		row.addChild("th", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTableHeader.Name"));
+		row.addChild("th", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTableHeader.Description"));
+		row.addChild("th", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTableHeader.FirstSeen"));
+		row.addChild("th", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTableHeader.LatestMessage"));
+		row.addChild("th", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTableHeader.Messages"));
+		row.addChild("th", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTableHeader.Subscribe"));
+		row.addChild("th", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTableHeader.Unsubscribe"));
 		
 		DateFormat dateFormat = DateFormat.getInstance();
 		
@@ -138,7 +138,7 @@ public class SelectBoardsPage extends WebPageImpl {
 					HTMLNode unsubscribeForm = addFormChild(unsubscribeCell, Freetalk.PLUGIN_URI + "/SelectBoards" + "#" + board.getName(), "Unsubscribe");
 					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID()});
 					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "BoardName", board.getName()});
-					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "submit", "Unsubscribe", "Unsubscribe" });
+					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "submit", "Unsubscribe", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTable.UnsubscribeButton") });
 				} catch(NoSuchBoardException e) {
 					// We are not subscribed to that board so we cannot fill all cells with information.
 					
@@ -149,11 +149,10 @@ public class SelectBoardsPage extends WebPageImpl {
 					HTMLNode subscribeForm = addFormChild(subscribeCell, Freetalk.PLUGIN_URI + "/SelectBoards" + "#" + board.getName(), "Subscribe");
 					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID()});
 					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "BoardName", board.getName()});
-					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "submit", "Subscribe", "Subscribe" });
+					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "submit", "Subscribe", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTable.SubscribeButton") });
 				}
 			}
 		}
-
 	}
 
 	private void makeBreadcrumbs() {
@@ -167,5 +166,4 @@ public class SelectBoardsPage extends WebPageImpl {
 	public static void addBreadcrumb(BreadcrumbTrail trail) {
 		trail.addBreadcrumbInfo("Select your boards", Freetalk.PLUGIN_URI + "/SelectBoards");
 	}
-
 }
