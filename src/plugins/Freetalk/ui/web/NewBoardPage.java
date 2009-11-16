@@ -37,14 +37,10 @@ public final class NewBoardPage extends WebPageImpl {
 	                    successBox.addChild("div"), 
 	                    "NewBoardPage.CreateBoardSuccessText",
 	                    new String[] { "link", "boardname", "/link" }, 
-	                    new String[] { // TODO: Why 'u'? See original below...
-	                            "<u><a href=\""+Freetalk.PLUGIN_URI+"/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + subscribedBoard.getName(),
+	                    new String[] {
+	                            "<a href=\""+Freetalk.PLUGIN_URI+"/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + subscribedBoard.getName()+"\">",
 	                            subscribedBoard.getName(),
-	                            "</a></u>" });
-				
-//				successBox.addChild("div", "The board "); /* TODO: I have no idea how to make this text appear in one line without removing the <u> */
-//				successBox.addChild("u").addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + subscribedBoard.getName(), subscribedBoard.getName()));
-//				successBox.addChild("div", " was successfully created. You have been subscribed to it.");
+	                            "</a>" });
 
 				makeNewBoardPage("en", "");
 			} catch (Exception e) {
@@ -68,6 +64,7 @@ public final class NewBoardPage extends WebPageImpl {
 		languageBox.addChild("p", Freetalk.getBaseL10n().getString("NewBoardPage.NewBoardBox.LanguageBoxText")+":");
 		/* TODO: Locale.getISOLanguages() only returns the abbreviations. Figure out how to get the full names, add some function to Board.java for getting them and use them here. */
 		/* For that you will also need to modify getComboBox() to take display names and values instead of only values and using them as display names */
+		/* ANSWER: I doubt that there are default strings. We have to provide translated language names by ourself! */
 		languageBox.addChild(getComboBox("BoardLanguage", Board.getAllowedLanguageCodes(), boardLanguage));
 		
 		HTMLNode nameBox = newBoardForm.addChild(getContentBox(Freetalk.getBaseL10n().getString("NewBoardPage.NewBoardBox.BoardNameBoxHeader")));
