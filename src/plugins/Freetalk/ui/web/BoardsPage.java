@@ -85,20 +85,13 @@ public final class BoardsPage extends WebPageImpl {
 			}
 		}
 
+		final String[] l10nLinkSubstitutionInput = new String[] { "link", "/link" };
+		final String[] l10nLinkSubstitutionOutput = new String[] { "<a href=\""+Freetalk.PLUGIN_URI+"/SelectBoards?identity="+mOwnIdentity.getID()+"\">", "</a>" };
+		HTMLNode aChild = boardsBox.addChild("p");
 		if(boardCount == 0) {
-            HTMLNode aChild = boardsBox.addChild("p");
-            Freetalk.getBaseL10n().addL10nSubstitution(
-                    aChild, 
-                    "BoardsPage.NoBoardSubscribed", 
-                    new String[] { "link", "/link" }, 
-                    new String[] { "<a href=\""+Freetalk.PLUGIN_URI+"/SelectBoards?identity="+mOwnIdentity.getID()+"\">", "</a>" });
+            Freetalk.getBaseL10n().addL10nSubstitution(aChild, "BoardsPage.NoBoardSubscribed", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);
 		} else {
-            HTMLNode aChild = boardsBox.addChild("p");
-            Freetalk.getBaseL10n().addL10nSubstitution(
-                    aChild, 
-                    "BoardsPage.BoardSubscriptions", 
-                    new String[] { "link", "/link" }, 
-                    new String[] { "<a href=\""+Freetalk.PLUGIN_URI+"/SelectBoards?identity="+mOwnIdentity.getID()+"\">", "</a>" });
+            Freetalk.getBaseL10n().addL10nSubstitution(aChild, "BoardsPage.BoardSubscriptions", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);
 		}
 	}
 
