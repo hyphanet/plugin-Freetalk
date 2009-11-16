@@ -108,12 +108,18 @@ public final class ThreadPage extends WebPageImpl {
         }
         } catch(NoSuchMessageException e) {
         	makeBreadcrumbs();
-        	HTMLNode alertBox = addAlertBox("The thread could not be displayed");
-        	alertBox.addChild("p", "It was deleted while you requested it.");
+        	HTMLNode alertBox = addAlertBox(Freetalk.getBaseL10n().getString("ThreadPage.ThreadDeleted.Header"));
+        	alertBox.addChild("p", Freetalk.getBaseL10n().getString("ThreadPage.ThreadDeleted.Text1"));
         	HTMLNode p = alertBox.addChild("p");
         	
-        	p.addChild("#", "Go back to ");
-        	p.addChild("a", "href", BoardPage.getURI(mBoard)).addChild("#", mBoard.getName()); 
+            Freetalk.getBaseL10n().addL10nSubstitution(
+                    p, 
+                    "ThreadPage.ThreadDeleted.Text2",
+                    new String[] { "link", "boardname", "/link" }, 
+                    new String[] {
+                            "<a href=\""+BoardPage.getURI(mBoard)+"\">",
+                            mBoard.getName(),
+                            "</a>" });
         }
     }
     
@@ -124,31 +130,36 @@ public final class ThreadPage extends WebPageImpl {
     	// FIXME: The author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out
     	// what the proper place for a function "getIdentityIDFromThreadID" is and whether I have already written one which can do that, and if
     	// yes, where it is.
-        authorNode.addChild("b").addChild("i").addChild("#", "Author unknown");
+        authorNode.addChild("b").addChild("i").addChild("#", Freetalk.getBaseL10n().getString("ThreadPage.ThreadNotDownloadedWarning.Author"));
 
         HTMLNode title = row.addChild(ref.wasRead() ? "td" : "th", "align", "left", "");
 
         addMarkThreadAsUnreadButton(title, (BoardThreadLink)ref);
         
-        title.addChild("b", "Thread not downloaded");
+        title.addChild("b", Freetalk.getBaseL10n().getString("ThreadPage.ThreadNotDownloadedWarning.Title"));
         
         row = table.addChild("tr");
         HTMLNode text = row.addChild("td", "align", "left", "");
-        text.addChild("div", "class", "infobox-error", "The parent thread of these messages was not downloaded yet.");
+        text.addChild("div", "class", "infobox-error", Freetalk.getBaseL10n().getString("ThreadPage.ThreadNotDownloadedWarning.Content"));
     }
     
     private void addThreadIsNoThreadWarning() {
-    	HTMLNode div = addAlertBox("This is a forked thread").addChild("div");
-    
-    	div.addChild("#", "The author of the second message below replied to the first message stating that it should become a new thread, the first message was"
-    			+ " not intended to be a thread by it's author, it was a reply to ");
+    	HTMLNode div = addAlertBox(Freetalk.getBaseL10n().getString("ThreadPage.ThreadIsNoThreadWarning.Header")).addChild("div");
+
+    	String uri;
     	try {
-			div.addChild("a", "href",  getURI(mBoard.getName(), mThread.getMessage().getThreadID())).addChild("#", "this");
-		} catch (NoSuchMessageException e) {
-			throw new IllegalArgumentException("SHOULD NOT HAPPEN");
-		}
-		
-		div.addChild("#", " thread.");
+    	    uri = getURI(mBoard.getName(), mThread.getMessage().getThreadID());
+    	} catch (NoSuchMessageException e) {
+    	    throw new IllegalArgumentException("SHOULD NOT HAPPEN");
+    	}
+    	
+        Freetalk.getBaseL10n().addL10nSubstitution(
+                div, 
+                "ThreadPage.ThreadIsNoThreadWarning.Text",
+                new String[] { "link", "/link" }, 
+                new String[] {
+                        "<a href=\""+uri+"\">",
+                        "</a>" });
     }
 
     /* You have to synchronize on mLocalDateFormat when using this function */
@@ -160,28 +171,29 @@ public final class ThreadPage extends WebPageImpl {
         HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width" }, new String[] { "left", "top", "2", "15%" }, "");
         authorNode.addChild("b").addChild("i").addChild("#", message.getAuthor().getShortestUniqueName(50));
         authorNode.addChild("br");
-        authorNode.addChild("#", "Posts: " + mFreetalk.getMessageManager().getMessagesBy(message.getAuthor()).size());
+        authorNode.addChild("#", Freetalk.getBaseL10n().getString("ThreadPage.Author.Posts") + ": " + mFreetalk.getMessageManager().getMessagesBy(message.getAuthor()).size());
         authorNode.addChild("br");
-        authorNode.addChild("#", "Reputation: ");
+        authorNode.addChild("#", Freetalk.getBaseL10n().getString("ThreadPage.Author.Reputation") + ": ");
         try {
         	addTrustersInfo(authorNode, message.getAuthor());
         }
         catch(Exception e) {
         	Logger.error(this, "addTrustersInfo() failed", e);
-        	authorNode.addChild("#", "Unknown");
+        	authorNode.addChild("#", Freetalk.getBaseL10n().getString("ThreadPage.UnknownReputation"));
         }
         
         authorNode.addChild("br");
         
+        final String txtEsteem = Freetalk.getBaseL10n().getString("ThreadPage.Author.Esteem");
         try {
         	int score = ((WoTIdentityManager)mFreetalk.getIdentityManager()).getScore((WoTOwnIdentity)mOwnIdentity, (WoTIdentity)message.getAuthor());
         		
-        	authorNode.addChild("#", "Esteem: "+ makeStars((int)(Math.log(score)/Math.log(10))));
+        	authorNode.addChild("#", txtEsteem + ": "+ makeStars((int)(Math.log(score)/Math.log(10))));
         } catch(NotInTrustTreeException e) {
-        	authorNode.addChild("#", "Esteem: None");
+        	authorNode.addChild("#", txtEsteem + ": " + Freetalk.getBaseL10n().getString("ThreadPage.Author.EsteemNone"));
         } catch(Exception e) {
         	Logger.error(this, "getScore() failed", e);
-        	authorNode.addChild("#", "Esteem: None");
+        	authorNode.addChild("#", txtEsteem + ": " + Freetalk.getBaseL10n().getString("ThreadPage.Author.EsteemNone"));
         }
         
         authorNode.addChild("br");
@@ -191,13 +203,13 @@ public final class ThreadPage extends WebPageImpl {
             int intTrust = ((WoTOwnIdentity)mOwnIdentity).getTrustIn((WoTIdentity)message.getAuthor());
             trust = Integer.toString(intTrust); 
         } catch (NotTrustedException e) {
-            trust = "None";
+            trust = Freetalk.getBaseL10n().getString("ThreadPage.Author.YourTrustNone");
         } catch (Exception e) {
         	Logger.error(this, "getTrust() failed", e);
-        	trust = "UNKNOWN";
+        	trust = Freetalk.getBaseL10n().getString("ThreadPage.Author.YourTrustUnknown");
         }
         
-        authorNode.addChild("#", "Your trust: "+trust);
+        authorNode.addChild("#", Freetalk.getBaseL10n().getString("ThreadPage.Author.YourTrust") + ": "+trust);
 
         HTMLNode title = row.addChild(ref.wasRead() ? "td" : "th", "align", "left", "");
         
@@ -227,8 +239,9 @@ public final class ThreadPage extends WebPageImpl {
 
     private String makeStars(int number) {
         String result = "";
-        for(int i=0;i<number;i++)
+        for(int i=0;i<number;i++) {
             result += "*";
+        }
         return result;
     }
 
@@ -277,7 +290,7 @@ public final class ThreadPage extends WebPageImpl {
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ParentThreadID", mThread.getThreadID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ParentMessageID", parentMessage.getID()});
-        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", "Reply" });
+        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", Freetalk.getBaseL10n().getString("ThreadPage.ReplyButton") });
     }
 
     private void addModButton(HTMLNode parent, Message message, int change, String label) {
@@ -300,7 +313,7 @@ public final class ThreadPage extends WebPageImpl {
         markAsUnreadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
         markAsUnreadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ThreadID", mThread.getThreadID()});
         markAsUnreadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "MarkThreadAsUnread", "true"});
-        markAsUnreadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", "Mark as unread" });
+        markAsUnreadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", Freetalk.getBaseL10n().getString("ThreadPage.MarkAsUnreadButton") });
     }
 
     private void addDebugInfo(HTMLNode messageBox, Message message) {
