@@ -37,13 +37,14 @@ public final class BoardPage extends WebPageImpl {
 	public final void make() {
 		makeBreadcrumbs();
 
-		HTMLNode threadsBox = addContentBox("Threads in '" + mBoard.getName() + "'");
+		HTMLNode threadsBox = addContentBox("");
+        Freetalk.getBaseL10n().addL10nSubstitution(threadsBox, "BoardPage.ThreadsHeader", new String[] { "boardname" }, new String[] { mBoard.getName() });
 		
 		// Button for creating a new thread
 		HTMLNode newThreadForm = addFormChild(threadsBox, Freetalk.PLUGIN_URI + "/NewThread", "NewThreadPage");
 			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID() });
 			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "BoardName", mBoard.getName() });
-			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "New thread" });
+			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", Freetalk.getBaseL10n().getString("BoardPage.CreateNewThreadButton") });
 		
 		// Threads table
 		HTMLNode threadsTable = threadsBox.addChild("table", new String[] { "border", "width" }, new String[] { "0", "100%" });
@@ -52,15 +53,16 @@ public final class BoardPage extends WebPageImpl {
 		HTMLNode colgroup = threadsTable.addChild("colgroup");
 			colgroup.addChild("col", "width", "100%"); // Title, should use as much space as possible, the other columns should have minimal size
 			colgroup.addChild("col"); // Author
+			colgroup.addChild("col"); // Trust
 			colgroup.addChild("col"); // Date
 			colgroup.addChild("col"); // Replies
 		
 		HTMLNode row = threadsTable.addChild("thead");
-			row.addChild("th", "Title");
-			row.addChild("th", "Author");
-			row.addChild("th", "Trust");
-			row.addChild("th", "Date");
-			row.addChild("th", "Replies");
+			row.addChild("th", Freetalk.getBaseL10n().getString("BoardPage.ThreadTableHeader.Title"));
+			row.addChild("th", Freetalk.getBaseL10n().getString("BoardPage.ThreadTableHeader.Author"));
+			row.addChild("th", Freetalk.getBaseL10n().getString("BoardPage.ThreadTableHeader.Trust"));
+			row.addChild("th", Freetalk.getBaseL10n().getString("BoardPage.ThreadTableHeader.Date"));
+			row.addChild("th", Freetalk.getBaseL10n().getString("BoardPage.ThreadTableHeader.Replies"));
 		
 		DateFormat dateFormat = DateFormat.getInstance();
 		

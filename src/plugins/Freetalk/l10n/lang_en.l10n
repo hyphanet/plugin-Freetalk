@@ -1,3 +1,10 @@
+BoardPage.ThreadsHeader=Threads in '${boardname}'
+BoardPage.CreateNewThreadButton=New thread
+BoardPage.ThreadTableHeader.Title=Title
+BoardPage.ThreadTableHeader.Author=Author
+BoardPage.ThreadTableHeader.Trust=Trust
+BoardPage.ThreadTableHeader.Date=Date
+BoardPage.ThreadTableHeader.Replies=Replies
 BoardsPage.BoardListHeader=Your boards
 BoardsPage.NewBoardButton=New board
 BoardsPage.BoardTableHeader.Name=Name
