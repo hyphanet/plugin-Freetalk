@@ -17,32 +17,35 @@ public final class Welcome extends WebPageImpl {
 	
 	public Welcome(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) {
 		super(myWebInterface, viewer, request);
-		// TODO Auto-generated constructor stub
 	}
 
 	public final void make() throws RedirectException {
-		if(mOwnIdentity == null)
+		if(mOwnIdentity == null) {
 			throw new RedirectException(logIn);
+		}
 		makeWelcomeBox();
 		makeOverviewBox();
 		new BoardsPage(mWebInterface, mOwnIdentity, mRequest).addToPage(mContentNode);
 	}
 	
 	private final void makeWelcomeBox() {
-		HTMLNode welcomeBox = addContentBox("Welcome");
-		welcomeBox.addChild("p", "IMPORTANT NOTE: All messages you post with the current Freetalk release are considered as testing messages and will NOT be readable by the first stable release. This is necessary so that we could change internal stuff completely if there is a need to do so.");
-		HTMLNode p = welcomeBox.addChild("p", "You can use Freetalk via the webinterface ");
-		p.addChild("strike", "or with a newsreader connected to localhost port 1199.");
-		p.addChild("#", " Unfortunately the newsreader interface seems to have a bug which makes it cause 100% CPU usage when it" +
-				" is not even being used. Until we find the time to debug it, it is disabled.");
+		HTMLNode welcomeBox = addContentBox(Freetalk.getBaseL10n().getString("Welcome.WelcomeBoxHeader"));
+		welcomeBox.addChild("p", Freetalk.getBaseL10n().getString("Welcome.WelcomeBoxText1"));
+		welcomeBox.addChild("p", Freetalk.getBaseL10n().getString("Welcome.WelcomeBoxText2"));
+		welcomeBox.addChild("p", Freetalk.getBaseL10n().getString("Welcome.WelcomeBoxText3"));
+		
+//		HTMLNode p = welcomeBox.addChild("p", "You can use Freetalk via the webinterface ");
+//		p.addChild("strike", "or with a newsreader connected to localhost port 1199.");
+//		p.addChild("#", " Unfortunately the newsreader interface seems to have a bug which makes it cause 100% CPU usage when it" +
+//				" is not even being used. Until we find the time to debug it, it is disabled.");
 		//welcomeBox.addChild("p", "For the newsreader: As the account name, specify the nickname of an own identity and as the e-mail address specify the Freetalk address. You can look it up on the identities page. A password is not required.");
 	}
 
 	private final void makeOverviewBox() {
-		HTMLNode overviewBox = addContentBox("Overview");
+		HTMLNode overviewBox = addContentBox(Freetalk.getBaseL10n().getString("Welcome.OverviewBoxHeader"));
 		HTMLNode list = overviewBox.addChild("ul");
-		list.addChild(new HTMLNode("li", "Known Identities: " + mFreetalk.getIdentityManager().countKnownIdentities()));
-		list.addChild(new HTMLNode("li", "Messages waiting to be sent: " + mFreetalk.getMessageManager().countUnsentMessages()));
+		list.addChild(new HTMLNode("li", Freetalk.getBaseL10n().getString("Welcome.OverviewBoxKnownIdentities") + ": " + mFreetalk.getIdentityManager().countKnownIdentities()));
+		list.addChild(new HTMLNode("li", Freetalk.getBaseL10n().getString("Welcome.OverviewBoxMessagesWaiting") + ": " + mFreetalk.getMessageManager().countUnsentMessages()));
 	}
 
 	public static void addBreadcrumb(BreadcrumbTrail trail) {

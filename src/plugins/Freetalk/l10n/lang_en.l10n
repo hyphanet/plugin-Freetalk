@@ -28,4 +28,11 @@ WebInterface.DiscussionMenuItem.Identities=Identities
 WebInterface.DiscussionMenuItem.Identities.Tooltip=Manage your own and known identities
 WebInterface.DiscussionMenuItem.LogOut=Log out
 WebInterface.DiscussionMenuItem.LogOut.Tooltip=Log out
+Welcome.WelcomeBoxHeader=Welcome
+Welcome.WelcomeBoxText1=IMPORTANT NOTE: All messages you post with the current Freetalk release are considered as testing messages and will NOT be readable by the first stable release. This is necessary so that we could change internal stuff completely if there is a need to do so.
+Welcome.WelcomeBoxText2=You can use Freetalk via the webinterface or with a newsreader connected to localhost port 1199.
+Welcome.WelcomeBoxText3=For the newsreader: As the account name, specify the nickname of an own identity and as the e-mail address specify the Freetalk address. You can look it up on the identities page. When you are asked for a user name, specify the Freetalk address. A password is not required.
+Welcome.OverviewBoxHeader=Overview
+Welcome.OverviewBoxKnownIdentities=Known Identities
+Welcome.OverviewBoxMessagesWaiting=Messages waiting to be sent
 End
