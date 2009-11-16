@@ -45,19 +45,26 @@ public class SelectBoardsPage extends WebPageImpl {
 				if(subscribe) {
 					SubscribedBoard board = messageManager.subscribeToBoard(mOwnIdentity, boardName);
 
-					HTMLNode successBox = addContentBox("Subscription succeeded");
-					successBox.addChild("div", "You are now subscribed to the board ")
-						.addChild("u").addChild(
-							new HTMLNode("a", "href", 
-									Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + board.getName(), board.getName()));
+					HTMLNode successBox = addContentBox(Freetalk.getBaseL10n().getString("SelectBoardsPage.SubscriptionSucceededBoxHeader"));
+	                Freetalk.getBaseL10n().addL10nSubstitution(
+	                        successBox.addChild("div"), 
+	                        "SelectBoardsPage.SubscriptionSucceededBoxText",
+	                        new String[] { "link", "boardname", "/link" }, 
+	                        new String[] {
+	                                "<a href=\""+Freetalk.PLUGIN_URI+"/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + board.getName()+"\">",
+	                                board.getName(),
+	                                "</a>" });
 				}
 				else if(unsubscribe) {
-					messageManager.unsubscribeFromBoard(mOwnIdentity, boardName);
-					addContentBox("Unsubscription succeeded")
-						.addChild("div", "You will no longer receive messages from the board " + boardName);
+                    HTMLNode successBox = addContentBox(Freetalk.getBaseL10n().getString("SelectBoardsPage.UnsubscriptionSucceededBoxHeader"));
+                    Freetalk.getBaseL10n().addL10nSubstitution(
+                        successBox.addChild("div"), 
+                        "SelectBoardsPage.UnsubscriptionSucceededBoxText",
+                        new String[] { "boardname" }, 
+                        new String[] { boardName });
 				}	
 			} catch(Exception e) {
-				HTMLNode alertBox = addAlertBox(subscribe ? "Subscribing to board failed" : "Unsubscribing from board failed");
+				HTMLNode alertBox = addAlertBox(subscribe ? Freetalk.getBaseL10n().getString("SelectBoardsPage.SubscribeFailed") : Freetalk.getBaseL10n().getString("SelectBoardsPage.UnsubscribeFailed"));
 				alertBox.addChild("div", e.getMessage());
 				
 				Logger.error(this, subscribe ? "subscribe failed" : "unsubscribe failed", e);
