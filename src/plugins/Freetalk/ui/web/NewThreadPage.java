@@ -35,12 +35,20 @@ public final class NewThreadPage extends WebPageImpl {
 			try {
 				mFreetalk.getMessageManager().postMessage(null, null, boards, mBoard, mOwnIdentity, threadSubject, null, threadText, null);
 
-				HTMLNode successBox = addContentBox("Thread created");
-				successBox.addChild("p", "The thread was put into your outbox. Freetalk will upload it after some time.");
-				successBox.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + mBoard.getName(),
-								"Go back to " + mBoard.getName()));
+				HTMLNode successBox = addContentBox(Freetalk.getBaseL10n().getString("NewThreadPage.ThreadCreated.Header"));
+				successBox.addChild("p", Freetalk.getBaseL10n().getString("NewThreadPage.ThreadCreated.Text"));
+				HTMLNode aChild = successBox.addChild("#");
+                Freetalk.getBaseL10n().addL10nSubstitution(
+                        aChild, 
+                        "NewThreadPage.ThreadCreated.BackToBoard",
+                        new String[] { "link", "boardname", "/link" }, 
+                        new String[] {
+                                // TODO: Use BoardPage.getURI(mBoard) here?
+                                "<a href=\"" + Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + mBoard.getName() + "\">",
+                                mBoard.getName(),
+                                "</a>" });
 			} catch (Exception e) {
-				HTMLNode alertBox = addAlertBox("The thread could not be created.");
+				HTMLNode alertBox = addAlertBox(Freetalk.getBaseL10n().getString("NewThreadPage.ThreadFailed.Header"));
 				alertBox.addChild("div", e.getMessage());
 				
 				makeNewThreadPage(threadSubject, threadText);
@@ -51,22 +59,26 @@ public final class NewThreadPage extends WebPageImpl {
 	}
 
 	private void makeNewThreadPage(String threadSubject, String threadText) {
-		HTMLNode threadBox = addContentBox("New thread in " + mBoard.getName());
+        final String trnsl = Freetalk.getBaseL10n().getString(
+                "NewThreadPage.ThreadBox.Header",
+                new String[] { "boardname" }, 
+                new String[] { mBoard.getName() });
+        HTMLNode threadBox = addContentBox(trnsl);
+	    
 		HTMLNode newThreadForm = addFormChild(threadBox, Freetalk.PLUGIN_URI + "/NewThread", "NewThread");
 		newThreadForm.addChild("input", new String[] { "type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
 		
-		HTMLNode authorBox = newThreadForm.addChild(getContentBox("Author"));
+		HTMLNode authorBox = newThreadForm.addChild(getContentBox(Freetalk.getBaseL10n().getString("NewThreadPage.ThreadBox.Author")));
 		authorBox.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
 		authorBox.addChild("b", mOwnIdentity.getFreetalkAddress());
 		
-		HTMLNode subjectBox = newThreadForm.addChild(getContentBox("Subject"));
+		HTMLNode subjectBox = newThreadForm.addChild(getContentBox(Freetalk.getBaseL10n().getString("NewThreadPage.ThreadBox.Subject")));
 		subjectBox.addChild("input", new String[] {"type", "name", "size", "maxlength", "value"},
 				new String[] {"text", "ThreadSubject", "100", Integer.toString(Message.MAX_MESSAGE_TITLE_TEXT_LENGTH), threadSubject});		
 		
-		HTMLNode textBox = newThreadForm.addChild(getContentBox("Text"));
+		HTMLNode textBox = newThreadForm.addChild(getContentBox(Freetalk.getBaseL10n().getString("NewThreadPage.ThreadBox.Text")));
 		textBox.addChild("textarea", new String[] { "name", "cols", "rows" }, new String[] { "ThreadText", "80", "30" }, threadText);
 		
-		newThreadForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateThread", "Submit"});
+		newThreadForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateThread", Freetalk.getBaseL10n().getString("NewThreadPage.ThreadBox.SubmitButton")});
 	}
-
 }
