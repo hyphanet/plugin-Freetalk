@@ -73,7 +73,7 @@ public final class IntroduceIdentityPage extends TaskPage {
 	}
 	
 	protected void showPuzzles() throws RedirectException {
-		HTMLNode contentBox = addAlertBox("Introduce your identity");
+		HTMLNode contentBox = addAlertBox(Freetalk.getBaseL10n().getString("IntroduceIdentityPage.IntroduceIdentity.Header"));
 		
 		List<String> puzzleIDs = null;
 		int trusterCount = 0;
@@ -84,24 +84,26 @@ public final class IntroduceIdentityPage extends TaskPage {
 		} catch (Exception e) {
 			Logger.error(this, "getIntroductionPuzzles() failed", e);
 
-			new ErrorPage(mWebInterface, mOwnIdentity, mRequest, "Obtaining puzzles failed", e.getMessage()).addToPage(contentBox);
+			new ErrorPage(mWebInterface, mOwnIdentity, mRequest, Freetalk.getBaseL10n().getString("IntroduceIdentityPage.IntroduceIdentity.ObtainingPuzzlesFailed"), e.getMessage()).addToPage(contentBox);
 			return;
 		}
 		
 		HTMLNode p;
 		
 		if(trusterCount > 0) {
-			p = contentBox.addChild("p", "You have received less than " + mFreetalk.getConfig().getInt(Config.MINIMUM_TRUSTER_COUNT) + 
-				" trust values from other identities: Your messages might not be seen by everyone.");
+		    String trnsl = Freetalk.getBaseL10n().getString(
+		            "IntroduceIdentityPage.IntroduceIdentity.ReceivedLowTrust",
+		            "trustcount",
+		            Integer.toString( mFreetalk.getConfig().getInt(Config.MINIMUM_TRUSTER_COUNT )));
+			p = contentBox.addChild("p", trnsl);
 		} else {
-			p = contentBox.addChild("p", "You have received no trust values from other identities: Your messages will not be seen by anyone!");
+			p = contentBox.addChild("p", Freetalk.getBaseL10n().getString("IntroduceIdentityPage.IntroduceIdentity.ReceivedNoTrust"));
 		}
 				
 		if(puzzleIDs.size() > 0 ) {
-			p.addChild("#", " You have to solve the following puzzles to get trusted by other identities, then your messages will be visible to the most identities:");
+			p.addChild("#", " " + Freetalk.getBaseL10n().getString("IntroduceIdentityPage.IntroduceIdentity.SolveAvailablePuzzles") + ":");
 		} else {
-			contentBox.addChild("p", "For your messages to become visible to others, you will have to solve so-called 'introduction puzzles'. Freetalk will" +
-					" show them to you as soon as they have been downloaded. This will take about 15 minutes.");
+			contentBox.addChild("p", Freetalk.getBaseL10n().getString("IntroduceIdentityPage.IntroduceIdentity.SolvePuzzlesLater"));
 			return;
 		}
 
@@ -126,16 +128,15 @@ public final class IntroduceIdentityPage extends TaskPage {
 	}
 	
 	protected void showEnoughPuzzlesSolvedMessage() {
-		HTMLNode contentBox = addContentBox("Identity introduced");
-		contentBox.addChild("#", "You have solved enough puzzles. In theory, the next day your identity should be visible to others. Freetalk will tell you to"
-				+ " solve more puzzles if it is not.");
+		HTMLNode contentBox = addContentBox(Freetalk.getBaseL10n().getString("IntroduceIdentityPage.EnoughPuzzlesSolved.Header"));
+		contentBox.addChild("#", Freetalk.getBaseL10n().getString("IntroduceIdentityPage.EnoughPuzzlesSolved.Text"));
 	}
 
 	public void make() throws RedirectException {
-		if(mNumberOfPuzzles > 0)
+		if(mNumberOfPuzzles > 0) {
 			showPuzzles();
-		else
+		} else {
 			showEnoughPuzzlesSolvedMessage();
+		}
 	}
-
 }
