@@ -13,9 +13,6 @@ import freenet.support.api.HTTPRequest;
 
 public final class LogInPage extends WebPageImpl {
     
-    private static final String[] l10nBoldSubstitutionInput = new String[] { "bold", "/bold" };
-    private static final String[] l10nBoldSubstitutionOutput = new String[] { "<b>", "</b>" };
-
 	public LogInPage(WebInterface myWebInterface, HTTPRequest request) {
 		super(myWebInterface, null, request);
 	}
@@ -31,6 +28,8 @@ public final class LogInPage extends WebPageImpl {
 	}
 
 	private final void makeWelcomeBox() {
+	    final String[] l10nBoldSubstitutionInput = new String[] { "bold", "/bold" };
+	    final String[] l10nBoldSubstitutionOutput = new String[] { "<b>", "</b>" };
 	    HTMLNode aChild;
 		HTMLNode welcomeBox = addContentBox(Freetalk.getBaseL10n().getString("LoginPage.WelcomeHeader"));
 		welcomeBox.addChild("p", Freetalk.getBaseL10n().getString("LoginPage.WelcomeText1"));
