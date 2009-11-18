@@ -44,6 +44,7 @@ import freenet.support.Logger;
  * @author bback
  * 
  * FIXME: maybe rework the ByteBuffer usage
+ * FIXME: add text to web interface: Thunderbird requires "enable in Account->Server settings: Always request authentication when connecting to server"
  */
 public class FreetalkNNTPHandler implements Runnable {
 
@@ -564,7 +565,7 @@ public class FreetalkNNTPHandler implements Runnable {
         printStatusLine("101 Capability list:");
         printText("VERSION 2");
         if (authOwnIdentity == null) {
-            printText("AUTHINFO USER"); // we allow this on unsecured connection
+            printText("AUTHINFO USER"); // we allow this on unsecured connections
         }
         printText("READER");
         printText("POST");
@@ -771,50 +772,6 @@ public class FreetalkNNTPHandler implements Runnable {
     }
 
     /**
-     * Find the user's OwnIdentity corresponding to the given mail
-     * address.  Use domain part to disambiguate if we have multiple
-     * identities with the same nickname.
-     */
-    private FTOwnIdentity getAuthorIdentity(String name, String domain) throws IOException {
-        FTOwnIdentity bestMatch = null;
-        boolean matchName = false, matchDomain = false, multiple = false;
-
-        Logger.debug(this, "Received message from " + name + "@" + domain);
-
-        Iterator<FTOwnIdentity> i = mIdentityManager.ownIdentityIterator();
-        while (i.hasNext()) {
-            FTOwnIdentity identity = i.next();
-            if (identity.getNickname().equals(name)) {
-                String id = identity.getID();
-                if (id.startsWith(domain) || domain.startsWith(id)) {
-                    if (matchDomain)
-                        multiple = true;
-                    bestMatch = identity;
-                    matchName = matchDomain = true;
-                }
-                else if (!matchDomain) {
-                    if (matchName)
-                        multiple = true;
-                    bestMatch = identity;
-                    matchName = true;
-                }
-            }
-        }
-
-        if (multiple) {
-            printStatusLine("441 Multiple identities matching sender");
-            return null;
-        }
-        else if (bestMatch == null) {
-            printStatusLine("441 Unknown sender <" + name + "@" + domain + ">");
-            return null;
-        }
-        else {
-            return bestMatch;
-        }
-    }
-
-    /**
      * Handle a command that includes a text data block.
      */
     private synchronized void finishCommand(String line, ByteBuffer text) throws IOException {
@@ -824,10 +781,13 @@ public class FreetalkNNTPHandler implements Runnable {
             printStatusLine("441 Unable to parse message");
         }
         else {
-            // FIXME: use authenticated ID or allow to use different IDs to POST?
-            FTOwnIdentity myIdentity = getAuthorIdentity(parser.getAuthorName(), parser.getAuthorDomain());
-            if (myIdentity == null)
+            // Freetalk address used during AUTH must match the email provided with POST
+            String freetalkAddress = parser.getAuthorName() + "@" + parser.getAuthorDomain();
+            if (freetalkAddress == null || authOwnIdentity == null || !freetalkAddress.equals(authOwnIdentity.getFreetalkAddress())) {
+                Logger.normal(this, "Error posting message, invalid user name: " + freetalkAddress);
+                printStatusLine("441 Posting failed, invalid user name");
                 return;
+            }
 
             synchronized(mMessageManager) {
                 try {
@@ -847,7 +807,7 @@ public class FreetalkNNTPHandler implements Runnable {
 
                     HashSet<String> boardSet = new HashSet<String>(parser.getBoards());
                     OwnMessage message = mMessageManager.postMessage(parentMessage.isThread() ? parentMessage.getURI() : parentMessage.getThreadURI(),
-                    		parentMessage, boardSet, parser.getReplyToBoard(), myIdentity, parser.getTitle(), null, parser.getText(), null);
+                    		parentMessage, boardSet, parser.getReplyToBoard(), authOwnIdentity, parser.getTitle(), null, parser.getText(), null);
                     printStatusLine("240 Message posted; ID is <" + message.getID() + ">");
                 }
                 catch (Exception e) {
