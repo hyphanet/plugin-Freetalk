@@ -14,10 +14,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 	
 	/* Step 1: Choose URI */
 	private Boolean mGenerateRandomSSK = null; 
-	private FreenetURI[] mIdentityURI = null; /*
-											 * insert URI at index 0 and request
-											 * URI at index 1
-											 */
+	private FreenetURI[] mIdentityURI = null; /* insert URI at index 0 and request URI at index 1 */
 
 	/* Step 2: Choose Nickname */
 	private String mIdentityNickname = null;
@@ -45,7 +42,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 	 * readable: Maybe separate it into several functions
 	 */
 	private void makeCreateIdentityBox() {
-		HTMLNode wizardBox = addContentBox("Create an own identity");
+		HTMLNode wizardBox = addContentBox(Freetalk.getBaseL10n().getString("CreateIdentityWizard.CreateIdentityBox.Header"));
 		HTMLNode backForm = addFormChild(wizardBox, Freetalk.PLUGIN_URI + "/CreateIdentity", "CreateIdentity");
 		HTMLNode createForm = addFormChild(wizardBox, Freetalk.PLUGIN_URI + "/CreateIdentity", "CreateIdentity");
 		
@@ -117,12 +114,9 @@ public class CreateIdentityWizard extends WebPageImpl {
 		if(requestedStep == 1) {
 			addHiddenFormData(createForm, requestedStep, requestedStep + 1);
 			
-			HTMLNode chooseURIbox = getContentBox("Step 1 of 3: Choose the SSK URI");
+			HTMLNode chooseURIbox = getContentBox(Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step1.Header"));
 			createForm.addChild(chooseURIbox);
-			
-			chooseURIbox.addChild("p", "The SSK URI of your identity is a public-private keypair which uniquely identifies your identity " +
-					"on the network. You can either let Freenet generate a new, random one for you or enter an existing SSK URI pair - for " +
-					"example if you own a Freesite you can re-use it's URI to show others that your identity belongs to your Freesite.");
+			chooseURIbox.addChild("p", Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step1.Text"));
 			
 			HTMLNode randomRadio = chooseURIbox.addChild("p");
 			HTMLNode notRandomRadio = chooseURIbox.addChild("p");
@@ -143,29 +137,31 @@ public class CreateIdentityWizard extends WebPageImpl {
 													new String[] { "radio", "GenerateRandomSSK" , "false", "checked"});
 			}
 			
-			randomRadio.addChild("#", "Generate a new, random SSK keypair for the identity.");
-			notRandomRadio.addChild("#", "I want to use an existing SSK URI keypair for the identity.");
+			randomRadio.addChild("#", Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step1.GenerateNewKeyPairRadio"));
+			notRandomRadio.addChild("#", Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step1.UseExistingKeyPairRadio"));
 
 			if(mGenerateRandomSSK != null && mGenerateRandomSSK == false) {
-				HTMLNode enterParagraph = notRandomRadio.addChild("p", "Please enter the SSK URI pair:");
+				HTMLNode enterParagraph = notRandomRadio.addChild("p", Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step1.EnterKeyPair") + ":");
 				
 				if(requestURIproblem != null) {
 					enterParagraph.addChild("br");
-					enterParagraph.addChild("div", "style", "color: red;", "Request URI error: " + requestURIproblem.getLocalizedMessage());
+					enterParagraph.addChild("div", "style", "color: red;", 
+					        Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step1.RequestUriError") + ": " + requestURIproblem.getLocalizedMessage());
 				}
 				
 				if(insertURIproblem != null) {
 					enterParagraph.addChild("br");
-					enterParagraph.addChild("div", "style", "color: red;", "Insert URI error: " + insertURIproblem.getLocalizedMessage());
+					enterParagraph.addChild("div", "style", "color: red;", 
+					        Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step1.InsertUriError") + ": " + insertURIproblem.getLocalizedMessage());
 				}
 			
 				enterParagraph.addChild("br");
-				enterParagraph.addChild("#", "Request URI: ");
+				enterParagraph.addChild("#", Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step1.RequestUri") + ": ");
 				enterParagraph.addChild("input",	new String[] { "type", "name", "size", "value" },
 													new String[] { "text", "RequestURI", "70", mRequest.getPartAsString("RequestURI", 256) });
 
 				enterParagraph.addChild("br");
-				enterParagraph.addChild("#", "Insert URI: ");
+				enterParagraph.addChild("#", Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step1.InsertUri") + ": ");
 				enterParagraph.addChild("input",	new String[] { "type", "name", "size", "value" },
 													new String[] { "text", "InsertURI", "70", mRequest.getPartAsString("InsertURI", 256) });
 			}
@@ -175,19 +171,17 @@ public class CreateIdentityWizard extends WebPageImpl {
 		else if(requestedStep == 2 ) {
 			addHiddenFormData(createForm, requestedStep, requestedStep + 1);
 			
-			HTMLNode chooseNameBox = getContentBox("Step 2 of 3: Choose the Nickname");
+			HTMLNode chooseNameBox = getContentBox(Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step2.Header"));
 			createForm.addChild(chooseNameBox);
-			
-			chooseNameBox.addChild("p", "The nickname of an identity cannot be changed after the identity has been created, please choose it " +
-					"carefully. You cannot use spaces and some special characters in the nickname.");
+			chooseNameBox.addChild("p", Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step2.Text"));
 			HTMLNode p = chooseNameBox.addChild("p");
 			
 			if(nicknameProblem != null) {
 				p.addChild("p", "style", "color: red;").
-				addChild("#", "Nickname error: " + nicknameProblem.getLocalizedMessage());
+				addChild("#", Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step2.NicknameError") + ": " + nicknameProblem.getLocalizedMessage());
 			}
 			
-			p.addChild("#", "Nickname: ");
+			p.addChild("#", Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step2.Nickname") + ": ");
 			p.addChild("input",	new String[] { "type", "name", "size", "value" },
 								new String[] { "text", "Nickname", "50", mRequest.getPartAsString("Nickname", 50) });
 
@@ -195,37 +189,31 @@ public class CreateIdentityWizard extends WebPageImpl {
 		
 		/* Step 3: Preferences */
 		else if(requestedStep == 3) {
+            final String[] l10nBoldSubstitutionInput = new String[] { "bold", "/bold" };
+            final String[] l10nBoldSubstitutionOutput = new String[] { "<b>", "</b>" };
+
 			addHiddenFormData(createForm, requestedStep, requestedStep + 1);
 			
-			HTMLNode choosePrefsBox = getContentBox("Step 3 of 3: Choose your preferences");
+			HTMLNode choosePrefsBox = getContentBox(Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step3.Header"));
 			createForm.addChild(choosePrefsBox);
 			
-			HTMLNode tlBox = getContentBox("Trust list");
+			HTMLNode tlBox = getContentBox(Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step3.TrustList.Header"));
 			choosePrefsBox.addChild(tlBox);
 			
-			HTMLNode p = tlBox.addChild("p", "Trust lists are the "); p.addChild("b", "fundament of Freetalk");
-			p.addChild("#", ": You can publish a "); p.addChild("b", "trust value"); p.addChild("#", " for every identity in your trust list. " +
-					"The trust value can be between -100 and +100 inclusive and is a measurement for how valuable you rate the messages of an " +
-					"identity. If someone posts spam, you can give a negative trust value, if he writes useful posts, you can assign a " +
-					" positive one.");
-			
-			p = tlBox.addChild("p", "For every identity, Freetalk will accumulate trust values which it has received by other identities and " +
-					"calculate a "); p.addChild("b", "score"); p.addChild("#", " - a weighted average - from those. If the score of an " +
-					"identity is negative, Freetalk will not download messages from that identity anymore (unless you tell it to do so). " +
-					"Therefore, the purpose of the trust system is to "); p.addChild("b", "prevent spam"); p.addChild("#", " but it is ");
-					p.addChild("b", "not to punish authors for having a different opinion than yours.");
-					p.addChild("#", " Please respect that when assigning trust values.");
-					
-			p = tlBox.addChild("p", "Here you can choose whether Freetalk should publish a trust list for your identity. It is generally a " +
-					"good idea because it helps the other users. However you can tell Freetalk not to publish your trust list if you are " +
-					"concernced that it might compromise your anonymity because the trust values among several of your identities might " +
-					"correlate.");
+			HTMLNode p;
+
+			p = tlBox.addChild("p");
+	        Freetalk.getBaseL10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text1", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+	        p = tlBox.addChild("p");
+	        Freetalk.getBaseL10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text2", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+	        p = tlBox.addChild("p");
+	        Freetalk.getBaseL10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text3", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 			
 			p = tlBox.addChild("p");
 			// Do not get checked state from the form data because if a checkbox is not checked then its form data is not set
 			p.addChild("input",	new String[] { "type", "name", "value", "checked" },
 								new String[] { "checkbox", "PublishTrustList", "true", "checked"});
-			p.addChild("#", "Publish the trust list of the identitiy");
+			p.addChild("#", Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step3.TrustList.PublishTrustListCheckbox"));
 		}
 		
 		/* Step 4: Create the identity */
@@ -236,16 +224,16 @@ public class CreateIdentityWizard extends WebPageImpl {
 				WoTOwnIdentity id = (WoTOwnIdentity)mFreetalk.getIdentityManager().createOwnIdentity(mIdentityNickname,
 						mIdentityPublishesTrustList, true, mIdentityURI[1], mIdentityURI[0]);
 						
-				HTMLNode summaryBox = getContentBox("Identity created");
+				HTMLNode summaryBox = getContentBox(Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step4.Header"));
 				wizardBox.addChild(summaryBox);
 				
-				summaryBox.addChild("p", "Your identity was successfully created. You can log in with it now.");
+				summaryBox.addChild("p", Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step4.Success"));
 				LogInPage.addLoginButton(this, summaryBox, id);
 				
 				return;
 			}
 			catch(Exception e) {
-				HTMLNode errorBox = getAlertBox("Sorry, there was a problem creating your identity");
+				HTMLNode errorBox = getAlertBox(Freetalk.getBaseL10n().getString("CreateIdentityWizard.Step4.Failure"));
 				createForm.addChild(errorBox);
 				
 				errorBox.addChild("p", e.getLocalizedMessage());
@@ -255,13 +243,13 @@ public class CreateIdentityWizard extends WebPageImpl {
 
 		if(requestedStep > 1) { // Step 4 (create the identity) will return; if it was successful so also display "Back" for it
 			addHiddenFormData(backForm, requestedStep, requestedStep - 1);
-			backForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Back" });
+			backForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", Freetalk.getBaseL10n().getString("CreateIdentityWizard.BackButton") });
 		}
 		
 		if(requestedStep < 4)
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Continue" });
+			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", Freetalk.getBaseL10n().getString("CreateIdentityWizard.ContinueButton") });
 		else // There was an error creating the identity
-			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Try to create it again" });
+			createForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", Freetalk.getBaseL10n().getString("CreateIdentityWizard.RetryButton") });
 	}
 
 	/**
@@ -304,5 +292,4 @@ public class CreateIdentityWizard extends WebPageImpl {
 			}
 		}
 	}
-
 }
