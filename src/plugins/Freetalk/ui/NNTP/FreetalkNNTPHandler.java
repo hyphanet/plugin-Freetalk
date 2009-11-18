@@ -42,6 +42,8 @@ import freenet.support.Logger;
  *
  * @author Benjamin Moody
  * @author bback
+ * 
+ * FIXME: maybe rework the ByteBuffer usage
  */
 public class FreetalkNNTPHandler implements Runnable {
 
@@ -276,8 +278,6 @@ public class FreetalkNNTPHandler implements Runnable {
         // FIXME: look up by "NNTP name"
         try {
             String boardName = FreetalkNNTPGroup.groupToBoardName(name);
-            // FIXME: The "null" breaks everything! We need to pass the own identity which is is specified as NNTP user. I have no time for fixing this
-            // right now because the NNTP server is broken anyway.
             SubscribedBoard board = mMessageManager.getSubscription(authOwnIdentity, boardName);
             currentGroup = new FreetalkNNTPGroup(board);
             synchronized (board) {
@@ -328,8 +328,6 @@ public class FreetalkNNTPHandler implements Runnable {
         if (name != null) {
             try {
                 String boardName = FreetalkNNTPGroup.groupToBoardName(name);
-                // FIXME: The "null" breaks everything! We need to pass the own identity which is is specified as NNTP user. I have no time for fixing this
-                // right now because the NNTP server is broken anyway.
                 SubscribedBoard board = mMessageManager.getSubscription(authOwnIdentity, boardName);
                 currentGroup = new FreetalkNNTPGroup(board);
             }
@@ -373,8 +371,6 @@ public class FreetalkNNTPHandler implements Runnable {
     private void listActiveGroups(String pattern) throws IOException {
         // FIXME: filter by wildmat
         printStatusLine("215 List of newsgroups follows:");
-        // FIXME: The "null" breaks everything! We need to pass the own identity which is is specified as NNTP user. I have no time for fixing this
-        // right now because the NNTP server is broken anyway.
 
         for (Iterator<SubscribedBoard> i = mMessageManager.subscribedBoardIterator(authOwnIdentity); i.hasNext(); ) {
             SubscribedBoard board = i.next();
@@ -409,9 +405,6 @@ public class FreetalkNNTPHandler implements Runnable {
         if (gmt)
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-        // FIXME: The "null" breaks everything! We need to pass the own identity which is is specified as NNTP user. I have no time for fixing this
-        // right now because the NNTP server is broken anyway.
-        
         Date date = df.parse(datestr, new ParsePosition(0));
         for (Iterator<SubscribedBoard> i = mMessageManager.subscribedBoardIteratorSortedByDate(authOwnIdentity, date); i.hasNext(); ) {
             SubscribedBoard board = i.next();
@@ -750,7 +743,8 @@ public class FreetalkNNTPHandler implements Runnable {
             }
         }
         else if (command.equalsIgnoreCase("POST")) {
-            /* FIXME: This happens when trying to send a reply to a message with Thunderbird */
+            /* This happens when trying to send a reply to a message with Thunderbird */
+            /* Message arrives in finishCommand() */
             printStatusLine("340 Please send article to be posted");
             return true;
         }
@@ -769,8 +763,6 @@ public class FreetalkNNTPHandler implements Runnable {
                 printStatusLine("501 Syntax error");
             }
         }
-        /* FIXME: Implement the login command. People with a newsreader which always tries to login will receive command not recognized
-         * and therefore cannot use NNTP. */
         else {
             printStatusLine("500 Command not recognized");
         }
@@ -817,8 +809,9 @@ public class FreetalkNNTPHandler implements Runnable {
             printStatusLine("441 Unknown sender <" + name + "@" + domain + ">");
             return null;
         }
-        else
+        else {
             return bestMatch;
+        }
     }
 
     /**
