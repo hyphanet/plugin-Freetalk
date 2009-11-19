@@ -43,8 +43,7 @@ import freenet.support.Logger;
  * @author Benjamin Moody
  * @author bback
  * 
- * FIXME: maybe rework the ByteBuffer usage
- * FIXME: add text to web interface: Thunderbird requires "enable in Account->Server settings: Always request authentication when connecting to server"
+ * FIXME: add config to Freetalk, enable/disable NNTP server, allow board subscribe by NNTP server
  */
 public class FreetalkNNTPHandler implements Runnable {
 
@@ -784,8 +783,8 @@ public class FreetalkNNTPHandler implements Runnable {
             // Freetalk address used during AUTH must match the email provided with POST
             String freetalkAddress = parser.getAuthorName() + "@" + parser.getAuthorDomain();
             if (freetalkAddress == null || authOwnIdentity == null || !freetalkAddress.equals(authOwnIdentity.getFreetalkAddress())) {
-                Logger.normal(this, "Error posting message, invalid user name: " + freetalkAddress);
-                printStatusLine("441 Posting failed, invalid user name");
+                Logger.normal(this, "Error posting message, invalid email address: " + freetalkAddress);
+                printStatusLine("441 Posting failed, invalid email address");
                 return;
             }
 
