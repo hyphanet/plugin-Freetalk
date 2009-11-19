@@ -45,10 +45,10 @@ public class SelectBoardsPage extends WebPageImpl {
 				if(subscribe) {
 					SubscribedBoard board = messageManager.subscribeToBoard(mOwnIdentity, boardName);
 
-					HTMLNode successBox = addContentBox(Freetalk.getBaseL10n().getString("SelectBoardsPage.SubscriptionSucceededBoxHeader"));
+					HTMLNode successBox = addContentBox(Freetalk.getBaseL10n().getString("SelectBoardsPage.SubscriptionSucceededBox.Header"));
 	                Freetalk.getBaseL10n().addL10nSubstitution(
 	                        successBox.addChild("div"), 
-	                        "SelectBoardsPage.SubscriptionSucceededBoxText",
+	                        "SelectBoardsPage.SubscriptionSucceededBox.Text",
 	                        new String[] { "link", "boardname", "/link" }, 
 	                        new String[] {
 	                                "<a href=\""+Freetalk.PLUGIN_URI+"/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + board.getName()+"\">",
@@ -56,10 +56,10 @@ public class SelectBoardsPage extends WebPageImpl {
 	                                "</a>" });
 				}
 				else if(unsubscribe) {
-                    HTMLNode successBox = addContentBox(Freetalk.getBaseL10n().getString("SelectBoardsPage.UnsubscriptionSucceededBoxHeader"));
+                    HTMLNode successBox = addContentBox(Freetalk.getBaseL10n().getString("SelectBoardsPage.UnsubscriptionSucceededBox.Header"));
                     Freetalk.getBaseL10n().addL10nSubstitution(
                         successBox.addChild("div"), 
-                        "SelectBoardsPage.UnsubscriptionSucceededBoxText",
+                        "SelectBoardsPage.UnsubscriptionSucceededBox.Text",
                         new String[] { "boardname" }, 
                         new String[] { boardName });
 				}	
@@ -75,9 +75,9 @@ public class SelectBoardsPage extends WebPageImpl {
 	}
 	
 	private void makeBoardsList() {
-		HTMLNode boardsBox = addContentBox(Freetalk.getBaseL10n().getString("SelectBoardsPage.SelectBoardsBoxHeader"));
+		HTMLNode boardsBox = addContentBox(Freetalk.getBaseL10n().getString("SelectBoardsPage.SelectBoardsBox.Header"));
 		
-		boardsBox.addChild("p", Freetalk.getBaseL10n().getString("SelectBoardsPage.SelectBoardsBoxText"));
+		boardsBox.addChild("p", Freetalk.getBaseL10n().getString("SelectBoardsPage.SelectBoardsBox.Text"));
 
 		HTMLNode newBoardForm = addFormChild(boardsBox, Freetalk.PLUGIN_URI + "/NewBoard", "NewBoardPage");
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});

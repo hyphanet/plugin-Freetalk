@@ -32,10 +32,10 @@ public final class NewBoardPage extends WebPageImpl {
 			try {
 				mFreetalk.getMessageManager().getOrCreateBoard(fullBoardName);
 				SubscribedBoard subscribedBoard = mFreetalk.getMessageManager().subscribeToBoard(mOwnIdentity, fullBoardName);
-				HTMLNode successBox = addContentBox(Freetalk.getBaseL10n().getString("NewBoardPage.CreateBoardSuccessHeader"));
+				HTMLNode successBox = addContentBox(Freetalk.getBaseL10n().getString("NewBoardPage.CreateBoardSuccess.Header"));
 	            Freetalk.getBaseL10n().addL10nSubstitution(
 	                    successBox.addChild("div"), 
-	                    "NewBoardPage.CreateBoardSuccessText",
+	                    "NewBoardPage.CreateBoardSuccess.Text",
 	                    new String[] { "link", "boardname", "/link" }, 
 	                    new String[] {
 	                            "<a href=\""+Freetalk.PLUGIN_URI+"/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + subscribedBoard.getName()+"\">",
@@ -56,19 +56,19 @@ public final class NewBoardPage extends WebPageImpl {
 	}
 	
 	private void makeNewBoardPage(String boardLanguage, String boardName) {
-		HTMLNode newBoardBox = addContentBox(Freetalk.getBaseL10n().getString("NewBoardPage.NewBoardBoxHeader"));
+		HTMLNode newBoardBox = addContentBox(Freetalk.getBaseL10n().getString("NewBoardPage.NewBoardBox.Header"));
 		HTMLNode newBoardForm = addFormChild(newBoardBox, Freetalk.PLUGIN_URI + "/NewBoard", "NewBoard");
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
 		
-		HTMLNode languageBox = newBoardForm.addChild(getContentBox(Freetalk.getBaseL10n().getString("NewBoardPage.NewBoardBox.LanguageBoxHeader")));
-		languageBox.addChild("p", Freetalk.getBaseL10n().getString("NewBoardPage.NewBoardBox.LanguageBoxText")+":");
+		HTMLNode languageBox = newBoardForm.addChild(getContentBox(Freetalk.getBaseL10n().getString("NewBoardPage.NewBoardBox.LanguageBox.Header")));
+		languageBox.addChild("p", Freetalk.getBaseL10n().getString("NewBoardPage.NewBoardBox.LanguageBox.Text")+":");
 		/* TODO: Locale.getISOLanguages() only returns the abbreviations. Figure out how to get the full names, add some function to Board.java for getting them and use them here. */
 		/* For that you will also need to modify getComboBox() to take display names and values instead of only values and using them as display names */
 		/* ANSWER: I doubt that there are default strings. We have to provide translated language names by ourself! */
 		languageBox.addChild(getComboBox("BoardLanguage", Board.getAllowedLanguageCodes(), boardLanguage));
 		
-		HTMLNode nameBox = newBoardForm.addChild(getContentBox(Freetalk.getBaseL10n().getString("NewBoardPage.NewBoardBox.BoardNameBoxHeader")));
-		nameBox.addChild("p", Freetalk.getBaseL10n().getString("NewBoardPage.NewBoardBox.BoardNameText"));
+		HTMLNode nameBox = newBoardForm.addChild(getContentBox(Freetalk.getBaseL10n().getString("NewBoardPage.NewBoardBox.BoardNameBox.Header")));
+		nameBox.addChild("p", Freetalk.getBaseL10n().getString("NewBoardPage.NewBoardBox.BoardNameBox.Text"));
 		
 		nameBox.addChild("input", new String[] { "type", "size", "maxlength", "name", "value"},
 				new String[] {"text", "128", Integer.toString(Board.MAX_BOARDNAME_TEXT_LENGTH), "BoardName", boardName});

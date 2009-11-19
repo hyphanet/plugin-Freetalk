@@ -23,14 +23,14 @@ public class WoTIsMissingPage extends WebPageImpl {
         final String[] l10nLinkSubstitutionOutput = new String[] { "<a href=\"/plugins\">", "</a>" };
         
         if(mNeedsNewWoT) {
-            HTMLNode box = addAlertBox(Freetalk.getBaseL10n().getString("WoTIsMissingPage.WotOutdatedHeader"));
+            HTMLNode box = addAlertBox(Freetalk.getBaseL10n().getString("WoTIsMissingPage.WotOutdated.Header"));
             HTMLNode aChild = box.addChild("#");
-            Freetalk.getBaseL10n().addL10nSubstitution(aChild, "WoTIsMissingPage.WotOutdatedText", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);
+            Freetalk.getBaseL10n().addL10nSubstitution(aChild, "WoTIsMissingPage.WotOutdated.Text", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);
             // FIXME: add "by going to the plugins page and pressing 'Reload'" after we have WoT in the official plugins list 
         } else {
-            HTMLNode box = addAlertBox(Freetalk.getBaseL10n().getString("WoTIsMissingPage.WotMissingHeader"));
+            HTMLNode box = addAlertBox(Freetalk.getBaseL10n().getString("WoTIsMissingPage.WotMissing.Header"));
             HTMLNode aChild = box.addChild("#");
-            Freetalk.getBaseL10n().addL10nSubstitution(aChild, "WoTIsMissingPage.WotMissingText", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);
+            Freetalk.getBaseL10n().addL10nSubstitution(aChild, "WoTIsMissingPage.WotMissing.Text", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);
         }
 	}
 }

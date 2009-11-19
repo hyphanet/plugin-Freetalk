@@ -35,7 +35,7 @@ public final class BoardsPage extends WebPageImpl {
 	}
 
 	private void makeBoardsList() {
-		HTMLNode boardsBox = addContentBox(Freetalk.getBaseL10n().getString("BoardsPage.BoardListHeader"));
+		HTMLNode boardsBox = addContentBox(Freetalk.getBaseL10n().getString("BoardsPage.BoardList.Header"));
 
 		HTMLNode newBoardForm = addFormChild(boardsBox, Freetalk.PLUGIN_URI + "/NewBoard", "NewBoardPage");
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});

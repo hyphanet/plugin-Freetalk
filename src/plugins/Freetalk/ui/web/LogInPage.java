@@ -31,16 +31,16 @@ public final class LogInPage extends WebPageImpl {
 	    final String[] l10nBoldSubstitutionInput = new String[] { "bold", "/bold" };
 	    final String[] l10nBoldSubstitutionOutput = new String[] { "<b>", "</b>" };
 	    HTMLNode aChild;
-		HTMLNode welcomeBox = addContentBox(Freetalk.getBaseL10n().getString("LoginPage.WelcomeHeader"));
-		welcomeBox.addChild("p", Freetalk.getBaseL10n().getString("LoginPage.WelcomeText1"));
+		HTMLNode welcomeBox = addContentBox(Freetalk.getBaseL10n().getString("LoginPage.Welcome.Header"));
+		welcomeBox.addChild("p", Freetalk.getBaseL10n().getString("LoginPage.Welcome.Text1"));
 		aChild = welcomeBox.addChild("p"); // allow bold in this section
-		Freetalk.getBaseL10n().addL10nSubstitution(aChild, "LoginPage.WelcomeText2", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		Freetalk.getBaseL10n().addL10nSubstitution(aChild, "LoginPage.Welcome.Text2", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 		aChild = welcomeBox.addChild("p"); // allow bold in this section
-		Freetalk.getBaseL10n().addL10nSubstitution(aChild, "LoginPage.WelcomeText3", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+		Freetalk.getBaseL10n().addL10nSubstitution(aChild, "LoginPage.Welcome.Text3", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 	}
 	
 	private final void makeLoginBox() {
-		HTMLNode loginBox = addContentBox(Freetalk.getBaseL10n().getString("LoginPage.LogInHeader"));
+		HTMLNode loginBox = addContentBox(Freetalk.getBaseL10n().getString("LoginPage.LogIn.Header"));
 	
 		Iterator<FTOwnIdentity> iter = mFreetalk.getIdentityManager().ownIdentityIterator();
 		
@@ -50,21 +50,21 @@ public final class LogInPage extends WebPageImpl {
 			FTOwnIdentity ownIdentity = iter.next();
 			selectBox.addChild("option", "value", ownIdentity.getID(), ownIdentity.getShortestUniqueName(40));
 		}
-		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", Freetalk.getBaseL10n().getString("LoginPage.LogInButton") });
+		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", Freetalk.getBaseL10n().getString("LoginPage.LogIn.Button") });
 	}
 	
 	protected static final void addLoginButton(WebPageImpl page, HTMLNode contentNode, FTOwnIdentity identity) {
 		HTMLNode logInForm = page.addFormChild(contentNode, Freetalk.PLUGIN_URI + "/LogIn", "LogIn");
 		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", identity.getID() });
-		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", Freetalk.getBaseL10n().getString("LoginPage.LogInButton") });
+		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", Freetalk.getBaseL10n().getString("LoginPage.LogIn.Button") });
 	}
 	
 	private void makeCreateIdentityBox() {
-		HTMLNode createIdentityBox = addContentBox(Freetalk.getBaseL10n().getString("LoginPage.CreateOwnIdentityHeader"));
+		HTMLNode createIdentityBox = addContentBox(Freetalk.getBaseL10n().getString("LoginPage.CreateOwnIdentity.Header"));
 		HTMLNode aChild = createIdentityBox.addChild("p"); 
         Freetalk.getBaseL10n().addL10nSubstitution(
                 aChild, 
-                "LoginPage.CreateOwnIdentityText", 
+                "LoginPage.CreateOwnIdentity.Text", 
                 new String[] { "link", "/link" }, 
                 new String[] { "<a href=\""+Freetalk.PLUGIN_URI+"/CreateIdentity\">", "</a>" });
 	}
