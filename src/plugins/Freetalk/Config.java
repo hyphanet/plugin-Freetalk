@@ -27,7 +27,10 @@ public final class Config {
 	
 	public static final String MINIMUM_TRUSTER_COUNT = "Introduction.MinimumTrusterCount";
 	
+	public static final String NNTP_SERVER_ENABLED = "NNTP.ServerEnabled";
+	public static final String NNTP_AUTOSUBSCRIBE_BOARDS = "NNTP.AutoSubscribeBoards";
 
+	
 	/**
 	 * The HashMap that contains all cofiguration parameters
 	 */
@@ -114,6 +117,16 @@ public final class Config {
 	}
 	
 	/**
+	 * Sets a boolean configuration parameter. You have to call storeAndCommit to write it to disk.
+	 * 
+	 * @param key Name of the config parameter.
+	 * @param value Value of the config parameter.
+	 */
+	public synchronized void set(String key, boolean value) {
+	    mStringParams.put(key, Boolean.toString(value));
+	}
+	
+	/**
 	 * Sets an Integer configuration parameter and stores it in the database. You have to call storeAndCommit to write it to disk.
 	 * 
 	 * @param key Name of the config parameter.
@@ -135,6 +148,20 @@ public final class Config {
 	 */
 	public synchronized int getInt(String key) {
 		return mIntParams.get(key);
+	}
+	
+	/**
+	 * Gets a boolean configuration parameter.
+	 */
+	public synchronized boolean getBoolean(String key) {
+	    return Boolean.valueOf( mStringParams.get(key) );
+	}
+
+	/**
+	 * Check wheter a boolean config parameter exists.
+	 */
+	public synchronized boolean containsBoolean(String key) {
+	    return containsString(key);
 	}
 
 	/**
@@ -190,7 +217,7 @@ public final class Config {
 
 		// FIXME: there is a null pointer somewhere in here. i don't have the
 		// time for fixing it right now
-		return mIntParams.keySet().toArray(new String[mStringParams.size()]);
+		return mIntParams.keySet().toArray(new String[mIntParams.size()]);
 	}
 
 	/**
@@ -200,10 +227,19 @@ public final class Config {
 	 */
 	public synchronized void setDefaultValues(boolean overwrite) {
 		/* Do not overwrite, it shall only be overwritten when the database has been converted to a new format */
-		if(!containsInt(DATABASE_FORMAT_VERSION))
+		if(!containsInt(DATABASE_FORMAT_VERSION)) {
 			set(DATABASE_FORMAT_VERSION, Freetalk.DATABASE_FORMAT_VERSION);
+		}
 		
-		if(!containsInt(MINIMUM_TRUSTER_COUNT))
+		if(!containsInt(MINIMUM_TRUSTER_COUNT)) {
 			set(MINIMUM_TRUSTER_COUNT, 5);
+		}
+		
+		if (!containsBoolean(NNTP_SERVER_ENABLED)) {
+		    set(NNTP_SERVER_ENABLED, true);
+		}
+		if (!containsBoolean(NNTP_AUTOSUBSCRIBE_BOARDS)) {
+		    set(NNTP_SERVER_ENABLED, false);
+		}
 	}
 }
