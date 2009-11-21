@@ -136,6 +136,6 @@ public class NewReplyPage extends WebPageImpl {
 	}
 
 	public static void addBreadcrumb(BreadcrumbTrail trail) {
-		trail.addBreadcrumbInfo("Reply", "");
+		trail.addBreadcrumbInfo(Freetalk.getBaseL10n().getString("Breadcrumb.Reply"), "");
 	}
 }

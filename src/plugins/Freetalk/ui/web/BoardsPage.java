@@ -103,6 +103,6 @@ public final class BoardsPage extends WebPageImpl {
 	}
 
 	public static void addBreadcrumb(BreadcrumbTrail trail) {
-		trail.addBreadcrumbInfo("Boards", Freetalk.PLUGIN_URI + "/SubscribedBoards");
+		trail.addBreadcrumbInfo(Freetalk.getBaseL10n().getString("Breadcrumb.Boards"), Freetalk.PLUGIN_URI + "/SubscribedBoards");
 	}
 }
