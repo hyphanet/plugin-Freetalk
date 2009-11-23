@@ -13,9 +13,21 @@ public interface FTOwnIdentity extends FTIdentity {
 	
 	public FreenetURI getInsertURI();
 	
+    /**
+     * Checks whether this Identity auto-subscribes to boards subscribed in NNTP client.
+     * 
+     * @return Whether this Identity auto-subscribes to boards subscribed in NNTP client or not.
+     */
+    public boolean nntpAutoSubscribeBoards();
+    
+    /**
+     * Sets if this Identity auto-subscribes to boards subscribed in NNTP client. 
+     */
+    public void setNntpAutoSubscribeBoards(boolean nntpAutoSubscribeBoards);
+
+	
 	/**
 	 * @throws Exception If the decision cannot be made right now. Practically this means that the connection to the WoT plugin is not working right now.
 	 */
 	public boolean wantsMessagesFrom(FTIdentity identity) throws Exception;
-
 }

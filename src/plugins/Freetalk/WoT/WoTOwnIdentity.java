@@ -26,6 +26,10 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 
 	private final Map<String, Boolean> mAssessed;
 
+    /** If true then auto-subscribe to boards that were subscribed in the NNTP client */
+    private boolean mNntpAutoSubscribeBoards;
+    
+	
 	/** Get a list of fields which the database should create an index on. */
 	public static String[] getIndexedFields() {
 		/* FIXME: Figure out whether indexed fields are inherited from parent classes. Otherwise we would have to also list the indexed fields
@@ -80,6 +84,22 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 		mIdentityManager.setTrust(this, identity, trust, comment);
 	}
 	
+    /**
+     * Checks whether this Identity auto-subscribes to boards subscribed in NNTP client.
+     * 
+     * @return Whether this Identity auto-subscribes to boards subscribed in NNTP client or not.
+     */
+    public boolean nntpAutoSubscribeBoards() {
+        return mNntpAutoSubscribeBoards;
+    }
+    
+    /**
+     * Sets if this Identity auto-subscribes to boards subscribed in NNTP client. 
+     */
+    public void setNntpAutoSubscribeBoards(boolean nntpAutoSubscribeBoards) {
+        mNntpAutoSubscribeBoards = nntpAutoSubscribeBoards;
+    }
+    
 	public void storeWithoutCommit() {
 		try {
 			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.

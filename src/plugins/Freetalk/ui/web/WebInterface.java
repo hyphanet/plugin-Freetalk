@@ -55,6 +55,7 @@ public final class WebInterface {
 	private final WebInterfaceToadlet subscribedBoardsToadlet;
 	private final WebInterfaceToadlet selectBoardsToadlet;
 	private final WebInterfaceToadlet identitiesToadlet;
+	private final WebInterfaceToadlet settingsToadlet;
 	private final WebInterfaceToadlet logOutToadlet;
 	
 	// Invisible
@@ -150,7 +151,25 @@ public final class WebInterface {
 		public boolean isEnabled(ToadletContext ctx) {
 			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
 		}
-		
+	}
+	
+	class SettingsWebInterfaceToadlet extends WebInterfaceToadlet {
+	    
+	    protected SettingsWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+	        super(client, wi, core, pageTitle);
+	    }
+	    
+	    @Override
+	    WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+	        if(!mFreetalk.wotConnected())
+	            return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+	        return new SettingsPage(webInterface, getLoggedInOwnIdentity(context), req);
+	    }
+	    
+	    @Override
+	    public boolean isEnabled(ToadletContext ctx) {
+	        return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
+	    }
 	}
 	
 	protected final URI logIn;
@@ -173,7 +192,6 @@ public final class WebInterface {
 		public boolean isEnabled(ToadletContext ctx) {
 			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
 		}
-		
 	}
 	
 	public class LogInWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -213,7 +231,6 @@ public final class WebInterface {
 		public boolean isEnabled(ToadletContext ctx) {
 			return super.isEnabled(ctx) && !mSessionManager.sessionExists(ctx);
 		}
-		
 	}
 
 	public class ChangeTrustWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -287,7 +304,6 @@ public final class WebInterface {
 		public Toadlet showAsToadlet() {
 			return identitiesToadlet;
 		}
-		
 	}
 	
 	class NewThreadWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -317,7 +333,6 @@ public final class WebInterface {
 		public boolean isEnabled(ToadletContext ctx) {
 			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
 		}
-		
 	}
 	
 	class ShowBoardWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -348,7 +363,6 @@ public final class WebInterface {
 		public boolean isEnabled(ToadletContext ctx) {
 			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
 		}
-		
 	}
 	
 	class ShowThreadWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -380,7 +394,6 @@ public final class WebInterface {
 		public boolean isEnabled(ToadletContext ctx) {
 			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
 		}
-		
 	}
 	
 	class NewReplyWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -412,7 +425,6 @@ public final class WebInterface {
 		public boolean isEnabled(ToadletContext ctx) {
 			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
 		}
-		
 	}
 	
 	class NewBoardWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -437,7 +449,6 @@ public final class WebInterface {
 		public boolean isEnabled(ToadletContext ctx) {
 			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
 		}
-		
 	}
 	
 	public class GetPuzzleWebInterfaceToadlet extends WebInterfaceToadlet {
@@ -510,7 +521,6 @@ public final class WebInterface {
 		public boolean isEnabled(ToadletContext ctx) {
 			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
 		}
-		
 	}
 	
 	private FTOwnIdentity getLoggedInOwnIdentity(ToadletContext context) throws RedirectException {
@@ -550,6 +560,7 @@ public final class WebInterface {
 		subscribedBoardsToadlet = new SubscribedBoardsWebInterfaceToadlet(null, this, clientCore, "SubscribedBoards");
 		selectBoardsToadlet = new SelectBoardsWebInterfaceToadlet(null, this, clientCore, "SelectBoards");
 		identitiesToadlet = new IdentitiesWebInterfaceToadlet(null, this, clientCore, "identities");
+		settingsToadlet = new SettingsWebInterfaceToadlet(null, this, clientCore, "Settings");
 		logOutToadlet = new LogOutWebInterfaceToadlet(null, this, clientCore, "LogOut");
 
 		container.register(homeToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/", true, "WebInterface.DiscussionMenuItem.Home", "WebInterface.DiscussionMenuItem.Home.Tooltip", false, homeToadlet);
@@ -557,6 +568,7 @@ public final class WebInterface {
 		container.register(subscribedBoardsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/SubscribedBoards", true, "WebInterface.DiscussionMenuItem.SubscribedBoards", "WebInterface.DiscussionMenuItem.SubscribedBoards.Tooltip", false, subscribedBoardsToadlet);
 		container.register(selectBoardsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/SelectBoards", true, "WebInterface.DiscussionMenuItem.SelectBoards", "WebInterface.DiscussionMenuItem.SelectBoards.Tooltip", false, selectBoardsToadlet);
 		container.register(identitiesToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/identities", true, "WebInterface.DiscussionMenuItem.Identities", "WebInterface.DiscussionMenuItem.Identities.Tooltip", false, identitiesToadlet);
+		container.register(settingsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/Settings", true, "WebInterface.DiscussionMenuItem.Settings", "WebInterface.DiscussionMenuItem.Settings.Tooltip", false, settingsToadlet);
 		container.register(logOutToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/LogOut", true, "WebInterface.DiscussionMenuItem.LogOut", "WebInterface.DiscussionMenuItem.LogOut.Tooltip", false, logOutToadlet);
 		
 		// Invisible pages
@@ -598,6 +610,7 @@ public final class WebInterface {
 				subscribedBoardsToadlet,
 				selectBoardsToadlet,
 				identitiesToadlet,
+				settingsToadlet,
 				logOutToadlet,
 				logInToadlet,
 				createIdentityToadlet,
