@@ -28,7 +28,6 @@ public final class Config {
 	public static final String MINIMUM_TRUSTER_COUNT = "Introduction.MinimumTrusterCount";
 	
 	public static final String NNTP_SERVER_ENABLED = "NNTP.ServerEnabled";
-	public static final String NNTP_AUTOSUBSCRIBE_BOARDS = "NNTP.AutoSubscribeBoards";
 
 	
 	/**
@@ -237,9 +236,6 @@ public final class Config {
 		
 		if (!containsBoolean(NNTP_SERVER_ENABLED)) {
 		    set(NNTP_SERVER_ENABLED, true);
-		}
-		if (!containsBoolean(NNTP_AUTOSUBSCRIBE_BOARDS)) {
-		    set(NNTP_SERVER_ENABLED, false);
 		}
 	}
 }

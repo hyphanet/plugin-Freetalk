@@ -8,7 +8,6 @@ import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import freenet.clients.http.RedirectException;
-import freenet.config.SubConfig;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
