@@ -66,7 +66,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	
 	private ClassLoader mClassLoader;
 	
-	private PluginRespirator mPluginRespirator; /* TODO: remove references in other classes so we can make this private */
+	private PluginRespirator mPluginRespirator;
 
 	private static PluginL10n l10n;
 	
@@ -164,6 +164,9 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
     		Logger.debug(this, "Starting NNTP server...");
     		mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "127.0.0.1", "127.0.0.1");
     		//mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "0.0.0.0", "*");
+		} else {
+            Logger.debug(this, "NNTP server disabled by user...");
+		    mNNTPServer = null;
 		}
 		
 		Logger.debug(this, "Plugin loaded.");
