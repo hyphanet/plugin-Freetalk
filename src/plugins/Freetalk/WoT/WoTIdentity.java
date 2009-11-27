@@ -136,7 +136,11 @@ public class WoTIdentity implements FTIdentity {
 	/* IMPORTANT: This code is duplicated in plugins.WoT.Identity.isNicknameValid().
 	 * Please also modify it there if you modify it here */
 	public static void validateNickname(String newNickname) throws InvalidParameterException {
-		if(!StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname))
+		if(!StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname)
+		|| !StringValidityChecker.containsNoInvalidCharacters(newNickname)
+		|| !StringValidityChecker.containsNoLinebreaks(newNickname)
+		|| !StringValidityChecker.containsNoControlCharacters(newNickname)
+		|| !StringValidityChecker.containsNoInvalidFormatting(newNickname))
 			throw new InvalidParameterException("Nickname contains invalid characters"); /* FIXME: Tell the user which ones are invalid!!! */
 		
 		if(newNickname.length() == 0) throw new InvalidParameterException("Blank nickname.");
