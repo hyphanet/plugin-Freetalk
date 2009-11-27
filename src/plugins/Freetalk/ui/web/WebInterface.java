@@ -622,6 +622,6 @@ public final class WebInterface {
 				getPuzzleToadlet,
 				introduceIdentityToadlet
 		}) container.unregister(t);
-		mPageMaker.removeNavigationCategory("Discussion");
+		mPageMaker.removeNavigationCategory("WebInterface.DiscussionMenuName");
 	}
 }
