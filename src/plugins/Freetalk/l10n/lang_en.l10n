@@ -16,6 +16,7 @@ BoardsPage.BoardSubscriptions=You can subscribe to more boards or unsubscribe fr
 Breadcrumb.Boards=Boards
 Breadcrumb.Reply=Reply
 Breadcrumb.SelectBoards=Select your boards
+Breadcrumb.Settings=Settings
 CreateIdentityWizard.CreateIdentityBox.Header=Create an own identity
 CreateIdentityWizard.BackButton=Back
 CreateIdentityWizard.ContinueButton=Continue

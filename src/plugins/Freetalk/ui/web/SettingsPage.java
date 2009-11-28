@@ -28,6 +28,8 @@ public class SettingsPage extends WebPageImpl {
             throw new RedirectException(logIn);
         }
         
+        makeBreadcrumbs();
+        
         if (mRequest.isPartSet("submit")) {
             
             boolean enableNntpServer = mRequest.getPartAsString("EnableNntpServer", 4).equals("true");
@@ -119,5 +121,16 @@ public class SettingsPage extends WebPageImpl {
         }
         
         return result;
+    }
+    
+    private void makeBreadcrumbs() {
+        BreadcrumbTrail trail = new BreadcrumbTrail();
+        Welcome.addBreadcrumb(trail);
+        SettingsPage.addBreadcrumb(trail);
+        mContentNode.addChild(trail.getHTMLNode());
+    }
+
+    public static void addBreadcrumb(BreadcrumbTrail trail) {
+        trail.addBreadcrumbInfo(Freetalk.getBaseL10n().getString("Breadcrumb.Settings"), Freetalk.PLUGIN_URI + "/Settings");
     }
 }
