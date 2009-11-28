@@ -30,6 +30,7 @@ import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.MessageURI;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
@@ -803,14 +804,19 @@ public class FreetalkNNTPHandler implements Runnable {
                     
                 	// FIXME: When replying to forked threads, this code will always sent the replies to the original thread. We need to find a way
                 	// to figure out whether the user wanted to reply to a forked thread - does NNTP pass a thread ID?
+                    
+                    MessageURI parentMessageURI = null;
+                    if (parentMessage != null) {
+                        parentMessageURI = parentMessage.isThread() ? parentMessage.getURI() : parentMessage.getThreadURI();
+                    }
 
                     HashSet<String> boardSet = new HashSet<String>(parser.getBoards());
-                    OwnMessage message = mMessageManager.postMessage(parentMessage.isThread() ? parentMessage.getURI() : parentMessage.getThreadURI(),
+                    OwnMessage message = mMessageManager.postMessage(parentMessageURI,
                     		parentMessage, boardSet, parser.getReplyToBoard(), authOwnIdentity, parser.getTitle(), null, parser.getText(), null);
                     printStatusLine("240 Message posted; ID is <" + message.getID() + ">");
                 }
                 catch (Exception e) {
-                    Logger.normal(this, "Error posting message: ", e);
+                    Logger.error(this, "Error posting message: ", e);
                     printStatusLine("441 Posting failed");
                 }
             }
