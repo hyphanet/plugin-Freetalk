@@ -543,7 +543,7 @@ public class WoTIdentityManager extends IdentityManager {
 			/* FIXME: Only add the context if the user actually uses the identity with Freetalk */
 			addFreetalkContext(newIdentity);
 			
-			PersistentTask introductionTask = new IntroduceIdentityTask((WoTOwnIdentity)newIdentity, mFreetalk.getBaseL10n());
+			PersistentTask introductionTask = new IntroduceIdentityTask((WoTOwnIdentity)newIdentity);
 			introductionTask.initializeTransient(db, mFreetalk);
 			introductionTask.storeWithoutCommit();
 		}

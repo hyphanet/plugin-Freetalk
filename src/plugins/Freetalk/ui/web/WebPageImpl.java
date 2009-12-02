@@ -77,7 +77,7 @@ public abstract class WebPageImpl implements WebPage {
 		mOwnIdentity = viewer;
 
 		mRequest = request;
-		
+
 		baseL10n = _baseL10n;
 	}
 
