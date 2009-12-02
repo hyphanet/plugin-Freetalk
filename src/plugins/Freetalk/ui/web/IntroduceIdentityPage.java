@@ -9,6 +9,7 @@ import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.NoSuchTaskException;
 import plugins.Freetalk.tasks.WoT.IntroduceIdentityTask;
 import freenet.clients.http.RedirectException;
+import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -19,16 +20,16 @@ public final class IntroduceIdentityPage extends TaskPage {
 	
 	private final WoTIdentityManager mIdentityManager;
 	
-	public IntroduceIdentityPage(WebInterface myWebInterface, WoTOwnIdentity myViewer, String myTaskID, int numberOfPuzzles) {
-		super(myWebInterface, myViewer, myTaskID);
+	public IntroduceIdentityPage(WebInterface myWebInterface, WoTOwnIdentity myViewer, String myTaskID, int numberOfPuzzles, BaseL10n _baseL10n) {
+		super(myWebInterface, myViewer, myTaskID, _baseL10n);
 		
 		mIdentityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 		
 		mNumberOfPuzzles = numberOfPuzzles;
 	}
 
-	public IntroduceIdentityPage(WebInterface myWebInterface, WoTOwnIdentity viewer, HTTPRequest request) {
-		super(myWebInterface, viewer, request);
+	public IntroduceIdentityPage(WebInterface myWebInterface, WoTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
+		super(myWebInterface, viewer, request, _baseL10n);
 		
 		mIdentityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 		
@@ -73,7 +74,7 @@ public final class IntroduceIdentityPage extends TaskPage {
 	}
 	
 	protected void showPuzzles() throws RedirectException {
-		HTMLNode contentBox = addAlertBox(Freetalk.getBaseL10n().getString("IntroduceIdentityPage.IntroduceIdentity.Header"));
+		HTMLNode contentBox = addAlertBox(l10n().getString("IntroduceIdentityPage.IntroduceIdentity.Header"));
 		
 		List<String> puzzleIDs = null;
 		int trusterCount = 0;
@@ -84,26 +85,26 @@ public final class IntroduceIdentityPage extends TaskPage {
 		} catch (Exception e) {
 			Logger.error(this, "getIntroductionPuzzles() failed", e);
 
-			new ErrorPage(mWebInterface, mOwnIdentity, mRequest, Freetalk.getBaseL10n().getString("IntroduceIdentityPage.IntroduceIdentity.ObtainingPuzzlesFailed"), e.getMessage()).addToPage(contentBox);
+			new ErrorPage(mWebInterface, mOwnIdentity, mRequest, l10n().getString("IntroduceIdentityPage.IntroduceIdentity.ObtainingPuzzlesFailed"), e.getMessage(), l10n()).addToPage(contentBox);
 			return;
 		}
 		
 		HTMLNode p;
 		
 		if(trusterCount > 0) {
-		    String trnsl = Freetalk.getBaseL10n().getString(
+		    String trnsl = l10n().getString(
 		            "IntroduceIdentityPage.IntroduceIdentity.ReceivedLowTrust",
 		            "trustcount",
 		            Integer.toString( mFreetalk.getConfig().getInt(Config.MINIMUM_TRUSTER_COUNT )));
 			p = contentBox.addChild("p", trnsl);
 		} else {
-			p = contentBox.addChild("p", Freetalk.getBaseL10n().getString("IntroduceIdentityPage.IntroduceIdentity.ReceivedNoTrust"));
+			p = contentBox.addChild("p", l10n().getString("IntroduceIdentityPage.IntroduceIdentity.ReceivedNoTrust"));
 		}
 				
 		if(puzzleIDs.size() > 0 ) {
-			p.addChild("#", " " + Freetalk.getBaseL10n().getString("IntroduceIdentityPage.IntroduceIdentity.SolveAvailablePuzzles") + ":");
+			p.addChild("#", " " + l10n().getString("IntroduceIdentityPage.IntroduceIdentity.SolveAvailablePuzzles") + ":");
 		} else {
-			contentBox.addChild("p", Freetalk.getBaseL10n().getString("IntroduceIdentityPage.IntroduceIdentity.SolvePuzzlesLater"));
+			contentBox.addChild("p", l10n().getString("IntroduceIdentityPage.IntroduceIdentity.SolvePuzzlesLater"));
 			return;
 		}
 
@@ -128,8 +129,8 @@ public final class IntroduceIdentityPage extends TaskPage {
 	}
 	
 	protected void showEnoughPuzzlesSolvedMessage() {
-		HTMLNode contentBox = addContentBox(Freetalk.getBaseL10n().getString("IntroduceIdentityPage.EnoughPuzzlesSolved.Header"));
-		contentBox.addChild("#", Freetalk.getBaseL10n().getString("IntroduceIdentityPage.EnoughPuzzlesSolved.Text"));
+		HTMLNode contentBox = addContentBox(l10n().getString("IntroduceIdentityPage.EnoughPuzzlesSolved.Header"));
+		contentBox.addChild("#", l10n().getString("IntroduceIdentityPage.EnoughPuzzlesSolved.Text"));
 	}
 
 	public void make() throws RedirectException {

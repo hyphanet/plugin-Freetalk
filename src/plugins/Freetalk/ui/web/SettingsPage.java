@@ -8,6 +8,7 @@ import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import freenet.clients.http.RedirectException;
+import freenet.l10n.BaseL10n;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -19,8 +20,8 @@ import freenet.support.api.HTTPRequest;
  */
 public class SettingsPage extends WebPageImpl {
 
-    public SettingsPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) {
-        super(myWebInterface, viewer, request);
+    public SettingsPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
+        super(myWebInterface, viewer, request, _baseL10n);
     }
 
     public void make() throws RedirectException {
@@ -44,22 +45,22 @@ public class SettingsPage extends WebPageImpl {
                 ((WoTOwnIdentity) mOwnIdentity).storeAndCommit(); // FIXME: remove ugly cast
             }
             
-            HTMLNode aBox = addContentBox(Freetalk.getBaseL10n().getString("SettingsPage.SettingsSaved.Header"));
-            aBox.addChild("p", Freetalk.getBaseL10n().getString("SettingsPage.SettingsSaved.Text"));
+            HTMLNode aBox = addContentBox(l10n().getString("SettingsPage.SettingsSaved.Header"));
+            aBox.addChild("p", l10n().getString("SettingsPage.SettingsSaved.Text"));
         }
 
-        HTMLNode settingsBox = addContentBox(Freetalk.getBaseL10n().getString("SettingsPage.SettingsBox.Header"));
+        HTMLNode settingsBox = addContentBox(l10n().getString("SettingsPage.SettingsBox.Header"));
         HTMLNode formNode = addFormChild(settingsBox, Freetalk.PLUGIN_URI + "/Settings", "Settings");
 
         makeOwnSettingsBox(formNode);
         makeGlobalSettingsBox(formNode);
         
-        formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", Freetalk.getBaseL10n().getString("SettingsPage.SaveButton")});
+        formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("SettingsPage.SaveButton")});
     }
 
     private final void makeOwnSettingsBox(HTMLNode formNode) {
 
-        formNode.addChild("div", "class", "configprefix", Freetalk.getBaseL10n().getString("SettingsPage.UserSettings.Header"));
+        formNode.addChild("div", "class", "configprefix", l10n().getString("SettingsPage.UserSettings.Header"));
         
         HTMLNode list = formNode.addChild("ul", "class", "config");
         HTMLNode item = list.addChild("li");
@@ -68,17 +69,17 @@ public class SettingsPage extends WebPageImpl {
 
         item.addChild("span", new String[]{ "class", "title", "style" },
                 new String[]{ "configshortdesc", booleanDefaultString(false), "cursor: help;" })
-                .addChild("#", Freetalk.getBaseL10n().getString("SettingsPage.UserSettings.NNTPAutoSubscribeBoards.Short"));
+                .addChild("#", l10n().getString("SettingsPage.UserSettings.NNTPAutoSubscribeBoards.Short"));
         
         item.addChild("span", "class", "config");
         item.addChild(addBooleanComboBox(mOwnIdentity.nntpAutoSubscribeBoards(), "AutoSubscribeBoards", false));
         
-        item.addChild("span", "class", "configlongdesc").addChild("#", Freetalk.getBaseL10n().getString("SettingsPage.UserSettings.NNTPAutoSubscribeBoards.Long"));
+        item.addChild("span", "class", "configlongdesc").addChild("#", l10n().getString("SettingsPage.UserSettings.NNTPAutoSubscribeBoards.Long"));
     }
 
     private final void makeGlobalSettingsBox(HTMLNode formNode) {
 
-        formNode.addChild("div", "class", "configprefix", Freetalk.getBaseL10n().getString("SettingsPage.GlobalSettings.Header"));
+        formNode.addChild("div", "class", "configprefix", l10n().getString("SettingsPage.GlobalSettings.Header"));
         
         HTMLNode list = formNode.addChild("ul", "class", "config");
         HTMLNode item = list.addChild("li");
@@ -87,12 +88,12 @@ public class SettingsPage extends WebPageImpl {
         
         item.addChild("span", new String[]{ "class", "title", "style" },
                 new String[]{ "configshortdesc", booleanDefaultString(true), "cursor: help;" })
-                .addChild("#", Freetalk.getBaseL10n().getString("SettingsPage.GlobalSettings.NNTPEnableServer.Short"));
+                .addChild("#", l10n().getString("SettingsPage.GlobalSettings.NNTPEnableServer.Short"));
         
         item.addChild("span", "class", "config");
         item.addChild(addBooleanComboBox(mFreetalk.getConfig().getBoolean(Config.NNTP_SERVER_ENABLED), "EnableNntpServer", false));
         
-        item.addChild("span", "class", "configlongdesc").addChild("#", Freetalk.getBaseL10n().getString("SettingsPage.GlobalSettings.NNTPEnableServer.Long"));
+        item.addChild("span", "class", "configlongdesc").addChild("#", l10n().getString("SettingsPage.GlobalSettings.NNTPEnableServer.Long"));
     }
     
     private String booleanDefaultString(boolean value) {
@@ -126,11 +127,11 @@ public class SettingsPage extends WebPageImpl {
     private void makeBreadcrumbs() {
         BreadcrumbTrail trail = new BreadcrumbTrail();
         Welcome.addBreadcrumb(trail);
-        SettingsPage.addBreadcrumb(trail);
+        SettingsPage.addBreadcrumb(trail, l10n());
         mContentNode.addChild(trail.getHTMLNode());
     }
 
-    public static void addBreadcrumb(BreadcrumbTrail trail) {
-        trail.addBreadcrumbInfo(Freetalk.getBaseL10n().getString("Breadcrumb.Settings"), Freetalk.PLUGIN_URI + "/Settings");
+    public static void addBreadcrumb(BreadcrumbTrail trail, BaseL10n l10n) {
+        trail.addBreadcrumbInfo(l10n.getString("Breadcrumb.Settings"), Freetalk.PLUGIN_URI + "/Settings");
     }
 }

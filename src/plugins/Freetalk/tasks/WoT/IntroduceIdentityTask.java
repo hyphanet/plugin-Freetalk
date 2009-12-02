@@ -8,6 +8,7 @@ import plugins.Freetalk.tasks.OwnMessageTask;
 import plugins.Freetalk.ui.web.IntroduceIdentityPage;
 import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;
+import freenet.l10n.BaseL10n;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 
@@ -29,15 +30,18 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 	public static final long PROCESSING_INTERVAL_SHORT = 10 * 60 * 1000;
 	
 	protected int mPuzzlesToSolve;
+	
+	protected BaseL10n baseL10n;
 
-	public IntroduceIdentityTask(WoTOwnIdentity myOwner) {
+	public IntroduceIdentityTask(WoTOwnIdentity myOwner, BaseL10n _baseL10n) {
 		super(myOwner);
 		
 		mPuzzlesToSolve = 0;
+		baseL10n = _baseL10n;
 	}
 
 	public synchronized WebPage display(WebInterface myWebInterface) {
-		return new IntroduceIdentityPage(myWebInterface, (WoTOwnIdentity)mOwner, mID, mPuzzlesToSolve);
+		return new IntroduceIdentityPage(myWebInterface, (WoTOwnIdentity)mOwner, mID, mPuzzlesToSolve, baseL10n);
 	}
 
 	public synchronized void process() {

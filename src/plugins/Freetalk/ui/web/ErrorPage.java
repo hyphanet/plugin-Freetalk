@@ -4,6 +4,7 @@
 package plugins.Freetalk.ui.web;
 
 import plugins.Freetalk.FTOwnIdentity;
+import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -12,8 +13,8 @@ public final class ErrorPage extends WebPageImpl {
 	private final String mErrorTitle;
 	private final String mErrorMessage;
 
-	public ErrorPage(WebInterface webInterface, FTOwnIdentity viewer, HTTPRequest request, String errorTitle, String errorMessage) {
-		super(webInterface, viewer, request);
+	public ErrorPage(WebInterface webInterface, FTOwnIdentity viewer, HTTPRequest request, String errorTitle, String errorMessage, BaseL10n _baseL10n) {
+		super(webInterface, viewer, request, _baseL10n);
 		mErrorTitle = errorTitle;
 		mErrorMessage = errorMessage;
 	}

@@ -11,6 +11,7 @@ import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.clients.http.RedirectException;
+import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -22,8 +23,8 @@ import freenet.support.api.HTTPRequest;
  */
 public class SelectBoardsPage extends WebPageImpl {
 
-	public SelectBoardsPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) {
-		super(myWebInterface, viewer, request);
+	public SelectBoardsPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
+		super(myWebInterface, viewer, request, _baseL10n);
 	}
 
 	public void make() throws RedirectException {
@@ -45,8 +46,8 @@ public class SelectBoardsPage extends WebPageImpl {
 				if(subscribe) {
 					SubscribedBoard board = messageManager.subscribeToBoard(mOwnIdentity, boardName);
 
-					HTMLNode successBox = addContentBox(Freetalk.getBaseL10n().getString("SelectBoardsPage.SubscriptionSucceededBox.Header"));
-	                Freetalk.getBaseL10n().addL10nSubstitution(
+					HTMLNode successBox = addContentBox(l10n().getString("SelectBoardsPage.SubscriptionSucceededBox.Header"));
+	                l10n().addL10nSubstitution(
 	                        successBox.addChild("div"), 
 	                        "SelectBoardsPage.SubscriptionSucceededBox.Text",
 	                        new String[] { "link", "boardname", "/link" }, 
@@ -56,15 +57,15 @@ public class SelectBoardsPage extends WebPageImpl {
 	                                "</a>" });
 				}
 				else if(unsubscribe) {
-                    HTMLNode successBox = addContentBox(Freetalk.getBaseL10n().getString("SelectBoardsPage.UnsubscriptionSucceededBox.Header"));
-                    Freetalk.getBaseL10n().addL10nSubstitution(
+                    HTMLNode successBox = addContentBox(l10n().getString("SelectBoardsPage.UnsubscriptionSucceededBox.Header"));
+                    l10n().addL10nSubstitution(
                         successBox.addChild("div"), 
                         "SelectBoardsPage.UnsubscriptionSucceededBox.Text",
                         new String[] { "boardname" }, 
                         new String[] { boardName });
 				}	
 			} catch(Exception e) {
-				HTMLNode alertBox = addAlertBox(subscribe ? Freetalk.getBaseL10n().getString("SelectBoardsPage.SubscribeFailed") : Freetalk.getBaseL10n().getString("SelectBoardsPage.UnsubscribeFailed"));
+				HTMLNode alertBox = addAlertBox(subscribe ? l10n().getString("SelectBoardsPage.SubscribeFailed") : l10n().getString("SelectBoardsPage.UnsubscribeFailed"));
 				alertBox.addChild("div", e.getMessage());
 				
 				Logger.error(this, subscribe ? "subscribe failed" : "unsubscribe failed", e);
@@ -75,23 +76,23 @@ public class SelectBoardsPage extends WebPageImpl {
 	}
 	
 	private void makeBoardsList() {
-		HTMLNode boardsBox = addContentBox(Freetalk.getBaseL10n().getString("SelectBoardsPage.SelectBoardsBox.Header"));
+		HTMLNode boardsBox = addContentBox(l10n().getString("SelectBoardsPage.SelectBoardsBox.Header"));
 		
-		boardsBox.addChild("p", Freetalk.getBaseL10n().getString("SelectBoardsPage.SelectBoardsBox.Text"));
+		boardsBox.addChild("p", l10n().getString("SelectBoardsPage.SelectBoardsBox.Text"));
 
 		HTMLNode newBoardForm = addFormChild(boardsBox, Freetalk.PLUGIN_URI + "/NewBoard", "NewBoardPage");
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
-		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", Freetalk.getBaseL10n().getString("SelectBoardsPage.NewBoardButton") });
+		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("SelectBoardsPage.NewBoardButton") });
 		
 		HTMLNode boardsTable = boardsBox.addChild("table", "border", "0");
 		HTMLNode row = boardsTable.addChild("tr");
-		row.addChild("th", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTableHeader.Name"));
-		row.addChild("th", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTableHeader.Description"));
-		row.addChild("th", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTableHeader.FirstSeen"));
-		row.addChild("th", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTableHeader.LatestMessage"));
-		row.addChild("th", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTableHeader.Messages"));
-		row.addChild("th", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTableHeader.Subscribe"));
-		row.addChild("th", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTableHeader.Unsubscribe"));
+		row.addChild("th", l10n().getString("SelectBoardsPage.BoardTableHeader.Name"));
+		row.addChild("th", l10n().getString("SelectBoardsPage.BoardTableHeader.Description"));
+		row.addChild("th", l10n().getString("SelectBoardsPage.BoardTableHeader.FirstSeen"));
+		row.addChild("th", l10n().getString("SelectBoardsPage.BoardTableHeader.LatestMessage"));
+		row.addChild("th", l10n().getString("SelectBoardsPage.BoardTableHeader.Messages"));
+		row.addChild("th", l10n().getString("SelectBoardsPage.BoardTableHeader.Subscribe"));
+		row.addChild("th", l10n().getString("SelectBoardsPage.BoardTableHeader.Unsubscribe"));
 		
 		DateFormat dateFormat = DateFormat.getInstance();
 		
@@ -145,7 +146,7 @@ public class SelectBoardsPage extends WebPageImpl {
 					HTMLNode unsubscribeForm = addFormChild(unsubscribeCell, Freetalk.PLUGIN_URI + "/SelectBoards" + "#" + board.getName(), "Unsubscribe");
 					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID()});
 					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "BoardName", board.getName()});
-					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "submit", "Unsubscribe", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTable.UnsubscribeButton") });
+					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "submit", "Unsubscribe", l10n().getString("SelectBoardsPage.BoardTable.UnsubscribeButton") });
 				} catch(NoSuchBoardException e) {
 					// We are not subscribed to that board so we cannot fill all cells with information.
 					
@@ -156,7 +157,7 @@ public class SelectBoardsPage extends WebPageImpl {
 					HTMLNode subscribeForm = addFormChild(subscribeCell, Freetalk.PLUGIN_URI + "/SelectBoards" + "#" + board.getName(), "Subscribe");
 					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID()});
 					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "BoardName", board.getName()});
-					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "submit", "Subscribe", Freetalk.getBaseL10n().getString("SelectBoardsPage.BoardTable.SubscribeButton") });
+					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "submit", "Subscribe", l10n().getString("SelectBoardsPage.BoardTable.SubscribeButton") });
 				}
 			}
 		}
@@ -165,12 +166,12 @@ public class SelectBoardsPage extends WebPageImpl {
 	private void makeBreadcrumbs() {
 		BreadcrumbTrail trail = new BreadcrumbTrail();
 		Welcome.addBreadcrumb(trail);
-		BoardsPage.addBreadcrumb(trail);
-		SelectBoardsPage.addBreadcrumb(trail);
+		BoardsPage.addBreadcrumb(trail, l10n());
+		SelectBoardsPage.addBreadcrumb(trail, l10n());
 		mContentNode.addChild(trail.getHTMLNode());
 	}
 
-	public static void addBreadcrumb(BreadcrumbTrail trail) {
-		trail.addBreadcrumbInfo(Freetalk.getBaseL10n().getString("Breadcrumb.SelectBoards"), Freetalk.PLUGIN_URI + "/SelectBoards");
+	public static void addBreadcrumb(BreadcrumbTrail trail, BaseL10n l10n) {
+		trail.addBreadcrumbInfo(l10n.getString("Breadcrumb.SelectBoards"), Freetalk.PLUGIN_URI + "/SelectBoards");
 	}
 }

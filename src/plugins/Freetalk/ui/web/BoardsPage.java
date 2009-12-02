@@ -12,6 +12,7 @@ import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.SubscribedBoard.MessageReference;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.clients.http.RedirectException;
+import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -22,8 +23,8 @@ import freenet.support.api.HTTPRequest;
  */
 public final class BoardsPage extends WebPageImpl {
 
-	public BoardsPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) {
-		super(myWebInterface, viewer, request);
+	public BoardsPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
+		super(myWebInterface, viewer, request, _baseL10n);
 	}
 
 	public final void make() throws RedirectException {
@@ -35,18 +36,18 @@ public final class BoardsPage extends WebPageImpl {
 	}
 
 	private void makeBoardsList() {
-		HTMLNode boardsBox = addContentBox(Freetalk.getBaseL10n().getString("BoardsPage.BoardList.Header"));
+		HTMLNode boardsBox = addContentBox(l10n().getString("BoardsPage.BoardList.Header"));
 
 		HTMLNode newBoardForm = addFormChild(boardsBox, Freetalk.PLUGIN_URI + "/NewBoard", "NewBoardPage");
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
-		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", Freetalk.getBaseL10n().getString("BoardsPage.NewBoardButton")});
+		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("BoardsPage.NewBoardButton")});
 
 		HTMLNode boardsTable = boardsBox.addChild("table", "border", "0");
 		HTMLNode row = boardsTable.addChild("tr");
-		row.addChild("th", Freetalk.getBaseL10n().getString("BoardsPage.BoardTableHeader.Name"));
-		row.addChild("th", Freetalk.getBaseL10n().getString("BoardsPage.BoardTableHeader.Description"));
-		row.addChild("th", Freetalk.getBaseL10n().getString("BoardsPage.BoardTableHeader.Messages"));
-		row.addChild("th", Freetalk.getBaseL10n().getString("BoardsPage.BoardTableHeader.LatestMessage"));
+		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.Name"));
+		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.Description"));
+		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.Messages"));
+		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.LatestMessage"));
 		
 		DateFormat dateFormat = DateFormat.getInstance();
 		
@@ -89,20 +90,20 @@ public final class BoardsPage extends WebPageImpl {
 		final String[] l10nLinkSubstitutionOutput = new String[] { "<a href=\""+Freetalk.PLUGIN_URI+"/SelectBoards?identity="+mOwnIdentity.getID()+"\">", "</a>" };
 		HTMLNode aChild = boardsBox.addChild("p");
 		if(boardCount == 0) {
-            Freetalk.getBaseL10n().addL10nSubstitution(aChild, "BoardsPage.NoBoardSubscribed", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);
+            l10n().addL10nSubstitution(aChild, "BoardsPage.NoBoardSubscribed", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);
 		} else {
-            Freetalk.getBaseL10n().addL10nSubstitution(aChild, "BoardsPage.BoardSubscriptions", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);
+            l10n().addL10nSubstitution(aChild, "BoardsPage.BoardSubscriptions", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);
 		}
 	}
 
 	private void makeBreadcrumbs() {
 		BreadcrumbTrail trail = new BreadcrumbTrail();
 		Welcome.addBreadcrumb(trail);
-		BoardsPage.addBreadcrumb(trail);
+		BoardsPage.addBreadcrumb(trail, l10n());
 		mContentNode.addChild(trail.getHTMLNode());
 	}
 
-	public static void addBreadcrumb(BreadcrumbTrail trail) {
-		trail.addBreadcrumbInfo(Freetalk.getBaseL10n().getString("Breadcrumb.Boards"), Freetalk.PLUGIN_URI + "/SubscribedBoards");
+	public static void addBreadcrumb(BreadcrumbTrail trail, BaseL10n l10n) {
+		trail.addBreadcrumbInfo(l10n.getString("Breadcrumb.Boards"), Freetalk.PLUGIN_URI + "/SubscribedBoards");
 	}
 }

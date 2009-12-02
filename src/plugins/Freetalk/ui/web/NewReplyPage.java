@@ -15,6 +15,7 @@ import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -24,8 +25,9 @@ public class NewReplyPage extends WebPageImpl {
 	private final BoardThreadLink mParentThread;
 	private final Message mParentMessage;
 
-	public NewReplyPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchBoardException, NoSuchMessageException {
-		super(myWebInterface, viewer, request);
+	public NewReplyPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) 
+	throws NoSuchBoardException, NoSuchMessageException {
+		super(myWebInterface, viewer, request, _baseL10n);
 		mBoard = mFreetalk.getMessageManager().getSubscription(mOwnIdentity, request.getPartAsString("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
 		
 		mParentThread = mBoard.getThreadLink(request.getPartAsString("ParentThreadID", 128));
@@ -59,11 +61,11 @@ public class NewReplyPage extends WebPageImpl {
 				mFreetalk.getMessageManager().postMessage(parentThreadURI,
 						mParentMessage, boards, mBoard, mOwnIdentity, replySubject, null, replyText, null);
 
-				HTMLNode successBox = addContentBox(Freetalk.getBaseL10n().getString("NewReplyPage.ReplyCreated.Header"));
-				successBox.addChild("p", Freetalk.getBaseL10n().getString("NewReplyPage.ReplyCreated.Text")); 
+				HTMLNode successBox = addContentBox(l10n().getString("NewReplyPage.ReplyCreated.Header"));
+				successBox.addChild("p", l10n().getString("NewReplyPage.ReplyCreated.Text")); 
 				
 				HTMLNode aChild = successBox.addChild("#");
-                Freetalk.getBaseL10n().addL10nSubstitution(
+                l10n().addL10nSubstitution(
                         aChild, 
                         "NewReplyPage.ReplyCreated.BackToParentThread",
                         new String[] { "link", "/link" }, 
@@ -74,7 +76,7 @@ public class NewReplyPage extends WebPageImpl {
 				successBox.addChild("br");
 				
 				aChild = successBox.addChild("#");
-                Freetalk.getBaseL10n().addL10nSubstitution(
+                l10n().addL10nSubstitution(
                         aChild, 
                         "NewReplyPage.ReplyCreated.BackToBoard",
                         new String[] { "link", "boardname", "/link" }, 
@@ -83,7 +85,7 @@ public class NewReplyPage extends WebPageImpl {
                                 mBoard.getName(),
                                 "</a>" });
 			} catch (Exception e) {
-				HTMLNode alertBox = addAlertBox(Freetalk.getBaseL10n().getString("NewReplyPage.ReplyFailed.Header"));
+				HTMLNode alertBox = addAlertBox(l10n().getString("NewReplyPage.ReplyFailed.Header"));
 				alertBox.addChild("div", e.getMessage());
 				
 				makeNewReplyPage(replySubject, replyText);
@@ -100,7 +102,7 @@ public class NewReplyPage extends WebPageImpl {
 
 	private void makeNewReplyPage(String replySubject, String replyText) {
 	    
-	    final String trnsl = Freetalk.getBaseL10n().getString(
+	    final String trnsl = l10n().getString(
 	            "NewReplyPage.ReplyBox.Header",
 	            new String[] { "boardname" }, 
 	            new String[] { mBoard.getName() });
@@ -111,31 +113,31 @@ public class NewReplyPage extends WebPageImpl {
 		newReplyForm.addChild("input", new String[] { "type", "name", "value"}, new String[] {"hidden", "ParentThreadID", mParentThread.getThreadID()});
 		newReplyForm.addChild("input", new String[] { "type", "name", "value"}, new String[] {"hidden", "ParentMessageID", mParentMessage.getID()});
 		
-		HTMLNode authorBox = newReplyForm.addChild(getContentBox(Freetalk.getBaseL10n().getString("NewReplyPage.ReplyBox.Author")));
+		HTMLNode authorBox = newReplyForm.addChild(getContentBox(l10n().getString("NewReplyPage.ReplyBox.Author")));
 		authorBox.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
 		authorBox.addChild("b", mOwnIdentity.getFreetalkAddress());
 		
-		HTMLNode subjectBox = newReplyForm.addChild(getContentBox(Freetalk.getBaseL10n().getString("NewReplyPage.ReplyBox.Subject")));
+		HTMLNode subjectBox = newReplyForm.addChild(getContentBox(l10n().getString("NewReplyPage.ReplyBox.Subject")));
 		subjectBox.addChild("input", new String[] {"type", "name", "size", "maxlength", "value"},
 									new String[] {"text", "ReplySubject", "100", Integer.toString(Message.MAX_MESSAGE_TITLE_TEXT_LENGTH), replySubject});		
 		
-		HTMLNode textBox = newReplyForm.addChild(getContentBox(Freetalk.getBaseL10n().getString("NewReplyPage.ReplyBox.Text")));
+		HTMLNode textBox = newReplyForm.addChild(getContentBox(l10n().getString("NewReplyPage.ReplyBox.Text")));
 		textBox.addChild("textarea", new String[] { "name", "cols", "rows" }, new String[] { "ReplyText", "80", "30" }, replyText);
 		
-		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateReply", Freetalk.getBaseL10n().getString("NewReplyPage.ReplyBox.SubmitButton")});
+		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateReply", l10n().getString("NewReplyPage.ReplyBox.SubmitButton")});
 	}
 
 	private void makeBreadcrumbs() {
 		BreadcrumbTrail trail = new BreadcrumbTrail();
 		Welcome.addBreadcrumb(trail);
-		BoardsPage.addBreadcrumb(trail);
+		BoardsPage.addBreadcrumb(trail, l10n());
 		BoardPage.addBreadcrumb(trail, mBoard);
 		ThreadPage.addBreadcrumb(trail, mBoard, mParentThread);
-		NewReplyPage.addBreadcrumb(trail);
+		NewReplyPage.addBreadcrumb(trail, l10n());
 		mContentNode.addChild(trail.getHTMLNode());
 	}
 
-	public static void addBreadcrumb(BreadcrumbTrail trail) {
-		trail.addBreadcrumbInfo(Freetalk.getBaseL10n().getString("Breadcrumb.Reply"), "");
+	public static void addBreadcrumb(BreadcrumbTrail trail, BaseL10n l10n) {
+		trail.addBreadcrumbInfo(l10n.getString("Breadcrumb.Reply"), "");
 	}
 }

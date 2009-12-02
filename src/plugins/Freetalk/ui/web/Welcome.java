@@ -6,6 +6,7 @@ package plugins.Freetalk.ui.web;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import freenet.clients.http.RedirectException;
+import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -15,8 +16,8 @@ import freenet.support.api.HTTPRequest;
  */
 public final class Welcome extends WebPageImpl {
 	
-	public Welcome(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) {
-		super(myWebInterface, viewer, request);
+	public Welcome(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
+		super(myWebInterface, viewer, request, _baseL10n);
 	}
 
 	public final void make() throws RedirectException {
@@ -25,29 +26,29 @@ public final class Welcome extends WebPageImpl {
 		}
 		makeWelcomeBox();
 		makeOverviewBox();
-		new BoardsPage(mWebInterface, mOwnIdentity, mRequest).addToPage(mContentNode);
+		new BoardsPage(mWebInterface, mOwnIdentity, mRequest, l10n()).addToPage(mContentNode);
 	}
 	
 	private final void makeWelcomeBox() {
         final String[] l10nBoldSubstitutionInput = new String[] { "bold", "/bold" };
         final String[] l10nBoldSubstitutionOutput = new String[] { "<b>", "</b>" };
 	    
-		HTMLNode welcomeBox = addContentBox(Freetalk.getBaseL10n().getString("Welcome.WelcomeBox.Header"));
+		HTMLNode welcomeBox = addContentBox(l10n().getString("Welcome.WelcomeBox.Header"));
 		
         HTMLNode p;
         p = welcomeBox.addChild("p");
-        Freetalk.getBaseL10n().addL10nSubstitution(p, "Welcome.WelcomeBox.Text1", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+        l10n().addL10nSubstitution(p, "Welcome.WelcomeBox.Text1", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
         p = welcomeBox.addChild("p");
-        Freetalk.getBaseL10n().addL10nSubstitution(p, "Welcome.WelcomeBox.Text2", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+        l10n().addL10nSubstitution(p, "Welcome.WelcomeBox.Text2", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
         p = welcomeBox.addChild("p");
-        Freetalk.getBaseL10n().addL10nSubstitution(p, "Welcome.WelcomeBox.Text3", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+        l10n().addL10nSubstitution(p, "Welcome.WelcomeBox.Text3", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 	}
 
 	private final void makeOverviewBox() {
-		HTMLNode overviewBox = addContentBox(Freetalk.getBaseL10n().getString("Welcome.OverviewBox.Header"));
+		HTMLNode overviewBox = addContentBox(l10n().getString("Welcome.OverviewBox.Header"));
 		HTMLNode list = overviewBox.addChild("ul");
-		list.addChild(new HTMLNode("li", Freetalk.getBaseL10n().getString("Welcome.OverviewBox.KnownIdentities") + ": " + mFreetalk.getIdentityManager().countKnownIdentities()));
-		list.addChild(new HTMLNode("li", Freetalk.getBaseL10n().getString("Welcome.OverviewBox.MessagesWaiting") + ": " + mFreetalk.getMessageManager().countUnsentMessages()));
+		list.addChild(new HTMLNode("li", l10n().getString("Welcome.OverviewBox.KnownIdentities") + ": " + mFreetalk.getIdentityManager().countKnownIdentities()));
+		list.addChild(new HTMLNode("li", l10n().getString("Welcome.OverviewBox.MessagesWaiting") + ": " + mFreetalk.getMessageManager().countUnsentMessages()));
 	}
 
 	public static void addBreadcrumb(BreadcrumbTrail trail) {

@@ -4,21 +4,21 @@
 package plugins.Freetalk.ui.web;
 
 import plugins.Freetalk.FTOwnIdentity;
+import freenet.l10n.BaseL10n;
 import freenet.support.api.HTTPRequest;
 
 public abstract class TaskPage extends WebPageImpl {
 
 	protected final String mTaskID;
 
-	public TaskPage(WebInterface myWebInterface, FTOwnIdentity myViewer, HTTPRequest request) {
-		super(myWebInterface, myViewer, request);
+	public TaskPage(WebInterface myWebInterface, FTOwnIdentity myViewer, HTTPRequest request, BaseL10n _baseL10n) {
+		super(myWebInterface, myViewer, request, _baseL10n);
 		
 		mTaskID = mRequest.getPartAsString("TaskID", 64);
 	}
 
-	public TaskPage(WebInterface myWebInterface, FTOwnIdentity myViewer, String myTaskID) {
-		super(myWebInterface, myViewer, null);
+	public TaskPage(WebInterface myWebInterface, FTOwnIdentity myViewer, String myTaskID, BaseL10n _baseL10n) {
+		super(myWebInterface, myViewer, null, _baseL10n);
 		mTaskID = myTaskID;
 	}
-
 }

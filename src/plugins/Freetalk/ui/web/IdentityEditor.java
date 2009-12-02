@@ -8,6 +8,7 @@ import java.util.Iterator;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import freenet.clients.http.RedirectException;
+import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -17,9 +18,8 @@ import freenet.support.api.HTTPRequest;
  */
 public final class IdentityEditor extends WebPageImpl {
 
-	public IdentityEditor(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) {
-		super(myWebInterface, viewer, request);
-		// TODO Auto-generated constructor stub
+	public IdentityEditor(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
+		super(myWebInterface, viewer, request, _baseL10n);
 	}
 
 	public final void make() throws RedirectException {

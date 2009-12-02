@@ -16,6 +16,7 @@ import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
+import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -29,8 +30,8 @@ public final class BoardPage extends WebPageImpl {
 
 	private final SubscribedBoard mBoard;
 	
-	public BoardPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) throws NoSuchBoardException {
-		super(myWebInterface, viewer, request);
+	public BoardPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) throws NoSuchBoardException {
+		super(myWebInterface, viewer, request, _baseL10n);
 		mBoard = mFreetalk.getMessageManager().getSubscription(viewer, request.getParam("name"));
 	}
 
@@ -38,13 +39,13 @@ public final class BoardPage extends WebPageImpl {
 		makeBreadcrumbs();
 
 		HTMLNode threadsBox = addContentBox("");
-        Freetalk.getBaseL10n().addL10nSubstitution(threadsBox, "BoardPage.Threads.Header", new String[] { "boardname" }, new String[] { mBoard.getName() });
+        l10n().addL10nSubstitution(threadsBox, "BoardPage.Threads.Header", new String[] { "boardname" }, new String[] { mBoard.getName() });
 		
 		// Button for creating a new thread
 		HTMLNode newThreadForm = addFormChild(threadsBox, Freetalk.PLUGIN_URI + "/NewThread", "NewThreadPage");
 			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID() });
 			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "BoardName", mBoard.getName() });
-			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", Freetalk.getBaseL10n().getString("BoardPage.CreateNewThreadButton") });
+			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("BoardPage.CreateNewThreadButton") });
 		
 		// Threads table
 		HTMLNode threadsTable = threadsBox.addChild("table", new String[] { "border", "width" }, new String[] { "0", "100%" });
@@ -58,11 +59,11 @@ public final class BoardPage extends WebPageImpl {
 			colgroup.addChild("col"); // Replies
 		
 		HTMLNode row = threadsTable.addChild("thead");
-			row.addChild("th", Freetalk.getBaseL10n().getString("BoardPage.ThreadTableHeader.Title"));
-			row.addChild("th", Freetalk.getBaseL10n().getString("BoardPage.ThreadTableHeader.Author"));
-			row.addChild("th", Freetalk.getBaseL10n().getString("BoardPage.ThreadTableHeader.Trust"));
-			row.addChild("th", Freetalk.getBaseL10n().getString("BoardPage.ThreadTableHeader.Date"));
-			row.addChild("th", Freetalk.getBaseL10n().getString("BoardPage.ThreadTableHeader.Replies"));
+			row.addChild("th", l10n().getString("BoardPage.ThreadTableHeader.Title"));
+			row.addChild("th", l10n().getString("BoardPage.ThreadTableHeader.Author"));
+			row.addChild("th", l10n().getString("BoardPage.ThreadTableHeader.Trust"));
+			row.addChild("th", l10n().getString("BoardPage.ThreadTableHeader.Date"));
+			row.addChild("th", l10n().getString("BoardPage.ThreadTableHeader.Replies"));
 		
 		DateFormat dateFormat = DateFormat.getInstance();
 		
@@ -135,7 +136,7 @@ public final class BoardPage extends WebPageImpl {
 	private void makeBreadcrumbs() {
 		BreadcrumbTrail trail = new BreadcrumbTrail();
 		Welcome.addBreadcrumb(trail);
-		BoardsPage.addBreadcrumb(trail);
+		BoardsPage.addBreadcrumb(trail, l10n());
 		BoardPage.addBreadcrumb(trail, mBoard);
 		mContentNode.addChild(trail.getHTMLNode());
 	}

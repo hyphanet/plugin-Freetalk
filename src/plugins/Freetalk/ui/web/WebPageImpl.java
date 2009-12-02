@@ -15,6 +15,7 @@ import freenet.clients.http.PageMaker;
 import freenet.clients.http.PageNode;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.ToadletContext;
+import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -46,18 +47,20 @@ public abstract class WebPageImpl implements WebPage {
 
 	protected final URI logIn;
 	
+    protected final BaseL10n baseL10n;
+	
 	/**
 	 * Creates a new WebPageImpl. It is abstract because only a subclass can run
 	 * the desired make() method to generate the content.
-	 * 
-	 * @param mFreetalk
-	 *            a reference to Freetalk, used to get references to database,
-	 *            client, whatever is needed.
 	 * @param viewer The FTOwnIdentity which is viewing this page.
 	 * @param request
 	 *            the request from the user.
+	 * @param _baseL10n TODO
+	 * @param mFreetalk
+	 *            a reference to Freetalk, used to get references to database,
+	 *            client, whatever is needed.
 	 */
-	public WebPageImpl(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request) {
+	public WebPageImpl(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
 		
 		try {
 			logIn = new URI(Freetalk.PLUGIN_URI+"/LogIn");
@@ -74,6 +77,8 @@ public abstract class WebPageImpl implements WebPage {
 		mOwnIdentity = viewer;
 
 		mRequest = request;
+		
+		baseL10n = _baseL10n;
 	}
 
 	/**
@@ -168,4 +173,8 @@ public abstract class WebPageImpl implements WebPage {
 		}
 		return s;
 	}
+	
+    protected BaseL10n l10n() {
+        return baseL10n;
+    }
 }

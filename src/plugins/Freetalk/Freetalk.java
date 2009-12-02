@@ -397,7 +397,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
      * @return
      */
     public String getString(String arg0) {
-        return Freetalk.getBaseL10n().getString(arg0);
+        return getBaseL10n().getString(arg0);
     }
 
 	/**
@@ -463,7 +463,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
      *
      * @return L10n object.
      */
-    public static BaseL10n getBaseL10n() {
+    public BaseL10n getBaseL10n() {
         return Freetalk.l10n.getBase();
     }
 }

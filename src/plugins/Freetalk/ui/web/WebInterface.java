@@ -29,6 +29,7 @@ import freenet.clients.http.ToadletContextClosedException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
+import freenet.l10n.BaseL10n;
 import freenet.node.NodeClientCore;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -69,6 +70,15 @@ public final class WebInterface {
 	private final WebInterfaceToadlet changeTrustToadlet;
 	private final WebInterfaceToadlet getPuzzleToadlet;
 	private final WebInterfaceToadlet introduceIdentityToadlet;
+
+	/**
+	 * Forward current l10n data.
+	 * 
+	 * @return current l10n data
+	 */
+	public BaseL10n l10n() {
+	    return mFreetalk.getBaseL10n();
+	}
 	
 	class HomeWebInterfaceToadlet extends WebInterfaceToadlet {
 
@@ -79,12 +89,12 @@ public final class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
-				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
 			
 			if(!mSessionManager.sessionExists(context))
 				throw new RedirectException(logIn);
 			
-			return new Welcome(webInterface, getLoggedInOwnIdentity(context), req);
+			return new Welcome(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 		}
 
 		@Override
@@ -103,8 +113,8 @@ public final class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
-				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
-			return new BoardsPage(webInterface, getLoggedInOwnIdentity(context), req);
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
+			return new BoardsPage(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 		}
 		
 		@Override
@@ -123,8 +133,8 @@ public final class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
-				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
-			return new SelectBoardsPage(webInterface, getLoggedInOwnIdentity(context), req);
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
+			return new SelectBoardsPage(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 		}
 		
 		@Override
@@ -143,8 +153,8 @@ public final class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
-				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
-			return new IdentityEditor(webInterface, getLoggedInOwnIdentity(context), req);
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
+			return new IdentityEditor(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 		}
 		
 		@Override
@@ -162,8 +172,8 @@ public final class WebInterface {
 	    @Override
 	    WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 	        if(!mFreetalk.wotConnected())
-	            return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
-	        return new SettingsPage(webInterface, getLoggedInOwnIdentity(context), req);
+	            return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
+	        return new SettingsPage(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 	    }
 	    
 	    @Override
@@ -183,7 +193,7 @@ public final class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
-				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
 			mSessionManager.deleteSession(context);
 			throw new RedirectException(logIn);
 		}
@@ -222,9 +232,9 @@ public final class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
-				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
 
-			return new LogInPage(webInterface , req);
+			return new LogInPage(webInterface , req, l10n());
 		}
 		
 		@Override
@@ -278,7 +288,7 @@ public final class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			// not expected to make it here
-			return new Welcome(webInterface, getLoggedInOwnIdentity(context), req);
+			return new Welcome(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 		}
 		
 		@Override
@@ -296,8 +306,8 @@ public final class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
 			if(!mFreetalk.wotConnected())
-				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
-			return new CreateIdentityWizard(webInterface, req);
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
+			return new CreateIdentityWizard(webInterface, req, l10n());
 		}
 		
 		@Override
@@ -315,12 +325,12 @@ public final class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
-				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
 
 			try {
-				return new NewThreadPage(webInterface, getLoggedInOwnIdentity(context), req);
+				return new NewThreadPage(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 			} catch (NoSuchBoardException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"), l10n());
 			}
 		}
 		
@@ -344,12 +354,12 @@ public final class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
-				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
 
 			try {
-				return new BoardPage(webInterface, getLoggedInOwnIdentity(context), req);
+				return new BoardPage(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 			} catch (NoSuchBoardException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"), l10n());
 				
 			}
 		}
@@ -374,14 +384,14 @@ public final class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
-				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
 
 			try {
-				return new ThreadPage(webInterface, getLoggedInOwnIdentity(context), req);
+				return new ThreadPage(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 			} catch (NoSuchBoardException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"), l10n());
 			} catch (NoSuchMessageException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown message "+req.getParam("id"), "Unknown message "+req.getParam("id"));
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown message "+req.getParam("id"), "Unknown message "+req.getParam("id"), l10n());
 			}
 		}
 		
@@ -405,14 +415,14 @@ public final class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
-				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
 
 			try {
-				return new NewReplyPage(webInterface, getLoggedInOwnIdentity(context), req);
+				return new NewReplyPage(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 			} catch (NoSuchBoardException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"));
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"), l10n());
 			} catch (NoSuchMessageException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown message "+req.getParam("id"), "Unknown message "+req.getParam("id"));
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown message "+req.getParam("id"), "Unknown message "+req.getParam("id"), l10n());
 			}
 		}
 		
@@ -436,8 +446,8 @@ public final class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
-				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
-			return new NewBoardPage(webInterface, getLoggedInOwnIdentity(context), req);
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
+			return new NewBoardPage(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 		}
 		
 		@Override
@@ -494,7 +504,7 @@ public final class WebInterface {
 		
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			// not expected to make it here
-			return new Welcome(webInterface, getLoggedInOwnIdentity(context), req);
+			return new Welcome(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 		}
 	}
 	
@@ -507,9 +517,9 @@ public final class WebInterface {
 		@Override
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
-				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated());
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
 			
-			return new IntroduceIdentityPage(webInterface, (WoTOwnIdentity)webInterface.getLoggedInOwnIdentity(context), req);
+			return new IntroduceIdentityPage(webInterface, (WoTOwnIdentity)webInterface.getLoggedInOwnIdentity(context), req, l10n());
 		}
 		
 		@Override
