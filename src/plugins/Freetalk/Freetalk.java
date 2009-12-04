@@ -178,6 +178,11 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		dbCfg.exceptionsOnNotStorable(true);
 		dbCfg.activationDepth(5); /* FIXME: Figure out a reasonable value */
 		
+        // TURN OFF SHUTDOWN HOOK.
+        // The shutdown hook does auto-commit. We do NOT want auto-commit: if a
+        // transaction hasn't commit()ed, it's not safe to commit it.
+        dbCfg.automaticShutDown(false);
+		
 		// TODO: Replace all these loops with one single loop which uses reflection!
 		
 		for(String f : Message.getIndexedFields())
