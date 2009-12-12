@@ -775,16 +775,22 @@ public abstract class MessageManager implements Runnable {
 		query.descend("mID").constrain(id);
 		ObjectSet<Message> result = query.execute();
 
+        Message m = null;
 		switch(result.size()) {
 			case 1:
-				Message m = result.next();
+				m = result.next();
 				m.initializeTransient(db, this);
-				return m;
+				break;
 			case 0:
 				throw new NoSuchMessageException(id);
 			default:
 				throw new DuplicateMessageException(id);
 		}
+		
+		if (m == null) {
+            throw new NoSuchMessageException(id);
+		}
+		return m;
 	}
 	
 	/**

@@ -342,7 +342,9 @@ public final class FCPInterface implements FredPluginFCP {
             // send all messages
             for(final MessageReference reference : messageRefList) {
                 final Message msg = reference.getMessage();
-                sendSingleMessage(replysender, msg, reference.getIndex(), includeMessageText);
+                if (msg != null) {
+                    sendSingleMessage(replysender, msg, reference.getIndex(), includeMessageText);
+                }
             }
         }
 
