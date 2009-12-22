@@ -220,7 +220,7 @@ public final class ThreadPage extends WebPageImpl {
         if(ref instanceof BoardThreadLink)
         	addMarkThreadAsUnreadButton(title, (BoardThreadLink)ref);
         
-        if(((WoTOwnIdentity)mOwnIdentity).getAssessed(message) == false) {
+        if(message.getAuthor() != mOwnIdentity && ((WoTOwnIdentity)mOwnIdentity).getAssessed(message) == false) {
             addModButton(title, message, 10, "+");
             addModButton(title, message, -10, "-");
             title.addChild("%", "&nbsp;");
