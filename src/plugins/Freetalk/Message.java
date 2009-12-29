@@ -493,7 +493,7 @@ public abstract class Message {
 	 * - No line breaks, tabs, or any other control characters.
 	 * - No invalid characters.
 	 * - valid UTF-8 encoding
-	 * - No invalid formatting (unpaired direction or annotation characters.)
+	 * - No invalid UTF formatting (unpaired direction or annotation characters).
 	 * - Not too long
 	 */
 	static public boolean isTitleValid(String title) {
@@ -525,7 +525,7 @@ public abstract class Message {
 	 * - Not null
 	 * - Not more than MAX_MESSAGE_TEXT_LENGTH characters or MAX_MESSAGE_TEXT_BYTE_LENGTH bytes.
 	 * - Valid UTF-8 encoding.
-	 * - Contains no invalid UTF formatting.
+	 * - Contains no invalid UTF formatting (unpaired direction or annotation characters).
 	 * - Control characters are allowed. FIXME: Check whether there are any dangerous control characters. If yes, only allow tabs, linebreaks. etc.
 	 */
 	static public boolean isTextValid(String text) {
