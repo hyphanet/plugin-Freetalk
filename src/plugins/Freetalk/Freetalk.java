@@ -53,7 +53,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	/* Constants */
 	
 	/** If set to true, all thread periods will be set to very low values, resulting in very fast message downloading. */
-	public static final boolean FAST_DEBUG_MODE = false; // FIXME: Set to false before release!
+	public static final boolean FAST_DEBUG_MODE = true; // FIXME: Set to false before release!
 	
 	public static final String PLUGIN_URI = "/Freetalk";
 	public static final String PLUGIN_TITLE = "Freetalk-testing"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */

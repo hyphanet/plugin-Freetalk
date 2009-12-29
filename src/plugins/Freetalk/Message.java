@@ -31,8 +31,11 @@ import freenet.support.StringValidityChecker;
 public abstract class Message {
     
     /* Public constants */
+	
+	// TODO: Get rid of the String.length() limit and only use the byte[].length limit. 
     
     public final static int MAX_MESSAGE_TITLE_TEXT_LENGTH = 256;     // String.length()
+    public final static int MAX_MESSAGE_TITLE_BYTE_LENGTH = 256;
     
     public final static int MAX_MESSAGE_TEXT_LENGTH = 64*1024;
     public final static int MAX_MESSAGE_TEXT_BYTE_LENGTH  = 64*1024; // byte[].length
@@ -489,12 +492,29 @@ public abstract class Message {
 	 * - Not empty
 	 * - No line breaks, tabs, or any other control characters.
 	 * - No invalid characters.
+	 * - valid UTF-8 encoding
 	 * - No invalid formatting (unpaired direction or annotation characters.)
+	 * - Not too long
 	 */
 	static public boolean isTitleValid(String title) {
-		return (title != null
-		        && title.length() > 0
-				&& StringValidityChecker.containsNoInvalidCharacters(title)
+		if(title == null)
+			return false;
+		
+		if(title.length() == 0)
+			return false;
+		
+		if(title.length() > MAX_MESSAGE_TITLE_TEXT_LENGTH)
+			return false;
+		
+	    try {
+    	    if (title.getBytes("UTF-8").length > MAX_MESSAGE_TITLE_BYTE_LENGTH) {
+    	        return false;
+    	    }
+	    } catch(UnsupportedEncodingException e) {
+	        return false;
+	    }
+		
+		return  (StringValidityChecker.containsNoInvalidCharacters(title)
 				&& StringValidityChecker.containsNoLinebreaks(title)
 				&& StringValidityChecker.containsNoControlCharacters(title)
 				&& StringValidityChecker.containsNoInvalidFormatting(title));
@@ -502,7 +522,11 @@ public abstract class Message {
 	
 	/**
 	 * Checks whether the text of the message is valid. Validity conditions:
-	 * - ...
+	 * - Not null
+	 * - Not more than MAX_MESSAGE_TEXT_LENGTH characters or MAX_MESSAGE_TEXT_BYTE_LENGTH bytes.
+	 * - Valid UTF-8 encoding.
+	 * - Contains no invalid UTF formatting.
+	 * - Control characters are allowed. FIXME: Check whether there are any dangerous control characters. If yes, only allow tabs, linebreaks. etc.
 	 */
 	static public boolean isTextValid(String text) {
         if (text == null) {
@@ -518,7 +542,9 @@ public abstract class Message {
 	    } catch(UnsupportedEncodingException e) {
 	        return false;
 	    }
-		return true;
+	    
+		return  (StringValidityChecker.containsNoInvalidCharacters(text)
+				&& StringValidityChecker.containsNoInvalidFormatting(text));
 	}
 	
 	/**
