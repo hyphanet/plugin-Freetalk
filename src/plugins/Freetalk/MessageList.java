@@ -304,6 +304,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		mMessageManager = myMessageManager;
 	}
 	
+	// FIXME: Get rid of the synchronized attribute, the list should be locked by all calling code before it locks db.lock()
 	public synchronized void storeWithoutCommit() {
 		try {
 			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
@@ -328,6 +329,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		}
 	}
 	
+	// FIXME: Get rid of the synchronized attribute, the list should be locked by all calling code before it locks db.lock()
 	@SuppressWarnings("unchecked")
 	protected synchronized void deleteWithoutCommit() {
 		try {
