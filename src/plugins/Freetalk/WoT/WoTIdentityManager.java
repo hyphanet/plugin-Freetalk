@@ -156,7 +156,7 @@ public class WoTIdentityManager extends IdentityManager {
 		params.putOverwrite("Message", "CreateIdentity");
 		params.putOverwrite("Nickname", newNickname);
 		params.putOverwrite("PublishTrustList", publishesTrustList ? "true" : "false");
-		params.putOverwrite("PublishIntroductionPuzzles", publishesIntroductionPuzzles ? "true" : "false");
+		params.putOverwrite("PublishIntroductionPuzzles", publishesTrustList && publishesIntroductionPuzzles ? "true" : "false");
 		params.putOverwrite("Context", Freetalk.WOT_CONTEXT);
 		params.putOverwrite("RequestURI", newRequestURI.toString());
 		params.putOverwrite("InsertURI", newInsertURI.toString());
