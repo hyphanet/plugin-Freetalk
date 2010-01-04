@@ -227,36 +227,76 @@ public abstract class MessageManager implements Runnable {
 	 * Deletes any messages and message lists referencing to it and commits the transaction.
 	 */
 	public synchronized void onIdentityDeletion(FTIdentity identity) {
-		synchronized(db.lock()) {
-			try {
-				// FIXME: We do not lock the boards. Ensure that the UI cannot re-use the board by calling storeAndCommit somewhere even though the board
-				// has been deleted. This can be ensured by having isStored() checks in all storeAndCommit() functions which use boards.
+
+		// We use multiple transactions here: We cannot acquire the db.lock() before board.deleteMessage because deleteMessage() synchronizes on board
+		// and therefore we must acquire the db.lock after synchronizing on each board.
+		// So the FIXME is: Add some mechanism similar to addMessagesToBoards()/synchronizeSubscribedBoards which handles half-deleted identities.
 				
 				for(Message message : getMessagesBy(identity)) {
 					message.initializeTransient(db, this);
 
 					for(Board board : message.getBoards()) {
+						synchronized(board) {
+						synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
+						synchronized(db.lock()) {
 						try {
 							board.deleteMessage(message);
+							message.setLinkedIn(false);
+							message.storeAndCommit();
 						} catch (NoSuchMessageException e) {
 							// The message was not added to the board yet, this is normal
+						} catch(RuntimeException e) {
+							DBUtil.rollbackAndThrow(db, this, e);
+						}
+						}
+						}
 						}
 						
 						Iterator<SubscribedBoard> iter = subscribedBoardIterator(board.getName());
 						while(iter.hasNext()){
 							SubscribedBoard subscribedBoard = iter.next();
 							
+							synchronized(subscribedBoard) {
+							synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
+							synchronized(db.lock()) {
 							try {
 								subscribedBoard.deleteMessage(message);
+								db.commit(); Logger.debug(this, "COMMITED.");
 							} catch (NoSuchMessageException e) {
 								// The message was not added to the board yet, this is normal
+							} catch(RuntimeException e) {
+								DBUtil.rollbackAndThrow(db, this, e);
+							}
+							}
+							}
 							}
 						}
+						
 					}
 
-					message.deleteWithoutCommit();
+					synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
+					synchronized(db.lock()) {	
+						try {
+							// Clear the "message was downloaded" flags of the references to this message.
+							// This is necessary because the following transaction (deletion of the message lists of the identity) might fail and we should
+							///re-download the message if the identity is not deleted.
+							for(MessageReference ref : getAllReferencesToMessage(message.getID())) {
+								ref.clearMessageWasDownloadedFlag();
+							}
+							
+							message.deleteWithoutCommit();
+							
+							db.commit(); Logger.debug(this, "COMMITED.");
+						}
+						catch(RuntimeException e) {
+							DBUtil.rollbackAndThrow(db, this, e);
+						}
+					}
+					}
 				}
 
+		synchronized(db.lock()) {
+			try {
 				for(MessageList messageList : getMessageListsBy(identity)) {
 					messageList.initializeTransient(db, this);
 					messageList.deleteWithoutCommit();
