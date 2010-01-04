@@ -13,7 +13,7 @@ import freenet.support.api.Bucket;
 
 public class PluginTalkerBlocking implements FredPluginTalker {
 	
-	public static final long TIMEOUT = 10 * 1000;
+	public static final long TIMEOUT = 30 * 1000;
 	
 	private PluginTalker mTalker;
 	
