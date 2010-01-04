@@ -121,21 +121,21 @@ public final class IntroduceIdentityPage extends TaskPage {
 		solveForm.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "TaskID", mTaskID });
 
 		if(puzzleIDs.size() > 0 ) {
-		int counter = 0;
-		for(String puzzleID : puzzleIDs) {
-			// Display as much puzzles per row as fitting in the browser-window via "inline-block" style. Nice, eh?
-			HTMLNode cell = solveForm.addChild("div", new String[] { "align" , "style"}, new String[] { "center" , "display: inline-block"});
-
-			cell.addChild("img", "src", Freetalk.PLUGIN_URI + "/GetPuzzle?PuzzleID=" + puzzleID); 
-			cell.addChild("br");
-			cell.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "PuzzleID" + counter, puzzleID });
-			cell.addChild("input", new String[] { "type", "name", "size"}, new String[] { "text", "Solution" + puzzleID, "10" });
-
-			++counter;
-		}
-		
-		solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SolvePuzzles",
-				l10n().getString("IntroduceIdentityPage.IntroduceIdentity.Submit") });
+			int counter = 0;
+			for(String puzzleID : puzzleIDs) {
+				// Display as much puzzles per row as fitting in the browser-window via "inline-block" style. Nice, eh?
+				HTMLNode cell = solveForm.addChild("div", new String[] { "align" , "style"}, new String[] { "center" , "display: inline-block"});
+	
+				cell.addChild("img", "src", Freetalk.PLUGIN_URI + "/GetPuzzle?PuzzleID=" + puzzleID); 
+				cell.addChild("br");
+				cell.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "PuzzleID" + counter, puzzleID });
+				cell.addChild("input", new String[] { "type", "name", "size"}, new String[] { "text", "Solution" + puzzleID, "10" });
+	
+				++counter;
+			}
+			
+			solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SolvePuzzles",
+					l10n().getString("IntroduceIdentityPage.IntroduceIdentity.Submit") });
 		}
 
 		solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Postpone", 
