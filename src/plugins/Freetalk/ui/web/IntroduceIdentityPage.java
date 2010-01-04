@@ -20,24 +20,21 @@ public final class IntroduceIdentityPage extends TaskPage {
 	
 	private final WoTIdentityManager mIdentityManager;
 	
+	private final boolean mWasPostponed;
+	
 	public IntroduceIdentityPage(WebInterface myWebInterface, WoTOwnIdentity myViewer, String myTaskID, int numberOfPuzzles, BaseL10n _baseL10n) {
 		super(myWebInterface, myViewer, myTaskID, _baseL10n);
 		
 		mIdentityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 		
 		mNumberOfPuzzles = numberOfPuzzles;
+		mWasPostponed = false;
 	}
 
 	public IntroduceIdentityPage(WebInterface myWebInterface, WoTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
 		super(myWebInterface, viewer, request, _baseL10n);
 		
 		mIdentityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
-		
-		if(!request.isPartSet("SolvePuzzles")) {
-			// We received an invalid request
-			mNumberOfPuzzles = 0;
-			return;
-		}
 		
 		synchronized(mFreetalk.getTaskManager()) {
 			IntroduceIdentityTask myTask;
@@ -46,6 +43,20 @@ public final class IntroduceIdentityPage extends TaskPage {
 				myTask = (IntroduceIdentityTask)mFreetalk.getTaskManager().getTask(mTaskID);
 			} catch(NoSuchTaskException e) {
 				throw new IllegalArgumentException(e);
+			}
+			
+			if(request.isPartSet("Postpone")) {
+				myTask.onHideForSomeTime();
+				mNumberOfPuzzles = 0;
+				mWasPostponed = true;
+				return;
+			} else
+				mWasPostponed = false;
+			
+			if(!request.isPartSet("SolvePuzzles")) {
+				// We received an invalid request
+				mNumberOfPuzzles = 0;
+				return;
 			}
 
 			int idx = 0;
@@ -100,18 +111,16 @@ public final class IntroduceIdentityPage extends TaskPage {
 		} else {
 			p = contentBox.addChild("p", l10n().getString("IntroduceIdentityPage.IntroduceIdentity.ReceivedNoTrust"));
 		}
-				
-		if(puzzleIDs.size() > 0 ) {
+		
+		if(puzzleIDs.size() > 0 )
 			p.addChild("#", " " + l10n().getString("IntroduceIdentityPage.IntroduceIdentity.SolveAvailablePuzzles") + ":");
-		} else {
-			contentBox.addChild("p", l10n().getString("IntroduceIdentityPage.IntroduceIdentity.SolvePuzzlesLater"));
-			return;
-		}
-
+		else
+			p = contentBox.addChild("p", l10n().getString("IntroduceIdentityPage.IntroduceIdentity.SolvePuzzlesLater"));
+		
 		HTMLNode solveForm = mFreetalk.getPluginRespirator().addFormChild(contentBox, Freetalk.PLUGIN_URI + "/IntroduceIdentity", "SolvePuzzles");
-
 		solveForm.addChild("input", new String[] { "type", "name", "value", }, new String[] { "hidden", "TaskID", mTaskID });
 
+		if(puzzleIDs.size() > 0 ) {
 		int counter = 0;
 		for(String puzzleID : puzzleIDs) {
 			// Display as much puzzles per row as fitting in the browser-window via "inline-block" style. Nice, eh?
@@ -124,8 +133,18 @@ public final class IntroduceIdentityPage extends TaskPage {
 
 			++counter;
 		}
+		
+		solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SolvePuzzles",
+				l10n().getString("IntroduceIdentityPage.IntroduceIdentity.Submit") });
+		}
 
-		solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "SolvePuzzles", "Submit" });
+		solveForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Postpone", 
+				l10n().getString("IntroduceIdentityPage.IntroduceIdentity.Postpone") });
+	}
+	
+	protected void showTaskWasPostponedMessage() {
+		HTMLNode contentBox = addContentBox(l10n().getString("IntroduceIdentityPage.TaskWasPostponed.Header"));
+		contentBox.addChild("#", l10n().getString("IntroduceIdentityPage.TaskWasPostponed.Text"));		
 	}
 	
 	protected void showEnoughPuzzlesSolvedMessage() {
@@ -137,7 +156,10 @@ public final class IntroduceIdentityPage extends TaskPage {
 		if(mNumberOfPuzzles > 0) {
 			showPuzzles();
 		} else {
-			showEnoughPuzzlesSolvedMessage();
+			if(mWasPostponed) 
+				showTaskWasPostponedMessage();
+			else
+				showEnoughPuzzlesSolvedMessage();
 		}
 	}
 }
