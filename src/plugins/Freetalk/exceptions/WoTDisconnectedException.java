@@ -11,5 +11,9 @@ package plugins.Freetalk.exceptions;
 public class WoTDisconnectedException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
+	
+	public WoTDisconnectedException() {
+		super("The connection to the web of trust plugin was lost.");
+	}
 
 }
