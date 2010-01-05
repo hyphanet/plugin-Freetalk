@@ -76,7 +76,7 @@ public final class SubscribedBoard extends Board {
 
 	}
 	
-	protected Board getParentBoard() {
+	public Board getParentBoard() {
 		return mParentBoard;
 	}
 
