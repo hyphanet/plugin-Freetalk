@@ -14,6 +14,7 @@ import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
+import plugins.Freetalk.exceptions.MessageNotFetchedException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import freenet.l10n.BaseL10n;
@@ -71,20 +72,50 @@ public final class BoardPage extends WebPageImpl {
 		
 		synchronized(mBoard) {
 			for(BoardThreadLink threadReference : mBoard.getThreads()) {
-				Message thread = threadReference.getMessage();
-
-				row = table.addChild("tr");
+				Message thread;
+				String threadTitle;
+				String authorText;
+				String authorScore; 
 				
-				String threadTitle = "UNKNOWN";
-				if(thread != null)
+				try {
+					thread = threadReference.getMessage();
 					threadTitle = thread.getTitle();
-				else {
+					authorText = thread.getAuthor().getShortestUniqueName(30);
+					
+					try {
+					// TODO: Get rid of the cast somehow, we should maybe call this WoTBoardPage :|
+						authorScore = Integer.toString(((WoTOwnIdentity)mOwnIdentity).getScoreFor((WoTIdentity)thread.getAuthor()));
+					}
+					catch(NotInTrustTreeException e) {
+						authorScore = "null"; // FIXME: Decide about this we should display something better
+					}
+					catch(Exception e) {
+						Logger.error(this, "getScoreFor() failed", e);
+						authorScore = "UNKNOWN";
+					}
+				}
+				catch(MessageNotFetchedException e) {
+					thread = null;
+					threadTitle = "UNKNOWN";
+					
+	            	// FIXME: The author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out
+	            	// what the proper place for a function "getIdentityIDFromThreadID" is and whether I have already written one which can do that, and if
+	            	// yes, where it is.
+					authorText = "UNKNOWN";
+					authorScore = "UNKNOWN";
+					
 					// The thread was not downloaded yet, we use the title of it's first reply as it's title.
 					for(BoardReplyLink messageRef : mBoard.getAllThreadReplies(threadReference.getThreadID(), true)) {
-						threadTitle = messageRef.getMessage().getTitle();
+						try {
+							threadTitle = messageRef.getMessage().getTitle();
+						} catch(MessageNotFetchedException e1) {
+							throw new RuntimeException(e1); // Should not happen: BoardReplyLink objects are only created if a message was fetched already.
+						}
 						break;
 					}
 				}
+
+				row = table.addChild("tr");
 				threadTitle = maxLength(threadTitle, 70); // TODO: Adjust
 
 				HTMLNode titleCell = row.addChild("td", new String[] { "align" }, new String[] { "left" });
@@ -95,32 +126,10 @@ public final class BoardPage extends WebPageImpl {
 				titleCell.addChild(new HTMLNode("a", "href", ThreadPage.getURI(mBoard, threadReference), threadTitle));
 
 				/* Author */
-            	// FIXME: The author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out
-            	// what the proper place for a function "getIdentityIDFromThreadID" is and whether I have already written one which can do that, and if
-            	// yes, where it is.
-				String authorText = thread != null ? thread.getAuthor().getShortestUniqueName(30) : "UNKNOWN";
 				row.addChild("td", new String[] { "align" }, new String[] { "left" }, authorText);
 
 				/* Trust */
-				String score; 
-
-					if(thread != null) {
-						try {
-						// TODO: Get rid of the cast somehow, we should maybe call this WoTBoardPage :|
-							score = Integer.toString(((WoTOwnIdentity)mOwnIdentity).getScoreFor((WoTIdentity)thread.getAuthor()));
-						}
-						catch(NotInTrustTreeException e) {
-							score = "null"; // FIXME: Decide about this we should display something better
-						}
-						catch(Exception e) {
-							Logger.error(this, "getScoreFor() failed", e);
-							score = "UNKNOWN";
-						}
-					}
-					else
-						score = "UNKNOWN";
-				
-				row.addChild("td", new String[] { "align" }, new String[] { "left" }, score);
+				row.addChild("td", new String[] { "align" }, new String[] { "left" }, authorScore);
 
 				/* Date of last reply */
 				row.addChild("td", new String[] { "align" , "style" }, new String[] { "center" , "white-space:nowrap;"}, 

@@ -6,8 +6,11 @@ package plugins.Freetalk.ui.NNTP;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import freenet.support.Logger;
+
 import plugins.Freetalk.Message;
 import plugins.Freetalk.SubscribedBoard;
+import plugins.Freetalk.exceptions.MessageNotFetchedException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 /**
@@ -106,11 +109,14 @@ public class FreetalkNNTPGroup {
 
                     while (currentIndex <= endIndex) {
                         try {
-                            currentMessage = board.getMessageByIndex(currentIndex);
+                            currentMessage = board.getMessageByIndex(currentIndex).getMessage();
                             return true;
                         }
-                        catch (NoSuchMessageException e) {
-                            // ignore
+                        catch (MessageNotFetchedException e) {
+                        	// Skip this one
+                        }
+                        catch (NoSuchMessageException e) { // Should not happen because endIndex == board.getLastMessageIndex();
+                            Logger.error(this, "NoSuchMessageException for currentIndex (" + currentIndex + ") <= endIndex (" + endIndex + ")", e);
                         }
                         currentIndex++;
                     }

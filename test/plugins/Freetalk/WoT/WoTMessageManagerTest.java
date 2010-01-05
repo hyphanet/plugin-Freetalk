@@ -23,6 +23,7 @@ import plugins.Freetalk.MessageList.MessageListFetchFailedMarker;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
 import plugins.Freetalk.SubscribedBoard.MessageReference;
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.MessageNotFetchedException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
@@ -167,7 +168,11 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 			
 			for(MessageReference replyRef : mBoard.getAllThreadReplies(ref.getThreadID(), true)) {
 				assertTrue(expectedReplies.hasNext());
-				assertEquals(expectedReplies.next(), replyRef.getMessage().getID());
+				try {
+					assertEquals(expectedReplies.next(), replyRef.getMessage().getID());
+				} catch(MessageNotFetchedException e) {
+					fail();
+				}
 			}
 			
 			assertFalse(expectedReplies.hasNext());

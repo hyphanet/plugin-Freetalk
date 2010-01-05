@@ -13,6 +13,7 @@ import plugins.Freetalk.MessageURI;
 import plugins.Freetalk.Quoting;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
+import plugins.Freetalk.exceptions.MessageNotFetchedException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.l10n.BaseL10n;
@@ -48,10 +49,12 @@ public class NewReplyPage extends WebPageImpl {
 			try {
 				MessageURI parentThreadURI;
 				
-				if(mParentThread.getMessage() != null)
+				try {
 					parentThreadURI = mParentThread.getMessage().getURI();
-				else
+				}
+				catch(MessageNotFetchedException e) {
 					parentThreadURI = mParentMessage.getThreadURI();
+				}
 				
 				// We do not always use the thread URI of the parent message because it might be the thread itself, then getThreadURI() will fail - threads have none.
 				// Further, we cannot do "parentThreadURI = mParentMessage.isThread() ? mParentMessage.getURI() : mParentMessage.getThreadURI()" because

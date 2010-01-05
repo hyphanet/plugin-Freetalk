@@ -24,6 +24,7 @@ import plugins.Freetalk.SubscribedBoard.MessageReference;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.MessageNotFetchedException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -252,15 +253,15 @@ public final class FCPInterface implements FredPluginFCP {
                 sfs.put("ReplyCount", board.threadReplyCount(threadReference.getThreadID()));
                 sfs.put("LastReplyDate", threadReference.getLastReplyDate().getTime());
                 
+                try {
                 final Message thread = threadReference.getMessage();
-                
-                if(thread != null) {
 	                sfs.putOverwrite("Title", thread.getTitle());
 	                sfs.putOverwrite("Author", thread.getAuthor().getFreetalkAddress());
 	                sfs.put("Date", thread.getDate().getTime());
 	                sfs.put("FetchDate", thread.getFetchDate().getTime());
 	                sfs.put("IsThread", thread.isThread());
-                } else {
+                }
+                catch(MessageNotFetchedException e) {
                 	// The thread was not downloaded yet.
                 	// TODO: Maybe Add title guess = title of first reply. See BoardPage for how to obtain.
                 	// FIXME: The author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out
@@ -341,10 +342,12 @@ public final class FCPInterface implements FredPluginFCP {
 
             // send all messages
             for(final MessageReference reference : messageRefList) {
-                final Message msg = reference.getMessage();
-                if (msg != null) {
-                    sendSingleMessage(replysender, msg, reference.getIndex(), includeMessageText);
+            	try {
+                    sendSingleMessage(replysender, reference.getMessage(), reference.getIndex(), includeMessageText);
                 }
+            	catch(MessageNotFetchedException e) {
+            		// Ignore.
+            	}
             }
         }
 
@@ -394,8 +397,13 @@ public final class FCPInterface implements FredPluginFCP {
 
             // send all messages of thread
             for(final MessageReference reference : messageRefList) {
+            	try {
                 final Message msg = reference.getMessage();
                 sendSingleMessage(replysender, msg, reference.getIndex(), includeMessageText);
+            	}
+            	catch(MessageNotFetchedException e) {
+            		// Ignore
+            	}
             }
         }
 
@@ -420,15 +428,19 @@ public final class FCPInterface implements FredPluginFCP {
      *   Description=Unknown message ID abc
      *   OR
      *   Description=Unknown board: abc
+     *   OR
+     *   Description=The message with ID ... was not fetched yet
      * @throws InvalidParameterException 
      * @throws NoSuchIdentityException 
      * @throws NoSuchBoardException 
      * @throws NoSuchMessageException 
+     * @throws MessageNotFetchedException If the given MessageIndex is valid but the message belonging to that index was not downloaded yet. This usually happens
+     * 			if a reply to a thread is downloaded before the thread message itself was fetched.
      * @throws PluginNotFoundException 
      * @throws UnsupportedEncodingException 
      */
     private void handleGetMessage(final PluginReplySender replysender, final SimpleFieldSet params)
-    	throws InvalidParameterException, NoSuchBoardException, NoSuchIdentityException, NoSuchMessageException,
+    	throws InvalidParameterException, NoSuchBoardException, NoSuchIdentityException, NoSuchMessageException, MessageNotFetchedException,
     		UnsupportedEncodingException, PluginNotFoundException
     {
         final String boardName = getMandatoryParameter(params, "BoardName");
@@ -447,7 +459,9 @@ public final class FCPInterface implements FredPluginFCP {
         //throws exception when not found
         final SubscribedBoard board = mFreetalk.getMessageManager().getSubscription(mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID), boardName);
         
-        final Message message = board.getMessageByIndex(messageIndex); // throws exception when not found
+        final MessageReference reference = board.getMessageByIndex(messageIndex); // throws exception when not found
+        
+        final Message message = reference.getMessage();  // throws MessageNotFetchedException
 
         sendSingleMessage(replysender, message, messageIndex, includeMessageText);
     }
