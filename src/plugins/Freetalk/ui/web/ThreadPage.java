@@ -4,6 +4,7 @@
 package plugins.Freetalk.ui.web;
 
 import java.text.DateFormat;
+import java.util.Arrays;
 import java.util.List;
 
 import plugins.Freetalk.Board;
@@ -19,6 +20,7 @@ import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.WoT.WoTTrust;
+import plugins.Freetalk.exceptions.MessageNotFetchedException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
@@ -61,8 +63,8 @@ public final class ThreadPage extends WebPageImpl {
     }
 
     public final void make() {
-        try {
-        synchronized (mLocalDateFormat) {
+		try {
+			synchronized (mLocalDateFormat) {
         	
         	// Normally, we would have to lock the MessageManager because we call storeAndCommit() on MessageReference objects:
         	// The board might be deleted between getSubscription() and the synchronized(mBoard) - the storeAndCommit() would result in orphan objects.
@@ -78,14 +80,17 @@ public final class ThreadPage extends WebPageImpl {
         			mThread.storeAndCommit();
         		}
             	
-            	if(mThread.getMessage() != null) {
-            		if(mThread.getMessage().isThread() == false)
-            			addThreadIsNoThreadWarning();
+            	try {
+            		Message threadMessage = mThread.getMessage();
+            		
+            		if(threadMessage.isThread() == false)
+            			addThreadIsNoThreadWarning(threadMessage);
 
             		addMessageBox(mThread);
             	}
-            	else
+            	catch(MessageNotFetchedException e) {
             		addThreadNotDownloadedWarning(mThread);
+            	}
             	
         		if(!mMarktThreadAsUnread && !mThread.wasThreadRead()) { // After displaying it to the user, mark it as read 
 	        		mThread.markAsRead();
@@ -106,9 +111,10 @@ public final class ThreadPage extends WebPageImpl {
 	                   	reference.storeAndCommit();
                     }
                 }
-            }
-        }
+        	}
+			}
         } catch(NoSuchMessageException e) {
+        	mThread = null;
         	makeBreadcrumbs();
         	HTMLNode alertBox = addAlertBox(l10n().getString("ThreadPage.ThreadDeleted.Header"));
         	alertBox.addChild("p", l10n().getString("ThreadPage.ThreadDeleted.Text1"));
@@ -145,15 +151,27 @@ public final class ThreadPage extends WebPageImpl {
         text.addChild("div", "class", "infobox-error", l10n().getString("ThreadPage.ThreadNotDownloadedWarning.Content"));
     }
     
-    private void addThreadIsNoThreadWarning() {
+    private void addThreadIsNoThreadWarning(Message threadWhichIsNoThread) {
     	HTMLNode div = addAlertBox(l10n().getString("ThreadPage.ThreadIsNoThreadWarning.Header")).addChild("div");
-
-    	String uri;
+    	
+    	String realThreadID;
+    		
     	try {
-    	    uri = getURI(mBoard.getName(), mThread.getMessage().getThreadID());
-    	} catch (NoSuchMessageException e) {
-    	    throw new IllegalArgumentException("SHOULD NOT HAPPEN");
+    		realThreadID = threadWhichIsNoThread.getThreadID();
     	}
+    	catch (NoSuchMessageException e) {
+    	    throw new IllegalArgumentException("SHOULD NOT HAPPEN: addThreadIsNoThreadWarning called for a thread: " + mThread.getThreadID());
+    	}
+    	
+    	Board realThreadBoard;
+    	
+    	// mBoard is a SubscribedBoard, getBoards() only returns a list of Board objects, so we must call getParentBoard()
+    	if(Arrays.binarySearch(threadWhichIsNoThread.getBoards(), mBoard.getParentBoard()) >= 0)
+    		realThreadBoard = mBoard;
+    	else
+    		realThreadBoard = threadWhichIsNoThread.getReplyToBoard();
+    	
+    	String uri = getURI(realThreadBoard.getName(), realThreadID);
     	
         l10n().addL10nSubstitution(
                 div, 
@@ -164,9 +182,20 @@ public final class ThreadPage extends WebPageImpl {
                         "</a>" });
     }
 
-    /* You have to synchronize on mLocalDateFormat when using this function */
+    /**
+     * Shows the message of a given message reference.
+     * 
+     * You have to synchronize on mLocalDateFormat when using this function
+     * 
+     * @param ref A reference to the message which is to be displayed. The getMessage() function of this reference <b>must not</b> throw MessageNotFetchedException. 
+     */
     private void addMessageBox(MessageReference ref) {
-    	Message message = ref.getMessage();
+    	Message message;
+    	try {
+    		message = ref.getMessage();
+    	} catch(MessageNotFetchedException e) {
+    		throw new RuntimeException("addMessageBox() called for a not-fetched message: " + e);
+    	}
     	
         HTMLNode table = mContentNode.addChild("table", new String[] {"border", "width" }, new String[] { "0", "100%" });
         HTMLNode row = table.addChild("tr");
@@ -364,15 +393,25 @@ public final class ThreadPage extends WebPageImpl {
      * @param threadID
      */
     public static void addBreadcrumb(BreadcrumbTrail trail, SubscribedBoard board, BoardThreadLink myThread) {
-        Message firstMessage = myThread.getMessage();
+        Message firstMessage = null;
         
-        if(firstMessage == null) { // The thread was not downloaded yet, we use it's first reply for obtaining the information in the breadcrumb
+        try {
+        	firstMessage = myThread.getMessage();
+        }
+        catch (MessageNotFetchedException e) { // The thread was not downloaded yet, we use it's first reply for obtaining the information in the breadcrumb
         	for(BoardReplyLink ref : board.getAllThreadReplies(myThread.getThreadID(), true)) { // FIXME: Synchronization is lacking.
-        		firstMessage = ref.getMessage();
+        		try  {
+        			firstMessage = ref.getMessage();
+        		} catch(MessageNotFetchedException e1) {
+        			throw new RuntimeException(e1); // Should not happen: BoardReplyLink objects are only created if a message was fetched already.
+        		}
         		break;
         	}
         }
         
-        trail.addBreadcrumbInfo(maxLength(firstMessage.getTitle(),30), getURI(board, myThread));
+    	if(firstMessage == null)
+    		throw new RuntimeException("Thread neither has a thread message nor any replies: " + myThread);
+        
+        trail.addBreadcrumbInfo(maxLength(firstMessage.getTitle(), 30), getURI(board, myThread));
     }
 }
