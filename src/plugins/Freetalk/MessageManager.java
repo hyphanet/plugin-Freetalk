@@ -1080,7 +1080,9 @@ public abstract class MessageManager implements Runnable {
     	}
     }
     
-	
+	/**
+	 * You do NOT need to synchronize on the IdentityManager when calling this function.
+	 */
 	public SubscribedBoard subscribeToBoard(FTOwnIdentity subscriber, String boardName) throws InvalidParameterException, NoSuchIdentityException, NoSuchBoardException {
 		synchronized(mIdentityManager) {
 			subscriber = mIdentityManager.getOwnIdentity(subscriber.getID()); // Ensure that the identity still exists so the caller does not have to synchronize.
@@ -1124,9 +1126,13 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 	/**
-	 * You have to synchronize on the IdentityManager which was used to obtain the subscriber while calling this function. 
+	 * You do NOT need to synchronize on the IdentityManager when calling this function. 
 	 */
-	public synchronized void unsubscribeFromBoard(FTOwnIdentity subscriber, String boardName) throws NoSuchBoardException {
+	public void unsubscribeFromBoard(FTOwnIdentity subscriber, String boardName) throws NoSuchBoardException, NoSuchIdentityException {
+		synchronized(mIdentityManager) {
+		subscriber = mIdentityManager.getOwnIdentity(subscriber.getID()); // Ensure that the identity still exists so the caller does not have to synchronize.
+			
+		synchronized(this) {		
 		SubscribedBoard subscribedBoard = getSubscription(subscriber, boardName);
 		
 		synchronized(subscribedBoard) {
@@ -1146,6 +1152,8 @@ public abstract class MessageManager implements Runnable {
 			catch(RuntimeException e) {
 				DBUtil.rollbackAndThrow(db, this, e);
 			}
+		}
+		}
 		}
 		}
 	}
