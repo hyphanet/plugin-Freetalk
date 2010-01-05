@@ -57,6 +57,8 @@ public class SelectBoardsPage extends WebPageImpl {
 	                                "</a>" });
 				}
 				else if(unsubscribe) {
+					messageManager.unsubscribeFromBoard(mOwnIdentity, boardName);
+					
                     HTMLNode successBox = addContentBox(l10n().getString("SelectBoardsPage.UnsubscriptionSucceededBox.Header"));
                     l10n().addL10nSubstitution(
                         successBox.addChild("div"), 
