@@ -63,14 +63,14 @@ public abstract class Message {
 	
 	/**
 	 * The URI of the thread this message belongs to.
-	 * We do not need it to construct the thread-tree from messages, but it boosts performance of thread-tree-construction:
-	 * Thread-size (amount of replies) is usually infinitesimal compared to the size of a FTBoard (amount of threads).
-	 * We receive messages in random order, therefore we will usually have orphan messages of which we need to find the parents.
-	 * If we receive the parent messages of those messages, we will be able to find their orphan children faster if we only need to search in
-	 * the thread they belong to and not in the whole FTBoard - which may contain many thousands of messages.
+	 * Notice that the message referenced by this URI might NOT be a thread itself - you are allowed to reply to a message saying that the message is a thread
+	 * even though it is a reply to a different thread. Doing this is called forking a thread.
 	 */
 	protected final MessageURI mThreadURI;
 	
+	/**
+	 * The parent thread ID which was calculated from {@link mThreadURI}
+	 */
 	protected final String mThreadID;
 	
 	/**
@@ -78,6 +78,9 @@ public abstract class Message {
 	 */
 	protected final MessageURI mParentURI;
 	
+	/**
+	 * The parent message ID which was calculated from {@link mParentURI} 
+	 */
 	protected final String mParentID;
 	
 	/**
@@ -247,6 +250,13 @@ public abstract class Message {
 	public MessageURI getURI() { /* Not synchronized because only OwnMessage might change the URI */
 		return mURI;
 	}
+	
+	/**
+	 * Gets the FreenetURI where this message is actually stored, i.e. the CHK URI of the message.
+	 */
+	protected FreenetURI getRealURI() {
+		return mRealURI;
+	}
 
 	public String getID() { /* Not synchronized because only OwnMessage might change the ID */
 		return mID;
@@ -269,7 +279,11 @@ public abstract class Message {
 
 	/**
 	 * Get the ID of the thread this message belongs to. Should not be used by the user interface for querying the database as the parent
-	 * thread might not have been downloaded yet. Use getThread().getID() instead.
+	 * thread might not have been downloaded yet. Use getThread() instead.
+	 * 
+	 * Notice that the message referenced by this ID might NOT be a thread itself - you are allowed to reply to a message saying that the message is a thread
+	 * even though it is a reply to a different thread. Doing this is called forking a thread.
+	 * 
 	 * @return The ID of the message's parent thread.
 	 * @throws NoSuchMessageException If the message is a thread itself.
 	 */
@@ -366,8 +380,11 @@ public abstract class Message {
 	
 	/**
 	 * Get the thread to which this message belongs. The transient fields of the returned message will be initialized already.
-	 * This might not always return the real parent thread, it will return the topmost parent message if the parent thread has not been
-	 * downloaded yet.
+	 * 
+	 * Notice that the returned message might not be a thread itself - you are allowed to reply to a message saying that the message is a thread
+	 * even though it is a reply to a different thread. Doing this is called forking a thread.
+	 * 
+	 * @throws NoSuchMessageException If the parent thread of this message was not downloaded yet.
 	 */
 	public synchronized Message getThread() throws NoSuchMessageException {
 		/* TODO: Find all usages of this function and check whether we should put the activate() here and what the fitting depth is */
