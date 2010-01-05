@@ -409,7 +409,7 @@ public final class FCPInterface implements FredPluginFCP {
      * Send the requested Message.
      * Format of request:
      *   Message=GetMessage
-     *   BoardID=abc
+     *   BoardName=abc
      *   OwnIdentityID=ID
      *   MessageIndex=123                (message index in board)
      *   IncludeMessageText=true|false   (optional, default is false)
