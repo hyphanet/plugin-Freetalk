@@ -6,6 +6,7 @@ import java.util.List;
 
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.MessageNotFetchedException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.ObjectSet;
@@ -86,6 +87,10 @@ public final class SubscribedBoard extends Board {
     /**
      * Gets the reference to the latest message. Does not return ghost thread references - therefore, the returned MessageReference will always
      * point to a valid Message object.
+     * 
+     * TODO: Make this function return class Message and not class MessageReference because it won't return MessageReference objects whose Message
+     * is not downloaded yet anyway.
+     * 
      * @throws NoSuchMessageException If the board is empty.
      */
     @SuppressWarnings("unchecked")
@@ -100,8 +105,13 @@ public final class SubscribedBoard extends Board {
 
         // Do not use a constrain() because the case where the latest message has no message object should not happen very often.
         for(MessageReference ref : allMessages) {
-        	if(ref.getMessage() != null)
+        	try {
+        		ref.getMessage(); // Check whether the message was downloaded
         		return ref;
+        	}
+        	catch(MessageNotFetchedException e)  {
+        		// Continue to next MessageReference
+        	}
         }
         
         throw new NoSuchMessageException();
@@ -178,9 +188,11 @@ public final class SubscribedBoard extends Board {
     		BoardThreadLink parentThreadRef = findOrCreateParentThread(newMessage);
     		
     		// 2. Tell it about it's parent thread if it exists.
-    		Message parentThread = parentThreadRef.getMessage(); // Can return null if the parent thread was not downloaded yet, then it's a ghost reference.
-    		if(parentThread != null)
-    			newMessage.setThread(parentThread);
+    		try {
+    			newMessage.setThread(parentThreadRef.getMessage());
+    		} catch(MessageNotFetchedException e) {
+    			// Can happen if the parent thread was not downloaded yet, then it's a ghost reference.
+    		}
     		
     		// 3. Tell the parent thread that a new message was added. This updates the last reply date and the "was read"-flag of the thread.
     		parentThreadRef.onMessageAdded(newMessage);
@@ -262,16 +274,24 @@ public final class SubscribedBoard extends Board {
 				
 				// Update the parent thread of the reply
 				
-				final BoardThreadLink threadLink = getThreadLink(parentThreadID);
+				BoardThreadLink threadLink = getThreadLink(parentThreadID);
 				
-				if(threadLink.getMessage() == null && threadReplyCount(parentThreadID) == 0) {
+				try {
+					threadLink.getMessage();
+				}
+				catch(MessageNotFetchedException e) {
 					// If the thread itself is a ghost thread and it has no more replies, we must delete it:
 					// It might happen that the caller first calls deleteMessage(thread) and then deleteMessage(all replies). The call to
 					// deleteMessage(thread) did not delete the thread because it still had replies. Now it has no more replies and we must delete it.
-					threadLink.deleteWithoutCommit(db);
-				} else {
-					threadLink.onMessageRemoved(message);
+					if(threadReplyCount(parentThreadID) == 0) {
+						threadLink.deleteWithoutCommit(db);
+						threadLink = null;
+					} 
 				}
+				
+				if(threadLink != null)
+					threadLink.onMessageRemoved(message);
+				
 			} catch (NoSuchMessageException e) {
 				Logger.error(this, "Should not happen: deleteMessage() called for a reply message which does not exist in this Board.", e);
 				throw e;
@@ -289,8 +309,13 @@ public final class SubscribedBoard extends Board {
     	
     	boolean newMessageIsThread = (newMessage.getID().equals(parentThreadID));
  
-    	for(MessageReference ref : getAllThreadReplies(parentThreadID, false)) {
-    		Message threadReply = ref.getMessage();
+    	for(BoardReplyLink ref : getAllThreadReplies(parentThreadID, false)) {
+    		Message threadReply;
+			try {
+				threadReply = ref.getMessage();
+			} catch (MessageNotFetchedException e1) {
+				throw new RuntimeException(e1); // Should not happen: BoardReplyLink objects are only created if a message was fetched already.
+			}
     		
     		try {
     			threadReply.getParent();
@@ -347,7 +372,7 @@ public final class SubscribedBoard extends Board {
         switch(results.size()) {
 	        case 1:
 				BoardThreadLink threadRef = results.next();
-				assert(threadRef.getMessage().getID().equals(threadID)); // The query works
+				assert(threadRef.getThreadID().equals(threadID)); // The query works
 				return threadRef;
 	        case 0:
 	        	throw new NoSuchMessageException(threadID);
@@ -452,8 +477,18 @@ public final class SubscribedBoard extends Board {
         return result.next().getIndex();
     }
 
+    /**
+     * Gets a reference to the message with the given index number.
+     * 
+     * Index numbers are local to each subscribed board. Attention: If a subscription to a board is removed and re-created, different index numbers might
+     * be assigned to each message. This can be detected by a changed ID of the subscribed board.
+     * 
+     * @param index The index number of the demanded message.
+     * @return A reference to the demanded message.
+     * @throws NoSuchMessageException If there is no such message index.
+     */
     @SuppressWarnings("unchecked")
-    public synchronized Message getMessageByIndex(int index) throws NoSuchMessageException {
+    public synchronized MessageReference getMessageByIndex(int index) throws NoSuchMessageException {
         Query q = db.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
@@ -462,13 +497,7 @@ public final class SubscribedBoard extends Board {
         
         switch(result.size()) {
 	        case 1:
-	        	Message message = result.next().getMessage();
-	        	if (message == null) {
-	        	    // FIXME: this should never happen (?) and breaks all callers
-	                throw new NoSuchMessageException();
-	        	}
-	        	message.initializeTransient(db, mMessageManager);
-	        	return message;
+	        	return result.next(); // No need to call initializeTransient(), it is done implicitly by MessageReference.getMessage();
 	        case 0:
 	            throw new NoSuchMessageException();
 	        default:
@@ -622,8 +651,11 @@ public final class SubscribedBoard extends Board {
     		mMessageDate = mMessage.getDate();
     	}
     	
-        /** Get the message to which this reference points */
-        public Message getMessage() {
+        /**
+         * Get the message to which this reference points.
+         * @throws MessageNotFetchedException If the message belonging to this reference was not fetched yet.
+         */
+        public Message getMessage() throws MessageNotFetchedException {
             /* We do not have to initialize mBoard and can assume that it is initialized because a MessageReference will only be loaded
              * by the board it belongs to. */
         	mBoard.db.activate(this, 3); // FIXME: Figure out a reasonable depth
@@ -720,6 +752,12 @@ public final class SubscribedBoard extends Board {
             }
             
         }
+        /**
+         * @throws MessageNotFetchedException For BoardReplyLink objects, this should never throw a MessageNotFetchedException in the current implementation.
+         */
+        public Message getMessage() throws MessageNotFetchedException {
+        	return super.getMessage();
+        }
         
         public String getThreadID() {
         	return mThreadID;
@@ -812,9 +850,15 @@ public final class SubscribedBoard extends Board {
 			return mThreadID;
 		}
 		
-		public Message getMessage() {
+		/**
+		 * Gets the actual message of this thread.
+		 * 
+		 * @throws MessageNotFetchedException If the message was not downloaded yet! This happens when a reply to a thread is downloaded before the actual
+		 * thread was downloaded.
+		 */
+		public Message getMessage() throws MessageNotFetchedException {
 			if(mMessage == null)
-				return null;
+				throw new MessageNotFetchedException(mThreadID);
 			
 			return super.getMessage();
 		}
