@@ -352,7 +352,7 @@ public final class SubscribedBoard extends Board {
         switch(results.size()) {
 	        case 1:
 				BoardReplyLink messageRef = results.next();
-				assert(messageRef.getMessage().equals(message)); // The query works
+				assert(message.equals(messageRef.mMessage)); // The query works
 				return messageRef;
 	        case 0:
 	        	throw new NoSuchMessageException(message.getID());
@@ -372,7 +372,7 @@ public final class SubscribedBoard extends Board {
         switch(results.size()) {
 	        case 1:
 				BoardThreadLink threadRef = results.next();
-				assert(threadRef.getThreadID().equals(threadID)); // The query works
+				assert(threadID.equals(threadRef.mThreadID)); // The query works
 				return threadRef;
 	        case 0:
 	        	throw new NoSuchMessageException(threadID);
