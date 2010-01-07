@@ -6,6 +6,7 @@ package plugins.Freetalk.ui.web;
 import plugins.Freetalk.FTOwnIdentity;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
 public final class ErrorPage extends WebPageImpl {
@@ -17,6 +18,7 @@ public final class ErrorPage extends WebPageImpl {
 		super(webInterface, viewer, request, _baseL10n);
 		mErrorTitle = errorTitle;
 		mErrorMessage = errorMessage;
+		Logger.error(this, "Internal error: " + errorTitle + ", " + errorMessage);
 	}
 
 	public final void make() {
