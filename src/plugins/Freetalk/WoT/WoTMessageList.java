@@ -23,11 +23,12 @@ public class WoTMessageList extends MessageList {
 	
 	
 	public WoTIdentity getAuthor() {
+		mAuthor.initializeTransient(db, mMessageManager.getIdentityManager());
 		return (WoTIdentity)mAuthor;
 	}
 
 	public FreenetURI getURI() {
-		return assembleURI(mAuthor.getRequestURI(), mIndex).sskForUSK();
+		return assembleURI(getAuthor().getRequestURI(), mIndex).sskForUSK();
 	}
 	
 	protected FreenetURI generateURI(FreenetURI baseURI, int index) {

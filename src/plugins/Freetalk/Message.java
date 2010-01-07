@@ -26,7 +26,8 @@ import freenet.support.StringValidityChecker;
  * There are two unique ways to reference a message: It's URI and it's message ID. The URI is to be given to the user if he wants to tell other
  * people about the message, the message ID is to be used for querying the database for a message in a fast way. 
  * 
- * @author saces, xor
+ * @author xor (xor@freenetproject.org)
+ * @author saces
  */
 public abstract class Message {
     
@@ -263,6 +264,7 @@ public abstract class Message {
 	}
 	
 	public synchronized MessageList getMessageList() {
+		mMessageList.initializeTransient(db, mMessageManager);
 		return mMessageList;
 	}
 	

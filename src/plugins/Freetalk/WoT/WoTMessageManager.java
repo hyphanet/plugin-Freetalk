@@ -119,6 +119,7 @@ public class WoTMessageManager extends MessageManager {
 	
 	public synchronized void onMessageListFetchFailed(FTIdentity author, FreenetURI uri, FetchFailedMarker.Reason reason) {
 		WoTMessageList ghostList = new WoTMessageList(author, uri);
+		ghostList.initializeTransient(db, this);
 		MessageList.MessageListFetchFailedMarker marker;
 		
 			try {
@@ -139,7 +140,6 @@ public class WoTMessageManager extends MessageManager {
 					Date date = CurrentTimeUTC.get();
 					Date dateOfNextRetry;
 
-					ghostList.initializeTransient(db, this);
 					ghostList.storeWithoutCommit();
 					
 					if(marker == null) {

@@ -399,7 +399,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	 * @return
 	 */
 	public FreenetURI getURI() {
-		return generateURI(mAuthor.getRequestURI(), mIndex).sskForUSK();
+		return generateURI(getAuthor().getRequestURI(), mIndex).sskForUSK();
 	}
 	
 	/**
@@ -411,6 +411,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	protected abstract FreenetURI generateURI(FreenetURI baseURI, int index);
 	
 	public FTIdentity getAuthor() {
+		mAuthor.initializeTransient(db, mMessageManager.getIdentityManager());
 		return mAuthor;
 	}
 	
