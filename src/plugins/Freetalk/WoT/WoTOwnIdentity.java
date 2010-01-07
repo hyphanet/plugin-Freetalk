@@ -15,8 +15,18 @@ import plugins.Freetalk.exceptions.NotTrustedException;
 import freenet.keys.FreenetURI;
 
 /**
- * @author xor
- *
+ * 
+ * 
+ * Activation policy: WoTOwnIdentity does automatic activation on its own.
+ * This means that WoTOwnIdentity can be activated to a depth of only 1 when querying them from the database.
+ * All methods automatically activate the object to any needed higher depth.
+ * 
+ * FIXME: The above is currently not valid. We do not activate the TreeMap mAssessed because trees have a varying depth by nature! The TreeMap MUST BE removed
+ * ASAP and replaced with separately stored objects for rating messages. Storing growing lists of objects in a member variable is wrong design anyway.
+ * 
+ * TODO: Change all code which queries for identities to use the lowest possible activation depth to benefit from automatic activation.
+ * 
+ * @author xor (xor@freenetproject.org)
  */
 public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	
@@ -46,6 +56,8 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	}
 
 	public FreenetURI getInsertURI() {
+		// TODO: If String[] is no nested object to db4o we can decrease this to 3 and also in storeAndCommit / deleteWithoutCommit
+		db.activate(this, 4);
 		return mInsertURI;
 	}
 
@@ -102,7 +114,8 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
     
 	public void storeWithoutCommit() {
 		try {
-			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			// 4 is the maximal depth of all getter functions. You have to adjust this when changing the set of member variables.
+			DBUtil.checkedActivate(db, this, 4);
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 
@@ -119,7 +132,8 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	protected void deleteWithoutCommit() {	
 		try {
 			// super.deleteWithoutCommit() does the following already so there is no need to do it here
-			// DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			// 4 is the maximal depth of all getter functions. You have to adjust this when changing the set of member variables.
+			// DBUtil.checkedActivate(db, this, 4);
 			
 			super.deleteWithoutCommit();
 			

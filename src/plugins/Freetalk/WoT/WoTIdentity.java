@@ -172,8 +172,7 @@ public class WoTIdentity implements FTIdentity {
 
 	protected void storeWithoutCommit() {
 		try {		
-			// 3 would be sufficient for everything except the FreenetURI mRequestURI
-			// (3 did not break anything in the past because the affected fields of FreenetURI are not actually used in the current implementation)
+			// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			DBUtil.checkedActivate(db, this, 4);
 
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
@@ -188,8 +187,7 @@ public class WoTIdentity implements FTIdentity {
 	
 	protected void deleteWithoutCommit() {
 		try {
-			// 3 would be sufficient for everything except the FreenetURI mRequestURI
-			// (3 did not break anything in the past because the affected fields of FreenetURI are not actually used in the current implementation)
+			// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			DBUtil.checkedActivate(db, this, 4);
 			
 			DBUtil.checkedDelete(db, this);
