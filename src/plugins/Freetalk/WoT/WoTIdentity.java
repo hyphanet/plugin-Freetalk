@@ -19,8 +19,14 @@ import freenet.support.StringValidityChecker;
 
 
 /**
- * @author xor
- *
+ * 
+ * Activation policy: WoTIdentity does automatic activation on its own.
+ * This means that WoTIdentity can be activated to a depth of only 1 when querying them from the database.
+ * All methods automatically activate the object to any needed higher depth.
+ * 
+ * TODO: Change all code which queries for identities to use the lowest possible activation depth to benefit from automatic activation.
+ * 
+ * @author xor (xor@freenetproject.org)
  */
 public class WoTIdentity implements FTIdentity {
 	
@@ -74,6 +80,7 @@ public class WoTIdentity implements FTIdentity {
 	}
 	
 	public String getID() {
+		db.activate(this, 2);
 		return mID;
 	}
 	
@@ -92,14 +99,18 @@ public class WoTIdentity implements FTIdentity {
 	}
 
 	public FreenetURI getRequestURI() {
+		// TODO: If String[] is no nested object to db4o we can decrease this to 3 and also in storeAndCommit / deleteWithoutCommit
+		db.activate(this, 4);
 		return mRequestURI;
 	}
 
 	public String getNickname() {
+		db.activate(this, 2);
 		return mNickname;
 	}
 
 	public String getNickname(int maxLength) {
+		db.activate(this, 2);
 		if(mNickname.length() > maxLength) {
 			return mNickname.substring(0, maxLength-3) + "...";
 		}
@@ -111,10 +122,12 @@ public class WoTIdentity implements FTIdentity {
 	}
 
 	public String getFreetalkAddress() {
+		db.activate(this, 2);
 		return mNickname + "@" + mID + "." + Freetalk.WOT_CONTEXT.toLowerCase();	
 	}
 
 	public synchronized long getLastReceivedFromWoT() {
+		db.activate(this, 2);
 		return mLastReceivedFromWoT;
 	}
 	
@@ -147,7 +160,10 @@ public class WoTIdentity implements FTIdentity {
 		if(newNickname.length() > 50) throw new InvalidParameterException("Nickname is too long, the limit is 50 characters.");
 	}
 
-	public synchronized void storeAndCommit() {
+	/**
+	 * You have to synchronize on this object before modifying the identity and calling storeAndCommit. 
+	 */
+	public void storeAndCommit() {
 		synchronized(db.lock()) {
 			storeWithoutCommit();
 			db.commit(); Logger.debug(this, "COMMITED.");
@@ -156,7 +172,9 @@ public class WoTIdentity implements FTIdentity {
 
 	protected void storeWithoutCommit() {
 		try {		
-			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			// 3 would be sufficient for everything except the FreenetURI mRequestURI
+			// (3 did not break anything in the past because the affected fields of FreenetURI are not actually used in the current implementation)
+			DBUtil.checkedActivate(db, this, 4);
 
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 			
@@ -170,7 +188,9 @@ public class WoTIdentity implements FTIdentity {
 	
 	protected void deleteWithoutCommit() {
 		try {
-			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			// 3 would be sufficient for everything except the FreenetURI mRequestURI
+			// (3 did not break anything in the past because the affected fields of FreenetURI are not actually used in the current implementation)
+			DBUtil.checkedActivate(db, this, 4);
 			
 			DBUtil.checkedDelete(db, this);
 			
