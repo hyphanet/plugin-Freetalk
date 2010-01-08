@@ -64,8 +64,6 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 
 	/* References from the node */
 	
-	private ClassLoader mClassLoader;
-	
 	private PluginRespirator mPluginRespirator;
 
 	private static PluginL10n l10n;
@@ -174,7 +172,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	
 	private ExtObjectContainer openDatabase(String filename) {
 		Configuration dbCfg = Db4o.newConfiguration();
-		dbCfg.reflectWith(new JdkReflector(mClassLoader));
+		dbCfg.reflectWith(new JdkReflector(getPluginClassLoader()));
 		dbCfg.exceptionsOnNotStorable(true);
 		dbCfg.activationDepth(5); /* FIXME: Figure out a reasonable value */
 		
@@ -409,8 +407,8 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	 * Called by the node during the loading of the plugin. The <code>ClassLoader</code> which was used by the node is passed to db4o
 	 * by Freetalk. Db4o needs to know the <code>ClassLoader</code> which was used to create the classes of the objects it is supposed to store.
 	 */
+    @Deprecated
 	public void setClassLoader(ClassLoader myClassLoader) {
-		mClassLoader = myClassLoader;
 	}
 	
     /**
