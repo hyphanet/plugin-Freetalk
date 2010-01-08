@@ -601,6 +601,7 @@ public class WoTIdentityManager extends IdentityManager {
 					id = result.next();
 					id.initializeTransient(db, this);
 					
+					synchronized(id) {
 					synchronized(db.lock()) {
 						try {
 							id.setLastReceivedFromWoT(time);
@@ -610,6 +611,7 @@ public class WoTIdentityManager extends IdentityManager {
 							db.rollback();
 							Logger.error(this, "ROLLED BACK: Error in parseIdentities", e);
 						}
+					}
 					}
 				}
 			}
@@ -647,6 +649,7 @@ public class WoTIdentityManager extends IdentityManager {
 		if(identity instanceof WoTOwnIdentity)
 			taskManager.onOwnIdentityDeletion((WoTOwnIdentity)identity);
 		
+		synchronized(identity) {
 		synchronized(db.lock()) {
 			try {
 				identity.initializeTransient(db, this);
@@ -658,6 +661,7 @@ public class WoTIdentityManager extends IdentityManager {
 			catch(RuntimeException e) {
 				DBUtil.rollbackAndThrow(db, this, e);
 			}
+		}
 		}
 	}
 	

@@ -6,6 +6,7 @@ package plugins.Freetalk.ui.web;
 import plugins.Freetalk.Config;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import freenet.clients.http.RedirectException;
 import freenet.l10n.BaseL10n;
@@ -40,9 +41,22 @@ public class SettingsPage extends WebPageImpl {
             }
             
             boolean autoSubscribeBoards = mRequest.getPartAsString("AutoSubscribeBoards", 4).equals("true");
-            synchronized (mOwnIdentity) {
-                mOwnIdentity.setNntpAutoSubscribeBoards(autoSubscribeBoards);
-                ((WoTOwnIdentity) mOwnIdentity).storeAndCommit(); // FIXME: remove ugly cast
+            
+            WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
+            
+            synchronized(identityManager) {
+            	try {
+            		// Ensure that the identity still exists.
+	            	WoTOwnIdentity identity = identityManager.getOwnIdentity(mOwnIdentity.getID());
+	            	
+	            	synchronized (identity) {
+	            		identity.setNntpAutoSubscribeBoards(autoSubscribeBoards);
+	            		identity.storeAndCommit();
+	            	}
+            	} catch(Exception e) {
+            		new ErrorPage(mWebInterface, mOwnIdentity, mRequest, "Setting own identity options failed", e.getLocalizedMessage(),
+            				l10n()).addToPage(mContentNode);
+            	}
             }
             
             HTMLNode aBox = addContentBox(l10n().getString("SettingsPage.SettingsSaved.Header"));
