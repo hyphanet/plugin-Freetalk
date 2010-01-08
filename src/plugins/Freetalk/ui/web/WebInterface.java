@@ -10,6 +10,7 @@ import java.net.URISyntaxException;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
@@ -257,9 +258,11 @@ public final class WebInterface {
 				return;
 			}
 			try {
+				WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
+				synchronized(identityManager) {
 				// TODO: These casts are ugly.
 				WoTOwnIdentity own = (WoTOwnIdentity)getLoggedInOwnIdentity(ctx);
-				WoTIdentity other = (WoTIdentity)mFreetalk.getIdentityManager().getIdentity(request.getPartAsString("OtherIdentityID", 64));
+				WoTIdentity other = identityManager.getIdentity(request.getPartAsString("OtherIdentityID", 64));
 				int change = Integer.parseInt(request.getPartAsString("TrustChange", 5));
 				
 				int trust;
@@ -271,10 +274,16 @@ public final class WebInterface {
 				own.setTrust(other, trust+change, "Freetalk web interface");
 
 				try {
+					MessageManager messageManager = mFreetalk.getMessageManager();
+					synchronized (messageManager) {
+					synchronized(own) {
 					Message message = mFreetalk.getMessageManager().get(request.getPartAsString("MessageID", 128));
 					own.setAssessed(message, true);
 					own.storeAndCommit();
+					}
+					}
 				} catch (NoSuchMessageException e) {
+				}
 				}
 			} catch(Exception e) {
 				// FIXME: provide error message
