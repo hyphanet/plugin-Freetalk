@@ -39,8 +39,7 @@ public final class BoardPage extends WebPageImpl {
 	public final void make() {
 		makeBreadcrumbs();
 
-		HTMLNode threadsBox = addContentBox("");
-        l10n().addL10nSubstitution(threadsBox, "BoardPage.Threads.Header", new String[] { "boardname" }, new String[] { mBoard.getName() });
+		HTMLNode threadsBox = addContentBox(l10n().getString("BoardPage.Threads.Header", "boardname" , mBoard.getName()));
 		
 		// Button for creating a new thread
 		HTMLNode newThreadForm = addFormChild(threadsBox, Freetalk.PLUGIN_URI + "/NewThread", "NewThreadPage");
