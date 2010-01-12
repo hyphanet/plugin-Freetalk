@@ -212,23 +212,23 @@ public final class ThreadPage extends WebPageImpl {
         
         authorNode.addChild("br");
         
-        final String txtScore = l10n().getString("Common.WebOfTrust.Score");
+        String txtScore;
         try {
-        	int score = ((WoTIdentityManager)mFreetalk.getIdentityManager()).getScore((WoTOwnIdentity)mOwnIdentity, (WoTIdentity)message.getAuthor());
-        		
-        	authorNode.addChild("#", txtScore + ": "+ score);
+        	final int score = ((WoTIdentityManager)mFreetalk.getIdentityManager()).getScore((WoTOwnIdentity)mOwnIdentity, (WoTIdentity)message.getAuthor());
+        	txtScore = Integer.toString(score);
         } catch(NotInTrustTreeException e) {
-        	authorNode.addChild("#", txtScore + ": " + l10n().getString("Common.WebOfTrust.ScoreNull"));
+        	txtScore = l10n().getString("Common.WebOfTrust.ScoreNull");
         } catch(Exception e) {
         	Logger.error(this, "getScore() failed", e);
-        	authorNode.addChild("#", txtScore + ": " + l10n().getString("Common.WebOfTrust.ScoreNull"));
+        	txtScore = l10n().getString("Common.WebOfTrust.ScoreNull");
         }
         
+        authorNode.addChild("#", l10n().getString("Common.WebOfTrust.Score") + ": "+ txtScore);
         authorNode.addChild("br");
         
         String trust;
         try {
-            int intTrust = ((WoTOwnIdentity)mOwnIdentity).getTrustIn((WoTIdentity)message.getAuthor());
+            final int intTrust = ((WoTOwnIdentity)mOwnIdentity).getTrustIn((WoTIdentity)message.getAuthor());
             trust = Integer.toString(intTrust); 
         } catch (NotTrustedException e) {
             trust = l10n().getString("ThreadPage.Author.YourTrustNone");
