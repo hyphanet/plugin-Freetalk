@@ -331,8 +331,6 @@ public class WoTIdentityManager extends IdentityManager {
 	 */
 	public List<WoTTrust> getReceivedTrusts(FTIdentity trustee) throws Exception {
 		List<WoTTrust> result = new ArrayList<WoTTrust>();
-		if(mTalker == null)
-			throw new WoTDisconnectedException();
 
 		SimpleFieldSet request = new SimpleFieldSet(true);
 		request.putOverwrite("Message", "GetTrusters");
@@ -361,9 +359,6 @@ public class WoTIdentityManager extends IdentityManager {
 	 * Not synchronized, the involved identity might be deleted during the query - which is not really a problem.
 	 */
 	public int getReceivedTrustsCount(FTIdentity trustee) throws Exception {
-		if(mTalker == null)
-			throw new WoTDisconnectedException();
-		
 		SimpleFieldSet request = new SimpleFieldSet(true);
 		request.putOverwrite("Message", "GetTrustersCount");
 		request.putOverwrite("Identity", trustee.getID());
@@ -388,9 +383,6 @@ public class WoTIdentityManager extends IdentityManager {
 	 * 		values less than zero.
 	 */
 	public int getReceivedTrustsCount(FTIdentity trustee, int selection) throws Exception {
-		if(mTalker == null)
-			throw new WoTDisconnectedException();
-		
 		SimpleFieldSet request = new SimpleFieldSet(true);
 		request.putOverwrite("Message", "GetTrustersCount");
 		request.putOverwrite("Identity", trustee.getID());
@@ -440,9 +432,6 @@ public class WoTIdentityManager extends IdentityManager {
 	 * @throws Exception 
 	 */
 	public List<String> getIntroductionPuzzles(WoTOwnIdentity ownIdentity, int amount) throws Exception {
-		if(mTalker == null)
-			throw new WoTDisconnectedException();
-		
 		ArrayList<String> puzzleIDs = new ArrayList<String>(amount + 1);
 		
 		SimpleFieldSet params = new SimpleFieldSet(true);
@@ -471,10 +460,6 @@ public class WoTIdentityManager extends IdentityManager {
 	}
 	
 	public IntroductionPuzzle getIntroductionPuzzle(String id) throws Exception {
-		if(mTalker == null)
-			throw new WoTDisconnectedException();
-		
-		
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "GetIntroductionPuzzle");
 		params.putOverwrite("Puzzle", id);
@@ -502,9 +487,6 @@ public class WoTIdentityManager extends IdentityManager {
 	}
 	
 	public void solveIntroductionPuzzle(WoTOwnIdentity ownIdentity, String puzzleID, String solution) throws Exception {
-		if(mTalker == null)
-			throw new WoTDisconnectedException();
-		
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "SolveIntroductionPuzzle");
 		params.putOverwrite("Identity", ownIdentity.getID());
@@ -527,10 +509,7 @@ public class WoTIdentityManager extends IdentityManager {
 	 * Fetches the identities with positive score from WoT and stores them in the database.
 	 * @throws Exception 
 	 */
-	private void fetchIdentities() throws Exception {
-		if(mTalker == null)
-			throw new PluginNotFoundException();
-		
+	private void fetchIdentities() throws Exception {		
 		// parseIdentities() acquires and frees the WoTIdentityManager-lock for each identity to allow other threads to access the identity manager while the
 		// parsing is in progress. Therefore, we do not take the lock for the whole execution of this function.
 		synchronized(this) {
