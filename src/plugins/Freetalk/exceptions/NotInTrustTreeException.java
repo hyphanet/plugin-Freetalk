@@ -7,7 +7,7 @@ import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 
 /**
- * Thrown when querying the {@link Score} of a target {@link Identity} in the trust tree of a tree owner {@link Identity} shows that there is no {@link Score} for
+ * Thrown when querying the {@link WoTScore} of a target {@link WoTIdentity} in the trust tree of a tree owner {@link Identity} shows that there is no {@link Score} for
  * the target in the tree owner's trust tree.  
  * 
  * @author Julien Cornuwel (batosai@freenetproject.org)
