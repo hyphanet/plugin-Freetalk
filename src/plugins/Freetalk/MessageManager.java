@@ -79,6 +79,8 @@ public abstract class MessageManager implements Runnable {
 		mFreetalk = myFreetalk;
 		mPluginRespirator = myPluginRespirator;
 		
+		deleteBrokenObjects();
+		
 		// It might happen that Freetalk is shutdown after a message has been downloaded and before addMessagesToBoards was called:
 		// Then the message will still be stored but not visible in the boards because storing a message and adding it to boards are separate transactions.
 		// Therefore, we must call addMessagesToBoards (and synchronizeSubscribedBoards) during startup.
@@ -97,6 +99,54 @@ public abstract class MessageManager implements Runnable {
 		mIdentityManager = myIdentityManager;
 		mFreetalk = null;
 		mPluginRespirator = null;
+	}
+	
+	/**
+	 * Called during startup to delete objects from the database which lack required information, such as messages with mAuthor == null.
+	 * This is only a workaround until we find the reason of their existence.
+	 */
+	@SuppressWarnings("unchecked")
+	private synchronized void deleteBrokenObjects() {
+		Logger.debug(this, "Looking for broken Message objects...");
+		Query q = db.query();
+		q.constrain(Message.class);
+		q.descend("mAuthor").constrain(null).identity();
+	
+		for(Message message : (ObjectSet<Message>) q.execute()) {
+			try {
+				synchronized(message) {
+				synchronized(db.lock()) {
+					message.initializeTransient(db, this);
+					Logger.error(this, "Deleting Message with mAuthor == null: " + message);
+					message.deleteWithoutCommit();
+					db.commit(); Logger.debug(this, "COMMITED.");
+				}
+				}
+			} catch(Exception e) {
+				db.rollback();
+				Logger.error(this, "ROLLED BACK: Deleting Message with mAuthor == null failed!", e);
+			}
+		}
+		
+		Logger.debug(this, "Finished looking for broken Message objects.");
+		
+		Logger.debug(this, "Looking for broken MessageList objects...");
+		q = db.query();
+		q.constrain(MessageList.class);
+		q.descend("mAuthor").constrain(null).identity();
+		
+		for(MessageList list : (ObjectSet<MessageList>) q.execute()) {
+			try {
+				list.initializeTransient(db, this);
+				Logger.error(this, "Deleting MessageList with mAuthor == null: " + list);
+				list.deleteWithoutCommit();
+				db.commit(); Logger.debug(this, "COMMITED.");
+			} catch(Exception e) {
+				db.rollback();
+				Logger.error(this, "ROLLED BACK: Deleting MessageList with mAuthor == null failed!", e);
+			}
+		}
+		Logger.debug(this, "Finished looking for broken MessageList objects.");
 	}
 	
 	public void run() {
@@ -426,6 +476,8 @@ public abstract class MessageManager implements Runnable {
 	 */
 	@SuppressWarnings("unchecked")
 	private synchronized boolean addMessagesToBoards() {
+		Logger.normal(this, "Adding messages to boards...");
+		
 		Query q = db.query();
 		q.constrain(Message.class);
 		q.descend("mWasLinkedIn").constrain(false);
@@ -444,6 +496,7 @@ public abstract class MessageManager implements Runnable {
 				synchronized(message) {
 				synchronized(db.lock()) {
 					try {
+						Logger.debug(this, "Adding message to board: " + message);
 						board.addMessage(message);
 						db.commit(); Logger.debug(this, "COMMITED.");
 						addedMessages = true;
@@ -467,10 +520,14 @@ public abstract class MessageManager implements Runnable {
 			}
 		}
 		
+		Logger.normal(this, "Finished adding messages to boards.");
+		
 		return addedMessages;
 	}
 	
 	private synchronized void synchronizeSubscribedBoards() {
+		Logger.normal(this, "Synchronizing subscribed boards...");
+		
 		Iterator<SubscribedBoard> iter = subscribedBoardIterator();
 		
 		while(iter.hasNext()) {
@@ -495,9 +552,13 @@ public abstract class MessageManager implements Runnable {
 			
 			Thread.yield();
 		}
+		
+		Logger.normal(this, "Finished synchronizing subscribed boards.");
 	}
 	
 	public synchronized void onMessageListReceived(MessageList list) {
+		list.initializeTransient(db, this);
+		
 		MessageListFetchFailedMarker marker;
 		MessageList ghostList;
 
@@ -512,7 +573,7 @@ public abstract class MessageManager implements Runnable {
 			ghostList = getMessageList(list.getID());
 			
 			if(marker == null) {
-				Logger.debug(this, "Downloaded a MessageList which we already have: " + list.getURI());
+				Logger.debug(this, "Downloaded a MessageList which we already have: " + list);
 				return;
 			}
 
@@ -532,7 +593,6 @@ public abstract class MessageManager implements Runnable {
 						}
 					}
 					
-					list.initializeTransient(db, this);
 					list.storeWithoutCommit();
 					db.commit(); Logger.debug(this, "COMMITED.");
 				}
