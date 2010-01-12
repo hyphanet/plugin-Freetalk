@@ -3,16 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import junit.framework.TestCase;
-
 import java.net.MalformedURLException;
 import java.util.UUID;
 
-import freenet.support.Base64;
-
-import plugins.Freetalk.WoT.WoTMessageURI;
-
+import junit.framework.TestCase;
 import freenet.keys.FreenetURI;
+import freenet.support.Base64;
 
 /**
  * A test for class plugins.Freetalk.WoT.WoTMessagURI.

@@ -16,13 +16,6 @@ import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.Message.Attachment;
-import plugins.Freetalk.WoT.WoTIdentity;
-import plugins.Freetalk.WoT.WoTMessage;
-import plugins.Freetalk.WoT.WoTMessageList;
-import plugins.Freetalk.WoT.WoTMessageManager;
-import plugins.Freetalk.WoT.WoTMessageURI;
-import plugins.Freetalk.WoT.WoTMessageXML;
-import plugins.Freetalk.WoT.WoTOwnIdentity;
 import freenet.keys.FreenetURI;
 
 

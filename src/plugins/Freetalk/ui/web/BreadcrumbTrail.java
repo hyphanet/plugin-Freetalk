@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
-import java.util.List;
 import java.util.LinkedList;
+import java.util.List;
 
 import freenet.support.HTMLNode;
 

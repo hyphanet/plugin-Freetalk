@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import plugins.Freetalk.WoT.WoTMessageURI;
+
 import com.db4o.ext.ExtObjectContainer;
 
 import freenet.keys.FreenetURI;

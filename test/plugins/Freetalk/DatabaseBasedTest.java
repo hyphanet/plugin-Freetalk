@@ -8,7 +8,6 @@ import java.io.File;
 import junit.framework.TestCase;
 
 import com.db4o.Db4o;
-import com.db4o.config.Configuration;
 import com.db4o.ext.ExtObjectContainer;
 
 /**

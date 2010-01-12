@@ -3,13 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.NNTP;
 
-import plugins.Freetalk.Freetalk;
-
-import java.net.Socket;
 import java.io.IOException;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import plugins.Freetalk.Freetalk;
 import freenet.io.NetworkInterface;
 import freenet.node.Node;
 import freenet.support.Logger;

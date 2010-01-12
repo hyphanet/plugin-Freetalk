@@ -13,11 +13,12 @@ import java.util.Random;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
-import com.db4o.ObjectContainer;
-
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageInserter;
 import plugins.Freetalk.OwnMessage;
+
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;

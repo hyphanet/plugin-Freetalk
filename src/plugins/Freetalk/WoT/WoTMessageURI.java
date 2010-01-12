@@ -6,10 +6,11 @@ package plugins.Freetalk.WoT;
 import java.net.MalformedURLException;
 import java.util.UUID;
 
-import com.db4o.ext.ExtObjectContainer;
-
 import plugins.Freetalk.DBUtil;
 import plugins.Freetalk.MessageURI;
+
+import com.db4o.ext.ExtObjectContainer;
+
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 

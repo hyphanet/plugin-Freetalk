@@ -6,12 +6,11 @@ package plugins.Freetalk.ui.NNTP;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import freenet.support.Logger;
-
 import plugins.Freetalk.Message;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.exceptions.MessageNotFetchedException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import freenet.support.Logger;
 
 /**
  * Object representing a newsgroup, as seen from the NNTP client's

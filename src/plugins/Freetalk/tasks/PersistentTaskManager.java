@@ -6,6 +6,7 @@ import plugins.Freetalk.DBUtil;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
+import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.exceptions.DuplicateTaskException;
 import plugins.Freetalk.exceptions.NoSuchTaskException;

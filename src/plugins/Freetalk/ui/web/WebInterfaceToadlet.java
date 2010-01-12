@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URI;
 
 import plugins.Freetalk.Freetalk;
-
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.LinkEnabledCallback;
 import freenet.clients.http.RedirectException;
