@@ -5,7 +5,6 @@ package plugins.Freetalk.ui.web;
 
 import java.text.DateFormat;
 import java.util.Arrays;
-import java.util.List;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
@@ -19,13 +18,11 @@ import plugins.Freetalk.SubscribedBoard.MessageReference;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
-import plugins.Freetalk.WoT.WoTTrust;
 import plugins.Freetalk.exceptions.MessageNotFetchedException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import plugins.Freetalk.exceptions.NotTrustedException;
-import plugins.Freetalk.exceptions.WoTDisconnectedException;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -215,16 +212,16 @@ public final class ThreadPage extends WebPageImpl {
         
         authorNode.addChild("br");
         
-        final String txtScore = l10n().getString("ThreadPage.Score");
+        final String txtScore = l10n().getString("Common.WebOfTrust.Score");
         try {
         	int score = ((WoTIdentityManager)mFreetalk.getIdentityManager()).getScore((WoTOwnIdentity)mOwnIdentity, (WoTIdentity)message.getAuthor());
         		
         	authorNode.addChild("#", txtScore + ": "+ score);
         } catch(NotInTrustTreeException e) {
-        	authorNode.addChild("#", txtScore + ": " + l10n().getString("ThreadPage.Author.ScoreNone"));
+        	authorNode.addChild("#", txtScore + ": " + l10n().getString("Common.WebOfTrust.ScoreNull"));
         } catch(Exception e) {
         	Logger.error(this, "getScore() failed", e);
-        	authorNode.addChild("#", txtScore + ": " + l10n().getString("ThreadPage.Author.ScoreNone"));
+        	authorNode.addChild("#", txtScore + ": " + l10n().getString("Common.WebOfTrust.ScoreNull"));
         }
         
         authorNode.addChild("br");
@@ -269,41 +266,18 @@ public final class ThreadPage extends WebPageImpl {
     }
 
     private void addTrustersInfo(HTMLNode parent, FTIdentity author) throws Exception {
-        int trustedBy = 0;
-        int distrustedBy = 0;
-        String trusted = "";
-        String distrusted = "";
-        List<WoTTrust> receivedTrust;
-        try {
-            receivedTrust = ((WoTIdentityManager)mFreetalk.getIdentityManager()).getReceivedTrusts(author);
-            for(WoTTrust t: receivedTrust) {
-                if(t.getValue() > 0) {
-                    trustedBy++;
-                    if(!trusted.equals("")) trusted += ", ";
-                    trusted += t.getTruster().getShortestUniqueName(20);
-                }
-                if(t.getValue() < 0) {
-                    distrustedBy++;
-                    if(!distrusted.equals("")) distrusted += ", ";
-                    distrusted += t.getTruster().getShortestUniqueName(20);
-                }
-            }
-        } catch (WoTDisconnectedException e) {
-            parent.addChild("#", "?");
-            return;
-        }
+    	WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 
-        if(trustedBy > 0) {
-            parent.addChild("abbr", new String[]{"title", "style"}, new String[]{trusted, "color:green"}, String.valueOf(trustedBy));
-        } else {
-            parent.addChild("#", String.valueOf(trustedBy));
-        }
-        parent.addChild("#", "/");
-        if(distrustedBy > 0) {
-            parent.addChild("abbr", new String[]{"title", "style"}, new String[]{distrusted, "color:red"}, String.valueOf(distrustedBy));
-        } else {
-            parent.addChild("#", String.valueOf(distrustedBy));
-        }
+        int trustedBy = identityManager.getReceivedTrustsCount(author, 1);
+        int distrustedBy = identityManager.getReceivedTrustsCount(author, -1);
+
+        parent.addChild("abbr", new String[]{"title", "style"}, new String[]{ l10n().getString("Common.WebOfTrust.TrustedByCount.Description"), "color:green"}, 
+        		String.valueOf(trustedBy));
+        
+        parent.addChild("#", " / ");
+
+        parent.addChild("abbr", new String[]{"title", "style"}, new String[]{ l10n().getString("Common.WebOfTrust.DistrustedByCount.Description"), "color:red"},
+        		String.valueOf(distrustedBy));
     }
 
     private void addReplyButton(HTMLNode parent, Message parentMessage) {

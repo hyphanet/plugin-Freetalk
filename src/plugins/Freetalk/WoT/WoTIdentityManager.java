@@ -367,7 +367,7 @@ public class WoTIdentityManager extends IdentityManager {
 		SimpleFieldSet request = new SimpleFieldSet(true);
 		request.putOverwrite("Message", "GetTrustersCount");
 		request.putOverwrite("Identity", trustee.getID());
-		request.putOverwrite("Context", "");
+		request.putOverwrite("Context", Freetalk.WOT_CONTEXT);		
 		
 		try {
 			SimpleFieldSet answer = sendFCPMessageBlocking(request, null, "TrustersCount").params;
@@ -377,6 +377,39 @@ public class WoTIdentityManager extends IdentityManager {
 			throw new WoTDisconnectedException();
 		}
 
+	}
+	
+	/**
+	 * Get the number of trust values for a given identity with the ability to select which values should be counted.
+	 * 
+	 * Not synchronized, the involved identity might be deleted during the query - which is not really a problem.
+	 * 
+	 * @param selection Use 1 for counting trust values greater than or equal to zero, 0 for counting trust values exactly equal to 0 and -1 for counting trust
+	 * 		values less than zero.
+	 */
+	public int getReceivedTrustsCount(FTIdentity trustee, int selection) throws Exception {
+		if(mTalker == null)
+			throw new WoTDisconnectedException();
+		
+		SimpleFieldSet request = new SimpleFieldSet(true);
+		request.putOverwrite("Message", "GetTrustersCount");
+		request.putOverwrite("Identity", trustee.getID());
+		request.putOverwrite("Context", Freetalk.WOT_CONTEXT);
+		
+		if(selection > 0)
+			request.putOverwrite("Selection", "+");
+		else if(selection == 0)
+			request.putOverwrite("Selection", "0");
+		else
+			request.putOverwrite("Selection", "-");
+		
+		try {
+			SimpleFieldSet answer = sendFCPMessageBlocking(request, null, "TrustersCount").params;
+			return Integer.parseInt(answer.get("Value"));
+		}
+		catch(PluginNotFoundException e) {
+			throw new WoTDisconnectedException();
+		}
 	}
 	
 	public static final class IntroductionPuzzle {
