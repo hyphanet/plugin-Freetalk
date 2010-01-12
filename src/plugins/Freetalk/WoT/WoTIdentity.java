@@ -200,7 +200,15 @@ public class WoTIdentity implements FTIdentity {
 	}
 
 	public String toString() {
-		return getFreetalkAddress();
+		if(db != null)
+			return getFreetalkAddress();
+		
+		// We do not throw a NPE because toString() is usually used in logging, we want the logging to be robust
+		
+		Logger.error(this, "toString() called before initializeTransient()!");
+		
+		return super.toString() + "(intializeTransient() not called!, identity ID may be null, here it is: " + mID + ")";
+			
 	}
 	
 }

@@ -657,7 +657,8 @@ public class WoTIdentityManager extends IdentityManager {
 	private void garbageCollectIdentities() {
 		/* Executing the thread loop once will always take longer than THREAD_PERIOD. Therefore, if we set the limit to 3*THREAD_PERIOD,
 		 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */
-		long lastAcceptTime = CurrentTimeUTC.getInMillis() - THREAD_PERIOD * 3;
+		long lastAcceptTime = Math.min(mLastIdentityFetchTime, mLastOwnIdentityFetchTime) - THREAD_PERIOD * 3;
+		lastAcceptTime = Math.min(lastAcceptTime, 0); // This is not really needed but a time less than 0 does not make sense.
 		
 		MessageManager messageManager = mFreetalk.getMessageManager();
 		PersistentTaskManager taskManager = mFreetalk.getTaskManager();
@@ -669,6 +670,7 @@ public class WoTIdentityManager extends IdentityManager {
 		ObjectSet<WoTIdentity> result = q.execute();
 		
 		for(WoTIdentity identity : result) {
+			identity.initializeTransient(db, this);
 			Logger.debug(this, "Garbage collecting identity " + identity);
 			deleteIdentity(identity, messageManager, taskManager);
 		}
@@ -676,6 +678,7 @@ public class WoTIdentityManager extends IdentityManager {
 	}
 	
 	private void deleteIdentity(WoTIdentity identity, MessageManager messageManager, PersistentTaskManager taskManager) {
+		identity.initializeTransient(db, this);
 		
 		messageManager.onIdentityDeletion(identity);
 
@@ -685,7 +688,6 @@ public class WoTIdentityManager extends IdentityManager {
 		synchronized(identity) {
 		synchronized(db.lock()) {
 			try {
-				identity.initializeTransient(db, this);
 				identity.deleteWithoutCommit();
 				
 				Logger.debug(this, "Identity deleted: " + identity);
