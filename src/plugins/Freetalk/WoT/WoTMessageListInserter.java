@@ -185,6 +185,14 @@ public final class WoTMessageListInserter extends MessageListInserter {
 			removeInsert(state);
 		}
 	}
+	
+	/**
+	 * This method must be synchronized because onFailure is synchronized and TransferThread calls abortAllTransfers() during shutdown without
+	 * synchronizing on this object.
+	 */
+	protected synchronized void abortAllTransfers() {
+		super.abortAllTransfers();
+	}
 
 	/* Not needed functions*/
 	
