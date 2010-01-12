@@ -210,20 +210,7 @@ public final class ThreadPage extends WebPageImpl {
         	authorNode.addChild("#", l10n().getString("ThreadPage.UnknownReputation"));
         }
         
-        authorNode.addChild("br");
-        
-        String txtScore;
-        try {
-        	final int score = ((WoTIdentityManager)mFreetalk.getIdentityManager()).getScore((WoTOwnIdentity)mOwnIdentity, (WoTIdentity)message.getAuthor());
-        	txtScore = Integer.toString(score);
-        } catch(NotInTrustTreeException e) {
-        	txtScore = l10n().getString("Common.WebOfTrust.ScoreNull");
-        } catch(Exception e) {
-        	Logger.error(this, "getScore() failed", e);
-        	txtScore = l10n().getString("Common.WebOfTrust.ScoreNull");
-        }
-        
-        authorNode.addChild("#", l10n().getString("Common.WebOfTrust.Score") + ": "+ txtScore);
+        // Your trust value
         authorNode.addChild("br");
         
         String trust;
@@ -238,7 +225,24 @@ public final class ThreadPage extends WebPageImpl {
         }
         
         authorNode.addChild("#", l10n().getString("ThreadPage.Author.YourTrust") + ": "+trust);
+        
+        // Effective score of the identity
+        authorNode.addChild("br");
+        
+        String txtScore;
+        try {
+        	final int score = ((WoTIdentityManager)mFreetalk.getIdentityManager()).getScore((WoTOwnIdentity)mOwnIdentity, (WoTIdentity)message.getAuthor());
+        	txtScore = Integer.toString(score);
+        } catch(NotInTrustTreeException e) {
+        	txtScore = l10n().getString("Common.WebOfTrust.ScoreNull");
+        } catch(Exception e) {
+        	Logger.error(this, "getScore() failed", e);
+        	txtScore = l10n().getString("Common.WebOfTrust.ScoreNull");
+        }
+        
+        authorNode.addChild("#", l10n().getString("Common.WebOfTrust.Score") + ": "+ txtScore);
 
+        // Title of the message
         HTMLNode title = row.addChild(ref.wasRead() ? "td" : "th", "align", "left", "");
         
         title.addChild("span", "style", "float:right; margin-left:10px", mLocalDateFormat.format(message.getDate()));
@@ -254,7 +258,7 @@ public final class ThreadPage extends WebPageImpl {
         title.addChild("b", maxLength(message.getTitle(),50));
         
         
-
+        // Body of the message
         row = table.addChild("tr");
         HTMLNode text = row.addChild("td", "align", "left", "");
         String[] lines = message.getText().split("\r\n|\n");
