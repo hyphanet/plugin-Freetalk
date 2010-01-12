@@ -198,4 +198,9 @@ public class WoTIdentity implements FTIdentity {
 			DBUtil.rollbackAndThrow(db, this, e);
 		}
 	}
+
+	public String toString() {
+		return getFreetalkAddress();
+	}
+	
 }
