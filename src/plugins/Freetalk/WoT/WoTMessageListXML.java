@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 
 import javax.xml.XMLConstants;
@@ -88,10 +87,6 @@ public final class WoTMessageListXML {
 			serializer.transform(domSource, resultStream);
 		}
 	}
-	
-	/** Valid element names for MessageList XML version 1 */
-	private static final HashSet<String> messageListXMLElements1 = new HashSet<String>(Arrays.asList(
-		new String[] { Freetalk.PLUGIN_TITLE, "MessageList", "Message", "Board"}));
 	
 	public static WoTMessageList decode(WoTMessageManager messageManager, WoTIdentity author, FreenetURI uri, InputStream inputStream) throws Exception {
 		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
