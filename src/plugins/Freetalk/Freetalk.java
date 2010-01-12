@@ -34,7 +34,6 @@ import freenet.pluginmanager.FredPluginRealVersioned;
 import freenet.pluginmanager.FredPluginThemed;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
-import freenet.pluginmanager.FredPluginWithClassLoader;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Executor;
@@ -48,7 +47,7 @@ import freenet.support.api.Bucket;
  * @author bback
  */
 public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, FredPluginBaseL10n, FredPluginThemed, FredPluginThreadless,
-	FredPluginVersioned, FredPluginRealVersioned, FredPluginWithClassLoader {
+	FredPluginVersioned, FredPluginRealVersioned {
 
 	/* Constants */
 	
@@ -403,13 +402,6 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
         return getBaseL10n().getString(arg0);
     }
 
-	/**
-	 * Called by the node during the loading of the plugin. The <code>ClassLoader</code> which was used by the node is passed to db4o
-	 * by Freetalk. Db4o needs to know the <code>ClassLoader</code> which was used to create the classes of the objects it is supposed to store.
-	 */
-    @Deprecated
-	public void setClassLoader(ClassLoader myClassLoader) {
-	}
 	
     /**
      * This code is only called during startup or when the user
