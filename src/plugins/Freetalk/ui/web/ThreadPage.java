@@ -215,16 +215,16 @@ public final class ThreadPage extends WebPageImpl {
         
         authorNode.addChild("br");
         
-        final String txtEsteem = l10n().getString("ThreadPage.Author.Esteem");
+        final String txtScore = l10n().getString("ThreadPage.Score");
         try {
         	int score = ((WoTIdentityManager)mFreetalk.getIdentityManager()).getScore((WoTOwnIdentity)mOwnIdentity, (WoTIdentity)message.getAuthor());
         		
-        	authorNode.addChild("#", txtEsteem + ": "+ makeStars((int)(Math.log(score)/Math.log(10))));
+        	authorNode.addChild("#", txtScore + ": "+ score);
         } catch(NotInTrustTreeException e) {
-        	authorNode.addChild("#", txtEsteem + ": " + l10n().getString("ThreadPage.Author.EsteemNone"));
+        	authorNode.addChild("#", txtScore + ": " + l10n().getString("ThreadPage.Author.ScoreNone"));
         } catch(Exception e) {
         	Logger.error(this, "getScore() failed", e);
-        	authorNode.addChild("#", txtEsteem + ": " + l10n().getString("ThreadPage.Author.EsteemNone"));
+        	authorNode.addChild("#", txtScore + ": " + l10n().getString("ThreadPage.Author.ScoreNone"));
         }
         
         authorNode.addChild("br");
@@ -266,14 +266,6 @@ public final class ThreadPage extends WebPageImpl {
             text.addChild("br");
         }
         addReplyButton(text, message);
-    }
-
-    private String makeStars(int number) {
-        String result = "";
-        for(int i=0;i<number;i++) {
-            result += "*";
-        }
-        return result;
     }
 
     private void addTrustersInfo(HTMLNode parent, FTIdentity author) throws Exception {
