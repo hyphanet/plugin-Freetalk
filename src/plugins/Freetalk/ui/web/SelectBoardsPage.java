@@ -101,7 +101,7 @@ public class SelectBoardsPage extends WebPageImpl {
 		MessageManager messageManager = mFreetalk.getMessageManager(); 
 		
 		synchronized(messageManager) {
-			Iterator<Board> boards = messageManager.boardIterator();
+			Iterator<Board> boards = messageManager.boardIteratorSortedByName();
 			
 			while(boards.hasNext()) {
 				Board board = boards.next();

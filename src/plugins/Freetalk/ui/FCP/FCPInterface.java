@@ -155,7 +155,7 @@ public final class FCPInterface implements FredPluginFCP {
     throws PluginNotFoundException
     {
         synchronized(mFreetalk.getMessageManager()) {
-            final Iterator<Board> boards = mFreetalk.getMessageManager().boardIterator(); // TODO: Optimization: Use a non-sorting function.
+            final Iterator<Board> boards = mFreetalk.getMessageManager().boardIteratorSortedByName(); // TODO: Optimization: Use a non-sorting function.
             while(boards.hasNext()) {
                 final Board board = boards.next();
 
@@ -196,7 +196,7 @@ public final class FCPInterface implements FredPluginFCP {
         
         synchronized(mFreetalk.getMessageManager()) {
         	// TODO: Optimization: Use a non sorting function.
-            final Iterator<SubscribedBoard> boards = mFreetalk.getMessageManager().subscribedBoardIterator(ownIdentity);
+            final Iterator<SubscribedBoard> boards = mFreetalk.getMessageManager().subscribedBoardIteratorSortedByName(ownIdentity);
             while(boards.hasNext()) {
                 final SubscribedBoard board = boards.next();
                 

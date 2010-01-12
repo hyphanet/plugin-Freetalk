@@ -54,7 +54,7 @@ public final class BoardsPage extends WebPageImpl {
 		int boardCount = 0;
 		
 		synchronized(mFreetalk.getMessageManager()) {
-			Iterator<SubscribedBoard> boards = mFreetalk.getMessageManager().subscribedBoardIterator(mOwnIdentity); // TODO: Optimization: Use a non-sorting function.
+			Iterator<SubscribedBoard> boards = mFreetalk.getMessageManager().subscribedBoardIteratorSortedByName(mOwnIdentity); // TODO: Optimization: Use a non-sorting function.
 			while(boards.hasNext()) {
 				++boardCount;
 				

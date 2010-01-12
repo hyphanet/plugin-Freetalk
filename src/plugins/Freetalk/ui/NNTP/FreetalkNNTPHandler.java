@@ -375,7 +375,7 @@ public class FreetalkNNTPHandler implements Runnable {
 
         synchronized(mMessageManager) {
         // TODO: Optimization: Use a non sorting function
-        for (Iterator<SubscribedBoard> i = mMessageManager.subscribedBoardIterator(authOwnIdentity); i.hasNext(); ) {
+        for (Iterator<SubscribedBoard> i = mMessageManager.subscribedBoardIteratorSortedByName(authOwnIdentity); i.hasNext(); ) {
             SubscribedBoard board = i.next();
             FreetalkNNTPGroup group = new FreetalkNNTPGroup(board);
             printTextResponseLine(group.getName()
@@ -394,7 +394,7 @@ public class FreetalkNNTPHandler implements Runnable {
         // FIXME: add filtering
         printStatusLine("215 Information follows:");
         synchronized(mMessageManager) {
-        for (Iterator<Board> i = mMessageManager.boardIterator(); i.hasNext(); ) { // TODO: Optimization: Use a non-sorting function.
+        for (Iterator<Board> i = mMessageManager.boardIteratorSortedByName(); i.hasNext(); ) { // TODO: Optimization: Use a non-sorting function.
             Board board = i.next();
             String groupName = FreetalkNNTPGroup.boardToGroupName(board.getName());
             printTextResponseLine(groupName	+ " " + board.getDescription(authOwnIdentity));

@@ -316,7 +316,7 @@ public abstract class MessageManager implements Runnable {
 					// FIXME: We do not lock the boards. Ensure that the UI cannot re-use the board by calling storeAndCommit somewhere even though the board
 					// has been deleted. This can be ensured by having isStored() checks in all storeAndCommit() functions which use boards.
 					
-					Iterator<SubscribedBoard> iter = subscribedBoardIterator((FTOwnIdentity)identity); // TODO: Optimization: Use a non-sorting function.
+					Iterator<SubscribedBoard> iter = subscribedBoardIteratorSortedByName((FTOwnIdentity)identity); // TODO: Optimization: Use a non-sorting function.
 					while(iter.hasNext()) {
 						SubscribedBoard board = iter.next();
 						board.deleteWithoutCommit();
@@ -1010,7 +1010,7 @@ public abstract class MessageManager implements Runnable {
 	 * You have to synchronize on this MessageManager before calling this function and while processing the returned list.
 	 * The transient fields of the returned boards will be initialized already.
 	 */
-	public Iterator<Board> boardIterator() {
+	public Iterator<Board> boardIteratorSortedByName() {
 		Query query = db.query();
 		query.constrain(Board.class);
 		query.constrain(SubscribedBoard.class).not();
@@ -1051,7 +1051,7 @@ public abstract class MessageManager implements Runnable {
 	 * 
 	 * The transient fields of the returned objects will be initialized already. 
 	 */
-	public Iterator<SubscribedBoard> subscribedBoardIterator(FTOwnIdentity subscriber) {
+	public Iterator<SubscribedBoard> subscribedBoardIteratorSortedByName(FTOwnIdentity subscriber) {
 		Query query = db.query();
 		query.constrain(SubscribedBoard.class);
 		query.descend("mSubscriber").constrain(subscriber).identity();
