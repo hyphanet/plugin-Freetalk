@@ -373,6 +373,8 @@ public class FreetalkNNTPHandler implements Runnable {
         // FIXME: filter by wildmat
         printStatusLine("215 List of newsgroups follows:");
 
+        synchronized(mMessageManager) {
+        // TODO: Optimization: Use a non sorting function
         for (Iterator<SubscribedBoard> i = mMessageManager.subscribedBoardIterator(authOwnIdentity); i.hasNext(); ) {
             SubscribedBoard board = i.next();
             FreetalkNNTPGroup group = new FreetalkNNTPGroup(board);
@@ -380,6 +382,7 @@ public class FreetalkNNTPHandler implements Runnable {
                     + " " + group.lastMessage()
                     + " " + group.firstMessage()
                     + " " + group.postingStatus());
+        }
         }
         endTextResponse();
     }
@@ -390,10 +393,12 @@ public class FreetalkNNTPHandler implements Runnable {
     private void listGroupDescriptions(String pattern) throws IOException {
         // FIXME: add filtering
         printStatusLine("215 Information follows:");
-        for (Iterator<Board> i = mMessageManager.boardIterator(); i.hasNext(); ) {
+        synchronized(mMessageManager) {
+        for (Iterator<Board> i = mMessageManager.boardIterator(); i.hasNext(); ) { // TODO: Optimization: Use a non-sorting function.
             Board board = i.next();
             String groupName = FreetalkNNTPGroup.boardToGroupName(board.getName());
             printTextResponseLine(groupName	+ " " + board.getDescription(authOwnIdentity));
+        }
         }
         endTextResponse();
     }

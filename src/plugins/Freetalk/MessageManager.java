@@ -316,7 +316,7 @@ public abstract class MessageManager implements Runnable {
 					// FIXME: We do not lock the boards. Ensure that the UI cannot re-use the board by calling storeAndCommit somewhere even though the board
 					// has been deleted. This can be ensured by having isStored() checks in all storeAndCommit() functions which use boards.
 					
-					Iterator<SubscribedBoard> iter = subscribedBoardIterator((FTOwnIdentity)identity);
+					Iterator<SubscribedBoard> iter = subscribedBoardIterator((FTOwnIdentity)identity); // TODO: Optimization: Use a non-sorting function.
 					while(iter.hasNext()) {
 						SubscribedBoard board = iter.next();
 						board.deleteWithoutCommit();
@@ -1005,13 +1005,16 @@ public abstract class MessageManager implements Runnable {
 	}
 
 	/**
-	 * Get an iterator of all boards. The transient fields of the returned boards will be initialized already.
+	 * Get an iterator of all boards. The list is sorted ascending by name.
+	 * 
+	 * You have to synchronize on this MessageManager before calling this function and while processing the returned list.
+	 * The transient fields of the returned boards will be initialized already.
 	 */
-	public synchronized Iterator<Board> boardIterator() {
+	public Iterator<Board> boardIterator() {
 		Query query = db.query();
 		query.constrain(Board.class);
 		query.constrain(SubscribedBoard.class).not();
-		query.descend("mName").orderDescending();
+		query.descend("mName").orderAscending();
 		return generalBoardIterator(query);
 	}
 	
@@ -1041,11 +1044,18 @@ public abstract class MessageManager implements Runnable {
 		return generalSubscribedBoardIterator(query);
 	}
 	
-	public synchronized Iterator<SubscribedBoard> subscribedBoardIterator(FTOwnIdentity subscriber) {
+	/**
+	 * Get a list of all subscribed boards of the given identity. The list is sorted ascending by name.
+	 * 
+	 * You have to synchronize on this MessageManager before calling this function and while processing the returned list.
+	 * 
+	 * The transient fields of the returned objects will be initialized already. 
+	 */
+	public Iterator<SubscribedBoard> subscribedBoardIterator(FTOwnIdentity subscriber) {
 		Query query = db.query();
 		query.constrain(SubscribedBoard.class);
 		query.descend("mSubscriber").constrain(subscriber).identity();
-		query.descend("mName").orderDescending();
+		query.descend("mName").orderAscending();
 		return generalSubscribedBoardIterator(query);
 	}
 	
