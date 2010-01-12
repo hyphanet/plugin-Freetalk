@@ -527,16 +527,20 @@ public class WoTIdentityManager extends IdentityManager {
 	 * Fetches the identities with positive score from WoT and stores them in the database.
 	 * @throws Exception 
 	 */
-	private synchronized void fetchIdentities() throws Exception {
+	private void fetchIdentities() throws Exception {
 		if(mTalker == null)
 			throw new PluginNotFoundException();
 		
+		// parseIdentities() acquires and frees the WoTIdentityManager-lock for each identity to allow other threads to access the identity manager while the
+		// parsing is in progress. Therefore, we do not take the lock for the whole execution of this function.
+		synchronized(this) {
 		long now = CurrentTimeUTC.getInMillis();
 		if((now - mLastIdentityFetchTime) < MINIMAL_IDENTITY_FETCH_DELAY)
 			return;
 		
 		mLastIdentityFetchTime = now;
-		
+		}
+				
 		Logger.debug(this, "Requesting identities with positive score from WoT ...");
 		SimpleFieldSet p1 = new SimpleFieldSet(true);
 		p1.putOverwrite("Message", "GetIdentitiesByScore");
@@ -549,12 +553,16 @@ public class WoTIdentityManager extends IdentityManager {
 	 * Fetches the own identities with positive score from WoT and stores them in the database.
 	 * @throws Exception 
 	 */
-	private synchronized void fetchOwnIdentities() throws Exception {
+	private void fetchOwnIdentities() throws Exception {
+		// parseIdentities() acquires and frees the WoTIdentityManager-lock for each identity to allow other threads to access the identity manager while the
+		// parsing is in progress. Therefore, we do not take the lock for the whole execution of this function.
+		synchronized(this) {
 		long now = CurrentTimeUTC.getInMillis();
 		if((now - mLastOwnIdentityFetchTime) < MINIMAL_OWN_IDENTITY_FETCH_DELAY)
 			return;
 		
 		mLastOwnIdentityFetchTime = now;
+		}
 		
 		Logger.debug(this, "Requesting own identities from WoT ...");
 		SimpleFieldSet p2 = new SimpleFieldSet(true);
