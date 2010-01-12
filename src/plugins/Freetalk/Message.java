@@ -742,5 +742,16 @@ public abstract class Message {
     	} else
     		return false;
 	}
+    
+    public String toString() {
+    	if(db != null)
+    		return getURI().toString();
+    	
+		// We do not throw a NPE because toString() is usually used in logging, we want the logging to be robust
+		
+		Logger.error(this, "toString() called before initializeTransient()!");
+		
+		return super.toString() + "(intializeTransient() not called!, message URI may be null, here it is: " + mURI + ")";
+    }
 
 }
