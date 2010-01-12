@@ -52,12 +52,14 @@ public final class LogInPage extends WebPageImpl {
 			selectBox.addChild("option", "value", ownIdentity.getID(), ownIdentity.getShortestUniqueName(40));
 		}
 		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("LoginPage.LogIn.Button") });
+		selectForm.addChild("p", l10n().getString("LoginPage.CookiesRequired.Text"));
 	}
 	
 	protected static final void addLoginButton(WebPageImpl page, HTMLNode contentNode, FTOwnIdentity identity, BaseL10n l10n) {
 		HTMLNode logInForm = page.addFormChild(contentNode, Freetalk.PLUGIN_URI + "/LogIn", "LogIn");
 		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", identity.getID() });
 		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n.getString("LoginPage.LogIn.Button") });
+		logInForm.addChild("p", l10n.getString("LoginPage.CookiesRequired.Text"));
 	}
 	
 	private void makeCreateIdentityBox() {
