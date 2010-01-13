@@ -207,8 +207,7 @@ public class WoTIdentity implements FTIdentity {
 		
 		Logger.error(this, "toString() called before initializeTransient()!");
 		
-		return super.toString() + "(intializeTransient() not called!, identity ID may be null, here it is: " + mID + ")";
-			
+		return super.toString() + " (intializeTransient() not called!, identity ID may be null, here it is: " + mID + ")";
 	}
 	
 }

@@ -751,7 +751,7 @@ public abstract class Message {
 		
 		Logger.error(this, "toString() called before initializeTransient()!");
 		
-		return super.toString() + "(intializeTransient() not called!, message URI may be null, here it is: " + mURI + ")";
+		return super.toString() + " (intializeTransient() not called!, message URI may be null, here it is: " + mURI + ")";
     }
 
 }
