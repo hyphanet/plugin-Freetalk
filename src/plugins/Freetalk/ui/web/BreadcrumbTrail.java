@@ -3,27 +3,31 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.ArrayList;
 
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 
 /**
+ * <p>A BreadcrumbTrail is the path of a webpage which is displayed at top of it, for example:</p>
  * 
+ * <p>Freetalk > Your Boards > en.freenet</p>
+ * 
+ * <p>Each entry in the path is a link except the last one. So the purpose of BreadcrumbTrails is easy navigation.</p>
+ * 
+ * <p>Each {@link WebPage} constructs a BreadcrumbTrail by calling {@link addBreadcrumbInfo} for each entry in the path and using {@link getHTMLNode} when done.</p>
+ * 
+ * @author xor (xor@freenetproject.org)
  * @author gerard_
- *
  */
 public final class BreadcrumbTrail {
-	protected final List<String> mTitles;
-	protected final List<String> mLinks;
+	// For small sizes arrays are faster than linked lists.
+	protected final ArrayList<String> mTitles = new ArrayList<String>(8);
+	protected final ArrayList<String> mLinks = new ArrayList<String>(8);
 	
 	protected final BaseL10n mL10n;
 
 	public BreadcrumbTrail(final BaseL10n myL10n) {
-		mTitles = new LinkedList<String>();
-		mLinks = new LinkedList<String>();
-		
 		mL10n = myL10n;
 	}
 
