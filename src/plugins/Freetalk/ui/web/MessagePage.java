@@ -55,8 +55,7 @@ public class MessagePage extends WebPageImpl {
         mMessageID = messageID;
 	}
 
-	@Override
-	public void make() throws RedirectException {
+	public final void make() {
 		try {
 			MessageManager messageManager = mFreetalk.getMessageManager();
 			
