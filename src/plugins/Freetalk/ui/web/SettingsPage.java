@@ -139,13 +139,13 @@ public class SettingsPage extends WebPageImpl {
     }
     
     private void makeBreadcrumbs() {
-        BreadcrumbTrail trail = new BreadcrumbTrail();
+        BreadcrumbTrail trail = new BreadcrumbTrail(l10n());
         Welcome.addBreadcrumb(trail);
-        SettingsPage.addBreadcrumb(trail, l10n());
+        SettingsPage.addBreadcrumb(trail);
         mContentNode.addChild(trail.getHTMLNode());
     }
 
-    public static void addBreadcrumb(BreadcrumbTrail trail, BaseL10n l10n) {
-        trail.addBreadcrumbInfo(l10n.getString("Breadcrumb.Settings"), Freetalk.PLUGIN_URI + "/Settings");
+    public static void addBreadcrumb(BreadcrumbTrail trail) {
+        trail.addBreadcrumbInfo(trail.getL10n().getString("Breadcrumb.Settings"), Freetalk.PLUGIN_URI + "/Settings");
     }
 }

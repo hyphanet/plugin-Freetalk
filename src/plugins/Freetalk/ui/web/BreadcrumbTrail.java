@@ -6,6 +6,7 @@ package plugins.Freetalk.ui.web;
 import java.util.LinkedList;
 import java.util.List;
 
+import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 
 /**
@@ -16,10 +17,14 @@ import freenet.support.HTMLNode;
 public final class BreadcrumbTrail {
 	protected final List<String> mTitles;
 	protected final List<String> mLinks;
+	
+	protected final BaseL10n mL10n;
 
-	public BreadcrumbTrail() {
+	public BreadcrumbTrail(final BaseL10n myL10n) {
 		mTitles = new LinkedList<String>();
 		mLinks = new LinkedList<String>();
+		
+		mL10n = myL10n;
 	}
 
 	protected void addBreadcrumbInfo(String title, String link) {
@@ -36,5 +41,9 @@ public final class BreadcrumbTrail {
 		}
 		result.addChild(new HTMLNode("span", mTitles.get(mTitles.size()-1)));
 		return result;
+	}
+	
+	protected BaseL10n getL10n() {
+		return mL10n;
 	}
 }

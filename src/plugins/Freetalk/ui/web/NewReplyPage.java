@@ -131,16 +131,16 @@ public class NewReplyPage extends WebPageImpl {
 	}
 
 	private void makeBreadcrumbs() {
-		BreadcrumbTrail trail = new BreadcrumbTrail();
+		BreadcrumbTrail trail = new BreadcrumbTrail(l10n());
 		Welcome.addBreadcrumb(trail);
-		BoardsPage.addBreadcrumb(trail, l10n());
+		BoardsPage.addBreadcrumb(trail);
 		BoardPage.addBreadcrumb(trail, mBoard);
 		ThreadPage.addBreadcrumb(trail, mBoard, mParentThread);
-		NewReplyPage.addBreadcrumb(trail, l10n());
+		NewReplyPage.addBreadcrumb(trail);
 		mContentNode.addChild(trail.getHTMLNode());
 	}
 
-	public static void addBreadcrumb(BreadcrumbTrail trail, BaseL10n l10n) {
-		trail.addBreadcrumbInfo(l10n.getString("Breadcrumb.Reply"), "");
+	public static void addBreadcrumb(BreadcrumbTrail trail) {
+		trail.addBreadcrumbInfo(trail.getL10n().getString("Breadcrumb.Reply"), "");
 	}
 }

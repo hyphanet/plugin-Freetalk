@@ -97,13 +97,13 @@ public final class BoardsPage extends WebPageImpl {
 	}
 
 	private void makeBreadcrumbs() {
-		BreadcrumbTrail trail = new BreadcrumbTrail();
+		BreadcrumbTrail trail = new BreadcrumbTrail(l10n());
 		Welcome.addBreadcrumb(trail);
-		BoardsPage.addBreadcrumb(trail, l10n());
+		BoardsPage.addBreadcrumb(trail);
 		mContentNode.addChild(trail.getHTMLNode());
 	}
 
-	public static void addBreadcrumb(BreadcrumbTrail trail, BaseL10n l10n) {
-		trail.addBreadcrumbInfo(l10n.getString("Breadcrumb.Boards"), Freetalk.PLUGIN_URI + "/SubscribedBoards");
+	public static void addBreadcrumb(BreadcrumbTrail trail) {
+		trail.addBreadcrumbInfo(trail.getL10n().getString("Breadcrumb.Boards"), Freetalk.PLUGIN_URI + "/SubscribedBoards");
 	}
 }

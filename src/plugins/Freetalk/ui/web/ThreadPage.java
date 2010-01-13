@@ -83,7 +83,7 @@ public final class ThreadPage extends WebPageImpl {
             		if(threadMessage.isThread() == false)
             			addThreadIsNoThreadWarning(threadMessage);
 
-            		addMessageBox(mThread);
+            		addMessageBox(threadMessage, mThread);
             	}
             	catch(MessageNotFetchedException e) {
             		addThreadNotDownloadedWarning(mThread);
@@ -95,13 +95,17 @@ public final class ThreadPage extends WebPageImpl {
 	            	mThread.storeAndCommit();
         		}
 
-                for(MessageReference reference : mBoard.getAllThreadReplies(mThread.getThreadID(), true)) {
+                for(BoardReplyLink reference : mBoard.getAllThreadReplies(mThread.getThreadID(), true)) {
                 	if(mMarktThreadAsUnread && reference.wasRead()) { // If requested, mark the messages of the thread as unread
                     	reference.markAsUnread();
                      	reference.storeAndCommit();
                     }
                 	
-                	addMessageBox(reference);
+                	try {
+                		addMessageBox(reference.getMessage(), reference);
+                	} catch(NoSuchMessageException e) {
+                		throw new RuntimeException(e); // getMessage() should never fail for BoardReplyLink.
+                	}
 
                     if(!mMarktThreadAsUnread && !reference.wasRead()) { // After displaying the messages to the user, mark them as read
 	                    reference.markAsRead();
@@ -180,19 +184,14 @@ public final class ThreadPage extends WebPageImpl {
     }
 
     /**
-     * Shows the message of a given message reference.
+     * Shows the given message.
      * 
      * You have to synchronize on mLocalDateFormat when using this function
      * 
-     * @param ref A reference to the message which is to be displayed. The getMessage() function of this reference <b>must not</b> throw MessageNotFetchedException. 
+     * @param message The message which shall be shown. Must not be null.
+     * @param ref A reference to the message which is to be displayed. Can be null, then the "message was read?" information will be unavailable. 
      */
-    private void addMessageBox(MessageReference ref) {
-    	Message message;
-    	try {
-    		message = ref.getMessage();
-    	} catch(MessageNotFetchedException e) {
-    		throw new RuntimeException("addMessageBox() called for a not-fetched message: " + e);
-    	}
+    private void addMessageBox(Message message, MessageReference ref) {
     	
         HTMLNode table = mContentNode.addChild("table", new String[] {"border", "width" }, new String[] { "0", "100%" });
         HTMLNode row = table.addChild("tr");
@@ -243,11 +242,11 @@ public final class ThreadPage extends WebPageImpl {
         authorNode.addChild("#", l10n().getString("Common.WebOfTrust.Score") + ": "+ txtScore);
 
         // Title of the message
-        HTMLNode title = row.addChild(ref.wasRead() ? "td" : "th", "align", "left", "");
+        HTMLNode title = row.addChild((ref == null || ref.wasRead()) ? "td" : "th", "align", "left", "");
         
         title.addChild("span", "style", "float:right; margin-left:10px", mLocalDateFormat.format(message.getDate()));
         
-        if(ref instanceof BoardThreadLink)
+        if(ref != null && ref instanceof BoardThreadLink)
         	addMarkThreadAsUnreadButton(title, (BoardThreadLink)ref);
         
         if(message.getAuthor() != mOwnIdentity && ((WoTOwnIdentity)mOwnIdentity).getAssessed(message) == false) {
@@ -338,9 +337,9 @@ public final class ThreadPage extends WebPageImpl {
     }
 
     private void makeBreadcrumbs() {
-        BreadcrumbTrail trail = new BreadcrumbTrail();
+        BreadcrumbTrail trail = new BreadcrumbTrail(l10n());
         Welcome.addBreadcrumb(trail);
-        BoardsPage.addBreadcrumb(trail, l10n());
+        BoardsPage.addBreadcrumb(trail);
         BoardPage.addBreadcrumb(trail, mBoard);
         if(mThread != null)
         	ThreadPage.addBreadcrumb(trail, mBoard, mThread);

@@ -166,14 +166,14 @@ public class SelectBoardsPage extends WebPageImpl {
 	}
 
 	private void makeBreadcrumbs() {
-		BreadcrumbTrail trail = new BreadcrumbTrail();
+		BreadcrumbTrail trail = new BreadcrumbTrail(l10n());
 		Welcome.addBreadcrumb(trail);
-		BoardsPage.addBreadcrumb(trail, l10n());
-		SelectBoardsPage.addBreadcrumb(trail, l10n());
+		BoardsPage.addBreadcrumb(trail);
+		SelectBoardsPage.addBreadcrumb(trail);
 		mContentNode.addChild(trail.getHTMLNode());
 	}
 
-	public static void addBreadcrumb(BreadcrumbTrail trail, BaseL10n l10n) {
-		trail.addBreadcrumbInfo(l10n.getString("Breadcrumb.SelectBoards"), Freetalk.PLUGIN_URI + "/SelectBoards");
+	public static void addBreadcrumb(BreadcrumbTrail trail) {
+		trail.addBreadcrumbInfo(trail.getL10n().getString("Breadcrumb.SelectBoards"), Freetalk.PLUGIN_URI + "/SelectBoards");
 	}
 }
