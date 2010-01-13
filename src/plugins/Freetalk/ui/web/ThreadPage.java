@@ -200,13 +200,13 @@ public final class ThreadPage extends WebPageImpl {
         authorNode.addChild("br");
         authorNode.addChild("#", l10n().getString("ThreadPage.Author.Posts") + ": " + mFreetalk.getMessageManager().getMessagesBy(message.getAuthor()).size());
         authorNode.addChild("br");
-        authorNode.addChild("#", l10n().getString("ThreadPage.Author.Reputation") + ": ");
+        authorNode.addChild("#", l10n().getString("ThreadPage.Author.TrusterCount") + ": ");
         try {
         	addTrustersInfo(authorNode, message.getAuthor());
         }
         catch(Exception e) {
         	Logger.error(this, "addTrustersInfo() failed", e);
-        	authorNode.addChild("#", l10n().getString("ThreadPage.UnknownReputation"));
+        	authorNode.addChild("#", l10n().getString("ThreadPage.Author.TrusterCountUnknown"));
         }
         
         // Your trust value
