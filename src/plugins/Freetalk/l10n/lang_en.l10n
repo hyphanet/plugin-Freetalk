@@ -10,6 +10,7 @@ BoardsPage.NewBoardButton=New board
 BoardsPage.BoardTableHeader.Name=Name
 BoardsPage.BoardTableHeader.Description=Description
 BoardsPage.BoardTableHeader.Messages=Messages
+BoardsPage.BoardTableHeader.UnreadMessages=Unread
 BoardsPage.BoardTableHeader.LatestMessage=Latest message
 BoardsPage.NoBoardSubscribed=You are not subscribed to any boards. Please ${link}select which ones you want to read${/link}.
 BoardsPage.BoardSubscriptions=You can subscribe to more boards or unsubscribe from the current ones ${link}here${/link}.
