@@ -30,10 +30,12 @@ import freenet.support.api.HTTPRequest;
 public final class BoardPage extends WebPageImpl {
 
 	private final SubscribedBoard mBoard;
+    private final boolean mMarkAllThreadsAsRead;
 	
 	public BoardPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) throws NoSuchBoardException {
 		super(myWebInterface, viewer, request, _baseL10n);
 		mBoard = mFreetalk.getMessageManager().getSubscription(viewer, request.getParam("name"));
+		mMarkAllThreadsAsRead = mRequest.isPartSet("MarkAllThreadsAsRead");
 	}
 
 	public final void make() {
@@ -46,6 +48,14 @@ public final class BoardPage extends WebPageImpl {
 			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID() });
 			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "BoardName", mBoard.getName() });
 			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("BoardPage.CreateNewThreadButton") });
+			
+        // Button to mark all threads read
+		HTMLNode span = threadsBox.addChild("span", "style", "float:right");
+        HTMLNode markAllAsReadButton = addFormChild(span, getURI(mBoard.getName()), "BoardPage");
+            markAllAsReadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
+            markAllAsReadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "name", mBoard.getName()});
+            markAllAsReadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "MarkAllThreadsAsRead", "true"});
+            markAllAsReadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("BoardPage.MarkAllThreadsAsReadButton") });
 		
 		// Threads table
 		HTMLNode threadsTable = threadsBox.addChild("table", new String[] { "border", "width" }, new String[] { "0", "100%" });
@@ -70,12 +80,18 @@ public final class BoardPage extends WebPageImpl {
 		HTMLNode table = threadsTable.addChild("tbody");
 		
 		synchronized(mBoard) {
+		    
 			for(BoardThreadLink threadReference : mBoard.getThreads()) {
 				Message thread;
 				String threadTitle;
 				String authorText;
 				String authorScore; 
-				
+
+                // mark thread read if requested ...
+                if (mMarkAllThreadsAsRead) {
+                    markThreadRead(threadReference);
+                }
+
 				try {
 					thread = threadReference.getMessage();
 					threadTitle = thread.getTitle();
@@ -140,6 +156,33 @@ public final class BoardPage extends WebPageImpl {
 			}
 		}
 	}
+
+    /**
+     * @param threadReference
+     */
+    private void markThreadRead(BoardThreadLink threadReference) {
+        // maybe mark thread and top level message read
+        boolean doStore = false;
+        if (!threadReference.wasThreadRead()) {
+            threadReference.markThreadAsRead();
+            doStore = true;
+        }
+        if (!threadReference.wasRead()) {
+            threadReference.markAsRead();
+            doStore = true;
+        }
+        if (doStore) {
+            threadReference.storeAndCommit();
+        }
+        
+        // mark all thread replies as read
+        for(BoardReplyLink reference : mBoard.getAllThreadReplies(threadReference.getThreadID(), true)) {
+            if(!reference.wasRead()) {
+                reference.markAsRead();
+                reference.storeAndCommit();
+            }
+        }
+    }
 
 	private void makeBreadcrumbs() {
 		BreadcrumbTrail trail = new BreadcrumbTrail(l10n());
