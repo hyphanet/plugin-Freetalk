@@ -5,6 +5,7 @@ BoardPage.ThreadTableHeader.Author=Author
 BoardPage.ThreadTableHeader.Trust=Trust
 BoardPage.ThreadTableHeader.Date=Date
 BoardPage.ThreadTableHeader.Replies=Replies
+BoardPage.ThreadTableHeader.Unread=Unread
 BoardPage.MarkAllThreadsAsReadButton=Mark all threads as read
 BoardsPage.BoardList.Header=Your boards
 BoardsPage.NewBoardButton=New board

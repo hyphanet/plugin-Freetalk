@@ -74,6 +74,7 @@ public final class BoardPage extends WebPageImpl {
 			row.addChild("th", l10n().getString("BoardPage.ThreadTableHeader.Trust"));
 			row.addChild("th", l10n().getString("BoardPage.ThreadTableHeader.Date"));
 			row.addChild("th", l10n().getString("BoardPage.ThreadTableHeader.Replies"));
+			row.addChild("th", l10n().getString("BoardPage.ThreadTableHeader.Unread"));
 		
 		DateFormat dateFormat = DateFormat.getInstance();
 		
@@ -153,8 +154,27 @@ public final class BoardPage extends WebPageImpl {
 				/* Reply count */
 				row.addChild("td", new String[] { "align" }, new String[] { "center" }, 
 						Integer.toString(mBoard.threadReplyCount(threadReference.getThreadID())));
+				
+				/* Unread count */
+				int unreadCount = getUnreadCount(threadReference);
+				row.addChild((unreadCount>0) ? "th" : "td", new String[] { "align" }, new String[] { "center" }, Integer.toString(unreadCount));
 			}
 		}
+	}
+	
+	private int getUnreadCount(BoardThreadLink threadReference) {
+	    int unreadCount = 0;
+        if (!threadReference.wasRead()) {
+            unreadCount++;
+        }
+        
+        // scan all replies
+        for(BoardReplyLink reference : mBoard.getAllThreadReplies(threadReference.getThreadID(), true)) {
+            if(!reference.wasRead()) {
+                unreadCount++;
+            }
+        }
+        return unreadCount;
 	}
 
     /**
