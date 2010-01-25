@@ -4,7 +4,9 @@
 package plugins.Freetalk.ui.web;
 
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
@@ -265,7 +267,13 @@ public final class ThreadPage extends WebPageImpl {
         HTMLNode text = row.addChild("td", "align", "left", "");
         String[] lines = message.getText().split("\r\n|\n");
         for(String line : lines) {
-            text.addChild("#", line);
+        	for (String splittedLine : splitLineAtURIs(line)) {
+        		HTMLNode linkNode = text;
+        		if (splittedLine.startsWith("CHK@") || splittedLine.startsWith("SSK@") || splittedLine.startsWith("USK@") || splittedLine.startsWith("KSK@")) {
+        			linkNode = linkNode.addChild("a", "href", "/" + splittedLine);
+        		}
+        		linkNode.addChild("#", splittedLine);
+        	}
             text.addChild("br");
         }
         addReplyButton(text, message);
@@ -356,6 +364,61 @@ public final class ThreadPage extends WebPageImpl {
     public static String getURI(final String boardName, final String threadID) {
     	return Freetalk.PLUGIN_URI + "/showThread?BoardName=" + boardName + "&ThreadID=" + threadID;
     }
+
+	/**
+	 * This method scans the given lines for freenet URIs ({link String}s
+	 * beginning with “CHK@”, “SSK@”, “USK@”, or “KSK@”) and splits the given
+	 * lines at those links. The links themselves are included as well, so all
+	 * returned {@code String}s that start with those key types are most
+	 * probably links.
+	 *
+	 * @param lines
+	 *            The lines to split
+	 * @return The splitted lines
+	 */
+	private static String[] splitLineAtURIs(String... lines) {
+		List<String> splittedLines = new ArrayList<String>();
+		List<String> linesToSplit = new ArrayList<String>(Arrays.asList(lines));
+		while (!linesToSplit.isEmpty()) {
+			String line = linesToSplit.remove(0);
+			String currentLine = line;
+			int chkLink = currentLine.indexOf("CHK@");
+			int sskLink = currentLine.indexOf("SSK@");
+			int uskLink = currentLine.indexOf("USK@");
+			int kskLink = currentLine.indexOf("KSK@");
+			while ((chkLink != -1) || (sskLink != -1) || (uskLink != -1) || (kskLink != -1)) {
+				int nextLink = Integer.MAX_VALUE;
+				if ((chkLink != -1) && (chkLink < nextLink)) {
+					nextLink = chkLink;
+				}
+				if ((sskLink != -1) && (sskLink < nextLink)) {
+					nextLink = sskLink;
+				}
+				if ((uskLink != -1) && (uskLink < nextLink)) {
+					nextLink = uskLink;
+				}
+				if ((kskLink != -1) && (kskLink < nextLink)) {
+					nextLink = kskLink;
+				}
+				/* TODO: other separators? */
+				int nextSpace = currentLine.indexOf(' ', nextLink);
+				if (nextSpace == -1) {
+					nextSpace = currentLine.length();
+				}
+				String uri = currentLine.substring(nextLink, nextSpace);
+				splittedLines.add(uri);
+				currentLine = currentLine.substring(nextSpace);
+				chkLink = currentLine.indexOf("CHK@");
+				sskLink = currentLine.indexOf("SSK@");
+				uskLink = currentLine.indexOf("USK@");
+				kskLink = currentLine.indexOf("USK@");
+			}
+			if (currentLine.length() > 0) {
+				splittedLines.add(currentLine);
+			}
+		}
+		return splittedLines.toArray(new String[splittedLines.size()]);
+	}
 
     /**
      * 
