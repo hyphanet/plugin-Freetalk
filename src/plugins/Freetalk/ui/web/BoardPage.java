@@ -59,6 +59,9 @@ public final class BoardPage extends WebPageImpl {
         	markAllAsReadButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "MarkAllThreadsAsRead", "true"});
         	markAllAsReadButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("BoardPage.MarkAllThreadsAsReadButton") });
 
+        // Clear margins after button row.
+        threadsBox.addChild("div", "style", "clear: both;");
+
 		// Threads table
 		HTMLNode threadsTable = threadsBox.addChild("table", new String[] { "border", "width" }, new String[] { "0", "100%" });
 		
