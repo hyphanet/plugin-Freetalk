@@ -407,8 +407,9 @@ public final class ThreadPage extends WebPageImpl {
 				}
 				currentParagraph = new HTMLNode("div");
 			} else if (nextLink < nextLineBreak) {
+				currentParagraph.addChild("#", currentLine.substring(0, nextLink));
 				int firstSlash = currentLine.indexOf('/', nextLink);
-				String uriKey = currentLine.substring(0, firstSlash).replaceAll("[\r\n\t ]+", "");
+				String uriKey = currentLine.substring(nextLink, firstSlash).replaceAll("[\r\n\t ]+", "");
 				int nextSpace = currentLine.indexOf(' ', firstSlash);
 				if (nextSpace == -1) {
 					nextSpace = currentLine.length();
