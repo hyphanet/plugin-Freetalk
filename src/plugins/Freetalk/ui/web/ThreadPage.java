@@ -416,7 +416,8 @@ public final class ThreadPage extends WebPageImpl {
 			}
 			/* TODO: other separators? */
 			if (nextLineBreak < nextLink) {
-				currentParagraph.addChild("#", (isEmptyParagraph && (nextLineBreak == 0)) ? "\u00a0" : currentLine.substring(0, nextLineBreak));
+				String line = currentLine.substring(0, nextLineBreak);
+				currentParagraph.addChild("#", (isEmptyParagraph && (line.trim().length() == 0)) ? "\u00a0" : line);
 				messageNode.addChild(currentParagraph);
 				currentLine = currentLine.substring(nextLineBreak);
 				if (currentLine.startsWith("\r\n")) {
@@ -450,7 +451,7 @@ public final class ThreadPage extends WebPageImpl {
 			lineBreakCRLF = currentLine.indexOf("\r\n");
 			lineBreakLF = currentLine.indexOf("\n");
 		}
-		currentParagraph.addChild("#", isEmptyParagraph && (currentLine.length() == 0) ? "\u00a0" : currentLine);
+		currentParagraph.addChild("#", isEmptyParagraph && (currentLine.trim().length() == 0) ? "\u00a0" : currentLine);
 		messageNode.addChild(currentParagraph);
 		return messageNode;
 	}
