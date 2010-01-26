@@ -411,6 +411,9 @@ public final class ThreadPage extends WebPageImpl {
 				int firstSlash = currentLine.indexOf('/', nextLink);
 				String uriKey = currentLine.substring(nextLink, firstSlash).replaceAll("[\r\n\t ]+", "");
 				int nextSpace = currentLine.indexOf(' ', firstSlash);
+				if ((nextSpace > nextLineBreak) && (firstSlash < nextLineBreak)) {
+					nextSpace = nextLineBreak;
+				}
 				if (nextSpace == -1) {
 					nextSpace = currentLine.length();
 				}
