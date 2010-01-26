@@ -392,6 +392,7 @@ public final class ThreadPage extends WebPageImpl {
 		int kskLink = currentLine.indexOf("KSK@");
 		int lineBreakCRLF = currentLine.indexOf("\r\n");
 		int lineBreakLF = currentLine.indexOf("\n");
+		boolean isEmptyParagraph = true;
 		while ((chkLink != -1) || (sskLink != -1) || (uskLink != -1) || (kskLink != -1) || (lineBreakCRLF != -1) || (lineBreakLF != -1)) {
 			int nextLink = Integer.MAX_VALUE;
 			int nextLineBreak = Integer.MAX_VALUE;
@@ -424,6 +425,7 @@ public final class ThreadPage extends WebPageImpl {
 					currentLine = currentLine.substring(1);
 				}
 				currentParagraph = (lineClass != null) ? new HTMLNode("div", "class", lineClass) : new HTMLNode("div");
+				isEmptyParagraph = true;
 			} else if (nextLink < nextLineBreak) {
 				currentParagraph.addChild("#", currentLine.substring(0, nextLink));
 				int firstSlash = currentLine.indexOf('/', nextLink);
@@ -439,6 +441,7 @@ public final class ThreadPage extends WebPageImpl {
 				currentLine = currentLine.substring(nextSpace);
 				HTMLNode linkNode = (linkClass != null) ? new HTMLNode("a", new String[] { "href", "class" }, new String[] { "/" + uriKey, linkClass }, uriKey) : new HTMLNode("a", "href", "/" + uriKey, uriKey);
 				currentParagraph.addChild(linkNode);
+				isEmptyParagraph = false;
 			}
 			chkLink = currentLine.indexOf("CHK@");
 			sskLink = currentLine.indexOf("SSK@");
@@ -447,7 +450,7 @@ public final class ThreadPage extends WebPageImpl {
 			lineBreakCRLF = currentLine.indexOf("\r\n");
 			lineBreakLF = currentLine.indexOf("\n");
 		}
-		currentParagraph.addChild("#", currentLine);
+		currentParagraph.addChild("#", isEmptyParagraph && (currentLine.length() == 0) ? "\u00a0" : currentLine);
 		messageNode.addChild(currentParagraph);
 		return messageNode;
 	}
