@@ -1,13 +1,1 @@
 # Freetalk Main CSS Header File
-
-#
-# Message Formatting
-#
-
-.message .message-line {
-	margin: 1em 0 0;
-}
-
-.message .message-line:first-child {
-	margin-top: 0;
-}
