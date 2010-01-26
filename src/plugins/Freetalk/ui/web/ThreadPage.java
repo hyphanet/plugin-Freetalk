@@ -430,18 +430,23 @@ public final class ThreadPage extends WebPageImpl {
 			} else if (nextLink < nextLineBreak) {
 				currentParagraph.addChild("#", currentLine.substring(0, nextLink));
 				int firstSlash = currentLine.indexOf('/', nextLink);
-				String uriKey = currentLine.substring(nextLink, firstSlash).replaceAll("[\r\n\t ]+", "");
-				int nextSpace = currentLine.indexOf(' ', firstSlash);
-				if ((nextSpace > nextLineBreak) && (firstSlash < nextLineBreak)) {
-					nextSpace = nextLineBreak;
+				if (firstSlash == -1) {
+					currentParagraph.addChild("#", currentLine.substring(nextLink, nextLink + 4));
+					currentLine = currentLine.substring(nextLink + 4);
+				} else {
+					String uriKey = currentLine.substring(nextLink, firstSlash).replaceAll("[\r\n\t ]+", "");
+					int nextSpace = currentLine.indexOf(' ', firstSlash);
+					if ((nextSpace > nextLineBreak) && (firstSlash < nextLineBreak)) {
+						nextSpace = nextLineBreak;
+					}
+					if (nextSpace == -1) {
+						nextSpace = currentLine.length();
+					}
+					uriKey += currentLine.substring(firstSlash, nextSpace);
+					currentLine = currentLine.substring(nextSpace);
+					HTMLNode linkNode = (linkClass != null) ? new HTMLNode("a", new String[] { "href", "class" }, new String[] { "/" + uriKey, linkClass }, uriKey) : new HTMLNode("a", "href", "/" + uriKey, uriKey);
+					currentParagraph.addChild(linkNode);
 				}
-				if (nextSpace == -1) {
-					nextSpace = currentLine.length();
-				}
-				uriKey += currentLine.substring(firstSlash, nextSpace);
-				currentLine = currentLine.substring(nextSpace);
-				HTMLNode linkNode = (linkClass != null) ? new HTMLNode("a", new String[] { "href", "class" }, new String[] { "/" + uriKey, linkClass }, uriKey) : new HTMLNode("a", "href", "/" + uriKey, uriKey);
-				currentParagraph.addChild(linkNode);
 				isEmptyParagraph = false;
 			}
 			chkLink = currentLine.indexOf("CHK@");
