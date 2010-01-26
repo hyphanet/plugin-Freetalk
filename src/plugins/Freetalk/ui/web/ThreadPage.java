@@ -397,7 +397,7 @@ public final class ThreadPage extends WebPageImpl {
 			}
 			/* TODO: other separators? */
 			if (nextLineBreak < nextLink) {
-				currentParagraph.addChild("#", currentLine.substring(0,nextLineBreak));
+				currentParagraph.addChild("#", currentLine.substring(0, nextLineBreak));
 				messageNode.addChild(currentParagraph);
 				currentLine = currentLine.substring(nextLineBreak);
 				if (currentLine.startsWith("\r\n")) {
