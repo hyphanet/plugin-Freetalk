@@ -364,7 +364,7 @@ public final class ThreadPage extends WebPageImpl {
 	 *            The message body to convert
 	 * @return The HTML node displaying the message
 	 */
-	private static HTMLNode convertMessageBody(String messageBody) {
+	public static HTMLNode convertMessageBody(String messageBody) {
 		HTMLNode messageNode = new HTMLNode("#");
 		HTMLNode currentParagraph = new HTMLNode("div");
 		String currentLine = messageBody;
