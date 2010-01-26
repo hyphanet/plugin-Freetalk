@@ -3,7 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -71,6 +73,7 @@ public final class WebInterface {
 	private final WebInterfaceToadlet changeTrustToadlet;
 	private final WebInterfaceToadlet getPuzzleToadlet;
 	private final WebInterfaceToadlet introduceIdentityToadlet;
+	private final WebInterfaceToadlet cssToadlet;
 
 	/**
 	 * Forward current l10n data.
@@ -541,7 +544,73 @@ public final class WebInterface {
 			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
 		}
 	}
-	
+	/**
+	 * Web interface toadlet that delivers CSS files from the “css” path
+	 * relative to this source file.
+	 *
+	 * @author <a href="mailto:bombe@pterodactylus.net">David ‘Bombe’ Roden</a>
+	 */
+	public class CSSWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		/**
+		 * Creates a new CSS web interface toadlet.
+		 *
+		 * @param highLevelSimpleClient
+		 *            The high-level simple client
+		 * @param webInterface
+		 *            The web interface
+		 * @param nodeClientCore
+		 *            The node client core
+		 * @param pageTitle
+		 *            The title of the page
+		 */
+		protected CSSWebInterfaceToadlet(HighLevelSimpleClient highLevelSimpleClient, WebInterface webInterface, NodeClientCore nodeClientCore, String pageTitle) {
+			super(highLevelSimpleClient, webInterface, nodeClientCore, pageTitle);
+		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		public void handleMethodGET(URI uri, HTTPRequest httpRequest, ToadletContext context) throws ToadletContextClosedException, IOException, RedirectException {
+			InputStream cssInputStream = null;
+			ByteArrayOutputStream cssBufferOutputStream = null;
+			Bucket cssBucket = null;
+			byte[] cssBuffer = new byte[0];
+			try {
+				String cssFilename = uri.getPath();
+				cssFilename = cssFilename.substring((Freetalk.PLUGIN_URI + "/css/").length());
+				cssInputStream = WebInterface.class.getResourceAsStream("/plugins/Freetalk/ui/web/css/" + cssFilename);
+				if (cssInputStream != null) {
+					cssBufferOutputStream = new ByteArrayOutputStream();
+					byte[] buffer = new byte[65536];
+					int read;
+					while ((read = cssInputStream.read(buffer)) != -1) {
+						cssBufferOutputStream.write(buffer, 0, read);
+					}
+					cssBuffer = cssBufferOutputStream.toByteArray();
+				}
+				cssBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, cssBuffer);
+				FilterOutput filterOutput = ContentFilter.filter(cssBucket, core.tempBucketFactory, "text/css", uri, null, null);
+				writeReply(context, 200, "text/css", "OK", cssBucket);
+			} finally {
+				Closer.close(cssBucket);
+				Closer.close(cssInputStream);
+				Closer.close(cssBufferOutputStream);
+			}
+		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		WebPage makeWebPage(HTTPRequest httpRequest, ToadletContext context) {
+			/* will not be reached. */
+			return null;
+		}
+
+	}
+
 	private FTOwnIdentity getLoggedInOwnIdentity(ToadletContext context) throws RedirectException {
 		try {
 			Session session = mSessionManager.useSession(context);
@@ -600,6 +669,7 @@ public final class WebInterface {
 		changeTrustToadlet = new ChangeTrustWebInterfaceToadlet(null, this, clientCore, "ChangeTrust");
 		getPuzzleToadlet = new GetPuzzleWebInterfaceToadlet(null, this, clientCore, "GetPuzzle");
 		introduceIdentityToadlet = new IntroduceIdentityWebInterfaceToadlet(null, this, clientCore, "IntroduceIdentity");
+		cssToadlet = new CSSWebInterfaceToadlet(null, this, clientCore, "CSS");
 		
 		container.register(logInToadlet, null, Freetalk.PLUGIN_URI + "/LogIn", true, false);
 		container.register(createIdentityToadlet, null, Freetalk.PLUGIN_URI + "/CreateIdentity", true, false);
@@ -611,6 +681,7 @@ public final class WebInterface {
 		container.register(changeTrustToadlet, null, Freetalk.PLUGIN_URI + "/ChangeTrust", true, false);
 		container.register(getPuzzleToadlet, null, Freetalk.PLUGIN_URI + "/GetPuzzle", true, false);
 		container.register(introduceIdentityToadlet, null, Freetalk.PLUGIN_URI + "/IntroduceIdentity", true, false);
+		container.register(cssToadlet, null, Freetalk.PLUGIN_URI + "/css/", true, false);
 	}
 	
 	
@@ -639,7 +710,8 @@ public final class WebInterface {
 				newReplyToadlet,
 				newBoardToadlet,
 				getPuzzleToadlet,
-				introduceIdentityToadlet
+				introduceIdentityToadlet,
+				cssToadlet,
 		}) container.unregister(t);
 		mPageMaker.removeNavigationCategory("WebInterface.DiscussionMenuName");
 	}
