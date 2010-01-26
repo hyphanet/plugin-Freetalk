@@ -101,6 +101,12 @@ public class MessageBodyConverterTest extends TestCase {
 		assertNotNull("messageNode", messageNode);
 		assertEquals("messageNode.getFirstTag()", "div", messageNode.getFirstTag());
 		assertEquals("messageNode.generate()", "<div>\nThe link <a href=\"/CHK@foo/bar/baz\">CHK@foo/bar/baz</a> is in this line.</div>\n<div>\nThe second line has the <a href=\"/USK@foo/baz/bar\">USK@foo/baz/bar</a> link.</div>\n", messageNode.generate());
+
+		messageBody = "The link CHK@foo/bar/baz is in this line.\nLink at the end: USK@foo/goo/hoo\nThe second line has the USK@foo/baz/bar link.";
+		messageNode = ThreadPage.convertMessageBody(messageBody);
+		assertNotNull("messageNode", messageNode);
+		assertEquals("messageNode.getFirstTag()", "div", messageNode.getFirstTag());
+		assertEquals("messageNode.generate()", "<div>\nThe link <a href=\"/CHK@foo/bar/baz\">CHK@foo/bar/baz</a> is in this line.</div>\n<div>\nLink at the end: <a href=\"/USK@foo/goo/hoo\">USK@foo/goo/hoo</a></div>\n<div>\nThe second line has the <a href=\"/USK@foo/baz/bar\">USK@foo/baz/bar</a> link.</div>\n", messageNode.generate());
 	}
 
 	/**
