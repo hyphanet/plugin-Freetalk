@@ -48,6 +48,12 @@ public class MessageBodyConverterTest extends TestCase {
 		assertEquals("messageNode.getFirstTag()", "div", messageNode.getFirstTag());
 		assertEquals("messageNode.generate()", "<div>\n&nbsp;</div>\n<div>\n&nbsp;</div>\n<div>\n&nbsp;</div>\n", messageNode.generate());
 
+		messageBody = "   \n  \n   ";
+		messageNode = ThreadPage.convertMessageBody(messageBody);
+		assertNotNull("messageNode", messageNode);
+		assertEquals("messageNode.getFirstTag()", "div", messageNode.getFirstTag());
+		assertEquals("messageNode.generate()", "<div>\n&nbsp;</div>\n<div>\n&nbsp;</div>\n<div>\n&nbsp;</div>\n", messageNode.generate());
+
 		messageBody = "Single line test.";
 		messageNode = ThreadPage.convertMessageBody(messageBody);
 		assertNotNull("messageNode", messageNode);
