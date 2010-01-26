@@ -192,8 +192,8 @@ public final class ThreadPage extends WebPageImpl {
      * @param ref A reference to the message which is to be displayed. Can be null, then the "message was read?" information will be unavailable. 
      */
     private void addMessageBox(Message message, MessageReference ref) {
-    	
-        HTMLNode table = mContentNode.addChild("table", new String[] {"border", "width" }, new String[] { "0", "100%" });
+
+        HTMLNode table = mContentNode.addChild("table", new String[] {"border", "width", "class" }, new String[] { "0", "100%", "message" });
         HTMLNode row = table.addChild("tr");
         HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width" }, new String[] { "left", "top", "2", "15%" }, "");
         authorNode.addChild("b").addChild("i").addChild("abbr", new String[] { "title" }, new String[] { message.getAuthor().getID() }).addChild("#", message.getAuthor().getShortestUniqueName(50));
@@ -264,7 +264,7 @@ public final class ThreadPage extends WebPageImpl {
         row = table.addChild("tr");
         HTMLNode text = row.addChild("td", "align", "left", "");
         String messageBody = message.getText();
-        text.addChild(convertMessageBody(messageBody));
+        text.addChild(convertMessageBody(messageBody, "message-line", null));
         addReplyButton(text, message);
     }
 
