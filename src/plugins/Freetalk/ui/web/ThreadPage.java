@@ -365,8 +365,26 @@ public final class ThreadPage extends WebPageImpl {
 	 * @return The HTML node displaying the message
 	 */
 	public static HTMLNode convertMessageBody(String messageBody) {
+		return convertMessageBody(messageBody, null, null);
+	}
+
+	/**
+	 * This method converts the message body into a HTML node. Line breaks
+	 * “CRLF” and “LF” are recognized and converted into {@code div} tags.
+	 * Freenet URIs are recognized and converted into links, even when they have
+	 * line breaks embedded in them.
+	 *
+	 * @param messageBody
+	 *            The message body to convert
+	 * @param lineClass
+	 *            The CSS class(es) for the single lines
+	 * @param linkClass
+	 *            The CSS class(es) for the links
+	 * @return The HTML node displaying the message
+	 */
+	public static HTMLNode convertMessageBody(String messageBody, String lineClass, String linkClass) {
 		HTMLNode messageNode = new HTMLNode("#");
-		HTMLNode currentParagraph = new HTMLNode("div");
+		HTMLNode currentParagraph = (lineClass != null) ? new HTMLNode("div", "class", lineClass) : new HTMLNode("div");
 		String currentLine = messageBody;
 		int chkLink = currentLine.indexOf("CHK@");
 		int sskLink = currentLine.indexOf("SSK@");
@@ -405,7 +423,7 @@ public final class ThreadPage extends WebPageImpl {
 				} else if (currentLine.startsWith("\n")) {
 					currentLine = currentLine.substring(1);
 				}
-				currentParagraph = new HTMLNode("div");
+				currentParagraph = (lineClass != null) ? new HTMLNode("div", "class", lineClass) : new HTMLNode("div");
 			} else if (nextLink < nextLineBreak) {
 				currentParagraph.addChild("#", currentLine.substring(0, nextLink));
 				int firstSlash = currentLine.indexOf('/', nextLink);
@@ -419,7 +437,8 @@ public final class ThreadPage extends WebPageImpl {
 				}
 				uriKey += currentLine.substring(firstSlash, nextSpace);
 				currentLine = currentLine.substring(nextSpace);
-				currentParagraph.addChild("a", "href", "/" + uriKey, uriKey);
+				HTMLNode linkNode = (linkClass != null) ? new HTMLNode("a", new String[] { "href", "class" }, new String[] { "/" + uriKey, linkClass }, uriKey) : new HTMLNode("a", "href", "/" + uriKey, uriKey);
+				currentParagraph.addChild(linkNode);
 			}
 			chkLink = currentLine.indexOf("CHK@");
 			sskLink = currentLine.indexOf("SSK@");
