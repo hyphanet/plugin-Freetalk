@@ -425,10 +425,8 @@ public final class ThreadPage extends WebPageImpl {
 			lineBreakCRLF = currentLine.indexOf("\r\n");
 			lineBreakLF = currentLine.indexOf("\n");
 		}
-		if (currentLine.length() > 0) {
-			currentParagraph.addChild("#", currentLine);
-			messageNode.addChild(currentParagraph);
-		}
+		currentParagraph.addChild("#", currentLine);
+		messageNode.addChild(currentParagraph);
 		return messageNode;
 	}
 
