@@ -446,7 +446,7 @@ public final class ThreadPage extends WebPageImpl {
 			chkLink = currentLine.indexOf("CHK@");
 			sskLink = currentLine.indexOf("SSK@");
 			uskLink = currentLine.indexOf("USK@");
-			kskLink = currentLine.indexOf("USK@");
+			kskLink = currentLine.indexOf("KSK@");
 			lineBreakCRLF = currentLine.indexOf("\r\n");
 			lineBreakLF = currentLine.indexOf("\n");
 		}
