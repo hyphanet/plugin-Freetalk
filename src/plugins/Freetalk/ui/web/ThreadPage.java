@@ -4,9 +4,7 @@
 package plugins.Freetalk.ui.web;
 
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
@@ -265,17 +263,8 @@ public final class ThreadPage extends WebPageImpl {
         // Body of the message
         row = table.addChild("tr");
         HTMLNode text = row.addChild("td", "align", "left", "");
-        String[] lines = message.getText().split("\r\n|\n");
-        for(String line : lines) {
-        	for (String splittedLine : splitLineAtURIs(line)) {
-        		HTMLNode linkNode = text;
-        		if (splittedLine.startsWith("CHK@") || splittedLine.startsWith("SSK@") || splittedLine.startsWith("USK@") || splittedLine.startsWith("KSK@")) {
-        			linkNode = linkNode.addChild("a", "href", "/" + splittedLine);
-        		}
-        		linkNode.addChild("#", splittedLine);
-        	}
-            text.addChild("br");
-        }
+        String messageBody = message.getText();
+        text.addChild(convertMessageBody(messageBody));
         addReplyButton(text, message);
     }
 
@@ -366,58 +355,80 @@ public final class ThreadPage extends WebPageImpl {
     }
 
 	/**
-	 * This method scans the given lines for freenet URIs ({link String}s
-	 * beginning with “CHK@”, “SSK@”, “USK@”, or “KSK@”) and splits the given
-	 * lines at those links. The links themselves are included as well, so all
-	 * returned {@code String}s that start with those key types are most
-	 * probably links.
+	 * This method converts the message body into a HTML node. Line breaks
+	 * “CRLF” and “LF” are recognized and converted into {@code div} tags.
+	 * Freenet URIs are recognized and converted into links, even when they have
+	 * line breaks embedded in them.
 	 *
-	 * @param lines
-	 *            The lines to split
-	 * @return The splitted lines
+	 * @param messageBody
+	 *            The message body to convert
+	 * @return The HTML node displaying the message
 	 */
-	private static String[] splitLineAtURIs(String... lines) {
-		List<String> splittedLines = new ArrayList<String>();
-		List<String> linesToSplit = new ArrayList<String>(Arrays.asList(lines));
-		while (!linesToSplit.isEmpty()) {
-			String line = linesToSplit.remove(0);
-			String currentLine = line;
-			int chkLink = currentLine.indexOf("CHK@");
-			int sskLink = currentLine.indexOf("SSK@");
-			int uskLink = currentLine.indexOf("USK@");
-			int kskLink = currentLine.indexOf("KSK@");
-			while ((chkLink != -1) || (sskLink != -1) || (uskLink != -1) || (kskLink != -1)) {
-				int nextLink = Integer.MAX_VALUE;
-				if ((chkLink != -1) && (chkLink < nextLink)) {
-					nextLink = chkLink;
+	private static HTMLNode convertMessageBody(String messageBody) {
+		HTMLNode messageNode = new HTMLNode("#");
+		HTMLNode currentParagraph = new HTMLNode("div");
+		String currentLine = messageBody;
+		int chkLink = currentLine.indexOf("CHK@");
+		int sskLink = currentLine.indexOf("SSK@");
+		int uskLink = currentLine.indexOf("USK@");
+		int kskLink = currentLine.indexOf("KSK@");
+		int lineBreakCRLF = currentLine.indexOf("\r\n");
+		int lineBreakLF = currentLine.indexOf("\n");
+		while ((chkLink != -1) || (sskLink != -1) || (uskLink != -1) || (kskLink != -1) || (lineBreakCRLF != -1) || (lineBreakLF != -1)) {
+			int nextLink = Integer.MAX_VALUE;
+			int nextLineBreak = Integer.MAX_VALUE;
+			if ((chkLink != -1) && (chkLink < nextLink)) {
+				nextLink = chkLink;
+			}
+			if ((sskLink != -1) && (sskLink < nextLink)) {
+				nextLink = sskLink;
+			}
+			if ((uskLink != -1) && (uskLink < nextLink)) {
+				nextLink = uskLink;
+			}
+			if ((kskLink != -1) && (kskLink < nextLink)) {
+				nextLink = kskLink;
+			}
+			if ((lineBreakCRLF != -1) && (lineBreakCRLF < nextLineBreak)) {
+				nextLineBreak = lineBreakCRLF;
+			}
+			if ((lineBreakLF != -1) && (lineBreakLF < nextLineBreak)) {
+				nextLineBreak = lineBreakLF;
+			}
+			/* TODO: other separators? */
+			if (nextLineBreak < nextLink) {
+				currentParagraph.addChild("#", currentLine.substring(0,nextLineBreak));
+				messageNode.addChild(currentParagraph);
+				currentLine = currentLine.substring(nextLineBreak);
+				if (currentLine.startsWith("\r\n")) {
+					currentLine = currentLine.substring(2);
+				} else if (currentLine.startsWith("\n")) {
+					currentLine = currentLine.substring(1);
 				}
-				if ((sskLink != -1) && (sskLink < nextLink)) {
-					nextLink = sskLink;
-				}
-				if ((uskLink != -1) && (uskLink < nextLink)) {
-					nextLink = uskLink;
-				}
-				if ((kskLink != -1) && (kskLink < nextLink)) {
-					nextLink = kskLink;
-				}
-				/* TODO: other separators? */
-				int nextSpace = currentLine.indexOf(' ', nextLink);
+				currentParagraph = new HTMLNode("div");
+			} else {
+				int firstSlash = currentLine.indexOf('/', nextLink);
+				String uriKey = currentLine.substring(0, firstSlash).replaceAll("[\r\n\t ]+", "");
+				int nextSpace = currentLine.indexOf(' ', firstSlash);
 				if (nextSpace == -1) {
 					nextSpace = currentLine.length();
 				}
-				String uri = currentLine.substring(nextLink, nextSpace);
-				splittedLines.add(uri);
+				uriKey += currentLine.substring(firstSlash, nextSpace);
 				currentLine = currentLine.substring(nextSpace);
-				chkLink = currentLine.indexOf("CHK@");
-				sskLink = currentLine.indexOf("SSK@");
-				uskLink = currentLine.indexOf("USK@");
-				kskLink = currentLine.indexOf("USK@");
+				currentParagraph.addChild("a", "href", "/" + uriKey, uriKey);
 			}
-			if (currentLine.length() > 0) {
-				splittedLines.add(currentLine);
-			}
+			chkLink = currentLine.indexOf("CHK@");
+			sskLink = currentLine.indexOf("SSK@");
+			uskLink = currentLine.indexOf("USK@");
+			kskLink = currentLine.indexOf("USK@");
+			lineBreakCRLF = currentLine.indexOf("\r\n");
+			lineBreakLF = currentLine.indexOf("\n");
 		}
-		return splittedLines.toArray(new String[splittedLines.size()]);
+		if (currentLine.length() > 0) {
+			currentParagraph.addChild("#", currentLine);
+			messageNode.addChild(currentParagraph);
+		}
+		return messageNode;
 	}
 
     /**
