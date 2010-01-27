@@ -13,7 +13,7 @@
 	color: #c00;
 }
 
-.freetalk .message .title .unread {
+.freetalk .message .title.unread {
 	background-color: #ddd;
 }
 
