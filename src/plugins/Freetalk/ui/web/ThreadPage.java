@@ -193,10 +193,10 @@ public final class ThreadPage extends WebPageImpl {
      */
     private void addMessageBox(Message message, MessageReference ref) {
 
-        HTMLNode table = mContentNode.addChild("table", new String[] {"border", "width", "class" }, new String[] { "0", "100%", "message" });
-        HTMLNode row = table.addChild("tr");
-        HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width" }, new String[] { "left", "top", "2", "15%" }, "");
-        authorNode.addChild("b").addChild("i").addChild("abbr", new String[] { "title" }, new String[] { message.getAuthor().getID() }).addChild("#", message.getAuthor().getShortestUniqueName(50));
+		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class" }, new String[] { "0", "100%", "message" });
+		HTMLNode row = table.addChild("tr", "class", "message");
+		HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width", "class" }, new String[] { "left", "top", "2", "15%", "author" }, "");
+		authorNode.addChild("abbr", new String[] { "title" }, new String[] { message.getAuthor().getID() }).addChild("span", "class", "name", message.getAuthor().getShortestUniqueName(50));
         authorNode.addChild("#", " [");
         authorNode.addChild("a", new String[] { "class", "href", "title" }, new String[] { "identity-link", "/WoT/ShowIdentity?id=" + message.getAuthor().getID(), "Web of Trust Page" }).addChild("#", "WoT");
         authorNode.addChild("#", "]");
@@ -245,23 +245,23 @@ public final class ThreadPage extends WebPageImpl {
         authorNode.addChild("#", l10n().getString("Common.WebOfTrust.Score") + ": "+ txtScore);
 
         // Title of the message
-        HTMLNode title = row.addChild((ref == null || ref.wasRead()) ? "td" : "th", "align", "left", "");
+		HTMLNode title = row.addChild("td", new String[] { "align", "class" }, new String[] { "left", "title " + ((ref == null || ref.wasRead()) ? "read" : "unread") });
+		title.addChild("div", "class", "date", mLocalDateFormat.format(message.getDate()));
         
-        title.addChild("span", "style", "float:right; margin-left:10px", mLocalDateFormat.format(message.getDate()));
         
         if(ref != null && ref instanceof BoardThreadLink)
         	addMarkThreadAsUnreadButton(title, (BoardThreadLink)ref);
         
         if(message.getAuthor() != mOwnIdentity && ((WoTOwnIdentity)mOwnIdentity).getAssessed(message) == false) {
-            addModButton(title, message, 10, "+");
-            addModButton(title, message, -10, "-");
-            title.addChild("%", "&nbsp;");
+			HTMLNode modButtons = title.addChild("div", "class", "mod-buttons");
+			addModButton(modButtons, message, 10, "+");
+			addModButton(modButtons, message, -10, "-");
         }
-        title.addChild("b", maxLength(message.getTitle(),50));
+		title.addChild("div", "class", "text", maxLength(message.getTitle(), 50));
         
         
         // Body of the message
-        row = table.addChild("tr");
+		row = table.addChild("tr", "class", "body");
         HTMLNode text = row.addChild("td", "align", "left", "");
         String messageBody = message.getText();
         text.addChild(convertMessageBody(messageBody, "message-line", null));
@@ -294,7 +294,7 @@ public final class ThreadPage extends WebPageImpl {
     }
 
     private void addModButton(HTMLNode parent, Message message, int change, String label) {
-        parent = parent.addChild("span", "style", "float:left");
+		parent = parent.addChild("div", "class", "mod-button");
         HTMLNode newReplyForm = addFormChild(parent, Freetalk.PLUGIN_URI + "/ChangeTrust", "ChangeTrustPage");
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OtherIdentityID", message.getAuthor().getID()});

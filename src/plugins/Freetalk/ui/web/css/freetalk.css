@@ -1,1 +1,28 @@
 /* Freetalk Main CSS Header File */
+
+.message .author .name {
+	font-weight: bold;
+	font-style: italic;
+}
+
+.message .title .date {
+	float: right;
+	margin-left: 2em;
+}
+
+.message .title .mod-buttons {
+	float: left;
+	margin-right: 2em;
+}
+
+.message .title .mod-button form {
+	display: inline;
+}
+
+.message .title .text {
+	font-weight: bold;
+}
+
+.message .body {
+
+}
