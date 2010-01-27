@@ -306,7 +306,7 @@ public final class ThreadPage extends WebPageImpl {
     }
     
     private void addMarkThreadAsUnreadButton(final HTMLNode title, final BoardThreadLink ref) {
-    	HTMLNode span = title.addChild("span", "style", "float:right");
+    	HTMLNode span = title.addChild("div", "class", "mark-unread-button");
     	
         HTMLNode markAsUnreadButton = addFormChild(span, Freetalk.PLUGIN_URI + "/showThread", "ThreadPage");
         markAsUnreadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});

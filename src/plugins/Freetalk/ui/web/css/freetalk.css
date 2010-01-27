@@ -5,14 +5,22 @@
 	font-style: italic;
 }
 
+.message .title .unread {
+	background-color: #ddd;
+}
+
 .message .title .date {
 	float: right;
-	margin-left: 2em;
+	margin-left: 1ex;
 }
 
 .message .title .mod-buttons {
 	float: left;
-	margin-right: 2em;
+	margin-right: 1ex;
+}
+
+.message .title .mod-button {
+	float: left;
 }
 
 .message .title .mod-button form {
@@ -21,6 +29,10 @@
 
 .message .title .text {
 	font-weight: bold;
+}
+
+.message .title .mark-unread.button {
+	float: right;
 }
 
 .message .body {
