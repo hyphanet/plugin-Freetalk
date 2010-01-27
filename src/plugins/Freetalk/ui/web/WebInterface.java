@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLConnection;
 
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
@@ -580,7 +581,9 @@ public final class WebInterface {
 			try {
 				String cssFilename = uri.getPath();
 				cssFilename = cssFilename.substring((Freetalk.PLUGIN_URI + "/css/").length());
-				cssInputStream = getClass().getResourceAsStream("/plugins/Freetalk/ui/web/css/" + cssFilename);
+				URLConnection cssUrlConnection = getClass().getResource("/plugins/Freetalk/ui/web/css/" + cssFilename).openConnection();
+				cssUrlConnection.setUseCaches(false);
+				cssInputStream = cssUrlConnection.getInputStream();
 				if (cssInputStream != null) {
 					cssBufferOutputStream = new ByteArrayOutputStream();
 					byte[] buffer = new byte[65536];
