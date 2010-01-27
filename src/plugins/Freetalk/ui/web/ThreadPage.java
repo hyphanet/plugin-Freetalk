@@ -274,12 +274,12 @@ public final class ThreadPage extends WebPageImpl {
         int trustedBy = identityManager.getReceivedTrustsCount(author, 1);
         int distrustedBy = identityManager.getReceivedTrustsCount(author, -1);
 
-        parent.addChild("abbr", new String[]{"title", "style"}, new String[]{ l10n().getString("Common.WebOfTrust.TrustedByCount.Description"), "color:green"}, 
+        parent.addChild("abbr", new String[]{"title", "class"}, new String[]{ l10n().getString("Common.WebOfTrust.TrustedByCount.Description"), "trust-count"},
         		String.valueOf(trustedBy));
         
         parent.addChild("#", " / ");
 
-        parent.addChild("abbr", new String[]{"title", "style"}, new String[]{ l10n().getString("Common.WebOfTrust.DistrustedByCount.Description"), "color:red"},
+        parent.addChild("abbr", new String[]{"title", "class"}, new String[]{ l10n().getString("Common.WebOfTrust.DistrustedByCount.Description"), "distrust-count"},
         		String.valueOf(distrustedBy));
     }
 

@@ -5,6 +5,14 @@
 	font-style: italic;
 }
 
+.message .author .trust-count {
+	color: #0c0;
+}
+
+.message .author .distrust-count {
+	color: #c00;
+}
+
 .message .title .unread {
 	background-color: #ddd;
 }
