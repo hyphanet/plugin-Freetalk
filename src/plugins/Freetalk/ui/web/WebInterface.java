@@ -580,7 +580,7 @@ public final class WebInterface {
 			try {
 				String cssFilename = uri.getPath();
 				cssFilename = cssFilename.substring((Freetalk.PLUGIN_URI + "/css/").length());
-				cssInputStream = WebInterface.class.getResourceAsStream("/plugins/Freetalk/ui/web/css/" + cssFilename);
+				cssInputStream = getClass().getResourceAsStream("/plugins/Freetalk/ui/web/css/" + cssFilename);
 				if (cssInputStream != null) {
 					cssBufferOutputStream = new ByteArrayOutputStream();
 					byte[] buffer = new byte[65536];
