@@ -36,6 +36,9 @@ public class SettingsPage extends WebPageImpl {
             
             boolean enableNntpServer = mRequest.getPartAsString("EnableNntpServer", 4).equals("true");
             String nntpServerBindTo = mRequest.getPartAsString("nntpServerBindTo", 1024);
+            if ("127.0.0.1".equals(nntpServerBindTo)) {
+            	nntpServerBindTo = null;
+            }
             synchronized (mFreetalk.getConfig()) {
                 mFreetalk.getConfig().set(Config.NNTP_SERVER_ENABLED, enableNntpServer);
                 mFreetalk.getConfig().set(Config.NNTP_SERVER_BINDTO, nntpServerBindTo);
@@ -113,7 +116,11 @@ public class SettingsPage extends WebPageImpl {
 
 		item = list.addChild("li");
 		item.addChild("span", new String[] { "class", "title", "style" }, new String[] { "configshortdesc", defaultString("127.0.0.1"), "cursor: help;" }).addChild("#", l10n().getString("SettingsPage.GlobalSettings.NNTPBindTo.Short"));
-		item.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "nntpServerBindTo", mFreetalk.getConfig().getString(Config.NNTP_SERVER_BINDTO) });
+		String currentValue = mFreetalk.getConfig().getString(Config.NNTP_SERVER_BINDTO);
+		if (currentValue == null) {
+			currentValue = "127.0.0.1";
+		}
+		item.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "nntpServerBindTo", currentValue });
 		item.addChild("span", "class", "configlongdesc", l10n().getString("SettingsPage.GlobalSettings.NNTPServerBindTo.Long"));
     }
 
