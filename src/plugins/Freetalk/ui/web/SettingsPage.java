@@ -36,12 +36,17 @@ public class SettingsPage extends WebPageImpl {
             
             boolean enableNntpServer = mRequest.getPartAsString("EnableNntpServer", 4).equals("true");
             String nntpServerBindTo = mRequest.getPartAsString("nntpServerBindTo", 1024);
-            if ("127.0.0.1".equals(nntpServerBindTo)) {
-            	nntpServerBindTo = null;
-            }
+			if ("127.0.0.1".equals(nntpServerBindTo)) {
+				nntpServerBindTo = null;
+			}
+			String nntpServerAllowedHosts = mRequest.getPartAsString("nntpServerAllowedHosts", 1024);
+			if ("127.0.0.1".equals(nntpServerAllowedHosts)) {
+				nntpServerAllowedHosts = null;
+			}
             synchronized (mFreetalk.getConfig()) {
                 mFreetalk.getConfig().set(Config.NNTP_SERVER_ENABLED, enableNntpServer);
                 mFreetalk.getConfig().set(Config.NNTP_SERVER_BINDTO, nntpServerBindTo);
+                mFreetalk.getConfig().set(Config.NNTP_SERVER_ALLOWED_HOSTS, nntpServerAllowedHosts);
                 mFreetalk.getConfig().storeAndCommit();
             }
             
@@ -122,6 +127,15 @@ public class SettingsPage extends WebPageImpl {
 		}
 		item.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "nntpServerBindTo", currentValue });
 		item.addChild("span", "class", "configlongdesc", l10n().getString("SettingsPage.GlobalSettings.NNTPBindTo.Long"));
+
+		item = list.addChild("li");
+		item.addChild("span", new String[] { "class", "title", "style" }, new String[] { "configshortdesc", defaultString("127.0.0.1"), "cursor: help;" }, l10n().getString("SettingsPage.GlobalSettings.NNTPAllowedHosts.Short"));
+		String allowedHosts = mFreetalk.getConfig().getString(Config.NNTP_SERVER_ALLOWED_HOSTS);
+		if (allowedHosts == null) {
+			allowedHosts = "127.0.0.1";
+		}
+		item.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "nntpServerAllowedHosts", allowedHosts });
+		item.addChild("span", "class", "configlongdesc", l10n().getString("SettingsPage.GlobalSettings.NNTPAllowedHosts.Long"));
     }
 
 	private String booleanDefaultString(boolean value) {

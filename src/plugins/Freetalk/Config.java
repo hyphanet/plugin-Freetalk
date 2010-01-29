@@ -32,6 +32,9 @@ public final class Config {
 	/** Parameter name for the {@code bindTo} parameter. */
 	public static final String NNTP_SERVER_BINDTO = "NNTP.BindTo";
 
+	/** Parameter name for the {@code allowedHosts} parameter. */
+	public static final String NNTP_SERVER_ALLOWED_HOSTS = "NNTP.AllowedHosts";
+
 	/**
 	 * The HashMap that contains all cofiguration parameters
 	 */
