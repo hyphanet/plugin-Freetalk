@@ -121,7 +121,7 @@ public class SettingsPage extends WebPageImpl {
 			currentValue = "127.0.0.1";
 		}
 		item.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "nntpServerBindTo", currentValue });
-		item.addChild("span", "class", "configlongdesc", l10n().getString("SettingsPage.GlobalSettings.NNTPServerBindTo.Long"));
+		item.addChild("span", "class", "configlongdesc", l10n().getString("SettingsPage.GlobalSettings.NNTPBindTo.Long"));
     }
 
 	private String booleanDefaultString(boolean value) {
