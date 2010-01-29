@@ -651,7 +651,7 @@ public class WoTIdentityManager extends IdentityManager {
 		/* Executing the thread loop once will always take longer than THREAD_PERIOD. Therefore, if we set the limit to 3*THREAD_PERIOD,
 		 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */
 		long lastAcceptTime = Math.min(mLastIdentityFetchTime, mLastOwnIdentityFetchTime) - THREAD_PERIOD * 3;
-		lastAcceptTime = Math.min(lastAcceptTime, 0); // This is not really needed but a time less than 0 does not make sense.;
+		lastAcceptTime = Math.max(lastAcceptTime, 0); // This is not really needed but a time less than 0 does not make sense.;
 		
 		Query q = db.query();
 		q.constrain(WoTIdentity.class);
