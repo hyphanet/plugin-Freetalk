@@ -411,6 +411,7 @@ public class FreetalkNNTPHandler implements Runnable {
         if (gmt)
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
 
+        printStatusLine("231 List of new newsgroups follows");
         Date date = df.parse(datestr, new ParsePosition(0));
         for (Iterator<SubscribedBoard> i = mMessageManager.subscribedBoardIteratorSortedByDate(authOwnIdentity, date); i.hasNext(); ) {
             SubscribedBoard board = i.next();
