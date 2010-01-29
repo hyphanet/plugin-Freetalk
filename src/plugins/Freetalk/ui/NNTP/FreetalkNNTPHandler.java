@@ -154,6 +154,10 @@ public class FreetalkNNTPHandler implements Runnable {
      * range.)  Print an error message if it can't be found.
      */
     private Iterator<FreetalkNNTPArticle> getArticleRangeIterator(String desc, boolean single) throws IOException {
+		if (authOwnIdentity == null) {
+			printStatusLine("480 Authentification required");
+			return null;
+		}
         if (desc == null) {
             if (currentGroup == null) {
                 printStatusLine("412 No newsgroup selected");
@@ -236,6 +240,10 @@ public class FreetalkNNTPHandler implements Runnable {
      * Handle the ARTICLE / BODY / HEAD / STAT commands.
      */
     private void selectArticle(String desc, boolean printHead, boolean printBody) throws IOException {
+		if (authOwnIdentity == null) {
+			printStatusLine("480 Authentification required");
+			return;
+		}
         Iterator<FreetalkNNTPArticle> iter = getArticleRangeIterator(desc, true);
 
         if (iter == null)
@@ -276,6 +284,10 @@ public class FreetalkNNTPHandler implements Runnable {
      * Handle the GROUP command.
      */
     private void selectGroup(String name) throws IOException {
+		if (authOwnIdentity == null) {
+			printStatusLine("480 Authentification required");
+			return;
+		}
         // FIXME: look up by "NNTP name"
         try {
             String boardName = FreetalkNNTPGroup.groupToBoardName(name);
@@ -298,6 +310,10 @@ public class FreetalkNNTPHandler implements Runnable {
      * Handle the LISTGROUP command.
      */
     private void selectGroupWithList(String name, String range) throws IOException {
+		if (authOwnIdentity == null) {
+			printStatusLine("480 Authentification required");
+			return;
+		}
         Matcher matcher = rangePattern.matcher(range);
 
         if (!matcher.matches()) {
@@ -370,6 +386,10 @@ public class FreetalkNNTPHandler implements Runnable {
      * Handle the LIST / LIST ACTIVE command.
      */
     private void listActiveGroups(String pattern) throws IOException {
+		if (authOwnIdentity == null) {
+			printStatusLine("480 Authentification required");
+			return;
+		}
         // FIXME: filter by wildmat
         printStatusLine("215 List of newsgroups follows:");
 
@@ -391,6 +411,10 @@ public class FreetalkNNTPHandler implements Runnable {
      * Handle the LIST NEWSGROUPS command.
      */
     private void listGroupDescriptions(String pattern) throws IOException {
+		if (authOwnIdentity == null) {
+			printStatusLine("480 Authentification required");
+			return;
+		}
         // FIXME: add filtering
         printStatusLine("215 Information follows:");
         synchronized(mMessageManager) {
@@ -407,6 +431,10 @@ public class FreetalkNNTPHandler implements Runnable {
      * Handle the NEWGROUPS command.
      */
     private void listNewGroupsSince(String datestr, String format, boolean gmt) throws IOException {
+		if (authOwnIdentity == null) {
+			printStatusLine("480 Authentification required");
+			return;
+		}
         SimpleDateFormat df = new SimpleDateFormat(format);
         if (gmt)
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -427,6 +455,10 @@ public class FreetalkNNTPHandler implements Runnable {
      * Handle the HDR / XHDR command.
      */
     private void printArticleHeader(String header, String articleDesc) throws IOException {
+		if (authOwnIdentity == null) {
+			printStatusLine("480 Authentification required");
+			return;
+		}
         Iterator<FreetalkNNTPArticle> iter = getArticleRangeIterator(articleDesc, false);
 
         if (iter != null) {
@@ -449,6 +481,10 @@ public class FreetalkNNTPHandler implements Runnable {
      * Handle the OVER / XOVER command.
      */
     private void printArticleOverview(String articleDesc) throws IOException {
+		if (authOwnIdentity == null) {
+			printStatusLine("480 Authentification required");
+			return;
+		}
         Iterator<FreetalkNNTPArticle> iter = getArticleRangeIterator(articleDesc, false);
 
         if (iter != null) {
