@@ -35,8 +35,10 @@ public class SettingsPage extends WebPageImpl {
         if (mRequest.isPartSet("submit")) {
             
             boolean enableNntpServer = mRequest.getPartAsString("EnableNntpServer", 4).equals("true");
+            String nntpServerBindTo = mRequest.getPartAsString("nntpServerBindTo", 1024);
             synchronized (mFreetalk.getConfig()) {
                 mFreetalk.getConfig().set(Config.NNTP_SERVER_ENABLED, enableNntpServer);
+                mFreetalk.getConfig().set(Config.NNTP_SERVER_BINDTO, nntpServerBindTo);
                 mFreetalk.getConfig().storeAndCommit();
             }
             
@@ -108,11 +110,20 @@ public class SettingsPage extends WebPageImpl {
         item.addChild(addBooleanComboBox(mFreetalk.getConfig().getBoolean(Config.NNTP_SERVER_ENABLED), "EnableNntpServer", false));
         
         item.addChild("span", "class", "configlongdesc").addChild("#", l10n().getString("SettingsPage.GlobalSettings.NNTPEnableServer.Long"));
+
+		item = list.addChild("li");
+		item.addChild("span", new String[] { "class", "title", "style" }, new String[] { "configshortdesc", defaultString("127.0.0.1"), "cursor: help;" }).addChild("#", l10n().getString("SettingsPage.GlobalSettings.NNTPBindTo.Short"));
+		item.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "nntpServerBindTo", mFreetalk.getConfig().getString(Config.NNTP_SERVER_BINDTO) });
+		item.addChild("span", "class", "configlongdesc", l10n().getString("SettingsPage.GlobalSettings.NNTPServerBindTo.Long"));
     }
-    
-    private String booleanDefaultString(boolean value) {
-        return NodeL10n.getBase().getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { value ? nodesL10n("true") : nodesL10n("false") });
-    }
+
+	private String booleanDefaultString(boolean value) {
+		return defaultString(value ? nodesL10n("true") : nodesL10n("false"));
+	}
+
+	private String defaultString(String value) {
+		return NodeL10n.getBase().getString("ConfigToadlet.defaultIs", "default", value);
+	}
 
     private static final String nodesL10n(String string) {
         return NodeL10n.getBase().getString("ConfigToadlet." + string);

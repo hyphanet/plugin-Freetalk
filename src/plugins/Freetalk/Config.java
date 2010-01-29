@@ -29,7 +29,9 @@ public final class Config {
 	
 	public static final String NNTP_SERVER_ENABLED = "NNTP.ServerEnabled";
 
-	
+	/** Parameter name for the {@code bindTo} parameter. */
+	public static final String NNTP_SERVER_BINDTO = "NNTP.BindTo";
+
 	/**
 	 * The HashMap that contains all cofiguration parameters
 	 */
