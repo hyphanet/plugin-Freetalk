@@ -141,7 +141,8 @@ public final class BoardPage extends WebPageImpl {
 
 				HTMLNode titleCell = row.addChild("td", new String[] { "align" }, new String[] { "left" });
 				
-				if(threadReference.wasThreadRead() == false)
+				final boolean threadWasRead = threadReference.wasThreadRead();
+				if(threadWasRead== false)
 					titleCell = titleCell.addChild("b");
 				
 				titleCell.addChild(new HTMLNode("a", "href", ThreadPage.getURI(mBoard, threadReference), threadTitle));
@@ -161,25 +162,10 @@ public final class BoardPage extends WebPageImpl {
 						Integer.toString(mBoard.threadReplyCount(threadReference.getThreadID())));
 				
 				/* Unread count */
-				int unreadCount = getUnreadCount(threadReference);
-				row.addChild((unreadCount>0) ? "th" : "td", new String[] { "align" }, new String[] { "center" }, Integer.toString(unreadCount));
+				int unreadCount = threadWasRead ? 0 : mBoard.threadUnreadReplyCount(threadReference.getThreadID());
+				row.addChild(threadWasRead ? "td" : "th", new String[] { "align" }, new String[] { "center" }, Integer.toString(unreadCount));
 			}
 		}
-	}
-	
-	private int getUnreadCount(BoardThreadLink threadReference) {
-	    int unreadCount = 0;
-        if (!threadReference.wasRead()) {
-            unreadCount++;
-        }
-        
-        // scan all replies
-        for(BoardReplyLink reference : mBoard.getAllThreadReplies(threadReference.getThreadID(), true)) {
-            if(!reference.wasRead()) {
-                unreadCount++;
-            }
-        }
-        return unreadCount;
 	}
 
     /**
