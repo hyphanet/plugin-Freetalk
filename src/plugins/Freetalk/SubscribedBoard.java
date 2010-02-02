@@ -572,6 +572,19 @@ public final class SubscribedBoard extends Board {
     public synchronized int threadReplyCount(String threadID) {
         return getAllThreadReplies(threadID, false).size();
     }
+    
+    /**
+     * Get the number of unread replies to the given thread.
+     */
+    public synchronized int threadUnreadReplyCount(String threadID) {
+    	final Query q = db.query();
+        q.constrain(BoardReplyLink.class);
+        q.descend("mBoard").constrain(this).identity();
+        q.descend("mThreadID").constrain(threadID);
+        q.descend("mWasRead").constrain(false);
+        
+        return q.execute().size();
+    }
 
     /**
      * Get all replies to the given thread, sorted ascending by date if requested
@@ -589,17 +602,6 @@ public final class SubscribedBoard extends Board {
        
         return q.execute();
     }
-    
-    public synchronized int getUnreadReplyCount(String threadID) {
-    	final Query q = db.query();
-        q.constrain(BoardReplyLink.class);
-        q.descend("mBoard").constrain(this).identity();
-        q.descend("mThreadID").constrain(threadID);
-        q.descend("mWasRead").constrain(false);
-        
-        return q.execute().size();
-    }
-    
     
     public static String[] getMessageReferenceIndexedFields() { /* TODO: ugly! find a better way */
     	return new String[] { "mBoard", "mMessage", "mMessageIndex", "mMessageDate" };
