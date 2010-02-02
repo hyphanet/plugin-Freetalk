@@ -10,6 +10,7 @@ import java.util.Iterator;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.SubscribedBoard;
+import plugins.Freetalk.SubscribedBoard.MessageReference;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.clients.http.RedirectException;
 import freenet.l10n.BaseL10n;
@@ -75,26 +76,23 @@ public final class BoardsPage extends WebPageImpl {
 				/* Count unread messages + find latest message date */
 				final int unreadMessageCount = board.getUnreadMessageCount();
 				
+				MessageReference latestMessage;
 				String latestMessageDateString;
 				
 				try {
-					Date latestMessageDate = board.getLatestMessage().getMessageDate();
-					if (latestMessageDate == null)
-						latestMessageDateString = "-";
-					else
-						latestMessageDateString = dateFormat.format(latestMessageDate);
+					latestMessage = board.getLatestMessage();
+					latestMessageDateString = dateFormat.format(latestMessage.getMessageDate());
 				} catch (NoSuchMessageException e) {
+					latestMessage = null;
 			        latestMessageDateString = "-";
 				} 
 				
-			    // bold or not bold, thats the question here ...
-			    final String tableRowType = (unreadMessageCount > 0) ? "th" : "td";
-
 			    /* Unread messages count, bold when there are unread messages */
-	            row.addChild(tableRowType, new String[] { "align" }, new String[] { "center" }, Integer.toString(unreadMessageCount));
+	            row.addChild((unreadMessageCount == 0) ? "td" : "th", new String[] { "align" }, new String[] { "center" }, Integer.toString(unreadMessageCount));
 
-			    /* Latest message date, bold when there are unread messages */
-				row.addChild(tableRowType, new String[] { "align" }, new String[] { "center" }, latestMessageDateString);
+			    /* Latest message date, bold when the latest message is unread */
+				row.addChild((latestMessage == null || latestMessage.wasRead()) ? "td" : "th", new String[] { "align" }, new String[] { "center" },
+						latestMessageDateString);
 			}
 		}
 
