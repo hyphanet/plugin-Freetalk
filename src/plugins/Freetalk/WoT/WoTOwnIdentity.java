@@ -56,8 +56,7 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	}
 
 	public FreenetURI getInsertURI() {
-		// TODO: If String[] is no nested object to db4o we can decrease this to 3 and also in storeAndCommit / deleteWithoutCommit
-		db.activate(this, 4);
+		db.activate(this, 3); // String[] is no nested object to db4o so 3 is sufficient.
 		return mInsertURI;
 	}
 
@@ -114,8 +113,8 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
     
 	public void storeWithoutCommit() {
 		try {
-			// 4 is the maximal depth of all getter functions. You have to adjust this when changing the set of member variables.
-			DBUtil.checkedActivate(db, this, 4);
+			// 3 is the maximal depth of all getter functions. You have to adjust this when changing the set of member variables.
+			DBUtil.checkedActivate(db, this, 3);
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 
@@ -132,8 +131,8 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	protected void deleteWithoutCommit() {	
 		try {
 			// super.deleteWithoutCommit() does the following already so there is no need to do it here
-			// 4 is the maximal depth of all getter functions. You have to adjust this when changing the set of member variables.
-			// DBUtil.checkedActivate(db, this, 4);
+			// 3 is the maximal depth of all getter functions. You have to adjust this when changing the set of member variables.
+			// DBUtil.checkedActivate(db, this, 3);
 			
 			super.deleteWithoutCommit();
 			
