@@ -476,6 +476,17 @@ public final class SubscribedBoard extends Board {
         
         return result.next().getIndex();
     }
+    
+	public synchronized int getUnreadMessageCount() {
+        Query q = db.query();
+        q.constrain(MessageReference.class);
+        q.descend("mBoard").constrain(this).identity();
+        q.descend("mWasRead").constrain(false);
+        @SuppressWarnings("unchecked")
+        ObjectSet<MessageReference> result = q.execute();
+        
+        return result.size();
+    }
 
     /**
      * Gets a reference to the message with the given index number.
