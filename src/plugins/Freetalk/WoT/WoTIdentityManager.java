@@ -404,6 +404,28 @@ public class WoTIdentityManager extends IdentityManager {
 		}
 	}
 	
+	public int getGivenTrustsCount(FTIdentity trustee, int selection) throws Exception {
+		SimpleFieldSet request = new SimpleFieldSet(true);
+		request.putOverwrite("Message", "GetTrusteesCount");
+		request.putOverwrite("Identity", trustee.getID());
+		request.putOverwrite("Context", Freetalk.WOT_CONTEXT);
+		
+		if(selection > 0)
+			request.putOverwrite("Selection", "+");
+		else if(selection == 0)
+			request.putOverwrite("Selection", "0");
+		else
+			request.putOverwrite("Selection", "-");
+		
+		try {
+			SimpleFieldSet answer = sendFCPMessageBlocking(request, null, "TrusteesCount").params;
+			return Integer.parseInt(answer.get("Value"));
+		}
+		catch(PluginNotFoundException e) {
+			throw new WoTDisconnectedException();
+		}
+	}
+	
 	public static final class IntroductionPuzzle {
 		public final String ID;
 		public final String MimeType;
