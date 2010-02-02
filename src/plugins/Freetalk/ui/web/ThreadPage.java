@@ -270,7 +270,7 @@ public final class ThreadPage extends WebPageImpl {
             addModButton(title, message, -10, "-");
             title.addChild("%", "&nbsp;");
         }
-        title.addChild("b", maxLength(message.getTitle(),50));
+        title.addChild("b", message.getTitle());
         
         
         // Body of the message
