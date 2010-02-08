@@ -4,13 +4,12 @@
 package plugins.Freetalk.ui.web;
 
 import java.text.DateFormat;
+import java.util.Date;
 import java.util.Iterator;
 
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.SubscribedBoard;
-import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
-import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
 import plugins.Freetalk.SubscribedBoard.MessageReference;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.clients.http.RedirectException;
@@ -75,45 +74,25 @@ public final class BoardsPage extends WebPageImpl {
 				row.addChild("td", new String[] { "align" }, new String[] { "center" }, Integer.toString(board.messageCount()));
 				
 				/* Count unread messages + find latest message date */
-				// FIXME: Can this processing can become too slow? Maybe maintain values when new messages are inserted?
-				int unreadMessageCount = 0;
-				long latestMessageDate = 0;
-
-				for (BoardThreadLink boardThreadLink : board.getThreads()) {
-			        if (!boardThreadLink.wasThreadRead()) {
-			            // check top message (thread start message)
-			            if (!boardThreadLink.wasRead()) {
-			                unreadMessageCount++;
-			            }
-			            // check all replies
-		                for(BoardReplyLink reference : board.getAllThreadReplies(boardThreadLink.getThreadID(), true)) {
-		                    if (!reference.wasRead()) {
-                                unreadMessageCount++;
-		                    }
-		                }
-			        }
-			        // using maintained value from getLastReplyDate() instead of checking each single message date above
-			        long lastReplyMillis = boardThreadLink.getLastReplyDate().getTime();
-			        if (lastReplyMillis > latestMessageDate) {
-			            latestMessageDate = lastReplyMillis;
-			        }
-			    }
-
-			    final String latestMessageDateString;
-			    if (latestMessageDate == 0) {
+				final int unreadMessageCount = board.getUnreadMessageCount();
+				
+				MessageReference latestMessage;
+				String latestMessageDateString;
+				
+				try {
+					latestMessage = board.getLatestMessage();
+					latestMessageDateString = dateFormat.format(latestMessage.getMessageDate());
+				} catch (NoSuchMessageException e) {
+					latestMessage = null;
 			        latestMessageDateString = "-";
-			    } else {
-			        latestMessageDateString = dateFormat.format(latestMessageDate);
-			    }
-
-			    // bold or not bold, thats the question here ...
-			    final String tableRowType = (unreadMessageCount > 0) ? "th" : "td";
-
+				} 
+				
 			    /* Unread messages count, bold when there are unread messages */
-	            row.addChild(tableRowType, new String[] { "align" }, new String[] { "center" }, Integer.toString(unreadMessageCount));
+	            row.addChild((unreadMessageCount == 0) ? "td" : "th", new String[] { "align" }, new String[] { "center" }, Integer.toString(unreadMessageCount));
 
-			    /* Latest message date, bold when there are unread messages */
-				row.addChild(tableRowType, new String[] { "align" }, new String[] { "center" }, latestMessageDateString);
+			    /* Latest message date, bold when the latest message is unread */
+				row.addChild((latestMessage == null || latestMessage.wasRead()) ? "td" : "th", new String[] { "align" }, new String[] { "center" },
+						latestMessageDateString);
 			}
 		}
 

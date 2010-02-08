@@ -80,7 +80,7 @@ public class WoTIdentity implements FTIdentity {
 	}
 	
 	public String getID() {
-		db.activate(this, 2);
+		db.activate(this, 1);
 		return mID;
 	}
 	
@@ -99,18 +99,17 @@ public class WoTIdentity implements FTIdentity {
 	}
 
 	public FreenetURI getRequestURI() {
-		// TODO: If String[] is no nested object to db4o we can decrease this to 3 and also in storeAndCommit / deleteWithoutCommit
-		db.activate(this, 4);
+		db.activate(this, 3); // String[] is no nested object to db4o so 3 is sufficient.
 		return mRequestURI;
 	}
 
 	public String getNickname() {
-		db.activate(this, 2);
+		db.activate(this, 1);
 		return mNickname;
 	}
 
 	public String getNickname(int maxLength) {
-		db.activate(this, 2);
+		db.activate(this, 1);
 		if(mNickname.length() > maxLength) {
 			return mNickname.substring(0, maxLength-3) + "...";
 		}
@@ -122,12 +121,12 @@ public class WoTIdentity implements FTIdentity {
 	}
 
 	public String getFreetalkAddress() {
-		db.activate(this, 2);
+		db.activate(this, 1);
 		return mNickname + "@" + mID + "." + Freetalk.WOT_CONTEXT.toLowerCase();	
 	}
 
 	public synchronized long getLastReceivedFromWoT() {
-		db.activate(this, 2);
+		db.activate(this, 1);
 		return mLastReceivedFromWoT;
 	}
 	
@@ -172,8 +171,8 @@ public class WoTIdentity implements FTIdentity {
 
 	protected void storeWithoutCommit() {
 		try {		
-			// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			DBUtil.checkedActivate(db, this, 4);
+			// 3 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			DBUtil.checkedActivate(db, this, 3);
 
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 			
@@ -187,8 +186,8 @@ public class WoTIdentity implements FTIdentity {
 	
 	protected void deleteWithoutCommit() {
 		try {
-			// 4 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			DBUtil.checkedActivate(db, this, 4);
+			// 3 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			DBUtil.checkedActivate(db, this, 3);
 			
 			DBUtil.checkedDelete(db, this);
 			

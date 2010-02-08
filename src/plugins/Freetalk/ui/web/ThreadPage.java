@@ -203,13 +203,23 @@ public final class ThreadPage extends WebPageImpl {
         authorNode.addChild("br");
         authorNode.addChild("#", l10n().getString("ThreadPage.Author.Posts") + ": " + mFreetalk.getMessageManager().getMessagesBy(message.getAuthor()).size());
         authorNode.addChild("br");
-        authorNode.addChild("#", l10n().getString("ThreadPage.Author.TrusterCount") + ": ");
+        authorNode.addChild("#", l10n().getString("ThreadPage.Author.TrustersCount") + ": ");
         try {
         	addTrustersInfo(authorNode, message.getAuthor());
         }
         catch(Exception e) {
         	Logger.error(this, "addTrustersInfo() failed", e);
-        	authorNode.addChild("#", l10n().getString("ThreadPage.Author.TrusterCountUnknown"));
+        	authorNode.addChild("#", l10n().getString("ThreadPage.Author.TrustersCountUnknown"));
+        }
+        
+        authorNode.addChild("br");
+        authorNode.addChild("#", l10n().getString("ThreadPage.Author.TrusteesCount") + ": ");
+        try {
+        	addTrusteesInfo(authorNode, message.getAuthor());
+        }
+        catch(Exception e) {
+        	Logger.error(this, "addTrusteesInfo() failed", e);
+        	authorNode.addChild("#", l10n().getString("ThreadPage.Author.TrusteesCountUnknown"));
         }
         
         // Your trust value
@@ -257,7 +267,7 @@ public final class ThreadPage extends WebPageImpl {
 			addModButton(modButtons, message, 10, "+");
 			addModButton(modButtons, message, -10, "-");
         }
-		title.addChild("div", "class", "text", maxLength(message.getTitle(), 50));
+		title.addChild("div", "class", "text", message.getTitle());
         
         
         // Body of the message
@@ -281,6 +291,23 @@ public final class ThreadPage extends WebPageImpl {
 
         parent.addChild("abbr", new String[]{"title", "class"}, new String[]{ l10n().getString("Common.WebOfTrust.DistrustedByCount.Description"), "distrust-count"},
         		String.valueOf(distrustedBy));
+    }
+    
+    private void addTrusteesInfo(HTMLNode parent, FTIdentity author) throws Exception {
+    	WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
+
+        int trustsCount = identityManager.getGivenTrustsCount(author, 1);
+        int distrustsCount = identityManager.getGivenTrustsCount(author, -1);
+
+        parent.addChild("abbr", new String[]{"title", "style"},
+        		new String[]{ l10n().getString("Common.WebOfTrust.PositiveGivenTrustsCount.Description"), "color:green"}, 
+        		String.valueOf(trustsCount));
+        
+        parent.addChild("#", " / ");
+
+        parent.addChild("abbr", new String[]{"title", "style"},
+        		new String[]{ l10n().getString("Common.WebOfTrust.NegativeGivenTrustsCount.Description"), "color:red"},
+        		String.valueOf(distrustsCount));
     }
 
     private void addReplyButton(HTMLNode parent, Message parentMessage) {

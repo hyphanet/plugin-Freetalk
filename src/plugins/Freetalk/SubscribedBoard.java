@@ -97,7 +97,7 @@ public final class SubscribedBoard extends Board {
 	public synchronized MessageReference getLatestMessage() throws NoSuchMessageException {
     	// TODO: We can probably cache the latest message date in this SubscribedBoard object.
     	
-        Query q = db.query();
+        final Query q = db.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this);
         q.descend("mMessageDate").orderDescending();
@@ -343,7 +343,7 @@ public final class SubscribedBoard extends Board {
     
     @SuppressWarnings("unchecked")
 	public synchronized BoardReplyLink getReplyLink(Message message) throws NoSuchMessageException {
-        Query q = db.query();
+        final Query q = db.query();
         q.constrain(BoardReplyLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mMessage").constrain(message).identity();
@@ -363,7 +363,7 @@ public final class SubscribedBoard extends Board {
     
     @SuppressWarnings("unchecked")
 	public synchronized BoardThreadLink getThreadLink(String threadID) throws NoSuchMessageException {
-        Query q = db.query();
+    	final Query q = db.query();
         q.constrain(BoardThreadLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mThreadID").constrain(threadID);
@@ -445,7 +445,7 @@ public final class SubscribedBoard extends Board {
      */
     @SuppressWarnings("unchecked")
     public synchronized ObjectSet<BoardThreadLink> getThreads() {
-    	Query q = db.query();
+    	final Query q = db.query();
     	q.constrain(BoardThreadLink.class);
     	q.descend("mBoard").constrain(SubscribedBoard.this).identity(); // FIXME: Benchmark whether switching the order of those two constrains makes it faster.
     	q.descend("mLastReplyDate").orderDescending();
@@ -454,7 +454,7 @@ public final class SubscribedBoard extends Board {
 
     @SuppressWarnings("unchecked")
     public synchronized ObjectSet<MessageReference> getAllMessages(final boolean sortByMessageIndexAscending) {
-        Query q = db.query();
+    	final Query q = db.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         if (sortByMessageIndexAscending) {
@@ -465,7 +465,7 @@ public final class SubscribedBoard extends Board {
 
     @SuppressWarnings("unchecked")
 	public synchronized int getLastMessageIndex() throws NoSuchMessageException {
-        Query q = db.query();
+    	final Query q = db.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mMessageIndex").orderDescending();
@@ -475,6 +475,15 @@ public final class SubscribedBoard extends Board {
         	throw new NoSuchMessageException();
         
         return result.next().getIndex();
+    }
+    
+	public synchronized int getUnreadMessageCount() {
+        final Query q = db.query();
+        q.constrain(MessageReference.class);
+        q.descend("mBoard").constrain(this).identity();
+        q.descend("mWasRead").constrain(false);
+        
+        return q.execute().size();
     }
 
     /**
@@ -489,7 +498,7 @@ public final class SubscribedBoard extends Board {
      */
     @SuppressWarnings("unchecked")
     public synchronized MessageReference getMessageByIndex(int index) throws NoSuchMessageException {
-        Query q = db.query();
+    	final Query q = db.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mMessageIndex").constrain(index);
@@ -551,7 +560,7 @@ public final class SubscribedBoard extends Board {
      * Get the number of messages in this board.
      */
     public synchronized int messageCount() {
-        Query q = db.query();
+    	final Query q = db.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         return q.execute().size();
@@ -563,13 +572,26 @@ public final class SubscribedBoard extends Board {
     public synchronized int threadReplyCount(String threadID) {
         return getAllThreadReplies(threadID, false).size();
     }
+    
+    /**
+     * Get the number of unread replies to the given thread.
+     */
+    public synchronized int threadUnreadReplyCount(String threadID) {
+    	final Query q = db.query();
+        q.constrain(BoardReplyLink.class);
+        q.descend("mBoard").constrain(this).identity();
+        q.descend("mThreadID").constrain(threadID);
+        q.descend("mWasRead").constrain(false);
+        
+        return q.execute().size();
+    }
 
     /**
      * Get all replies to the given thread, sorted ascending by date if requested
      */
     @SuppressWarnings("unchecked")
     public synchronized ObjectSet<BoardReplyLink> getAllThreadReplies(String threadID, final boolean sortByDateAscending) {
-        Query q = db.query();
+    	final Query q = db.query();
         q.constrain(BoardReplyLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mThreadID").constrain(threadID);

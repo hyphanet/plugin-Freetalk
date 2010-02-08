@@ -404,6 +404,28 @@ public class WoTIdentityManager extends IdentityManager {
 		}
 	}
 	
+	public int getGivenTrustsCount(FTIdentity trustee, int selection) throws Exception {
+		SimpleFieldSet request = new SimpleFieldSet(true);
+		request.putOverwrite("Message", "GetTrusteesCount");
+		request.putOverwrite("Identity", trustee.getID());
+		request.putOverwrite("Context", Freetalk.WOT_CONTEXT);
+		
+		if(selection > 0)
+			request.putOverwrite("Selection", "+");
+		else if(selection == 0)
+			request.putOverwrite("Selection", "0");
+		else
+			request.putOverwrite("Selection", "-");
+		
+		try {
+			SimpleFieldSet answer = sendFCPMessageBlocking(request, null, "TrusteesCount").params;
+			return Integer.parseInt(answer.get("Value"));
+		}
+		catch(PluginNotFoundException e) {
+			throw new WoTDisconnectedException();
+		}
+	}
+	
 	public static final class IntroductionPuzzle {
 		public final String ID;
 		public final String MimeType;
@@ -651,7 +673,7 @@ public class WoTIdentityManager extends IdentityManager {
 		/* Executing the thread loop once will always take longer than THREAD_PERIOD. Therefore, if we set the limit to 3*THREAD_PERIOD,
 		 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */
 		long lastAcceptTime = Math.min(mLastIdentityFetchTime, mLastOwnIdentityFetchTime) - THREAD_PERIOD * 3;
-		lastAcceptTime = Math.min(lastAcceptTime, 0); // This is not really needed but a time less than 0 does not make sense.;
+		lastAcceptTime = Math.max(lastAcceptTime, 0); // This is not really needed but a time less than 0 does not make sense.;
 		
 		Query q = db.query();
 		q.constrain(WoTIdentity.class);
