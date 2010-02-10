@@ -372,6 +372,10 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		return mConfig;
 	}
 	
+	protected ExtObjectContainer getDatabase() {
+		return db;
+	}
+	
 	public IdentityManager getIdentityManager() {
 		return mIdentityManager;
 	}	

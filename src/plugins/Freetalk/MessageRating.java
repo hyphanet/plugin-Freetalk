@@ -121,29 +121,6 @@ public abstract class MessageRating {
 		return mMessage;
 	}
 	
-	protected void storeWithoutCommit() {
-		try {		
-			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			DBUtil.checkedActivate(mDB, this, 2);
-
-			mDB.store(this);
-		}
-		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(mDB, this, e);
-		}
-	}
-	
-	protected void deleteWithoutCommit() {
-		try {
-			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			DBUtil.checkedActivate(mDB, this, 2);
-			
-			DBUtil.checkedDelete(mDB, this);
-		}
-		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(mDB, this, e);
-		}
-	}
 
 	public String toString() {
 		if(mDB != null)
