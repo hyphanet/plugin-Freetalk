@@ -274,7 +274,7 @@ public final class ThreadPage extends WebPageImpl {
 		row = table.addChild("tr", "class", "body");
         HTMLNode text = row.addChild("td", "align", "left", "");
         String messageBody = message.getText();
-        text.addChild(convertMessageBody(messageBody, "message-line", null));
+        text.addChild(convertMessageBody(messageBody, null));
         addReplyButton(text, message);
     }
 
@@ -392,37 +392,29 @@ public final class ThreadPage extends WebPageImpl {
 	 * @return The HTML node displaying the message
 	 */
 	public static HTMLNode convertMessageBody(String messageBody) {
-		return convertMessageBody(messageBody, null, null);
+		return convertMessageBody(messageBody, null);
 	}
 
 	/**
-	 * This method converts the message body into a HTML node. Line breaks
-	 * “CRLF” and “LF” are recognized and converted into {@code div} tags.
-	 * Freenet URIs are recognized and converted into links, even when they have
-	 * line breaks embedded in them.
+	 * This method converts the message body into a HTML node. Freenet URIs are
+	 * recognized and converted into links, even when they have line breaks
+	 * embedded in them.
 	 *
 	 * @param messageBody
 	 *            The message body to convert
-	 * @param lineClass
-	 *            The CSS class(es) for the single lines
 	 * @param linkClass
 	 *            The CSS class(es) for the links
 	 * @return The HTML node displaying the message
 	 */
-	public static HTMLNode convertMessageBody(String messageBody, String lineClass, String linkClass) {
+	public static HTMLNode convertMessageBody(String messageBody, String linkClass) {
 		HTMLNode messageNode = new HTMLNode("#");
-		HTMLNode currentParagraph = (lineClass != null) ? new HTMLNode("div", "class", lineClass) : new HTMLNode("div");
 		String currentLine = messageBody;
 		int chkLink = currentLine.indexOf("CHK@");
 		int sskLink = currentLine.indexOf("SSK@");
 		int uskLink = currentLine.indexOf("USK@");
 		int kskLink = currentLine.indexOf("KSK@");
-		int lineBreakCRLF = currentLine.indexOf("\r\n");
-		int lineBreakLF = currentLine.indexOf("\n");
-		boolean isEmptyParagraph = true;
-		while ((chkLink != -1) || (sskLink != -1) || (uskLink != -1) || (kskLink != -1) || (lineBreakCRLF != -1) || (lineBreakLF != -1)) {
+		while ((chkLink != -1) || (sskLink != -1) || (uskLink != -1) || (kskLink != -1)) {
 			int nextLink = Integer.MAX_VALUE;
-			int nextLineBreak = Integer.MAX_VALUE;
 			if ((chkLink != -1) && (chkLink < nextLink)) {
 				nextLink = chkLink;
 			}
@@ -435,56 +427,36 @@ public final class ThreadPage extends WebPageImpl {
 			if ((kskLink != -1) && (kskLink < nextLink)) {
 				nextLink = kskLink;
 			}
-			if ((lineBreakCRLF != -1) && (lineBreakCRLF < nextLineBreak)) {
-				nextLineBreak = lineBreakCRLF;
-			}
-			if ((lineBreakLF != -1) && (lineBreakLF < nextLineBreak)) {
-				nextLineBreak = lineBreakLF;
-			}
-			/* TODO: other separators? */
-			if (nextLineBreak < nextLink) {
-				String line = currentLine.substring(0, nextLineBreak);
-				currentParagraph.addChild("#", (isEmptyParagraph && (line.trim().length() == 0)) ? "\u00a0" : line);
-				messageNode.addChild(currentParagraph);
-				currentLine = currentLine.substring(nextLineBreak);
-				if (currentLine.startsWith("\r\n")) {
-					currentLine = currentLine.substring(2);
-				} else if (currentLine.startsWith("\n")) {
-					currentLine = currentLine.substring(1);
+			messageNode.addChild("#", currentLine.substring(0, nextLink));
+			int firstSlash = currentLine.indexOf('/', nextLink);
+			if ((firstSlash == -1) || ((firstSlash - nextLink) >= 105)) {
+				messageNode.addChild("#", currentLine.substring(nextLink, nextLink + 4));
+				currentLine = currentLine.substring(nextLink + 4);
+			} else {
+				String uriKey = currentLine.substring(nextLink, firstSlash).replaceAll("[\r\n\t ]+", "");
+				int nextSpace = currentLine.indexOf(' ', firstSlash);
+				int nextCrLf = currentLine.indexOf("\r\n", firstSlash);
+				int nextLf = currentLine.indexOf("\n", firstSlash);
+				if (nextSpace == -1) {
+					nextSpace = currentLine.length();
 				}
-				currentParagraph = (lineClass != null) ? new HTMLNode("div", "class", lineClass) : new HTMLNode("div");
-				isEmptyParagraph = true;
-			} else if (nextLink < nextLineBreak) {
-				currentParagraph.addChild("#", currentLine.substring(0, nextLink));
-				int firstSlash = currentLine.indexOf('/', nextLink);
-				if ((firstSlash == -1) || ((firstSlash - nextLink) >= 105)) {
-					currentParagraph.addChild("#", currentLine.substring(nextLink, nextLink + 4));
-					currentLine = currentLine.substring(nextLink + 4);
-				} else {
-					String uriKey = currentLine.substring(nextLink, firstSlash).replaceAll("[\r\n\t ]+", "");
-					int nextSpace = currentLine.indexOf(' ', firstSlash);
-					if ((nextSpace > nextLineBreak) && (firstSlash < nextLineBreak)) {
-						nextSpace = nextLineBreak;
-					}
-					if (nextSpace == -1) {
-						nextSpace = currentLine.length();
-					}
-					uriKey += currentLine.substring(firstSlash, nextSpace);
-					currentLine = currentLine.substring(nextSpace);
-					HTMLNode linkNode = (linkClass != null) ? new HTMLNode("a", new String[] { "href", "class" }, new String[] { "/" + uriKey, linkClass }, uriKey) : new HTMLNode("a", "href", "/" + uriKey, uriKey);
-					currentParagraph.addChild(linkNode);
+				if ((nextCrLf != -1) && (nextCrLf < nextSpace)) {
+					nextSpace = nextCrLf;
 				}
-				isEmptyParagraph = false;
+				if ((nextLf != -1) && (nextLf < nextSpace)) {
+					nextSpace = nextLf;
+				}
+				uriKey += currentLine.substring(firstSlash, nextSpace);
+				currentLine = currentLine.substring(nextSpace);
+				HTMLNode linkNode = (linkClass != null) ? new HTMLNode("a", new String[] { "href", "class" }, new String[] { "/" + uriKey, linkClass }, uriKey) : new HTMLNode("a", "href", "/" + uriKey, uriKey);
+				messageNode.addChild(linkNode);
 			}
 			chkLink = currentLine.indexOf("CHK@");
 			sskLink = currentLine.indexOf("SSK@");
 			uskLink = currentLine.indexOf("USK@");
 			kskLink = currentLine.indexOf("KSK@");
-			lineBreakCRLF = currentLine.indexOf("\r\n");
-			lineBreakLF = currentLine.indexOf("\n");
 		}
-		currentParagraph.addChild("#", isEmptyParagraph && (currentLine.trim().length() == 0) ? "\u00a0" : currentLine);
-		messageNode.addChild(currentParagraph);
+		messageNode.addChild("#", currentLine);
 		return messageNode;
 	}
 

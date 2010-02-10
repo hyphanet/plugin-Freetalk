@@ -39,26 +39,22 @@ public class MessageBodyConverterTest extends TestCase {
 		messageBody = "";
 		messageNode = ThreadPage.convertMessageBody(messageBody);
 		assertNotNull("messageNode", messageNode);
-		assertEquals("messageNode.getFirstTag()", "div", messageNode.getFirstTag());
-		assertEquals("messageNode.generate()", "<div>\n&nbsp;</div>\n", messageNode.generate());
+		assertEquals("messageNode.generate()", "", messageNode.generate());
 
 		messageBody = "\n\n";
 		messageNode = ThreadPage.convertMessageBody(messageBody);
 		assertNotNull("messageNode", messageNode);
-		assertEquals("messageNode.getFirstTag()", "div", messageNode.getFirstTag());
-		assertEquals("messageNode.generate()", "<div>\n&nbsp;</div>\n<div>\n&nbsp;</div>\n<div>\n&nbsp;</div>\n", messageNode.generate());
+		assertEquals("messageNode.generate()", "\n\n", messageNode.generate());
 
 		messageBody = "   \n  \n   ";
 		messageNode = ThreadPage.convertMessageBody(messageBody);
 		assertNotNull("messageNode", messageNode);
-		assertEquals("messageNode.getFirstTag()", "div", messageNode.getFirstTag());
-		assertEquals("messageNode.generate()", "<div>\n&nbsp;</div>\n<div>\n&nbsp;</div>\n<div>\n&nbsp;</div>\n", messageNode.generate());
+		assertEquals("messageNode.generate()", "   \n  \n   ", messageNode.generate());
 
 		messageBody = "Single line test.";
 		messageNode = ThreadPage.convertMessageBody(messageBody);
 		assertNotNull("messageNode", messageNode);
-		assertEquals("messageNode.getFirstTag()", "div", messageNode.getFirstTag());
-		assertEquals("messageNode.generate()", "<div>\nSingle line test.</div>\n", messageNode.generate());
+		assertEquals("messageNode.generate()", "Single line test.", messageNode.generate());
 	}
 
 	/**
@@ -71,8 +67,7 @@ public class MessageBodyConverterTest extends TestCase {
 		messageBody = "First line.\nSecond line.\nThird line.";
 		messageNode = ThreadPage.convertMessageBody(messageBody);
 		assertNotNull("messageNode", messageNode);
-		assertEquals("messageNode.getFirstTag()", "div", messageNode.getFirstTag());
-		assertEquals("messageNode.generate()", "<div>\nFirst line.</div>\n<div>\nSecond line.</div>\n<div>\nThird line.</div>\n", messageNode.generate());
+		assertEquals("messageNode.generate()", "First line.\nSecond line.\nThird line.", messageNode.generate());
 	}
 
 	/**
@@ -85,14 +80,14 @@ public class MessageBodyConverterTest extends TestCase {
 		messageBody = "The link CHK@foo/bar/baz is in this line.";
 		messageNode = ThreadPage.convertMessageBody(messageBody);
 		assertNotNull("messageNode", messageNode);
-		assertEquals("messageNode.getFirstTag()", "div", messageNode.getFirstTag());
-		assertEquals("messageNode.generate()", "<div>\nThe link <a href=\"/CHK@foo/bar/baz\">CHK@foo/bar/baz</a> is in this line.</div>\n", messageNode.generate());
+		assertEquals("messageNode.getFirstTag()", "a", messageNode.getFirstTag());
+		assertEquals("messageNode.generate()", "The link <a href=\"/CHK@foo/bar/baz\">CHK@foo/bar/baz</a> is in this line.", messageNode.generate());
 
 		messageBody = "The link CHK@foo/bar/baz is in this line, as is USK@foo/baz/bar";
 		messageNode = ThreadPage.convertMessageBody(messageBody);
 		assertNotNull("messageNode", messageNode);
-		assertEquals("messageNode.getFirstTag()", "div", messageNode.getFirstTag());
-		assertEquals("messageNode.generate()", "<div>\nThe link <a href=\"/CHK@foo/bar/baz\">CHK@foo/bar/baz</a> is in this line, as is <a href=\"/USK@foo/baz/bar\">USK@foo/baz/bar</a></div>\n", messageNode.generate());
+		assertEquals("messageNode.getFirstTag()", "a", messageNode.getFirstTag());
+		assertEquals("messageNode.generate()", "The link <a href=\"/CHK@foo/bar/baz\">CHK@foo/bar/baz</a> is in this line, as is <a href=\"/USK@foo/baz/bar\">USK@foo/baz/bar</a>", messageNode.generate());
 	}
 
 	/**
@@ -105,20 +100,20 @@ public class MessageBodyConverterTest extends TestCase {
 		messageBody = "The link CHK@foo/bar/baz is in this line.\nAnd here is a second line.";
 		messageNode = ThreadPage.convertMessageBody(messageBody);
 		assertNotNull("messageNode", messageNode);
-		assertEquals("messageNode.getFirstTag()", "div", messageNode.getFirstTag());
-		assertEquals("messageNode.generate()", "<div>\nThe link <a href=\"/CHK@foo/bar/baz\">CHK@foo/bar/baz</a> is in this line.</div>\n<div>\nAnd here is a second line.</div>\n", messageNode.generate());
+		assertEquals("messageNode.getFirstTag()", "a", messageNode.getFirstTag());
+		assertEquals("messageNode.generate()", "The link <a href=\"/CHK@foo/bar/baz\">CHK@foo/bar/baz</a> is in this line.\nAnd here is a second line.", messageNode.generate());
 
 		messageBody = "The link CHK@foo/bar/baz is in this line.\nThe second line has the USK@foo/baz/bar link.";
 		messageNode = ThreadPage.convertMessageBody(messageBody);
 		assertNotNull("messageNode", messageNode);
-		assertEquals("messageNode.getFirstTag()", "div", messageNode.getFirstTag());
-		assertEquals("messageNode.generate()", "<div>\nThe link <a href=\"/CHK@foo/bar/baz\">CHK@foo/bar/baz</a> is in this line.</div>\n<div>\nThe second line has the <a href=\"/USK@foo/baz/bar\">USK@foo/baz/bar</a> link.</div>\n", messageNode.generate());
+		assertEquals("messageNode.getFirstTag()", "a", messageNode.getFirstTag());
+		assertEquals("messageNode.generate()", "The link <a href=\"/CHK@foo/bar/baz\">CHK@foo/bar/baz</a> is in this line.\nThe second line has the <a href=\"/USK@foo/baz/bar\">USK@foo/baz/bar</a> link.", messageNode.generate());
 
 		messageBody = "The link CHK@foo/bar/baz is in this line.\nLink at the end: USK@foo/goo/hoo\nThe second line has the USK@foo/baz/bar link.";
 		messageNode = ThreadPage.convertMessageBody(messageBody);
 		assertNotNull("messageNode", messageNode);
-		assertEquals("messageNode.getFirstTag()", "div", messageNode.getFirstTag());
-		assertEquals("messageNode.generate()", "<div>\nThe link <a href=\"/CHK@foo/bar/baz\">CHK@foo/bar/baz</a> is in this line.</div>\n<div>\nLink at the end: <a href=\"/USK@foo/goo/hoo\">USK@foo/goo/hoo</a></div>\n<div>\nThe second line has the <a href=\"/USK@foo/baz/bar\">USK@foo/baz/bar</a> link.</div>\n", messageNode.generate());
+		assertEquals("messageNode.getFirstTag()", "a", messageNode.getFirstTag());
+		assertEquals("messageNode.generate()", "The link <a href=\"/CHK@foo/bar/baz\">CHK@foo/bar/baz</a> is in this line.\nLink at the end: <a href=\"/USK@foo/goo/hoo\">USK@foo/goo/hoo</a>\nThe second line has the <a href=\"/USK@foo/baz/bar\">USK@foo/baz/bar</a> link.", messageNode.generate());
 	}
 
 	/**
@@ -133,8 +128,8 @@ public class MessageBodyConverterTest extends TestCase {
 		messageBody = "This is a usenet message and it has a line break in the link USK@abc\ndef/foo/bar/baz which is not beautiful.";
 		messageNode = ThreadPage.convertMessageBody(messageBody);
 		assertNotNull("messageNode", messageNode);
-		assertEquals("messageNode.getFirstTag()", "div", messageNode.getFirstTag());
-		assertEquals("messageNode.generate()", "<div>\nThis is a usenet message and it has a line break in the link <a href=\"/USK@abcdef/foo/bar/baz\">USK@abcdef/foo/bar/baz</a> which is not beautiful.</div>\n", messageNode.generate());
+		assertEquals("messageNode.getFirstTag()", "a", messageNode.getFirstTag());
+		assertEquals("messageNode.generate()", "This is a usenet message and it has a line break in the link <a href=\"/USK@abcdef/foo/bar/baz\">USK@abcdef/foo/bar/baz</a> which is not beautiful.", messageNode.generate());
 	}
 
 }
