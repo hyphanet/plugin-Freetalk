@@ -116,7 +116,7 @@ public abstract class MessageManager implements Runnable {
 			try {
 				synchronized(message) {
 				synchronized(db.lock()) {
-					message.initializeTransient(db, this);
+					message.initializeTransient(mFreetalk);
 					Logger.error(this, "Deleting Message with mAuthor == null: " + message);
 					message.deleteWithoutCommit();
 					db.commit(); Logger.debug(this, "COMMITED.");
@@ -137,7 +137,7 @@ public abstract class MessageManager implements Runnable {
 		
 		for(MessageList list : (ObjectSet<MessageList>) q.execute()) {
 			try {
-				list.initializeTransient(db, this);
+				list.initializeTransient(mFreetalk);
 				Logger.error(this, "Deleting MessageList with mAuthor == null: " + list);
 				list.deleteWithoutCommit();
 				db.commit(); Logger.debug(this, "COMMITED.");
@@ -283,7 +283,7 @@ public abstract class MessageManager implements Runnable {
 		// So the FIXME is: Add some mechanism similar to addMessagesToBoards()/synchronizeSubscribedBoards which handles half-deleted identities.
 				
 				for(Message message : getMessagesBy(identity)) {
-					message.initializeTransient(db, this);
+					message.initializeTransient(mFreetalk);
 
 					for(Board board : message.getBoards()) {
 						synchronized(board) {
@@ -296,7 +296,7 @@ public abstract class MessageManager implements Runnable {
 						} catch (NoSuchMessageException e) {
 							// The message was not added to the board yet, this is normal
 						} catch(RuntimeException e) {
-							DBUtil.rollbackAndThrow(db, this, e);
+							Persistent.rollbackAndThrow(db, this, e);
 						}
 						}
 						}
@@ -315,7 +315,7 @@ public abstract class MessageManager implements Runnable {
 							} catch (NoSuchMessageException e) {
 								// The message was not added to the board yet, this is normal
 							} catch(RuntimeException e) {
-								DBUtil.rollbackAndThrow(db, this, e);
+								Persistent.rollbackAndThrow(db, this, e);
 							}
 							}
 							}
@@ -339,7 +339,7 @@ public abstract class MessageManager implements Runnable {
 							db.commit(); Logger.debug(this, "COMMITED.");
 						}
 						catch(RuntimeException e) {
-							DBUtil.rollbackAndThrow(db, this, e);
+							Persistent.rollbackAndThrow(db, this, e);
 						}
 					}
 					}
@@ -348,18 +348,18 @@ public abstract class MessageManager implements Runnable {
 		synchronized(db.lock()) {
 			try {
 				for(MessageList messageList : getMessageListsBy(identity)) {
-					messageList.initializeTransient(db, this);
+					messageList.initializeTransient(mFreetalk);
 					messageList.deleteWithoutCommit();
 				}
 
 				if(identity instanceof FTOwnIdentity) {
 					for(OwnMessage message : getOwnMessagesBy((FTOwnIdentity)identity)) {
-						message.initializeTransient(db, this);
+						message.initializeTransient(mFreetalk);
 						message.deleteWithoutCommit();
 					}
 
 					for(OwnMessageList messageList : getOwnMessageListsBy((FTOwnIdentity)identity)) {
-						messageList.initializeTransient(db, this);
+						messageList.initializeTransient(mFreetalk);
 						messageList.deleteWithoutCommit();
 					}
 					
@@ -375,7 +375,7 @@ public abstract class MessageManager implements Runnable {
 				db.commit(); Logger.debug(this, "COMMITED: Messages and message lists deleted for " + identity);
 			}
 			catch(RuntimeException e) {
-				DBUtil.rollbackAndThrow(db, this, e);
+				Persistent.rollbackAndThrow(db, this, e);
 			}
 		}
 	}
@@ -393,14 +393,12 @@ public abstract class MessageManager implements Runnable {
 		synchronized(db.lock()) {
 			try {
 				list.beginOfInsert();
-				db.commit(); Logger.debug(this, "COMMITED.");
+				Persistent.commit(db, this);
 			}
 			catch(RuntimeException e) {
-				db.rollback();
-				Logger.error(this, "ROLLED BACK: Exception in onMessageListInsertStarted for " + list, e);
 				// This function MUST NOT succeed if the list was not marked as being inserted: Otherwise messages could be added to the list while it is
 				// being inserted already, resulting in the messages being marked as successfully inserted but not being visible to anyone!
-				throw e;
+				Persistent.rollbackAndThrow(db, this, e);
 			}
 		}
 	}
@@ -416,7 +414,7 @@ public abstract class MessageManager implements Runnable {
 			try {
 				OwnMessageList list = getOwnMessageList(MessageList.getIDFromURI(uri));
 				list.markAsInserted();
-				db.commit(); Logger.debug(this, "COMMITED.");
+				list.commit(this);
 			}
 			catch(RuntimeException e) {
 				db.rollback();
@@ -444,7 +442,7 @@ public abstract class MessageManager implements Runnable {
 			
 			synchronized(db.lock()) {
 				try {
-					message.initializeTransient(db, this);
+					message.initializeTransient(mFreetalk);
 					message.storeWithoutCommit();
 
 					for(MessageReference ref : getAllReferencesToMessage(message.getID())) {
@@ -456,7 +454,7 @@ public abstract class MessageManager implements Runnable {
 						ref.setMessageWasDownloadedFlag();
 					}
 
-					db.commit(); Logger.debug(this, "COMMITED.");
+					message.commit(this);
 				}
 				catch(Exception ex) {
 					db.rollback(); Logger.error(this, "ROLLED BACK!", ex);
@@ -487,7 +485,7 @@ public abstract class MessageManager implements Runnable {
 		boolean addedMessages = false;
 		
 		for(Message message : invisibleMessages) {
-			message.initializeTransient(db, this);
+			message.initializeTransient(mFreetalk);
 			
 			boolean allSuccessful = true;
 			
@@ -498,7 +496,7 @@ public abstract class MessageManager implements Runnable {
 					try {
 						Logger.debug(this, "Adding message to board: " + message);
 						board.addMessage(message);
-						db.commit(); Logger.debug(this, "COMMITED.");
+						board.commit(this);
 						addedMessages = true;
 					}
 					catch(Exception e) {
@@ -557,7 +555,7 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 	public synchronized void onMessageListReceived(MessageList list) {
-		list.initializeTransient(db, this);
+		list.initializeTransient(mFreetalk);
 		
 		MessageListFetchFailedMarker marker;
 		MessageList ghostList;
@@ -594,7 +592,7 @@ public abstract class MessageManager implements Runnable {
 					}
 					
 					list.storeWithoutCommit();
-					db.commit(); Logger.debug(this, "COMMITED.");
+					list.commit(this);
 				}
 				catch(RuntimeException ex) {
 					db.rollback(); Logger.error(this, "ROLLED BACK!", ex);
@@ -631,7 +629,7 @@ public abstract class MessageManager implements Runnable {
 					} catch(NoSuchFetchFailedMarkerException e1) {
 						Date dateOfNextRetry = calculateDateOfNextMessageFetchRetry(reason, date, 0);
 						failedMarker = new MessageList.MessageFetchFailedMarker(ref, reason, date, dateOfNextRetry);
-						failedMarker.initializeTransient(db, this);
+						failedMarker.initializeTransient(mFreetalk);
 					}
 					
 					failedMarker.storeWithoutCommit();
@@ -644,7 +642,7 @@ public abstract class MessageManager implements Runnable {
 				}
 				
 				
-				db.commit(); Logger.debug(this, "COMMITED.");
+				Persistent.commit(db, this);
 			}
 			catch(RuntimeException ex) {
 				db.rollback();
@@ -696,7 +694,7 @@ public abstract class MessageManager implements Runnable {
 
 					public FetchFailedMarker next() {
 						FetchFailedMarker next = iter.next();
-						next.initializeTransient(db, MessageManager.this);
+						next.initializeTransient(mFreetalk);
 						return next;
 					}
 
@@ -718,7 +716,7 @@ public abstract class MessageManager implements Runnable {
 		switch(markers.size()) {
 			case 1:
 				MessageFetchFailedMarker result = markers.next();
-				result.initializeTransient(db, this);
+				result.initializeTransient(mFreetalk);
 				return result;
 			case 0:
 				throw new NoSuchFetchFailedMarkerException(ref.toString());
@@ -737,7 +735,7 @@ public abstract class MessageManager implements Runnable {
 		switch(markers.size()) {
 			case 1:
 				MessageListFetchFailedMarker result = markers.next();
-				result.initializeTransient(db, this);
+				result.initializeTransient(mFreetalk);
 				return result;
 			case 0:
 				throw new NoSuchFetchFailedMarkerException(messageListID);
@@ -778,7 +776,7 @@ public abstract class MessageManager implements Runnable {
 					++amount;
 					
 					Logger.debug(this, "Cleared marker " + marker);
-					db.commit(); Logger.debug(this, "COMMITED!");
+					marker.commit(this);
 				}
 				catch(RuntimeException e) {
 					db.rollback();
@@ -839,7 +837,7 @@ public abstract class MessageManager implements Runnable {
 
 					public MessageList.MessageReference next() {
 						MessageList.MessageReference next = iter.next();
-						next.initializeTransient(db);
+						next.initializeTransient(mFreetalk);
 						return next;
 					}
 
@@ -878,7 +876,7 @@ public abstract class MessageManager implements Runnable {
 		switch(result.size()) {
 			case 1:
 				Message m = result.next();
-				m.initializeTransient(db, this);
+				m.initializeTransient(mFreetalk);
 				return m;
 			case 0:
 				throw new NoSuchMessageException(id);
@@ -904,7 +902,7 @@ public abstract class MessageManager implements Runnable {
 		switch(result.size()) {
 			case 1:
 				MessageList list = result.next();
-				list.initializeTransient(db, this);
+				list.initializeTransient(mFreetalk);
 				return list;
 			case 0:
 				throw new NoSuchMessageListException(id);
@@ -923,7 +921,7 @@ public abstract class MessageManager implements Runnable {
 		switch(result.size()) {
 			case 1:
 				OwnMessageList list = result.next();
-				list.initializeTransient(db, this);
+				list.initializeTransient(mFreetalk);
 				return list;
 			case 0:
 				throw new NoSuchMessageListException(id);
@@ -947,7 +945,7 @@ public abstract class MessageManager implements Runnable {
 		switch(result.size()) {
 			case 1:
 				OwnMessage m = result.next();
-				m.initializeTransient(db, this);
+				m.initializeTransient(mFreetalk);
 				return m;
 			case 0:
 				throw new NoSuchMessageException(id);
@@ -973,7 +971,7 @@ public abstract class MessageManager implements Runnable {
 		switch(result.size()) {
 			case 1:
 				Board b = result.next();
-				b.initializeTransient(db, this);
+				b.initializeTransient(mFreetalk);
 				return b;
 			case 0:
 				throw new NoSuchBoardException(name);
@@ -999,7 +997,7 @@ public abstract class MessageManager implements Runnable {
 			synchronized(db.lock()) {
 			try {
 				board = new Board(name);
-				board.initializeTransient(db, this);
+				board.initializeTransient(mFreetalk);
 				board.storeWithoutCommit();
 				db.commit(); Logger.debug(this, "COMMITED: Created board " + name);
 			}
@@ -1031,7 +1029,7 @@ public abstract class MessageManager implements Runnable {
 
 			public Board next() {
 				final Board next = iter.next();
-				next.initializeTransient(db, MessageManager.this);
+				next.initializeTransient(mFreetalk);
 				return next;
 			}
 
@@ -1053,7 +1051,7 @@ public abstract class MessageManager implements Runnable {
 
 			public SubscribedBoard next() {
 				final SubscribedBoard next = iter.next();
-				next.initializeTransient(db, MessageManager.this);
+				next.initializeTransient(mFreetalk);
 				return next;
 			}
 
@@ -1137,7 +1135,7 @@ public abstract class MessageManager implements Runnable {
     	switch(result.size()) {
     		case 1:
     			SubscribedBoard board = result.next();
-    			board.initializeTransient(db, this);
+    			board.initializeTransient(mFreetalk);
     			return board;
     		case 0: throw new NoSuchBoardException(boardName);
     		default: throw new DuplicateBoardException(boardName);
@@ -1161,7 +1159,7 @@ public abstract class MessageManager implements Runnable {
 					synchronized(db.lock()) {
 						try {
 							SubscribedBoard subscribedBoard = new SubscribedBoard(board, subscriber);
-							subscribedBoard.initializeTransient(db, this);
+							subscribedBoard.initializeTransient(mFreetalk);
 							subscribedBoard.storeWithoutCommit();
 							subscribedBoard.synchronizeWithoutCommit();
 							
@@ -1171,17 +1169,17 @@ public abstract class MessageManager implements Runnable {
 								board.storeWithoutCommit();
 							}
 							
-							db.commit(); Logger.debug(this, "COMMITED.");
+							subscribedBoard.commit(this);
 
 							return subscribedBoard;
 						}
 						catch(InvalidParameterException error) {
-							db.rollback(); Logger.error(this, "subscribeToBoard failed", error);
-							throw error;							
+							Persistent.rollbackAndThrow(db, this, new RuntimeException(error));
+							throw error; // Satisfy the compiler
 						}
 						catch(Exception error) {
-							db.rollback(); Logger.error(this, "subscribeToBoard failed", error);
-							throw new RuntimeException(error);
+							Persistent.rollbackAndThrow(db, this, new RuntimeException(error));
+							throw new RuntimeException(error); // Satisfy the compiler
 						}
 					}
 				}
@@ -1211,10 +1209,10 @@ public abstract class MessageManager implements Runnable {
 					board.storeWithoutCommit();
 				}
 				
-				db.commit(); Logger.debug(this, "COMMITED");
+				subscribedBoard.commit(this);
 			}
 			catch(RuntimeException e) {
-				DBUtil.rollbackAndThrow(db, this, e);
+				Persistent.rollbackAndThrow(db, this, e);
 			}
 		}
 		}
@@ -1254,7 +1252,7 @@ public abstract class MessageManager implements Runnable {
 
 			public OwnMessage next() {
 				OwnMessage next = iter.next();
-				next.initializeTransient(db, MessageManager.this);
+				next.initializeTransient(mFreetalk);
 				return next;
 			}
 
@@ -1293,7 +1291,7 @@ public abstract class MessageManager implements Runnable {
 
 			public MessageList.MessageReference next() {
 				MessageList.MessageReference next = iter.next();
-				next.initializeTransient(db);
+				next.initializeTransient(mFreetalk);
 				return next;
 			}
 

@@ -3,16 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import plugins.Freetalk.MessageList.MessageFetchFailedMarker;
-import plugins.Freetalk.MessageList.MessageListFetchFailedMarker;
-import plugins.Freetalk.WoT.WoTIdentity;
+import java.util.Map.Entry;
+
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTMessageFetcher;
 import plugins.Freetalk.WoT.WoTMessageInserter;
 import plugins.Freetalk.WoT.WoTMessageListFetcher;
 import plugins.Freetalk.WoT.WoTMessageListInserter;
 import plugins.Freetalk.WoT.WoTMessageManager;
-import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.tasks.PersistentTaskManager;
 import plugins.Freetalk.ui.FCP.FCPInterface;
 import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
@@ -179,53 +177,15 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
         // The shutdown hook does auto-commit. We do NOT want auto-commit: if a
         // transaction hasn't commit()ed, it's not safe to commit it.
         dbCfg.automaticShutDown(false);
+        
+        for(Entry<Class<? extends Persistent>, String[]> entry : Persistent.getIndexedFields().entrySet()) {
+        	Class<? extends Persistent> currentClass = entry.getKey();
+        	
+        	for(String indexedField : entry.getValue()) { // FIXME: Test whether this actually works!
+        		dbCfg.objectClass(currentClass).objectField(indexedField).indexed(true);
+        	}
+        }
 		
-		// TODO: Replace all these loops with one single loop which uses reflection!
-		
-		for(String f : Message.getIndexedFields())
-			dbCfg.objectClass(Message.class).objectField(f).indexed(true);
-		
-		for(String f : MessageList.getIndexedFields())
-			dbCfg.objectClass(MessageList.class).objectField(f).indexed(true);
-		
-		for(String f: MessageList.MessageReference.getIndexedFields())
-			dbCfg.objectClass(MessageList.MessageReference.class).objectField(f).indexed(true);
-		
-		dbCfg.objectClass(FetchFailedMarker.class).persistStaticFieldValues(); /* Make it store enums */
-		
-		for(String f : FetchFailedMarker.getIndexedFields())
-			dbCfg.objectClass(FetchFailedMarker.class).objectField(f).indexed(true);
-		
-		for(String f : MessageFetchFailedMarker.getIndexedFields())
-			dbCfg.objectClass(MessageFetchFailedMarker.class).objectField(f).indexed(true);
-		
-		for(String f : MessageListFetchFailedMarker.getIndexedFields())
-			dbCfg.objectClass(MessageListFetchFailedMarker.class).objectField(f).indexed(true);
-			
-		
-		for(String f : Board.getIndexedFields()) {
-			dbCfg.objectClass(Board.class).objectField(f).indexed(true);
-		}
-		
-		for(String f : SubscribedBoard.getMessageReferenceIndexedFields()) {
-			dbCfg.objectClass(SubscribedBoard.BoardReplyLink.class).objectField(f).indexed(true);
-		}
-		
-		for(String f : SubscribedBoard.getBoardReplyLinkIndexedFields()) {
-			dbCfg.objectClass(SubscribedBoard.BoardReplyLink.class).objectField(f).indexed(true);
-		}		
-		
-		for(String f : SubscribedBoard.getBoardThreadLinkIndexedFields()) {
-			dbCfg.objectClass(SubscribedBoard.BoardReplyLink.class).objectField(f).indexed(true);
-		}
-
-		for(String f :  WoTIdentity.getIndexedFields()) {
-			dbCfg.objectClass(WoTIdentity.class).objectField(f).indexed(true);
-		}
-		
-		for(String f :  WoTOwnIdentity.getIndexedFields()) {
-			dbCfg.objectClass(WoTOwnIdentity.class).objectField(f).indexed(true);
-		}
 		
 		return Db4o.openFile(dbCfg, filename).ext();
 	}

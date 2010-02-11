@@ -46,15 +46,15 @@ public final class SubscribedBoard extends Board {
 		mSubscriber = mySubscriber;
 	}
 	
-    protected void initializeTransient(ExtObjectContainer myDB, MessageManager myMessageManager) {
-    	super.initializeTransient(myDB, myMessageManager);
-    	mParentBoard.initializeTransient(myDB, myMessageManager);
-    	mSubscriber.initializeTransient(myDB, myMessageManager.getIdentityManager());
+    protected void initializeTransient(Freetalk myFreetalk) {
+    	super.initializeTransient(myFreetalk);
+    	mParentBoard.initializeTransient(myFreetalk);
+    	mSubscriber.initializeTransient(myFreetalk);
     }
     
     protected void storeWithoutCommit() {
-    	DBUtil.throwIfNotStored(db, mSubscriber);
-    	DBUtil.throwIfNotStored(db, mParentBoard);
+    	throwIfNotStored(mSubscriber);
+    	throwIfNotStored(mParentBoard);
     	super.storeWithoutCommit();
     }
 
@@ -63,15 +63,17 @@ public final class SubscribedBoard extends Board {
 		// TODO: When deleting a subscribed board, check whether the objects of class Message are being used by a subscribed board of another own identity.
 		// If not, delete the messages.
 		try {
-			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			checkedActivate(3); // TODO: Figure out a suitable depth.
 			
-			for(MessageReference ref : getAllMessages(false))
-				ref.deleteWithoutCommit(db);
+			for(MessageReference ref : getAllMessages(false)) {
+				ref.initializeTransient(mFreetalk);
+				ref.deleteWithoutCommit();
+			}
 
-			DBUtil.checkedDelete(db, this);
+			checkedDelete();
 		}
 		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(db, this, e);
+			rollbackAndThrow(e);
 		}
 
 	}
@@ -97,7 +99,7 @@ public final class SubscribedBoard extends Board {
 	public synchronized MessageReference getLatestMessage() throws NoSuchMessageException {
     	// TODO: We can probably cache the latest message date in this SubscribedBoard object.
     	
-        final Query q = db.query();
+        final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this);
         q.descend("mMessageDate").orderDescending();
@@ -166,7 +168,7 @@ public final class SubscribedBoard extends Board {
     		// People are allowed to reply to non-threads as if they were threads, which results in a 'forked' thread.
     		ghostRef = getThreadLink(newMessage.getID());
     		ghostRef.setMessage(newMessage);
-    		ghostRef.storeWithoutCommit(db);
+    		ghostRef.storeWithoutCommit();
     		
     		linkThreadRepliesToNewParent(newMessage.getID(), newMessage);
     	}
@@ -174,7 +176,8 @@ public final class SubscribedBoard extends Board {
     		// If there was no ghost reference, we must store a BoardThreadLink if the new message is a thread 
 			if(newMessage.isThread()) {
 	    		BoardThreadLink threadRef = new BoardThreadLink(this, newMessage, takeFreeMessageIndexWithoutCommit());
-	    		threadRef.storeWithoutCommit(db);
+	    		threadRef.initializeTransient(mFreetalk);
+	    		threadRef.storeWithoutCommit();
 	    		
 	    		// We do not call linkThreadRepliesToNewParent() here because if there was no ghost reference for the new message this means that no replies to
 	    		// it were received yet.
@@ -196,7 +199,7 @@ public final class SubscribedBoard extends Board {
     		
     		// 3. Tell the parent thread that a new message was added. This updates the last reply date and the "was read"-flag of the thread.
     		parentThreadRef.onMessageAdded(newMessage);
-    		parentThreadRef.storeWithoutCommit(db);
+    		parentThreadRef.storeWithoutCommit();
     		
     		// 4. Store a BoardReplyLink for the new message
     		BoardReplyLink messageRef;
@@ -207,7 +210,8 @@ public final class SubscribedBoard extends Board {
     		}
     		catch(NoSuchMessageException e) {
     			messageRef = new BoardReplyLink(this, newMessage, takeFreeMessageIndexWithoutCommit());
-    			messageRef.storeWithoutCommit(db);
+    			messageRef.initializeTransient(mFreetalk);
+    			messageRef.storeWithoutCommit();
     		}
     		
     		// 5. Try to find the new message's parent message and tell it about it's parent message if it exists.
@@ -217,7 +221,7 @@ public final class SubscribedBoard extends Board {
     			// FIXME: This allows crossposting. Figure out whether we need to handle it specially:
     			// What happens if the message has specified a parent thread which belongs to this board BUT a parent message which is in a different board
     			// and does not belong to the parent thread
-    			newMessage.setParent(mMessageManager.get(newMessage.getParentID()));
+    			newMessage.setParent(mFreetalk.getMessageManager().get(newMessage.getParentID()));
     		}
     		catch(NoSuchMessageException e) {
     			// The parent message of the message was not downloaded yet
@@ -248,7 +252,7 @@ public final class SubscribedBoard extends Board {
     		
     		// If it was listed as a thread and had no replies, we can delete it's ThreadLink.
 	    	if(threadReplyCount(message.getID()) == 0) {
-	    		threadLink.deleteWithoutCommit(db);
+	    		threadLink.deleteWithoutCommit();
 	    	} else {
 	    		// We do not delete the ThreadLink if it has replies already: We want the replies to stay visible and therefore the ThreadLink has to be kept,
 	    		// so we mark it as a ghost thread.
@@ -269,7 +273,7 @@ public final class SubscribedBoard extends Board {
 				{ // Delete the reply itself.
 					BoardReplyLink replyLink = getReplyLink(message);
 					parentThreadID = replyLink.getThreadID();
-					replyLink.deleteWithoutCommit(db);
+					replyLink.deleteWithoutCommit();
 				}
 				
 				// Update the parent thread of the reply
@@ -284,7 +288,7 @@ public final class SubscribedBoard extends Board {
 					// It might happen that the caller first calls deleteMessage(thread) and then deleteMessage(all replies). The call to
 					// deleteMessage(thread) did not delete the thread because it still had replies. Now it has no more replies and we must delete it.
 					if(threadReplyCount(parentThreadID) == 0) {
-						threadLink.deleteWithoutCommit(db);
+						threadLink.deleteWithoutCommit();
 						threadLink = null;
 					} 
 				}
@@ -343,7 +347,7 @@ public final class SubscribedBoard extends Board {
     
     @SuppressWarnings("unchecked")
 	public synchronized BoardReplyLink getReplyLink(Message message) throws NoSuchMessageException {
-        final Query q = db.query();
+        final Query q = mDB.query();
         q.constrain(BoardReplyLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mMessage").constrain(message).identity();
@@ -363,7 +367,7 @@ public final class SubscribedBoard extends Board {
     
     @SuppressWarnings("unchecked")
 	public synchronized BoardThreadLink getThreadLink(String threadID) throws NoSuchMessageException {
-    	final Query q = db.query();
+    	final Query q = mDB.query();
         q.constrain(BoardThreadLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mThreadID").constrain(threadID);
@@ -410,7 +414,7 @@ public final class SubscribedBoard extends Board {
     	catch(NoSuchMessageException e) {
     		// There is no thread reference for the parent thread yet. Either it was not downloaded yet or it was downloaded but is no thread.
     		try {
-    			Message parentThread = mMessageManager.get(parentThreadID);
+    			Message parentThread = mFreetalk.getMessageManager().get(parentThreadID);
     			
     			if(Arrays.binarySearch(parentThread.getBoards(), this) < 0) {
     				// The parent thread is not a message in this board.
@@ -424,13 +428,13 @@ public final class SubscribedBoard extends Board {
     			// which is the parent of the message which was passed to this function.
 
     			BoardThreadLink parentThreadRef = new BoardThreadLink(this, parentThread, takeFreeMessageIndexWithoutCommit()); 
-    			parentThreadRef.storeWithoutCommit(db);
+    			parentThreadRef.storeWithoutCommit();
     			return parentThreadRef;
     		}
     		catch(NoSuchMessageException ex) { 
     			// The message manager did not find the parentThreadID, so the parent thread was not downloaded yet, we create a ghost thread reference for it.
     			BoardThreadLink ghostThreadRef = new BoardThreadLink(this, parentThreadID, newMessage.getDate(), takeFreeMessageIndexWithoutCommit());
-    			ghostThreadRef.storeWithoutCommit(db);
+    			ghostThreadRef.storeWithoutCommit();
     			return ghostThreadRef;
     		}		
     	}
@@ -445,7 +449,7 @@ public final class SubscribedBoard extends Board {
      */
     @SuppressWarnings("unchecked")
     public synchronized ObjectSet<BoardThreadLink> getThreads() {
-    	final Query q = db.query();
+    	final Query q = mDB.query();
     	q.constrain(BoardThreadLink.class);
     	q.descend("mBoard").constrain(SubscribedBoard.this).identity(); // FIXME: Benchmark whether switching the order of those two constrains makes it faster.
     	q.descend("mLastReplyDate").orderDescending();
@@ -454,7 +458,7 @@ public final class SubscribedBoard extends Board {
 
     @SuppressWarnings("unchecked")
     public synchronized ObjectSet<MessageReference> getAllMessages(final boolean sortByMessageIndexAscending) {
-    	final Query q = db.query();
+    	final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         if (sortByMessageIndexAscending) {
@@ -465,7 +469,7 @@ public final class SubscribedBoard extends Board {
 
     @SuppressWarnings("unchecked")
 	public synchronized int getLastMessageIndex() throws NoSuchMessageException {
-    	final Query q = db.query();
+    	final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mMessageIndex").orderDescending();
@@ -478,7 +482,7 @@ public final class SubscribedBoard extends Board {
     }
     
 	public synchronized int getUnreadMessageCount() {
-        final Query q = db.query();
+        final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mWasRead").constrain(false);
@@ -498,7 +502,7 @@ public final class SubscribedBoard extends Board {
      */
     @SuppressWarnings("unchecked")
     public synchronized MessageReference getMessageByIndex(int index) throws NoSuchMessageException {
-    	final Query q = db.query();
+    	final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mMessageIndex").constrain(index);
@@ -520,7 +524,7 @@ public final class SubscribedBoard extends Board {
             final boolean sortByMessageIndexAscending,
             final boolean sortByMessageDateAscending)
     {
-        final Query q = db.query();
+        final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         if (minimumIndex > 0) {
@@ -541,7 +545,7 @@ public final class SubscribedBoard extends Board {
             final boolean sortByMessageIndexAscending,
             final boolean sortByMessageDateAscending)
     {
-        final Query q = db.query();
+        final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         if (minimumDate > 0) {
@@ -560,7 +564,7 @@ public final class SubscribedBoard extends Board {
      * Get the number of messages in this board.
      */
     public synchronized int messageCount() {
-    	final Query q = db.query();
+    	final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         return q.execute().size();
@@ -577,7 +581,7 @@ public final class SubscribedBoard extends Board {
      * Get the number of unread replies to the given thread.
      */
     public synchronized int threadUnreadReplyCount(String threadID) {
-    	final Query q = db.query();
+    	final Query q = mDB.query();
         q.constrain(BoardReplyLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mThreadID").constrain(threadID);
@@ -591,7 +595,7 @@ public final class SubscribedBoard extends Board {
      */
     @SuppressWarnings("unchecked")
     public synchronized ObjectSet<BoardReplyLink> getAllThreadReplies(String threadID, final boolean sortByDateAscending) {
-    	final Query q = db.query();
+    	final Query q = mDB.query();
         q.constrain(BoardReplyLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mThreadID").constrain(threadID);
@@ -635,7 +639,7 @@ public final class SubscribedBoard extends Board {
 //    	
 //    }
 
-    public static abstract class MessageReference {
+    public static abstract class MessageReference extends Persistent {
     	
     	protected final SubscribedBoard mBoard;
     	
@@ -680,8 +684,8 @@ public final class SubscribedBoard extends Board {
         public Message getMessage() throws MessageNotFetchedException {
             /* We do not have to initialize mBoard and can assume that it is initialized because a MessageReference will only be loaded
              * by the board it belongs to. */
-        	mBoard.db.activate(this, 3); // FIXME: Figure out a reasonable depth
-        	mMessage.initializeTransient(mBoard.db, mBoard.mMessageManager);
+        	activate(3); // FIXME: Figure out a reasonable depth
+        	mMessage.initializeTransient(mFreetalk);
             return mMessage;
         }
         
@@ -713,14 +717,14 @@ public final class SubscribedBoard extends Board {
          */
         protected void storeWithoutCommit(ExtObjectContainer db) {
         	try {
-        		DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
-        		DBUtil.throwIfNotStored(db, mBoard);
-        		if(mMessage != null) DBUtil.throwIfNotStored(db, mMessage);
+        		checkedActivate(3); // TODO: Figure out a suitable depth.
+        		throwIfNotStored(mBoard);
+        		if(mMessage != null) throwIfNotStored(mMessage);
 
-        		db.store(this);
+        		checkedStore();
         	}
         	catch(RuntimeException e) {
-        		DBUtil.rollbackAndThrow(db, this, e);
+        		rollbackAndThrow(e);
         	}
         }
         
@@ -728,30 +732,20 @@ public final class SubscribedBoard extends Board {
          * Does not provide synchronization, you have to lock this Board before calling this function.
          */
         public void storeAndCommit() {
-        	ExtObjectContainer db = mBoard.db;
-        	
-        	synchronized(db.lock()) {
+        	synchronized(mDB.lock()) {
         		try {
-	        		storeWithoutCommit(db);
-	        		db.commit(); Logger.debug(this, "COMMITED.");
+	        		storeWithoutCommit();
+	        		commit(this);
         		}
         		catch(RuntimeException e) {
-        			DBUtil.rollbackAndThrow(db, this, e);
+        			rollbackAndThrow(e);
         		}
         	}
         }
         
         
     	protected void deleteWithoutCommit(ExtObjectContainer db) {
-    		try {
-    			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
-    			
-    			DBUtil.checkedDelete(db, this);
-    		}
-    		catch(RuntimeException e) {
-        		DBUtil.rollbackAndThrow(db, this, e);
-        	}
-			
+    		deleteWithoutCommit(3); // TODO: Figure out a suitable depth.
 		}
     }
     

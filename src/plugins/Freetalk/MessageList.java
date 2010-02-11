@@ -15,7 +15,6 @@ import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.ObjectSet;
-import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
@@ -33,7 +32,7 @@ import freenet.support.Logger;
  * - A <code>MessageList</code> should maybe be limited to a maximal amount of messages references.
  * - There should be a limit to a certain maximal amount of boards a message can be posted to.
  */
-public abstract class MessageList implements Iterable<MessageList.MessageReference> {
+public abstract class MessageList extends Persistent implements Iterable<MessageList.MessageReference> {
 	
 	protected String mID; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
 	
@@ -42,8 +41,8 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	protected int mIndex; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
 	
 	
-	public static String[] getIndexedFields() {
-		return new String[] { "mID", "mAuthor", "mIndex" };
+	static { 
+		registerIndexedFields(MessageList.class, new String[] { "mID", "mAuthor", "mIndex" });
 	}
 	
 	
@@ -53,7 +52,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	 * objects which belong to a certain board - which is necessary because we only want to download messages from boards to which the
 	 * user is actually subscribed.
 	 */
-	public static class MessageReference {
+	public static class MessageReference extends Persistent {
 		
 		private MessageList mMessageList = null;
 		
@@ -65,8 +64,8 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		
 		private boolean iWasDownloaded = false;
 		
-		public static String[] getIndexedFields() {
-			return new String[] { "mMessageID", "mBoard", "iWasDownloaded" };
+		static  {
+			registerIndexedFields(MessageList.class, new String[] { "mMessageID", "mBoard", "iWasDownloaded" });
 		}
 		
 		public MessageReference(String newMessageID, FreenetURI newURI, Board myBoard) {
@@ -78,15 +77,9 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			mBoard = myBoard;
 		}
 		
-		private transient ExtObjectContainer db;
-		
-		protected void initializeTransient(ExtObjectContainer myDB) {
-			db = myDB;
-		}
-		
 		protected void storeWithoutCommit() {
 			try {
-				DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+				checkedActivate(3); // TODO: Figure out a suitable depth.
 				
 				// We cannot throwIfNotStored because MessageReference objects are usually created within the same transaction of creating the MessageList
 				//DBUtil.throwIfNotStored(db, mMessageList);
@@ -95,27 +88,27 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 				if(mURI == null)
 					throw new NullPointerException("Should not happen: URI is null for " + this);
 				
-				db.store(mURI);
-				db.store(this);
+				checkedStore(mURI);
+				checkedStore();
 			}
 			catch(RuntimeException e) {
-				DBUtil.rollbackAndThrow(db, this, e);
+				rollbackAndThrow(e);
 			}
 		}
 		
 		public void deleteWithoutCommit() {
 			try {
-				DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+				checkedActivate(3); // TODO: Figure out a suitable depth.
 				
-				DBUtil.checkedDelete(db, this);
+				checkedDelete();
 				
 				if(mURI != null)
-					mURI.removeFrom(db);
+					mURI.removeFrom(mDB);
 				else
 					Logger.error(this, "Should not happen: URI is null for " + this);
 			}
 			catch(RuntimeException e) {
-				DBUtil.rollbackAndThrow(db, this, e);
+				rollbackAndThrow(e);
 			}
 		}
 		
@@ -157,7 +150,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		}
 
 		public MessageList getMessageList() {
-			db.activate(this, 3);
+			activate(3);
 			return mMessageList;
 		}
 		
@@ -174,8 +167,8 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 
 		private final String mMessageListID;
 		
-		public static String[] getIndexedFields() {
-			return new String[] { "mMessageListID" };
+		static {
+			registerIndexedFields(MessageListFetchFailedMarker.class, new String[] { "mMessageListID" });
 		}
 		
 		public MessageListFetchFailedMarker(MessageList myMessageList, Reason myReason, Date myDate, Date myDateOfNextRetry) {
@@ -194,8 +187,8 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 
 		private final MessageReference mMessageReference;
 		
-		public static String[] getIndexedFields() {
-			return new String[] { "mMessageReference" };
+		static {
+			registerIndexedFields(MessageFetchFailedMarker.class, new String[] { "mMessageReference" });
 		}
 		
 		public MessageFetchFailedMarker(MessageReference myMessageReference, Reason myReason, Date myDate, Date myDateOfNextRetry) {
@@ -205,12 +198,12 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		}
 		
 		public void storeWithoutCommit() {
-			DBUtil.throwIfNotStored(mDB, mMessageReference);
+			throwIfNotStored(mMessageReference);
 			super.storeWithoutCommit();
 		}
 
 		public MessageReference getMessageReference() {
-			mMessageReference.initializeTransient(mDB);
+			mMessageReference.initializeTransient(mFreetalk);
 			return mMessageReference;
 		}
 	}
@@ -296,20 +289,13 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 		mMessages = new ArrayList<MessageReference>(16); /* TODO: Find a reasonable value */
 	}
 	
-	protected transient ExtObjectContainer db;
-	protected transient MessageManager mMessageManager;
-
-	public void initializeTransient(ExtObjectContainer myDB, MessageManager myMessageManager) {
-		db = myDB;
-		mMessageManager = myMessageManager;
-	}
 	
 	// FIXME: Get rid of the synchronized attribute, the list should be locked by all calling code before it locks db.lock()
 	public synchronized void storeWithoutCommit() {
 		try {
-			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			checkedActivate(3); // TODO: Figure out a suitable depth.
 			
-			DBUtil.throwIfNotStored(db, mAuthor);
+			throwIfNotStored(mAuthor);
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 			
@@ -318,14 +304,14 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			// the more complex structure. FIXME: I hope that the implicit storage of this MessageList by ref.storeWithoutCommit() does not hurt?
 			
 			for(MessageReference ref : mMessages) {
-				ref.initializeTransient(db);
+				ref.initializeTransient(mFreetalk);
 				ref.storeWithoutCommit();
 			}
-			db.store(mMessages, 1);
-			db.store(this);
+			mDB.store(mMessages, 1);
+			checkedStore();
 		}
 		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(db, this, e);
+			rollbackAndThrow(e);
 		}
 	}
 	
@@ -333,17 +319,17 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	@SuppressWarnings("unchecked")
 	protected synchronized void deleteWithoutCommit() {
 		try {
-			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			checkedActivate(3); // TODO: Figure out a suitable depth.
 			
 			{ // First we have to delete the objects of type MessageListFetchFailedReference because this MessageList needs to exist in the db so we can query them
 				// TODO: This requires that we have locked the MessageManager, which is currently the case for every call to deleteWithoutCommit()
 				// However, we should move the code elsewhere to ensure the locking...
-				Query query = db.query();
+				Query query = mDB.query();
 				query.constrain(MessageListFetchFailedMarker.class);
 				query.descend("mMessageListID").constrain(getID());
 				
 				for(MessageListFetchFailedMarker failedRef : (ObjectSet<MessageListFetchFailedMarker>)query.execute()) {
-					failedRef.initializeTransient(db, mMessageManager);
+					failedRef.initializeTransient(mFreetalk);
 					failedRef.deleteWithoutCommit();
 				}
 			}
@@ -351,30 +337,30 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 			
 			// Then we delete our list of MessageReferences before we delete each of it's MessageReferences 
 			// - less work of db4o, it does not have to null all the pointers to them.
-			DBUtil.checkedDelete(db, mMessages);
+			checkedDelete(mMessages);
 			
 			for(MessageReference ref : mMessages) {
 				// TODO: This requires that we have locked the MessageManager, which is currently the case for every call to deleteWithoutCommit()
 				// However, we should move the code elsewhere to ensure the locking...
-				Query query = db.query();
+				Query query = mDB.query();
 				query.constrain(MessageFetchFailedMarker.class);
 				query.descend("mMessageReference").constrain(ref).identity();
 				
 				// Before deleting the MessageReference itself, we must delete any MessageFetchFailedReference objects which point to it. 
 				for(MessageFetchFailedMarker failedRef : (ObjectSet<MessageFetchFailedMarker>)query.execute()) {
-					failedRef.initializeTransient(db, mMessageManager);
+					failedRef.initializeTransient(mFreetalk);
 					failedRef.deleteWithoutCommit();
 				}
 				
-				ref.initializeTransient(db);
+				ref.initializeTransient(mFreetalk);
 				ref.deleteWithoutCommit();
 			}
 			
 			// We delete this at last because each MessageReference object had a pointer to it - less work for db4o, it doesn't have to null them all
-			DBUtil.checkedDelete(db, this);
+			checkedDelete();
 		}
 		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(db, this, e);
+			rollbackAndThrow(e);
 		}
 	}
 	
@@ -411,7 +397,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	protected abstract FreenetURI generateURI(FreenetURI baseURI, int index);
 	
 	public FTIdentity getAuthor() {
-		mAuthor.initializeTransient(db, mMessageManager.getIdentityManager());
+		mAuthor.initializeTransient(mFreetalk);
 		return mAuthor;
 	}
 	
@@ -436,7 +422,7 @@ public abstract class MessageList implements Iterable<MessageList.MessageReferen
 	}
 	
 	public String toString() {
-		if(db != null)
+		if(mDB != null)
 			return getURI().toString();
 		
 		// We do not throw a NPE because toString() is usually used in logging, we want the logging to be robust

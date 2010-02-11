@@ -240,8 +240,8 @@ public class Board extends Persistent implements Comparable<Board> {
     		assert(mMessageIndex == (mBoard.mNextFreeMessageIndex-1));
     	}
     	
-    	public static String[] getIndexedFields() {
-    		return new String[] { "mBoard" , "mMessage" };
+    	static {
+    		registerIndexedFields(BoardMessageLink.class, new String[] { "mBoard" , "mMessage" });
     	}
     	
     	public Board getBoard() {
