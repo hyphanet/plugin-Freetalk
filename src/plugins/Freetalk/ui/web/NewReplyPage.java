@@ -93,14 +93,19 @@ public class NewReplyPage extends WebPageImpl {
 				
 				makeNewReplyPage(replySubject, replyText);
 			}
+			return;
 		}
-		else {
-			String subject = mParentMessage.getTitle();
-			if(!subject.startsWith("Re:"))
-				subject = "Re: " + subject;
-			
-			makeNewReplyPage(subject, Quoting.getFullQuote(mParentMessage));
+		String subject = mParentMessage.getTitle();
+		if(!subject.startsWith("Re:"))
+			subject = "Re: " + subject;
+		String text = Quoting.getFullQuote(mParentMessage);
+		if (mRequest.isPartSet("CreatePreview")) {
+			subject = mRequest.getPartAsString("ReplySubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH);
+			text = mRequest.getPartAsString("ReplyText", Message.MAX_MESSAGE_TEXT_LENGTH);
+			mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), subject, text));
 		}
+
+		makeNewReplyPage(subject, Quoting.getFullQuote(mParentMessage));
 	}
 
 	private void makeNewReplyPage(String replySubject, String replyText) {
@@ -128,6 +133,7 @@ public class NewReplyPage extends WebPageImpl {
 		textBox.addChild("textarea", new String[] { "name", "cols", "rows" }, new String[] { "ReplyText", "80", "30" }, replyText);
 		
 		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateReply", l10n().getString("NewReplyPage.ReplyBox.SubmitButton")});
+		newReplyForm.addChild(PreviewPane.createPreviewButton(l10n(), "CreatePreview"));
 	}
 
 	private void makeBreadcrumbs() {

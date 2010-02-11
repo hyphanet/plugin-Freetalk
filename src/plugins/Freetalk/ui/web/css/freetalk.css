@@ -1,0 +1,48 @@
+/* Freetalk Main CSS Header File */
+
+.freetalk .message .author .name {
+	font-weight: bold;
+	font-style: italic;
+}
+
+.freetalk .message .author .trust-count {
+	color: #0c0;
+}
+
+.freetalk .message .author .distrust-count {
+	color: #c00;
+}
+
+.freetalk .message .title.unread {
+	background-color: #ddd;
+}
+
+.freetalk .message .title .date {
+	float: right;
+	margin-left: 1ex;
+}
+
+.freetalk .message .title .mod-buttons {
+	float: left;
+	margin-right: 1ex;
+}
+
+.freetalk .message .title .mod-button {
+	float: left;
+}
+
+.freetalk .message .title .mod-button form {
+	display: inline;
+}
+
+.freetalk .message .title .text {
+	font-weight: bold;
+}
+
+.freetalk .message .title .mark-unread-button {
+	float: right;
+}
+
+.freetalk .message .body {
+	white-space: pre-wrap;
+}

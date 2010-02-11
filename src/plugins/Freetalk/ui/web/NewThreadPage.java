@@ -54,9 +54,16 @@ public final class NewThreadPage extends WebPageImpl {
 				
 				makeNewThreadPage(threadSubject, threadText);
 			}
+			return;
 		}
-		else
-			makeNewThreadPage("", "");
+		String threadSubject = "";
+		String threadText = "";
+		if (mRequest.isPartSet("CreatePreview")) {
+			threadSubject = mRequest.getPartAsString("ThreadSubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH);
+			threadText = mRequest.getPartAsString("ThreadText", Message.MAX_MESSAGE_TEXT_LENGTH);
+			mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), threadSubject, threadText));
+		}
+		makeNewThreadPage(threadSubject, threadText);
 	}
 
 	private void makeNewThreadPage(String threadSubject, String threadText) {
@@ -81,5 +88,6 @@ public final class NewThreadPage extends WebPageImpl {
 		textBox.addChild("textarea", new String[] { "name", "cols", "rows" }, new String[] { "ThreadText", "80", "30" }, threadText);
 		
 		newThreadForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateThread", l10n().getString("NewThreadPage.ThreadBox.SubmitButton")});
+		newThreadForm.addChild(PreviewPane.createPreviewButton(l10n(), "CreatePreview"));
 	}
 }

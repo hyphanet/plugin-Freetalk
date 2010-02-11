@@ -4,9 +4,7 @@
 package plugins.Freetalk.ui.web;
 
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
@@ -194,15 +192,14 @@ public final class ThreadPage extends WebPageImpl {
      * @param ref A reference to the message which is to be displayed. Can be null, then the "message was read?" information will be unavailable. 
      */
     private void addMessageBox(Message message, MessageReference ref) {
-    	
-        HTMLNode table = mContentNode.addChild("table", new String[] {"border", "width" }, new String[] { "0", "100%" });
-        HTMLNode row = table.addChild("tr");
-        HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width" }, new String[] { "left", "top", "2", "15%" }, "");
-        authorNode.addChild("b").addChild("i").
-        	addChild("a", new String[] { "class", "href" }, new String[] { "identity-link", "/WoT/ShowIdentity?id=" + message.getAuthor().getID() }).
-        	addChild("abbr", new String[] { "title" }, new String[] { message.getAuthor().getFreetalkAddress() }).
-        	addChild("#", message.getAuthor().getShortestUniqueName(50));
-        
+
+		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class" }, new String[] { "0", "100%", "message" });
+		HTMLNode row = table.addChild("tr", "class", "message");
+		HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width", "class" }, new String[] { "left", "top", "2", "15%", "author" }, "");
+		authorNode.addChild("abbr", new String[] { "title" }, new String[] { message.getAuthor().getID() }).addChild("span", "class", "name", message.getAuthor().getShortestUniqueName(50));
+        authorNode.addChild("#", " [");
+        authorNode.addChild("a", new String[] { "class", "href", "title" }, new String[] { "identity-link", "/WoT/ShowIdentity?id=" + message.getAuthor().getID(), "Web of Trust Page" }).addChild("#", "WoT");
+        authorNode.addChild("#", "]");
         authorNode.addChild("br");
         authorNode.addChild("#", l10n().getString("ThreadPage.Author.Posts") + ": " + mFreetalk.getMessageManager().getMessagesBy(message.getAuthor()).size());
         authorNode.addChild("br");
@@ -258,35 +255,26 @@ public final class ThreadPage extends WebPageImpl {
         authorNode.addChild("#", l10n().getString("Common.WebOfTrust.Score") + ": "+ txtScore);
 
         // Title of the message
-        HTMLNode title = row.addChild((ref == null || ref.wasRead()) ? "td" : "th", "align", "left", "");
+		HTMLNode title = row.addChild("td", new String[] { "align", "class" }, new String[] { "left", "title " + ((ref == null || ref.wasRead()) ? "read" : "unread") });
+		title.addChild("div", "class", "date", mLocalDateFormat.format(message.getDate()));
         
-        title.addChild("span", "style", "float:right; margin-left:10px", mLocalDateFormat.format(message.getDate()));
         
         if(ref != null && ref instanceof BoardThreadLink)
         	addMarkThreadAsUnreadButton(title, (BoardThreadLink)ref);
         
         if(message.getAuthor() != mOwnIdentity && ((WoTOwnIdentity)mOwnIdentity).getAssessed(message) == false) {
-            addModButton(title, message, 10, "+");
-            addModButton(title, message, -10, "-");
-            title.addChild("%", "&nbsp;");
+			HTMLNode modButtons = title.addChild("div", "class", "mod-buttons");
+			addModButton(modButtons, message, 10, "+");
+			addModButton(modButtons, message, -10, "-");
         }
-        title.addChild("b", message.getTitle());
+		title.addChild("div", "class", "text", message.getTitle());
         
         
         // Body of the message
-        row = table.addChild("tr");
+		row = table.addChild("tr", "class", "body");
         HTMLNode text = row.addChild("td", "align", "left", "");
-        String[] lines = message.getText().split("\r\n|\n");
-        for(String line : lines) {
-        	for (String splittedLine : splitLineAtURIs(line)) {
-        		HTMLNode linkNode = text;
-        		if (splittedLine.startsWith("CHK@") || splittedLine.startsWith("SSK@") || splittedLine.startsWith("USK@") || splittedLine.startsWith("KSK@")) {
-        			linkNode = linkNode.addChild("a", "href", "/" + splittedLine);
-        		}
-        		linkNode.addChild("#", splittedLine);
-        	}
-            text.addChild("br");
-        }
+        String messageBody = message.getText();
+        text.addChild(convertMessageBody(messageBody, null));
         addReplyButton(text, message);
     }
 
@@ -296,12 +284,12 @@ public final class ThreadPage extends WebPageImpl {
         int trustedBy = identityManager.getReceivedTrustsCount(author, 1);
         int distrustedBy = identityManager.getReceivedTrustsCount(author, -1);
 
-        parent.addChild("abbr", new String[]{"title", "style"}, new String[]{ l10n().getString("Common.WebOfTrust.TrustedByCount.Description"), "color:green"}, 
+        parent.addChild("abbr", new String[]{"title", "class"}, new String[]{ l10n().getString("Common.WebOfTrust.TrustedByCount.Description"), "trust-count"},
         		String.valueOf(trustedBy));
         
         parent.addChild("#", " / ");
 
-        parent.addChild("abbr", new String[]{"title", "style"}, new String[]{ l10n().getString("Common.WebOfTrust.DistrustedByCount.Description"), "color:red"},
+        parent.addChild("abbr", new String[]{"title", "class"}, new String[]{ l10n().getString("Common.WebOfTrust.DistrustedByCount.Description"), "distrust-count"},
         		String.valueOf(distrustedBy));
     }
     
@@ -333,7 +321,7 @@ public final class ThreadPage extends WebPageImpl {
     }
 
     private void addModButton(HTMLNode parent, Message message, int change, String label) {
-        parent = parent.addChild("span", "style", "float:left");
+		parent = parent.addChild("div", "class", "mod-button");
         HTMLNode newReplyForm = addFormChild(parent, Freetalk.PLUGIN_URI + "/ChangeTrust", "ChangeTrustPage");
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OtherIdentityID", message.getAuthor().getID()});
@@ -345,7 +333,7 @@ public final class ThreadPage extends WebPageImpl {
     }
     
     private void addMarkThreadAsUnreadButton(final HTMLNode title, final BoardThreadLink ref) {
-    	HTMLNode span = title.addChild("span", "style", "float:right");
+    	HTMLNode span = title.addChild("div", "class", "mark-unread-button");
     	
         HTMLNode markAsUnreadButton = addFormChild(span, Freetalk.PLUGIN_URI + "/showThread", "ThreadPage");
         markAsUnreadButton.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
@@ -394,58 +382,82 @@ public final class ThreadPage extends WebPageImpl {
     }
 
 	/**
-	 * This method scans the given lines for freenet URIs ({link String}s
-	 * beginning with “CHK@”, “SSK@”, “USK@”, or “KSK@”) and splits the given
-	 * lines at those links. The links themselves are included as well, so all
-	 * returned {@code String}s that start with those key types are most
-	 * probably links.
+	 * This method converts the message body into a HTML node. Line breaks
+	 * “CRLF” and “LF” are recognized and converted into {@code div} tags.
+	 * Freenet URIs are recognized and converted into links, even when they have
+	 * line breaks embedded in them.
 	 *
-	 * @param lines
-	 *            The lines to split
-	 * @return The splitted lines
+	 * @param messageBody
+	 *            The message body to convert
+	 * @return The HTML node displaying the message
 	 */
-	private static String[] splitLineAtURIs(String... lines) {
-		List<String> splittedLines = new ArrayList<String>();
-		List<String> linesToSplit = new ArrayList<String>(Arrays.asList(lines));
-		while (!linesToSplit.isEmpty()) {
-			String line = linesToSplit.remove(0);
-			String currentLine = line;
-			int chkLink = currentLine.indexOf("CHK@");
-			int sskLink = currentLine.indexOf("SSK@");
-			int uskLink = currentLine.indexOf("USK@");
-			int kskLink = currentLine.indexOf("KSK@");
-			while ((chkLink != -1) || (sskLink != -1) || (uskLink != -1) || (kskLink != -1)) {
-				int nextLink = Integer.MAX_VALUE;
-				if ((chkLink != -1) && (chkLink < nextLink)) {
-					nextLink = chkLink;
-				}
-				if ((sskLink != -1) && (sskLink < nextLink)) {
-					nextLink = sskLink;
-				}
-				if ((uskLink != -1) && (uskLink < nextLink)) {
-					nextLink = uskLink;
-				}
-				if ((kskLink != -1) && (kskLink < nextLink)) {
-					nextLink = kskLink;
-				}
-				/* TODO: other separators? */
-				int nextSpace = currentLine.indexOf(' ', nextLink);
+	public static HTMLNode convertMessageBody(String messageBody) {
+		return convertMessageBody(messageBody, null);
+	}
+
+	/**
+	 * This method converts the message body into a HTML node. Freenet URIs are
+	 * recognized and converted into links, even when they have line breaks
+	 * embedded in them.
+	 *
+	 * @param messageBody
+	 *            The message body to convert
+	 * @param linkClass
+	 *            The CSS class(es) for the links
+	 * @return The HTML node displaying the message
+	 */
+	public static HTMLNode convertMessageBody(String messageBody, String linkClass) {
+		HTMLNode messageNode = new HTMLNode("#");
+		String currentLine = messageBody;
+		int chkLink = currentLine.indexOf("CHK@");
+		int sskLink = currentLine.indexOf("SSK@");
+		int uskLink = currentLine.indexOf("USK@");
+		int kskLink = currentLine.indexOf("KSK@");
+		while ((chkLink != -1) || (sskLink != -1) || (uskLink != -1) || (kskLink != -1)) {
+			int nextLink = Integer.MAX_VALUE;
+			if ((chkLink != -1) && (chkLink < nextLink)) {
+				nextLink = chkLink;
+			}
+			if ((sskLink != -1) && (sskLink < nextLink)) {
+				nextLink = sskLink;
+			}
+			if ((uskLink != -1) && (uskLink < nextLink)) {
+				nextLink = uskLink;
+			}
+			if ((kskLink != -1) && (kskLink < nextLink)) {
+				nextLink = kskLink;
+			}
+			messageNode.addChild("#", currentLine.substring(0, nextLink));
+			int firstSlash = currentLine.indexOf('/', nextLink);
+			if ((firstSlash == -1) || ((firstSlash - nextLink) >= 105)) {
+				messageNode.addChild("#", currentLine.substring(nextLink, nextLink + 4));
+				currentLine = currentLine.substring(nextLink + 4);
+			} else {
+				String uriKey = currentLine.substring(nextLink, firstSlash).replaceAll("[\r\n\t ]+", "");
+				int nextSpace = currentLine.indexOf(' ', firstSlash);
+				int nextCrLf = currentLine.indexOf("\r\n", firstSlash);
+				int nextLf = currentLine.indexOf("\n", firstSlash);
 				if (nextSpace == -1) {
 					nextSpace = currentLine.length();
 				}
-				String uri = currentLine.substring(nextLink, nextSpace);
-				splittedLines.add(uri);
+				if ((nextCrLf != -1) && (nextCrLf < nextSpace)) {
+					nextSpace = nextCrLf;
+				}
+				if ((nextLf != -1) && (nextLf < nextSpace)) {
+					nextSpace = nextLf;
+				}
+				uriKey += currentLine.substring(firstSlash, nextSpace);
 				currentLine = currentLine.substring(nextSpace);
-				chkLink = currentLine.indexOf("CHK@");
-				sskLink = currentLine.indexOf("SSK@");
-				uskLink = currentLine.indexOf("USK@");
-				kskLink = currentLine.indexOf("USK@");
+				HTMLNode linkNode = (linkClass != null) ? new HTMLNode("a", new String[] { "href", "class" }, new String[] { "/" + uriKey, linkClass }, uriKey) : new HTMLNode("a", "href", "/" + uriKey, uriKey);
+				messageNode.addChild(linkNode);
 			}
-			if (currentLine.length() > 0) {
-				splittedLines.add(currentLine);
-			}
+			chkLink = currentLine.indexOf("CHK@");
+			sskLink = currentLine.indexOf("SSK@");
+			uskLink = currentLine.indexOf("USK@");
+			kskLink = currentLine.indexOf("KSK@");
 		}
-		return splittedLines.toArray(new String[splittedLines.size()]);
+		messageNode.addChild("#", currentLine);
+		return messageNode;
 	}
 
     /**

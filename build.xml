@@ -46,6 +46,7 @@
 		<copy todir="${build}">
 			<fileset dir="src/">
 				<include name="**/*.l10n" />
+				<include name="plugins/Freetalk/ui/web/css/*.css" />
 			</fileset>
 		</copy>
 	</target>

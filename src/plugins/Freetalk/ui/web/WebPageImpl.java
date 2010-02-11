@@ -93,7 +93,9 @@ public abstract class WebPageImpl implements WebPage {
 			page = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getShortestUniqueName(40), ctx);
 		else
 			page = mPM.getPageNode(Freetalk.PLUGIN_TITLE, ctx);
-		
+		page.addCustomStyleSheet(Freetalk.PLUGIN_URI + "/css/freetalk.css");
+		page.content.addAttribute("class", "freetalk");
+
 		if(mOwnIdentity != null && !(this instanceof TaskPage)) {
 			PersistentTaskManager taskManager = mFreetalk.getTaskManager();
 			
