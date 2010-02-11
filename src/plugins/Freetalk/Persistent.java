@@ -24,11 +24,17 @@ public abstract class Persistent {
 	protected static final void registerIndexedFields(Class<? extends Persistent> clazz, String[] fields) {
 		mIndexedFields.put(clazz, fields);
 	}
+	
+	protected static final Hashtable<Class<? extends Persistent>, String[]> getIndexedFields() {
+		return mIndexedFields;
+	}
+	
 	/**
-	 * Has to be called after retrieving a persistent Object from the database to initialize its transient fields:<br />
+	 * Must be called once after obtaining this object from the database before using any getter or setter member functions
+	 * and before calling storeWithoutCommit / deleteWithoutCommit.
 	 * Transient fields are NOT stored in the database. They are references to objects such as the IdentityManager.
 	 */
-	protected final void initializeTransient(Freetalk myFreetalk) {
+	public void initializeTransient(Freetalk myFreetalk) {
 		mFreetalk = myFreetalk;
 		mDB = mFreetalk.getDatabase();
 	}
@@ -72,7 +78,7 @@ public abstract class Persistent {
 	 * Currently does not any additional checks, it is used to 
 	 * @param object
 	 */
-	protected void checkedStore(Object object) {
+	protected final void checkedStore(Object object) {
 		mDB.store(object);
 	}
 	
@@ -81,7 +87,7 @@ public abstract class Persistent {
 	 * 
 	 * Same as a call to {@link checkedStore(this)}
 	 */
-	protected void checkedStore() {
+	protected final void checkedStore() {
 		mDB.store(this);
 	}
 	
@@ -131,14 +137,16 @@ public abstract class Persistent {
 	}
 
 	/**
-	 * Only to be used by the extending classes, not to be called from the outside.
-	 * 
 	 * Rolls back the current transaction, logs the passed exception and throws it.
 	 * To be used in try/catch blocks in storeWithoutCommit/deleteWithoutCommit.
 	 */
-	protected final void rollbackAndThrow(RuntimeException error) {
-		mDB.rollback(); Logger.error(this, "ROLLED BACK!", error);
+	public static final void rollbackAndThrow(ExtObjectContainer db, Object loggingObject, RuntimeException error) {
+		db.rollback(); Logger.error(loggingObject, "ROLLED BACK!", error);
 		throw error;
+	}
+	
+	protected final void rollbackAndThrow(RuntimeException error) {
+		rollbackAndThrow(mDB, this, error);
 	}
 	
 
@@ -151,7 +159,7 @@ public abstract class Persistent {
 	 * 
 	 * @param activationDepth The desired activation depth.
 	 */
-	protected void storeWithoutCommit(int activationDepth) {
+	public void storeWithoutCommit(int activationDepth) {
 		try {		
 			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(activationDepth);
@@ -167,7 +175,7 @@ public abstract class Persistent {
 	 * The call to this function must be embedded in a transaction, that is a block of:<br />
 	 * synchronized(mDB.lock()) { try { object.storeWithoutCommit(); mDB.commit(); } catch(RuntimeException e) { Persistent.rollbackAndThrow(mDB, this, e); } } 
 	 */
-	protected void storeWithoutCommit() {
+	public void storeWithoutCommit() {
 		storeWithoutCommit(1);
 	}
 	
@@ -180,7 +188,7 @@ public abstract class Persistent {
 	 * 
 	 * @param activationDepth The desired activation depth.
 	 */
-	protected void deleteWithoutCommit(int activationDepth) {
+	public void deleteWithoutCommit(int activationDepth) {
 		try {
 			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(activationDepth);
@@ -196,7 +204,16 @@ public abstract class Persistent {
 	 * The call to this function must be embedded in a transaction, that is a block of:<br />
 	 * synchronized(mDB.lock()) { try { object.deleteWithoutCommit(); mDB.commit(); } catch(RuntimeException e) { Persistent.rollbackAndThrow(mDB, this, e); } }
 	 */
-	protected void deleteWithoutCommit() {
+	public void deleteWithoutCommit() {
 		deleteWithoutCommit(1);
+	}
+	
+	public static final void commit(ExtObjectContainer db, Object loggingObject) {
+		db.commit();
+		Logger.debug(loggingObject, "COMMITED.");
+	}
+	
+	public final void commit(Object loggingObject) {
+		commit(mDB, loggingObject);
 	}
 }
