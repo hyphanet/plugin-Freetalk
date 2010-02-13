@@ -15,17 +15,40 @@ import freenet.support.Logger;
  */
 public abstract class Persistent {
 	
+	/**
+	 * A reference to the Freetalk object with which this Persistent object is associated.
+	 */
 	protected transient Freetalk mFreetalk;
 	
+	/**
+	 * A reference to the database in which this Persistent object resists.
+	 */
 	protected transient ExtObjectContainer mDB;
 	
+	
+	/**
+	 * Holds a per-class list of indexed member variables. Indexed member variables are such where db4o is 
+	 * told to create an index on for fast queries.
+	 */
 	protected transient static final Hashtable<Class<? extends Persistent>, String[]> mIndexedFields = new Hashtable<Class<? extends Persistent>, String[]>();
 
+	/**
+	 * Function for registering the indexed fields of a class.
+	 * Has to be called in the "static{}" code block of the class - calling it after the static code block was executed will not have any effect!
+	 * 
+	 * @param clazz The class of which the fields are to be registered
+	 * @param fields The names of the fields in the Java source code.
+	 */
 	protected static final void registerIndexedFields(Class<? extends Persistent> clazz, String[] fields) {
 		mIndexedFields.put(clazz, fields);
 	}
 	
-	protected static final Hashtable<Class<? extends Persistent>, String[]> getIndexedFields() {
+	/**
+	 * Gets all indexed fields which were registered yet.
+	 * Must be called after the "static{}" code blocks were executed as the indexed fields are registered during that phase.
+	 * @return
+	 */
+	protected synchronized static final Hashtable<Class<? extends Persistent>, String[]> getIndexedFields() {
 		return mIndexedFields;
 	}
 	
@@ -109,7 +132,7 @@ public abstract class Persistent {
 	/**
 	 * Only to be used by the extending classes, not to be called from the outside.
 	 * 
-	 * Same as a call to {@link checkedDelete()}
+	 * Same as a call to {@link checkedDelete(Object object)}
 	 */
 	protected final void checkedDelete() {
 		checkedDelete(this);
@@ -159,7 +182,7 @@ public abstract class Persistent {
 	 * 
 	 * @param activationDepth The desired activation depth.
 	 */
-	public void storeWithoutCommit(int activationDepth) {
+	protected void storeWithoutCommit(int activationDepth) {
 		try {		
 			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(activationDepth);
@@ -175,7 +198,7 @@ public abstract class Persistent {
 	 * The call to this function must be embedded in a transaction, that is a block of:<br />
 	 * synchronized(mDB.lock()) { try { object.storeWithoutCommit(); mDB.commit(); } catch(RuntimeException e) { Persistent.rollbackAndThrow(mDB, this, e); } } 
 	 */
-	public void storeWithoutCommit() {
+	protected  void storeWithoutCommit() {
 		storeWithoutCommit(1);
 	}
 	
@@ -188,7 +211,7 @@ public abstract class Persistent {
 	 * 
 	 * @param activationDepth The desired activation depth.
 	 */
-	public void deleteWithoutCommit(int activationDepth) {
+	protected void deleteWithoutCommit(int activationDepth) {
 		try {
 			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(activationDepth);
@@ -204,16 +227,16 @@ public abstract class Persistent {
 	 * The call to this function must be embedded in a transaction, that is a block of:<br />
 	 * synchronized(mDB.lock()) { try { object.deleteWithoutCommit(); mDB.commit(); } catch(RuntimeException e) { Persistent.rollbackAndThrow(mDB, this, e); } }
 	 */
-	public void deleteWithoutCommit() {
+	protected void deleteWithoutCommit() {
 		deleteWithoutCommit(1);
 	}
 	
-	public static final void commit(ExtObjectContainer db, Object loggingObject) {
+	protected static final void commit(ExtObjectContainer db, Object loggingObject) {
 		db.commit();
 		Logger.debug(loggingObject, "COMMITED.");
 	}
 	
-	public final void commit(Object loggingObject) {
+	protected final void commit(Object loggingObject) {
 		commit(mDB, loggingObject);
 	}
 }

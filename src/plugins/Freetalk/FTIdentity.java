@@ -5,10 +5,8 @@ package plugins.Freetalk;
 
 import freenet.keys.FreenetURI;
 
-public interface FTIdentity { // FIXME: Change to abstract class so we can extend Persistent.
+public interface FTIdentity { // FIXME: Rename to "Identity"
 	
-	public void initializeTransient(Freetalk myFreetalk);
-
 	public String getID();
 	
 	/**

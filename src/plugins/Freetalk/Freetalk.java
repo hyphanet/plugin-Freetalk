@@ -124,7 +124,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		mWebInterface = new WebInterface(this);
 		
 		Logger.debug(this, "Creating identity manager...");
-		mIdentityManager = new WoTIdentityManager(db, this);
+		mIdentityManager = new WoTIdentityManager(this);
 		
 		Logger.debug(this, "Creating message manager...");
 		mMessageManager = new WoTMessageManager(db, mIdentityManager, this, mPluginRespirator);
@@ -343,11 +343,11 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		return db;
 	}
 	
-	public IdentityManager getIdentityManager() {
+	public WoTIdentityManager getIdentityManager() {
 		return mIdentityManager;
 	}	
 	
-	public MessageManager getMessageManager() {
+	public WoTMessageManager getMessageManager() {
 		return mMessageManager;
 	}
 	

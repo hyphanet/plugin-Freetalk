@@ -328,7 +328,10 @@ public abstract class Message extends Persistent {
 	 * Get the author of the message.
 	 */
 	public FTIdentity getAuthor() {
-		mAuthor.initializeTransient(mFreetalk);
+		if(mAuthor instanceof Persistent) {
+			Persistent author = (Persistent)mAuthor;
+			author.initializeTransient(mFreetalk);
+		}
 		return mAuthor;
 	}
 

@@ -46,10 +46,13 @@ public final class SubscribedBoard extends Board {
 		mSubscriber = mySubscriber;
 	}
 	
-    protected void initializeTransient(Freetalk myFreetalk) {
+    public void initializeTransient(Freetalk myFreetalk) {
     	super.initializeTransient(myFreetalk);
     	mParentBoard.initializeTransient(myFreetalk);
-    	mSubscriber.initializeTransient(myFreetalk);
+    	if(mSubscriber instanceof Persistent) {
+    		Persistent subscriber = (Persistent)mSubscriber;
+    		subscriber.initializeTransient(myFreetalk);
+    	}
     }
     
     protected void storeWithoutCommit() {

@@ -81,7 +81,7 @@ public class WoTMessageManager extends MessageManager {
 
 		Date date = myDate!=null ? myDate : CurrentTimeUTC.get();
 		m = WoTOwnMessage.construct((WoTMessageURI)myParentThreadURI, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
-		m.initializeTransient(db, this);
+		m.initializeTransient(mFreetalk);
 		synchronized(this) {
 			m.storeAndCommit();
 		}
@@ -119,7 +119,7 @@ public class WoTMessageManager extends MessageManager {
 	
 	public synchronized void onMessageListFetchFailed(FTIdentity author, FreenetURI uri, FetchFailedMarker.Reason reason) {
 		WoTMessageList ghostList = new WoTMessageList(author, uri);
-		ghostList.initializeTransient(db, this);
+		ghostList.initializeTransient(mFreetalk);
 		MessageList.MessageListFetchFailedMarker marker;
 		
 			try {
@@ -145,7 +145,7 @@ public class WoTMessageManager extends MessageManager {
 					if(marker == null) {
 						dateOfNextRetry = calculateDateOfNextMessageListFetchRetry(reason, date, 0);
 						marker = new MessageList.MessageListFetchFailedMarker(ghostList, reason, date, dateOfNextRetry);
-						marker.initializeTransient(db, this);
+						marker.initializeTransient(mFreetalk);
 					} else  {
 						marker.setReason(reason);
 						marker.incrementNumberOfRetries();
@@ -212,7 +212,7 @@ public class WoTMessageManager extends MessageManager {
 		
 		WoTOwnIdentity author = (WoTOwnIdentity)message.getAuthor();
 		WoTOwnMessageList list = new WoTOwnMessageList(author, getFreeOwnMessageListIndex(author));
-		list.initializeTransient(db, this);
+		list.initializeTransient(mFreetalk);
 		// FIXME: list.addMessage is synchronized and the caller of this function synchronizes on db.lock() - wrong order! This could cause deadlocks.
 		list.addMessage(message);
 		list.storeWithoutCommit();
@@ -239,7 +239,7 @@ public class WoTMessageManager extends MessageManager {
 
 					public WoTOwnMessage next() {
 						WoTOwnMessage next = iter.next();
-						next.initializeTransient(db, WoTMessageManager.this);
+						next.initializeTransient(mFreetalk);
 						return next;
 					}
 
@@ -270,7 +270,7 @@ public class WoTMessageManager extends MessageManager {
 
 					public WoTOwnMessageList next() {
 						WoTOwnMessageList next = iter.next();
-						next.initializeTransient(db, WoTMessageManager.this);
+						next.initializeTransient(mFreetalk);
 						return next;
 					}
 

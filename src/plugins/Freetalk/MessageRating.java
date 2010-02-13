@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import com.db4o.ext.ExtObjectContainer;
-
 import freenet.support.Logger;
 
 /**
@@ -65,7 +63,10 @@ public abstract class MessageRating extends Persistent {
 	 */
 	public final FTOwnIdentity getRater() {
 		activate(2); assert(mRater != null);
-		mRater.initializeTransient(mFreetalk);
+		if(mRater instanceof Persistent) {
+			Persistent rater = (Persistent)mRater;
+			rater.initializeTransient(mFreetalk);
+		}
 		return mRater;
 	}
 	

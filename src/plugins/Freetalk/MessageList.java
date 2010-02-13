@@ -397,7 +397,9 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	protected abstract FreenetURI generateURI(FreenetURI baseURI, int index);
 	
 	public FTIdentity getAuthor() {
-		mAuthor.initializeTransient(mFreetalk);
+		if(mAuthor instanceof Persistent) {
+			((Persistent)mAuthor).initializeTransient(mFreetalk);
+		}
 		return mAuthor;
 	}
 	

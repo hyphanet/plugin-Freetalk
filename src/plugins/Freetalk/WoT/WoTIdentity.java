@@ -3,14 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import plugins.Freetalk.DBUtil;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
-import plugins.Freetalk.IdentityManager;
+import plugins.Freetalk.Persistent;
 import plugins.Freetalk.exceptions.InvalidParameterException;
-
-import com.db4o.ext.ExtObjectContainer;
-
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
@@ -28,7 +24,7 @@ import freenet.support.StringValidityChecker;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public class WoTIdentity implements FTIdentity {
+public class WoTIdentity extends Persistent implements FTIdentity {
 	
 	/* Attributes, stored in the database. */
 	
@@ -45,16 +41,9 @@ public class WoTIdentity implements FTIdentity {
 	 * We delete them if they were not received for a certain time interval.
 	 */
 	private long mLastReceivedFromWoT;
-	
-	/* References to objects of the plugin, not stored in the database. */
-	
-	protected transient ExtObjectContainer db;
-	
-	protected transient WoTIdentityManager mIdentityManager;
-	
-	/** Get a list of fields which the database should create an index on. */
-	public static String[] getIndexedFields() {
-		return new String[] { "mID" };
+
+	static {
+		registerIndexedFields(WoTIdentity.class, new String[] { "mID" });
 	}
 
 	public WoTIdentity(String myID, FreenetURI myRequestURI, String myNickname) {
@@ -69,18 +58,9 @@ public class WoTIdentity implements FTIdentity {
 		mNickname = myNickname;
 		mLastReceivedFromWoT = CurrentTimeUTC.getInMillis();
 	}
-	
-	/**
-	 * Has to be used after loading a FTIdentityWoT object from the database to initialize the transient fields.
-	 */
-	public void initializeTransient(ExtObjectContainer myDB, IdentityManager myIdentityManager) {
-		assert(myDB != null);
-		db = myDB;
-		mIdentityManager = (WoTIdentityManager)myIdentityManager;
-	}
-	
+
 	public String getID() {
-		db.activate(this, 1);
+		// activate(1);	// 1 is the default activation depth, no need to execute activate(1).
 		return mID;
 	}
 	
@@ -99,17 +79,17 @@ public class WoTIdentity implements FTIdentity {
 	}
 
 	public FreenetURI getRequestURI() {
-		db.activate(this, 3); // String[] is no nested object to db4o so 3 is sufficient.
+		activate(3); // String[] is no nested object to db4o so 3 is sufficient.
 		return mRequestURI;
 	}
 
 	public String getNickname() {
-		db.activate(this, 1);
+		// activate(1);	// 1 is the default activation depth, no need to execute activate(1)
 		return mNickname;
 	}
 
 	public String getNickname(int maxLength) {
-		db.activate(this, 1);
+		// activate(1);	// 1 is the default activation depth, no need to execute activate(1)
 		if(mNickname.length() > maxLength) {
 			return mNickname.substring(0, maxLength-3) + "...";
 		}
@@ -117,16 +97,16 @@ public class WoTIdentity implements FTIdentity {
 	}
 
 	public String getShortestUniqueName(int maxLength) {
-		return mIdentityManager.shortestUniqueName(this, maxLength);
+		return mFreetalk.getIdentityManager().shortestUniqueName(this, maxLength);
 	}
 
 	public String getFreetalkAddress() {
-		db.activate(this, 1);
+		// activate(1);	// 1 is the default activation depth, no need to execute activate(1)
 		return mNickname + "@" + mID + "." + Freetalk.WOT_CONTEXT.toLowerCase();	
 	}
 
 	public synchronized long getLastReceivedFromWoT() {
-		db.activate(this, 1);
+		// activate(1);	// 1 is the default activation depth, no need to execute activate(1)
 		return mLastReceivedFromWoT;
 	}
 	
@@ -136,7 +116,7 @@ public class WoTIdentity implements FTIdentity {
 	 */
 	public synchronized void setLastReceivedFromWoT(long time) {
 		mLastReceivedFromWoT = time;
-		storeWithoutCommit();
+		storeWithoutCommit(); // TODO: Move store() calls outside of class identity
 	}
 
 	/**
@@ -163,43 +143,43 @@ public class WoTIdentity implements FTIdentity {
 	 * You have to synchronize on this object before modifying the identity and calling storeAndCommit. 
 	 */
 	public void storeAndCommit() {
-		synchronized(db.lock()) {
+		synchronized(mDB.lock()) {
 			storeWithoutCommit();
-			db.commit(); Logger.debug(this, "COMMITED.");
+			commit(this);
 		}
 	}
 
 	protected void storeWithoutCommit() {
 		try {		
 			// 3 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			DBUtil.checkedActivate(db, this, 3);
+			checkedActivate(3);
 
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 			
-			db.store(mRequestURI);
-			db.store(this);
+			checkedStore(mRequestURI);
+			checkedStore();
 		}
 		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(db, this, e);
+			rollbackAndThrow(e);
 		}
 	}
 	
 	protected void deleteWithoutCommit() {
 		try {
 			// 3 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			DBUtil.checkedActivate(db, this, 3);
+			checkedActivate(this, 3);
 			
-			DBUtil.checkedDelete(db, this);
+			checkedDelete();
 			
-			mRequestURI.removeFrom(db);
+			mRequestURI.removeFrom(mDB);
 		}
 		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(db, this, e);
+			rollbackAndThrow(e);
 		}
 	}
 
 	public String toString() {
-		if(db != null)
+		if(mDB != null)
 			return getFreetalkAddress();
 		
 		// We do not throw a NPE because toString() is usually used in logging, we want the logging to be robust

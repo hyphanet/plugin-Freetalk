@@ -6,15 +6,10 @@ package plugins.Freetalk.tasks;
 import java.util.UUID;
 
 import plugins.Freetalk.FTOwnIdentity;
-import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Persistent;
 import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;
-
-import com.db4o.ext.ExtObjectContainer;
-
 import freenet.support.CurrentTimeUTC;
-import freenet.support.Logger;
 
 /**
  * A PersistentTask is a user notification which is stored in the database as long as it is valid.
@@ -71,7 +66,7 @@ public abstract class PersistentTask extends Persistent {
 	 */
 	public abstract void onHideForSomeTime();
 	
-	public void storeWithoutCommit() {
+	protected void storeWithoutCommit() {
 		try {
 			checkedActivate(3); // TODO: Figure out a suitable depth.
 			
@@ -87,7 +82,7 @@ public abstract class PersistentTask extends Persistent {
 		}
 	}
 	
-	public synchronized void storeAndCommit() {
+	protected synchronized void storeAndCommit() {
 		synchronized(mDB.lock()) {
 			storeWithoutCommit();
 			commit(this);
