@@ -572,7 +572,7 @@ public final class FCPInterface implements FredPluginFCP {
     private void handleListOwnIdentities(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException
     {
-        final Iterator<FTOwnIdentity> ownIdentities = mFreetalk.getIdentityManager().ownIdentityIterator();
+        final Iterator<WoTOwnIdentity> ownIdentities = mFreetalk.getIdentityManager().ownIdentityIterator();
         while (ownIdentities.hasNext()) {
             final FTOwnIdentity id = ownIdentities.next();
 

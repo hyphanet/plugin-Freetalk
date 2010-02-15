@@ -96,7 +96,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		for(int i = 0; i < requestSSKs.length; ++i) {
 			FreenetURI requestURI = new FreenetURI(requestSSKs[i]); FreenetURI insertURI = new FreenetURI(insertSSKs[i]);
 			mOwnIdentities[i] = new WoTOwnIdentity(WoTOwnIdentity.getIDFromURI(requestURI), requestURI, insertURI, "nickname" + i);
-			mOwnIdentities[i].initializeTransient(db, mIdentityManager);
+			mOwnIdentities[i].initializeTransient(db);
 			mOwnIdentities[i].storeWithoutCommit();
 		}
 		
@@ -117,7 +117,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		references.add(messageRef);
 		
 		WoTMessageList list = new WoTMessageList(author, uri, references);
-		list.initializeTransient(db, mMessageManager);
+		list.initializeTransient(db);
 		list.storeWithoutCommit();
 		db.commit();
 		

@@ -240,5 +240,10 @@ public class PersistentTaskManager implements Runnable {
 	public void onOwnMessagePosted(OwnMessage message) {
 		proccessTasks(getOwnMessageTasks((FTOwnIdentity)message.getAuthor()), CurrentTimeUTC.getInMillis());
 	}
+	
+	public void storeTaskWithoutCommit(PersistentTask task) {
+		task.initializeTransient(mFreetalk);
+		task.storeWithoutCommit();
+	}
 
 }

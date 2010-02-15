@@ -42,7 +42,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		FreenetURI authorRequestSSK = new FreenetURI("SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/");
 		FreenetURI authorInsertSSK = new FreenetURI("SSK@Ykhv0x0K8jtrgOlqWVS4S2Jvmnm64zv5voNjMfz1nYI,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQECAAE/");
 		WoTIdentity myAuthor = new WoTOwnIdentity(WoTIdentity.getIDFromURI(authorRequestSSK), authorRequestSSK, authorInsertSSK, "Nickname");
-		myAuthor.initializeTransient(db, null);
+		myAuthor.initializeTransient(db);
 		myAuthor.storeAndCommit();
 		
 		FreenetURI myThreadRealURI = new FreenetURI("CHK@7qMS7LklYIhbZ88i0~u97lxrLKS2uxNwZWQOjPdXnJw,IlA~FSjWW2mPWlzWx7FgpZbBErYdLkqie1uSrcN~LbM,AAIA--8");
@@ -57,7 +57,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 			messageReferences.add(new MessageList.MessageReference(myMessageID, mMessageRealURI, board));
 		}
 		WoTMessageList messageList = new WoTMessageList(myAuthor, WoTMessageList.assembleURI(authorRequestSSK, 123), messageReferences);
-		messageList.initializeTransient(db, mMessageManager);
+		messageList.initializeTransient(db);
 		messageList.storeWithoutCommit();
 		db.commit();
 		mMessageListID = messageList.getID();
@@ -72,7 +72,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		
 		mMessageID = message.getID();
 		
-		message.initializeTransient(db, mMessageManager);
+		message.initializeTransient(db);
 		message.storeAndCommit();
 		
 
@@ -132,7 +132,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		ByteArrayInputStream is = new ByteArrayInputStream(mHardcodedEncodedMessage.getBytes("UTF-8"));
 		ByteArrayOutputStream decodedAndEncodedMessage = new ByteArrayOutputStream(4096);
 		Message decodedMessage = WoTMessageXML.decode(mMessageManager, is, (WoTMessageList)mMessageManager.getMessageList(mMessageListID), mMessageRealURI);
-		decodedMessage.initializeTransient(db, mMessageManager);
+		decodedMessage.initializeTransient(db);
 		WoTMessageXML.encode(decodedMessage, decodedAndEncodedMessage);		
 		
 		assertEquals(mHardcodedEncodedMessage, decodedAndEncodedMessage.toString().replace("\r\n", "\n"));

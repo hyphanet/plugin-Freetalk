@@ -139,6 +139,10 @@ public class WoTIdentity extends Persistent implements FTIdentity {
 		if(newNickname.length() > 50) throw new InvalidParameterException("Nickname is too long, the limit is 50 characters.");
 	}
 
+	protected void commit(Object loggingObject) {
+		super.commit(loggingObject);
+	}
+	
 	/**
 	 * You have to synchronize on this object before modifying the identity and calling storeAndCommit. 
 	 */

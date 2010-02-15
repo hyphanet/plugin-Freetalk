@@ -55,7 +55,7 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 		FreenetURI authorInsertSSK = new FreenetURI("SSK@Ykhv0x0K8jtrgOlqWVS4S2Jvmnm64zv5voNjMfz1nYI,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQECAAE/");
 		String authorID = WoTIdentity.getIDFromURI(authorRequestSSK);
 		WoTOwnIdentity myAuthor = new WoTOwnIdentity(authorID, authorRequestSSK, authorInsertSSK, "Nickname");
-		myAuthor.initializeTransient(db, null);
+		myAuthor.initializeTransient(db);
 		myAuthor.storeAndCommit();
 		
 
@@ -72,7 +72,7 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 		};
 
 		WoTOwnMessageList messageList = new WoTOwnMessageList(myAuthor, 123);
-		messageList.initializeTransient(db, mMessageManager);
+		messageList.initializeTransient(db);
 		messageList.storeWithoutCommit();
 		db.commit();
 		

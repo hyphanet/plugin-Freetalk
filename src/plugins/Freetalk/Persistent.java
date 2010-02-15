@@ -62,8 +62,15 @@ public abstract class Persistent {
 		mDB = mFreetalk.getDatabase();
 	}
 	
+	/**
+	 * For being used in unit tests which run without a Freetalk object
+	 */
+	public void initializeTransient(ExtObjectContainer db) {
+		mDB = db;
+	}
+	
 	protected final void activate(int depth) {
-		mDB.activate(this, depth);
+		checkedActivate(this, depth);
 	}
 
 	/**
@@ -236,7 +243,7 @@ public abstract class Persistent {
 		Logger.debug(loggingObject, "COMMITED.");
 	}
 	
-	protected final void commit(Object loggingObject) {
+	protected void commit(Object loggingObject) {
 		commit(mDB, loggingObject);
 	}
 }

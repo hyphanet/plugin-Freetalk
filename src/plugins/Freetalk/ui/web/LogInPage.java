@@ -7,6 +7,7 @@ import java.util.Iterator;
 
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.WoT.WoTOwnIdentity;
 import freenet.clients.http.RedirectException;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
@@ -43,7 +44,7 @@ public final class LogInPage extends WebPageImpl {
 	private final void makeLoginBox() {
 		HTMLNode loginBox = addContentBox(l10n().getString("LoginPage.LogIn.Header"));
 	
-		Iterator<FTOwnIdentity> iter = mFreetalk.getIdentityManager().ownIdentityIterator();
+		Iterator<WoTOwnIdentity> iter = mFreetalk.getIdentityManager().ownIdentityIterator();
 		
 		HTMLNode selectForm = addFormChild(loginBox, Freetalk.PLUGIN_URI + "/LogIn", "LogIn");
 		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnIdentityID");
