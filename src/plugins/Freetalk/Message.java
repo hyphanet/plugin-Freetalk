@@ -148,13 +148,6 @@ public abstract class Message extends Persistent {
 	private boolean mWasLinkedIn = false;
 	
 	
-	/* References to objects of the plugin, not stored in the database. */
-	
-	protected transient ExtObjectContainer db;
-	
-	protected transient MessageManager mMessageManager;
-	
-	
 	static {
 		registerIndexedFields(Message.class,
 		new String[] {
@@ -360,7 +353,7 @@ public abstract class Message extends Persistent {
 	 * Get the text of the message.
 	 */
 	public String getText() {
-		db.activate(this, 3); // FIXME: We currently have a bug which makes the message bodies get lost in inserted messages. Does this fix it?
+		activate(3); // FIXME: We currently have a bug which makes the message bodies get lost in inserted messages. Does this fix it?
 		return mText;
 	}
 	
@@ -368,7 +361,7 @@ public abstract class Message extends Persistent {
 	 * Get the attachments of the message, in the order in which they were received.
 	 */
 	public Attachment[] getAttachments() {
-		db.activate(this, 3);
+		activate(3);
 		return mAttachments;
 	}
 	
@@ -382,7 +375,7 @@ public abstract class Message extends Persistent {
 	 */
 	public synchronized Message getThread() throws NoSuchMessageException {
 		/* TODO: Find all usages of this function and check whether we should put the activate() here and what the fitting depth is */
-		db.activate(this, 3);
+		activate(3);
 		if(mThread == null)
 			throw new NoSuchMessageException();
 		mThread.initializeTransient(mFreetalk);
@@ -404,7 +397,7 @@ public abstract class Message extends Persistent {
 	 */
 	public synchronized Message getParent() throws NoSuchMessageException {
 		/* TODO: Find all usages of this function and check whether we should put the activate() here and what the fitting depth is */
-		db.activate(this, 3);
+		activate(3);
 		if(mParent == null)
 			throw new NoSuchMessageException();
 		mParent.initializeTransient(mFreetalk);
@@ -665,10 +658,10 @@ public abstract class Message extends Persistent {
 	}
 	
 	public synchronized void storeAndCommit() {
-		synchronized(db.lock()) {
+		synchronized(mDB.lock()) {
 			try {
 				storeWithoutCommit();
-				db.commit(); Logger.debug(this, "COMMITED.");
+				commit(this);
 			}
 			catch(RuntimeException e) {
 				rollbackAndThrow(e);
@@ -733,7 +726,7 @@ public abstract class Message extends Persistent {
 			}
 			if(mRealURI != null) {
 				// It's a FreenetURI so there is no transient initialization
-				mRealURI.removeFrom(db);
+				mRealURI.removeFrom(mDB);
 			}
 			if(mURI != null) {
 				mURI.initializeTransient(mFreetalk);
@@ -756,7 +749,7 @@ public abstract class Message extends Persistent {
 	}
     
     public String toString() {
-    	if(db != null)
+    	if(mDB != null)
     		return getURI().toString();
     	
 		// We do not throw a NPE because toString() is usually used in logging, we want the logging to be robust

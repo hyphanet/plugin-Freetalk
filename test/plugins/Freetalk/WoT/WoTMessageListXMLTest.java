@@ -10,13 +10,17 @@ import javax.xml.transform.TransformerException;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.DatabaseBasedTest;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
+import plugins.Freetalk.ui.NNTP.FreetalkNNTPArticle;
 import freenet.keys.FreenetURI;
 import freenet.support.MultiValueTable;
 
 public class WoTMessageListXMLTest extends DatabaseBasedTest {
+	
+	private Freetalk mFreetalk;
 	
 	private WoTMessageManager mMessageManager;
 	
@@ -37,7 +41,8 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 	public void setUp() throws Exception {
 		super.setUp();
 		
-		mMessageManager = new WoTMessageManager(db, null);
+		mFreetalk = new Freetalk(db);
+		mMessageManager = mFreetalk.getMessageManager();
 		
 		HashSet<Board> myBoards1 = new HashSet<Board>();
 			myBoards1.add(mMessageManager.getOrCreateBoard("en.board1"));
@@ -55,7 +60,7 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 		FreenetURI authorInsertSSK = new FreenetURI("SSK@Ykhv0x0K8jtrgOlqWVS4S2Jvmnm64zv5voNjMfz1nYI,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQECAAE/");
 		String authorID = WoTIdentity.getIDFromURI(authorRequestSSK);
 		WoTOwnIdentity myAuthor = new WoTOwnIdentity(authorID, authorRequestSSK, authorInsertSSK, "Nickname");
-		myAuthor.initializeTransient(db);
+		myAuthor.initializeTransient(mFreetalk);
 		myAuthor.storeAndCommit();
 		
 
@@ -72,7 +77,7 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 		};
 
 		WoTOwnMessageList messageList = new WoTOwnMessageList(myAuthor, 123);
-		messageList.initializeTransient(db);
+		messageList.initializeTransient(mFreetalk);
 		messageList.storeWithoutCommit();
 		db.commit();
 		

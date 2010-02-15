@@ -91,13 +91,10 @@ public abstract class MessageManager implements Runnable {
 	/**
 	 * For being used in JUnit tests to run without a node.
 	 */
-	protected MessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager) {
-		assert(myDB != null);
-		assert(myIdentityManager != null);
-		
-		db = myDB;
-		mIdentityManager = myIdentityManager;
-		mFreetalk = null;
+	protected MessageManager(Freetalk myFreetalk) {
+		mFreetalk = myFreetalk;
+		db = mFreetalk.getDatabase();
+		mIdentityManager = mFreetalk.getIdentityManager();
 		mPluginRespirator = null;
 	}
 	

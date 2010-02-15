@@ -26,13 +26,13 @@ import plugins.Freetalk.tasks.PersistentTaskManager;
 import plugins.Freetalk.tasks.WoT.IntroduceIdentityTask;
 
 import com.db4o.ObjectSet;
-import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.Executor;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -70,16 +70,16 @@ public class WoTIdentityManager extends IdentityManager {
 
 	private PluginTalkerBlocking mTalker = null;
 
-	public WoTIdentityManager(Freetalk myFreetalk) {
-		super(myFreetalk, myFreetalk.getPluginRespirator().getNode().executor);
+	public WoTIdentityManager(Freetalk myFreetalk, Executor myExecutor) {
+		super(myFreetalk, myExecutor);
 		mIsUnitTest = false;
 	}
 	
 	/**
 	 * For being used in JUnit tests to run without a node.
 	 */
-	WoTIdentityManager(ExtObjectContainer myDB) {
-		super(myDB);
+	public WoTIdentityManager(Freetalk myFreetalk) {
+		super(myFreetalk);
 		mIsUnitTest = true;
 	}
 	

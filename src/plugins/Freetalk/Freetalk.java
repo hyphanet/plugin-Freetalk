@@ -124,7 +124,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		mWebInterface = new WebInterface(this);
 		
 		Logger.debug(this, "Creating identity manager...");
-		mIdentityManager = new WoTIdentityManager(this);
+		mIdentityManager = new WoTIdentityManager(this, mPluginRespirator.getNode().executor);
 		
 		Logger.debug(this, "Creating message manager...");
 		mMessageManager = new WoTMessageManager(db, mIdentityManager, this, mPluginRespirator);
@@ -195,6 +195,15 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		
 		
 		return Db4o.openFile(dbCfg, filename).ext();
+	}
+	
+	/**
+	 * Concstructor for being used by unit tests only.
+	 */
+	public Freetalk(ExtObjectContainer myDB) {
+		db = myDB;
+		mIdentityManager = new WoTIdentityManager(this);
+		mMessageManager = new WoTMessageManager(this);
 	}
 
 	private void upgradeDatabase() {

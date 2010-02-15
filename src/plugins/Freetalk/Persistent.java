@@ -62,15 +62,8 @@ public abstract class Persistent {
 		mDB = mFreetalk.getDatabase();
 	}
 	
-	/**
-	 * For being used in unit tests which run without a Freetalk object
-	 */
-	public void initializeTransient(ExtObjectContainer db) {
-		mDB = db;
-	}
-	
-	protected final void activate(int depth) {
-		checkedActivate(this, depth);
+	protected final void activate(int depth) { // FIXME: Change visibility to private and use checkedActivate in extending classes.
+		mDB.activate(this, depth);
 	}
 
 	/**
