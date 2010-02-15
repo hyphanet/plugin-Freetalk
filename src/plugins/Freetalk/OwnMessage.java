@@ -9,6 +9,7 @@ import java.util.Set;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 
 public abstract class OwnMessage extends Message {
 
@@ -67,4 +68,23 @@ public abstract class OwnMessage extends Message {
 		storeWithoutCommit();
 	}
 
+    public String toString() {
+    	if(mDB != null) {
+    		MessageURI uri = getURI();
+    		if(uri != null)
+    			return uri.toString();
+    		
+    		FreenetURI realURI = getRealURI();
+    		if(realURI != null)
+    			return realURI.toString();
+    		
+    		return "ID:" + getID() + " (no URI present, inserted=" + wasInserted() + ")";
+    	}
+    	
+		// We do not throw a NPE because toString() is usually used in logging, we want the logging to be robust
+		
+		Logger.error(this, "toString() called before initializeTransient()!");
+		
+		return super.toString() + " (intializeTransient() not called!, message URI may be null, here it is: " + mURI + ")";
+    }
 }
