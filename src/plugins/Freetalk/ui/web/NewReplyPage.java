@@ -105,7 +105,7 @@ public class NewReplyPage extends WebPageImpl {
 			mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), subject, text));
 		}
 
-		makeNewReplyPage(subject, Quoting.getFullQuote(mParentMessage));
+		makeNewReplyPage(subject, text);
 	}
 
 	private void makeNewReplyPage(String replySubject, String replyText) {
