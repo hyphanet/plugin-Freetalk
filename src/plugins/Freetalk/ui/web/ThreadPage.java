@@ -5,6 +5,8 @@ package plugins.Freetalk.ui.web;
 
 import java.text.DateFormat;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
@@ -432,7 +434,8 @@ public final class ThreadPage extends WebPageImpl {
 				currentLine = currentLine.substring(nextLink + 4);
 			} else {
 				String uriKey = currentLine.substring(nextLink, firstSlash).replaceAll("[\r\n\t ]+", "");
-				int nextSpace = currentLine.indexOf(' ', firstSlash);
+				Matcher matcher = Pattern.compile("[\\p{javaWhitespace}]").matcher(currentLine);
+				int nextSpace = matcher.find(firstSlash) ? matcher.start() : -1;
 				int nextCrLf = currentLine.indexOf("\r\n", firstSlash);
 				int nextLf = currentLine.indexOf("\n", firstSlash);
 				if (nextSpace == -1) {
