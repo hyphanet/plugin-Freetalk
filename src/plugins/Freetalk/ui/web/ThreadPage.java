@@ -196,10 +196,7 @@ public final class ThreadPage extends WebPageImpl {
 		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class" }, new String[] { "0", "100%", "message" });
 		HTMLNode row = table.addChild("tr", "class", "message");
 		HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width", "class" }, new String[] { "left", "top", "2", "15%", "author" }, "");
-		authorNode.addChild("abbr", new String[] { "title" }, new String[] { message.getAuthor().getID() }).addChild("span", "class", "name", message.getAuthor().getShortestUniqueName(50));
-        authorNode.addChild("#", " [");
-        authorNode.addChild("a", new String[] { "class", "href", "title" }, new String[] { "identity-link", "/WoT/ShowIdentity?id=" + message.getAuthor().getID(), "Web of Trust Page" }).addChild("#", "WoT");
-        authorNode.addChild("#", "]");
+		authorNode.addChild("a", new String[] { "class", "href", "title" }, new String[] { "identity-link", "/WoT/ShowIdentity?id=" + message.getAuthor().getID(), "Web of Trust Page" }).addChild("abbr", new String[] { "title" }, new String[] { message.getAuthor().getID() }).addChild("span", "class", "name", message.getAuthor().getShortestUniqueName(50));
         authorNode.addChild("br");
         authorNode.addChild("#", l10n().getString("ThreadPage.Author.Posts") + ": " + mFreetalk.getMessageManager().getMessagesBy(message.getAuthor()).size());
         authorNode.addChild("br");
