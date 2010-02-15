@@ -250,6 +250,7 @@ public final class ThreadPage extends WebPageImpl {
         }
         
         authorNode.addChild("#", l10n().getString("Common.WebOfTrust.Score") + ": "+ txtScore);
+        authorNode.addChild("div", "class", "identicon").addChild("img", new String[] { "src", "width", "height" }, new String[] { "/WoT/GetIdenticon?identity=" + message.getAuthor().getID(), "128", "128"});
 
         // Title of the message
 		HTMLNode title = row.addChild("td", new String[] { "align", "class" }, new String[] { "left", "title " + ((ref == null || ref.wasRead()) ? "read" : "unread") });
