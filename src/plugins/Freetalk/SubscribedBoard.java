@@ -2,6 +2,7 @@ package plugins.Freetalk;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import plugins.Freetalk.exceptions.DuplicateMessageException;
@@ -359,6 +360,7 @@ public final class SubscribedBoard extends Board {
         switch(results.size()) {
 	        case 1:
 				BoardReplyLink messageRef = results.next();
+				messageRef.initializeTransient(mFreetalk);
 				assert(message.equals(messageRef.mMessage)); // The query works
 				return messageRef;
 	        case 0:
@@ -379,6 +381,7 @@ public final class SubscribedBoard extends Board {
         switch(results.size()) {
 	        case 1:
 				BoardThreadLink threadRef = results.next();
+				threadRef.initializeTransient(mFreetalk);
 				assert(threadID.equals(threadRef.mThreadID)); // The query works
 				return threadRef;
 	        case 0:
@@ -430,13 +433,15 @@ public final class SubscribedBoard extends Board {
     			// that message. The parent thread message will still be displayed as a reply to it's original thread, but it will also appear as a new thread
     			// which is the parent of the message which was passed to this function.
 
-    			BoardThreadLink parentThreadRef = new BoardThreadLink(this, parentThread, takeFreeMessageIndexWithoutCommit()); 
+    			BoardThreadLink parentThreadRef = new BoardThreadLink(this, parentThread, takeFreeMessageIndexWithoutCommit());
+    			parentThreadRef.initializeTransient(mFreetalk);
     			parentThreadRef.storeWithoutCommit();
     			return parentThreadRef;
     		}
     		catch(NoSuchMessageException ex) { 
     			// The message manager did not find the parentThreadID, so the parent thread was not downloaded yet, we create a ghost thread reference for it.
     			BoardThreadLink ghostThreadRef = new BoardThreadLink(this, parentThreadID, newMessage.getDate(), takeFreeMessageIndexWithoutCommit());
+    			ghostThreadRef.initializeTransient(mFreetalk);
     			ghostThreadRef.storeWithoutCommit();
     			return ghostThreadRef;
     		}		
@@ -577,7 +582,11 @@ public final class SubscribedBoard extends Board {
      * Get the number of replies to the given thread.
      */
     public synchronized int threadReplyCount(String threadID) {
-        return getAllThreadReplies(threadID, false).size();
+    	final Query q = mDB.query();
+        q.constrain(BoardReplyLink.class);
+        q.descend("mBoard").constrain(this).identity();
+        q.descend("mThreadID").constrain(threadID);
+        return q.execute().size();
     }
     
     /**
@@ -597,7 +606,7 @@ public final class SubscribedBoard extends Board {
      * Get all replies to the given thread, sorted ascending by date if requested
      */
     @SuppressWarnings("unchecked")
-    public synchronized ObjectSet<BoardReplyLink> getAllThreadReplies(String threadID, final boolean sortByDateAscending) {
+    public synchronized Iterable<BoardReplyLink> getAllThreadReplies(String threadID, final boolean sortByDateAscending) {
     	final Query q = mDB.query();
         q.constrain(BoardReplyLink.class);
         q.descend("mBoard").constrain(this).identity();
@@ -606,8 +615,29 @@ public final class SubscribedBoard extends Board {
         if (sortByDateAscending) {
             q.descend("mMessageDate").orderAscending();
         }
-       
-        return q.execute();
+        
+		return new Iterable<BoardReplyLink>() {
+			@SuppressWarnings("unchecked")
+			public Iterator<BoardReplyLink> iterator() {
+				return new Iterator<BoardReplyLink>() {
+					private final Iterator<BoardReplyLink> iter = q.execute().iterator();
+
+					public boolean hasNext() {
+						return iter.hasNext();
+					}
+
+					public BoardReplyLink next() {
+						BoardReplyLink next = iter.next();
+						next.initializeTransient(mFreetalk);
+						return next;
+					}
+
+					public void remove() {
+						throw new UnsupportedOperationException();
+					}
+				};
+			}
+		};
     }
     
     public static String[] getMessageReferenceIndexedFields() { /* TODO: ugly! find a better way */
@@ -839,10 +869,11 @@ public final class SubscribedBoard extends Board {
     	    		// TODO: This assumes that getAllThreadReplies() obtains the sorted order using an index. This is not the case right now. If we do not
     	    		// optimize getAllThreadReplies() we should just iterate over the unsorted replies list and do maximum search.
     				
-    				ObjectSet<BoardReplyLink> replies = mBoard.getAllThreadReplies(mThreadID, true);
-    				int replyCount = replies.size();
+    				mLastReplyDate = mMessageDate;
     				
-    				mLastReplyDate = replyCount > 0 ? replies.get(replyCount-1).getDate() : mMessageDate;
+    				for(BoardReplyLink reply : mBoard.getAllThreadReplies(mThreadID, true)) {
+    					mLastReplyDate = reply.getDate();
+    				}
     		}
 
     		// TODO: I decided not to change the "therad was read flag:" If the thread was unread before, then it is probably still unread now.
