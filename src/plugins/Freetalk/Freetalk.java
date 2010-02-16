@@ -94,6 +94,12 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	
 	private FreetalkNNTPServer mNNTPServer;
 
+	/**
+	 * Default constructor, used by the node, do not remove it.
+	 */
+	public Freetalk() {
+		
+	}
 
 	public void runPlugin(PluginRespirator myPR) {
 		Logger.debug(this, "Plugin starting up...");
