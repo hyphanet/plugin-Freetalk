@@ -112,6 +112,7 @@ public final class SubscribedBoard extends Board {
         // Do not use a constrain() because the case where the latest message has no message object should not happen very often.
         for(MessageReference ref : allMessages) {
         	try {
+        		ref.initializeTransient(mFreetalk);
         		ref.getMessage(); // Check whether the message was downloaded
         		return ref;
         	}
