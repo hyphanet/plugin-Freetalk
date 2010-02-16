@@ -1,7 +1,9 @@
 package plugins.Freetalk;
 
 import java.util.Hashtable;
+import java.util.Iterator;
 
+import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 
 import freenet.support.Logger;
@@ -239,4 +241,45 @@ public abstract class Persistent {
 	protected void commit(Object loggingObject) {
 		commit(mDB, loggingObject);
 	}
+	
+	/**
+	 * An implementation of Iterable which iterates over an ObjectSet of objects which extend Persistent and calls initializeTransient() for each object automatically.
+	 */
+	public static class InitializingIterable<T extends Persistent> implements Iterable<T> {
+		
+		final Freetalk mFreetalk;
+		final ObjectSet<T> mObjectSet;
+		
+		public InitializingIterable(Freetalk myFreetalk, ObjectSet<T> myObjectSet) {
+			mFreetalk = myFreetalk;
+			mObjectSet = myObjectSet;
+		}
+
+		@Override
+		public Iterator<T> iterator() {
+			return new Iterator<T>() {
+				final Iterator<T> mIterator = mObjectSet.iterator(); 
+				
+				@Override
+				public boolean hasNext() {
+					return mIterator.hasNext();
+				}
+
+				@Override
+				public T next() {
+					T next = mIterator.next();
+					next.initializeTransient(mFreetalk);
+					return next;
+				}
+
+				@Override
+				public void remove() {
+					throw new UnsupportedOperationException();
+				}
+				
+			};
+		}
+	}
+	
+	
 }

@@ -457,12 +457,12 @@ public final class SubscribedBoard extends Board {
      * @return An iterator of the message which the identity will see (based on its trust levels).
      */
     @SuppressWarnings("unchecked")
-    public synchronized ObjectSet<BoardThreadLink> getThreads() {
+    public synchronized Iterable<BoardThreadLink> getThreads() {
     	final Query q = mDB.query();
     	q.constrain(BoardThreadLink.class);
     	q.descend("mBoard").constrain(SubscribedBoard.this).identity(); // FIXME: Benchmark whether switching the order of those two constrains makes it faster.
     	q.descend("mLastReplyDate").orderDescending();
-    	return q.execute();
+    	return new Persistent.InitializingIterable<BoardThreadLink>(mFreetalk, q.execute());
     }
 
     @SuppressWarnings("unchecked")
