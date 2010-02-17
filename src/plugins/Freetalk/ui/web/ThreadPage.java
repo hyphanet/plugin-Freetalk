@@ -429,7 +429,6 @@ public final class ThreadPage extends WebPageImpl {
 			}
 			messageNode.addChild("#", currentLine.substring(0, nextLink));
 			int firstSlash = currentLine.indexOf('/', nextLink);
-			System.out.println("current line: " + currentLine + ", distance to slash: " + (firstSlash - nextLink));
 			if (((nextLink != kskLink) && (firstSlash == -1)) || ((firstSlash - nextLink) >= 105) || ((nextLink != kskLink) && ((firstSlash - nextLink) < 99))) {
 				messageNode.addChild("#", currentLine.substring(nextLink, nextLink + 4));
 				currentLine = currentLine.substring(nextLink + 4);
