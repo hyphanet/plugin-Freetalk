@@ -16,6 +16,7 @@ import java.util.UUID;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.DatabaseBasedTest;
 import plugins.Freetalk.FetchFailedMarker;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.SubscribedBoard;
@@ -37,7 +38,7 @@ import freenet.support.CurrentTimeUTC;
 
 public class WoTMessageManagerTest extends DatabaseBasedTest {
 	
-	private WoTIdentityManager mIdentityManager;
+	private Freetalk mFreetalk;
 	private WoTMessageManager mMessageManager;
 	
 	private WoTOwnIdentity[] mOwnIdentities;
@@ -64,8 +65,8 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 	protected void setUp() throws Exception {
 		super.setUp();
 		
-		mIdentityManager = new WoTIdentityManager(db);
-		mMessageManager = new WoTMessageManager(db, mIdentityManager);
+		mFreetalk = new Freetalk(db);
+		mMessageManager = mFreetalk.getMessageManager();
 		
 		constructIdentities();
 		constructBoards();
@@ -96,7 +97,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		for(int i = 0; i < requestSSKs.length; ++i) {
 			FreenetURI requestURI = new FreenetURI(requestSSKs[i]); FreenetURI insertURI = new FreenetURI(insertSSKs[i]);
 			mOwnIdentities[i] = new WoTOwnIdentity(WoTOwnIdentity.getIDFromURI(requestURI), requestURI, insertURI, "nickname" + i);
-			mOwnIdentities[i].initializeTransient(db, mIdentityManager);
+			mOwnIdentities[i].initializeTransient(mFreetalk);
 			mOwnIdentities[i].storeWithoutCommit();
 		}
 		
@@ -117,7 +118,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		references.add(messageRef);
 		
 		WoTMessageList list = new WoTMessageList(author, uri, references);
-		list.initializeTransient(db, mMessageManager);
+		list.initializeTransient(mFreetalk);
 		list.storeWithoutCommit();
 		db.commit();
 		

@@ -18,7 +18,7 @@ import freenet.keys.FreenetURI;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public abstract class MessageURI {
+public abstract class MessageURI extends Persistent {
 
 	/**
 	 * Get the FreenetURI of the container which stores the message. Typically it is the URI of a message list, therefore it is not a fully qualified 
@@ -30,20 +30,6 @@ public abstract class MessageURI {
 	 * Get the ID of the message, it is globally unique for all messages - this is ensured by the fact that message IDs contain the routing keys of their author.
 	 */
 	public abstract String getMessageID();
-	
-	/**
-	 * Stores this MessageURI in the given container.
-	 * Does not provide synchronization, does not commit the transaction and does not catch any exceptions, especially does not rollback() when an exception happens.
-	 * You have to do all this yourself!
-	 */
-	protected abstract void storeWithoutCommit(ExtObjectContainer db);
-	
-	/**
-	 * Removes this MessageURI from the given container.
-	 * Does not provide synchronization, does not commit the transaction and does not catch any exceptions, especially does not rollback() when an exception happens.
-	 * You have to do all this yourself!
-	 */
-	protected abstract void removeFrom(ExtObjectContainer db);
 
 	@Override
 	public abstract boolean equals(Object obj);

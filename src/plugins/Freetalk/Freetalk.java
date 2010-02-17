@@ -3,16 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import plugins.Freetalk.MessageList.MessageFetchFailedMarker;
-import plugins.Freetalk.MessageList.MessageListFetchFailedMarker;
-import plugins.Freetalk.WoT.WoTIdentity;
+import java.util.Map.Entry;
+
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTMessageFetcher;
 import plugins.Freetalk.WoT.WoTMessageInserter;
 import plugins.Freetalk.WoT.WoTMessageListFetcher;
 import plugins.Freetalk.WoT.WoTMessageListInserter;
 import plugins.Freetalk.WoT.WoTMessageManager;
-import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.tasks.PersistentTaskManager;
 import plugins.Freetalk.ui.FCP.FCPInterface;
 import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
@@ -96,6 +94,12 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	
 	private FreetalkNNTPServer mNNTPServer;
 
+	/**
+	 * Default constructor, used by the node, do not remove it.
+	 */
+	public Freetalk() {
+		
+	}
 
 	public void runPlugin(PluginRespirator myPR) {
 		Logger.debug(this, "Plugin starting up...");
@@ -126,7 +130,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		mWebInterface = new WebInterface(this);
 		
 		Logger.debug(this, "Creating identity manager...");
-		mIdentityManager = new WoTIdentityManager(db, this);
+		mIdentityManager = new WoTIdentityManager(this, mPluginRespirator.getNode().executor);
 		
 		Logger.debug(this, "Creating message manager...");
 		mMessageManager = new WoTMessageManager(db, mIdentityManager, this, mPluginRespirator);
@@ -159,13 +163,20 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 
 		if (mConfig.getBoolean(Config.NNTP_SERVER_ENABLED)) {
     		Logger.debug(this, "Starting NNTP server...");
-    		mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "127.0.0.1", "127.0.0.1");
-    		//mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, "0.0.0.0", "*");
+    		String bindTo = mConfig.getString(Config.NNTP_SERVER_BINDTO);
+			if (bindTo == null) {
+				bindTo = "127.0.0.1";
+			}
+			String allowedHosts = mConfig.getString(Config.NNTP_SERVER_ALLOWED_HOSTS);
+			if (allowedHosts == null) {
+				allowedHosts = "127.0.0.1";
+			}
+			mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, bindTo, allowedHosts);
 		} else {
             Logger.debug(this, "NNTP server disabled by user...");
 		    mNNTPServer = null;
 		}
-		
+
 		Logger.debug(this, "Plugin loaded.");
 	}
 	
@@ -179,55 +190,26 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
         // The shutdown hook does auto-commit. We do NOT want auto-commit: if a
         // transaction hasn't commit()ed, it's not safe to commit it.
         dbCfg.automaticShutDown(false);
+        
+        for(Entry<Class<? extends Persistent>, String[]> entry : Persistent.getIndexedFields().entrySet()) {
+        	Class<? extends Persistent> currentClass = entry.getKey();
+        	
+        	for(String indexedField : entry.getValue()) { // FIXME: Test whether this actually works!
+        		dbCfg.objectClass(currentClass).objectField(indexedField).indexed(true);
+        	}
+        }
 		
-		// TODO: Replace all these loops with one single loop which uses reflection!
-		
-		for(String f : Message.getIndexedFields())
-			dbCfg.objectClass(Message.class).objectField(f).indexed(true);
-		
-		for(String f : MessageList.getIndexedFields())
-			dbCfg.objectClass(MessageList.class).objectField(f).indexed(true);
-		
-		for(String f: MessageList.MessageReference.getIndexedFields())
-			dbCfg.objectClass(MessageList.MessageReference.class).objectField(f).indexed(true);
-		
-		dbCfg.objectClass(FetchFailedMarker.class).persistStaticFieldValues(); /* Make it store enums */
-		
-		for(String f : FetchFailedMarker.getIndexedFields())
-			dbCfg.objectClass(FetchFailedMarker.class).objectField(f).indexed(true);
-		
-		for(String f : MessageFetchFailedMarker.getIndexedFields())
-			dbCfg.objectClass(MessageFetchFailedMarker.class).objectField(f).indexed(true);
-		
-		for(String f : MessageListFetchFailedMarker.getIndexedFields())
-			dbCfg.objectClass(MessageListFetchFailedMarker.class).objectField(f).indexed(true);
-			
-		
-		for(String f : Board.getIndexedFields()) {
-			dbCfg.objectClass(Board.class).objectField(f).indexed(true);
-		}
-		
-		for(String f : SubscribedBoard.getMessageReferenceIndexedFields()) {
-			dbCfg.objectClass(SubscribedBoard.BoardReplyLink.class).objectField(f).indexed(true);
-		}
-		
-		for(String f : SubscribedBoard.getBoardReplyLinkIndexedFields()) {
-			dbCfg.objectClass(SubscribedBoard.BoardReplyLink.class).objectField(f).indexed(true);
-		}		
-		
-		for(String f : SubscribedBoard.getBoardThreadLinkIndexedFields()) {
-			dbCfg.objectClass(SubscribedBoard.BoardReplyLink.class).objectField(f).indexed(true);
-		}
-
-		for(String f :  WoTIdentity.getIndexedFields()) {
-			dbCfg.objectClass(WoTIdentity.class).objectField(f).indexed(true);
-		}
-		
-		for(String f :  WoTOwnIdentity.getIndexedFields()) {
-			dbCfg.objectClass(WoTOwnIdentity.class).objectField(f).indexed(true);
-		}
 		
 		return Db4o.openFile(dbCfg, filename).ext();
+	}
+	
+	/**
+	 * Concstructor for being used by unit tests only.
+	 */
+	public Freetalk(ExtObjectContainer myDB) {
+		db = myDB;
+		mIdentityManager = new WoTIdentityManager(this);
+		mMessageManager = new WoTMessageManager(this);
 	}
 
 	private void upgradeDatabase() {
@@ -372,11 +354,15 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		return mConfig;
 	}
 	
-	public IdentityManager getIdentityManager() {
+	protected ExtObjectContainer getDatabase() {
+		return db;
+	}
+	
+	public WoTIdentityManager getIdentityManager() {
 		return mIdentityManager;
 	}	
 	
-	public MessageManager getMessageManager() {
+	public WoTMessageManager getMessageManager() {
 		return mMessageManager;
 	}
 	

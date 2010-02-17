@@ -28,7 +28,7 @@ import freenet.support.StringValidityChecker;
  *
  * @author xor
  */
-public class Board implements Comparable<Board> {
+public class Board extends Persistent implements Comparable<Board> {
 
     /* Constants */
 
@@ -57,17 +57,11 @@ public class Board implements Comparable<Board> {
     private int mNextFreeMessageIndex = 1;
 
 
-    /* References to objects of the plugin, not stored in the database. */
-
-    protected transient ExtObjectContainer db;
-    protected transient MessageManager mMessageManager;
-
-
     /**
      * Get a list of fields which the database should create an index on.
      */
-    public static String[] getIndexedFields() {
-        return new String[] { "mID", "mName" };
+    static {
+        registerIndexedFields(Board.class, new String[] { "mID", "mName" });
     }
 
     public static String[] getAllowedLanguageCodes() {
@@ -94,29 +88,12 @@ public class Board implements Comparable<Board> {
     }
 
     /**
-     * Has to be used after loading a FTBoard object from the database to initialize the transient fields.
-     */
-    protected void initializeTransient(ExtObjectContainer myDB, MessageManager myMessageManager) {
-        assert(myDB != null);
-        assert(myMessageManager != null);
-        db = myDB;
-        mMessageManager = myMessageManager;
-    }
-
-    /**
      * Store this object in the database. You have to initializeTransient() before.
      * 
      * Does not provide synchronization, you have to lock the MessageManager, this Board and then the database before calling this function.
      */
     protected void storeWithoutCommit() {
-    	try  {
-    		DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
-
-    		db.store(this);
-    	}
-    	catch(RuntimeException e) {
-    		DBUtil.rollbackAndThrow(db, this, e);
-    	}
+    	super.storeWithoutCommit(3); // TODO: Figure out a suitable depth.
     }
 
 
@@ -240,7 +217,7 @@ public class Board implements Comparable<Board> {
     	return false;
     }
     
-    public static final class BoardMessageLink {
+    public static final class BoardMessageLink extends Persistent {
     	
     	private final Board mBoard;
     	
@@ -263,8 +240,8 @@ public class Board implements Comparable<Board> {
     		assert(mMessageIndex == (mBoard.mNextFreeMessageIndex-1));
     	}
     	
-    	public static String[] getIndexedFields() {
-    		return new String[] { "mBoard" , "mMessage" };
+    	static {
+    		registerIndexedFields(BoardMessageLink.class, new String[] { "mBoard" , "mMessage" });
     	}
     	
     	public Board getBoard() {
@@ -272,7 +249,7 @@ public class Board implements Comparable<Board> {
     	}
     	
     	public Message getMessage() {
-    		mMessage.initializeTransient(mBoard.db, mBoard.mMessageManager);
+    		mMessage.initializeTransient(mBoard.mFreetalk);
     		return mMessage;
     	}
     	
@@ -288,37 +265,28 @@ public class Board implements Comparable<Board> {
         /**
          * Does not provide synchronization, you have to lock the MessageManager, this Board and then the database before calling this function.
          */
-        protected void storeWithoutCommit(ExtObjectContainer db) {
+        protected void storeWithoutCommit() {
         	try {
-        		DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
-        		DBUtil.throwIfNotStored(db, mBoard);
-        		DBUtil.throwIfNotStored(db, mMessage);
-        		DBUtil.throwIfNotStored(db, mAuthor);
-
-        		db.store(this);
+        		checkedActivate(3); // TODO: Figure out a suitable depth.
+        		throwIfNotStored(mBoard);
+        		throwIfNotStored(mMessage);
+        		throwIfNotStored(mAuthor);
+        		checkedStore();
         	}
         	catch(RuntimeException e) {
-        		DBUtil.rollbackAndThrow(db, this, e);
+        		rollbackAndThrow(e);
         	}
         }
         
-    	protected void deleteWithoutCommit(ExtObjectContainer db) {
-    		try {
-    			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
-    			
-    			DBUtil.checkedDelete(db, this);
-    		}
-    		catch(RuntimeException e) {
-        		DBUtil.rollbackAndThrow(db, this, e);
-        	}
-			
+    	protected void deleteWithoutCommit() {
+    		deleteWithoutCommit(3); // TODO: Figure out a suitable depth.
 		}
     	
     }
     
     @SuppressWarnings("unchecked")
 	private BoardMessageLink getMessageLink(Message message) throws NoSuchMessageException {
-    	Query q = db.query();
+    	Query q = mDB.query();
     	q.constrain(BoardMessageLink.class);
     	q.descend("mMessage").constrain(message).identity();
     	q.descend("mBoard").constrain(this).identity();
@@ -344,7 +312,7 @@ public class Board implements Comparable<Board> {
     
     @SuppressWarnings("unchecked")
     protected ObjectSet<BoardMessageLink> getMessagesAfterIndex(int index) {
-        Query q = db.query();
+        Query q = mDB.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mMessageIndex").constrain(index).greater();
@@ -377,12 +345,12 @@ public class Board implements Comparable<Board> {
     		Logger.error(this, "addMessage() called for already existing message: " + newMessage);
     	}
     	catch(NoSuchMessageException e) {
-    		new BoardMessageLink(this, newMessage, takeFreeMessageIndexWithoutCommit()).storeWithoutCommit(db);
+    		new BoardMessageLink(this, newMessage, takeFreeMessageIndexWithoutCommit()).storeWithoutCommit();
     	}
     }
     
     protected synchronized void deleteMessage(Message message) throws NoSuchMessageException {
-    	getMessageLink(message).deleteWithoutCommit(db);
+    	getMessageLink(message).deleteWithoutCommit();
     }
 
 }

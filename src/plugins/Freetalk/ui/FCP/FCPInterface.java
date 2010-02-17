@@ -386,7 +386,7 @@ public final class FCPInterface implements FredPluginFCP {
         synchronized(board) {
 
         	final BoardThreadLink threadLink = board.getThreadLink(threadID);
-            final List<BoardReplyLink> messageRefList;
+            final Iterable<BoardReplyLink> messageRefList;
             final Message thread = mFreetalk.getMessageManager().get(threadID); // throws exception when not found
             {
                 // send thread root message
@@ -572,7 +572,7 @@ public final class FCPInterface implements FredPluginFCP {
     private void handleListOwnIdentities(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException
     {
-        final Iterator<FTOwnIdentity> ownIdentities = mFreetalk.getIdentityManager().ownIdentityIterator();
+        final Iterator<WoTOwnIdentity> ownIdentities = mFreetalk.getIdentityManager().ownIdentityIterator();
         while (ownIdentities.hasNext()) {
             final FTOwnIdentity id = ownIdentities.next();
 

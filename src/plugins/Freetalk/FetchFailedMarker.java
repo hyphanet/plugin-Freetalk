@@ -5,8 +5,6 @@ package plugins.Freetalk;
 
 import java.util.Date;
 
-import com.db4o.ext.ExtObjectContainer;
-
 /**
  * When a message (list) fetch fails we need to mark the message (list) as fetched to prevent the failed message (list) from getting into the
  * fetch queue over and over again. An attacker could insert many message list which have unparseable XML to fill up everyone's fetch queue
@@ -16,7 +14,7 @@ import com.db4o.ext.ExtObjectContainer;
  * fetch the message (list) again in the future. For example when the user installs a new version of the plugin we can fetch all messages(list)
  * again with failed XML parsing if the new version has fixed a bug in the XML parser.
  */
-public class FetchFailedMarker {
+public class FetchFailedMarker extends Persistent {
 	
 	public static enum Reason {
 		Unknown,
@@ -32,8 +30,8 @@ public class FetchFailedMarker {
 	
 	private Date mDateOfNextRetry;
 	
-	public static String[] getIndexedFields() {
-		return new String[] { "mDateOfNextRetry" };
+	static {
+		registerIndexedFields(FetchFailedMarker.class, new String[] { "mDateOfNextRetry" });
 	}
 	
 	public FetchFailedMarker(Reason myReason, Date myDate, Date myDateOfNextRetry) {
@@ -60,6 +58,7 @@ public class FetchFailedMarker {
 	 * NOT synchronized! Lock the MessageManager when working on FetchFailedMarker objects.
 	 */
 	public Date getDate() {
+		// activate(1);	// 1 is the default activation depth => no need to activate.
 		return mDate;
 	}
 
@@ -74,6 +73,7 @@ public class FetchFailedMarker {
 	 * NOT synchronized! Lock the MessageManager when working on FetchFailedMarker objects.
 	 */
 	public int getNumberOfRetries() {
+		// activate(1);	// 1 is the default activation depth => no need to activate.
 		return mNumberOfRetries;
 	}
 	
@@ -81,6 +81,7 @@ public class FetchFailedMarker {
 	 * NOT synchronized! Lock the MessageManager when working on FetchFailedMarker objects.
 	 */
 	public void incrementNumberOfRetries() {
+		// activate(1);	// 1 is the default activation depth => no need to activate.
 		++mNumberOfRetries;
 	}
 	
@@ -88,6 +89,7 @@ public class FetchFailedMarker {
 	 * NOT synchronized! Lock the MessageManager when working on FetchFailedMarker objects.
 	 */
 	public Date getDateOfNextRetry() {
+		// activate(1);	// 1 is the default activation depth => no need to activate.
 		return mDateOfNextRetry;
 	}
 	
@@ -97,41 +99,17 @@ public class FetchFailedMarker {
 	public void setDateOfNextRetry(Date newDate) {
 		mDateOfNextRetry = newDate;
 	}
-	
-	protected transient ExtObjectContainer mDB;
-	
-	protected transient MessageManager mMessageManager;
-
-	public void initializeTransient(ExtObjectContainer myDB, MessageManager myMessageManager) {
-		mDB = myDB;
-		mMessageManager = myMessageManager;
-	}
 
 	public void storeWithoutCommit() {
-		try {
-			DBUtil.checkedActivate(mDB, this, 3); // TODO: Figure out a suitable depth.
-			
-			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
-			
-			mDB.store(this);
-		}
-		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(mDB, this, e);
-		}
+		super.storeWithoutCommit(2); // TODO: Figure out a suitable depth.
 	}
 	
 	public void deleteWithoutCommit() {
-		try {
-			DBUtil.checkedActivate(mDB, this, 3); // TODO: Figure out a suitable depth.
-			
-			DBUtil.checkedDelete(mDB, this);
-		}
-		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(mDB, this, e);
-		}
+		super.deleteWithoutCommit(2); // TODO: Figure out a suitable depth.
 	}
 
 	public Reason getReason() {
+		activate(2); // FIXME: Check whether this is enough for an enum, or even too much.
 		return mReason;
 	}
 }

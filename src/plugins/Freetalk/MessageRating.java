@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import com.db4o.ext.ExtObjectContainer;
-
 import freenet.support.Logger;
 
 /**
@@ -23,7 +21,7 @@ import freenet.support.Logger;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public abstract class MessageRating {
+public abstract class MessageRating extends Persistent {
 	
 	/**
 	 * The {@link FTOwnIdentity} which has assigned this rating. 
@@ -34,22 +32,6 @@ public abstract class MessageRating {
 	 * The affected {@link Message}.
 	 */
 	private final Message mMessage;
-	
-	
-	
-	/**
-	 * A reference to the database, used for activating / storing this object.
-	 * This member variable is not stored in the database.
-	 */
-	protected transient ExtObjectContainer mDB;
-
-
-	/**
-	 * A reference to the MessageManager which this rating belongs to. Used for initializing the referenced rater and message.
-	 * This member variable is not stored in the database.
-	 */
-	protected transient MessageManager mMessageManager;
-	
 	
 	/**
 	 * Constructor for being used be the implementing child classes.
@@ -74,35 +56,17 @@ public abstract class MessageRating {
 	}
 	
 	/**
-	 * Initializes the transient fields of this object.
-	 * Must be called once after obtaining this object from the database before using any getter or setter member functions
-	 * and before calling storeWithoutCommit / deleteWithoutCommit.
-	 * 
-	 * @param myDatabase The database in which this object is stored.
-	 * @param myMessageManager The MessageManager to which this MessageRating's message belongs.
-	 */
-	protected final void initializeTransient(ExtObjectContainer myDatabase, MessageManager myMessageManager) {
-		// Non critical information, we don't need to throw.
-		assert(myDatabase != null);
-		assert(myMessageManager != null);
-		
-		mDB = myDatabase;
-		mMessageManager = myMessageManager;
-	}
-	
-	
-	/**
 	 * Get the {@link FTOwnIdentity} which has assigned this rating.
 	 * 
 	 * Before using any getter functions you must call {@link initializeTransient} once after having obtained this object from the database.
 	 * The transient fields of the returned object will be initialized by this getter already though.
 	 */
 	public final FTOwnIdentity getRater() {
-		assert(mDB != null);
-		assert(mMessageManager != null);
-		
-		mDB.activate(this, 2); assert(mRater != null);
-		mRater.initializeTransient(mDB, mMessageManager.getIdentityManager());
+		activate(2); assert(mRater != null);
+		if(mRater instanceof Persistent) {
+			Persistent rater = (Persistent)mRater;
+			rater.initializeTransient(mFreetalk);
+		}
 		return mRater;
 	}
 	
@@ -113,37 +77,11 @@ public abstract class MessageRating {
 	 * The transient fields of the returned object will be initialized by this getter already though.
 	 */
 	public final Message getMessage() {
-		assert(mDB != null);
-		assert(mMessageManager != null);
-		
 		mDB.activate(this, 2); assert(mMessage != null);
-		mMessage.initializeTransient(mDB, mMessageManager);
+		mMessage.initializeTransient(mFreetalk);
 		return mMessage;
 	}
 	
-	protected void storeWithoutCommit() {
-		try {		
-			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			DBUtil.checkedActivate(mDB, this, 2);
-
-			mDB.store(this);
-		}
-		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(mDB, this, e);
-		}
-	}
-	
-	protected void deleteWithoutCommit() {
-		try {
-			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			DBUtil.checkedActivate(mDB, this, 2);
-			
-			DBUtil.checkedDelete(mDB, this);
-		}
-		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(mDB, this, e);
-		}
-	}
 
 	public String toString() {
 		if(mDB != null)

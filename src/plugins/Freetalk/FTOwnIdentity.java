@@ -9,7 +9,7 @@ import freenet.keys.FreenetURI;
  * @author saces, xor
  *
  */
-public interface FTOwnIdentity extends FTIdentity {
+public interface FTOwnIdentity extends FTIdentity { // FIXME: Rename to "OwnIdentity"
 	
 	public FreenetURI getInsertURI();
 	

@@ -3,14 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import com.db4o.ext.ExtObjectContainer;
-
 import freenet.keys.FreenetURI;
 
-public interface FTIdentity {
+public interface FTIdentity { // FIXME: Rename to "Identity"
 	
-	public void initializeTransient(ExtObjectContainer myDB, IdentityManager myIdentityManager);
-
 	public String getID();
 	
 	/**

@@ -7,6 +7,7 @@ import java.util.Iterator;
 
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.WoT.WoTOwnIdentity;
 import freenet.clients.http.RedirectException;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
@@ -32,7 +33,7 @@ public final class IdentityEditor extends WebPageImpl {
 	private final void makeOwnIdentitiesBox() {
 		HTMLNode box = addContentBox("Own Identities");
 
-		Iterator<FTOwnIdentity> ownIdentities = mFreetalk.getIdentityManager().ownIdentityIterator();
+		Iterator<WoTOwnIdentity> ownIdentities = mFreetalk.getIdentityManager().ownIdentityIterator();
 		if (ownIdentities.hasNext() == false) {
 			box.addChild("p", "No own identities received from the WoT plugin yet. Please create one there and wait for 15 minutes until it appears here.");
 		} else {

@@ -16,26 +16,30 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 
 /**
- * @author saces, xor
- * 
+ * @author xor (xor@freenetproject.org)
+ * @author saces
  */
 public abstract class IdentityManager implements PrioRunnable {
+
+	protected final Freetalk mFreetalk;
 	
 	protected final ExtObjectContainer db;
 
 	protected final Executor mExecutor;
 
-	public IdentityManager(ExtObjectContainer myDB, Executor myExecutor) {
+	public IdentityManager(Freetalk myFreetalk, Executor myExecutor) {
 		Logger.debug(this, "Creating identity manager...");
-		db = myDB;
+		mFreetalk = myFreetalk;
+		db = mFreetalk.getDatabase();
 		mExecutor = myExecutor;
 	}
 
 	/**
 	 * For being used in JUnit tests to run without a node.
 	 */
-	public IdentityManager(ExtObjectContainer myDB) {
-		db = myDB;
+	public IdentityManager(Freetalk myFreetalk) {
+		mFreetalk = myFreetalk;
+		db = mFreetalk.getDatabase();
 		mExecutor = null;
 	}
 	
@@ -54,39 +58,14 @@ public abstract class IdentityManager implements PrioRunnable {
 		return q.execute().size();
 	}
 
-	@SuppressWarnings("unchecked")
-	public synchronized Iterator<FTOwnIdentity> ownIdentityIterator() {
-		return new Iterator<FTOwnIdentity> () {
-			Iterator<FTOwnIdentity> iter;
-			
-			{
-				 Query q = db.query();
-				 q.constrain(FTOwnIdentity.class);
-				 iter = q.execute().iterator();
-			}
-			
-			public boolean hasNext() {
-				return iter.hasNext();
-			}
-
-			public FTOwnIdentity next() {
-				FTOwnIdentity oi = iter.next();
-				oi.initializeTransient(db, IdentityManager.this);
-				return oi;
-			}
-
-			public void remove() {
-				throw new UnsupportedOperationException("Cannot delete own identities via ownIdentityIterator().");
-			}
-		};
-	}
+	public abstract Iterator<? extends FTOwnIdentity> ownIdentityIterator();
 	
 	public abstract FTIdentity getIdentity(String id) throws NoSuchIdentityException;
 	
 	public abstract FTOwnIdentity getOwnIdentity(String id) throws NoSuchIdentityException;
 
 	public synchronized boolean anyOwnIdentityWantsMessagesFrom(FTIdentity identity) {
-		Iterator<FTOwnIdentity> iter = ownIdentityIterator();
+		final Iterator<? extends FTOwnIdentity> iter = ownIdentityIterator();
 		boolean noOwnIdentities = true;
 
 		while (iter.hasNext()) {

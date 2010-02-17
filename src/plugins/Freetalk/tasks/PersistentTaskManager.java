@@ -2,12 +2,12 @@ package plugins.Freetalk.tasks;
 
 import java.util.Random;
 
-import plugins.Freetalk.DBUtil;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.OwnMessage;
+import plugins.Freetalk.Persistent;
 import plugins.Freetalk.exceptions.DuplicateTaskException;
 import plugins.Freetalk.exceptions.NoSuchTaskException;
 
@@ -104,7 +104,7 @@ public class PersistentTaskManager implements Runnable {
 		for(PersistentTask task : expiredTasks) {
 			synchronized(mDB.lock()) {
 				try {
-					task.initializeTransient(mDB, mFreetalk);
+					task.initializeTransient(mFreetalk);
 					task.deleteWithoutCommit();
 					mDB.commit();
 				}
@@ -133,7 +133,7 @@ public class PersistentTaskManager implements Runnable {
 		for(PersistentTask task : pendingTasks) {
 			try {
 				Logger.debug(this, "Processing task " + task);
-				task.initializeTransient(mDB, mFreetalk);
+				task.initializeTransient(mFreetalk);
 				task.process();
 				Logger.debug(this, "Processing finished.");
 			}
@@ -158,7 +158,7 @@ public class PersistentTaskManager implements Runnable {
 		switch(result.size()) {
 			case 1:
 				PersistentTask task = result.next();
-				task.initializeTransient(mDB, mFreetalk);
+				task.initializeTransient(mFreetalk);
 				return task;
 			case 0:
 				throw new NoSuchTaskException(id);
@@ -219,14 +219,14 @@ public class PersistentTaskManager implements Runnable {
 		synchronized(mDB.lock()) {
 			try {
 				for(PersistentTask task : tasks) {
-					task.initializeTransient(mDB, mFreetalk);
+					task.initializeTransient(mFreetalk);
 					task.deleteWithoutCommit();
 				}
 				
 				mDB.commit(); Logger.debug(this, "COMMITED: Deleted tasks of " + identity);
 			}
 			catch(RuntimeException e) {
-				DBUtil.rollbackAndThrow(mDB, this, e);
+				Persistent.rollbackAndThrow(mDB, this, e);
 			}
 		}
 	}
@@ -239,6 +239,11 @@ public class PersistentTaskManager implements Runnable {
 	 */
 	public void onOwnMessagePosted(OwnMessage message) {
 		proccessTasks(getOwnMessageTasks((FTOwnIdentity)message.getAuthor()), CurrentTimeUTC.getInMillis());
+	}
+	
+	public void storeTaskWithoutCommit(PersistentTask task) {
+		task.initializeTransient(mFreetalk);
+		task.storeWithoutCommit();
 	}
 
 }

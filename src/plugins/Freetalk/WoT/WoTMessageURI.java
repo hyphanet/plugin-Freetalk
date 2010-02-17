@@ -6,11 +6,7 @@ package plugins.Freetalk.WoT;
 import java.net.MalformedURLException;
 import java.util.UUID;
 
-import plugins.Freetalk.DBUtil;
 import plugins.Freetalk.MessageURI;
-
-import com.db4o.ext.ExtObjectContainer;
-
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 
@@ -115,31 +111,31 @@ public final class WoTMessageURI extends MessageURI {
 	}
 
 	@Override
-	public void removeFrom(ExtObjectContainer db) {
+	protected void deleteWithoutCommit() {
 		try {
-			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			checkedActivate(3); // TODO: Figure out a suitable depth.
 			
-			DBUtil.checkedDelete(db, this);
+			checkedDelete();
 			
-			mFreenetURI.removeFrom(db);
+			mFreenetURI.removeFrom(mDB);
 		}
 		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(db, this, e);
+			rollbackAndThrow(e);
 		}
 	}
 
 	@Override
-	public void storeWithoutCommit(ExtObjectContainer db) {
+	protected void storeWithoutCommit() {
 		try {
-			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			checkedActivate(3); // TODO: Figure out a suitable depth.
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in removeFrom() !
 			
-			db.store(mFreenetURI);
-			db.store(this);
+			mDB.store(mFreenetURI);
+			checkedStore();
 		}
 		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(db, this, e);
+			rollbackAndThrow(e);
 		}
 	}
 

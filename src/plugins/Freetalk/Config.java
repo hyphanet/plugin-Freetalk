@@ -19,7 +19,7 @@ import freenet.support.Logger;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-public final class Config {
+public final class Config extends Persistent {
 
 	/* Names of the config parameters */
 	
@@ -29,32 +29,27 @@ public final class Config {
 	
 	public static final String NNTP_SERVER_ENABLED = "NNTP.ServerEnabled";
 
-	
+	/** Parameter name for the {@code bindTo} parameter. */
+	public static final String NNTP_SERVER_BINDTO = "NNTP.BindTo";
+
+	/** Parameter name for the {@code allowedHosts} parameter. */
+	public static final String NNTP_SERVER_ALLOWED_HOSTS = "NNTP.AllowedHosts";
+
 	/**
 	 * The HashMap that contains all cofiguration parameters
 	 */
 	private final HashMap<String, String> mStringParams;
 	
 	private final HashMap<String, Integer> mIntParams;
-	
-	private transient Freetalk mFreetalk;
-	
-	private transient ExtObjectContainer mDB;
 
 	/**
 	 * Creates a new Config object and stores the default values in it.
 	 */
-	protected Config(Freetalk myFreetalk, ExtObjectContainer db) {
-		mFreetalk = myFreetalk;
-		mDB = db;
+	protected Config(Freetalk myFreetalk) {
+		initializeTransient(myFreetalk);
 		mStringParams = new HashMap<String, String>();
 		mIntParams = new HashMap<String, Integer>();
 		setDefaultValues(false);
-	}
-	
-	protected void initializeTransient(Freetalk myFreetalk, ExtObjectContainer db) {
-		mFreetalk = myFreetalk;
-		mDB = db;
 	}
 	
 	/**
@@ -68,7 +63,7 @@ public final class Config {
 			
 			if(result.size() == 0) {
 				Logger.debug(myFreetalk, "Creating new Config...");
-				config = new Config(myFreetalk, db);
+				config = new Config(myFreetalk);
 				config.storeAndCommit();
 			}
 			else {
@@ -77,7 +72,7 @@ public final class Config {
 				
 				Logger.debug(myFreetalk, "Loaded config.");
 				config = result.next();
-				config.initializeTransient(myFreetalk, db);
+				config.initializeTransient(myFreetalk);
 				config.setDefaultValues(false);
 			}
 			
@@ -92,15 +87,14 @@ public final class Config {
 	public synchronized void storeAndCommit() {
 		synchronized(mDB.lock()) {
 			try {
-				DBUtil.checkedActivate(mDB, this, 3);
-				
+				checkedActivate(3);
 				mDB.store(mStringParams, 3);
 				mDB.store(mIntParams, 3);
-				mDB.store(this);
+				checkedStore();
 				mDB.commit();
 			}
 			catch(RuntimeException e) {
-				DBUtil.rollbackAndThrow(mDB, this, e);
+				rollbackAndThrow(e);
 			}
 		}
 	}

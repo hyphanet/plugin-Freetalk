@@ -5,16 +5,11 @@ package plugins.Freetalk.tasks;
 
 import java.util.UUID;
 
-import plugins.Freetalk.DBUtil;
 import plugins.Freetalk.FTOwnIdentity;
-import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.Persistent;
 import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;
-
-import com.db4o.ext.ExtObjectContainer;
-
 import freenet.support.CurrentTimeUTC;
-import freenet.support.Logger;
 
 /**
  * A PersistentTask is a user notification which is stored in the database as long as it is valid.
@@ -29,7 +24,7 @@ import freenet.support.Logger;
  * @author xor (xor@freenetproject.org)
  * 
  */
-public abstract class PersistentTask {
+public abstract class PersistentTask extends Persistent {
 	
 	protected final String mID;
 	
@@ -42,11 +37,6 @@ public abstract class PersistentTask {
 	protected long mDeleteTime;
 	
 	
-	protected transient Freetalk mFreetalk;
-	
-	protected transient ExtObjectContainer mDB;
-	
-	
 	protected PersistentTask(FTOwnIdentity myOwner) {
 		if(myOwner == null)
 			throw new NullPointerException();
@@ -56,11 +46,6 @@ public abstract class PersistentTask {
 		mNextProcessingTime = CurrentTimeUTC.getInMillis();
 		mNextDisplayTime = Long.MAX_VALUE;
 		mDeleteTime = Long.MAX_VALUE;
-	}
-	
-	public void initializeTransient(ExtObjectContainer db, Freetalk myFreetalk) {
-		mDB = db;
-		mFreetalk = myFreetalk;
 	}
 
 	/**
@@ -81,38 +66,31 @@ public abstract class PersistentTask {
 	 */
 	public abstract void onHideForSomeTime();
 	
-	public void storeWithoutCommit() {
+	protected void storeWithoutCommit() {
 		try {
-			DBUtil.checkedActivate(mDB, this, 3); // TODO: Figure out a suitable depth.
+			checkedActivate(3); // TODO: Figure out a suitable depth.
 			
 			// We cannot throw because PersistentTasks are usually created within the transaction which is used to create the owner.
 			//DBUtil.throwIfNotStored(mDB, mOwner);
 
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 			
-			mDB.store(this);
+			checkedStore();
 		}
 		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(mDB, this, e);
+			rollbackAndThrow(e);
 		}
 	}
 	
-	public synchronized void storeAndCommit() {
+	protected synchronized void storeAndCommit() {
 		synchronized(mDB.lock()) {
 			storeWithoutCommit();
-			mDB.commit(); Logger.debug(this, "COMMITED.");
+			commit(this);
 		}
 	}
 	
 	protected void deleteWithoutCommit() {
-		try {
-			DBUtil.checkedActivate(mDB, this, 3); // TODO: Figure out a suitable depth.
-			
-			DBUtil.checkedDelete(mDB, this);
-		}
-		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(mDB, this, e);
-		}
+		deleteWithoutCommit(3);
 	}
 
 }

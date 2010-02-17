@@ -23,8 +23,9 @@ public class WoTMessageList extends MessageList {
 	
 	
 	public WoTIdentity getAuthor() {
-		mAuthor.initializeTransient(db, mMessageManager.getIdentityManager());
-		return (WoTIdentity)mAuthor;
+		WoTIdentity author = (WoTIdentity)mAuthor;
+		author.initializeTransient(mFreetalk);
+		return author;
 	}
 
 	public FreenetURI getURI() {

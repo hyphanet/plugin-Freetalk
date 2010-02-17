@@ -6,7 +6,6 @@ package plugins.Freetalk.WoT;
 import java.util.Map;
 import java.util.TreeMap;
 
-import plugins.Freetalk.DBUtil;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Message;
@@ -41,10 +40,10 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
     
 	
 	/** Get a list of fields which the database should create an index on. */
-	public static String[] getIndexedFields() {
+	static {
 		/* FIXME: Figure out whether indexed fields are inherited from parent classes. Otherwise we would have to also list the indexed fields
 		 * of WoTIdentity here. */
-		return new String[] {  }; 
+		registerIndexedFields(WoTOwnIdentity.class, new String[] { }); 
 	}
 
 	public WoTOwnIdentity(String myID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
@@ -56,7 +55,7 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	}
 
 	public FreenetURI getInsertURI() {
-		db.activate(this, 3); // String[] is no nested object to db4o so 3 is sufficient.
+		activate(3); // String[] is no nested object to db4o so 3 is sufficient.
 		return mInsertURI;
 	}
 
@@ -84,15 +83,15 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	}
 
 	public int getScoreFor(WoTIdentity identity) throws NotInTrustTreeException, Exception {
-		return mIdentityManager.getScore(this, identity);
+		return mFreetalk.getIdentityManager().getScore(this, identity);
 	}
 
 	public int getTrustIn(WoTIdentity identity) throws NotTrustedException, Exception {
-		return mIdentityManager.getTrust(this, identity);
+		return mFreetalk.getIdentityManager().getTrust(this, identity);
 	}
 
 	public void setTrust(WoTIdentity identity, int trust, String comment) throws Exception {
-		mIdentityManager.setTrust(this, identity, trust, comment);
+		mFreetalk.getIdentityManager().setTrust(this, identity, trust, comment);
 	}
 	
     /**
@@ -114,17 +113,16 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	public void storeWithoutCommit() {
 		try {
 			// 3 is the maximal depth of all getter functions. You have to adjust this when changing the set of member variables.
-			DBUtil.checkedActivate(db, this, 3);
+			checkedActivate(3);
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 
-			// TODO: As soon as we have a unit test which checks whether the content of subscribed boards gets stored, specify a depth here. Probably 1
-			db.store(mInsertURI);
-			db.store(mAssessed);
-			super.storeWithoutCommit();
+			checkedStore(mInsertURI);
+			checkedStore(mAssessed);
+			checkedStore();
 		}
 		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(db, this, e);
+			rollbackAndThrow(e);
 		}
 	}
 
@@ -136,11 +134,11 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 			
 			super.deleteWithoutCommit();
 			
-			DBUtil.checkedDelete(db, mAssessed);
-			mInsertURI.removeFrom(db);
+			checkedDelete(mAssessed);
+			mInsertURI.removeFrom(mDB);
 		}
 		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(db, this, e);
+			rollbackAndThrow(e);
 		}
 	}
 }

@@ -29,7 +29,7 @@ import freenet.support.StringValidityChecker;
  * @author xor (xor@freenetproject.org)
  * @author saces
  */
-public abstract class Message {
+public abstract class Message extends Persistent {
     
     /* Public constants */
 	
@@ -148,24 +148,16 @@ public abstract class Message {
 	private boolean mWasLinkedIn = false;
 	
 	
-	/* References to objects of the plugin, not stored in the database. */
-	
-	protected transient ExtObjectContainer db;
-	
-	protected transient MessageManager mMessageManager;
-	
-	
-	/**
-	 * Get a list of fields which the database should create an index on.
-	 */
-	public static String[] getIndexedFields() {
-		return new String[] {
+	static {
+		registerIndexedFields(Message.class,
+		new String[] {
 								"mID", /* Indexed because it is our primary key */
 								"mThreadID", /* Indexed for being able to query all messages of a thread */
 								"mParentID", /* Indexed for being able to get all replies to a message */
 								"mFetchDate", /* Indexed because Frost needs to query for all messages after the time it has last done so */
 								"mWasLinkedIn" /* Indexed because the message manager needs to query for all messages which have not been linked in */
-							};
+					}
+		);
 	}
 	
 	protected Message(MessageURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, MessageURI newThreadURI, MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
@@ -227,16 +219,6 @@ public abstract class Message {
 	}
 	
 	/**
-	 * Has to be used after loading a FTBoard object from the database to initialize the transient fields.
-	 */
-	public void initializeTransient(ExtObjectContainer myDB, MessageManager myMessageManager) {
-		assert(myDB != null);
-		assert(myMessageManager != null);
-		db = myDB;
-		mMessageManager = myMessageManager;
-	}
-	
-	/**
 	 * Verifies that the given message ID begins with the routing key of the author.
 	 * @throws InvalidParameterException If the ID is not valid. 
 	 */
@@ -264,7 +246,7 @@ public abstract class Message {
 	}
 	
 	public synchronized MessageList getMessageList() {
-		mMessageList.initializeTransient(db, mMessageManager);
+		mMessageList.initializeTransient(mFreetalk);
 		return mMessageList;
 	}
 	
@@ -327,7 +309,7 @@ public abstract class Message {
 	 */
 	public Board[] getBoards() {
 		for(Board b : mBoards)
-			b.initializeTransient(db, mMessageManager);
+			b.initializeTransient(mFreetalk);
 		return mBoards;
 	}
 	
@@ -339,7 +321,10 @@ public abstract class Message {
 	 * Get the author of the message.
 	 */
 	public FTIdentity getAuthor() {
-		mAuthor.initializeTransient(db, mMessageManager.getIdentityManager());
+		if(mAuthor instanceof Persistent) {
+			Persistent author = (Persistent)mAuthor;
+			author.initializeTransient(mFreetalk);
+		}
 		return mAuthor;
 	}
 
@@ -368,7 +353,7 @@ public abstract class Message {
 	 * Get the text of the message.
 	 */
 	public String getText() {
-		db.activate(this, 3); // FIXME: We currently have a bug which makes the message bodies get lost in inserted messages. Does this fix it?
+		activate(3); // FIXME: We currently have a bug which makes the message bodies get lost in inserted messages. Does this fix it?
 		return mText;
 	}
 	
@@ -376,7 +361,7 @@ public abstract class Message {
 	 * Get the attachments of the message, in the order in which they were received.
 	 */
 	public Attachment[] getAttachments() {
-		db.activate(this, 3);
+		activate(3);
 		return mAttachments;
 	}
 	
@@ -390,10 +375,10 @@ public abstract class Message {
 	 */
 	public synchronized Message getThread() throws NoSuchMessageException {
 		/* TODO: Find all usages of this function and check whether we should put the activate() here and what the fitting depth is */
-		db.activate(this, 3);
+		activate(3);
 		if(mThread == null)
 			throw new NoSuchMessageException();
-		mThread.initializeTransient(db, mMessageManager);
+		mThread.initializeTransient(mFreetalk);
 		return mThread;
 	}
 	
@@ -412,10 +397,10 @@ public abstract class Message {
 	 */
 	public synchronized Message getParent() throws NoSuchMessageException {
 		/* TODO: Find all usages of this function and check whether we should put the activate() here and what the fitting depth is */
-		db.activate(this, 3);
+		activate(3);
 		if(mParent == null)
 			throw new NoSuchMessageException();
-		mParent.initializeTransient(db, mMessageManager);
+		mParent.initializeTransient(mFreetalk);
 		return mParent;
 	}
 
@@ -673,63 +658,83 @@ public abstract class Message {
 	}
 	
 	public synchronized void storeAndCommit() {
-		synchronized(db.lock()) {
+		synchronized(mDB.lock()) {
 			try {
 				storeWithoutCommit();
-				db.commit(); Logger.debug(this, "COMMITED.");
+				commit(this);
 			}
 			catch(RuntimeException e) {
-				DBUtil.rollbackAndThrow(db, this, e);
+				rollbackAndThrow(e);
 			}
 		}
 	}
 	
 	public void storeWithoutCommit() {
 		try {
-			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			checkedActivate(3); // TODO: Figure out a suitable depth.
 			
 			for(Board board : mBoards)
-				DBUtil.throwIfNotStored(db, board);
+				throwIfNotStored(board);
 			
-			DBUtil.throwIfNotStored(db, mAuthor);
+			throwIfNotStored(mAuthor);
 			
 			// The MessageLists of OwnMessages are created within the same transaction as the storeAndCommit so we cannot do throwIfNotStored for them.
 			if(mMessageList != null && !(this instanceof OwnMessage))
-				DBUtil.throwIfNotStored(db, mMessageList);
+				throwIfNotStored(mMessageList);
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 
-			if(mURI != null)
-				db.store(mURI);
-			if(mRealURI != null)
-				db.store(mRealURI);
-			if(mThreadURI != null)
-				mThreadURI.storeWithoutCommit(db);
-			if(mParentURI != null)
-				mParentURI.storeWithoutCommit(db);
+			if(mURI != null) {
+				mURI.initializeTransient(mFreetalk);
+				mURI.storeWithoutCommit();
+			}
+			if(mRealURI != null) {
+				// It's a FreenetURI so it does not extend Persistent.
+				checkedStore(mRealURI);
+			}
+			if(mThreadURI != null) {
+				mThreadURI.initializeTransient(mFreetalk);
+				mThreadURI.storeWithoutCommit();
+			}
+			if(mParentURI != null) {
+				mParentURI.initializeTransient(mFreetalk);
+				mParentURI.storeWithoutCommit();
+			}
 			// db.store(mBoards); /* Not stored because it is a primitive for db4o */
 			// db.store(mDate); /* Not stored because it is a primitive for db4o */
 			// db.store(mAttachments); /* Not stored because it is a primitive for db4o */
-			db.store(this);
+			checkedStore();
 		}
 		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(db, this, e);
+			rollbackAndThrow(e);
 		}
 	}
 	
 	protected void deleteWithoutCommit() {
 		try {
-			DBUtil.checkedActivate(db, this, 3); // TODO: Figure out a suitable depth.
+			checkedActivate(3); // TODO: Figure out a suitable depth.
 			
-			DBUtil.checkedDelete(db, this);
+			checkedDelete(this);
 			
-			if(mParentURI != null) mParentURI.removeFrom(db);
-			if(mThreadURI != null) mThreadURI.removeFrom(db);
-			if(mRealURI != null) mRealURI.removeFrom(db);
-			if(mURI != null) mURI.removeFrom(db);
+			if(mParentURI != null) { 
+				mParentURI.initializeTransient(mFreetalk);
+				mParentURI.deleteWithoutCommit();
+			}
+			if(mThreadURI != null) {
+				mThreadURI.initializeTransient(mFreetalk);
+				mThreadURI.deleteWithoutCommit();
+			}
+			if(mRealURI != null) {
+				// It's a FreenetURI so there is no transient initialization
+				mRealURI.removeFrom(mDB);
+			}
+			if(mURI != null) {
+				mURI.initializeTransient(mFreetalk);
+				mURI.deleteWithoutCommit();
+			}
 		}
 		catch(RuntimeException e) {
-			DBUtil.rollbackAndThrow(db, this, e);
+			rollbackAndThrow(e);
 		}
 	}
 
@@ -744,7 +749,7 @@ public abstract class Message {
 	}
     
     public String toString() {
-    	if(db != null)
+    	if(mDB != null)
     		return getURI().toString();
     	
 		// We do not throw a NPE because toString() is usually used in logging, we want the logging to be robust
