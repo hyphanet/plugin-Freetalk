@@ -439,21 +439,26 @@ public final class ThreadPage extends WebPageImpl {
 				String uriKey = currentLine.substring(nextLink, firstSlash).replaceAll("[\r\n\t ]+", "");
 				Matcher matcher = Pattern.compile("[\\p{javaWhitespace}]").matcher(currentLine);
 				int nextSpace = matcher.find(firstSlash) ? matcher.start() : -1;
-				int nextCrLf = currentLine.indexOf("\r\n", firstSlash);
-				int nextLf = currentLine.indexOf("\n", firstSlash);
-				if (nextSpace == -1) {
-					nextSpace = currentLine.length();
+				if ((nextLink == kskLink) && (nextSpace == (nextLink + 4))) {
+					messageNode.addChild("#", currentLine.substring(nextLink, nextLink + 4));
+					currentLine = currentLine.substring(nextLink + 4);
+				} else {
+					int nextCrLf = currentLine.indexOf("\r\n", firstSlash);
+					int nextLf = currentLine.indexOf("\n", firstSlash);
+					if (nextSpace == -1) {
+						nextSpace = currentLine.length();
+					}
+					if ((nextCrLf != -1) && (nextCrLf < nextSpace)) {
+						nextSpace = nextCrLf;
+					}
+					if ((nextLf != -1) && (nextLf < nextSpace)) {
+						nextSpace = nextLf;
+					}
+					uriKey += currentLine.substring(firstSlash, nextSpace);
+					currentLine = currentLine.substring(nextSpace);
+					HTMLNode linkNode = (linkClass != null) ? new HTMLNode("a", new String[] { "href", "class" }, new String[] { "/" + uriKey, linkClass }, uriKey) : new HTMLNode("a", "href", "/" + uriKey, uriKey);
+					messageNode.addChild(linkNode);
 				}
-				if ((nextCrLf != -1) && (nextCrLf < nextSpace)) {
-					nextSpace = nextCrLf;
-				}
-				if ((nextLf != -1) && (nextLf < nextSpace)) {
-					nextSpace = nextLf;
-				}
-				uriKey += currentLine.substring(firstSlash, nextSpace);
-				currentLine = currentLine.substring(nextSpace);
-				HTMLNode linkNode = (linkClass != null) ? new HTMLNode("a", new String[] { "href", "class" }, new String[] { "/" + uriKey, linkClass }, uriKey) : new HTMLNode("a", "href", "/" + uriKey, uriKey);
-				messageNode.addChild(linkNode);
 			}
 			chkLink = currentLine.indexOf("CHK@");
 			sskLink = currentLine.indexOf("SSK@");

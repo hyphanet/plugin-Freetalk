@@ -118,6 +118,13 @@ public class MessageBodyConverterTest extends TestCase {
 		assertNotNull("messageNode", messageNode);
 		assertEquals("messageNode.getFirstTag()", "a", messageNode.getFirstTag());
 		assertEquals("messageNode.generate()", "The link <a href=\"/KSK@GPL-3\">KSK@GPL-3</a> is in this line.", messageNode.generate());
+
+		/* …except for the string “KSK@” only! */
+		messageBody = "The test KSK@ is not a link at all.";
+		messageNode = ThreadPage.convertMessageBody(messageBody);
+		assertNotNull("messageNode", messageNode);
+		assertNull("messageNode.getFirstTag()", messageNode.getFirstTag());
+		assertEquals("messageNode.generate()", "The test KSK@ is not a link at all.", messageNode.generate());
 	}
 
 	/**
