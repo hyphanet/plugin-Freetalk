@@ -255,24 +255,20 @@ public abstract class Persistent {
 			mObjectSet = myObjectSet;
 		}
 
-		@Override
 		public Iterator<T> iterator() {
 			return new Iterator<T>() {
 				final Iterator<T> mIterator = mObjectSet.iterator(); 
 				
-				@Override
 				public boolean hasNext() {
 					return mIterator.hasNext();
 				}
 
-				@Override
 				public T next() {
 					T next = mIterator.next();
 					next.initializeTransient(mFreetalk);
 					return next;
 				}
 
-				@Override
 				public void remove() {
 					throw new UnsupportedOperationException();
 				}
