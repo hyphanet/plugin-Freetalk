@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<!-- ant build file for Freenet -->
+<!-- ant build file for Freetalk -->
 
-<project name="Freenet" default="dist" basedir=".">
+<project name="Freetalk" default="dist" basedir=".">
 	<property name="freenet-cvs-snapshot.location" location="../fred/lib/freenet-cvs-snapshot.jar"/>
 	<property name="freenet-ext.location" location="../fred/lib/freenet-ext.jar"/>
 	<property name="debug-node-freetalk-plugin.location" location="../fred/plugins/Freetalk.jar"/>
