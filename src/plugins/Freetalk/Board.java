@@ -313,12 +313,12 @@ public class Board extends Persistent implements Comparable<Board> {
     }
     
     @SuppressWarnings("unchecked")
-    protected ObjectSet<BoardMessageLink> getMessagesAfterIndex(int index) {
+    protected Iterable<BoardMessageLink> getMessagesAfterIndex(int index) {
         Query q = mDB.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mMessageIndex").constrain(index).greater();
-        return q.execute();
+        return new Persistent.InitializingIterable(mFreetalk, q.execute());
     }
     
     /**
