@@ -250,6 +250,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	 * This method must be synchronized because onFailure is synchronized and TransferThread calls abortAllTransfers() during shutdown without
 	 * synchronizing on this object.
 	 */
+	@Override
 	protected synchronized void abortAllTransfers() {
 		super.abortAllTransfers();
 		mMessageLists.clear();
