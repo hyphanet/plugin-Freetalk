@@ -5,6 +5,8 @@ package plugins.Freetalk.ui.web;
 
 import java.text.DateFormat;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTIdentity;
@@ -196,10 +198,7 @@ public final class ThreadPage extends WebPageImpl {
 		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class" }, new String[] { "0", "100%", "message" });
 		HTMLNode row = table.addChild("tr", "class", "message");
 		HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width", "class" }, new String[] { "left", "top", "2", "15%", "author" }, "");
-		authorNode.addChild("abbr", new String[] { "title" }, new String[] { message.getAuthor().getID() }).addChild("span", "class", "name", message.getAuthor().getShortestUniqueName(50));
-        authorNode.addChild("#", " [");
-        authorNode.addChild("a", new String[] { "class", "href", "title" }, new String[] { "identity-link", "/WoT/ShowIdentity?id=" + message.getAuthor().getID(), "Web of Trust Page" }).addChild("#", "WoT");
-        authorNode.addChild("#", "]");
+		authorNode.addChild("a", new String[] { "class", "href", "title" }, new String[] { "identity-link", "/WoT/ShowIdentity?id=" + message.getAuthor().getID(), "Web of Trust Page" }).addChild("abbr", new String[] { "title" }, new String[] { message.getAuthor().getID() }).addChild("span", "class", "name", message.getAuthor().getShortestUniqueName(50));
         authorNode.addChild("br");
         authorNode.addChild("#", l10n().getString("ThreadPage.Author.Posts") + ": " + mFreetalk.getMessageManager().getMessagesBy(message.getAuthor()).size());
         authorNode.addChild("br");
@@ -253,6 +252,7 @@ public final class ThreadPage extends WebPageImpl {
         }
         
         authorNode.addChild("#", l10n().getString("Common.WebOfTrust.Score") + ": "+ txtScore);
+        authorNode.addChild("div", "class", "identicon").addChild("img", new String[] { "src", "width", "height" }, new String[] { "/WoT/GetIdenticon?identity=" + message.getAuthor().getID(), "128", "128"});
 
         // Title of the message
 		HTMLNode title = row.addChild("td", new String[] { "align", "class" }, new String[] { "left", "title " + ((ref == null || ref.wasRead()) ? "read" : "unread") });
@@ -429,27 +429,36 @@ public final class ThreadPage extends WebPageImpl {
 			}
 			messageNode.addChild("#", currentLine.substring(0, nextLink));
 			int firstSlash = currentLine.indexOf('/', nextLink);
-			if ((firstSlash == -1) || ((firstSlash - nextLink) >= 105)) {
+			if (((nextLink != kskLink) && (firstSlash == -1)) || ((firstSlash - nextLink) >= 105) || ((nextLink != kskLink) && ((firstSlash - nextLink) < 99))) {
 				messageNode.addChild("#", currentLine.substring(nextLink, nextLink + 4));
 				currentLine = currentLine.substring(nextLink + 4);
 			} else {
+				if (nextLink == kskLink) {
+					firstSlash = nextLink;
+				}
 				String uriKey = currentLine.substring(nextLink, firstSlash).replaceAll("[\r\n\t ]+", "");
-				int nextSpace = currentLine.indexOf(' ', firstSlash);
-				int nextCrLf = currentLine.indexOf("\r\n", firstSlash);
-				int nextLf = currentLine.indexOf("\n", firstSlash);
-				if (nextSpace == -1) {
-					nextSpace = currentLine.length();
+				Matcher matcher = Pattern.compile("[\\p{javaWhitespace}]").matcher(currentLine);
+				int nextSpace = matcher.find(firstSlash) ? matcher.start() : -1;
+				if ((nextLink == kskLink) && (nextSpace == (nextLink + 4))) {
+					messageNode.addChild("#", currentLine.substring(nextLink, nextLink + 4));
+					currentLine = currentLine.substring(nextLink + 4);
+				} else {
+					int nextCrLf = currentLine.indexOf("\r\n", firstSlash);
+					int nextLf = currentLine.indexOf("\n", firstSlash);
+					if (nextSpace == -1) {
+						nextSpace = currentLine.length();
+					}
+					if ((nextCrLf != -1) && (nextCrLf < nextSpace)) {
+						nextSpace = nextCrLf;
+					}
+					if ((nextLf != -1) && (nextLf < nextSpace)) {
+						nextSpace = nextLf;
+					}
+					uriKey += currentLine.substring(firstSlash, nextSpace);
+					currentLine = currentLine.substring(nextSpace);
+					HTMLNode linkNode = (linkClass != null) ? new HTMLNode("a", new String[] { "href", "class" }, new String[] { "/" + uriKey, linkClass }, uriKey) : new HTMLNode("a", "href", "/" + uriKey, uriKey);
+					messageNode.addChild(linkNode);
 				}
-				if ((nextCrLf != -1) && (nextCrLf < nextSpace)) {
-					nextSpace = nextCrLf;
-				}
-				if ((nextLf != -1) && (nextLf < nextSpace)) {
-					nextSpace = nextLf;
-				}
-				uriKey += currentLine.substring(firstSlash, nextSpace);
-				currentLine = currentLine.substring(nextSpace);
-				HTMLNode linkNode = (linkClass != null) ? new HTMLNode("a", new String[] { "href", "class" }, new String[] { "/" + uriKey, linkClass }, uriKey) : new HTMLNode("a", "href", "/" + uriKey, uriKey);
-				messageNode.addChild(linkNode);
 			}
 			chkLink = currentLine.indexOf("CHK@");
 			sskLink = currentLine.indexOf("SSK@");
