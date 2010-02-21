@@ -371,7 +371,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	}
 	
 	public String getVersion() {
-		return Version.getMarketingVersion();
+		return Version.longVersionString;
 	}
 	
 	public long getRealVersion() {

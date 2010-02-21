@@ -25,9 +25,7 @@ public class Version {
 	public static final long latestVersion = version;
 	
 
-	public static String getMarketingVersion() {
-		return "0.1 beta "+gitRevision;
-	}
+	public static final String longVersionString = "0.1 beta "+gitRevision;
 
 	public static long getRealVersion() {
 		return version;
