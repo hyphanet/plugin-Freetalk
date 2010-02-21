@@ -14,7 +14,6 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.ObjectSet;
-import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.support.CurrentTimeUTC;
@@ -294,7 +293,10 @@ public class Board extends Persistent implements Comparable<Board> {
     	
     	switch(messageLinks.size()) {
     		case 0: throw new NoSuchMessageException(message.getID());
-    		case 1: return messageLinks.next();
+    		case 1:
+    			final BoardMessageLink link = messageLinks.next();
+    			link.initializeTransient(mFreetalk);
+    			return link;
     		default: throw new DuplicateMessageException(message.getID());
     	}
     }
@@ -311,12 +313,12 @@ public class Board extends Persistent implements Comparable<Board> {
     }
     
     @SuppressWarnings("unchecked")
-    protected ObjectSet<BoardMessageLink> getMessagesAfterIndex(int index) {
+    protected Iterable<BoardMessageLink> getMessagesAfterIndex(int index) {
         Query q = mDB.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mMessageIndex").constrain(index).greater();
-        return q.execute();
+        return new Persistent.InitializingIterable(mFreetalk, q.execute());
     }
     
     /**
@@ -345,7 +347,9 @@ public class Board extends Persistent implements Comparable<Board> {
     		Logger.error(this, "addMessage() called for already existing message: " + newMessage);
     	}
     	catch(NoSuchMessageException e) {
-    		new BoardMessageLink(this, newMessage, takeFreeMessageIndexWithoutCommit()).storeWithoutCommit();
+    		final BoardMessageLink link = new BoardMessageLink(this, newMessage, takeFreeMessageIndexWithoutCommit());
+    		link.initializeTransient(mFreetalk);
+    		link.storeWithoutCommit();
     	}
     }
     
