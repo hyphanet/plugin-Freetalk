@@ -2,8 +2,6 @@ package plugins.Freetalk;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
 
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
@@ -351,7 +349,7 @@ public final class SubscribedBoard extends Board {
     }
     
     @SuppressWarnings("unchecked")
-	public synchronized BoardReplyLink getReplyLink(Message message) throws NoSuchMessageException {
+	public synchronized BoardReplyLink getReplyLink(final Message message) throws NoSuchMessageException {
         final Query q = mDB.query();
         q.constrain(BoardReplyLink.class);
         q.descend("mBoard").constrain(this).identity();
@@ -360,7 +358,7 @@ public final class SubscribedBoard extends Board {
         
         switch(results.size()) {
 	        case 1:
-				BoardReplyLink messageRef = results.next();
+				final BoardReplyLink messageRef = results.next();
 				messageRef.initializeTransient(mFreetalk);
 				assert(message.equals(messageRef.mMessage)); // The query works
 				return messageRef;
@@ -372,7 +370,7 @@ public final class SubscribedBoard extends Board {
     }
     
     @SuppressWarnings("unchecked")
-	public synchronized BoardThreadLink getThreadLink(String threadID) throws NoSuchMessageException {
+	public synchronized BoardThreadLink getThreadLink(final String threadID) throws NoSuchMessageException {
     	final Query q = mDB.query();
         q.constrain(BoardThreadLink.class);
         q.descend("mBoard").constrain(this).identity();
@@ -381,7 +379,7 @@ public final class SubscribedBoard extends Board {
         
         switch(results.size()) {
 	        case 1:
-				BoardThreadLink threadRef = results.next();
+				final BoardThreadLink threadRef = results.next();
 				threadRef.initializeTransient(mFreetalk);
 				assert(threadID.equals(threadRef.mThreadID)); // The query works
 				return threadRef;
@@ -403,7 +401,7 @@ public final class SubscribedBoard extends Board {
      * The transient fields of the returned message will be initialized already.
      * @throws NoSuchMessageException
      */
-    private synchronized BoardThreadLink findOrCreateParentThread(Message newMessage) {
+    private synchronized BoardThreadLink findOrCreateParentThread(final Message newMessage) {
     	String parentThreadID;
     	
     	try {
@@ -421,9 +419,9 @@ public final class SubscribedBoard extends Board {
     	catch(NoSuchMessageException e) {
     		// There is no thread reference for the parent thread yet. Either it was not downloaded yet or it was downloaded but is no thread.
     		try {
-    			Message parentThread = mFreetalk.getMessageManager().get(parentThreadID);
+    			final Message parentThread = mFreetalk.getMessageManager().get(parentThreadID);
     			
-    			if(Arrays.binarySearch(parentThread.getBoards(), this) < 0) {
+    			if(Arrays.binarySearch(parentThread.getBoards(), mParentBoard) < 0) {
     				// The parent thread is not a message in this board.
     				// TODO: Decide whether we should maybe store a flag in the BoardThreadLink which marks it.
     				// IMHO it is part of the UI's job to read the board list of the actual Message object and display something if the thread is not
@@ -466,14 +464,14 @@ public final class SubscribedBoard extends Board {
     }
 
     @SuppressWarnings("unchecked")
-    public synchronized ObjectSet<MessageReference> getAllMessages(final boolean sortByMessageIndexAscending) {
+    public synchronized Iterable<MessageReference> getAllMessages(final boolean sortByMessageIndexAscending) {
     	final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         if (sortByMessageIndexAscending) {
             q.descend("mMessageIndex").orderAscending(); /* Needed for NNTP */
         }
-        return q.execute();
+        return new Persistent.InitializingIterable<MessageReference>(mFreetalk, q.execute());
     }
 
     @SuppressWarnings("unchecked")
@@ -515,11 +513,13 @@ public final class SubscribedBoard extends Board {
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mMessageIndex").constrain(index);
-        ObjectSet<MessageReference> result = q.execute();
+        final ObjectSet<MessageReference> result = q.execute();
         
         switch(result.size()) {
 	        case 1:
-	        	return result.next(); // No need to call initializeTransient(), it is done implicitly by MessageReference.getMessage();
+	        	final MessageReference ref = result.next();
+	        	ref.initializeTransient(mFreetalk);
+	        	return ref;
 	        case 0:
 	            throw new NoSuchMessageException();
 	        default:
@@ -528,7 +528,7 @@ public final class SubscribedBoard extends Board {
     }
 
     @SuppressWarnings("unchecked")
-    public synchronized List<MessageReference> getMessagesByMinimumIndex(
+    public synchronized Iterable<MessageReference> getMessagesByMinimumIndex(
             int minimumIndex,
             final boolean sortByMessageIndexAscending,
             final boolean sortByMessageDateAscending)
@@ -545,11 +545,11 @@ public final class SubscribedBoard extends Board {
         if (sortByMessageDateAscending) {
             q.descend("mMessageDate").orderAscending();
         }
-        return q.execute();
+        return new Persistent.InitializingIterable<MessageReference>(mFreetalk, q.execute());
     }
 
     @SuppressWarnings("unchecked")
-    public synchronized List<MessageReference> getMessagesByMinimumDate(
+    public synchronized Iterable<MessageReference> getMessagesByMinimumDate(
             long minimumDate,
             final boolean sortByMessageIndexAscending,
             final boolean sortByMessageDateAscending)
@@ -566,7 +566,7 @@ public final class SubscribedBoard extends Board {
         if (sortByMessageDateAscending) {
             q.descend("mMessageDate").orderAscending();
         }
-        return q.execute();
+        return new Persistent.InitializingIterable<MessageReference>(mFreetalk, q.execute());
     }
 
     /**
@@ -607,7 +607,7 @@ public final class SubscribedBoard extends Board {
      * Get all replies to the given thread, sorted ascending by date if requested
      */
     @SuppressWarnings("unchecked")
-    public synchronized Iterable<BoardReplyLink> getAllThreadReplies(String threadID, final boolean sortByDateAscending) {
+    public synchronized Iterable<BoardReplyLink> getAllThreadReplies(final String threadID, final boolean sortByDateAscending) {
     	final Query q = mDB.query();
         q.constrain(BoardReplyLink.class);
         q.descend("mBoard").constrain(this).identity();
@@ -617,40 +617,7 @@ public final class SubscribedBoard extends Board {
             q.descend("mMessageDate").orderAscending();
         }
         
-		return new Iterable<BoardReplyLink>() {
-			@SuppressWarnings("unchecked")
-			public Iterator<BoardReplyLink> iterator() {
-				return new Iterator<BoardReplyLink>() {
-					private final Iterator<BoardReplyLink> iter = q.execute().iterator();
-
-					public boolean hasNext() {
-						return iter.hasNext();
-					}
-
-					public BoardReplyLink next() {
-						BoardReplyLink next = iter.next();
-						next.initializeTransient(mFreetalk);
-						return next;
-					}
-
-					public void remove() {
-						throw new UnsupportedOperationException();
-					}
-				};
-			}
-		};
-    }
-    
-    public static String[] getMessageReferenceIndexedFields() { /* TODO: ugly! find a better way */
-    	return new String[] { "mBoard", "mMessage", "mMessageIndex", "mMessageDate" };
-    }
-
-    public static String[] getBoardReplyLinkIndexedFields() { /* TODO: ugly! find a better way */
-        return new String[] { "mThreadID" };
-    }
-    
-    public static String[] getBoardThreadLinkIndexedFields() { /* TODO: ugly! find a better way */
-    	return new String[] { "mThreadID" };
+		return new Persistent.InitializingIterable(mFreetalk, q.execute());
     }
     
 //    public static final class UnwantedMessageLink {
@@ -685,6 +652,11 @@ public final class SubscribedBoard extends Board {
 
     	private boolean mWasRead = false;
     	
+    	static {
+    		Persistent.registerIndexedFields(MessageReference.class, 
+    			new String[] { "mBoard", "mMessage", "mMessageIndex", "mMessageDate" });
+    	}
+    	
     	
     	private MessageReference(SubscribedBoard myBoard, int myMessageIndex) {
         	if(myBoard == null)
@@ -716,8 +688,6 @@ public final class SubscribedBoard extends Board {
          * @throws MessageNotFetchedException If the message belonging to this reference was not fetched yet.
          */
         public Message getMessage() throws MessageNotFetchedException {
-            /* We do not have to initialize mBoard and can assume that it is initialized because a MessageReference will only be loaded
-             * by the board it belongs to. */
         	activate(3); // FIXME: Figure out a reasonable depth
         	mMessage.initializeTransient(mFreetalk);
             return mMessage;
@@ -790,6 +760,9 @@ public final class SubscribedBoard extends Board {
         
         private final String mThreadID;
         
+        static {
+        	Persistent.registerIndexedFields(BoardReplyLink.class, new String[] { "mThreadID" });
+        }
 
         protected BoardReplyLink(SubscribedBoard myBoard, Message myMessage, int myIndex) {
         	super(myBoard, myMessage, myIndex);
@@ -827,6 +800,9 @@ public final class SubscribedBoard extends Board {
     	
     	private boolean mWasThreadRead = false;
     	
+        static {
+        	Persistent.registerIndexedFields(BoardReplyLink.class, new String[] { "mThreadID" });
+        }
     	
     	protected BoardThreadLink(SubscribedBoard myBoard, Message myThread, int myMessageIndex) {
     		super(myBoard, myThread, myMessageIndex);
