@@ -656,7 +656,7 @@ public abstract class MessageManager implements Runnable {
 		final Query query = db.query();
 		query.constrain(FetchFailedMarker.class);
 		query.descend("mDateOfNextRetry").constrain(now).greater().not();
-		return new Persistent.InitializingIterable<FetchFailedMarker>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<FetchFailedMarker>(mFreetalk, query.execute());
 	}
 	
 	private MessageFetchFailedMarker getMessageFetchFailedMarker(final MessageReference ref) throws NoSuchFetchFailedMarkerException {
@@ -774,7 +774,7 @@ public abstract class MessageManager implements Runnable {
 		query.constrain(MessageList.MessageReference.class);
 		query.constrain(OwnMessageList.OwnMessageReference.class).not();
 		query.descend("mMessageID").constrain(id);
-		return new Persistent.InitializingIterable<MessageList.MessageReference>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query.execute());
 	}
 
 	/**
@@ -952,7 +952,7 @@ public abstract class MessageManager implements Runnable {
 		query.constrain(Board.class);
 		query.constrain(SubscribedBoard.class).not();
 		query.descend("mName").orderAscending();
-		return new Persistent.InitializingIterable<Board>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<Board>(mFreetalk, query.execute());
 	}
 	
 	/**
@@ -963,14 +963,14 @@ public abstract class MessageManager implements Runnable {
 		final Query query = db.query();
 		query.constrain(Board.class);
 		query.descend("mHasSubscriptions").constrain(true);
-		return new Persistent.InitializingIterable<Board>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<Board>(mFreetalk, query.execute());
 	}
 	
 	@SuppressWarnings("unchecked")
 	public synchronized ObjectSet<SubscribedBoard> subscribedBoardIterator() {
 		final Query query = db.query();
 		query.constrain(SubscribedBoard.class);
-		return new Persistent.InitializingIterable<SubscribedBoard>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, query.execute());
 	}
 	/**
 	 * Get an iterator of boards which were first seen after the given Date, sorted ascending by the date they were first seen at.
@@ -981,7 +981,7 @@ public abstract class MessageManager implements Runnable {
 		query.constrain(SubscribedBoard.class);
 		query.descend("mFirstSeenDate").constrain(seenAfter).greater();
 		query.descend("mFirstSeenDate").orderAscending();
-		return new Persistent.InitializingIterable<SubscribedBoard>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, query.execute());
 	}
 	
 	/**
@@ -997,7 +997,7 @@ public abstract class MessageManager implements Runnable {
 		query.constrain(SubscribedBoard.class);
 		query.descend("mSubscriber").constrain(subscriber).identity();
 		query.descend("mName").orderAscending();
-		return new Persistent.InitializingIterable<SubscribedBoard>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, query.execute());
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -1007,7 +1007,7 @@ public abstract class MessageManager implements Runnable {
     	final Query q = db.query();
     	q.constrain(SubscribedBoard.class);
     	q.descend("mName").constrain(boardName);
-    	return new Persistent.InitializingIterable<SubscribedBoard>(mFreetalk, q.execute());
+    	return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, q.execute());
     }
 	
     @SuppressWarnings("unchecked")
@@ -1129,7 +1129,7 @@ public abstract class MessageManager implements Runnable {
 		final Query query = db.query();
 		query.constrain(OwnMessage.class);
 		query.descend("mRealURI").constrain(null).identity();
-		return new Persistent.InitializingIterable<OwnMessage>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<OwnMessage>(mFreetalk, query.execute());
 
 	}
 	
@@ -1148,7 +1148,7 @@ public abstract class MessageManager implements Runnable {
 		query.descend("mBoard").descend("mHasSubscriptions").constrain(true);
 		query.descend("iWasDownloaded").constrain(false);
 		/* FIXME: Order the message references randomly with some trick. */
-		return new Persistent.InitializingIterable<MessageList.MessageReference>(mFreetalk, query.execute());		
+		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query.execute());		
 	}
 
 
@@ -1168,7 +1168,7 @@ public abstract class MessageManager implements Runnable {
 		query.constrain(MessageList.class);
 		query.constrain(OwnMessageList.class).not();
 		query.descend("mAuthor").constrain(author).identity();
-		return new Persistent.InitializingIterable<MessageList>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<MessageList>(mFreetalk, query.execute());
 	}
 	
 	/**
@@ -1188,7 +1188,7 @@ public abstract class MessageManager implements Runnable {
 		final Query query = db.query();
 		query.constrain(OwnMessageList.class);
 		query.descend("mAuthor").constrain(author).identity();
-		return new Persistent.InitializingIterable<OwnMessageList>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<OwnMessageList>(mFreetalk, query.execute());
 	}
 	
 	
@@ -1210,7 +1210,7 @@ public abstract class MessageManager implements Runnable {
 		query.constrain(Message.class);
 		query.constrain(OwnMessage.class).not();
 		query.descend("mAuthor").constrain(author).identity();
-		return new Persistent.InitializingIterable<Message>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<Message>(mFreetalk, query.execute());
 	}
 	
 	/**
@@ -1230,7 +1230,7 @@ public abstract class MessageManager implements Runnable {
 		final Query query = db.query();
 		query.constrain(OwnMessage.class);
 		query.descend("mAuthor").constrain(author).identity();
-		return new Persistent.InitializingIterable<OwnMessage>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<OwnMessage>(mFreetalk, query.execute());
 	}
 
 	public IdentityManager getIdentityManager() {

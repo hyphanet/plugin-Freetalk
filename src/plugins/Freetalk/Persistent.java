@@ -258,12 +258,12 @@ public abstract class Persistent {
 	 * An implementation of ObjectSet which encapsulates a given ObjectSet of objects which extend Persistent and calls initializeTransient() for each returned object
 	 * automatically.
 	 */
-	public static class InitializingIterable<Type extends Persistent> implements ObjectSet<Type> {
+	public static class InitializingObjectSet<Type extends Persistent> implements ObjectSet<Type> {
 		
 		final Freetalk mFreetalk;
 		final ObjectSet<Type> mObjectSet;
 		
-		public InitializingIterable(Freetalk myFreetalk, ObjectSet<Type> myObjectSet) {
+		public InitializingObjectSet(Freetalk myFreetalk, ObjectSet<Type> myObjectSet) {
 			mFreetalk = myFreetalk;
 			mObjectSet = myObjectSet;
 		}

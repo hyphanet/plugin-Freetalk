@@ -460,7 +460,7 @@ public final class SubscribedBoard extends Board {
     	q.constrain(BoardThreadLink.class);
     	q.descend("mBoard").constrain(SubscribedBoard.this).identity(); // FIXME: Benchmark whether switching the order of those two constrains makes it faster.
     	q.descend("mLastReplyDate").orderDescending();
-    	return new Persistent.InitializingIterable<BoardThreadLink>(mFreetalk, q.execute());
+    	return new Persistent.InitializingObjectSet<BoardThreadLink>(mFreetalk, q.execute());
     }
 
     @SuppressWarnings("unchecked")
@@ -471,7 +471,7 @@ public final class SubscribedBoard extends Board {
         if (sortByMessageIndexAscending) {
             q.descend("mMessageIndex").orderAscending(); /* Needed for NNTP */
         }
-        return new Persistent.InitializingIterable<MessageReference>(mFreetalk, q.execute());
+        return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q.execute());
     }
 
     @SuppressWarnings("unchecked")
@@ -545,7 +545,7 @@ public final class SubscribedBoard extends Board {
         if (sortByMessageDateAscending) {
             q.descend("mMessageDate").orderAscending();
         }
-        return new Persistent.InitializingIterable<MessageReference>(mFreetalk, q.execute());
+        return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q.execute());
     }
 
     @SuppressWarnings("unchecked")
@@ -566,7 +566,7 @@ public final class SubscribedBoard extends Board {
         if (sortByMessageDateAscending) {
             q.descend("mMessageDate").orderAscending();
         }
-        return new Persistent.InitializingIterable<MessageReference>(mFreetalk, q.execute());
+        return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q.execute());
     }
 
     /**
@@ -617,7 +617,7 @@ public final class SubscribedBoard extends Board {
             q.descend("mMessageDate").orderAscending();
         }
         
-		return new Persistent.InitializingIterable(mFreetalk, q.execute());
+		return new Persistent.InitializingObjectSet(mFreetalk, q.execute());
     }
     
 //    public static final class UnwantedMessageLink {
