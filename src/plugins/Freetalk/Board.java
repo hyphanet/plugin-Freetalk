@@ -318,7 +318,7 @@ public class Board extends Persistent implements Comparable<Board> {
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mMessageIndex").constrain(index).greater();
-        return new Persistent.InitializingIterable(mFreetalk, q.execute());
+        return new Persistent.InitializingObjectSet(mFreetalk, q.execute());
     }
     
     /**

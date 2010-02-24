@@ -116,12 +116,11 @@ public abstract class MessageManager implements Runnable {
 					message.initializeTransient(mFreetalk);
 					Logger.error(this, "Deleting Message with mAuthor == null: " + message);
 					message.deleteWithoutCommit();
-					db.commit(); Logger.debug(this, "COMMITED.");
+					message.commit(this);
 				}
 				}
 			} catch(Exception e) {
-				db.rollback();
-				Logger.error(this, "ROLLED BACK: Deleting Message with mAuthor == null failed!", e);
+				Persistent.checkedRollback(db, this, e);
 			}
 		}
 		
@@ -137,10 +136,9 @@ public abstract class MessageManager implements Runnable {
 				list.initializeTransient(mFreetalk);
 				Logger.error(this, "Deleting MessageList with mAuthor == null: " + list);
 				list.deleteWithoutCommit();
-				db.commit(); Logger.debug(this, "COMMITED.");
+				list.commit(this);
 			} catch(Exception e) {
-				db.rollback();
-				Logger.error(this, "ROLLED BACK: Deleting MessageList with mAuthor == null failed!", e);
+				Persistent.checkedRollback(db, this, e);
 			}
 		}
 		Logger.debug(this, "Finished looking for broken MessageList objects.");
@@ -280,8 +278,6 @@ public abstract class MessageManager implements Runnable {
 		// So the FIXME is: Add some mechanism similar to addMessagesToBoards()/synchronizeSubscribedBoards which handles half-deleted identities.
 				
 				for(Message message : getMessagesBy(identity)) {
-					message.initializeTransient(mFreetalk);
-
 					for(Board board : message.getBoards()) {
 						synchronized(board) {
 						synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
@@ -299,10 +295,7 @@ public abstract class MessageManager implements Runnable {
 						}
 						}
 						
-						Iterator<SubscribedBoard> iter = subscribedBoardIterator(board.getName());
-						while(iter.hasNext()){
-							SubscribedBoard subscribedBoard = iter.next();
-							
+						for(SubscribedBoard subscribedBoard : subscribedBoardIterator(board.getName())) {
 							synchronized(subscribedBoard) {
 							synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
 							synchronized(db.lock()) {
@@ -345,31 +338,26 @@ public abstract class MessageManager implements Runnable {
 		synchronized(db.lock()) {
 			try {
 				for(MessageList messageList : getMessageListsBy(identity)) {
-					messageList.initializeTransient(mFreetalk);
 					messageList.deleteWithoutCommit();
 				}
 
 				if(identity instanceof FTOwnIdentity) {
 					for(OwnMessage message : getOwnMessagesBy((FTOwnIdentity)identity)) {
-						message.initializeTransient(mFreetalk);
 						message.deleteWithoutCommit();
 					}
 
 					for(OwnMessageList messageList : getOwnMessageListsBy((FTOwnIdentity)identity)) {
-						messageList.initializeTransient(mFreetalk);
 						messageList.deleteWithoutCommit();
 					}
 					
 					// FIXME: We do not lock the boards. Ensure that the UI cannot re-use the board by calling storeAndCommit somewhere even though the board
 					// has been deleted. This can be ensured by having isStored() checks in all storeAndCommit() functions which use boards.
 					
-					Iterator<SubscribedBoard> iter = subscribedBoardIteratorSortedByName((FTOwnIdentity)identity); // TODO: Optimization: Use a non-sorting function.
-					while(iter.hasNext()) {
-						SubscribedBoard board = iter.next();
+					for(SubscribedBoard board : subscribedBoardIteratorSortedByName((FTOwnIdentity)identity)) // TODO: Optimization: Use a non-sorting function.
 						board.deleteWithoutCommit();
-					}
 				}
-				db.commit(); Logger.debug(this, "COMMITED: Messages and message lists deleted for " + identity);
+				Logger.debug(this, "Messages and message lists deleted for " + identity);
+				Persistent.commit(db, this);
 			}
 			catch(RuntimeException e) {
 				Persistent.rollbackAndThrow(db, this, e);
@@ -414,8 +402,7 @@ public abstract class MessageManager implements Runnable {
 				list.commit(this);
 			}
 			catch(RuntimeException e) {
-				db.rollback();
-				Logger.error(this, "ROLLED BACK: Exception in onMessageListInsertSucceeded for " + uri, e);
+				Persistent.rollbackAndThrow(db, this, e);
 			}
 		}
 	}
@@ -454,7 +441,7 @@ public abstract class MessageManager implements Runnable {
 					message.commit(this);
 				}
 				catch(Exception ex) {
-					db.rollback(); Logger.error(this, "ROLLED BACK!", ex);
+					Persistent.checkedRollback(db, this, e);
 				}
 			}
 			
@@ -498,7 +485,7 @@ public abstract class MessageManager implements Runnable {
 					}
 					catch(Exception e) {
 						allSuccessful = false;
-						db.rollback(); Logger.error(this, "ROLLED BACK: Adding message to board failed", e);						
+						Persistent.checkedRollback(db, this, e);			
 					}
 				}
 				}
@@ -523,23 +510,17 @@ public abstract class MessageManager implements Runnable {
 	private synchronized void synchronizeSubscribedBoards() {
 		Logger.normal(this, "Synchronizing subscribed boards...");
 		
-		Iterator<SubscribedBoard> iter = subscribedBoardIterator();
-		
-		while(iter.hasNext()) {
-			SubscribedBoard board = iter.next();
-			
-			
+		for(SubscribedBoard board : subscribedBoardIterator()) {
 			// No need to lock the parent board because we do not modify it and we've locked the MessageManager which prevents writes to the parent board.
 			// synchronized(board.getParentBoard()) {
 			synchronized(board) {
 			synchronized(db.lock()) {
 				try {
 					board.synchronizeWithoutCommit();
-					db.commit(); Logger.debug(this, "COMMITED.");
+					board.commit(this);
 				}
 				catch(Exception e) {
-					db.rollback();
-					Logger.error(this, "Board synchronization failed", e);
+					Persistent.checkedRollback(db, this, e);
 				}
 			}
 			}
@@ -592,7 +573,7 @@ public abstract class MessageManager implements Runnable {
 					list.commit(this);
 				}
 				catch(RuntimeException ex) {
-					db.rollback(); Logger.error(this, "ROLLED BACK!", ex);
+					Persistent.checkedRollback(db, this, ex);
 				}
 		}
 	}
@@ -642,8 +623,7 @@ public abstract class MessageManager implements Runnable {
 				Persistent.commit(db, this);
 			}
 			catch(RuntimeException ex) {
-				db.rollback();
-				Logger.error(this, "ROLLED BACK: Exception while marking a not-downloadable messge", ex);
+				Persistent.checkedRollback(db, this, ex);
 			}
 			}
 		}
@@ -671,48 +651,24 @@ public abstract class MessageManager implements Runnable {
 		}		
 	}
 	
-	private Iterable<FetchFailedMarker> getFetchFailedMarkers(final Date now) {
-		return new Iterable<FetchFailedMarker>() {
-			@SuppressWarnings("unchecked")
-			public Iterator<FetchFailedMarker> iterator() {
-				return new Iterator<FetchFailedMarker>() {
-					private Iterator<FetchFailedMarker> iter;
-
-					{
-						Query query = db.query();
-						query.constrain(FetchFailedMarker.class);
-						query.descend("mDateOfNextRetry").constrain(now).greater().not();
-						iter = query.execute().iterator();
-					}
-
-					public boolean hasNext() {
-						return iter.hasNext();
-					}
-
-					public FetchFailedMarker next() {
-						FetchFailedMarker next = iter.next();
-						next.initializeTransient(mFreetalk);
-						return next;
-					}
-
-					public void remove() {
-						throw new UnsupportedOperationException();
-					}
-				};
-			}
-		};
+	@SuppressWarnings("unchecked")
+	private ObjectSet<FetchFailedMarker> getFetchFailedMarkers(final Date now) {
+		final Query query = db.query();
+		query.constrain(FetchFailedMarker.class);
+		query.descend("mDateOfNextRetry").constrain(now).greater().not();
+		return new Persistent.InitializingObjectSet<FetchFailedMarker>(mFreetalk, query.execute());
 	}
 	
-	private MessageFetchFailedMarker getMessageFetchFailedMarker(MessageReference ref) throws NoSuchFetchFailedMarkerException {
-		Query q = db.query();
+	private MessageFetchFailedMarker getMessageFetchFailedMarker(final MessageReference ref) throws NoSuchFetchFailedMarkerException {
+		final Query q = db.query();
 		q.constrain(MessageFetchFailedMarker.class);
 		q.descend("mMessageReference").constrain(ref).identity();
 		@SuppressWarnings("unchecked")
-		ObjectSet<MessageFetchFailedMarker> markers = q.execute();
+		final ObjectSet<MessageFetchFailedMarker> markers = q.execute();
 		
 		switch(markers.size()) {
 			case 1:
-				MessageFetchFailedMarker result = markers.next();
+				final MessageFetchFailedMarker result = markers.next();
 				result.initializeTransient(mFreetalk);
 				return result;
 			case 0:
@@ -722,16 +678,16 @@ public abstract class MessageManager implements Runnable {
 		}
 	}
 	
-	protected MessageListFetchFailedMarker getMessageListFetchFailedMarker(String messageListID) throws NoSuchFetchFailedMarkerException {
-		Query q = db.query();
+	protected MessageListFetchFailedMarker getMessageListFetchFailedMarker(final String messageListID) throws NoSuchFetchFailedMarkerException {
+		final Query q = db.query();
 		q.constrain(MessageListFetchFailedMarker.class);
 		q.descend("mMessageListID").constrain(messageListID);
 		@SuppressWarnings("unchecked")
-		ObjectSet<MessageListFetchFailedMarker> markers = q.execute();
+		final ObjectSet<MessageListFetchFailedMarker> markers = q.execute();
 		
 		switch(markers.size()) {
 			case 1:
-				MessageListFetchFailedMarker result = markers.next();
+				final MessageListFetchFailedMarker result = markers.next();
 				result.initializeTransient(mFreetalk);
 				return result;
 			case 0:
@@ -776,8 +732,7 @@ public abstract class MessageManager implements Runnable {
 					marker.commit(this);
 				}
 				catch(RuntimeException e) {
-					db.rollback();
-					Logger.error(this, "ROLLED BACK: Exception while clearing a FetchFailedMarker ", e);
+					Persistent.checkedRollback(db, this, e);
 				}
 			}
 		}
@@ -813,37 +768,13 @@ public abstract class MessageManager implements Runnable {
 	 * Get a list of all MessageReference objects to the given message ID. References to OwnMessage are not returned.
 	 * Used to mark the references to a message which was downloaded as downloaded.
 	 */
-	private Iterable<MessageList.MessageReference> getAllReferencesToMessage(final String id) {
-		return new Iterable<MessageList.MessageReference>() {
-			@SuppressWarnings("unchecked")
-			public Iterator<MessageList.MessageReference> iterator() {
-				return new Iterator<MessageList.MessageReference>() {
-					private Iterator<MessageList.MessageReference> iter;
-
-					{
-						Query query = db.query();
-						query.constrain(MessageList.MessageReference.class);
-						query.constrain(OwnMessageList.OwnMessageReference.class).not();
-						query.descend("mMessageID").constrain(id);
-						iter = query.execute().iterator();
-					}
-
-					public boolean hasNext() {
-						return iter.hasNext();
-					}
-
-					public MessageList.MessageReference next() {
-						MessageList.MessageReference next = iter.next();
-						next.initializeTransient(mFreetalk);
-						return next;
-					}
-
-					public void remove() {
-						throw new UnsupportedOperationException();
-					}
-				};
-			}
-		};
+	@SuppressWarnings("unchecked")
+	private ObjectSet<MessageList.MessageReference> getAllReferencesToMessage(final String id) {
+		final Query query = db.query();
+		query.constrain(MessageList.MessageReference.class);
+		query.constrain(OwnMessageList.OwnMessageReference.class).not();
+		query.descend("mMessageID").constrain(id);
+		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query.execute());
 	}
 
 	/**
@@ -863,16 +794,16 @@ public abstract class MessageManager implements Runnable {
 	 * @throws NoSuchMessageException 
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized Message get(String id) throws NoSuchMessageException {
-		Query query = db.query();
+	public synchronized Message get(final String id) throws NoSuchMessageException {
+		final Query query = db.query();
 		query.constrain(Message.class);
 		query.constrain(OwnMessage.class).not();
 		query.descend("mID").constrain(id);
-		ObjectSet<Message> result = query.execute();
+		final ObjectSet<Message> result = query.execute();
 
 		switch(result.size()) {
 			case 1:
-				Message m = result.next();
+				final Message m = result.next();
 				m.initializeTransient(mFreetalk);
 				return m;
 			case 0:
@@ -889,16 +820,16 @@ public abstract class MessageManager implements Runnable {
 	 * @throws NoSuchMessageListException 
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized MessageList getMessageList(String id) throws NoSuchMessageListException {
-		Query query = db.query();
+	public synchronized MessageList getMessageList(final String id) throws NoSuchMessageListException {
+		final Query query = db.query();
 		query.constrain(MessageList.class);
 		query.constrain(OwnMessageList.class).not();
 		query.descend("mID").constrain(id);
-		ObjectSet<MessageList> result = query.execute();
+		final ObjectSet<MessageList> result = query.execute();
 
 		switch(result.size()) {
 			case 1:
-				MessageList list = result.next();
+				final MessageList list = result.next();
 				list.initializeTransient(mFreetalk);
 				return list;
 			case 0:
@@ -909,15 +840,15 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public synchronized OwnMessageList getOwnMessageList(String id) throws NoSuchMessageListException {
-		Query query = db.query();
+	public synchronized OwnMessageList getOwnMessageList(final String id) throws NoSuchMessageListException {
+		final Query query = db.query();
 		query.constrain(OwnMessageList.class);
 		query.descend("mID").constrain(id);
-		ObjectSet<OwnMessageList> result = query.execute();
+		final ObjectSet<OwnMessageList> result = query.execute();
 
 		switch(result.size()) {
 			case 1:
-				OwnMessageList list = result.next();
+				final OwnMessageList list = result.next();
 				list.initializeTransient(mFreetalk);
 				return list;
 			case 0:
@@ -927,21 +858,21 @@ public abstract class MessageManager implements Runnable {
 		}
 	}
 	
-	public OwnMessage getOwnMessage(FreenetURI uri) throws NoSuchMessageException {
+	public OwnMessage getOwnMessage(final FreenetURI uri) throws NoSuchMessageException {
 		/* return getOwnMessage(Message.getIDFromURI(uri)); */
 		throw new UnsupportedOperationException("Getting a message by it's URI is inefficient compared to getting by ID. Please only repair this function if absolutely unavoidable.");
 	}
 	
 	@SuppressWarnings("unchecked")
-	public synchronized OwnMessage getOwnMessage(String id) throws NoSuchMessageException {
-		Query query = db.query();
+	public synchronized OwnMessage getOwnMessage(final String id) throws NoSuchMessageException {
+		final Query query = db.query();
 		query.constrain(OwnMessage.class);
 		query.descend("mID").constrain(id);
-		ObjectSet<OwnMessage> result = query.execute();
+		final ObjectSet<OwnMessage> result = query.execute();
 
 		switch(result.size()) {
 			case 1:
-				OwnMessage m = result.next();
+				final OwnMessage m = result.next();
 				m.initializeTransient(mFreetalk);
 				return m;
 			case 0:
@@ -959,15 +890,15 @@ public abstract class MessageManager implements Runnable {
 	public synchronized Board getBoardByName(String name) throws NoSuchBoardException {
 		name = name.toLowerCase();
 		
-		Query query = db.query();
+		final Query query = db.query();
 		query.constrain(Board.class);
 		query.constrain(SubscribedBoard.class).not();
 		query.descend("mName").constrain(name);
-		ObjectSet<Board> result = query.execute();
+		final ObjectSet<Board> result = query.execute();
 
 		switch(result.size()) {
 			case 1:
-				Board b = result.next();
+				final Board b = result.next();
 				b.initializeTransient(mFreetalk);
 				return b;
 			case 0:
@@ -996,67 +927,17 @@ public abstract class MessageManager implements Runnable {
 				board = new Board(name);
 				board.initializeTransient(mFreetalk);
 				board.storeWithoutCommit();
-				db.commit(); Logger.debug(this, "COMMITED: Created board " + name);
+				Logger.debug(this, "Created board " + name);
+				board.commit(this);
 			}
 			catch(RuntimeException ex) {
-				db.rollback();
-				Logger.error(this, "ROLLED BACK: Exception while creating board " + name, ex);
-				throw ex;
+				Persistent.rollbackAndThrow(db, this, ex);
+				throw ex; // Satisfy the compiler
 			}
 			}
 		}
 		
 		return board;
-	}
-	
-	/**
-	 * For a database Query of result type <code>ObjectSet\<Board\></code>, this function provides an iterator. The iterator of the ObjectSet
-	 * cannot be used instead because it will not call initializeTransient() on the boards. The iterator which is returned by this function
-	 * takes care of that.
-	 * Please synchronize on the <code>MessageManager</code> when using this function, it is not synchronized itself.
-	 */
-	@SuppressWarnings("unchecked")
-	protected Iterator<Board> generalBoardIterator(final Query q) {
-		return new Iterator<Board>() {
-			private final Iterator<Board> iter = q.execute().iterator();
-			
-			public boolean hasNext() {
-				return iter.hasNext();
-			}
-
-			public Board next() {
-				final Board next = iter.next();
-				next.initializeTransient(mFreetalk);
-				return next;
-			}
-
-			public void remove() {
-				throw new UnsupportedOperationException("Boards cannot be deleted here.");
-			}
-			
-		};
-	}
-	
-	@SuppressWarnings("unchecked")
-	protected Iterator<SubscribedBoard> generalSubscribedBoardIterator(final Query q) {
-		return new Iterator<SubscribedBoard>() {
-			private final Iterator<SubscribedBoard> iter = q.execute().iterator();
-			
-			public boolean hasNext() {
-				return iter.hasNext();
-			}
-
-			public SubscribedBoard next() {
-				final SubscribedBoard next = iter.next();
-				next.initializeTransient(mFreetalk);
-				return next;
-			}
-
-			public void remove() {
-				throw new UnsupportedOperationException("Boards cannot be deleted here.");
-			}
-			
-		};
 	}
 
 	/**
@@ -1065,38 +946,42 @@ public abstract class MessageManager implements Runnable {
 	 * You have to synchronize on this MessageManager before calling this function and while processing the returned list.
 	 * The transient fields of the returned boards will be initialized already.
 	 */
-	public Iterator<Board> boardIteratorSortedByName() {
-		Query query = db.query();
+	@SuppressWarnings("unchecked")
+	public ObjectSet<Board> boardIteratorSortedByName() {
+		final Query query = db.query();
 		query.constrain(Board.class);
 		query.constrain(SubscribedBoard.class).not();
 		query.descend("mName").orderAscending();
-		return generalBoardIterator(query);
+		return new Persistent.InitializingObjectSet<Board>(mFreetalk, query.execute());
 	}
 	
 	/**
 	 * Get all boards which are being subscribed to by at least one {@link FTOwnIdentity}, i.e. the boards from which we should download messages.
 	 */
-	public synchronized Iterator<Board> boardWithSubscriptionsIterator() {
-		Query query = db.query();
+	@SuppressWarnings("unchecked")
+	public synchronized ObjectSet<Board> boardWithSubscriptionsIterator() {
+		final Query query = db.query();
 		query.constrain(Board.class);
 		query.descend("mHasSubscriptions").constrain(true);
-		return generalBoardIterator(query);
+		return new Persistent.InitializingObjectSet<Board>(mFreetalk, query.execute());
 	}
 	
-	public synchronized Iterator<SubscribedBoard> subscribedBoardIterator() {
-		Query query = db.query();
+	@SuppressWarnings("unchecked")
+	public synchronized ObjectSet<SubscribedBoard> subscribedBoardIterator() {
+		final Query query = db.query();
 		query.constrain(SubscribedBoard.class);
-		return generalSubscribedBoardIterator(query);
+		return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, query.execute());
 	}
 	/**
 	 * Get an iterator of boards which were first seen after the given Date, sorted ascending by the date they were first seen at.
 	 */
-	public synchronized Iterator<SubscribedBoard> subscribedBoardIteratorSortedByDate(FTOwnIdentity subscriber, final Date seenAfter) {
-		Query query = db.query();
+	@SuppressWarnings("unchecked")
+	public synchronized ObjectSet<SubscribedBoard> subscribedBoardIteratorSortedByDate(final FTOwnIdentity subscriber, final Date seenAfter) {
+		final Query query = db.query();
 		query.constrain(SubscribedBoard.class);
 		query.descend("mFirstSeenDate").constrain(seenAfter).greater();
 		query.descend("mFirstSeenDate").orderAscending();
-		return generalSubscribedBoardIterator(query);
+		return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, query.execute());
 	}
 	
 	/**
@@ -1106,32 +991,38 @@ public abstract class MessageManager implements Runnable {
 	 * 
 	 * The transient fields of the returned objects will be initialized already. 
 	 */
-	public Iterator<SubscribedBoard> subscribedBoardIteratorSortedByName(FTOwnIdentity subscriber) {
-		Query query = db.query();
+	@SuppressWarnings("unchecked")
+	public ObjectSet<SubscribedBoard> subscribedBoardIteratorSortedByName(final FTOwnIdentity subscriber) {
+		final Query query = db.query();
 		query.constrain(SubscribedBoard.class);
 		query.descend("mSubscriber").constrain(subscriber).identity();
 		query.descend("mName").orderAscending();
-		return generalSubscribedBoardIterator(query);
+		return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, query.execute());
 	}
 	
-	private Iterator<SubscribedBoard> subscribedBoardIterator(String boardName) {
-    	Query q = db.query();
+	@SuppressWarnings("unchecked")
+	private ObjectSet<SubscribedBoard> subscribedBoardIterator(String boardName) {
+		boardName = boardName.toLowerCase();
+		
+    	final Query q = db.query();
     	q.constrain(SubscribedBoard.class);
     	q.descend("mName").constrain(boardName);
-    	return generalSubscribedBoardIterator(q);
+    	return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, q.execute());
     }
 	
     @SuppressWarnings("unchecked")
-	public synchronized SubscribedBoard getSubscription(FTOwnIdentity subscriber, String boardName) throws NoSuchBoardException {
-    	Query q = db.query();
+	public synchronized SubscribedBoard getSubscription(final FTOwnIdentity subscriber, String boardName) throws NoSuchBoardException {
+    	boardName = boardName.toLowerCase();
+    	
+    	final Query q = db.query();
     	q.constrain(SubscribedBoard.class);
     	q.descend("mName").constrain(boardName);
     	q.descend("mSubscriber").constrain(subscriber).identity();
-    	ObjectSet<SubscribedBoard> result = q.execute();
+    	final ObjectSet<SubscribedBoard> result = q.execute();
     	
     	switch(result.size()) {
     		case 1:
-    			SubscribedBoard board = result.next();
+    			final SubscribedBoard board = result.next();
     			board.initializeTransient(mFreetalk);
     			return board;
     		case 0: throw new NoSuchBoardException(boardName);
@@ -1143,6 +1034,8 @@ public abstract class MessageManager implements Runnable {
 	 * You do NOT need to synchronize on the IdentityManager when calling this function.
 	 */
 	public SubscribedBoard subscribeToBoard(FTOwnIdentity subscriber, String boardName) throws InvalidParameterException, NoSuchIdentityException, NoSuchBoardException {
+		boardName = boardName.toLowerCase();
+		
 		synchronized(mIdentityManager) {
 			subscriber = mIdentityManager.getOwnIdentity(subscriber.getID()); // Ensure that the identity still exists so the caller does not have to synchronize.
 
@@ -1199,7 +1092,7 @@ public abstract class MessageManager implements Runnable {
 			try {
 				subscribedBoard.deleteWithoutCommit();
 				
-				if(subscribedBoardIterator(subscribedBoard.getName()).hasNext() == false) {
+				if(subscribedBoardIterator(subscribedBoard.getName()).iterator().hasNext() == false) {
 					Board board = getBoardByName(subscribedBoard.getName());
 					Logger.debug(this, "Last subscription to board " + board + " removed, clearing it's HasSubscriptions flag.");
 					board.setHasSubscriptions(false);
@@ -1232,31 +1125,12 @@ public abstract class MessageManager implements Runnable {
 //	}
 	
 	@SuppressWarnings("unchecked")
-	public synchronized Iterator<OwnMessage> notInsertedMessageIterator() {
-		return new Iterator<OwnMessage>() {
-			private Iterator<OwnMessage> iter;
+	public synchronized ObjectSet<OwnMessage> notInsertedMessageIterator() {
+		final Query query = db.query();
+		query.constrain(OwnMessage.class);
+		query.descend("mRealURI").constrain(null).identity();
+		return new Persistent.InitializingObjectSet<OwnMessage>(mFreetalk, query.execute());
 
-			{
-				Query query = db.query();
-				query.constrain(OwnMessage.class);
-				query.descend("mRealURI").constrain(null).identity();
-				iter = query.execute().iterator();
-			}
-			
-			public boolean hasNext() {
-				return iter.hasNext();
-			}
-
-			public OwnMessage next() {
-				OwnMessage next = iter.next();
-				next.initializeTransient(mFreetalk);
-				return next;
-			}
-
-			public void remove() {
-				throw new UnsupportedOperationException();
-			}
-		};
 	}
 	
 	/**
@@ -1266,36 +1140,15 @@ public abstract class MessageManager implements Runnable {
 	 * messages from.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized Iterator<MessageList.MessageReference> notDownloadedMessageIterator() {
-		return new Iterator<MessageList.MessageReference>() {
-			private Iterator<MessageList.MessageReference> iter;
-
-			{
-				// TODO: This query is very slow!
-				Query query = db.query();
-				query.constrain(MessageList.MessageReference.class);
-				query.constrain(OwnMessageList.OwnMessageReference.class).not();
-				query.descend("mBoard").descend("mHasSubscriptions").constrain(true);
-				query.descend("iWasDownloaded").constrain(false);
-				/* FIXME: Order the message references randomly with some trick. */
-				
-				iter = query.execute().iterator();
-			}
-
-			public boolean hasNext() {
-				return iter.hasNext();
-			}
-
-			public MessageList.MessageReference next() {
-				MessageList.MessageReference next = iter.next();
-				next.initializeTransient(mFreetalk);
-				return next;
-			}
-
-			public void remove() {
-				throw new UnsupportedOperationException();
-			}
-		};
+	public synchronized ObjectSet<MessageList.MessageReference> notDownloadedMessageIterator() {
+		// TODO: This query is very slow!
+		final Query query = db.query();
+		query.constrain(MessageList.MessageReference.class);
+		query.constrain(OwnMessageList.OwnMessageReference.class).not();
+		query.descend("mBoard").descend("mHasSubscriptions").constrain(true);
+		query.descend("iWasDownloaded").constrain(false);
+		/* FIXME: Order the message references randomly with some trick. */
+		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query.execute());		
 	}
 
 
@@ -1310,12 +1163,12 @@ public abstract class MessageManager implements Runnable {
 	 * @return All message lists of the given identity except those of class OwnMessageList.
 	 */
 	@SuppressWarnings("unchecked")
-	protected synchronized List<MessageList> getMessageListsBy(FTIdentity author) {
-		Query query = db.query();
+	protected synchronized ObjectSet<MessageList> getMessageListsBy(final FTIdentity author) {
+		final Query query = db.query();
 		query.constrain(MessageList.class);
 		query.constrain(OwnMessageList.class).not();
 		query.descend("mAuthor").constrain(author).identity();
-		return query.execute();
+		return new Persistent.InitializingObjectSet<MessageList>(mFreetalk, query.execute());
 	}
 	
 	/**
@@ -1331,11 +1184,11 @@ public abstract class MessageManager implements Runnable {
 	 * @return All own message lists of the given own identity.
 	 */
 	@SuppressWarnings("unchecked")
-	protected synchronized List<OwnMessageList> getOwnMessageListsBy(FTOwnIdentity author) {
-		Query query = db.query();
+	protected synchronized ObjectSet<OwnMessageList> getOwnMessageListsBy(final FTOwnIdentity author) {
+		final Query query = db.query();
 		query.constrain(OwnMessageList.class);
 		query.descend("mAuthor").constrain(author).identity();
-		return query.execute();
+		return new Persistent.InitializingObjectSet<OwnMessageList>(mFreetalk, query.execute());
 	}
 	
 	
@@ -1352,13 +1205,12 @@ public abstract class MessageManager implements Runnable {
 	 * @return All messages of the given identity except those of class OwnMessage.
 	 */
 	@SuppressWarnings("unchecked")
-	public List<Message> getMessagesBy(FTIdentity author) {
-		Query query = db.query();
+	public ObjectSet<Message> getMessagesBy(final FTIdentity author) {
+		final Query query = db.query();
 		query.constrain(Message.class);
 		query.constrain(OwnMessage.class).not();
 		query.descend("mAuthor").constrain(author).identity();
-		ObjectSet<Message> result = query.execute();
-		return result;
+		return new Persistent.InitializingObjectSet<Message>(mFreetalk, query.execute());
 	}
 	
 	/**
@@ -1374,11 +1226,11 @@ public abstract class MessageManager implements Runnable {
 	 * @return All own messages of the given own identity.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized List<OwnMessage> getOwnMessagesBy(FTOwnIdentity author) {
-		Query query = db.query();
+	public synchronized ObjectSet<OwnMessage> getOwnMessagesBy(final FTOwnIdentity author) {
+		final Query query = db.query();
 		query.constrain(OwnMessage.class);
 		query.descend("mAuthor").constrain(author).identity();
-		return query.execute();
+		return new Persistent.InitializingObjectSet<OwnMessage>(mFreetalk, query.execute());
 	}
 
 	public IdentityManager getIdentityManager() {

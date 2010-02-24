@@ -137,8 +137,7 @@ public class WoTIdentityManager extends IdentityManager {
 				db.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				db.rollback();
-				Logger.error(this, "ROLLED BACK: Error while creating OwnIdentity", e);
+				Persistent.rollbackAndThrow(db, this, e);
 			}
 		}
 		
@@ -173,8 +172,7 @@ public class WoTIdentityManager extends IdentityManager {
 				db.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				db.rollback();
-				Logger.error(this, "ROLLED BACK: Error while creating OwnIdentity", e);
+				Persistent.checkedRollback(db, this, e);
 			}
 		}
 		
@@ -651,8 +649,7 @@ public class WoTIdentityManager extends IdentityManager {
 							db.commit(); Logger.debug(this, "COMMITED.");
 						}
 						catch(Exception e) {
-							db.rollback();
-							Logger.error(this, "ROLLED BACK: Error in parseIdentities", e);
+							Persistent.checkedRollback(db, this, e);
 						}
 					}
 				} else {
@@ -668,8 +665,7 @@ public class WoTIdentityManager extends IdentityManager {
 							id.commit(this);
 						}
 						catch(RuntimeException e) {
-							db.rollback();
-							Logger.error(this, "ROLLED BACK: Error in parseIdentities", e);
+							Persistent.checkedRollback(db, this, e);
 						}
 					}
 					}

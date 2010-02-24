@@ -1,10 +1,14 @@
 package plugins.Freetalk;
 
+import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
+import com.db4o.ext.ExtObjectSet;
 
 import freenet.support.Logger;
 
@@ -160,13 +164,21 @@ public abstract class Persistent {
 			throw new RuntimeException("Mandatory object is not stored: " + object);
 		}
 	}
+	
+	public static final void checkedRollback(ExtObjectContainer db, Object loggingObject, Throwable error) {
+		// As of db4o 7.4 it seems necessary to call gc(); to cause rollback() to work.
+		System.gc();
+		db.rollback();
+		System.gc(); 
+		Logger.error(loggingObject, "ROLLED BACK!", error);
+	}
 
 	/**
 	 * Rolls back the current transaction, logs the passed exception and throws it.
 	 * To be used in try/catch blocks in storeWithoutCommit/deleteWithoutCommit.
 	 */
 	public static final void rollbackAndThrow(ExtObjectContainer db, Object loggingObject, RuntimeException error) {
-		db.rollback(); Logger.error(loggingObject, "ROLLED BACK!", error);
+		checkedRollback(db, loggingObject, error);
 		throw error;
 	}
 	
@@ -243,22 +255,102 @@ public abstract class Persistent {
 	}
 	
 	/**
-	 * An implementation of Iterable which iterates over an ObjectSet of objects which extend Persistent and calls initializeTransient() for each object automatically.
+	 * An implementation of ObjectSet which encapsulates a given ObjectSet of objects which extend Persistent and calls initializeTransient() for each returned object
+	 * automatically.
 	 */
-	public static class InitializingIterable<T extends Persistent> implements Iterable<T> {
+	public static class InitializingObjectSet<Type extends Persistent> implements ObjectSet<Type> {
 		
 		final Freetalk mFreetalk;
-		final ObjectSet<T> mObjectSet;
+		final ObjectSet<Type> mObjectSet;
 		
-		public InitializingIterable(Freetalk myFreetalk, ObjectSet<T> myObjectSet) {
+		public InitializingObjectSet(Freetalk myFreetalk, ObjectSet<Type> myObjectSet) {
 			mFreetalk = myFreetalk;
 			mObjectSet = myObjectSet;
 		}
 
 		@Override
-		public Iterator<T> iterator() {
-			return new Iterator<T>() {
-				final Iterator<T> mIterator = mObjectSet.iterator(); 
+		public ExtObjectSet ext() {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public boolean hasNext() {
+			return mObjectSet.hasNext();
+		}
+
+		@Override
+		public Type next() {
+			Type next = mObjectSet.next();
+			next.initializeTransient(mFreetalk);
+			return next;
+		}
+
+		@Override
+		public void reset() {
+			mObjectSet.reset();
+		}
+
+		@Override
+		public int size() {
+			return mObjectSet.size();
+		}
+
+		@Override
+		public boolean add(Type e) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public void add(int index, Type element) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public boolean addAll(Collection<? extends Type> c) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public boolean addAll(int index, Collection<? extends Type> c) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public void clear() {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public boolean contains(Object o) {
+			return mObjectSet.contains(o);
+		}
+
+		@Override
+		public boolean containsAll(Collection<?> c) {
+			return mObjectSet.containsAll(c);
+		}
+
+		@Override
+		public Type get(int index) {
+			Type object = mObjectSet.get(index);
+			object.initializeTransient(mFreetalk);
+			return object;
+		}
+
+		@Override
+		public int indexOf(Object o) {
+			return mObjectSet.indexOf(o);
+		}
+
+		@Override
+		public boolean isEmpty() {
+			return mObjectSet.isEmpty();
+		}
+
+		@Override
+		public Iterator<Type> iterator() {
+			return new Iterator<Type>() {
+				final Iterator<Type> mIterator = mObjectSet.iterator(); 
 				
 				@Override
 				public boolean hasNext() {
@@ -266,8 +358,8 @@ public abstract class Persistent {
 				}
 
 				@Override
-				public T next() {
-					T next = mIterator.next();
+				public Type next() {
+					Type next = mIterator.next();
 					next.initializeTransient(mFreetalk);
 					return next;
 				}
@@ -279,7 +371,124 @@ public abstract class Persistent {
 				
 			};
 		}
+
+		@Override
+		public int lastIndexOf(Object o) {
+			return mObjectSet.lastIndexOf(o);
+		}
+
+		private final class InitializingListIterator<ListType extends Persistent> implements ListIterator<ListType> {
+			private final ListIterator<ListType> mIterator;
+			
+			public InitializingListIterator(ListIterator<ListType> myIterator) {
+				 mIterator = myIterator;
+			}
+
+			@Override
+			public void add(ListType e) {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public boolean hasNext() {
+				return mIterator.hasNext();
+			}
+
+			@Override
+			public boolean hasPrevious() {
+				return mIterator.hasPrevious();
+			}
+
+			@Override
+			public ListType next() {
+				ListType next = mIterator.next();
+				next.initializeTransient(mFreetalk);
+				return next;
+			}
+
+			@Override
+			public int nextIndex() {
+				return mIterator.nextIndex();
+			}
+
+			@Override
+			public ListType previous() {
+				ListType previous = mIterator.previous();
+				previous.initializeTransient(mFreetalk);
+				return previous;
+			}
+
+			@Override
+			public int previousIndex() {
+				return mIterator.previousIndex();
+			}
+
+			@Override
+			public void remove() {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public void set(ListType e) {
+				throw new UnsupportedOperationException();
+			}
+		}
+		
+		@Override
+		public ListIterator<Type> listIterator() {
+			return new InitializingListIterator<Type>(mObjectSet.listIterator());
+		}
+		
+		@Override
+		public ListIterator<Type> listIterator(int index) {
+			return new InitializingListIterator<Type>(mObjectSet.listIterator(index));
+		}
+
+		@Override
+		public boolean remove(Object o) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Type remove(int index) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public boolean removeAll(Collection<?> c) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public boolean retainAll(Collection<?> c) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Type set(int index, Type element) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public List<Type> subList(int fromIndex, int toIndex) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Object[] toArray() {
+			throw new UnsupportedOperationException("ObjectSet provides array functionality already.");
+		}
+
+		@Override
+		public <T> T[] toArray(T[] a) {
+			throw new UnsupportedOperationException("ObjectSet provides array functionality already.");
+		}
+
+		@Override
+		public void remove() {
+			throw new UnsupportedOperationException();
+		}
+
 	}
-	
 	
 }
