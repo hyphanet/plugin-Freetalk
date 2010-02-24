@@ -18,6 +18,7 @@ import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.MessageURI;
+import plugins.Freetalk.Persistent;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -110,8 +111,7 @@ public class WoTMessageManager extends MessageManager {
 				db.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				db.rollback();
-				Logger.error(this, "ROLLED BACK: Exception in onMessageListInserFailed for " + uri, e);
+				Persistent.checkedRollback(db, this, e);
 			}
 		}
 	}
@@ -163,8 +163,7 @@ public class WoTMessageManager extends MessageManager {
 					Logger.debug(this, "COMMITED.");
 				}
 				catch(Exception ex) {
-					db.rollback();
-					Logger.error(this, "ROLLED BACK: Error while marking a message list as 'download failed'", ex);
+					Persistent.checkedRollback(db, this, e);
 				}
 			}
 	}
@@ -179,8 +178,7 @@ public class WoTMessageManager extends MessageManager {
 				db.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				db.rollback(); Logger.error(this, "ROLLED BACK!", e);
-				throw e;
+				Persistent.rollbackAndThrow(db, this, e);
 			}
 		}
 		}

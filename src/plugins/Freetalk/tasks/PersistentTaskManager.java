@@ -109,8 +109,7 @@ public class PersistentTaskManager implements Runnable {
 					mDB.commit();
 				}
 				catch(RuntimeException e) {
-					Logger.error(this, "Error while trying to delete an expired task", e);
-					mDB.rollback();
+					Persistent.checkedRollback(mDB, this, e);
 				}
 			}
 		}

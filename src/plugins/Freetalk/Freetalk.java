@@ -225,6 +225,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	private void closeDatabase() {
 		synchronized(db.lock()) {
 			try {
+				System.gc();
 				db.rollback();
 				db.close();
 				db = null;
