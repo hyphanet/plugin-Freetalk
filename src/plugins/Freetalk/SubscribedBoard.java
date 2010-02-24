@@ -455,7 +455,7 @@ public final class SubscribedBoard extends Board {
      * @return An iterator of the message which the identity will see (based on its trust levels).
      */
     @SuppressWarnings("unchecked")
-    public synchronized Iterable<BoardThreadLink> getThreads() {
+    public synchronized ObjectSet<BoardThreadLink> getThreads() {
     	final Query q = mDB.query();
     	q.constrain(BoardThreadLink.class);
     	q.descend("mBoard").constrain(SubscribedBoard.this).identity(); // FIXME: Benchmark whether switching the order of those two constrains makes it faster.
@@ -464,7 +464,7 @@ public final class SubscribedBoard extends Board {
     }
 
     @SuppressWarnings("unchecked")
-    public synchronized Iterable<MessageReference> getAllMessages(final boolean sortByMessageIndexAscending) {
+    public synchronized ObjectSet<MessageReference> getAllMessages(final boolean sortByMessageIndexAscending) {
     	final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
@@ -528,7 +528,7 @@ public final class SubscribedBoard extends Board {
     }
 
     @SuppressWarnings("unchecked")
-    public synchronized Iterable<MessageReference> getMessagesByMinimumIndex(
+    public synchronized ObjectSet<MessageReference> getMessagesByMinimumIndex(
             int minimumIndex,
             final boolean sortByMessageIndexAscending,
             final boolean sortByMessageDateAscending)
@@ -549,7 +549,7 @@ public final class SubscribedBoard extends Board {
     }
 
     @SuppressWarnings("unchecked")
-    public synchronized Iterable<MessageReference> getMessagesByMinimumDate(
+    public synchronized ObjectSet<MessageReference> getMessagesByMinimumDate(
             long minimumDate,
             final boolean sortByMessageIndexAscending,
             final boolean sortByMessageDateAscending)
@@ -607,7 +607,7 @@ public final class SubscribedBoard extends Board {
      * Get all replies to the given thread, sorted ascending by date if requested
      */
     @SuppressWarnings("unchecked")
-    public synchronized Iterable<BoardReplyLink> getAllThreadReplies(final String threadID, final boolean sortByDateAscending) {
+    public synchronized ObjectSet<BoardReplyLink> getAllThreadReplies(final String threadID, final boolean sortByDateAscending) {
     	final Query q = mDB.query();
         q.constrain(BoardReplyLink.class);
         q.descend("mBoard").constrain(this).identity();
