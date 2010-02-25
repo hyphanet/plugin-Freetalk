@@ -63,7 +63,7 @@ public abstract class Persistent {
 	 * and before calling storeWithoutCommit / deleteWithoutCommit.
 	 * Transient fields are NOT stored in the database. They are references to objects such as the IdentityManager.
 	 */
-	public final void initializeTransient(final Freetalk myFreetalk) {
+	public void initializeTransient(Freetalk myFreetalk) {
 		mFreetalk = myFreetalk;
 		mDB = mFreetalk.getDatabase();
 	}
@@ -77,7 +77,7 @@ public abstract class Persistent {
 	 * 
 	 * Activates the object to the specified depth.<br /><br />
 	 */
-	protected final void checkedActivate(final Object object, final int depth) {
+	protected final void checkedActivate(Object object, int depth) {
 		if(mDB.isStored(object)) {
 			if(!mDB.isActive(object))
 				Logger.error(this, "Trying to store a non-active object: " + object);
@@ -91,7 +91,7 @@ public abstract class Persistent {
 	 * 
 	 * Same as a call to {@link checkedActivate(this, depth)}
 	 */
-	protected final void checkedActivate(final int depth) {
+	protected final void checkedActivate(int depth) {
 		checkedActivate(this, depth);
 	}
 	
@@ -103,7 +103,7 @@ public abstract class Persistent {
 	 * Currently does not any additional checks, it is used to 
 	 * @param object
 	 */
-	protected final void checkedStore(final Object object) {
+	protected final void checkedStore(Object object) {
 		mDB.store(object);
 	}
 	
@@ -124,7 +124,7 @@ public abstract class Persistent {
 	 * 
 	 * This is to be used as an integrity check in deleteWithoutCommit() implementations. 
 	 */
-	protected final void checkedDelete(final Object object) {
+	protected final void checkedDelete(Object object) {
 		if(mDB.isStored(object))
 			mDB.delete(object);
 		else
@@ -149,7 +149,7 @@ public abstract class Persistent {
 	 * This function is to be used as an integrity check in storeWithoutCommit() implementations which require that objects to which
 	 * this object references have been stored already.
 	 */
-	protected final void throwIfNotStored(final Object object) {
+	protected final void throwIfNotStored(Object object) {
 		if(object == null) {
 			Logger.error(this, "Mandatory object is null!");
 			throw new RuntimeException("Mandatory object is null!"); 
@@ -169,7 +169,7 @@ public abstract class Persistent {
 	 * 	catch(RuntimeException e) { Persistent.checkedRollback(mDB, this, e); }<br />
 	 * } 
 	 */
-	public static final void checkedRollback(final ExtObjectContainer db, final Object loggingObject, final Throwable error) {
+	public static final void checkedRollback(ExtObjectContainer db, Object loggingObject, Throwable error) {
 		// As of db4o 7.4 it seems necessary to call gc(); to cause rollback() to work.
 		System.gc();
 		db.rollback();
@@ -185,7 +185,7 @@ public abstract class Persistent {
 	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
 	 * } 
 	 */
-	public static final void checkedRollbackAndThrow(final ExtObjectContainer db, final Object loggingObject, final RuntimeException error) {
+	public static final void checkedRollbackAndThrow(ExtObjectContainer db, Object loggingObject, RuntimeException error) {
 		checkedRollback(db, loggingObject, error);
 		throw error;
 	}
@@ -194,7 +194,7 @@ public abstract class Persistent {
 	 * Only to be used by the extending classes, not to be called from the outside.
 	 * To be used when writing your own {@link storeWithoutCommit}, look at this function to see how it is used.
 	 */
-	protected final void checkedRollbackAndThrow(final RuntimeException error) {
+	protected final void checkedRollbackAndThrow(RuntimeException error) {
 		checkedRollbackAndThrow(mDB, this, error);
 	}
 	
@@ -208,13 +208,13 @@ public abstract class Persistent {
 	 * 
 	 * @param activationDepth The desired activation depth.
 	 */
-	protected void storeWithoutCommit(final int activationDepth) {
+	protected void storeWithoutCommit(int activationDepth) {
 		try {		
 			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(activationDepth);
 			checkedStore(); // There is no checkedStore()
 		}
-		catch(final RuntimeException e) {
+		catch(RuntimeException e) {
 			checkedRollbackAndThrow(e);
 		}
 	}
@@ -227,7 +227,7 @@ public abstract class Persistent {
 	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
 	 * } 
 	 */
-	protected void storeWithoutCommit() {
+	protected  void storeWithoutCommit() {
 		storeWithoutCommit(1);
 	}
 	
@@ -240,13 +240,13 @@ public abstract class Persistent {
 	 * 
 	 * @param activationDepth The desired activation depth.
 	 */
-	protected void deleteWithoutCommit(final int activationDepth) {
+	protected void deleteWithoutCommit(int activationDepth) {
 		try {
 			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(activationDepth);
 			checkedDelete(this);
 		}
-		catch(final RuntimeException e) {
+		catch(RuntimeException e) {
 			checkedRollbackAndThrow(e);
 		}
 	}
@@ -272,7 +272,7 @@ public abstract class Persistent {
 	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
 	 * } 
 	 */
-	protected static final void checkedCommit(final ExtObjectContainer db, final Object loggingObject) {
+	protected static final void checkedCommit(ExtObjectContainer db, Object loggingObject) {
 		db.commit();
 		Logger.debug(loggingObject, "COMMITED.");
 	}
@@ -284,10 +284,8 @@ public abstract class Persistent {
 	 * 	try { object.storeWithoutCommit(); object.checkedCommit(this); }<br />
 	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
 	 * } 
-	 * 
-	 * Notice that this function is not final to allow implementing classes to override it for making it visible in their package.
 	 */
-	protected void checkedCommit(final Object loggingObject) {
+	protected void checkedCommit(Object loggingObject) {
 		checkedCommit(mDB, loggingObject);
 	}
 	
@@ -300,7 +298,7 @@ public abstract class Persistent {
 		private final Freetalk mFreetalk;
 		private final ObjectSet<Type> mObjectSet;
 		
-		public InitializingObjectSet(final Freetalk myFreetalk, final ObjectSet<Type> myObjectSet) {
+		public InitializingObjectSet(Freetalk myFreetalk, ObjectSet<Type> myObjectSet) {
 			mFreetalk = myFreetalk;
 			mObjectSet = myObjectSet;
 		}
@@ -317,7 +315,7 @@ public abstract class Persistent {
 
 		@Override
 		public Type next() {
-			final Type next = mObjectSet.next();
+			Type next = mObjectSet.next();
 			next.initializeTransient(mFreetalk);
 			return next;
 		}
@@ -333,22 +331,22 @@ public abstract class Persistent {
 		}
 
 		@Override
-		public boolean add(final Type e) {
+		public boolean add(Type e) {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public void add(final int index, final Type element) {
+		public void add(int index, Type element) {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public boolean addAll(final Collection<? extends Type> c) {
+		public boolean addAll(Collection<? extends Type> c) {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public boolean addAll(final int index, final Collection<? extends Type> c) {
+		public boolean addAll(int index, Collection<? extends Type> c) {
 			throw new UnsupportedOperationException();
 		}
 
@@ -358,24 +356,24 @@ public abstract class Persistent {
 		}
 
 		@Override
-		public boolean contains(final Object o) {
+		public boolean contains(Object o) {
 			return mObjectSet.contains(o);
 		}
 
 		@Override
-		public boolean containsAll(final Collection<?> c) {
+		public boolean containsAll(Collection<?> c) {
 			return mObjectSet.containsAll(c);
 		}
 
 		@Override
-		public Type get(final int index) {
+		public Type get(int index) {
 			Type object = mObjectSet.get(index);
 			object.initializeTransient(mFreetalk);
 			return object;
 		}
 
 		@Override
-		public int indexOf(final Object o) {
+		public int indexOf(Object o) {
 			return mObjectSet.indexOf(o);
 		}
 
@@ -385,7 +383,7 @@ public abstract class Persistent {
 		}
 
 		@Override
-		public final Iterator<Type> iterator() {
+		public Iterator<Type> iterator() {
 			return new Iterator<Type>() {
 				final Iterator<Type> mIterator = mObjectSet.iterator(); 
 				
@@ -396,7 +394,7 @@ public abstract class Persistent {
 
 				@Override
 				public Type next() {
-					final Type next = mIterator.next();
+					Type next = mIterator.next();
 					next.initializeTransient(mFreetalk);
 					return next;
 				}
@@ -410,19 +408,19 @@ public abstract class Persistent {
 		}
 
 		@Override
-		public int lastIndexOf(final Object o) {
+		public int lastIndexOf(Object o) {
 			return mObjectSet.lastIndexOf(o);
 		}
 
 		private final class InitializingListIterator<ListType extends Persistent> implements ListIterator<ListType> {
 			private final ListIterator<ListType> mIterator;
 			
-			public InitializingListIterator(final ListIterator<ListType> myIterator) {
+			public InitializingListIterator(ListIterator<ListType> myIterator) {
 				 mIterator = myIterator;
 			}
 
 			@Override
-			public void add(final ListType e) {
+			public void add(ListType e) {
 				throw new UnsupportedOperationException();
 			}
 
@@ -438,7 +436,7 @@ public abstract class Persistent {
 
 			@Override
 			public ListType next() {
-				final ListType next = mIterator.next();
+				ListType next = mIterator.next();
 				next.initializeTransient(mFreetalk);
 				return next;
 			}
@@ -450,7 +448,7 @@ public abstract class Persistent {
 
 			@Override
 			public ListType previous() {
-				final ListType previous = mIterator.previous();
+				ListType previous = mIterator.previous();
 				previous.initializeTransient(mFreetalk);
 				return previous;
 			}
@@ -466,7 +464,7 @@ public abstract class Persistent {
 			}
 
 			@Override
-			public void set(final ListType e) {
+			public void set(ListType e) {
 				throw new UnsupportedOperationException();
 			}
 		}
@@ -477,37 +475,37 @@ public abstract class Persistent {
 		}
 		
 		@Override
-		public ListIterator<Type> listIterator(final int index) {
+		public ListIterator<Type> listIterator(int index) {
 			return new InitializingListIterator<Type>(mObjectSet.listIterator(index));
 		}
 
 		@Override
-		public boolean remove(final Object o) {
+		public boolean remove(Object o) {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public Type remove(final int index) {
+		public Type remove(int index) {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public boolean removeAll(final Collection<?> c) {
+		public boolean removeAll(Collection<?> c) {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public boolean retainAll(final Collection<?> c) {
+		public boolean retainAll(Collection<?> c) {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public Type set(final int index, final Type element) {
+		public Type set(int index, Type element) {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public List<Type> subList(final int fromIndex, final int toIndex) {
+		public List<Type> subList(int fromIndex, int toIndex) {
 			throw new UnsupportedOperationException();
 		}
 
@@ -517,7 +515,7 @@ public abstract class Persistent {
 		}
 
 		@Override
-		public <T> T[] toArray(final T[] a) {
+		public <T> T[] toArray(T[] a) {
 			throw new UnsupportedOperationException("ObjectSet provides array functionality already.");
 		}
 
