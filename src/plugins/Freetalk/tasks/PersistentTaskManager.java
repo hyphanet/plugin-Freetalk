@@ -225,7 +225,7 @@ public class PersistentTaskManager implements Runnable {
 				mDB.commit(); Logger.debug(this, "COMMITED: Deleted tasks of " + identity);
 			}
 			catch(RuntimeException e) {
-				Persistent.rollbackAndThrow(mDB, this, e);
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
 			}
 		}
 	}

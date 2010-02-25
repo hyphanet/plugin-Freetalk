@@ -273,7 +273,7 @@ public class Board extends Persistent implements Comparable<Board> {
         		checkedStore();
         	}
         	catch(RuntimeException e) {
-        		rollbackAndThrow(e);
+        		checkedRollbackAndThrow(e);
         	}
         }
         

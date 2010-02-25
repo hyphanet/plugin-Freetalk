@@ -353,7 +353,7 @@ public abstract class Message extends Persistent {
 	 * Get the text of the message.
 	 */
 	public String getText() {
-		activate(3); // FIXME: We currently have a bug which makes the message bodies get lost in inserted messages. Does this fix it?
+		checkedActivate(3); // FIXME: We currently have a bug which makes the message bodies get lost in inserted messages. Does this fix it?
 		return mText;
 	}
 	
@@ -361,7 +361,7 @@ public abstract class Message extends Persistent {
 	 * Get the attachments of the message, in the order in which they were received.
 	 */
 	public Attachment[] getAttachments() {
-		activate(3);
+		checkedActivate(3);
 		return mAttachments;
 	}
 	
@@ -375,7 +375,7 @@ public abstract class Message extends Persistent {
 	 */
 	public synchronized Message getThread() throws NoSuchMessageException {
 		/* TODO: Find all usages of this function and check whether we should put the activate() here and what the fitting depth is */
-		activate(3);
+		checkedActivate(3);
 		if(mThread == null)
 			throw new NoSuchMessageException();
 		mThread.initializeTransient(mFreetalk);
@@ -397,7 +397,7 @@ public abstract class Message extends Persistent {
 	 */
 	public synchronized Message getParent() throws NoSuchMessageException {
 		/* TODO: Find all usages of this function and check whether we should put the activate() here and what the fitting depth is */
-		activate(3);
+		checkedActivate(3);
 		if(mParent == null)
 			throw new NoSuchMessageException();
 		mParent.initializeTransient(mFreetalk);
@@ -661,10 +661,10 @@ public abstract class Message extends Persistent {
 		synchronized(mDB.lock()) {
 			try {
 				storeWithoutCommit();
-				commit(this);
+				checkedCommit(this);
 			}
 			catch(RuntimeException e) {
-				rollbackAndThrow(e);
+				checkedRollbackAndThrow(e);
 			}
 		}
 	}
@@ -706,7 +706,7 @@ public abstract class Message extends Persistent {
 			checkedStore();
 		}
 		catch(RuntimeException e) {
-			rollbackAndThrow(e);
+			checkedRollbackAndThrow(e);
 		}
 	}
 	
@@ -734,7 +734,7 @@ public abstract class Message extends Persistent {
 			}
 		}
 		catch(RuntimeException e) {
-			rollbackAndThrow(e);
+			checkedRollbackAndThrow(e);
 		}
 	}
 

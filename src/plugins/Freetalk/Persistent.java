@@ -67,10 +67,6 @@ public abstract class Persistent {
 		mFreetalk = myFreetalk;
 		mDB = mFreetalk.getDatabase();
 	}
-	
-	protected final void activate(int depth) { // FIXME: Change visibility to private and use checkedActivate in extending classes.
-		mDB.activate(this, depth);
-	}
 
 	/**
 	 * Only to be used by the extending classes, not to be called from the outside.
@@ -86,7 +82,7 @@ public abstract class Persistent {
 			if(!mDB.isActive(object))
 				Logger.error(this, "Trying to store a non-active object: " + object);
 				
-			activate(depth);
+			mDB.activate(this, depth);
 		}
 	}
 	
@@ -165,6 +161,14 @@ public abstract class Persistent {
 		}
 	}
 	
+	/**
+	 * This is one of the only functions which outside classes should use.  Rolls back the current transaction, logs the passed exception and throws it.
+	 * The call to this function must be embedded in a transaction, that is a block of:<br />
+	 * synchronized(mDB.lock()) {<br />
+	 * 	try { object.storeWithoutCommit(); object.checkedCommit(this); }<br />
+	 * 	catch(RuntimeException e) { Persistent.checkedRollback(mDB, this, e); }<br />
+	 * } 
+	 */
 	public static final void checkedRollback(ExtObjectContainer db, Object loggingObject, Throwable error) {
 		// As of db4o 7.4 it seems necessary to call gc(); to cause rollback() to work.
 		System.gc();
@@ -174,16 +178,24 @@ public abstract class Persistent {
 	}
 
 	/**
-	 * Rolls back the current transaction, logs the passed exception and throws it.
-	 * To be used in try/catch blocks in storeWithoutCommit/deleteWithoutCommit.
+	 * This is one of the only functions which outside classes should use.  Rolls back the current transaction, logs the passed exception and throws it.
+	 * The call to this function must be embedded in a transaction, that is a block of:<br />
+	 * synchronized(mDB.lock()) {<br />
+	 * 	try { object.storeWithoutCommit(); object.checkedCommit(this); }<br />
+	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
+	 * } 
 	 */
-	public static final void rollbackAndThrow(ExtObjectContainer db, Object loggingObject, RuntimeException error) {
+	public static final void checkedRollbackAndThrow(ExtObjectContainer db, Object loggingObject, RuntimeException error) {
 		checkedRollback(db, loggingObject, error);
 		throw error;
 	}
 	
-	protected final void rollbackAndThrow(RuntimeException error) {
-		rollbackAndThrow(mDB, this, error);
+	/**
+	 * Only to be used by the extending classes, not to be called from the outside.
+	 * To be used when writing your own {@link storeWithoutCommit}, look at this function to see how it is used.
+	 */
+	protected final void checkedRollbackAndThrow(RuntimeException error) {
+		checkedRollbackAndThrow(mDB, this, error);
 	}
 	
 
@@ -203,14 +215,17 @@ public abstract class Persistent {
 			checkedStore(); // There is no checkedStore()
 		}
 		catch(RuntimeException e) {
-			rollbackAndThrow(e);
+			checkedRollbackAndThrow(e);
 		}
 	}
 	
 	/**
-	 * This is one of the only public functions which outside classes should use. It is used for storing the object.
+	 * This is one of the only functions which outside classes should use. It is used for storing the object.
 	 * The call to this function must be embedded in a transaction, that is a block of:<br />
-	 * synchronized(mDB.lock()) { try { object.storeWithoutCommit(); mDB.commit(); } catch(RuntimeException e) { Persistent.rollbackAndThrow(mDB, this, e); } } 
+	 * synchronized(mDB.lock()) {<br />
+	 * 	try { object.storeWithoutCommit(); object.checkedCommit(this); }<br />
+	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
+	 * } 
 	 */
 	protected  void storeWithoutCommit() {
 		storeWithoutCommit(1);
@@ -232,26 +247,46 @@ public abstract class Persistent {
 			checkedDelete(this);
 		}
 		catch(RuntimeException e) {
-			rollbackAndThrow(e);
+			checkedRollbackAndThrow(e);
 		}
 	}
 	
 	/**
-	 * This is one of the only public functions which outside classes should use. It is used for deleting the object.
+	 * This is one of the only functions which outside classes should use. It is used for deleting the object.
 	 * The call to this function must be embedded in a transaction, that is a block of:<br />
-	 * synchronized(mDB.lock()) { try { object.deleteWithoutCommit(); mDB.commit(); } catch(RuntimeException e) { Persistent.rollbackAndThrow(mDB, this, e); } }
+	 * synchronized(mDB.lock()) {<br />
+	 * 	try { object.storeWithoutCommit(); object.checkedCommit(this); }<br />
+	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
+	 * } 
 	 */
 	protected void deleteWithoutCommit() {
 		deleteWithoutCommit(1);
 	}
 	
-	protected static final void commit(ExtObjectContainer db, Object loggingObject) {
+
+	/**
+	 * This is one of the only functions which outside classes should use. It is used for committing the transaction. 
+	 * The call to this function must be embedded in a transaction, that is a block of:<br />
+	 * synchronized(mDB.lock()) {<br />
+	 * 	try { object.storeWithoutCommit(); Persistent.checkedCommit(mDB, this); }<br />
+	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
+	 * } 
+	 */
+	protected static final void checkedCommit(ExtObjectContainer db, Object loggingObject) {
 		db.commit();
 		Logger.debug(loggingObject, "COMMITED.");
 	}
 	
-	protected void commit(Object loggingObject) {
-		commit(mDB, loggingObject);
+	/**
+	 * This is one of the only functions which outside classes should use. It is used for committing the transaction.
+	 * The call to this function must be embedded in a transaction, that is a block of:<br />
+	 * synchronized(mDB.lock()) {<br />
+	 * 	try { object.storeWithoutCommit(); object.checkedCommit(this); }<br />
+	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
+	 * } 
+	 */
+	protected void checkedCommit(Object loggingObject) {
+		checkedCommit(mDB, loggingObject);
 	}
 	
 	/**

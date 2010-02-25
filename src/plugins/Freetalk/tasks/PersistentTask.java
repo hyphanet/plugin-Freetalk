@@ -78,14 +78,14 @@ public abstract class PersistentTask extends Persistent {
 			checkedStore();
 		}
 		catch(RuntimeException e) {
-			rollbackAndThrow(e);
+			checkedRollbackAndThrow(e);
 		}
 	}
 	
 	protected synchronized void storeAndCommit() {
 		synchronized(mDB.lock()) {
 			storeWithoutCommit();
-			commit(this);
+			checkedCommit(this);
 		}
 	}
 	
