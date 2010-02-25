@@ -163,7 +163,7 @@ public class WoTMessageManager extends MessageManager {
 					Logger.debug(this, "COMMITED.");
 				}
 				catch(Exception ex) {
-					Persistent.checkedRollback(db, this, e);
+					Persistent.checkedRollback(db, this, ex);
 				}
 			}
 	}
