@@ -120,7 +120,7 @@ public final class WoTMessageURI extends MessageURI {
 			mFreenetURI.removeFrom(mDB);
 		}
 		catch(RuntimeException e) {
-			rollbackAndThrow(e);
+			checkedRollbackAndThrow(e);
 		}
 	}
 
@@ -135,7 +135,7 @@ public final class WoTMessageURI extends MessageURI {
 			checkedStore();
 		}
 		catch(RuntimeException e) {
-			rollbackAndThrow(e);
+			checkedRollbackAndThrow(e);
 		}
 	}
 

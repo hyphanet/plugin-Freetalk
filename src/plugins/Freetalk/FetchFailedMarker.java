@@ -109,7 +109,7 @@ public class FetchFailedMarker extends Persistent {
 	}
 
 	public Reason getReason() {
-		activate(2); // FIXME: Check whether this is enough for an enum, or even too much.
+		checkedActivate(2); // FIXME: Check whether this is enough for an enum, or even too much.
 		return mReason;
 	}
 }

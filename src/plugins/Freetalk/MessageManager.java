@@ -116,7 +116,7 @@ public abstract class MessageManager implements Runnable {
 					message.initializeTransient(mFreetalk);
 					Logger.error(this, "Deleting Message with mAuthor == null: " + message);
 					message.deleteWithoutCommit();
-					message.commit(this);
+					message.checkedCommit(this);
 				}
 				}
 			} catch(Exception e) {
@@ -136,7 +136,7 @@ public abstract class MessageManager implements Runnable {
 				list.initializeTransient(mFreetalk);
 				Logger.error(this, "Deleting MessageList with mAuthor == null: " + list);
 				list.deleteWithoutCommit();
-				list.commit(this);
+				list.checkedCommit(this);
 			} catch(Exception e) {
 				Persistent.checkedRollback(db, this, e);
 			}
@@ -289,7 +289,7 @@ public abstract class MessageManager implements Runnable {
 						} catch (NoSuchMessageException e) {
 							// The message was not added to the board yet, this is normal
 						} catch(RuntimeException e) {
-							Persistent.rollbackAndThrow(db, this, e);
+							Persistent.checkedRollbackAndThrow(db, this, e);
 						}
 						}
 						}
@@ -305,7 +305,7 @@ public abstract class MessageManager implements Runnable {
 							} catch (NoSuchMessageException e) {
 								// The message was not added to the board yet, this is normal
 							} catch(RuntimeException e) {
-								Persistent.rollbackAndThrow(db, this, e);
+								Persistent.checkedRollbackAndThrow(db, this, e);
 							}
 							}
 							}
@@ -329,7 +329,7 @@ public abstract class MessageManager implements Runnable {
 							db.commit(); Logger.debug(this, "COMMITED.");
 						}
 						catch(RuntimeException e) {
-							Persistent.rollbackAndThrow(db, this, e);
+							Persistent.checkedRollbackAndThrow(db, this, e);
 						}
 					}
 					}
@@ -357,10 +357,10 @@ public abstract class MessageManager implements Runnable {
 						board.deleteWithoutCommit();
 				}
 				Logger.debug(this, "Messages and message lists deleted for " + identity);
-				Persistent.commit(db, this);
+				Persistent.checkedCommit(db, this);
 			}
 			catch(RuntimeException e) {
-				Persistent.rollbackAndThrow(db, this, e);
+				Persistent.checkedRollbackAndThrow(db, this, e);
 			}
 		}
 	}
@@ -378,12 +378,12 @@ public abstract class MessageManager implements Runnable {
 		synchronized(db.lock()) {
 			try {
 				list.beginOfInsert();
-				Persistent.commit(db, this);
+				Persistent.checkedCommit(db, this);
 			}
 			catch(RuntimeException e) {
 				// This function MUST NOT succeed if the list was not marked as being inserted: Otherwise messages could be added to the list while it is
 				// being inserted already, resulting in the messages being marked as successfully inserted but not being visible to anyone!
-				Persistent.rollbackAndThrow(db, this, e);
+				Persistent.checkedRollbackAndThrow(db, this, e);
 			}
 		}
 	}
@@ -399,10 +399,10 @@ public abstract class MessageManager implements Runnable {
 			try {
 				OwnMessageList list = getOwnMessageList(MessageList.getIDFromURI(uri));
 				list.markAsInserted();
-				list.commit(this);
+				list.checkedCommit(this);
 			}
 			catch(RuntimeException e) {
-				Persistent.rollbackAndThrow(db, this, e);
+				Persistent.checkedRollbackAndThrow(db, this, e);
 			}
 		}
 	}
@@ -438,7 +438,7 @@ public abstract class MessageManager implements Runnable {
 						ref.setMessageWasDownloadedFlag();
 					}
 
-					message.commit(this);
+					message.checkedCommit(this);
 				}
 				catch(Exception ex) {
 					Persistent.checkedRollback(db, this, e);
@@ -480,7 +480,7 @@ public abstract class MessageManager implements Runnable {
 					try {
 						Logger.debug(this, "Adding message to board: " + message);
 						board.addMessage(message);
-						board.commit(this);
+						board.checkedCommit(this);
 						addedMessages = true;
 					}
 					catch(Exception e) {
@@ -517,7 +517,7 @@ public abstract class MessageManager implements Runnable {
 			synchronized(db.lock()) {
 				try {
 					board.synchronizeWithoutCommit();
-					board.commit(this);
+					board.checkedCommit(this);
 				}
 				catch(Exception e) {
 					Persistent.checkedRollback(db, this, e);
@@ -570,7 +570,7 @@ public abstract class MessageManager implements Runnable {
 					}
 					
 					list.storeWithoutCommit();
-					list.commit(this);
+					list.checkedCommit(this);
 				}
 				catch(RuntimeException ex) {
 					Persistent.checkedRollback(db, this, ex);
@@ -620,7 +620,7 @@ public abstract class MessageManager implements Runnable {
 				}
 				
 				
-				Persistent.commit(db, this);
+				Persistent.checkedCommit(db, this);
 			}
 			catch(RuntimeException ex) {
 				Persistent.checkedRollback(db, this, ex);
@@ -729,7 +729,7 @@ public abstract class MessageManager implements Runnable {
 					++amount;
 					
 					Logger.debug(this, "Cleared marker " + marker);
-					marker.commit(this);
+					marker.checkedCommit(this);
 				}
 				catch(RuntimeException e) {
 					Persistent.checkedRollback(db, this, e);
@@ -928,10 +928,10 @@ public abstract class MessageManager implements Runnable {
 				board.initializeTransient(mFreetalk);
 				board.storeWithoutCommit();
 				Logger.debug(this, "Created board " + name);
-				board.commit(this);
+				board.checkedCommit(this);
 			}
 			catch(RuntimeException ex) {
-				Persistent.rollbackAndThrow(db, this, ex);
+				Persistent.checkedRollbackAndThrow(db, this, ex);
 				throw ex; // Satisfy the compiler
 			}
 			}
@@ -1059,16 +1059,16 @@ public abstract class MessageManager implements Runnable {
 								board.storeWithoutCommit();
 							}
 							
-							subscribedBoard.commit(this);
+							subscribedBoard.checkedCommit(this);
 
 							return subscribedBoard;
 						}
 						catch(InvalidParameterException error) {
-							Persistent.rollbackAndThrow(db, this, new RuntimeException(error));
+							Persistent.checkedRollbackAndThrow(db, this, new RuntimeException(error));
 							throw error; // Satisfy the compiler
 						}
 						catch(Exception error) {
-							Persistent.rollbackAndThrow(db, this, new RuntimeException(error));
+							Persistent.checkedRollbackAndThrow(db, this, new RuntimeException(error));
 							throw new RuntimeException(error); // Satisfy the compiler
 						}
 					}
@@ -1099,10 +1099,10 @@ public abstract class MessageManager implements Runnable {
 					board.storeWithoutCommit();
 				}
 				
-				subscribedBoard.commit(this);
+				subscribedBoard.checkedCommit(this);
 			}
 			catch(RuntimeException e) {
-				Persistent.rollbackAndThrow(db, this, e);
+				Persistent.checkedRollbackAndThrow(db, this, e);
 			}
 		}
 		}

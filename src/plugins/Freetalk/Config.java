@@ -94,7 +94,7 @@ public final class Config extends Persistent {
 				mDB.commit();
 			}
 			catch(RuntimeException e) {
-				rollbackAndThrow(e);
+				checkedRollbackAndThrow(e);
 			}
 		}
 	}

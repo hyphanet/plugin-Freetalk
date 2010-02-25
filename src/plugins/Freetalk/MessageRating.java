@@ -62,7 +62,7 @@ public abstract class MessageRating extends Persistent {
 	 * The transient fields of the returned object will be initialized by this getter already though.
 	 */
 	public final FTOwnIdentity getRater() {
-		activate(2); assert(mRater != null);
+		checkedActivate(2); assert(mRater != null);
 		if(mRater instanceof Persistent) {
 			Persistent rater = (Persistent)mRater;
 			rater.initializeTransient(mFreetalk);

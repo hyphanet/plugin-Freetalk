@@ -55,7 +55,7 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	}
 
 	public FreenetURI getInsertURI() {
-		activate(3); // String[] is no nested object to db4o so 3 is sufficient.
+		checkedActivate(3); // String[] is no nested object to db4o so 3 is sufficient.
 		return mInsertURI;
 	}
 
@@ -122,7 +122,7 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 			checkedStore();
 		}
 		catch(RuntimeException e) {
-			rollbackAndThrow(e);
+			checkedRollbackAndThrow(e);
 		}
 	}
 
@@ -138,7 +138,7 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 			mInsertURI.removeFrom(mDB);
 		}
 		catch(RuntimeException e) {
-			rollbackAndThrow(e);
+			checkedRollbackAndThrow(e);
 		}
 	}
 }

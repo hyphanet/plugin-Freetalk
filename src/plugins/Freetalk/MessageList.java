@@ -92,7 +92,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 				checkedStore();
 			}
 			catch(RuntimeException e) {
-				rollbackAndThrow(e);
+				checkedRollbackAndThrow(e);
 			}
 		}
 		
@@ -108,7 +108,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 					Logger.error(this, "Should not happen: URI is null for " + this);
 			}
 			catch(RuntimeException e) {
-				rollbackAndThrow(e);
+				checkedRollbackAndThrow(e);
 			}
 		}
 		
@@ -150,7 +150,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		}
 
 		public MessageList getMessageList() {
-			activate(3);
+			checkedActivate(3);
 			return mMessageList;
 		}
 		
@@ -311,7 +311,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			checkedStore();
 		}
 		catch(RuntimeException e) {
-			rollbackAndThrow(e);
+			checkedRollbackAndThrow(e);
 		}
 	}
 	
@@ -360,7 +360,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			checkedDelete();
 		}
 		catch(RuntimeException e) {
-			rollbackAndThrow(e);
+			checkedRollbackAndThrow(e);
 		}
 	}
 	

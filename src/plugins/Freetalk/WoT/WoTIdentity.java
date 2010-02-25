@@ -79,7 +79,7 @@ public class WoTIdentity extends Persistent implements FTIdentity {
 	}
 
 	public FreenetURI getRequestURI() {
-		activate(3); // String[] is no nested object to db4o so 3 is sufficient.
+		checkedActivate(3); // String[] is no nested object to db4o so 3 is sufficient.
 		return mRequestURI;
 	}
 
@@ -139,8 +139,8 @@ public class WoTIdentity extends Persistent implements FTIdentity {
 		if(newNickname.length() > 50) throw new InvalidParameterException("Nickname is too long, the limit is 50 characters.");
 	}
 
-	protected void commit(Object loggingObject) {
-		super.commit(loggingObject);
+	protected void checkedCommit(Object loggingObject) {
+		super.checkedCommit(loggingObject);
 	}
 	
 	/**
@@ -149,7 +149,7 @@ public class WoTIdentity extends Persistent implements FTIdentity {
 	public void storeAndCommit() {
 		synchronized(mDB.lock()) {
 			storeWithoutCommit();
-			commit(this);
+			checkedCommit(this);
 		}
 	}
 
@@ -164,7 +164,7 @@ public class WoTIdentity extends Persistent implements FTIdentity {
 			checkedStore();
 		}
 		catch(RuntimeException e) {
-			rollbackAndThrow(e);
+			checkedRollbackAndThrow(e);
 		}
 	}
 	
@@ -178,7 +178,7 @@ public class WoTIdentity extends Persistent implements FTIdentity {
 			mRequestURI.removeFrom(mDB);
 		}
 		catch(RuntimeException e) {
-			rollbackAndThrow(e);
+			checkedRollbackAndThrow(e);
 		}
 	}
 

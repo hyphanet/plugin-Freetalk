@@ -75,7 +75,7 @@ public final class SubscribedBoard extends Board {
 			checkedDelete();
 		}
 		catch(RuntimeException e) {
-			rollbackAndThrow(e);
+			checkedRollbackAndThrow(e);
 		}
 
 	}
@@ -688,7 +688,7 @@ public final class SubscribedBoard extends Board {
          * @throws MessageNotFetchedException If the message belonging to this reference was not fetched yet.
          */
         public Message getMessage() throws MessageNotFetchedException {
-        	activate(3); // FIXME: Figure out a reasonable depth
+        	checkedActivate(3); // FIXME: Figure out a reasonable depth
         	mMessage.initializeTransient(mFreetalk);
             return mMessage;
         }
@@ -728,7 +728,7 @@ public final class SubscribedBoard extends Board {
         		checkedStore();
         	}
         	catch(RuntimeException e) {
-        		rollbackAndThrow(e);
+        		checkedRollbackAndThrow(e);
         	}
         }
         
@@ -739,10 +739,10 @@ public final class SubscribedBoard extends Board {
         	synchronized(mDB.lock()) {
         		try {
 	        		storeWithoutCommit();
-	        		commit(this);
+	        		checkedCommit(this);
         		}
         		catch(RuntimeException e) {
-        			rollbackAndThrow(e);
+        			checkedRollbackAndThrow(e);
         		}
         	}
         }

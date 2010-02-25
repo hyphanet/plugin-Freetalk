@@ -137,7 +137,7 @@ public class WoTIdentityManager extends IdentityManager {
 				db.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
-				Persistent.rollbackAndThrow(db, this, e);
+				Persistent.checkedRollbackAndThrow(db, this, e);
 			}
 		}
 		
@@ -662,7 +662,7 @@ public class WoTIdentityManager extends IdentityManager {
 					synchronized(db.lock()) {
 						try {
 							id.setLastReceivedFromWoT(time);
-							id.commit(this);
+							id.checkedCommit(this);
 						}
 						catch(RuntimeException e) {
 							Persistent.checkedRollback(db, this, e);
@@ -717,10 +717,10 @@ public class WoTIdentityManager extends IdentityManager {
 				identity.deleteWithoutCommit();
 				
 				Logger.normal(this, "Identity deleted: " + identity);
-				identity.commit(this);
+				identity.checkedCommit(this);
 			}
 			catch(RuntimeException e) {
-				Persistent.rollbackAndThrow(db, this, e);
+				Persistent.checkedRollbackAndThrow(db, this, e);
 			}
 		}
 		}
