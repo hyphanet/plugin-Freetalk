@@ -24,9 +24,8 @@ import freenet.support.Logger;
  * @author Benjamin Moody
  * @author xor (xor@freenetproject.org)
  */
-public class FreetalkNNTPServer implements Runnable {
+public final class FreetalkNNTPServer implements Runnable {
 
-	private final Node mNode;
 	private final Freetalk mFreetalk;
 
 	/** Comma-separated list of addresses to bind to. */
@@ -36,24 +35,23 @@ public class FreetalkNNTPServer implements Runnable {
 	/** Comma-separated list of hosts to accept connections from. */
 	private final String mAllowedHosts;
 
-	private NetworkInterface iface;
-	private volatile boolean shutdown;
-	private boolean shutdownFinished;
+	private NetworkInterface mInterface;
+	private volatile boolean mIsShuttingDown;
+	private boolean mIsShutdownFinished;
 
 	private final ArrayList<FreetalkNNTPHandler> clientHandlers;
 
-	public FreetalkNNTPServer(Node myNode, Freetalk ft, int port, String bindTo, String allowedHosts) {
-		mNode = myNode;
+	public FreetalkNNTPServer(Freetalk ft, int port, String bindTo, String allowedHosts) {
 		mFreetalk = ft;
 		mBindTo = bindTo;
 		mPort = port;
 		mAllowedHosts = allowedHosts;
-		shutdown = shutdownFinished = false;
+		mIsShuttingDown = mIsShutdownFinished = false;
 		clientHandlers = new ArrayList<FreetalkNNTPHandler>();
 	}
 	
 	public void start() {
-		mNode.executor.execute(this, "Freetalk NNTP Server");
+		mFreetalk.getPluginRespirator().getNode().executor.execute(this, "Freetalk " + this.getClass().getName());
 		Logger.debug(this, "Started.");
 	}
 
@@ -61,16 +59,16 @@ public class FreetalkNNTPServer implements Runnable {
 	 * Shut down the server and disconnect any currently-connected clients.
 	 */
 	public void terminate() {
-		shutdown = true;
+		mIsShuttingDown = true;
 		try {
-			iface.close();
+			mInterface.close();
 		}
 		catch (IOException e) {
 			Logger.error(this, "Error shutting down NNTP server", e);
 		}
 		
 		synchronized (this) {
-			while (!shutdownFinished) {
+			while (!mIsShutdownFinished) {
 				try {
 					wait();
 				}
@@ -86,13 +84,13 @@ public class FreetalkNNTPServer implements Runnable {
 	 */
 	public void run() {
 		try {
-			iface = NetworkInterface.create(mPort, mBindTo, mAllowedHosts, mNode.executor, true);
+			mInterface = NetworkInterface.create(mPort, mBindTo, mAllowedHosts, mNode.executor, true);
 			/* FIXME: NetworkInterface.accept() currently does not support being interrupted by Thread.interrupt(),
 			 * shutdown works by timeout. This sucks and should be changed. As long as it is still like that,
 			 * we have to use a low timeout. */
-			iface.setSoTimeout(1000);
-			while (!shutdown) {
-				final Socket clientSocket = iface.accept();
+			mInterface.setSoTimeout(1000);
+			while (!mIsShuttingDown) {
+				final Socket clientSocket = mInterface.accept();
 				if(clientSocket != null) { /* null is returned on timeout */
 					try {
 						acceptConnection(clientSocket);
@@ -105,7 +103,7 @@ public class FreetalkNNTPServer implements Runnable {
 			}
 
 			Logger.debug(this, "NNTP Server exiting...");
-			iface.close();
+			mInterface.close();
 		}
 		catch (IOException e) {
 			Logger.error(this, "Unable to start NNTP server", e);
@@ -115,7 +113,7 @@ public class FreetalkNNTPServer implements Runnable {
 			terminateHandlers();
 
 			synchronized (this) {
-				shutdownFinished = true;
+				mIsShutdownFinished = true;
 				notify();
 			}
 		}
