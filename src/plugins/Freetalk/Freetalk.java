@@ -174,6 +174,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		catch(RuntimeException e) {
 			Logger.error(this, "Startup failed!", e);
 			terminate();
+			throw e;
 		}
 	}
 	
