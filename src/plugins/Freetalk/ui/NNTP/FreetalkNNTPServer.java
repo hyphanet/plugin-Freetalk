@@ -5,6 +5,7 @@ package plugins.Freetalk.ui.NNTP;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -21,6 +22,7 @@ import freenet.support.Logger;
  * well.  Use terminate() to shut everything down.
  *
  * @author Benjamin Moody
+ * @author xor (xor@freenetproject.org)
  */
 public class FreetalkNNTPServer implements Runnable {
 
@@ -28,21 +30,24 @@ public class FreetalkNNTPServer implements Runnable {
 	private final Freetalk mFreetalk;
 
 	/** Comma-separated list of addresses to bind to. */
-	private String mBindTo;
+	private final String mBindTo;
 	/** Port to listen on for connections. */
-	private int mPort;
+	private final int mPort;
 	/** Comma-separated list of hosts to accept connections from. */
-	private String mAllowedHosts;
+	private final String mAllowedHosts;
 
 	private NetworkInterface iface;
 	private volatile boolean shutdown;
 	private boolean shutdownFinished;
 
-	private ArrayList<FreetalkNNTPHandler> clientHandlers;
+	private final ArrayList<FreetalkNNTPHandler> clientHandlers;
 
 	public FreetalkNNTPServer(Node myNode, Freetalk ft, int port, String bindTo, String allowedHosts) {
 		mNode = myNode;
 		mFreetalk = ft;
+		mBindTo = bindTo;
+		mPort = port;
+		mAllowedHosts = allowedHosts;
 		shutdown = shutdownFinished = false;
 		clientHandlers = new ArrayList<FreetalkNNTPHandler>();
 	}
@@ -53,8 +58,7 @@ public class FreetalkNNTPServer implements Runnable {
 	}
 
 	/**
-	 * Shut down the server and disconnect any currently-connected
-	 * clients.
+	 * Shut down the server and disconnect any currently-connected clients.
 	 */
 	public void terminate() {
 		shutdown = true;
@@ -82,30 +86,22 @@ public class FreetalkNNTPServer implements Runnable {
 	 */
 	public void run() {
 		try {
-			iface = NetworkInterface.create(mPort, mBindTo, mAllowedHosts,
-											mNode.executor, true);
+			iface = NetworkInterface.create(mPort, mBindTo, mAllowedHosts, mNode.executor, true);
 			/* FIXME: NetworkInterface.accept() currently does not support being interrupted by Thread.interrupt(),
 			 * shutdown works by timeout. This sucks and should be changed. As long as it is still like that,
 			 * we have to use a low timeout. */
 			iface.setSoTimeout(1000);
 			while (!shutdown) {
-				Socket clientSocket = iface.accept();
+				final Socket clientSocket = iface.accept();
 				if(clientSocket != null) { /* null is returned on timeout */
-					Logger.debug(this, "Accepted an NNTP connection from " + clientSocket.getInetAddress());
-
-					FreetalkNNTPHandler handler = new FreetalkNNTPHandler(mFreetalk, clientSocket);
-					mNode.executor.execute(handler, "Freetalk NNTP Client " + clientSocket.getInetAddress());
-
-					clientHandlers.add(handler);
-				}
-				
-				// Remove disconnected clients from the list
-				for (Iterator<FreetalkNNTPHandler> i = clientHandlers.iterator(); i.hasNext(); ) {
-					FreetalkNNTPHandler handler = i.next();
-					if (!handler.isAlive()) {
-						i.remove();
+					try {
+						acceptConnection(clientSocket);
+					} catch(SocketException e) {
+						Logger.error(this, "Accepting connection failed.", e);
 					}
 				}
+				
+				garbageCollectDisconnectedHandlers();
 			}
 
 			Logger.debug(this, "NNTP Server exiting...");
@@ -125,14 +121,37 @@ public class FreetalkNNTPServer implements Runnable {
 		}
 	}
 	
+	private void acceptConnection(Socket clientSocket) throws SocketException {
+		final FreetalkNNTPHandler handler = new FreetalkNNTPHandler(mFreetalk, clientSocket);
+
+		synchronized(clientHandlers) {
+			clientHandlers.add(handler);
+		}
+		
+		mNode.executor.execute(handler, "Freetalk NNTP Client " + clientSocket.getInetAddress());
+		Logger.debug(this, "Accepted an NNTP connection from " + clientSocket.getInetAddress());
+	}
+	
+	private void garbageCollectDisconnectedHandlers() {
+		synchronized(clientHandlers) {
+			for (final Iterator<FreetalkNNTPHandler> i = clientHandlers.iterator(); i.hasNext(); ) {
+				final FreetalkNNTPHandler handler = i.next();
+				if (!handler.isAlive()) {
+					i.remove();
+				}
+			}
+		}
+	}
+	
 	private void terminateHandlers() {
 		Logger.debug(this, "Closing client handlers...");
 		synchronized(clientHandlers) {
 			// Close client sockets
-			for (Iterator<FreetalkNNTPHandler> i = clientHandlers.iterator(); i.hasNext(); ) {
-				FreetalkNNTPHandler handler = i.next();
+			for (final FreetalkNNTPHandler handler : clientHandlers) {
 				handler.terminate();
 			}
+			
+			clientHandlers.clear();
 		}
 	}
 }
