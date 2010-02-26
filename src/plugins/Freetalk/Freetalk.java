@@ -102,6 +102,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	}
 
 	public void runPlugin(PluginRespirator myPR) {
+		try {
 		Logger.debug(this, "Plugin starting up...");
 
 		mPluginRespirator = myPR;
@@ -115,16 +116,6 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 		
 		upgradeDatabase();
-		
-//		/* FIXME: Debug code, remove when not needed anymore */
-//		Logger.debug(this, "Wiping database...");
-//		ObjectSet<Object> result = db.queryByExample(new Object());
-//		for (Object o : result)
-//			db.delete(o);
-//		db.commit(); Logger.debug(this, "COMMITED.");
-//		Logger.debug(this, "Database wiped.");
-		
-		Executor executor = mPluginRespirator.getNode().executor;
 		
 		Logger.debug(this, "Creating Web interface...");
 		mWebInterface = new WebInterface(this);
@@ -179,6 +170,11 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		}
 
 		Logger.debug(this, "Plugin loaded.");
+		}
+		catch(RuntimeException e) {
+			Logger.error(this, "Startup failed!", e);
+			terminate();
+		}
 	}
 	
 	private ExtObjectContainer openDatabase(String filename) {
