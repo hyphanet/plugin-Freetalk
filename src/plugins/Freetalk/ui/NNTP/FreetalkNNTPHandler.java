@@ -6,7 +6,6 @@ package plugins.Freetalk.ui.NNTP;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.SocketException;
@@ -43,10 +42,11 @@ import freenet.support.Logger;
  *
  * @author Benjamin Moody
  * @author bback
+ * @author xor (xor@freenetproject.org)
  * 
  * FIXME: allow board subscribe by NNTP server
  */
-public class FreetalkNNTPHandler implements Runnable {
+public final class FreetalkNNTPHandler implements Runnable {
 
     private final IdentityManager mIdentityManager;
     private final MessageManager mMessageManager;
