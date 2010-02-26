@@ -153,6 +153,8 @@ public final class FreetalkNNTPHandler implements Runnable {
      * followed by a dash, indicating an unbounded range; or a number
      * followed by a dash and a second number, indicating a bounded
      * range.)  Print an error message if it can't be found.
+     * 
+     * You have to embed the call to this function and processing of the returned Iterator in a synchronized(mCurrentGroup.getBoard())!
      */
     private Iterator<FreetalkNNTPArticle> getArticleRangeIterator(final String desc, final boolean single) throws IOException {
 		if (mAuthenticatedUser == null) {
@@ -244,6 +246,12 @@ public final class FreetalkNNTPHandler implements Runnable {
 			printStatusLine("480 Authentification required");
 			return;
 		}
+		
+        if (mCurrentGroup == null) {
+            printStatusLine("412 No newsgroup selected");
+            return;
+        }
+        synchronized(mCurrentGroup.getBoard())  {
 		final Iterator<FreetalkNNTPArticle> iter = getArticleRangeIterator(desc, true);
 
         if (iter == null)
@@ -273,6 +281,7 @@ public final class FreetalkNNTPHandler implements Runnable {
         }
         else {
             printStatusLine("223 " + article.getMessageNum() + " <" + article.getMessage().getID() + ">");
+        }
         }
     }
 
@@ -453,9 +462,18 @@ public final class FreetalkNNTPHandler implements Runnable {
 			printStatusLine("480 Authentification required");
 			return;
 		}
-		final Iterator<FreetalkNNTPArticle> iter = getArticleRangeIterator(articleDesc, false);
+		
+        if (mCurrentGroup == null) {
+            printStatusLine("412 No newsgroup selected");
+            return;
+        }
+        
+		synchronized(mCurrentGroup.getBoard()) {
+			final Iterator<FreetalkNNTPArticle> iter = getArticleRangeIterator(articleDesc, false);
 
-        if (iter != null) {
+			if (iter == null)
+				return;
+        
             printStatusLine("224 Header contents follow");
             while (iter.hasNext()) {
             	final FreetalkNNTPArticle article = iter.next();
@@ -468,7 +486,7 @@ public final class FreetalkNNTPHandler implements Runnable {
                     printTextResponseLine(article.getMessageNum() + " " + article.getHeaderByName(header));
             }
             endTextResponse();
-        }
+		}
     }
 
     /**
@@ -479,9 +497,18 @@ public final class FreetalkNNTPHandler implements Runnable {
 			printStatusLine("480 Authentification required");
 			return;
 		}
-		final Iterator<FreetalkNNTPArticle> iter = getArticleRangeIterator(articleDesc, false);
+		
+        if (mCurrentGroup == null) {
+            printStatusLine("412 No newsgroup selected");
+            return;
+        }
+		
+        synchronized(mCurrentGroup.getBoard()) {
+        	final Iterator<FreetalkNNTPArticle> iter = getArticleRangeIterator(articleDesc, false);
 
-        if (iter != null) {
+        	if (iter == null)
+        		return;
+        
             printStatusLine("224 Overview follows");
             while (iter.hasNext()) {
             	final FreetalkNNTPArticle article = iter.next();

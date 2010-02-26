@@ -472,6 +472,20 @@ public final class SubscribedBoard extends Board {
         }
         return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q.execute());
     }
+    
+    @SuppressWarnings("unchecked")
+	public synchronized int getFirstMessageIndex() throws NoSuchMessageException {
+    	final Query q = mDB.query();
+        q.constrain(MessageReference.class);
+        q.descend("mBoard").constrain(this).identity();
+        q.descend("mMessageIndex").orderAscending();
+        ObjectSet<MessageReference> result = q.execute();
+        
+        if(result.size() == 0)
+        	throw new NoSuchMessageException();
+        
+        return result.next().getIndex();
+    }
 
     @SuppressWarnings("unchecked")
 	public synchronized int getLastMessageIndex() throws NoSuchMessageException {

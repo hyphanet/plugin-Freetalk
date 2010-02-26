@@ -84,7 +84,7 @@ public final class FreetalkNNTPServer implements Runnable {
 	 */
 	public void run() {
 		try {
-			mInterface = NetworkInterface.create(mPort, mBindTo, mAllowedHosts, mNode.executor, true);
+			mInterface = NetworkInterface.create(mPort, mBindTo, mAllowedHosts, mFreetalk.getPluginRespirator().getNode().executor, true);
 			/* FIXME: NetworkInterface.accept() currently does not support being interrupted by Thread.interrupt(),
 			 * shutdown works by timeout. This sucks and should be changed. As long as it is still like that,
 			 * we have to use a low timeout. */
@@ -126,7 +126,7 @@ public final class FreetalkNNTPServer implements Runnable {
 			clientHandlers.add(handler);
 		}
 		
-		mNode.executor.execute(handler, "Freetalk NNTP Client " + clientSocket.getInetAddress());
+		mFreetalk.getPluginRespirator().getNode().executor.execute(handler, "Freetalk NNTP Client " + clientSocket.getInetAddress());
 		Logger.debug(this, "Accepted an NNTP connection from " + clientSocket.getInetAddress());
 	}
 	

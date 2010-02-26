@@ -162,7 +162,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 			if (allowedHosts == null) {
 				allowedHosts = "127.0.0.1";
 			}
-			mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, bindTo, allowedHosts);
+			mNNTPServer = new FreetalkNNTPServer(this, 1199, bindTo, allowedHosts);
 			mNNTPServer.start();
 		} else {
             Logger.debug(this, "NNTP server disabled by user...");
