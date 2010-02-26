@@ -195,9 +195,14 @@ public abstract class MessageManager implements Runnable {
 			}
 		}
 	}
+	
+	public void start() {
+		mPluginRespirator.getNode().executor.execute(this, "Freetalk " + this.getClass().getName());
+		Logger.debug(this, "Started.");
+	}
 
 	public void terminate() {
-		Logger.debug(this, "Stopping the message manager..."); 
+		Logger.debug(this, "Stopping ..."); 
 		isRunning = false;
 		mThread.interrupt();
 		synchronized(this) {
@@ -210,7 +215,7 @@ public abstract class MessageManager implements Runnable {
 				}
 			}
 		}
-		Logger.debug(this, "Stopped the message manager.");
+		Logger.debug(this, "Stopped.");
 	}
 	
 	/**

@@ -24,15 +24,15 @@ import freenet.support.Logger;
  */
 public class FreetalkNNTPServer implements Runnable {
 
-	private Node node;
-	private Freetalk freetalk;
+	private final Node mNode;
+	private final Freetalk mFreetalk;
 
-	/** Port to listen on for connections. */
-	private int port;
 	/** Comma-separated list of addresses to bind to. */
-	private String bindTo;
+	private String mBindTo;
+	/** Port to listen on for connections. */
+	private int mPort;
 	/** Comma-separated list of hosts to accept connections from. */
-	private String allowedHosts;
+	private String mAllowedHosts;
 
 	private NetworkInterface iface;
 	private volatile boolean shutdown;
@@ -41,14 +41,15 @@ public class FreetalkNNTPServer implements Runnable {
 	private ArrayList<FreetalkNNTPHandler> clientHandlers;
 
 	public FreetalkNNTPServer(Node myNode, Freetalk ft, int port, String bindTo, String allowedHosts) {
-		node = myNode;
-		freetalk = ft;
-		this.port = port; /* TODO: As soon as Freetalk has a configuration class, read it from there */
-		this.bindTo = bindTo; /* TODO: As soon as Freetalk has a configuration class, read it from there */
-		this.allowedHosts = allowedHosts; /* TODO: As soon as Freetalk has a configuration class, read it from there */
+		mNode = myNode;
+		mFreetalk = ft;
 		shutdown = shutdownFinished = false;
 		clientHandlers = new ArrayList<FreetalkNNTPHandler>();
-		node.executor.execute(this, "Freetalk NNTP Server");
+	}
+	
+	public void start() {
+		mNode.executor.execute(this, "Freetalk NNTP Server");
+		Logger.debug(this, "Started.");
 	}
 
 	/**
@@ -81,8 +82,8 @@ public class FreetalkNNTPServer implements Runnable {
 	 */
 	public void run() {
 		try {
-			iface = NetworkInterface.create(port, bindTo, allowedHosts,
-											node.executor, true);
+			iface = NetworkInterface.create(mPort, mBindTo, mAllowedHosts,
+											mNode.executor, true);
 			/* FIXME: NetworkInterface.accept() currently does not support being interrupted by Thread.interrupt(),
 			 * shutdown works by timeout. This sucks and should be changed. As long as it is still like that,
 			 * we have to use a low timeout. */
@@ -92,8 +93,8 @@ public class FreetalkNNTPServer implements Runnable {
 				if(clientSocket != null) { /* null is returned on timeout */
 					Logger.debug(this, "Accepted an NNTP connection from " + clientSocket.getInetAddress());
 
-					FreetalkNNTPHandler handler = new FreetalkNNTPHandler(freetalk, clientSocket);
-					node.executor.execute(handler, "Freetalk NNTP Client " + clientSocket.getInetAddress());
+					FreetalkNNTPHandler handler = new FreetalkNNTPHandler(mFreetalk, clientSocket);
+					mNode.executor.execute(handler, "Freetalk NNTP Client " + clientSocket.getInetAddress());
 
 					clientHandlers.add(handler);
 				}

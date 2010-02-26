@@ -76,8 +76,13 @@ public class PersistentTaskManager implements Runnable {
 		}
 	}
 	
+	public void start() {
+		mExecutor.execute(this, "Freetalk " + this.getClass().getName());
+		Logger.debug(this, "Started.");
+	}
+	
 	public void terminate() {
-		Logger.debug(this, "Stopping the task manager...");
+		Logger.debug(this, "Stopping ...");
 		isRunning = false;
 		mThread.interrupt();
 		synchronized(this) {
@@ -90,7 +95,7 @@ public class PersistentTaskManager implements Runnable {
 				}
 			}
 		}
-		Logger.debug(this, "Stopped the task manager.");
+		Logger.debug(this, "Stopped.");
 	}
 	
 	@SuppressWarnings("unchecked")

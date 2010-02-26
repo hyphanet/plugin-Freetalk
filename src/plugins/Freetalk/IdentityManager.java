@@ -81,6 +81,11 @@ public abstract class IdentityManager implements PrioRunnable {
 
 		return noOwnIdentities ? true : false;
 	}
+	
+	public void start() {
+		mExecutor.execute(this, "Freetalk " + this.getClass().getName());
+		Logger.debug(this, "Started.");
+	}
 
 	public abstract void terminate();
 
