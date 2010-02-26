@@ -37,46 +37,43 @@ public class FreetalkNNTPArticle {
 		}
 	}
 
-	/* FIXME: Message.getDate() returns UTC time. If newsreaders expect UTC, this is correct. If they expect to receive their local time
-	 * then we need to convert to the local time of the newsreader by specifying the time zone when creating the SimpleDateFormat. 
-	 * SimpleDateFormat interprets Date objects given to it as UTC and converts them to the specified timezone automaticall. */
 	public static final SimpleDateFormat mDateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
 
-	public static final Pattern endOfLinePattern = Pattern.compile("\r\n?|\n");
+	public static final Pattern mEndOfLinePattern = Pattern.compile("\r\n?|\n");
 
-	private final Message message;
+	private final Message mMessage;
 
-	private final int messageNum;
+	private final int mMessageIndex;
 
-	public FreetalkNNTPArticle(Message message) {
-		this.message = message;
-		messageNum = 0;
+	public FreetalkNNTPArticle(final Message message) {
+		this.mMessage = message;
+		mMessageIndex = 0;
 	}
 
-	public FreetalkNNTPArticle(Message message, int messageNum) {
-		this.message = message;
-		this.messageNum = messageNum;
+	public FreetalkNNTPArticle(final Message message, final int messageNum) {
+		this.mMessage = message;
+		this.mMessageIndex = messageNum;
 	}
 
 	/**
 	 * Get the FTMessage object associated with this group.
 	 */
 	public Message getMessage() {
-		return message;
+		return mMessage;
 	}
 
 	/**
 	 * Get the message number, or 0 if none was set.
 	 */
 	public int getMessageNum() {
-		return messageNum;
+		return mMessageIndex;
 	}
 
 	/**
 	 * Get the contents of the named header; if the header is not
 	 * present, return the empty string.
 	 */
-	public String getHeaderByName(String name) {
+	public String getHeaderByName(final String name) {
 		for (Header hdr : Header.values())
 			if (name.equalsIgnoreCase(hdr.getName()))
 				return getHeader(hdr);
@@ -88,8 +85,8 @@ public class FreetalkNNTPArticle {
 	 * Wrap header contents onto multiple lines.  Wrapping is done so
 	 * as to limit the number of bytes (of UTF-8) on a single line.
 	 */
-	private static String wrapHeader(String name, String text, int softLimit, int hardLimit) {
-		StringBuilder result = new StringBuilder();
+	private static String wrapHeader(final String name, final String text, final int softLimit, final int hardLimit) {
+		final StringBuilder result = new StringBuilder(text.length() * 2);
 		int lineStart, wordPos, width, i;
 
 		lineStart = 0;
@@ -146,17 +143,17 @@ public class FreetalkNNTPArticle {
 	 * wrapped (it may be arbitrarily long, but will not contain any
 	 * line feeds, tabs, or other control characters.)
 	 */
-	public String getHeader(Header hdr) {
+	public String getHeader(final Header hdr) {
 		switch (hdr) {
 		case FROM:
-			return message.getAuthor().getFreetalkAddress();
+			return mMessage.getAuthor().getFreetalkAddress();
 
 		case SUBJECT:
-			return message.getTitle();
+			return mMessage.getTitle();
 
 		case NEWSGROUPS:
-			Board boards[] = message.getBoards();
-			StringBuilder builder = new StringBuilder();
+			final Board boards[] = mMessage.getBoards();
+			final StringBuilder builder = new StringBuilder(1024);
 
 			builder.append(FreetalkNNTPGroup.boardToGroupName(boards[0].getName()));
 
@@ -168,7 +165,7 @@ public class FreetalkNNTPArticle {
 			return builder.toString();
 
 		case FOLLOWUP_TO:
-			Board board = message.getReplyToBoard();
+			final Board board = mMessage.getReplyToBoard();
 			if (board == null)
 				return "";
 			else
@@ -176,22 +173,22 @@ public class FreetalkNNTPArticle {
 
 		case DATE:
 			synchronized(mDateFormat) {
-				return mDateFormat.format(message.getDate());
+				return mDateFormat.format(mMessage.getDate());
 			}
 
 		case MESSAGE_ID:
-			return "<" + message.getID() + ">";
+			return "<" + mMessage.getID() + ">";
 
 		case REFERENCES:
 			// FIXME: it would be good for the message to include a
 			// list of earlier messages in the thread, in case the
 			// parent message can't be retrieved.
 
-			if (message.isThread())
+			if (mMessage.isThread())
 				return "";
 			else {
 				try {
-					return "<" + message.getParentID() + ">";
+					return "<" + mMessage.getParentID() + ">";
 				}
 				catch(NoSuchMessageException e) {
 					Logger.error(this, "Should not happen", e);
@@ -214,11 +211,11 @@ public class FreetalkNNTPArticle {
 	 * Get the complete list of headers.
 	 */
 	public String getHead() {
-		StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder();
 
-		synchronized (message) {
+		synchronized (mMessage) {
 			for (Header hdr : Header.values()) {
-				String text = getHeader(hdr);
+				final String text = getHeader(hdr);
 				if (!text.equals("")) {
 					builder.append(hdr.getName());
 					builder.append(": ");
@@ -235,14 +232,14 @@ public class FreetalkNNTPArticle {
 	 * Get the message body.
 	 */
 	public String getBody() {
-		return message.getText();
+		return mMessage.getText();
 	}
 
 	/**
 	 * Get the number of lines in the article's body.
 	 */
 	public long getBodyLineCount() {
-		String[] bodyLines = endOfLinePattern.split(getBody());
+		final String[] bodyLines = mEndOfLinePattern.split(getBody());
 		return bodyLines.length;
 	}
 
@@ -250,7 +247,7 @@ public class FreetalkNNTPArticle {
 	 * Get number of bytes to encode string as UTF-8
 	 */
 	private long byteCountUTF8(String s) {
-		// GAH!  There must be a simpler way to do this
+		// TODO: GAH!  There must be a simpler way to do this
 		try {
 			byte[] b = s.getBytes("UTF-8");
 			return b.length;
@@ -264,8 +261,8 @@ public class FreetalkNNTPArticle {
 	 * Get the total size of the article.
 	 */
 	public long getByteCount() {
-		String[] headLines = endOfLinePattern.split(getHead());
-		String[] bodyLines = endOfLinePattern.split(getBody());
+		final String[] headLines = mEndOfLinePattern.split(getHead());
+		final String[] bodyLines = mEndOfLinePattern.split(getBody());
 		long count = 2;
 		int i;
 

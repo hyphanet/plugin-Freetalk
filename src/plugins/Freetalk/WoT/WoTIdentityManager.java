@@ -808,7 +808,7 @@ public class WoTIdentityManager extends IdentityManager {
 	}
 	
 	public void terminate() {
-		Logger.debug(this, "Stopping the identity manager...");
+		Logger.debug(this, "Stopping ...");
 		isRunning = false;
 		mThread.interrupt();
 		synchronized(this) {
@@ -821,7 +821,7 @@ public class WoTIdentityManager extends IdentityManager {
 				}
 			}
 		}
-		Logger.debug(this, "Stopped the indentity manager.");
+		Logger.debug(this, "Stopped.");
 	}
 
 }

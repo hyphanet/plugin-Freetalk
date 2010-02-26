@@ -148,8 +148,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			FetchContext fetchContext = mClient.getFetchContext();
 			fetchContext.maxSplitfileBlockRetries = 2;
 			fetchContext.maxNonSplitfileRetries = 2;
-			ClientGetter g = mClient.fetch(uri, -1, requestClient, this, fetchContext);
-			g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null);
+			ClientGetter g = mClient.fetch(uri, -1, requestClient, this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS);
 			addFetch(g);
 			mMessageLists.put(g, list.getID());
 			Logger.debug(this, "Trying to fetch message from " + uri);

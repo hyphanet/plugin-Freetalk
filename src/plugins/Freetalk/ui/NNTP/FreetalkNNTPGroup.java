@@ -18,17 +18,24 @@ import freenet.support.Logger;
  *
  * @author Benjamin Moody
  */
-public class FreetalkNNTPGroup {
-    private final SubscribedBoard board;
+public final class FreetalkNNTPGroup {
+    private final SubscribedBoard mBoard;
 
-    public FreetalkNNTPGroup(SubscribedBoard board) {
-        this.board = board;
+    public FreetalkNNTPGroup(final SubscribedBoard board) {
+        mBoard = board;
     }
 
     /**
      * Convert NNTP group name into a Freetalk board name.
      */
-    public static String groupToBoardName(String name) {
+    public static String groupToBoardName(final String name) {
+        return name;
+    }
+
+    /**
+     * Convert a Freetalk board name into an NNTP group name.
+     */
+    public static String boardToGroupName(final String name) {
         // FIXME: This does nothing at the moment.  In the future it
         // could be used to quote names in ASCII, for older
         // newsreaders that only allow ASCII group names
@@ -36,38 +43,36 @@ public class FreetalkNNTPGroup {
     }
 
     /**
-     * Convert a Freetalk board name into an NNTP group name.
-     */
-    public static String boardToGroupName(String name) {
-        return name;
-    }
-
-    /**
      * Get the FTBoard object associated with this group.
      */
     public SubscribedBoard getBoard() {
-        return board;
+        return mBoard;
     }
 
     /**
      * Get the group name
      */
-    public String getName() {
-        return boardToGroupName(board.getName());
+    public String getGroupName() {
+        return boardToGroupName(mBoard.getName());
     }
 
     /**
      * Estimate number of messages that have been posted.
      */
     public long messageCount() {
-        return board.getAllMessages(false).size();
+        return mBoard.getAllMessages(false).size();
     }
 
     /**
      * Get the first valid message number.
      */
     public int firstMessage() {
-        return 1;
+    	try {
+    		return mBoard.getFirstMessageIndex();
+    	}
+    	catch(NoSuchMessageException e) {
+    		return 0; // FIXME: Does NNTP expect this if there are no messages??
+    	}
     }
 
     /**
@@ -75,7 +80,7 @@ public class FreetalkNNTPGroup {
      */
     public int lastMessage() {
     	try {
-    		return board.getLastMessageIndex();
+    		return mBoard.getLastMessageIndex();
     	}
     	catch(NoSuchMessageException e) {
     		return 0; // FIXME: Does NNTP expect this if there are no messages??
@@ -84,21 +89,19 @@ public class FreetalkNNTPGroup {
 
     /**
      * Get an iterator for articles in the given range.
+     * You have to embed the call to this function and processing of the returned Iterator in a synchronized(thisGroup.getBoard())!
      */
     public Iterator<FreetalkNNTPArticle> getMessageIterator(int start, int end) throws NoSuchMessageException {
-        synchronized (board) {
             if (start < firstMessage())
                 start = firstMessage();
 
             if (end == -1 || end > lastMessage())
                 end = lastMessage();
 
-            Iterator<FreetalkNNTPArticle> iter;
-
             final int startIndex = start;
             final int endIndex = end;
 
-            iter = new Iterator<FreetalkNNTPArticle>() {
+            final Iterator<FreetalkNNTPArticle> iter = new Iterator<FreetalkNNTPArticle>() {
                 private int currentIndex = startIndex;
                 private Message currentMessage = null;
 
@@ -108,7 +111,7 @@ public class FreetalkNNTPGroup {
 
                     while (currentIndex <= endIndex) {
                         try {
-                            currentMessage = board.getMessageByIndex(currentIndex).getMessage();
+                            currentMessage = mBoard.getMessageByIndex(currentIndex).getMessage();
                             return true;
                         }
                         catch (MessageNotFetchedException e) {
@@ -141,7 +144,6 @@ public class FreetalkNNTPGroup {
                 throw new NoSuchMessageException();
 
             return iter;
-        }
     }
 
     /**

@@ -28,7 +28,6 @@ public class PersistentTaskManager implements Runnable {
 	
 	protected ExtObjectContainer mDB;
 	
-	protected Executor mExecutor;
 	private volatile boolean isRunning = false;
 	private volatile boolean shutdownFinished = false;
 	private Thread mThread = null;
@@ -76,8 +75,13 @@ public class PersistentTaskManager implements Runnable {
 		}
 	}
 	
+	public void start() {
+		mFreetalk.getPluginRespirator().getNode().executor.execute(this, "Freetalk " + this.getClass().getName());
+		Logger.debug(this, "Started.");
+	}
+	
 	public void terminate() {
-		Logger.debug(this, "Stopping the task manager...");
+		Logger.debug(this, "Stopping ...");
 		isRunning = false;
 		mThread.interrupt();
 		synchronized(this) {
@@ -90,7 +94,7 @@ public class PersistentTaskManager implements Runnable {
 				}
 			}
 		}
-		Logger.debug(this, "Stopped the task manager.");
+		Logger.debug(this, "Stopped.");
 	}
 	
 	@SuppressWarnings("unchecked")

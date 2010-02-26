@@ -102,6 +102,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	}
 
 	public void runPlugin(PluginRespirator myPR) {
+		try {
 		Logger.debug(this, "Plugin starting up...");
 
 		mPluginRespirator = myPR;
@@ -116,16 +117,6 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		
 		upgradeDatabase();
 		
-//		/* FIXME: Debug code, remove when not needed anymore */
-//		Logger.debug(this, "Wiping database...");
-//		ObjectSet<Object> result = db.queryByExample(new Object());
-//		for (Object o : result)
-//			db.delete(o);
-//		db.commit(); Logger.debug(this, "COMMITED.");
-//		Logger.debug(this, "Database wiped.");
-		
-		Executor executor = mPluginRespirator.getNode().executor;
-		
 		Logger.debug(this, "Creating Web interface...");
 		mWebInterface = new WebInterface(this);
 		
@@ -138,31 +129,31 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		Logger.debug(this, "Creating task manager...");
 		mTaskManager = new PersistentTaskManager(db, this);
 		
-		executor.execute(mIdentityManager, "FT Identity Manager");
-		executor.execute(mMessageManager, "FT Message Manager");
-		executor.execute(mTaskManager, "FT PersistentTaskManager");
+		mIdentityManager.start();
+		mMessageManager.start();
+		mTaskManager.start();
 		
 		Logger.debug(this, "Creating message fetcher...");
-		mMessageFetcher = new WoTMessageFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT Message Fetcher", mIdentityManager, mMessageManager);
+		mMessageFetcher = new WoTMessageFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageFetcher", mIdentityManager, mMessageManager);
 		mMessageFetcher.start();
 		
 		Logger.debug(this, "Creating message inserter...");
-		mMessageInserter = new WoTMessageInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT Message Inserter", mIdentityManager, mMessageManager);
+		mMessageInserter = new WoTMessageInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageInserter", mIdentityManager, mMessageManager);
 		mMessageInserter.start();
 		
 		Logger.debug(this, "Creating message list fetcher...");
-		mMessageListFetcher = new WoTMessageListFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT MessageList Fetcher", mIdentityManager, mMessageManager);
+		mMessageListFetcher = new WoTMessageListFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageListFetcher", mIdentityManager, mMessageManager);
 		mMessageListFetcher.start();
 		
 		Logger.debug(this, "Creating message list inserter...");
-		mMessageListInserter = new WoTMessageListInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "FT MessageList Inserter", mIdentityManager, mMessageManager);
+		mMessageListInserter = new WoTMessageListInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageListInserter", mIdentityManager, mMessageManager);
 		mMessageListInserter.start();
 
 		Logger.debug(this, "Creating FCP interface...");
 		mFCPInterface = new FCPInterface(this);
 
 		if (mConfig.getBoolean(Config.NNTP_SERVER_ENABLED)) {
-    		Logger.debug(this, "Starting NNTP server...");
+    		Logger.debug(this, "Creating NNTP server...");
     		String bindTo = mConfig.getString(Config.NNTP_SERVER_BINDTO);
 			if (bindTo == null) {
 				bindTo = "127.0.0.1";
@@ -171,13 +162,20 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 			if (allowedHosts == null) {
 				allowedHosts = "127.0.0.1";
 			}
-			mNNTPServer = new FreetalkNNTPServer(mPluginRespirator.getNode(), this, 1199, bindTo, allowedHosts);
+			mNNTPServer = new FreetalkNNTPServer(this, 1199, bindTo, allowedHosts);
+			mNNTPServer.start();
 		} else {
             Logger.debug(this, "NNTP server disabled by user...");
 		    mNNTPServer = null;
 		}
 
 		Logger.debug(this, "Plugin loaded.");
+		}
+		catch(RuntimeException e) {
+			Logger.error(this, "Startup failed!", e);
+			terminate();
+			throw e;
+		}
 	}
 	
 	private ExtObjectContainer openDatabase(String filename) {

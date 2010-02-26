@@ -204,8 +204,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
 		fetchContext.maxNonSplitfileRetries = 2;
-		ClientGetter g = mClient.fetch(uri, -1, mRequestClient, this, fetchContext);
-		g.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS, mClientContext, null);
+		ClientGetter g = mClient.fetch(uri, -1, mRequestClient, this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS);
 		addFetch(g);
 		Logger.debug(this, "Trying to fetch MessageList from " + uri);
 		
