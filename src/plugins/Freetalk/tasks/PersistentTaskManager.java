@@ -28,7 +28,6 @@ public class PersistentTaskManager implements Runnable {
 	
 	protected ExtObjectContainer mDB;
 	
-	protected Executor mExecutor;
 	private volatile boolean isRunning = false;
 	private volatile boolean shutdownFinished = false;
 	private Thread mThread = null;
@@ -77,7 +76,7 @@ public class PersistentTaskManager implements Runnable {
 	}
 	
 	public void start() {
-		mExecutor.execute(this, "Freetalk " + this.getClass().getName());
+		mFreetalk.getPluginRespirator().getNode().executor.execute(this, "Freetalk " + this.getClass().getName());
 		Logger.debug(this, "Started.");
 	}
 	
