@@ -37,9 +37,6 @@ public class FreetalkNNTPArticle {
 		}
 	}
 
-	/* FIXME: Message.getDate() returns UTC time. If newsreaders expect UTC, this is correct. If they expect to receive their local time
-	 * then we need to convert to the local time of the newsreader by specifying the time zone when creating the SimpleDateFormat. 
-	 * SimpleDateFormat interprets Date objects given to it as UTC and converts them to the specified timezone automaticall. */
 	public static final SimpleDateFormat mDateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
 
 	public static final Pattern mEndOfLinePattern = Pattern.compile("\r\n?|\n");
