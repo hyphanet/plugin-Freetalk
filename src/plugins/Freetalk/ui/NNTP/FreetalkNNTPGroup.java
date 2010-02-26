@@ -29,9 +29,6 @@ public class FreetalkNNTPGroup {
      * Convert NNTP group name into a Freetalk board name.
      */
     public static String groupToBoardName(String name) {
-        // FIXME: This does nothing at the moment.  In the future it
-        // could be used to quote names in ASCII, for older
-        // newsreaders that only allow ASCII group names
         return name;
     }
 
@@ -39,6 +36,9 @@ public class FreetalkNNTPGroup {
      * Convert a Freetalk board name into an NNTP group name.
      */
     public static String boardToGroupName(String name) {
+        // FIXME: This does nothing at the moment.  In the future it
+        // could be used to quote names in ASCII, for older
+        // newsreaders that only allow ASCII group names
         return name;
     }
 
@@ -52,7 +52,7 @@ public class FreetalkNNTPGroup {
     /**
      * Get the group name
      */
-    public String getName() {
+    public String getGroupName() {
         return boardToGroupName(board.getName());
     }
 
