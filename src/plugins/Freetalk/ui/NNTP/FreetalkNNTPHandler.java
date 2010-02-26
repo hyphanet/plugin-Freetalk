@@ -139,7 +139,7 @@ public final class FreetalkNNTPHandler implements Runnable {
      * CR+LF and dot-stuffing as necessary.)
      */
     private void printText(final String text) throws IOException {
-        String[] lines = FreetalkNNTPArticle.endOfLinePattern.split(text);
+        String[] lines = FreetalkNNTPArticle.mEndOfLinePattern.split(text);
         for (int i = 0; i < lines.length; i++) {
             printTextResponseLine(lines[i]);
         }
