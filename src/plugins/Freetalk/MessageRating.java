@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import java.util.Date;
+
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 
 /**
@@ -34,6 +37,16 @@ public abstract class MessageRating extends Persistent {
 	private final Message mMessage;
 	
 	/**
+	 * The author of the affected {@link Message}
+	 */
+	private final FTIdentity mMessageAuthor;
+	
+	/**
+	 * The {@link Date} when this rating was assigned.
+	 */
+	private final Date mDate;
+	
+	/**
 	 * Constructor for being used be the implementing child classes.
 	 * 
 	 * @param myRater The own identity which has assigned this rating. Must not be null. Cannot be changed after constructing the MessageRating.
@@ -53,6 +66,8 @@ public abstract class MessageRating extends Persistent {
 		
 		mRater = myRater;
 		mMessage = myMessage;
+		mMessageAuthor = mMessage.getAuthor();
+		mDate = CurrentTimeUTC.get();
 	}
 	
 	/**
@@ -77,12 +92,26 @@ public abstract class MessageRating extends Persistent {
 	 * The transient fields of the returned object will be initialized by this getter already though.
 	 */
 	public final Message getMessage() {
-		mDB.activate(this, 2); assert(mMessage != null);
+		checkedActivate(2); assert(mMessage != null);
 		mMessage.initializeTransient(mFreetalk);
 		return mMessage;
 	}
 	
-
+	public final FTIdentity getMessageAuthor() {
+		checkedActivate(2); assert(mMessageAuthor != null);
+		
+		if(mMessageAuthor instanceof Persistent)
+			((Persistent)mMessageAuthor).initializeTransient(mFreetalk);
+			
+		return mMessageAuthor;
+	}
+	
+	public final Date getDate() {
+		// 1 is the default activation depth so we don't need to activate this because Date is a native type for db4o
+		// checkedActivate(1); assert(mDate != null);
+		return mDate;
+	}
+	
 	public String toString() {
 		if(mDB != null)
 			return getRater() + " has rated the message " + getMessage();
@@ -92,7 +121,6 @@ public abstract class MessageRating extends Persistent {
 		Logger.error(this, "toString() called before initializeTransient()!");
 		
 		return super.toString() + " (intializeTransient() not called!, rater and message may be null: " + mRater + " has rated the message " + mMessage + ")";
-			
 	}
 
 }
