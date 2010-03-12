@@ -9,7 +9,7 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 /**
  * DUPLICATE CODE TAKEN FROM THE WoT PLUGIN
  */
-public class WoTTrust {
+public final class WoTTrust {
 
 	/** The identity which gives the trust. */
 	private final FTIdentity mTruster;

@@ -14,7 +14,7 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 
-public class WoTOwnMessage extends OwnMessage {
+public final class WoTOwnMessage extends OwnMessage {
 
 	public static WoTOwnMessage construct(WoTMessageURI myParentThreadURI, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, 
 			FTOwnIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {

@@ -44,7 +44,7 @@ import freenet.support.io.NativeThread;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public class WoTIdentityManager extends IdentityManager {
+public final class WoTIdentityManager extends IdentityManager {
 	
 	/* FIXME: This really has to be tweaked before release. */  
 	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (30 * 1000) : (5 * 60 * 1000);

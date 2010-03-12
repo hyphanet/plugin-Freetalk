@@ -27,7 +27,7 @@ import freenet.keys.FreenetURI;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
+public final class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	
 	/* Attributes, stored in the database. */
 
