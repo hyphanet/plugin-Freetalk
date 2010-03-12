@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.exceptions;
 
-public class DuplicateTaskException extends DuplicateElementException {
+public final class DuplicateTaskException extends DuplicateElementException {
 
 	private static final long serialVersionUID = 1L;
 

@@ -8,7 +8,7 @@ package plugins.Freetalk.exceptions;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public class WoTDisconnectedException extends RuntimeException {
+public final class WoTDisconnectedException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 	

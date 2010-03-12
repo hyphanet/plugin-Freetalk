@@ -16,7 +16,7 @@ package plugins.Freetalk.exceptions;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  *
  */
-public class InvalidParameterException extends Exception {
+public final class InvalidParameterException extends Exception {
 	
 	private static final long serialVersionUID = -1;
 
