@@ -46,6 +46,10 @@ public abstract class MessageRating extends Persistent {
 	 */
 	private final Date mDate;
 	
+	static {
+		Persistent.registerIndexedFields(MessageRating.class, new String[] { "mRater", "mMessage", "mMessageAuthor" });
+	}
+	
 	/**
 	 * Constructor for being used be the implementing child classes.
 	 * 
@@ -111,6 +115,23 @@ public abstract class MessageRating extends Persistent {
 		// checkedActivate(1); assert(mDate != null);
 		return mDate;
 	}
+	
+	protected void storeWithoutCommit() {
+		try {		
+			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(2);
+			
+			throwIfNotStored(getRater());
+			throwIfNotStored(getMessage());
+			throwIfNotStored(getMessageAuthor());
+			
+			checkedStore();
+		}
+		catch(final RuntimeException e) {
+			checkedRollbackAndThrow(e);
+		}
+	}
+
 	
 	public String toString() {
 		if(mDB != null)
