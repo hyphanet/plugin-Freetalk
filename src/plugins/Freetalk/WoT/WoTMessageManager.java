@@ -20,9 +20,12 @@ import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.MessageURI;
 import plugins.Freetalk.Persistent;
 import plugins.Freetalk.Message.Attachment;
+import plugins.Freetalk.Persistent.InitializingObjectSet;
+import plugins.Freetalk.exceptions.DuplicateElementException;
 import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
+import plugins.Freetalk.exceptions.NoSuchMessageRatingException;
 import plugins.Freetalk.tasks.PersistentTaskManager;
 
 import com.db4o.ObjectContainer;
@@ -36,7 +39,7 @@ import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 
-public class WoTMessageManager extends MessageManager {
+public final class WoTMessageManager extends MessageManager {
 	
 	/** One for all requests for WoTMessage*, for fairness. */
 	final RequestClient mRequestClient;
@@ -353,5 +356,42 @@ public class WoTMessageManager extends MessageManager {
 		
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
+	
+	public WoTMessageRating rateMessage(WoTOwnIdentity rater, WoTMessage message, final byte value) {
+		synchronized(mIdentityManager) {
+		synchronized(this) {
+			// We do not have to re-query the rater/message because MessageRating.storeWithout commit throws if they are not stored anymore
+			
+			final WoTMessageRating rating = new WoTMessageRating(rater, message, value);
+			synchronized(db.lock()) {
+				try {
+					rating.storeWithoutCommit();
+					rating.checkedCommit(this);
+				} catch(RuntimeException e) {
+					Persistent.checkedRollback(db, this, e);
+				}
+			}
+			
+			return rating;
+		}
+		}
+	}
+	
+	public synchronized WoTMessageRating getMessageRating(final WoTOwnIdentity rater, final WoTMessage message) throws NoSuchMessageRatingException {
+		final Query query = db.query();
+		query.constrain(WoTMessageRating.class);
+		query.descend("mRater").constrain(rater).identity();
+		query.descend("mMessage").constrain(message).identity();
+		final InitializingObjectSet<WoTMessageRating> result = new Persistent.InitializingObjectSet<WoTMessageRating>(mFreetalk, query);
+		
+		switch(result.size()) {
+			case 0: throw new NoSuchMessageRatingException();
+			case 1: return result.next();
+			default: throw new DuplicateElementException("Duplicate rating from " + rater + " of " + message);
+		}
+	}
 
+	public synchronized void deleteMessageRating(final WoTMessageRating rating) {
+		
+	}
 }
