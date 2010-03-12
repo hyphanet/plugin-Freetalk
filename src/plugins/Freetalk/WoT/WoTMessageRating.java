@@ -49,6 +49,10 @@ public final class WoTMessageRating extends MessageRating {
 			return super.toString();
 	}
 	
+	protected void storeWithoutCommit() { // Override visibility
+		super.storeWithoutCommit();
+	}
+
 	public void checkedCommit(Object loggingObject) {
 		final WoTIdentityManager identityManager = mFreetalk.getIdentityManager();
 		final WoTOwnIdentity rater = (WoTOwnIdentity)getRater();
