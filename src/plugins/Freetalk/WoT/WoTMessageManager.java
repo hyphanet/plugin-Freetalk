@@ -363,14 +363,7 @@ public final class WoTMessageManager extends MessageManager {
 			// We do not have to re-query the rater/message because MessageRating.storeWithout commit throws if they are not stored anymore
 			
 			final WoTMessageRating rating = new WoTMessageRating(rater, message, value);
-			synchronized(db.lock()) {
-				try {
-					rating.storeWithoutCommit();
-					rating.checkedCommit(this);
-				} catch(RuntimeException e) {
-					Persistent.checkedRollback(db, this, e);
-				}
-			}
+			rating.storeAndCommit();
 			
 			return rating;
 		}
@@ -391,7 +384,11 @@ public final class WoTMessageManager extends MessageManager {
 		}
 	}
 
-	public synchronized void deleteMessageRating(final WoTMessageRating rating) {
-		
+	public void deleteMessageRating(final WoTMessageRating rating) {
+		synchronized(mIdentityManager) {
+		synchronized(this) {
+			rating.deleteAndCommit();
+		}
+		}
 	}
 }

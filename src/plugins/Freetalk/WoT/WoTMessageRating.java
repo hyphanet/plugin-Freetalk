@@ -48,12 +48,9 @@ public final class WoTMessageRating extends MessageRating {
 		else
 			return super.toString();
 	}
-	
-	protected void storeWithoutCommit() { // Override visibility
-		super.storeWithoutCommit();
-	}
 
-	public void checkedCommit(Object loggingObject) {
+	
+	private void addValueToWoTTrust(final byte value) {
 		final WoTIdentityManager identityManager = mFreetalk.getIdentityManager();
 		final WoTOwnIdentity rater = (WoTOwnIdentity)getRater();
 		final WoTIdentity messageAuthor = (WoTIdentity)getMessageAuthor();
@@ -68,7 +65,7 @@ public final class WoTMessageRating extends MessageRating {
 			throw new RuntimeException(e);
 		}
 					
-		trustValue += mValue;
+		trustValue += value;
 		
 		int signum = Integer.signum(trustValue);
 		
@@ -80,7 +77,57 @@ public final class WoTMessageRating extends MessageRating {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	private void addValueToWoTTrust() {
+		addValueToWoTTrust(mValue);
+	}
+	
+	private void substractValueFromWoTTrust() {
+		addValueToWoTTrust((byte)-mValue);
+	}
+	
+	protected void storeAndCommit() {
+		synchronized(mDB.lock()) {
+			addValueToWoTTrust();
 		
-		super.checkedCommit(loggingObject);
+			try {
+				super.storeWithoutCommit();
+				super.checkedCommit(this);
+			} catch(RuntimeException e1) {
+				try {
+					substractValueFromWoTTrust();
+				} catch(RuntimeException e2) {
+					super.checkedRollbackAndThrow(
+					 new RuntimeException("Fatal error: The rating was stored in WoT, storing in Freetalk failed and removing in WoT again also failed!" +
+							"This means that you cannot remove the rating anymore using Freetalk." +
+							"Please manually remove the rating from the trust value of the identity! The original error was: " + e1 + " and the second " + e2)
+					);
+				}
+				super.checkedRollbackAndThrow(e1);
+			}
+		}
+	}
+	
+	protected void deleteAndCommit() {
+		synchronized(mDB.lock()) {
+			substractValueFromWoTTrust();
+		
+			try {
+				super.deleteWithoutCommit();
+				super.checkedCommit(this);
+			} catch(RuntimeException e1) {
+				try {
+					addValueToWoTTrust();
+				} catch(RuntimeException e2) {
+					super.checkedRollbackAndThrow(
+					 new RuntimeException("Fatal error: The rating was removed from WoT, deleting it in Freetalk failed and restoring the rating in WoT also failed!" +
+							"This means that the rating still appears in Freetalk but the trust value of the identity does not contain it anymore." +
+							"Please manually remove the rating from the trust value of the identity! The original error was: " + e1 + " and the second " + e2)
+					);
+				}
+				super.checkedRollbackAndThrow(e1);
+			}
+		}
 	}
 }
