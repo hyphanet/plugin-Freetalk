@@ -17,6 +17,7 @@ import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.MessageRating;
 import plugins.Freetalk.MessageURI;
 import plugins.Freetalk.Persistent;
 import plugins.Freetalk.Message.Attachment;
@@ -370,7 +371,13 @@ public final class WoTMessageManager extends MessageManager {
 		}
 	}
 	
-	public synchronized WoTMessageRating getMessageRating(final WoTOwnIdentity rater, final WoTMessage message) throws NoSuchMessageRatingException {
+	public synchronized WoTMessageRating getMessageRating(final FTOwnIdentity rater, final Message message) throws NoSuchMessageRatingException {
+		if(!(rater instanceof WoTOwnIdentity))
+			throw new IllegalArgumentException("No WoT identity: " + rater);
+		
+		if(!(message instanceof WoTMessage))
+			throw new IllegalArgumentException("No WoT message: " + message);
+		
 		final Query query = db.query();
 		query.constrain(WoTMessageRating.class);
 		query.descend("mRater").constrain(rater).identity();
@@ -384,11 +391,17 @@ public final class WoTMessageManager extends MessageManager {
 		}
 	}
 
-	public void deleteMessageRating(final WoTMessageRating rating) {
+	public void deleteMessageRating(final MessageRating rating) {
+		if(!(rating instanceof WoTMessageRating))
+			throw new IllegalArgumentException("No WoT rating: " + rating);
+		
+		final WoTMessageRating realRating = (WoTMessageRating)rating;
+		
 		synchronized(mIdentityManager) {
 		synchronized(this) {
-			rating.deleteAndCommit();
+			realRating.deleteAndCommit();
 		}
 		}
 	}
+	
 }
