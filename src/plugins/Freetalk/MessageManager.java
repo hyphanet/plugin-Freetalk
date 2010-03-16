@@ -24,6 +24,7 @@ import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
+import plugins.Freetalk.exceptions.NoSuchMessageRatingException;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -1241,5 +1242,10 @@ public abstract class MessageManager implements Runnable {
 	public IdentityManager getIdentityManager() {
 		return mIdentityManager;
 	}
+	
+	
+	public abstract MessageRating getMessageRating(FTOwnIdentity rater, Message message) throws NoSuchMessageRatingException;
+
+	public abstract void deleteMessageRating(final MessageRating rating);
 
 }
