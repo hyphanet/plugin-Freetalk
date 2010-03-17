@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.exceptions;
 
-public class DuplicateIdentityException extends DuplicateElementException {
+public final class DuplicateIdentityException extends DuplicateElementException {
 
 	public DuplicateIdentityException(String id) {
 		super("ID: " + id);

@@ -3,12 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import java.util.Map;
-import java.util.TreeMap;
-
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
-import plugins.Freetalk.Message;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import plugins.Freetalk.exceptions.NotTrustedException;
 import freenet.keys.FreenetURI;
@@ -27,13 +23,11 @@ import freenet.keys.FreenetURI;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
+public final class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	
 	/* Attributes, stored in the database. */
 
 	private final FreenetURI mInsertURI;
-
-	private final Map<String, Boolean> mAssessed;
 
     /** If true then auto-subscribe to boards that were subscribed in the NNTP client */
     private boolean mNntpAutoSubscribeBoards;
@@ -51,23 +45,11 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 		if(myInsertURI == null)
 			throw new IllegalArgumentException();
 		mInsertURI = myInsertURI;
-		mAssessed = new TreeMap<String, Boolean>();
 	}
 
 	public FreenetURI getInsertURI() {
 		checkedActivate(3); // String[] is no nested object to db4o so 3 is sufficient.
 		return mInsertURI;
-	}
-
-	public void setAssessed(Message message, boolean assessed) {
-		mAssessed.put(message.getID(), new Boolean(assessed) );
-	}
-
-	public boolean getAssessed(Message message) {
-		if(!mAssessed.containsKey(message.getID())) {
-			return false;
-		}
-		return mAssessed.get(message.getID()).booleanValue();
 	}
 
 	public boolean wantsMessagesFrom(FTIdentity identity) throws Exception {
@@ -118,7 +100,6 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 
 			checkedStore(mInsertURI);
-			checkedStore(mAssessed);
 			checkedStore();
 		}
 		catch(RuntimeException e) {
@@ -134,7 +115,6 @@ public class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 			
 			super.deleteWithoutCommit();
 			
-			checkedDelete(mAssessed);
 			mInsertURI.removeFrom(mDB);
 		}
 		catch(RuntimeException e) {

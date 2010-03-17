@@ -50,7 +50,7 @@ public final class LogInPage extends WebPageImpl {
 		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnIdentityID");
 		while(iter.hasNext()) {
 			FTOwnIdentity ownIdentity = iter.next();
-			selectBox.addChild("option", "value", ownIdentity.getID(), ownIdentity.getShortestUniqueName(40));
+			selectBox.addChild("option", "value", ownIdentity.getID(), ownIdentity.getShortestUniqueName());
 		}
 		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("LoginPage.LogIn.Button") });
 		selectForm.addChild("p", l10n().getString("LoginPage.CookiesRequired.Text"));

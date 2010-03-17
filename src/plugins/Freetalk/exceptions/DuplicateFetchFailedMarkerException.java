@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.exceptions;
 
-public class DuplicateFetchFailedMarkerException extends DuplicateElementException {
+public final class DuplicateFetchFailedMarkerException extends DuplicateElementException {
 
 	private static final long serialVersionUID = 1L;
 

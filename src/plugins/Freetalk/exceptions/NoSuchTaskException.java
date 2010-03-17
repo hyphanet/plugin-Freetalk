@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.exceptions;
 
-public class NoSuchTaskException extends NoSuchObjectException {
+public final class NoSuchTaskException extends NoSuchObjectException {
 
 	private static final long serialVersionUID = 1L;
 

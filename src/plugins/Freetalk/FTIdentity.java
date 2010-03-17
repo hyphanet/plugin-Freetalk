@@ -15,9 +15,8 @@ public interface FTIdentity { // FIXME: Rename to "Identity"
 	public FreenetURI getRequestURI();
 	
 	public String getNickname();
-	public String getNickname(int maxLength);
 
-	public String getShortestUniqueName(int maxLength);
+	public String getShortestUniqueName();
 	
 	public String getFreetalkAddress();
 	

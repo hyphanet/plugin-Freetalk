@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
 import java.util.Collection;
@@ -9,6 +12,7 @@ import java.util.ListIterator;
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.ext.ExtObjectSet;
+import com.db4o.query.Query;
 
 import freenet.support.Logger;
 
@@ -212,7 +216,7 @@ public abstract class Persistent {
 		try {		
 			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(activationDepth);
-			checkedStore(); // There is no checkedStore()
+			checkedStore();
 		}
 		catch(final RuntimeException e) {
 			checkedRollbackAndThrow(e);
@@ -303,6 +307,11 @@ public abstract class Persistent {
 		public InitializingObjectSet(final Freetalk myFreetalk, final ObjectSet<Type> myObjectSet) {
 			mFreetalk = myFreetalk;
 			mObjectSet = myObjectSet;
+		}
+		
+		@SuppressWarnings("unchecked")
+		public InitializingObjectSet(final Freetalk myFreetalk, final Query myQuery) {
+			this(myFreetalk, myQuery.execute());
 		}
 	
 		public ExtObjectSet ext() {

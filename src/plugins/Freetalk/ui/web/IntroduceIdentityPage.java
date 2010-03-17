@@ -96,7 +96,7 @@ public final class IntroduceIdentityPage extends TaskPage {
 		} catch (Exception e) {
 			Logger.error(this, "getIntroductionPuzzles() failed", e);
 
-			new ErrorPage(mWebInterface, mOwnIdentity, mRequest, l10n().getString("IntroduceIdentityPage.IntroduceIdentity.ObtainingPuzzlesFailed"), e.getMessage(), l10n()).addToPage(contentBox);
+			new ErrorPage(mWebInterface, mOwnIdentity, mRequest, l10n().getString("IntroduceIdentityPage.IntroduceIdentity.ObtainingPuzzlesFailed"), e, l10n()).addToPage(contentBox);
 			return;
 		}
 		

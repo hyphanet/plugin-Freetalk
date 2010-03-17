@@ -12,16 +12,15 @@ import java.net.URLConnection;
 
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
-import plugins.Freetalk.Message;
-import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
+import plugins.Freetalk.WoT.WoTMessage;
+import plugins.Freetalk.WoT.WoTMessageManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager.IntroductionPuzzle;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
-import plugins.Freetalk.exceptions.NotTrustedException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.RedirectException;
@@ -255,58 +254,59 @@ public final class WebInterface {
 		}
 
 		@Override
-		public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-			String pass = request.getPartAsString("formPassword", 32);
-			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
-				writeHTMLReply(ctx, 403, "Forbidden", "Invalid form password.");
-				return;
-			}
+		WebPage makeWebPage(HTTPRequest request, ToadletContext context) throws RedirectException {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, request, mFreetalk.wotOutdated(), l10n());
+
+			// TODO: These casts are ugly.
+			final WoTOwnIdentity own = (WoTOwnIdentity)webInterface.getLoggedInOwnIdentity(context);
+			WebPage errorPage = null;
+			
 			try {
 				WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
-				synchronized(identityManager) {
-				// TODO: These casts are ugly.
-				WoTOwnIdentity own = (WoTOwnIdentity)getLoggedInOwnIdentity(ctx);
-				WoTIdentity other = identityManager.getIdentity(request.getPartAsString("OtherIdentityID", 64));
-				int change = Integer.parseInt(request.getPartAsString("TrustChange", 5));
+				WoTMessageManager messageManager = (WoTMessageManager)mFreetalk.getMessageManager();
 				
-				int trust;
-				try {
-					trust = own.getTrustIn(other);
-				} catch (NotTrustedException e) {
-					trust = 0;
-				}
-				own.setTrust(other, trust+change, "Freetalk web interface");
-
-				try {
-					MessageManager messageManager = mFreetalk.getMessageManager();
-					synchronized (messageManager) {
-					synchronized(own) {
-					Message message = mFreetalk.getMessageManager().get(request.getPartAsString("MessageID", 128));
-					own.setAssessed(message, true);
-					own.storeAndCommit();
+				synchronized(identityManager) {
+					boolean removeRating = request.getPartAsString("RemoveRating", 16).equals("true");
+					
+					try {						
+						synchronized (messageManager) {
+						synchronized(own) {
+							WoTMessage message = (WoTMessage)messageManager.get(request.getPartAsString("MessageID", 128));
+							if(removeRating)
+								messageManager.deleteMessageRating(messageManager.getMessageRating(own, message));
+							else
+								messageManager.rateMessage(own, message, Byte.parseByte(request.getPartAsString("TrustChange", 5)));
+						}
+						}
+					} catch (NoSuchMessageException e) {
+						errorPage = new ErrorPage(webInterface, own, request, "Rating the message failed", e, l10n());
 					}
-					}
-				} catch (NoSuchMessageException e) {
-				}
+					
 				}
 			} catch(Exception e) {
-				// FIXME: provide error message
+				errorPage = new ErrorPage(webInterface, webInterface.getLoggedInOwnIdentity(context), request, "Rating the message failed", e, l10n());
 			}
-
-			// TODO: This should not use the names of the parts directly, they should be encapsulated in ThreadPage!
-			writeTemporaryRedirect(ctx, "Changing trust successful, redirecting to thread",
-					ThreadPage.getURI(request.getPartAsString("BoardName", 64), request.getPartAsString("ThreadID", 128)));
-		}
-
-		@Override
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
-			// not expected to make it here
-			return new Welcome(webInterface, getLoggedInOwnIdentity(context), req, l10n());
+			try {
+				// FIXME: The current WebPageImpl does not support adding one page to another page outside of make() !
+				if(errorPage != null)
+					return  errorPage;
+				
+				WebPage result = new ThreadPage(webInterface, own, request, l10n());
+				return result;
+			} catch(Exception e) {
+				throw new RuntimeException(e);
+			}
 		}
 		
 		@Override
 		public Toadlet showAsToadlet() {
 			return homeToadlet;
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
 		}
 	}
 	
@@ -343,7 +343,7 @@ public final class WebInterface {
 			try {
 				return new NewThreadPage(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 			} catch (NoSuchBoardException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"), l10n());
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), e, l10n());
 			}
 		}
 		
@@ -372,7 +372,7 @@ public final class WebInterface {
 			try {
 				return new BoardPage(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 			} catch (NoSuchBoardException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"), l10n());
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), e, l10n());
 				
 			}
 		}
@@ -402,9 +402,9 @@ public final class WebInterface {
 			try {
 				return new ThreadPage(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 			} catch (NoSuchBoardException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"), l10n());
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), e, l10n());
 			} catch (NoSuchMessageException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown message "+req.getParam("id"), "Unknown message "+req.getParam("id"), l10n());
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown message "+req.getParam("id"), e, l10n());
 			}
 		}
 		
@@ -433,9 +433,9 @@ public final class WebInterface {
 			try {
 				return new NewReplyPage(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 			} catch (NoSuchBoardException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), "Unknown board "+req.getParam("name"), l10n());
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), e, l10n());
 			} catch (NoSuchMessageException e) {
-				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown message "+req.getParam("id"), "Unknown message "+req.getParam("id"), l10n());
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown message "+req.getParam("id"), e, l10n());
 			}
 		}
 		

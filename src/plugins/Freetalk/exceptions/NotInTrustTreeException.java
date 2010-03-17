@@ -13,7 +13,7 @@ import plugins.Freetalk.WoT.WoTOwnIdentity;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  *
  */
-public class NotInTrustTreeException extends NoSuchObjectException {
+public final class NotInTrustTreeException extends NoSuchObjectException {
 	
 	private static final long serialVersionUID = -1;
 

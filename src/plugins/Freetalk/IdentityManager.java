@@ -3,8 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import java.util.Hashtable;
 import java.util.Iterator;
 
+import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 
 import com.db4o.ext.ExtObjectContainer;
@@ -26,6 +28,9 @@ public abstract class IdentityManager implements PrioRunnable {
 	protected final ExtObjectContainer db;
 
 	protected final Executor mExecutor;
+	
+	private final Hashtable<FTIdentity, String> mShortestUniqueNicknameCache = new Hashtable<FTIdentity, String>(1024);
+	
 
 	public IdentityManager(Freetalk myFreetalk, Executor myExecutor) {
 		Logger.debug(this, "Creating identity manager...");
@@ -89,30 +94,8 @@ public abstract class IdentityManager implements PrioRunnable {
 
 	public abstract void terminate();
 
-	/// format the name of an author
-	public String shortestUniqueName(FTIdentity identity, int maxLength) {
-		String nick = identity.getNickname(maxLength-5);
-		String id = identity.getID();
-		int longestCommonPrefix = 0;
-		String formatted;
-
-		// FIXME: use a map when this gets slow
-		for(FTIdentity i : getAllIdentities()) {
-			String otherID = i.getID();
-			if(i.getNickname(maxLength-5).equals(nick) && !otherID.equals(id)) {
-				if(longestCommonPrefix == 0) {
-					longestCommonPrefix = 1;
-				}
-				while(id.substring(0, longestCommonPrefix).equals(otherID.substring(0, longestCommonPrefix))){
-					longestCommonPrefix++;
-				}
-			}
-		}
-		if(longestCommonPrefix > 0) {
-			return nick + "@" + id.substring(0, longestCommonPrefix);
-		} else {
-			return nick;
-		}
-	} 
-
+	/**
+	 * This function does not do any synchronization and does not require any synchronization, therefore you can use it everywhere without causing deadlocks.
+	 */
+	public abstract String getShortestUniqueName(FTIdentity identity);
 }

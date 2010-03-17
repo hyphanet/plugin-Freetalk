@@ -17,12 +17,16 @@ import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.MessageRating;
 import plugins.Freetalk.MessageURI;
 import plugins.Freetalk.Persistent;
 import plugins.Freetalk.Message.Attachment;
+import plugins.Freetalk.Persistent.InitializingObjectSet;
+import plugins.Freetalk.exceptions.DuplicateElementException;
 import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
+import plugins.Freetalk.exceptions.NoSuchMessageRatingException;
 import plugins.Freetalk.tasks.PersistentTaskManager;
 
 import com.db4o.ObjectContainer;
@@ -36,7 +40,7 @@ import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 
-public class WoTMessageManager extends MessageManager {
+public final class WoTMessageManager extends MessageManager {
 	
 	/** One for all requests for WoTMessage*, for fairness. */
 	final RequestClient mRequestClient;
@@ -353,5 +357,56 @@ public class WoTMessageManager extends MessageManager {
 		
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
+	
+	public WoTMessageRating rateMessage(WoTOwnIdentity rater, WoTMessage message, final byte value) {
+		synchronized(mIdentityManager) {
+		synchronized(this) {
+			// We do not have to re-query the rater/message because MessageRating.storeWithout commit throws if they are not stored anymore
+			
+			final WoTMessageRating rating = new WoTMessageRating(rater, message, value);
+			rating.initializeTransient(mFreetalk);
+			rating.storeAndCommit();
+			
+			return rating;
+		}
+		}
+	}
+	
+	/**
+	 * This function is not synchronized to allow calls to it when only having locked a {@link Board} and not the whole MessageManager.
+	 */
+	public WoTMessageRating getMessageRating(final FTOwnIdentity rater, final Message message) throws NoSuchMessageRatingException {
+		if(!(rater instanceof WoTOwnIdentity))
+			throw new IllegalArgumentException("No WoT identity: " + rater);
+		
+		if(!(message instanceof WoTMessage))
+			throw new IllegalArgumentException("No WoT message: " + message);
+		
+		final Query query = db.query();
+		query.constrain(WoTMessageRating.class);
+		query.descend("mRater").constrain(rater).identity();
+		query.descend("mMessage").constrain(message).identity();
+		final InitializingObjectSet<WoTMessageRating> result = new Persistent.InitializingObjectSet<WoTMessageRating>(mFreetalk, query);
+		
+		switch(result.size()) {
+			case 0: throw new NoSuchMessageRatingException();
+			case 1: return result.next();
+			default: throw new DuplicateElementException("Duplicate rating from " + rater + " of " + message);
+		}
+	}
 
+	public void deleteMessageRating(final MessageRating rating) {
+		if(!(rating instanceof WoTMessageRating))
+			throw new IllegalArgumentException("No WoT rating: " + rating);
+		
+		final WoTMessageRating realRating = (WoTMessageRating)rating;
+		
+		synchronized(mIdentityManager) {
+		synchronized(this) {
+			realRating.initializeTransient(mFreetalk);
+			realRating.deleteAndCommit();
+		}
+		}
+	}
+	
 }

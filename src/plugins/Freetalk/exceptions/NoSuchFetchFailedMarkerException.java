@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.exceptions;
 
-public class NoSuchFetchFailedMarkerException extends NoSuchObjectException {
+public final class NoSuchFetchFailedMarkerException extends NoSuchObjectException {
 
 	private static final long serialVersionUID = 1L;
 

@@ -78,7 +78,7 @@ public class Board extends Persistent implements Comparable<Board> {
         if(newName==null || newName.length() == 0)
             throw new IllegalArgumentException("Empty board name.");
         if(!isNameValid(newName))
-            throw new InvalidParameterException("Board names have to be either in English or have an ISO language code at the beginning followed by a dot.");
+            throw new InvalidParameterException("Invalid board name."); // TODO: Explain what is invalid
 
         mID = UUID.randomUUID().toString();
         mName = newName.toLowerCase();

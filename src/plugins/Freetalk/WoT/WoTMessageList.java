@@ -9,7 +9,7 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import freenet.keys.FreenetURI;
 
-public class WoTMessageList extends MessageList {
+public final class WoTMessageList extends MessageList {
 
 	public WoTMessageList(FTIdentity myAuthor, FreenetURI myURI, List<MessageReference> newMessages) throws InvalidParameterException,
 			NoSuchIdentityException {

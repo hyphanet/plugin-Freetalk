@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.exceptions;
 
-public class DuplicateBoardException extends DuplicateElementException {
+public final class DuplicateBoardException extends DuplicateElementException {
 
 	public DuplicateBoardException(String name) {
 		super(name);

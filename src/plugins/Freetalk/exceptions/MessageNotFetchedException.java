@@ -7,7 +7,7 @@ package plugins.Freetalk.exceptions;
  * This exception is thrown when Freetalk has indication that a message with the given ID exists but was not able to fetch 
  * the message yet. This usually happens when a reply of a thread is downloaded before the thread message itself.
  */
-public class MessageNotFetchedException extends NoSuchMessageException {
+public final class MessageNotFetchedException extends NoSuchMessageException {
 
 	private static final long serialVersionUID = 1L;
 	

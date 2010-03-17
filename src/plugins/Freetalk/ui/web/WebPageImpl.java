@@ -90,7 +90,7 @@ public abstract class WebPageImpl implements WebPage {
 	public final String toHTML(ToadletContext ctx) throws RedirectException {
 		PageNode page;
 		if(mOwnIdentity != null)
-			page = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getShortestUniqueName(40), ctx);
+			page = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getShortestUniqueName(), ctx);
 		else
 			page = mPM.getPageNode(Freetalk.PLUGIN_TITLE, ctx);
 		page.addCustomStyleSheet(Freetalk.PLUGIN_URI + "/css/freetalk.css");

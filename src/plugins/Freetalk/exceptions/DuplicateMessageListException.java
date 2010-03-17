@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.exceptions;
 
-public class DuplicateMessageListException extends DuplicateElementException {
+public final class DuplicateMessageListException extends DuplicateElementException {
 	
 	public DuplicateMessageListException(String id) {
 		super("ID: " + id);

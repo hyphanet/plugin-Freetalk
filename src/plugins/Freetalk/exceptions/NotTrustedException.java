@@ -11,7 +11,7 @@ import plugins.Freetalk.WoT.WoTIdentity;
  * @author xor (xor@freenetproject.org)
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
-public class NotTrustedException extends NoSuchObjectException {
+public final class NotTrustedException extends NoSuchObjectException {
 	
 	private static final long serialVersionUID = -1;
 
