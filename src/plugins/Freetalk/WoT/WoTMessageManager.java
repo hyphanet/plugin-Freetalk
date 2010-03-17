@@ -364,6 +364,7 @@ public final class WoTMessageManager extends MessageManager {
 			// We do not have to re-query the rater/message because MessageRating.storeWithout commit throws if they are not stored anymore
 			
 			final WoTMessageRating rating = new WoTMessageRating(rater, message, value);
+			rating.initializeTransient(mFreetalk);
 			rating.storeAndCommit();
 			
 			return rating;
@@ -371,7 +372,10 @@ public final class WoTMessageManager extends MessageManager {
 		}
 	}
 	
-	public synchronized WoTMessageRating getMessageRating(final FTOwnIdentity rater, final Message message) throws NoSuchMessageRatingException {
+	/**
+	 * This function is not synchronized to allow calls to it when only having locked a {@link Board} and not the whole MessageManager.
+	 */
+	public WoTMessageRating getMessageRating(final FTOwnIdentity rater, final Message message) throws NoSuchMessageRatingException {
 		if(!(rater instanceof WoTOwnIdentity))
 			throw new IllegalArgumentException("No WoT identity: " + rater);
 		
@@ -399,6 +403,7 @@ public final class WoTMessageManager extends MessageManager {
 		
 		synchronized(mIdentityManager) {
 		synchronized(this) {
+			realRating.initializeTransient(mFreetalk);
 			realRating.deleteAndCommit();
 		}
 		}
