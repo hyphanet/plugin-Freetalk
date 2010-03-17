@@ -17,10 +17,12 @@ import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
 import plugins.Freetalk.SubscribedBoard.MessageReference;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
+import plugins.Freetalk.WoT.WoTMessageRating;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.MessageNotFetchedException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.exceptions.NoSuchMessageRatingException;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import plugins.Freetalk.exceptions.NotTrustedException;
 import freenet.l10n.BaseL10n;
@@ -196,7 +198,7 @@ public final class ThreadPage extends WebPageImpl {
 		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class" }, new String[] { "0", "100%", "message" });
 		HTMLNode row = table.addChild("tr", "class", "message");
 		HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width", "class" }, new String[] { "left", "top", "2", "15%", "author" }, "");
-		authorNode.addChild("abbr", new String[] { "title" }, new String[] { message.getAuthor().getID() }).addChild("span", "class", "name", message.getAuthor().getShortestUniqueName(50));
+		authorNode.addChild("abbr", new String[] { "title" }, new String[] { message.getAuthor().getID() }).addChild("span", "class", "name", message.getAuthor().getShortestUniqueName());
         authorNode.addChild("#", " [");
         authorNode.addChild("a", new String[] { "class", "href", "title" }, new String[] { "identity-link", "/WoT/ShowIdentity?id=" + message.getAuthor().getID(), "Web of Trust Page" }).addChild("#", "WoT");
         authorNode.addChild("#", "]");
@@ -262,10 +264,16 @@ public final class ThreadPage extends WebPageImpl {
         if(ref != null && ref instanceof BoardThreadLink)
         	addMarkThreadAsUnreadButton(title, (BoardThreadLink)ref);
         
-        if(message.getAuthor() != mOwnIdentity && ((WoTOwnIdentity)mOwnIdentity).getAssessed(message) == false) {
-			HTMLNode modButtons = title.addChild("div", "class", "mod-buttons");
-			addModButton(modButtons, message, 10, "+");
-			addModButton(modButtons, message, -10, "-");
+        if(message.getAuthor() != mOwnIdentity) {
+        	HTMLNode modButtons = title.addChild("div", "class", "mod-buttons");
+        	
+        	try {
+        		WoTMessageRating rating = mFreetalk.getMessageManager().getMessageRating(mOwnIdentity, message);
+        		addRemoveRatingButton(modButtons, message, rating);
+        	} catch(NoSuchMessageRatingException e) {
+    			addRateButton(modButtons, message, 10);
+    			addRateButton(modButtons, message, -10);        		
+        	}
         }
 		title.addChild("div", "class", "text", message.getTitle());
         
@@ -320,16 +328,28 @@ public final class ThreadPage extends WebPageImpl {
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("ThreadPage.ReplyButton") });
     }
 
-    private void addModButton(HTMLNode parent, Message message, int change, String label) {
+    private void addRateButton(HTMLNode parent, Message message, int change) {
 		parent = parent.addChild("div", "class", "mod-button");
         HTMLNode newReplyForm = addFormChild(parent, Freetalk.PLUGIN_URI + "/ChangeTrust", "ChangeTrustPage");
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
-        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OtherIdentityID", message.getAuthor().getID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ThreadID", mThread.getThreadID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "MessageID", message.getID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "TrustChange", String.valueOf(change)});
-        newReplyForm.addChild("input", new String[] {"type", "name", "value", "style"}, new String[] {"submit", "submit", label, "width:2em" });
+        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit",
+        		l10n().getString("ThreadPage.Rating.Rate.Text", "points", (change>=0 ? "+" : "") + change)});
+    }
+    
+    private void addRemoveRatingButton(HTMLNode parent, Message message, WoTMessageRating rating) {
+		parent = parent.addChild("div", "class", "mod-button");
+        HTMLNode removeRatingForm = addFormChild(parent, Freetalk.PLUGIN_URI + "/ChangeTrust", "ChangeTrustPage");
+        removeRatingForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
+        removeRatingForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
+        removeRatingForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ThreadID", mThread.getThreadID()});
+        removeRatingForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "MessageID", message.getID()});
+        removeRatingForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "RemoveRating", "true"});
+        removeRatingForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", 
+        		l10n().getString("ThreadPage.Rating.Remove.Text", "points", (rating.getValue() >=0  ? "+" : "") + rating.getValue()) });
     }
     
     private void addMarkThreadAsUnreadButton(final HTMLNode title, final BoardThreadLink ref) {

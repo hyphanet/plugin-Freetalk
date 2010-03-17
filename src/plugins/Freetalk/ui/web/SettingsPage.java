@@ -64,7 +64,7 @@ public class SettingsPage extends WebPageImpl {
 	            		identity.storeAndCommit();
 	            	}
             	} catch(Exception e) {
-            		new ErrorPage(mWebInterface, mOwnIdentity, mRequest, "Setting own identity options failed", e.getLocalizedMessage(),
+            		new ErrorPage(mWebInterface, mOwnIdentity, mRequest, "Setting own identity options failed", e,
             				l10n()).addToPage(mContentNode);
             	}
             }

@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 import plugins.Freetalk.FTOwnIdentity;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
@@ -14,11 +17,21 @@ public final class ErrorPage extends WebPageImpl {
 	private final String mErrorTitle;
 	private final String mErrorMessage;
 
-	public ErrorPage(WebInterface webInterface, FTOwnIdentity viewer, HTTPRequest request, String errorTitle, String errorMessage, BaseL10n _baseL10n) {
+	public ErrorPage(WebInterface webInterface, FTOwnIdentity viewer, HTTPRequest request, String errorTitle, Throwable t, BaseL10n _baseL10n) {
 		super(webInterface, viewer, request, _baseL10n);
 		mErrorTitle = errorTitle;
+		
+		String errorMessage = t != null ? t.getLocalizedMessage() : null;
+		if(errorMessage == null || errorMessage.equals("")) {
+			final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			final PrintStream ps = new PrintStream(bos);
+			t.printStackTrace(ps);
+			errorMessage = bos.toString();
+			ps.close();
+		}
+		
 		mErrorMessage = errorMessage;
-		Logger.error(this, "Internal error: " + errorTitle + ", " + errorMessage);
+		Logger.error(this, "Internal error", t);
 	}
 
 	public final void make() {

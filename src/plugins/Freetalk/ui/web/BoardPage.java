@@ -101,7 +101,7 @@ public final class BoardPage extends WebPageImpl {
 				try {
 					thread = threadReference.getMessage();
 					threadTitle = thread.getTitle();
-					authorText = thread.getAuthor().getShortestUniqueName(30);
+					authorText = thread.getAuthor().getShortestUniqueName();
 					
 					try {
 					// TODO: Get rid of the cast somehow, we should maybe call this WoTBoardPage :|
