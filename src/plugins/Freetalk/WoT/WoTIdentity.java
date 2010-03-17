@@ -88,21 +88,29 @@ public class WoTIdentity extends Persistent implements FTIdentity {
 		return mNickname;
 	}
 
-	public String getNickname(int maxLength) {
+	protected String getNickname(int maxLength) {
 		// activate(1);	// 1 is the default activation depth, no need to execute activate(1)
 		if(mNickname.length() > maxLength) {
-			return mNickname.substring(0, maxLength-3) + "...";
+			return mNickname.substring(0, maxLength) + "...";
 		}
 		return mNickname;
 	}
 
-	public String getShortestUniqueName(int maxLength) {
-		return mFreetalk.getIdentityManager().shortestUniqueName(this, maxLength);
+	public String getShortestUniqueName() {
+		return mFreetalk.getIdentityManager().getShortestUniqueName(this);
 	}
 
 	public String getFreetalkAddress() {
 		// activate(1);	// 1 is the default activation depth, no need to execute activate(1)
 		return mNickname + "@" + mID + "." + Freetalk.WOT_CONTEXT.toLowerCase();	
+	}
+	
+	protected String getFreetalkAddress(int maxLength) {
+		final String address = getFreetalkAddress();
+		if(address.length() > maxLength) {
+			return address.substring(0, maxLength) + "...";
+		}
+		return address;
 	}
 
 	public synchronized long getLastReceivedFromWoT() {
@@ -127,6 +135,9 @@ public class WoTIdentity extends Persistent implements FTIdentity {
 	 */
 	/* IMPORTANT: This code is duplicated in plugins.WoT.Identity.isNicknameValid().
 	 * Please also modify it there if you modify it here */
+	// FIXME: Reconsider the length limit of 50 characters. Maybe 20 or 30 would be enough??
+	// IMHO the limit should be sufficiently short to allow the UI to always display unshortened nicknames: If we shorten nicknames, the caching of 
+	// shortest unique nicknames gets too complicated because we need multiple caches for different lengths.
 	public static void validateNickname(String newNickname) throws InvalidParameterException {
 		if(!StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname)
 		|| !StringValidityChecker.containsNoInvalidCharacters(newNickname)

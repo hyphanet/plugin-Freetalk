@@ -4,6 +4,9 @@
 package plugins.Freetalk.WoT;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -69,6 +72,15 @@ public final class WoTIdentityManager extends IdentityManager {
 	private Thread mThread = null;
 
 	private PluginTalkerBlocking mTalker = null;
+	
+	
+	/**
+	 * Caches the shortest unique nickname for each identity. Key = Identity it, Value = Shortest nickname.
+	 */
+	private volatile Hashtable<String, String> mShortestUniqueNicknameCache = new Hashtable<String, String>();
+	
+	private boolean mShortestUniqueNicknameCacheNeedsUpdate = true;
+	
 
 	public WoTIdentityManager(Freetalk myFreetalk, Executor myExecutor) {
 		super(myFreetalk, myExecutor);
@@ -179,38 +191,12 @@ public final class WoTIdentityManager extends IdentityManager {
 		return identity;
 	}
 	
-	@SuppressWarnings("unchecked")
-	public synchronized Iterable<WoTIdentity> getAllIdentities() {
-		return new Iterable<WoTIdentity>() {
-			public Iterator<WoTIdentity> iterator() {
-				return new Iterator<WoTIdentity> () {
-					Iterator<WoTIdentity> iter;
-
-					{
-						Query q = db.query();
-						q.constrain(WoTIdentity.class);
-						iter = q.execute().iterator();
-					}
-
-					public boolean hasNext() {
-						return iter.hasNext();
-					}
-
-					public WoTIdentity next() {
-						WoTIdentity i = iter.next();
-						i.initializeTransient(mFreetalk);
-						return i;
-					}
-
-					public void remove() {
-						throw new UnsupportedOperationException("Cannot delete identities.");
-					}
-				};
-			}
-		};
+	public ObjectSet<WoTIdentity> getAllIdentities() {
+		Query q = db.query();
+		q.constrain(WoTIdentity.class);
+		return new Persistent.InitializingObjectSet<WoTIdentity>(mFreetalk, q);
 	}
 	
-	@SuppressWarnings("unchecked")
 	public synchronized Iterator<WoTOwnIdentity> ownIdentityIterator() {
 		try {
 			fetchOwnIdentities();
@@ -218,29 +204,10 @@ public final class WoTIdentityManager extends IdentityManager {
 		} 
 		catch(Exception e) {} /* Ignore, return the ones which are in database now */
 		
-		return new Iterator<WoTOwnIdentity> () {
-			Iterator<WoTOwnIdentity> iter;
-			
-			{
-				 Query q = db.query();
-				 q.constrain(WoTOwnIdentity.class);
-				 iter = (Iterator<WoTOwnIdentity>)q.execute().iterator();
-			}
-			
-			public boolean hasNext() {
-				return iter.hasNext();
-			}
+		final Query q = db.query();
+		q.constrain(WoTOwnIdentity.class);
+		return new Persistent.InitializingObjectSet<WoTOwnIdentity>(mFreetalk, q);
 
-			public WoTOwnIdentity next() {
-				WoTOwnIdentity oi = iter.next();
-				oi.initializeTransient(mFreetalk);
-				return oi;
-			}
-
-			public void remove() {
-				throw new UnsupportedOperationException("Cannot delete own identities via ownIdentityIterator().");
-			}
-		};
 	}
 
 	@SuppressWarnings("unchecked")
@@ -564,6 +531,10 @@ public final class WoTIdentityManager extends IdentityManager {
 		p1.putOverwrite("Selection", "+");
 		p1.putOverwrite("Context", Freetalk.WOT_CONTEXT);
 		parseIdentities(sendFCPMessageBlocking(p1, null, "Identities").params, false);
+		
+		// We usually call garbageCollectIdentities() after calling this function, it updates the cache already...
+		// if(mShortestUniqueNicknameCacheNeedsUpdate)
+		//	updateShortestUniqueNicknameCache();
 	}
 	
 	/**
@@ -585,6 +556,10 @@ public final class WoTIdentityManager extends IdentityManager {
 		SimpleFieldSet p2 = new SimpleFieldSet(true);
 		p2.putOverwrite("Message","GetOwnIdentities");
 		parseIdentities(sendFCPMessageBlocking(p2, null, "OwnIdentities").params, true);
+		
+		// We usually call garbageCollectIdentities() after calling this function, it updates the cache already...
+		// if(mShortestUniqueNicknameCacheNeedsUpdate)
+		//	updateShortestUniqueNicknameCache();
 	}
 	
 	/**
@@ -604,6 +579,8 @@ public final class WoTIdentityManager extends IdentityManager {
 			PersistentTask introductionTask = new IntroduceIdentityTask((WoTOwnIdentity)newIdentity);
 			mFreetalk.getTaskManager().storeTaskWithoutCommit(introductionTask);
 		}
+		
+		mShortestUniqueNicknameCacheNeedsUpdate = true;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -674,6 +651,8 @@ public final class WoTIdentityManager extends IdentityManager {
 			}
 			Thread.yield();
 		}
+		
+		
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -700,6 +679,9 @@ public final class WoTIdentityManager extends IdentityManager {
 			Logger.debug(this, "Garbage collecting identity " + identity);
 			deleteIdentity(identity, messageManager, taskManager);
 		}
+		
+		if(mShortestUniqueNicknameCacheNeedsUpdate)
+			updateShortestUniqueNicknameCache();
 		}
 	}
 	
@@ -724,6 +706,8 @@ public final class WoTIdentityManager extends IdentityManager {
 			}
 		}
 		}
+		
+		mShortestUniqueNicknameCacheNeedsUpdate = true;
 	}
 	
 	private synchronized boolean connectToWoT() {
@@ -758,6 +742,12 @@ public final class WoTIdentityManager extends IdentityManager {
 		long nextIdentityRequestTime = 0;
 		
 		Random random = mFreetalk.getPluginRespirator().getNode().fastWeakRandom;
+		
+		try {
+			updateShortestUniqueNicknameCache();
+		} catch(Exception e) {
+			Logger.error(this, "Initializing shortest unique nickname cache failed", e);
+		}
 		
 		try {
 		while(isRunning) {
@@ -824,4 +814,72 @@ public final class WoTIdentityManager extends IdentityManager {
 		Logger.debug(this, "Stopped.");
 	}
 
+	
+	@SuppressWarnings("unchecked")
+	private synchronized void updateShortestUniqueNicknameCache() {
+		// We don't use getAllIdentities() because we do not need to have intializeTransient() called on each identity, we only query strings anyway.
+		final Query q = db.query();
+		q.constrain(WoTIdentity.class);
+		ObjectSet<WoTIdentity> result = q.execute();
+		final WoTIdentity[] identities = result.toArray(new WoTIdentity[result.size()]);
+		
+		Arrays.sort(identities, new Comparator<WoTIdentity>() {
+
+			@Override
+			public int compare(WoTIdentity i1, WoTIdentity i2) {
+				return i1.getFreetalkAddress().compareTo(i2.getFreetalkAddress());
+			}
+			
+		});
+		
+		final String[] nicknames = new String[identities.length];
+		 
+		
+		for(int i=0; i < identities.length; ++i) {
+			nicknames[i] = identities[i].getNickname() + "@" + identities[i].getID().substring(0, 3);
+			// FIXME: Implement
+//			int maxLength = 10;
+//			int minLength = 1;
+//			int firstDuplicate = i;
+//			
+//			do {
+//				if(identities[i].getNickname().length() >= minLength)
+//					nicknames[i] = identities[i].getNickname(maxLength);
+//				else
+//					nicknames[i] = identities[i].getFreetalkAddress(maxLength);
+//			
+//				while((firstDuplicate-1) > 0) {
+//					if(nicknames[firstDuplicate-1].equalsIgnoreCase(nicknames[i])) {
+//						--firstDuplicate;
+//					}
+//				}
+//				
+//				++minLength;
+//				while(minLength > maxLength)
+//					++maxLength;
+//				
+//				
+//				
+//			} while(firstDuplicate != i);
+		}
+		
+		final Hashtable<String,String> newCache = new Hashtable<String, String>(identities.length * 2);
+		
+		for(int i = 0; i < identities.length; ++i)
+			newCache.put(identities[i].getID(), nicknames[i]);
+		
+		mShortestUniqueNicknameCache = newCache;
+		mShortestUniqueNicknameCacheNeedsUpdate = false;
+	}
+
+	@Override
+	public String getShortestUniqueName(FTIdentity identity) {
+		// We must not synchronize anything according to the specification of this function (to prevent deadlocks)
+		String nickname = mShortestUniqueNicknameCache.get(identity.getID());
+		
+		if(nickname == null)
+			nickname = identity.getFreetalkAddress();
+		
+		return nickname;
+	}
 }
