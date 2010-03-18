@@ -891,7 +891,7 @@ public final class FreetalkNNTPHandler implements Runnable {
      * byte sequence.
      */
     private ByteBuffer readLineBytes(final InputStream is) throws IOException {
-        ByteBuffer buf = ByteBuffer.allocate(Math.min(is.available(), 64*1024));
+        ByteBuffer buf = ByteBuffer.allocate(Math.max(4096, Math.min(is.available(), 64*1024)));
         int b;
         
         do {
