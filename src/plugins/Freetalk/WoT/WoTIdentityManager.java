@@ -821,8 +821,11 @@ public final class WoTIdentityManager extends IdentityManager {
 	}
 
 	
+	// TODO: This function should be a feature of WoT.
 	@SuppressWarnings("unchecked")
 	private synchronized void updateShortestUniqueNicknameCache() {
+		Logger.debug(this, "Updating shortest unique nickname cache...");
+		
 		// We don't use getAllIdentities() because we do not need to have intializeTransient() called on each identity, we only query strings anyway.
 		final Query q = db.query();
 		q.constrain(WoTIdentity.class);
@@ -833,40 +836,34 @@ public final class WoTIdentityManager extends IdentityManager {
 
 			@Override
 			public int compare(WoTIdentity i1, WoTIdentity i2) {
-				return i1.getFreetalkAddress().compareTo(i2.getFreetalkAddress());
+				return i1.getFreetalkAddress().compareToIgnoreCase(i2.getFreetalkAddress());
 			}
 			
 		});
 		
 		final String[] nicknames = new String[identities.length];
-		 
 		
 		for(int i=0; i < identities.length; ++i) {
-			nicknames[i] = identities[i].getNickname() + "@" + identities[i].getID().substring(0, 3);
-			// FIXME: Implement
-//			int maxLength = 10;
-//			int minLength = 1;
-//			int firstDuplicate = i;
-//			
-//			do {
-//				if(identities[i].getNickname().length() >= minLength)
-//					nicknames[i] = identities[i].getNickname(maxLength);
-//				else
-//					nicknames[i] = identities[i].getFreetalkAddress(maxLength);
-//			
-//				while((firstDuplicate-1) > 0) {
-//					if(nicknames[firstDuplicate-1].equalsIgnoreCase(nicknames[i])) {
-//						--firstDuplicate;
-//					}
-//				}
-//				
-//				++minLength;
-//				while(minLength > maxLength)
-//					++maxLength;
-//				
-//				
-//				
-//			} while(firstDuplicate != i);
+			nicknames[i] = identities[i].getNickname();
+			
+			int minLength = nicknames[i].length();
+			int firstDuplicate;
+			
+			do {
+				firstDuplicate = i;
+				
+				while((firstDuplicate-1) > 0 && nicknames[firstDuplicate-1].equalsIgnoreCase(nicknames[i])) {
+					--firstDuplicate;
+				}
+			
+				if(firstDuplicate < i) {
+					++minLength;
+					
+					for(int j=i; j >= firstDuplicate; --j) {
+						nicknames[j] = identities[j].getFreetalkAddress(minLength);
+					}
+				}
+			} while(firstDuplicate != i);
 		}
 		
 		final Hashtable<String,String> newCache = new Hashtable<String, String>(identities.length * 2);
@@ -876,6 +873,8 @@ public final class WoTIdentityManager extends IdentityManager {
 		
 		mShortestUniqueNicknameCache = newCache;
 		mShortestUniqueNicknameCacheNeedsUpdate = false;
+		
+		Logger.debug(this, "Finished updating shortest unique nickname cache.");
 	}
 
 	@Override

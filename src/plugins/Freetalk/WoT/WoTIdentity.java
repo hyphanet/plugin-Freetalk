@@ -105,10 +105,23 @@ public class WoTIdentity extends Persistent implements FTIdentity {
 		return mNickname + "@" + mID + "." + Freetalk.WOT_CONTEXT.toLowerCase();	
 	}
 	
-	protected String getFreetalkAddress(int maxLength) {
+	/**
+	 * Returns a Freetalk-address with a maximal content length.
+	 * The format will be "nickname@abbreviated_routing_key...", i.e. 3 dots will be appended if the length exceeds the maximal length.
+	 * The "@" and "..." are not included in the length computation - therefore its called maximal <b>content</b> length, not maximal length.
+	 * If the nickname does not fit in the maximal length it is NOT abbreviated, the full nickname is returned then.
+	 * 
+	 * The reason for this weird definition is to allow easy computation of nicknames which have a shortest unique length...
+	 * See {@link WoTIdentityManager.updateShortestUniqueNicknameCache} for how this is used.
+	 */
+	protected String getFreetalkAddress(int maxContentLength) {
 		final String address = getFreetalkAddress();
-		if(address.length() > maxLength) {
-			return address.substring(0, maxLength) + "...";
+		
+		if(getNickname().length() > maxContentLength)
+			return getNickname();
+		
+		if(address.length() > maxContentLength) {
+			return address.substring(0, maxContentLength+1) + "..."; // "+1" because the "@" does not count as length.
 		}
 		return address;
 	}

@@ -90,7 +90,7 @@ public final class IdentityEditor extends WebPageImpl {
 				continue;
 
 			row = identitiesTable.addChild("tr");
-			row.addChild("td", id.getNickname());
+			row.addChild("td", id.getShortestUniqueName());
 			row.addChild("td", id.getFreetalkAddress());
 			//HTMLNode deleteCell = row.addChild("td");
 			/* FIXME: repair, i.e. make it use the WoT plugin */
