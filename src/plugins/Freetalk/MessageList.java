@@ -62,7 +62,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		
 		private final Board mBoard;
 		
-		private boolean iWasDownloaded = false;
+		private boolean mWasDownloaded = false;
 		
 		static  {
 			registerIndexedFields(MessageList.class, new String[] { "mMessageID", "mBoard", "iWasDownloaded" });
@@ -128,15 +128,15 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		}
 		
 		public synchronized boolean wasMessageDownloaded() {
-			return iWasDownloaded;
+			return mWasDownloaded;
 		}
 		
 		/**
 		 * Marks the MessageReference as downloaded and stores the change in the database, without committing the transaction.
 		 */
 		public synchronized void setMessageWasDownloadedFlag() {
-			assert(iWasDownloaded == false);
-			iWasDownloaded = true;
+			assert(mWasDownloaded == false);
+			mWasDownloaded = true;
 			storeWithoutCommit();
 		}
 		
@@ -144,8 +144,8 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		 * Marks the MessageReference as not downloaded and stores the change in the database, without committing the transaction.
 		 */
 		public synchronized void clearMessageWasDownloadedFlag() {
-			assert(iWasDownloaded == true);
-			iWasDownloaded = false;
+			assert(mWasDownloaded == true);
+			mWasDownloaded = false;
 			storeWithoutCommit();
 		}
 
