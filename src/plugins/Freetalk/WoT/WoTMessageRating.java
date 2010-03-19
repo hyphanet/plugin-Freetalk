@@ -1,6 +1,7 @@
 package plugins.Freetalk.WoT;
 
 import plugins.Freetalk.MessageRating;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NotTrustedException;
 import freenet.support.Logger;
 
@@ -51,7 +52,7 @@ public final class WoTMessageRating extends MessageRating {
 	}
 
 	
-	private void addValueToWoTTrust(final byte value) {
+	private void addValueToWoTTrust(final byte value) throws NoSuchIdentityException {
 		final WoTIdentityManager identityManager = mFreetalk.getIdentityManager();
 		final WoTOwnIdentity rater = (WoTOwnIdentity)getRater();
 		final WoTIdentity messageAuthor = (WoTIdentity)getMessageAuthor();
@@ -60,6 +61,8 @@ public final class WoTMessageRating extends MessageRating {
 		
 		try {
 			trustValue = identityManager.getTrust(rater, messageAuthor);
+		} catch(NoSuchIdentityException e) {
+			throw e;
 		} catch (NotTrustedException e) {
 			trustValue = 0;
 		} catch (Exception e) {
@@ -75,23 +78,29 @@ public final class WoTMessageRating extends MessageRating {
 		
 		try {
 			identityManager.setTrust(rater, messageAuthor, trustValue, "Freetalk web interface");
+		} catch(NoSuchIdentityException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
 	
-	private void addValueToWoTTrust() {
+	private void addValueToWoTTrust() throws NoSuchIdentityException {
 		addValueToWoTTrust(mValue);
 	}
 	
-	private void substractValueFromWoTTrust() {
+	private void substractValueFromWoTTrust() throws NoSuchIdentityException {
 		addValueToWoTTrust((byte)-mValue);
 	}
 	
 	protected void storeAndCommit() {
 		synchronized(mDB.lock()) {
 			Logger.debug(this, "Storing rating " + this);
-			addValueToWoTTrust();
+			try {
+				addValueToWoTTrust();
+			} catch(NoSuchIdentityException e) {
+				throw new RuntimeException(e);
+			}
 		
 			try {
 				super.storeWithoutCommit();
@@ -99,7 +108,7 @@ public final class WoTMessageRating extends MessageRating {
 			} catch(RuntimeException e1) {
 				try {
 					substractValueFromWoTTrust();
-				} catch(RuntimeException e2) {
+				} catch(Exception e2) {
 					super.checkedRollbackAndThrow(
 					 new RuntimeException("Fatal error: The rating was stored in WoT, storing in Freetalk failed and removing in WoT again also failed!" +
 							"This means that you cannot remove the rating anymore using Freetalk." +
@@ -114,7 +123,12 @@ public final class WoTMessageRating extends MessageRating {
 	protected void deleteAndCommit() {
 		synchronized(mDB.lock()) {
 			Logger.debug(this, "Deleting rating " + this);
-			substractValueFromWoTTrust();
+			try {
+				substractValueFromWoTTrust();
+			} catch(NoSuchIdentityException e) {
+				// We must not throw an exception when the identity was deleted already for identity garbage collection to work properly
+				Logger.debug(this, "Not substracting rating from trust value: Identity was deleted already.");
+			}
 		
 			try {
 				super.deleteWithoutCommit();
@@ -122,6 +136,8 @@ public final class WoTMessageRating extends MessageRating {
 			} catch(RuntimeException e1) {
 				try {
 					addValueToWoTTrust();
+				} catch(NoSuchIdentityException e) {
+					Logger.error(this, "Deleting the MessageRating failed and re-adding the trust value also failed because the identity was deleted already.", e);
 				} catch(RuntimeException e2) {
 					super.checkedRollbackAndThrow(
 					 new RuntimeException("Fatal error: The rating was removed from WoT, deleting it in Freetalk failed and restoring the rating in WoT also failed!" +

@@ -118,8 +118,14 @@ public final class WoTIdentityManager extends IdentityManager {
 			throw new WoTDisconnectedException();
 		}
 		
-		if(result.params.get("Message").equals("Error"))
-			throw new Exception("FCP message " + result.params.get("OriginalMessage") + " failed: " + result.params.get("Description"));
+		if(result.params.get("Message").equals("Error")) {
+			final String description = result.params.get("Description");
+			
+			if(description.indexOf("UnknownIdentityException") >= 0)
+				throw new NoSuchIdentityException(description);
+			
+			throw new Exception("FCP message " + result.params.get("OriginalMessage") + " failed: " + description);
+		}
 		
 		if(result.params.get("Message").equals(expectedReplyMessage) == false)
 			throw new Exception("FCP message " + params.get("Message") + " received unexpected reply: " + result.params.get("Message"));
