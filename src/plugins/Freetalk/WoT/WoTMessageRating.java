@@ -2,6 +2,7 @@ package plugins.Freetalk.WoT;
 
 import plugins.Freetalk.MessageRating;
 import plugins.Freetalk.exceptions.NotTrustedException;
+import freenet.support.Logger;
 
 /**
  * A rating for a WoTMessage.
@@ -89,6 +90,7 @@ public final class WoTMessageRating extends MessageRating {
 	
 	protected void storeAndCommit() {
 		synchronized(mDB.lock()) {
+			Logger.debug(this, "Storing rating " + this);
 			addValueToWoTTrust();
 		
 			try {
@@ -111,6 +113,7 @@ public final class WoTMessageRating extends MessageRating {
 	
 	protected void deleteAndCommit() {
 		synchronized(mDB.lock()) {
+			Logger.debug(this, "Deleting rating " + this);
 			substractValueFromWoTTrust();
 		
 			try {
@@ -129,5 +132,13 @@ public final class WoTMessageRating extends MessageRating {
 				super.checkedRollbackAndThrow(e1);
 			}
 		}
+	}
+	
+	protected void storeWithoutCommit() {
+		throw new UnsupportedOperationException("Please use storeAndCommit()");
+	}
+	
+	protected void deleteWithoutCommit() {
+		throw new UnsupportedOperationException("Please use deleteAndCommit()");
 	}
 }
