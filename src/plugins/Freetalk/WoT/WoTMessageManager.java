@@ -358,7 +358,7 @@ public final class WoTMessageManager extends MessageManager {
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
 	
-	public WoTMessageRating rateMessage(WoTOwnIdentity rater, WoTMessage message, final byte value) {
+	public WoTMessageRating rateMessage(final WoTOwnIdentity rater, final WoTMessage message, final byte value) {
 		synchronized(mIdentityManager) {
 		synchronized(this) {
 			// We do not have to re-query the rater/message because MessageRating.storeWithout commit throws if they are not stored anymore
@@ -394,6 +394,20 @@ public final class WoTMessageManager extends MessageManager {
 			default: throw new DuplicateElementException("Duplicate rating from " + rater + " of " + message);
 		}
 	}
+	
+	public ObjectSet<WoTMessageRating> getAllMessageRatings(final Message message) {
+		final Query query = db.query();
+		query.constrain(WoTMessageRating.class);
+		query.descend("mMessage").constrain(message).identity();
+		return new Persistent.InitializingObjectSet<WoTMessageRating>(mFreetalk, query);
+	}
+	
+	public ObjectSet<? extends MessageRating> getAllMessageRatingsBy(FTOwnIdentity rater) {
+		final Query query = db.query();
+		query.constrain(WoTMessageRating.class);
+		query.descend("mRater").constrain(rater).identity();
+		return new Persistent.InitializingObjectSet<WoTMessageRating>(mFreetalk, query);
+	}
 
 	public void deleteMessageRating(final MessageRating rating) {
 		if(!(rating instanceof WoTMessageRating))
@@ -401,11 +415,9 @@ public final class WoTMessageManager extends MessageManager {
 		
 		final WoTMessageRating realRating = (WoTMessageRating)rating;
 		
-		synchronized(mIdentityManager) {
 		synchronized(this) {
 			realRating.initializeTransient(mFreetalk);
 			realRating.deleteAndCommit();
-		}
 		}
 	}
 	

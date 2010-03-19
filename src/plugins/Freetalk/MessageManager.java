@@ -198,7 +198,7 @@ public abstract class MessageManager implements Runnable {
 	}
 	
 	public void start() {
-		mPluginRespirator.getNode().executor.execute(this, "Freetalk " + this.getClass().getName());
+		mPluginRespirator.getNode().executor.execute(this, "Freetalk " + this.getClass().getSimpleName());
 		Logger.debug(this, "Started.");
 	}
 
@@ -278,12 +278,25 @@ public abstract class MessageManager implements Runnable {
 	 * Deletes any messages and message lists referencing to it and commits the transaction.
 	 */
 	public synchronized void onIdentityDeletion(FTIdentity identity) {
-
+		Logger.debug(this, "Deleting all objects of identity " + identity);
 		// We use multiple transactions here: We cannot acquire the db.lock() before board.deleteMessage because deleteMessage() synchronizes on board
 		// and therefore we must acquire the db.lock after synchronizing on each board.
 		// So the FIXME is: Add some mechanism similar to addMessagesToBoards()/synchronizeSubscribedBoards which handles half-deleted identities.
+		
+		if(identity instanceof FTOwnIdentity) {
+			final FTOwnIdentity ownId = (FTOwnIdentity)identity;
+			for(final MessageRating messageRating : getAllMessageRatingsBy(ownId)) {
+				// This does a single transaction and commits it.
+				deleteMessageRating(messageRating);
+			}
+		}
 				
 				for(Message message : getMessagesBy(identity)) {
+					for(MessageRating rating : getAllMessageRatings(message)) {
+						// This call does a full transaction.
+						deleteMessageRating(rating);
+					}
+					
 					for(Board board : message.getBoards()) {
 						synchronized(board) {
 						synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
@@ -348,11 +361,13 @@ public abstract class MessageManager implements Runnable {
 				}
 
 				if(identity instanceof FTOwnIdentity) {
-					for(OwnMessage message : getOwnMessagesBy((FTOwnIdentity)identity)) {
+					final FTOwnIdentity ownId = (FTOwnIdentity)identity;
+					
+					for(final OwnMessage message : getOwnMessagesBy(ownId)) {
 						message.deleteWithoutCommit();
 					}
 
-					for(OwnMessageList messageList : getOwnMessageListsBy((FTOwnIdentity)identity)) {
+					for(final OwnMessageList messageList : getOwnMessageListsBy(ownId)) {
 						messageList.deleteWithoutCommit();
 					}
 					
@@ -1245,6 +1260,10 @@ public abstract class MessageManager implements Runnable {
 	
 	
 	public abstract MessageRating getMessageRating(FTOwnIdentity rater, Message message) throws NoSuchMessageRatingException;
+	
+	public abstract ObjectSet<? extends MessageRating> getAllMessageRatings(Message message);
+	
+	public abstract ObjectSet<? extends MessageRating> getAllMessageRatingsBy(FTOwnIdentity rater);
 
 	public abstract void deleteMessageRating(final MessageRating rating);
 
