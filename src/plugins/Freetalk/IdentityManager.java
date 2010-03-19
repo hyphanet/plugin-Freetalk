@@ -6,7 +6,6 @@ package plugins.Freetalk;
 import java.util.Hashtable;
 import java.util.Iterator;
 
-import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 
 import com.db4o.ext.ExtObjectContainer;
@@ -88,7 +87,7 @@ public abstract class IdentityManager implements PrioRunnable {
 	}
 	
 	public void start() {
-		mExecutor.execute(this, "Freetalk " + this.getClass().getName());
+		mExecutor.execute(this, "Freetalk " + this.getClass().getSimpleName());
 		Logger.debug(this, "Started.");
 	}
 

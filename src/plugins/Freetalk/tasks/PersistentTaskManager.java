@@ -16,7 +16,6 @@ import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.support.CurrentTimeUTC;
-import freenet.support.Executor;
 import freenet.support.Logger;
 
 public class PersistentTaskManager implements Runnable {
@@ -76,7 +75,7 @@ public class PersistentTaskManager implements Runnable {
 	}
 	
 	public void start() {
-		mFreetalk.getPluginRespirator().getNode().executor.execute(this, "Freetalk " + this.getClass().getName());
+		mFreetalk.getPluginRespirator().getNode().executor.execute(this, "Freetalk " + this.getClass().getSimpleName());
 		Logger.debug(this, "Started.");
 	}
 	

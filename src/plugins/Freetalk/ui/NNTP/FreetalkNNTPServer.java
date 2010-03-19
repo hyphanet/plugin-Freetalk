@@ -51,7 +51,7 @@ public final class FreetalkNNTPServer implements Runnable {
 	}
 	
 	public void start() {
-		mFreetalk.getPluginRespirator().getNode().executor.execute(this, "Freetalk " + this.getClass().getName());
+		mFreetalk.getPluginRespirator().getNode().executor.execute(this, "Freetalk " + this.getClass().getSimpleName());
 		Logger.debug(this, "Started.");
 	}
 
