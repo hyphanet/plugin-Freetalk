@@ -65,7 +65,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		private boolean mWasDownloaded = false;
 		
 		static  {
-			registerIndexedFields(MessageList.class, new String[] { "mMessageID", "mBoard", "iWasDownloaded" });
+			registerIndexedFields(MessageList.class, new String[] { "mMessageID", "mBoard", "mWasDownloaded" });
 		}
 		
 		public MessageReference(String newMessageID, FreenetURI newURI, Board myBoard) {

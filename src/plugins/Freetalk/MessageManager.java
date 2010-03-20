@@ -1167,7 +1167,7 @@ public abstract class MessageManager implements Runnable {
 		query.constrain(MessageList.MessageReference.class);
 		query.constrain(OwnMessageList.OwnMessageReference.class).not();
 		query.descend("mBoard").descend("mHasSubscriptions").constrain(true);
-		query.descend("iWasDownloaded").constrain(false);
+		query.descend("mWasDownloaded").constrain(false);
 		/* FIXME: Order the message references randomly with some trick. */
 		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query.execute());		
 	}
