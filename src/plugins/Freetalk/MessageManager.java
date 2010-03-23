@@ -341,6 +341,7 @@ public abstract class MessageManager implements Runnable {
 							///re-download the message if the identity is not deleted.
 							for(MessageReference ref : getAllReferencesToMessage(message.getID())) {
 								ref.clearMessageWasDownloadedFlag();
+								ref.storeWithoutCommit();
 							}
 							
 							message.deleteWithoutCommit();
@@ -457,6 +458,7 @@ public abstract class MessageManager implements Runnable {
 						} catch(NoSuchFetchFailedMarkerException e1) { }
 						
 						ref.setMessageWasDownloadedFlag();
+						ref.storeWithoutCommit();
 					}
 
 					message.checkedCommit(this);
@@ -625,18 +627,14 @@ public abstract class MessageManager implements Runnable {
 						Date dateOfNextRetry = calculateDateOfNextMessageFetchRetry(failedMarker.getReason(), date, failedMarker.getNumberOfRetries());
 						failedMarker.setDate(date);
 						failedMarker.setDateOfNextRetry(dateOfNextRetry);
-						
-						if(!ref.wasMessageDownloaded()) {
-							Logger.error(this, "There was a MessageFetchFailedMarker but the message was not marked as downloaded: " + failedMarker);
-							ref.setMessageWasDownloadedFlag();
-						}
 					} catch(NoSuchFetchFailedMarkerException e1) {
 						Date dateOfNextRetry = calculateDateOfNextMessageFetchRetry(reason, date, 0);
 						failedMarker = new MessageList.MessageFetchFailedMarker(ref, reason, date, dateOfNextRetry);
 						failedMarker.initializeTransient(mFreetalk);
-						ref.setMessageWasDownloadedFlag();
 					}
 					
+					ref.setMessageWasDownloadedFlag();
+					ref.storeWithoutCommit();
 					failedMarker.storeWithoutCommit();
 				
 					
@@ -740,6 +738,7 @@ public abstract class MessageManager implements Runnable {
 						MessageFetchFailedMarker m = (MessageFetchFailedMarker)marker;
 						MessageReference ref = m.getMessageReference();
 						ref.clearMessageWasDownloadedFlag();
+						ref.storeWithoutCommit();
 					} else if(marker instanceof MessageListFetchFailedMarker) {
 						MessageListFetchFailedMarker m = (MessageListFetchFailedMarker)marker;
 						try {

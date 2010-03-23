@@ -137,7 +137,6 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		public synchronized void setMessageWasDownloadedFlag() {
 			assert(mWasDownloaded == false);
 			mWasDownloaded = true;
-			storeWithoutCommit();
 		}
 		
 		/**
@@ -146,7 +145,6 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		public synchronized void clearMessageWasDownloadedFlag() {
 			assert(mWasDownloaded == true);
 			mWasDownloaded = false;
-			storeWithoutCommit();
 		}
 
 		public MessageList getMessageList() {
