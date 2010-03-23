@@ -625,15 +625,20 @@ public abstract class MessageManager implements Runnable {
 						Date dateOfNextRetry = calculateDateOfNextMessageFetchRetry(failedMarker.getReason(), date, failedMarker.getNumberOfRetries());
 						failedMarker.setDate(date);
 						failedMarker.setDateOfNextRetry(dateOfNextRetry);
+						
+						if(!ref.wasMessageDownloaded()) {
+							Logger.error(this, "There was a MessageFetchFailedMarker but the message was not marked as downloaded: " + failedMarker);
+							ref.setMessageWasDownloadedFlag();
+						}
 					} catch(NoSuchFetchFailedMarkerException e1) {
 						Date dateOfNextRetry = calculateDateOfNextMessageFetchRetry(reason, date, 0);
 						failedMarker = new MessageList.MessageFetchFailedMarker(ref, reason, date, dateOfNextRetry);
 						failedMarker.initializeTransient(mFreetalk);
+						ref.setMessageWasDownloadedFlag();
 					}
 					
 					failedMarker.storeWithoutCommit();
 				
-					ref.setMessageWasDownloadedFlag();
 					
 					Logger.normal(this, "Marked message as download failed with reason " + reason + " (next retry is at " + failedMarker.getDateOfNextRetry()
 							+ ", number of retries: " + failedMarker.getNumberOfRetries() + "): "
