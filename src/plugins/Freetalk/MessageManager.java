@@ -440,39 +440,47 @@ public abstract class MessageManager implements Runnable {
 	public abstract void onMessageListInsertFailed(FreenetURI uri, boolean collision) throws NoSuchMessageListException;
 	
 	public synchronized void onMessageReceived(Message message) {
+		boolean wasDownloadedAlready;
 		try {
 			get(message.getID());
-			Logger.debug(this, "Downloaded a message which we already have: " + message.getURI());
+			wasDownloadedAlready = true;
+			Logger.error(this, "Downloaded a message which we already have: " + message.getURI());
 		}
 		catch(NoSuchMessageException e) {
-			
-			synchronized(db.lock()) {
-				try {
+			wasDownloadedAlready = false;
+		}
+		
+		synchronized(db.lock()) {
+			try {
+				if(!wasDownloadedAlready) {
 					message.initializeTransient(mFreetalk);
 					message.storeWithoutCommit();
-
-					for(MessageReference ref : getAllReferencesToMessage(message.getID())) {
-						try {
-							getMessageFetchFailedMarker(ref).deleteWithoutCommit();
-							Logger.normal(this, "Deleted a FetchFailedMarker for the message.");
-						} catch(NoSuchFetchFailedMarkerException e1) { }
-						
-						ref.setMessageWasDownloadedFlag();
-						ref.storeWithoutCommit();
-					}
-
-					message.checkedCommit(this);
 				}
-				catch(Exception ex) {
-					Persistent.checkedRollback(db, this, e);
+				
+				// We also try to mark the message as downloaded if it was fetched already to ensure that its not being fetched over and over again.
+				// TODO: Change the message list downloading code to check whethe messages were downloaded already when importing the lists...
+
+				for(MessageReference ref : getAllReferencesToMessage(message.getID())) {
+					try {
+						getMessageFetchFailedMarker(ref).deleteWithoutCommit();
+						Logger.normal(this, "Deleted a FetchFailedMarker for the message.");
+					} catch(NoSuchFetchFailedMarkerException e1) { }
+					
+					ref.setMessageWasDownloadedFlag();
+					ref.storeWithoutCommit();
 				}
+
+				Persistent.checkedCommit(db, this);
 			}
-			
-			// TODO: Instead of calling it immediately, schedule it to be executed in a few seconds. So if we receive a bunch of messages at once, they'll
-			// be bulk-added.
-			if(addMessagesToBoards())
-				synchronizeSubscribedBoards();
+			catch(Exception ex) {
+				Persistent.checkedRollback(db, this, ex);
+			}
 		}
+		
+		// TODO: Instead of calling it immediately, schedule it to be executed in a few seconds. So if we receive a bunch of messages at once, they'll
+		// be bulk-added.
+		if(addMessagesToBoards())
+			synchronizeSubscribedBoards();
 	}
 	
 	/**
@@ -610,7 +618,7 @@ public abstract class MessageManager implements Runnable {
 	public synchronized void onMessageFetchFailed(MessageReference messageReference, FetchFailedMarker.Reason reason) {
 		try {
 			get(messageReference.getMessageID());
-			Logger.debug(this, "Trying to mark a message as 'downlod failed' which we actually have: " + messageReference.getURI());
+			Logger.debug(this, "Trying to mark a message as 'download failed' which we actually have: " + messageReference.getURI());
 		}
 		catch(NoSuchMessageException e) {
 			synchronized(db.lock()) {

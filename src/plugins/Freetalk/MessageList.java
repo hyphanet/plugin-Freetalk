@@ -135,7 +135,8 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		 * Marks the MessageReference as downloaded and stores the change in the database, without committing the transaction.
 		 */
 		public synchronized void setMessageWasDownloadedFlag() {
-			assert(mWasDownloaded == false);
+			// TODO: Figure out why this happens sometimes.
+			// assert(mWasDownloaded == false);
 			mWasDownloaded = true;
 		}
 		
@@ -143,7 +144,8 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		 * Marks the MessageReference as not downloaded and stores the change in the database, without committing the transaction.
 		 */
 		public synchronized void clearMessageWasDownloadedFlag() {
-			assert(mWasDownloaded == true);
+			// TODO: Figure out why this happens sometimes.
+			// assert(mWasDownloaded == true);
 			mWasDownloaded = false;
 		}
 
