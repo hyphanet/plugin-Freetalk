@@ -617,6 +617,10 @@ public final class WebInterface {
 	private FTOwnIdentity getLoggedInOwnIdentity(ToadletContext context) throws RedirectException {
 		try {
 			Session session = mSessionManager.useSession(context);
+			
+			if(session == null)
+				throw new RedirectException(logIn);
+			
 			return mFreetalk.getIdentityManager().getOwnIdentity(session.getUserID());
 		} catch(NoSuchIdentityException e) { // Should not happen.
 			throw new RuntimeException(e);
