@@ -76,6 +76,7 @@
 				<pathelement location="${junit.location}"/>
 			</classpath>
 
+			<assertions><enable/></assertions>
 			<formatter type="plain" usefile="false"/>
 
 			<batchtest fork="yes">
