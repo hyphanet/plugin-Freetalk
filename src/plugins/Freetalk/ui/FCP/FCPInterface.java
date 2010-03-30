@@ -568,7 +568,7 @@ public final class FCPInterface implements FredPluginFCP {
      *   Nickname=name
      *   FreetalkAddress=freetalkAddr
      */
-    // FIXME: remove before release, exposes ALL own identities!
+    // TODO: Require some kind of authentication.
     private void handleListOwnIdentities(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException
     {
@@ -788,6 +788,19 @@ public final class FCPInterface implements FredPluginFCP {
         synchronized(mFreetalk.getMessageManager()) {
 
             try {
+            	
+                // evaluate parentThread
+                final String parentThreadID = params.get("ParentThreadID"); // may be null
+                final Message parentThread;
+                if(parentThreadID != null) {
+                    try {
+                        parentThread = mFreetalk.getMessageManager().get(parentThreadID);
+                    } catch(final NoSuchMessageException e) {
+                        throw new InvalidParameterException("Message specified by ParentThreadID was not found");
+                    }
+                } else {
+                	parentThread = null;
+                }
                 
                 // evaluate parentMessage
                 final String parentMsgId = params.get("ParentID"); // may be null
@@ -833,10 +846,6 @@ public final class FCPInterface implements FredPluginFCP {
                         throw new InvalidParameterException("ReplyToBoard is not contained in TargetBoards");
                     }
                 }
-                
-                // evaluate parentThread
-                final String parentThreadID = params.get("ParentThreadID"); // may be null
-                // FIXME: implement! Currently, all replies to forked threads will go to the original thread!
 
                 // evaluate authorIdentity
                 final String authorIdentityIDString = getMandatoryParameter(params, "AuthorIdentityID");
@@ -898,7 +907,7 @@ public final class FCPInterface implements FredPluginFCP {
                 final String messageText = new String(utf8Bytes, "UTF-8");
 
                 // post new message
-                mFreetalk.getMessageManager().postMessage(parentMessage.isThread() ? parentMessage.getURI() : parentMessage.getThreadURI(),
+                mFreetalk.getMessageManager().postMessage(parentThread.getURI(),
                         parentMessage,
                         targetBoards,
                         replyToBoard,
@@ -960,7 +969,7 @@ public final class FCPInterface implements FredPluginFCP {
      *   OriginalMessage=msg or null
      *   Description=msg or null
      *
-     * FIXME: provide numerical return codes for all possible error messages (Board not found,...)
+     * TODO: provide numerical return codes for all possible error messages (Board not found,...)
      */
     private SimpleFieldSet errorMessageFCP(final String originalMessage, final Exception e) {
 
