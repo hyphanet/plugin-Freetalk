@@ -272,6 +272,70 @@ public abstract class MessageManager implements Runnable {
 		return unsentCount;
 	}
 	
+	private synchronized void deleteMessage(Message message) {
+		for(MessageRating rating : getAllMessageRatings(message)) {
+			// This call does a full transaction.
+			deleteMessageRating(rating);
+		}
+		
+		for(Board board : message.getBoards()) {
+			synchronized(board) {
+			synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
+			synchronized(db.lock()) {
+			try {
+				board.deleteMessage(message);
+				message.setLinkedIn(false);
+				message.storeAndCommit();
+			} catch (NoSuchMessageException e) {
+				// The message was not added to the board yet, this is normal
+			} catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(db, this, e);
+			}
+			}
+			}
+			}
+			
+			for(SubscribedBoard subscribedBoard : subscribedBoardIterator(board.getName())) {
+				synchronized(subscribedBoard) {
+				synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
+				synchronized(db.lock()) {
+				try {
+					subscribedBoard.deleteMessage(message);
+					db.commit(); Logger.debug(this, "COMMITED.");
+				} catch (NoSuchMessageException e) {
+					// The message was not added to the board yet, this is normal
+				} catch(RuntimeException e) {
+					Persistent.checkedRollbackAndThrow(db, this, e);
+				}
+				}
+				}
+				}
+			}
+			
+		}
+
+		synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
+		synchronized(db.lock()) {	
+			try {
+				// Clear the "message was downloaded" flags of the references to this message.
+				// This is necessary because the following transaction (deletion of the message lists of the identity) might fail and we should
+				///re-download the message if the identity is not deleted.
+				for(MessageReference ref : getAllReferencesToMessage(message.getID())) {
+					ref.clearMessageWasDownloadedFlag();
+					ref.storeWithoutCommit();
+				}
+				
+				message.deleteWithoutCommit();
+				
+				db.commit(); Logger.debug(this, "COMMITED.");
+			}
+			catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(db, this, e);
+			}
+		}
+		}
+	}
+	
 	/**
 	 * Called by the {@link IdentityManager} before an identity is deleted from the database.
 	 * 
@@ -292,67 +356,7 @@ public abstract class MessageManager implements Runnable {
 		}
 				
 				for(Message message : getMessagesBy(identity)) {
-					for(MessageRating rating : getAllMessageRatings(message)) {
-						// This call does a full transaction.
-						deleteMessageRating(rating);
-					}
-					
-					for(Board board : message.getBoards()) {
-						synchronized(board) {
-						synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
-						synchronized(db.lock()) {
-						try {
-							board.deleteMessage(message);
-							message.setLinkedIn(false);
-							message.storeAndCommit();
-						} catch (NoSuchMessageException e) {
-							// The message was not added to the board yet, this is normal
-						} catch(RuntimeException e) {
-							Persistent.checkedRollbackAndThrow(db, this, e);
-						}
-						}
-						}
-						}
-						
-						for(SubscribedBoard subscribedBoard : subscribedBoardIterator(board.getName())) {
-							synchronized(subscribedBoard) {
-							synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
-							synchronized(db.lock()) {
-							try {
-								subscribedBoard.deleteMessage(message);
-								db.commit(); Logger.debug(this, "COMMITED.");
-							} catch (NoSuchMessageException e) {
-								// The message was not added to the board yet, this is normal
-							} catch(RuntimeException e) {
-								Persistent.checkedRollbackAndThrow(db, this, e);
-							}
-							}
-							}
-							}
-						}
-						
-					}
-
-					synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
-					synchronized(db.lock()) {	
-						try {
-							// Clear the "message was downloaded" flags of the references to this message.
-							// This is necessary because the following transaction (deletion of the message lists of the identity) might fail and we should
-							///re-download the message if the identity is not deleted.
-							for(MessageReference ref : getAllReferencesToMessage(message.getID())) {
-								ref.clearMessageWasDownloadedFlag();
-								ref.storeWithoutCommit();
-							}
-							
-							message.deleteWithoutCommit();
-							
-							db.commit(); Logger.debug(this, "COMMITED.");
-						}
-						catch(RuntimeException e) {
-							Persistent.checkedRollbackAndThrow(db, this, e);
-						}
-					}
-					}
+					deleteMessage(message);
 				}
 
 		synchronized(db.lock()) {
