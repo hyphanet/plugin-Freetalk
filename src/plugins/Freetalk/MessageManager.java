@@ -301,7 +301,7 @@ public abstract class MessageManager implements Runnable {
 				synchronized(db.lock()) {
 				try {
 					subscribedBoard.deleteMessage(message);
-					db.commit(); Logger.debug(this, "COMMITED.");
+					subscribedBoard.checkedCommit(this);
 				} catch (NoSuchMessageException e) {
 					// The message was not added to the board yet, this is normal
 				} catch(RuntimeException e) {
@@ -326,8 +326,7 @@ public abstract class MessageManager implements Runnable {
 				}
 				
 				message.deleteWithoutCommit();
-				
-				db.commit(); Logger.debug(this, "COMMITED.");
+				message.checkedCommit(this);
 			}
 			catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(db, this, e);
