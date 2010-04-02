@@ -519,8 +519,7 @@ public abstract class MessageManager implements Runnable {
 					}
 					catch(Exception e) {
 						allSuccessful = false;
-						Persistent.checkedRollback(db, this, e);
-						break;
+						Persistent.checkedRollback(db, this, e);			
 					}
 				}
 				}
@@ -534,9 +533,6 @@ public abstract class MessageManager implements Runnable {
 					message.storeAndCommit();
 				}
 				}
-			} else {
-				Logger.error(this, "Deleting a message because adding it to a board failed: " + message);
-				deleteMessage(message);
 			}
 		}
 		
