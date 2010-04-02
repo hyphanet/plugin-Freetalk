@@ -691,7 +691,7 @@ public final class WoTIdentityManager extends IdentityManager {
 		}
 	}
 	
-	private void deleteIdentity(WoTIdentity identity, MessageManager messageManager, PersistentTaskManager taskManager) {
+	private synchronized void deleteIdentity(WoTIdentity identity, MessageManager messageManager, PersistentTaskManager taskManager) {
 		identity.initializeTransient(mFreetalk);
 		
 		messageManager.onIdentityDeletion(identity);
