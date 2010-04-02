@@ -102,26 +102,49 @@ public abstract class MessageManager implements Runnable {
 	/**
 	 * Called during startup to delete objects from the database which lack required information, such as messages with mAuthor == null.
 	 * This is only a workaround until we find the reason of their existence.
+	 * 
+	 * This function MUST NOT be executed when any other threads could have accessed the MessageManager already:
+	 * It does not do proper locking of the involved boards.
 	 */
-	@SuppressWarnings("unchecked")
 	private synchronized void deleteBrokenObjects() {
 		Logger.debug(this, "Looking for broken Message objects...");
 		Query q = db.query();
 		q.constrain(Message.class);
 		q.descend("mAuthor").constrain(null).identity();
-	
-		for(Message message : (ObjectSet<Message>) q.execute()) {
-			try {
-				synchronized(message) {
-				synchronized(db.lock()) {
-					message.initializeTransient(mFreetalk);
-					Logger.error(this, "Deleting Message with mAuthor == null: " + message);
+		
+		for(Message message : new Persistent.InitializingObjectSet<Message>(mFreetalk, q)) {
+			synchronized(db.lock()) {
+				Logger.error(this, "Deleting Message with mAuthor == null: " + message);
+				
+				try {
+					for(MessageRating rating : getAllMessageRatings(message)) {
+						deleteMessageRating(rating);
+					}
+					
+					for(Board board : message.getBoards()) {
+						try {
+							board.deleteMessage(message);
+							board.storeWithoutCommit();
+						} catch(NoSuchMessageException e) { }
+										
+						for(SubscribedBoard subscribedBoard : subscribedBoardIterator(board.getName())) {
+							try {
+								subscribedBoard.deleteMessage(message);
+								subscribedBoard.checkedCommit(this);
+							} catch (NoSuchMessageException e) { }
+						}
+					}
+					
+					for(MessageReference ref : getAllReferencesToMessage(message.getID())) {
+						ref.clearMessageWasDownloadedFlag();
+						ref.storeWithoutCommit();
+					}
+
 					message.deleteWithoutCommit();
 					message.checkedCommit(this);
+				} catch(Exception e) {
+					Persistent.checkedRollback(db, this, e);
 				}
-				}
-			} catch(Exception e) {
-				Persistent.checkedRollback(db, this, e);
 			}
 		}
 		
@@ -132,14 +155,17 @@ public abstract class MessageManager implements Runnable {
 		q.constrain(MessageList.class);
 		q.descend("mAuthor").constrain(null).identity();
 		
-		for(MessageList list : (ObjectSet<MessageList>) q.execute()) {
-			try {
-				list.initializeTransient(mFreetalk);
+		for(MessageList list : new Persistent.InitializingObjectSet<MessageList>(mFreetalk, q)) {
+			synchronized(db.lock()) {
 				Logger.error(this, "Deleting MessageList with mAuthor == null: " + list);
-				list.deleteWithoutCommit();
-				list.checkedCommit(this);
-			} catch(Exception e) {
-				Persistent.checkedRollback(db, this, e);
+				
+				try {
+					// We don't use deleteMessageList because it could fail for broken MessageList objects.
+					list.deleteWithoutCommit();
+					list.checkedCommit(this);
+				} catch(Exception e) {
+					Persistent.checkedRollback(db, this, e);
+				}
 			}
 		}
 		Logger.debug(this, "Finished looking for broken MessageList objects.");
