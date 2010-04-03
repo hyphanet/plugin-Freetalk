@@ -143,6 +143,8 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		WoTMessage message = WoTMessage.construct(myList, myRealURI, myURI.getMessageID(), myThreadURI, myParentURI,
 				mBoards, mBoards.iterator().next(),  author, "message " + myUUID, CurrentTimeUTC.get(), "message body " + myUUID, null);
 		
+		message.initializeTransient(mFreetalk);
+		
 		return message;
 	}
 	
