@@ -524,13 +524,11 @@ public abstract class MessageManager implements Runnable {
 		q.constrain(Message.class);
 		q.descend("mWasLinkedIn").constrain(false);
 		q.constrain(OwnMessage.class).not();
-		ObjectSet<Message> invisibleMessages = q.execute();
+		ObjectSet<Message> invisibleMessages = new Persistent.InitializingObjectSet<Message>(mFreetalk, q);
 		
 		boolean addedMessages = false;
 		
 		for(Message message : invisibleMessages) {
-			message.initializeTransient(mFreetalk);
-			
 			boolean allSuccessful = true;
 			
 			for(Board board : message.getBoards()) {
