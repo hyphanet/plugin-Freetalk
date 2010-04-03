@@ -32,6 +32,10 @@ import freenet.keys.FreenetURI;
  * able to guess the URIs of new message lists), so the message lists are signed already and there is no need anymore to sign the messages, 
  * therefore messages can be inserted as CHK.
  * 
+ * Activation policy: Class WoTMessage does automatic activation on its own.
+ * This means that objects of class WoTMessage can be activated to a depth of only 1 when querying them from the database.
+ * All methods automatically activate the object to any needed higher depth.
+ * 
  * @author xor
  */
 public final class WoTMessage extends Message {
@@ -62,7 +66,7 @@ public final class WoTMessage extends Message {
 	
 	@Override
 	public WoTMessageURI getURI() { /* Not synchronized because only OwnMessage might change the URI */
-		return (WoTMessageURI)mURI;
+		return (WoTMessageURI)super.getURI();
 	}
 
 }

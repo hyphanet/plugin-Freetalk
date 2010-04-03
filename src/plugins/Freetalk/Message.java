@@ -11,9 +11,6 @@ import java.util.Set;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
-
-import com.db4o.ext.ExtObjectContainer;
-
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
@@ -24,7 +21,11 @@ import freenet.support.StringValidityChecker;
  * A Freetalk message. This class is supposed to be used by the UI directly for reading messages. The UI can obtain message objects by querying
  * them from a <code>MessageManager</code>. A message has the usual attributes (author, boards to which it is posted, etc.) one would assume.
  * There are two unique ways to reference a message: It's URI and it's message ID. The URI is to be given to the user if he wants to tell other
- * people about the message, the message ID is to be used for querying the database for a message in a fast way. 
+ * people about the message, the message ID is to be used for querying the database for a message in a fast way.
+ * 
+ * Activation policy: Class Message does automatic activation on its own.
+ * This means that objects of class Message can be activated to a depth of only 1 when querying them from the database.
+ * All methods automatically activate the object to any needed higher depth.
  * 
  * @author xor (xor@freenetproject.org)
  * @author saces
@@ -231,6 +232,10 @@ public abstract class Message extends Persistent {
 	 * Get the URI of the message.
 	 */
 	public MessageURI getURI() { /* Not synchronized because only OwnMessage might change the URI */
+		checkedActivate(3); // It's likely that the URI will be used so we fully activate it.
+		assert(mURI != null);
+		
+		mURI.initializeTransient(mFreetalk);
 		return mURI;
 	}
 	
@@ -238,6 +243,9 @@ public abstract class Message extends Persistent {
 	 * Gets the FreenetURI where this message is actually stored, i.e. the CHK URI of the message.
 	 */
 	protected FreenetURI getRealURI() {
+		checkedActivate(2);
+		assert(mRealURI != null);
+		
 		return mRealURI;
 	}
 
@@ -246,6 +254,9 @@ public abstract class Message extends Persistent {
 	}
 	
 	public synchronized MessageList getMessageList() {
+		checkedActivate(2);
+		assert(mMessageList != null);
+		
 		mMessageList.initializeTransient(mFreetalk);
 		return mMessageList;
 	}
@@ -255,6 +266,8 @@ public abstract class Message extends Persistent {
 	 * @throws NoSuchMessageException 
 	 */
 	public synchronized MessageURI getThreadURI() throws NoSuchMessageException {
+		checkedActivate(2);
+		
 		if(mThreadURI == null)
 			throw new NoSuchMessageException();
 		
@@ -272,6 +285,8 @@ public abstract class Message extends Persistent {
 	 * @throws NoSuchMessageException If the message is a thread itself.
 	 */
 	public synchronized String getThreadID() throws NoSuchMessageException {
+		// checkedActivate(1);
+		
 		if(mThreadID == null)
 			throw new NoSuchMessageException();
 		
@@ -282,13 +297,18 @@ public abstract class Message extends Persistent {
 	 * Get the MessageURI to which this message is a reply. Null if the message is a thread.
 	 */
 	public MessageURI getParentURI() throws NoSuchMessageException {
+		checkedActivate(3); // It's likely that the URI will be used so we fully activate it.
+		
 		if(mParentURI == null)
 			throw new NoSuchMessageException();
 		
+		mParentURI.initializeTransient(mFreetalk);
 		return mParentURI;
 	}
 	
 	public String getParentID() throws NoSuchMessageException {
+		// checkedActivate(1);
+		
 		if(mParentID == null)
 			throw new NoSuchMessageException();
 		
@@ -300,6 +320,8 @@ public abstract class Message extends Persistent {
 	 * specify the URI of a parent message it is still a thread if there is no parent thread URI!
 	 */
 	public boolean isThread() {
+		checkedActivate(2);
+		
 		return mThreadURI == null;
 	}
 	
@@ -308,12 +330,19 @@ public abstract class Message extends Persistent {
 	 * The transient fields of the returned boards are initialized already.
 	 */
 	public Board[] getBoards() {
+		checkedActivate(2);
+		assert(mBoards != null);
+		
 		for(Board b : mBoards)
 			b.initializeTransient(mFreetalk);
 		return mBoards;
 	}
 	
 	public Board getReplyToBoard() {
+		checkedActivate(2);
+		assert(mReplyToBoard != null);
+		
+		mReplyToBoard.initializeTransient(mFreetalk);
 		return mReplyToBoard;
 	}
 
@@ -321,6 +350,9 @@ public abstract class Message extends Persistent {
 	 * Get the author of the message.
 	 */
 	public FTIdentity getAuthor() {
+		checkedActivate(2);
+		assert(mAuthor != null);
+		
 		if(mAuthor instanceof Persistent) {
 			Persistent author = (Persistent)mAuthor;
 			author.initializeTransient(mFreetalk);
@@ -332,6 +364,9 @@ public abstract class Message extends Persistent {
 	 * Get the title of the message.
 	 */
 	public String getTitle() {
+		// checkedActivate(1);
+		assert(mTitle != null);
+		
 		return mTitle;
 	}
 	
@@ -339,6 +374,9 @@ public abstract class Message extends Persistent {
 	 * Get the date when the message was written in <strong>UTC time</strong>.
 	 */
 	public Date getDate() {
+		// checkedActivate(1);
+		assert(mDate != null);
+		
 		return mDate;
 	}
 	
@@ -346,6 +384,9 @@ public abstract class Message extends Persistent {
 	 * Get the date when the message was fetched by Freetalk.
 	 */
 	public Date getFetchDate() {
+		// checkedActivate(1);
+		assert(mFetchDate != null);
+		
 		return mFetchDate;
 	}
 
@@ -353,7 +394,9 @@ public abstract class Message extends Persistent {
 	 * Get the text of the message.
 	 */
 	public String getText() {
-		checkedActivate(3); // FIXME: We currently have a bug which makes the message bodies get lost in inserted messages. Does this fix it?
+		// checkedActivate(1);
+		assert(mText != null);
+		
 		return mText;
 	}
 	
@@ -362,6 +405,7 @@ public abstract class Message extends Persistent {
 	 */
 	public Attachment[] getAttachments() {
 		checkedActivate(3);
+		
 		return mAttachments;
 	}
 	
@@ -374,10 +418,12 @@ public abstract class Message extends Persistent {
 	 * @throws NoSuchMessageException If the parent thread of this message was not downloaded yet.
 	 */
 	public synchronized Message getThread() throws NoSuchMessageException {
-		/* TODO: Find all usages of this function and check whether we should put the activate() here and what the fitting depth is */
-		checkedActivate(3);
+		/* TODO: Find all usages of this function and check whether we might want to use a higher depth here */
+		checkedActivate(2);
+		
 		if(mThread == null)
 			throw new NoSuchMessageException();
+		
 		mThread.initializeTransient(mFreetalk);
 		return mThread;
 	}
@@ -385,7 +431,7 @@ public abstract class Message extends Persistent {
 	public synchronized void setThread(Message newParentThread) {
 		assert(mThread == null);
 		
-		if(!newParentThread.getID().equals(mThreadID))
+		if(!newParentThread.getID().equals(mThreadID)) // mThreadID needs no activation
 			throw new IllegalArgumentException("Trying to set a message as thread which has the wrong ID: " + newParentThread.getID());
 		
 		mThread = newParentThread;
@@ -396,20 +442,23 @@ public abstract class Message extends Persistent {
 	 * Get the message to which this message is a reply. The transient fields of the returned message will be initialized already.
 	 */
 	public synchronized Message getParent() throws NoSuchMessageException {
-		/* TODO: Find all usages of this function and check whether we should put the activate() here and what the fitting depth is */
-		checkedActivate(3);
+		/* TODO: Find all usages of this function and check whether we might want to use a higher depth here */
+		checkedActivate(2);
+		
 		if(mParent == null)
 			throw new NoSuchMessageException();
+		
 		mParent.initializeTransient(mFreetalk);
 		return mParent;
 	}
 
 	public synchronized void setParent(Message newParent)  {
-		if(!newParent.getID().equals(mParentID))
+		assert(mParent == null);
+		
+		if(!newParent.getID().equals(mParentID)) // mParentID needs no activation
 			throw new IllegalArgumentException("Trying to set a message as parent which has the wrong ID: " + newParent.getID());
 		
 		mParent = newParent;
-		
 		storeWithoutCommit();
 	}
 	
@@ -419,6 +468,7 @@ public abstract class Message extends Persistent {
 	 * 
 	 */
 	protected synchronized boolean wasLinkedIn() {
+		// checkedActivate(1);
 		return mWasLinkedIn;
 	}
 	
@@ -671,7 +721,7 @@ public abstract class Message extends Persistent {
 	
 	public void storeWithoutCommit() {
 		try {
-			checkedActivate(3); // TODO: Figure out a suitable depth.
+			checkedActivate(3); // 3 is the maximum depth of all getter functions. You have to adjust this when adding new members.
 			
 			for(Board board : mBoards)
 				throwIfNotStored(board);
@@ -743,7 +793,7 @@ public abstract class Message extends Persistent {
 	public boolean equals(Object obj) {
     	if(obj instanceof Message) {
     		Message otherMessage = (Message)obj;
-    		return mID.equals(otherMessage.getID());
+    		return mID.equals(otherMessage.getID()); // mID needs no activation
     	} else
     		return false;
 	}
