@@ -70,7 +70,12 @@ public abstract class OwnMessageList extends MessageList {
 		return mMessages.size();
 	}
 
-	protected abstract boolean fitsIntoContainer();
+	protected boolean fitsIntoContainer() {
+		if(getMessageCount() > MAX_MESSAGES_PER_MESSAGELIST)
+			return false;
+		
+		return true;
+	}
 	
 	/**
 	 * Stores this OwnMessageList in the database without committing the transaction.

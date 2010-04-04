@@ -6,6 +6,7 @@ package plugins.Freetalk;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -33,6 +34,9 @@ import freenet.support.Logger;
  * - There should be a limit to a certain maximal amount of boards a message can be posted to.
  */
 public abstract class MessageList extends Persistent implements Iterable<MessageList.MessageReference> {
+	
+	public static final int MAX_MESSAGES_PER_MESSAGELIST = 256;
+	
 	
 	protected String mID; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
 	
@@ -219,18 +223,42 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	 * @throws InvalidParameterException
 	 * @throws NoSuchIdentityException
 	 */
-	public MessageList(FTIdentity myAuthor, FreenetURI myURI, List<MessageReference> newMessages) throws InvalidParameterException, NoSuchIdentityException {
+	public MessageList(final FTIdentity myAuthor, final FreenetURI myURI, final List<MessageReference> newMessages)
+		throws InvalidParameterException, NoSuchIdentityException {
+		
 		this(myAuthor, myURI, new ArrayList<MessageReference>(newMessages));
 		
 		if(mMessages.size() < 1)
 			throw new IllegalArgumentException("Trying to construct a message list with no messages.");
 		
-		Hashtable<String, FreenetURI> messageURIs = new Hashtable<String, FreenetURI>(newMessages.size());
+		// We must ensure that:
+		// - Each message ID is mapped to a unique FreenetURI
+		// - A message is not posted to too many boards
+		// - No board is specified twice
+		// Because one MessageReference is passed in per board we must create a set which contains one object per message ID which associates the URI with the ID
+		// and aggregates the list of its boards.
+		// We use an ID=>MessageInfo hash table for that, MessageInfo being:
 		
-		/* FIXME: 1. Limit the amount of MessageReferences. 2. Limit the amount of boards a single message can be posted to by counting
-		 * the number of occurrences of a single FreenetURI in the MessageReference list. 3. Ensure that no (FreenetURI, Board) pair is twice
-		 * or more in the list, this would be a DoS attempt. See also the constraints list at the top of this file.
-		 * - NOTE: Currently, WoTMessageListXML ensures (3) by using a HashSet<Board>. */
+		class MessageInfo {
+			final FreenetURI uri;
+			final HashSet<Board> boards;
+			
+			public MessageInfo(FreenetURI myURI) {
+				uri = myURI;
+				boards = new HashSet<Board>(Math.min(newMessages.size(), Message.MAX_BOARDS_PER_MESSAGE) * 2);
+			}
+			
+			public void addBoard(Board board) {
+				if(!boards.add(board))
+					throw new IllegalArgumentException("Message list contains multiple mappings of the same board to the message " + uri);
+				
+				if(boards.size() > Message.MAX_BOARDS_PER_MESSAGE)
+					throw new IllegalArgumentException("Message list contains too many boards for message " + uri);
+			}
+		}
+		
+		Hashtable<String, MessageInfo> messages = new Hashtable<String, MessageInfo>(newMessages.size() * 2);
+		
 		for(MessageReference ref : mMessages) {
 			ref.setMessageList(this);
 			
@@ -241,10 +269,20 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 				throw new IllegalArgumentException("Trying to create a MessageList which contains a Message with an ID which does not belong to the author of the MessageList");
 			}
 			
-			FreenetURI previousURI = messageURIs.put(ref.getMessageID(), ref.getURI());
-			if(previousURI != null && previousURI.equals(ref.getURI()) == false)
-				throw new IllegalArgumentException("Trying to create a MessageList which maps one message ID to multiple URIs");
-				
+			MessageInfo info = messages.get(ref.getMessageID());
+			
+			if(info != null) {
+				if(!info.uri.equals(ref.getURI()) == false)
+					throw new IllegalArgumentException("Trying to create a MessageList which maps one message ID to multiple URIs: " + ref.getMessageID());
+			} else {
+				info = new MessageInfo(ref.getURI());
+				messages.put(ref.getMessageID(), info);
+			}
+			
+			info.addBoard(ref.getBoard());
+			
+			if(messages.size() > MAX_MESSAGES_PER_MESSAGELIST)
+				throw new IllegalArgumentException("Too many messages in message list: " + mMessages.size());
 		}
 	}
 	

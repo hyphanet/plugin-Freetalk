@@ -34,6 +34,9 @@ public final class WoTOwnMessageList extends OwnMessageList {
 	 * Returns true if the XML of this message list fits into a single SSK block.
 	 */
 	protected boolean fitsIntoContainer() {
+		if(!super.fitsIntoContainer())
+			return false;
+			
 		/* FIXME: Implement. */
 		return true;
 	}

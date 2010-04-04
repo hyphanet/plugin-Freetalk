@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.HashSet;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -27,6 +26,7 @@ import org.w3c.dom.NodeList;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -100,6 +100,11 @@ public final class WoTMessageListXML {
 			throw new Exception("Version " + listElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);
 				
 		NodeList messageElements = listElement.getElementsByTagName("Message");
+		
+		// The message list constructor does all validity checks for message lists, but we duplicate the easy size checks here to prevent memory DoS
+		if(messageElements.getLength() > MessageList.MAX_MESSAGES_PER_MESSAGELIST)
+			throw new IllegalArgumentException("Too many messages in MessageList: " + messageElements.getLength());
+		
 		/* The message count is multiplied by 2 because if a message is posted to multiple boards, a MessageReference has to be created for each */
 		ArrayList<MessageList.MessageReference> messages = new ArrayList<MessageList.MessageReference>(messageElements.getLength() * 2);
 		
@@ -110,7 +115,11 @@ public final class WoTMessageListXML {
 			FreenetURI messageURI = new FreenetURI(messageElement.getAttribute("URI"));
 		
 			NodeList boardElements = messageElement.getElementsByTagName("Board");
-			HashSet<Board> messageBoards = new HashSet<Board>(boardElements.getLength() * 2);
+			
+			if(boardElements.getLength() > Message.MAX_BOARDS_PER_MESSAGE)
+				throw new IllegalArgumentException("Too many boards for message " + messageID + ": " + boardElements.getLength());
+			
+			ArrayList<Board> messageBoards = new ArrayList<Board>(boardElements.getLength() + 1);
 			
 			for(int boardIndex = 0; boardIndex < boardElements.getLength(); ++boardIndex) {
 				Element boardElement = (Element)boardElements.item(boardIndex);

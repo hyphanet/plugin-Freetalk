@@ -41,6 +41,8 @@ public abstract class Message extends Persistent {
     
     public final static int MAX_MESSAGE_TEXT_LENGTH = 64*1024;
     public final static int MAX_MESSAGE_TEXT_BYTE_LENGTH  = 64*1024; // byte[].length
+    
+    public final static int MAX_BOARDS_PER_MESSAGE = 16;
 	
 	/* Attributes, stored in the database */
 	
@@ -184,11 +186,14 @@ public abstract class Message extends Persistent {
 		if (newBoards.isEmpty())
 			throw new InvalidParameterException("No boards in message " + newURI);
 		
+		if (newBoards.size() > MAX_BOARDS_PER_MESSAGE)
+			throw new InvalidParameterException("Too many boards in message " + newURI);
+		
 		if (newReplyToBoard != null && !newBoards.contains(newReplyToBoard)) {
 			Logger.error(this, "Message created with replyToBoard not being in newBoards: " + newURI);
 			newBoards.add(newReplyToBoard);
 		}
-
+		
 		mURI = newURI;
 		mRealURI = newRealURI;
 		mMessageList = newMessageList;
