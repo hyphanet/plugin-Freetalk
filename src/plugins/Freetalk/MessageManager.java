@@ -469,6 +469,8 @@ public abstract class MessageManager implements Runnable {
 	public abstract void onMessageListInsertFailed(FreenetURI uri, boolean collision) throws NoSuchMessageListException;
 	
 	public synchronized void onMessageReceived(Message message) {
+		message.initializeTransient(mFreetalk);
+		
 		boolean wasDownloadedAlready;
 		try {
 			get(message.getID());
@@ -482,7 +484,6 @@ public abstract class MessageManager implements Runnable {
 		synchronized(db.lock()) {
 			try {
 				if(!wasDownloadedAlready) {
-					message.initializeTransient(mFreetalk);
 					message.storeWithoutCommit();
 				}
 				
