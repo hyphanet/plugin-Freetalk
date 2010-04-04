@@ -16,6 +16,7 @@ import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageFetcher;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.exceptions.NoSuchMessageListException;
 
 import com.db4o.ObjectContainer;
 
@@ -169,6 +170,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		
 		boolean fetchMoreMessages = false;
 		
+		synchronized(mMessageManager) {
 		try {
 			list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
 			bucket = result.asBucket();
@@ -178,28 +180,27 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			
 			fetchMoreMessages = true;
 		}
+		catch (NoSuchMessageListException e) {
+			Logger.normal(this, "MessageList was deleted already, not importing message: " + state.getURI());
+		}
 		catch (Exception e) {
 			Logger.error(this, "Parsing failed for message " + state.getURI(), e);
 		
-			if(list != null) {
-				try {
-					mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), FetchFailedMarker.Reason.ParsingFailed);
+			try {
+				mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), FetchFailedMarker.Reason.ParsingFailed);
 					
-					fetchMoreMessages = true;
-				}
-				catch(NoSuchMessageException ex) {
-					assert(false);
-					Logger.error(this, "SHOULD NOT HAPPEN", ex);
-				}
-			} else {
-				// This is not really an error, the MessageFetcher is not being told when a MessageList is deleted
-				Logger.normal(this, "Downloaded a message for a non-existant MessageList: " + state.getURI());
+				fetchMoreMessages = true;
+			}
+			catch(NoSuchMessageException ex) {
+				Logger.error(this, "SHOULD NOT HAPPEN", ex);
+				assert(false);
 			}
 		}
 		finally {
 			Closer.close(inputStream);
 			Closer.close(bucket);
 			removeFetch(state);
+		}
 		}
 		
 		// We only call fetchMessages() if we know that the current message was marked as fetched in the database, otherwise the fetch thread could get stuck
@@ -214,14 +215,17 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			switch(e.getMode()) {
 				case FetchException.DATA_NOT_FOUND:
 					try {
-						// FIXME: Synchronization!
+						synchronized(mMessageManager) {
 						WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
 						mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), FetchFailedMarker.Reason.DataNotFound);
+						}
 						
 						// We only call fetchMessages() if we know that the message for which the fetch failed was marked as failed, otherwise the fetch
 						// thread could get stuck in a busy loop: "fetch(), onFailure(), fetch(), onFailure() ..."
 						fetchMessages();
-					} catch (Exception ex) { /* NoSuchMessageList / NoSuchMessage */
+					} catch(NoSuchMessageListException ex) {
+						Logger.normal(this, "MessageList was deleted already, not marking message as fetch failed: " + state.getURI());
+					} catch (Exception ex) {
 						Logger.error(this, "SHOULD NOT HAPPEN", ex);
 						assert(false);
 					}

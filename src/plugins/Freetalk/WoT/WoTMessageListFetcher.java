@@ -216,38 +216,44 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 
 	@Override
 	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-		Logger.debug(this, "Fetched MessageList: " + state.getURI());
+		Logger.normal(this, "Fetched MessageList: " + state.getURI());
 
 		Bucket bucket = null;
 		InputStream inputStream = null;
 		WoTIdentity identity = null;
 		
+		synchronized(mIdentityManager) {
 		try {
-			identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI()); // FIXME: Synchronize, the identity must exist in onMessageListReceived.
+			identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI());
+			synchronized(mMessageManager) {
 			bucket = result.asBucket();			
 			inputStream = bucket.getInputStream();
 			WoTMessageList list = WoTMessageListXML.decode(mMessageManager, identity, state.getURI(), inputStream);
 			mMessageManager.onMessageListReceived(list);
+			}
+		}
+		catch (NoSuchIdentityException e) {
+			Logger.normal(this, "Identity was deleted already, ignoring MessageList " + state.getURI());
 		}
 		catch (Exception e) {
 			Logger.error(this, "Parsing failed for MessageList " + state.getURI(), e);
-
-			if(identity != null) {
-				mMessageManager.onMessageListFetchFailed(identity, state.getURI(), FetchFailedMarker.Reason.ParsingFailed);
-			}
+			mMessageManager.onMessageListFetchFailed(identity, state.getURI(), FetchFailedMarker.Reason.ParsingFailed);
 		}
 		finally {
 			Closer.close(inputStream);
 			Closer.close(bucket);
 			removeFetch(state);
 		}
+		}
 		
+		if(identity != null) {
 		try {
 			int unavailableIndex = mMessageManager.getUnavailableOldMessageListIndex(identity);
 			boolean unavailableIsNewer = unavailableIndex > state.getURI().getEdition(); /* Follow redirects then! */
 			fetchMessageList(identity, unavailableIndex , unavailableIsNewer);
 		} catch(Exception e) {
 			Logger.error(this, "Fetching of next MessageList failed.", e);
+		}
 		}
 	}
 
@@ -259,16 +265,20 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 					// We requested an old MessageList, i.e. it's index is lower than the index of the latest known MessageList, so the requested MessageList
 					// must have existed but has fallen out of Freenet, we mark it as DNF so it does not spam the request queue.
 					if(state.getURI().isSSK()) { 
-						Logger.debug(this, "DNF for old MessageList " + state.getURI());
-						WoTIdentity identity;
+						Logger.normal(this, "DNF for old MessageList " + state.getURI());
+						
 						try {
-							identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI()); // FIXME: The identity might be deleted, synchronize!
+							synchronized(mIdentityManager) {
+							final WoTIdentity identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI());
+							//synchronized(mMessageManager) {	// Would only be needed if we call more functions..
 							mMessageManager.onMessageListFetchFailed(identity, state.getURI(), FetchFailedMarker.Reason.DataNotFound);
+							//}
+							}
 						} catch (NoSuchIdentityException ex) {
-							Logger.error(this, "SHOULD NOT HAPPEN", ex);
+							Logger.normal(this, "Identity was deleted already, not marking MessageList as DNF: " + state.getURI());
 						}
 					} else { // The requested MessageList was a new USK index (higher than the latest known) and does not exist yet => Do not mark as DNF.
-						Logger.debug(this, "DNF for new MessageList " + state.getURI());
+						Logger.normal(this, "DNF for new MessageList " + state.getURI());
 					}
 					
 					break;
