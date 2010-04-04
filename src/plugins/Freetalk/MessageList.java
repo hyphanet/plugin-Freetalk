@@ -272,7 +272,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			MessageInfo info = messages.get(ref.getMessageID());
 			
 			if(info != null) {
-				if(!info.uri.equals(ref.getURI()) == false)
+				if(info.uri.equals(ref.getURI()) == false)
 					throw new IllegalArgumentException("Trying to create a MessageList which maps one message ID to multiple URIs: " + ref.getMessageID());
 			} else {
 				info = new MessageInfo(ref.getURI());
