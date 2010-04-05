@@ -32,6 +32,10 @@ import freenet.support.Logger;
  * - A <code>MessageList</code> should not contain multiple mapppings of a URI to the same board. This is considered as DoS
  * - A <code>MessageList</code> should maybe be limited to a maximal amount of messages references.
  * - There should be a limit to a certain maximal amount of boards a message can be posted to.
+ * 
+ * Activation policy: Class MessageList (and it's member classes) does automatic activation on its own.
+ * This means that objects of class MessageList can be activated to a depth of only 1 when querying them from the database.
+ * All methods automatically activate the object to any needed higher depth.
  */
 public abstract class MessageList extends Persistent implements Iterable<MessageList.MessageReference> {
 	
@@ -116,22 +120,23 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			}
 		}
 		
-		/**
-		 * Returns null, implemented only in OwnMessageList.OwnMessageReference.
-		 */
 		public String getMessageID() {
+			// checkedActivate(1);
 			return mMessageID;
 		}
 		
 		public FreenetURI getURI() {
+			checkedActivate(2);
 			return mURI;
 		}
 		
 		public Board getBoard() {
+			checkedActivate(2);
 			return mBoard;
 		}
 		
 		public synchronized boolean wasMessageDownloaded() {
+			// checkedActivate(1);
 			return mWasDownloaded;
 		}
 		
@@ -139,6 +144,8 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		 * Marks the MessageReference as downloaded and stores the change in the database, without committing the transaction.
 		 */
 		public synchronized void setMessageWasDownloadedFlag() {
+			// checkedActivate(1);
+			
 			// TODO: Figure out why this happens sometimes.
 			// assert(mWasDownloaded == false);
 			mWasDownloaded = true;
@@ -148,13 +155,15 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		 * Marks the MessageReference as not downloaded and stores the change in the database, without committing the transaction.
 		 */
 		public synchronized void clearMessageWasDownloadedFlag() {
+			// checkedActivate(1);
+			
 			// TODO: Figure out why this happens sometimes.
 			// assert(mWasDownloaded == true);
 			mWasDownloaded = false;
 		}
 
 		public MessageList getMessageList() {
-			checkedActivate(3);
+			checkedActivate(2);
 			return mMessageList;
 		}
 		
@@ -182,6 +191,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		}
 
 		public String getMessageListID() {
+			// checkedActivate(1);
 			return mMessageListID;
 		}
 		
@@ -202,11 +212,13 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		}
 		
 		public void storeWithoutCommit() {
+			checkedActivate(2);
 			throwIfNotStored(mMessageReference);
 			super.storeWithoutCommit();
 		}
 
 		public MessageReference getMessageReference() {
+			checkedActivate(2);
 			mMessageReference.initializeTransient(mFreetalk);
 			return mMessageReference;
 		}
@@ -328,8 +340,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	}
 	
 	
-	// FIXME: Get rid of the synchronized attribute, the list should be locked by all calling code before it locks db.lock()
-	public synchronized void storeWithoutCommit() {
+	public void storeWithoutCommit() {
 		try {
 			checkedActivate(3); // TODO: Figure out a suitable depth.
 			
@@ -353,9 +364,8 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		}
 	}
 	
-	// FIXME: Get rid of the synchronized attribute, the list should be locked by all calling code before it locks db.lock()
 	@SuppressWarnings("unchecked")
-	protected synchronized void deleteWithoutCommit() {
+	protected void deleteWithoutCommit() {
 		try {
 			checkedActivate(3); // TODO: Figure out a suitable depth.
 			
@@ -415,6 +425,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	}
 	
 	public String getID() {
+		// checkedActivate(1);
 		return mID;
 	}
 	
@@ -435,6 +446,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	protected abstract FreenetURI generateURI(FreenetURI baseURI, int index);
 	
 	public FTIdentity getAuthor() {
+		checkedActivate(2);
 		if(mAuthor instanceof Persistent) {
 			((Persistent)mAuthor).initializeTransient(mFreetalk);
 		}
@@ -442,6 +454,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	}
 	
 	public int getIndex() {
+		// checkedActivate(1);
 		return mIndex;
 	}
 	
@@ -449,6 +462,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	 * You have to synchronize on the <code>MessageList</code> when using this method.
 	 */
 	public Iterator<MessageReference> iterator() {
+		checkedActivate(3);
 		return mMessages.iterator();
 	}
 	

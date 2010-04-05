@@ -594,6 +594,7 @@ public abstract class MessageManager implements Runnable {
 	public synchronized void onMessageListReceived(MessageList list) {
 		list.initializeTransient(mFreetalk);
 		
+		synchronized(list) {
 		MessageListFetchFailedMarker marker;
 		MessageList ghostList;
 
@@ -634,6 +635,7 @@ public abstract class MessageManager implements Runnable {
 				catch(RuntimeException ex) {
 					Persistent.checkedRollback(db, this, ex);
 				}
+		}
 		}
 	}
 	

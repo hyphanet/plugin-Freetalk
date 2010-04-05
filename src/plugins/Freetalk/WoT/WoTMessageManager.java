@@ -138,6 +138,7 @@ public final class WoTMessageManager extends MessageManager {
 				}
 			}
 			
+			//synchronized(ghostList) {	// The object is only known by this function right now
 			synchronized(db.lock()) {
 				try {
 					Date date = CurrentTimeUTC.get();
@@ -170,6 +171,7 @@ public final class WoTMessageManager extends MessageManager {
 					Persistent.checkedRollback(db, this, ex);
 				}
 			}
+			//}
 	}
 	
 	public synchronized void onOwnMessageInserted(String id, FreenetURI realURI) throws NoSuchMessageException {
