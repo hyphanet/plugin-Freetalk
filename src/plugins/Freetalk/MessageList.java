@@ -275,23 +275,23 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			ref.setMessageList(this);
 			
 			try {
-				Message.verifyID(mAuthor, ref.getMessageID());
+				Message.verifyID(mAuthor, ref.mMessageID); // Don't use getter methods because initializeTransient does not happen before the constructor
 			}
 			catch(InvalidParameterException e) {
 				throw new IllegalArgumentException("Trying to create a MessageList which contains a Message with an ID which does not belong to the author of the MessageList");
 			}
 			
-			MessageInfo info = messages.get(ref.getMessageID());
+			MessageInfo info = messages.get(ref.mMessageID);
 			
 			if(info != null) {
-				if(info.uri.equals(ref.getURI()) == false)
+				if(info.uri.equals(ref.mURI) == false)
 					throw new IllegalArgumentException("Trying to create a MessageList which maps one message ID to multiple URIs: " + ref.getMessageID());
 			} else {
-				info = new MessageInfo(ref.getURI());
-				messages.put(ref.getMessageID(), info);
+				info = new MessageInfo(ref.mURI);
+				messages.put(ref.mMessageID, info);
 			}
 			
-			info.addBoard(ref.getBoard());
+			info.addBoard(ref.mBoard);
 			
 			if(messages.size() > MAX_MESSAGES_PER_MESSAGELIST)
 				throw new IllegalArgumentException("Too many messages in message list: " + mMessages.size());
@@ -463,6 +463,9 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	 */
 	public Iterator<MessageReference> iterator() {
 		checkedActivate(3);
+		for(MessageReference ref : mMessages) {
+			ref.initializeTransient(mFreetalk);
+		}
 		return mMessages.iterator();
 	}
 	
