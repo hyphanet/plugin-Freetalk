@@ -138,7 +138,9 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		/* mIdentities contains all identities which are available, so we have to flush it. */
 		if(identitiesToFetchFrom.size() == 0) {
 			Logger.debug(this, "Ran out of identities to fetch from, clearing the LRUQueue...");
+			synchronized(mIdentities) {
 			mIdentities.clear();
+			}
 
 			for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
 				if(mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
