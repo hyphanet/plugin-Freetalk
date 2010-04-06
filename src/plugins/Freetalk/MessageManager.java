@@ -1208,9 +1208,13 @@ public abstract class MessageManager implements Runnable {
 		final Query query = db.query();
 		query.constrain(MessageList.MessageReference.class);
 		query.constrain(OwnMessageList.OwnMessageReference.class).not();
-		query.descend("mBoard").descend("mHasSubscriptions").constrain(true);
 		query.descend("mWasDownloaded").constrain(false);
-		/* FIXME: Order the message references randomly with some trick. */
+		query.descend("mDate").orderDescending();
+		query.descend("mBoard").descend("mHasSubscriptions").constrain(true);
+		
+		// TODO: The date only contains day, month and year (the XML does not contain more). We have some randomization by sorting by date but we might
+		// want even more maybe - are there any security issues with not downloading messages in perfectly random order? Probably not?
+
 		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query.execute());		
 	}
 

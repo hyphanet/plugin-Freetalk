@@ -70,19 +70,22 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		
 		private final Board mBoard;
 		
+		private final Date mDate;
+		
 		private boolean mWasDownloaded = false;
 		
 		static  {
-			registerIndexedFields(MessageList.class, new String[] { "mMessageID", "mBoard", "mWasDownloaded" });
+			registerIndexedFields(MessageList.class, new String[] { "mMessageID", "mBoard", "mDate", "mWasDownloaded" });
 		}
 		
-		public MessageReference(String newMessageID, FreenetURI newURI, Board myBoard) {
+		public MessageReference(String newMessageID, FreenetURI newURI, Board myBoard, Date myDate) {
 			if(newMessageID == null || newURI == null || (myBoard == null && !(this instanceof OwnMessageList.OwnMessageReference)))
 				throw new IllegalArgumentException(); /* TODO: Be more verbose */
 			
 			mMessageID = newMessageID;
 			mURI = newURI;
 			mBoard = myBoard;
+			mDate = myDate;
 		}
 		
 		protected void storeWithoutCommit() {
@@ -133,6 +136,11 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		public Board getBoard() {
 			checkedActivate(2);
 			return mBoard;
+		}
+		
+		public Date getDate() {
+			// checkedActivate(1);
+			return mDate;
 		}
 		
 		public synchronized boolean wasMessageDownloaded() {

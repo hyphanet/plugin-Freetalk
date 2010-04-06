@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -62,7 +63,7 @@ public final class WoTMessageListXML {
 				Element messageTag = xmlDoc.createElement("Message");
 				messageTag.setAttribute("ID", message.getID());
 				messageTag.setAttribute("URI", message.getRealURI().toString());
-				synchronized(mDateFormat) { /* TODO: The date is currently not used anywhere */
+				synchronized(mDateFormat) {
 					messageTag.setAttribute("Date", mDateFormat.format(message.getDate()));
 				}
 				
@@ -113,6 +114,11 @@ public final class WoTMessageListXML {
 			
 			String messageID = messageElement.getAttribute("ID");
 			FreenetURI messageURI = new FreenetURI(messageElement.getAttribute("URI"));
+			final Date messageDate;
+			
+			synchronized(mDateFormat) {
+				messageDate = mDateFormat.parse(messageElement.getAttribute("Date"));
+			}
 		
 			NodeList boardElements = messageElement.getElementsByTagName("Board");
 			
@@ -127,7 +133,7 @@ public final class WoTMessageListXML {
 			}
 			
 			for(Board board : messageBoards)
-				messages.add(new MessageList.MessageReference(messageID, messageURI, board));
+				messages.add(new MessageList.MessageReference(messageID, messageURI, board, messageDate));
 		}
 		
 		return new WoTMessageList(author, uri, messages);
