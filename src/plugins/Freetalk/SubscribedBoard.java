@@ -457,7 +457,7 @@ public final class SubscribedBoard extends Board {
     public synchronized ObjectSet<BoardThreadLink> getThreads() {
     	final Query q = mDB.query();
     	q.constrain(BoardThreadLink.class);
-    	q.descend("mBoard").constrain(SubscribedBoard.this).identity(); // FIXME: Benchmark whether switching the order of those two constrains makes it faster.
+    	q.descend("mBoard").constrain(SubscribedBoard.this).identity(); // TODO: Benchmark whether switching the order of those two constrains makes it faster.
     	q.descend("mLastReplyDate").orderDescending();
     	return new Persistent.InitializingObjectSet<BoardThreadLink>(mFreetalk, q.execute());
     }
@@ -701,7 +701,7 @@ public final class SubscribedBoard extends Board {
          * @throws MessageNotFetchedException If the message belonging to this reference was not fetched yet.
          */
         public Message getMessage() throws MessageNotFetchedException {
-        	checkedActivate(3); // FIXME: Figure out a reasonable depth
+        	checkedActivate(2);
         	mMessage.initializeTransient(mFreetalk);
             return mMessage;
         }

@@ -329,7 +329,7 @@ public final class WoTIdentityManager extends IdentityManager {
 			SimpleFieldSet answer = sendFCPMessageBlocking(request, null, "Identities").params;
 			for(int idx = 0; ; idx++) {
 				String id = answer.get("Identity"+idx);
-				if(id == null || id.equals("")) /* FIXME: Figure out whether the second condition is necessary */
+				if(id == null || id.equals("")) /* TODO: Figure out whether the second condition is necessary */
 					break;
 				try {
 					result.add(new WoTTrust(getIdentity(id), trustee, (byte)Integer.parseInt(answer.get("Value"+idx)), answer.get("Comment"+idx)));
@@ -457,7 +457,7 @@ public final class WoTIdentityManager extends IdentityManager {
 			for(int idx = 0; ; idx++) {
 				String id = result.get("Puzzle" + idx);
 				
-				if(id == null || id.equals("")) /* FIXME: Figure out whether the second condition is necessary */
+				if(id == null || id.equals("")) /* TODO: Figure out whether the second condition is necessary */
 					break;
 				
 				puzzleIDs.add(id);
@@ -600,7 +600,9 @@ public final class WoTIdentityManager extends IdentityManager {
 		
 		final PersistentTaskManager taskManager = mFreetalk.getTaskManager();
 	
-		for(int idx = 0; ; idx++) {
+		int idx;
+		
+		for(idx = 0; ; idx++) {
 			String identityID = params.get("Identity"+idx);
 			if(identityID == null || identityID.equals("")) /* FIXME: Figure out whether the second condition is necessary */
 				break;
@@ -658,7 +660,7 @@ public final class WoTIdentityManager extends IdentityManager {
 			Thread.yield();
 		}
 		
-		
+		Logger.debug(this, "parseIdentities received " + idx + " identities. bOwnIdentities==" + bOwnIdentities);
 	}
 	
 	@SuppressWarnings("unchecked")
