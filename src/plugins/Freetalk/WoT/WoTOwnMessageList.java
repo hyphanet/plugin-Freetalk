@@ -36,8 +36,11 @@ public final class WoTOwnMessageList extends OwnMessageList {
 	protected boolean fitsIntoContainer() {
 		if(!super.fitsIntoContainer())
 			return false;
-			
-		/* FIXME: Implement. */
+	
+		if(getMessageCount() > 5)
+			return false;
+		
+		// TODO: Implement a real fitsIntoContainer which compresses the XML and checks the size. (Bug 4041) 
 		return true;
 	}
 
