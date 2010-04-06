@@ -1192,6 +1192,7 @@ public abstract class MessageManager implements Runnable {
 		final Query query = db.query();
 		query.constrain(OwnMessage.class);
 		query.descend("mRealURI").constrain(null).identity();
+		// TODO: Sort ascending by date if db4o is intelligent enough to evaluate the mRealURI constrain before sorting...
 		return new Persistent.InitializingObjectSet<OwnMessage>(mFreetalk, query.execute());
 
 	}
