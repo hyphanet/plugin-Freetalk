@@ -48,11 +48,12 @@ import freenet.support.io.NativeThread;
  */
 public final class WoTMessageListFetcher extends MessageListFetcher {
 
-	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 1000) : (1 * 60 * 1000);	// FIXME: tweak before release
-	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (3 * 60 * 1000) : (10 * 60 * 1000);	// FIXME: tweak before release
+	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 1000) : (5 * 60 * 1000);
+	
+	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (3 * 60 * 1000) : (15 * 60 * 1000);	// TODO: Make configurable
 	
 	/**
-	 * How many message lists do we attempt to fetch in parallel? FIXME: This should be configurable.
+	 * How many message lists do we attempt to fetch in parallel? TODO: This should be configurable.
 	 */
 	private static final int MAX_PARALLEL_MESSAGELIST_FETCH_COUNT = Freetalk.FAST_DEBUG_MODE ? 64 : 16;
 	
@@ -167,11 +168,11 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	 * @throws FetchException 
 	 */
 	private void fetchMessageLists(WoTIdentity identity) throws FetchException {
-		int newIndex = mMessageManager.getUnavailableNewMessageListIndex(identity); // FIXME: The identity might have been deleted, synchronize!
+		int newIndex = mMessageManager.getUnavailableNewMessageListIndex(identity);
 		fetchMessageList(identity, newIndex, true);
 		
 		if(newIndex > 0) {
-			int oldIndex = mMessageManager.getUnavailableOldMessageListIndex(identity); // FIXME: The identity might have been deleted, synchronize!
+			int oldIndex = mMessageManager.getUnavailableOldMessageListIndex(identity);
 			if(oldIndex != newIndex)
 				fetchMessageList(identity, oldIndex, false); 
 		}
