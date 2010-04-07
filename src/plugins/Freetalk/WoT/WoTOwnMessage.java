@@ -25,6 +25,7 @@ public final class WoTOwnMessage extends OwnMessage {
 	protected WoTOwnMessage(WoTMessageURI myParentThreadURI, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, FTOwnIdentity newAuthor,
 			String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		
+		// FIXME: Add some (configurable?) randomization to the date of the message to make correlation attacks more difficult.
 		super(null, null, generateRandomID(newAuthor), null, myParentThreadURI,
 			  (newParentMessage == null ? null : newParentMessage.getURI()),
 			  newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);

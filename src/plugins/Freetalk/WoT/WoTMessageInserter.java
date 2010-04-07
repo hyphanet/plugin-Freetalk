@@ -47,8 +47,11 @@ import freenet.support.io.NativeThread;
  */
 public final class WoTMessageInserter extends MessageInserter {
 
-	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 1000) : (1 * 60 * 1000); // FIXME: Tweak before release.
-	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (2 * 60 * 1000) : (5 * 60 * 1000); // FIXME: Tweak before release.
+	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 1000) : (10 * 60 * 1000);
+	
+	// TODO: The message inserter should not constantly wake up but rather receive an event notification when there are messages to be inserted.
+	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (2 * 60 * 1000) : (5 * 60 * 1000);
+	
 	private static final int ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT = 10;
 	
 	private final WoTMessageManager mMessageManager;
@@ -103,7 +106,6 @@ public final class WoTMessageInserter extends MessageInserter {
 		synchronized(mMessageManager) {
 			for(WoTOwnMessage message : mMessageManager.getNotInsertedOwnMessages()) {
 				try {
-					/* FIXME: Delay the messages!!!!! And set their date to reflect the delay */
 					insertMessage(message);
 				}
 				catch(Exception e) {
