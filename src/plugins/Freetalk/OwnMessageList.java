@@ -21,7 +21,7 @@ public abstract class OwnMessageList extends MessageList {
 	public final class OwnMessageReference extends MessageReference {
 		
 		public OwnMessageReference(OwnMessage myMessage) {
-			super(myMessage.getID(), myMessage.getRealURI(), null);
+			super(myMessage.getID(), myMessage.getRealURI(), null, myMessage.getDate());
 		}
 
 	}

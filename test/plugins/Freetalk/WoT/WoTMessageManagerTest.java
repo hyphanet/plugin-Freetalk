@@ -134,7 +134,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		FreenetURI myListURI = WoTMessageList.assembleURI(author.getRequestURI(), mMessageListIndex++);
 		WoTMessageURI myURI = new WoTMessageURI(myListURI + "#" + myUUID);
 		
-		MessageList.MessageReference ref = new MessageList.MessageReference(myURI.getMessageID(), myRealURI, mBoard);
+		MessageList.MessageReference ref = new MessageList.MessageReference(myURI.getMessageID(), myRealURI, mBoard, CurrentTimeUTC.get());
 		
 		WoTMessageList myList = storeMessageList(author, myListURI, ref);
 		
