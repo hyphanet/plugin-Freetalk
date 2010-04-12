@@ -155,11 +155,13 @@ public abstract class Persistent {
 	 */
 	protected final void throwIfNotStored(final Object object) {
 		if(object == null) {
+			assert(false);
 			Logger.error(this, "Mandatory object is null!");
 			throw new RuntimeException("Mandatory object is null!"); 
 		}
 		
 		if(!mDB.isStored(object)) {
+			assert(false);
 			Logger.error(this, "Mandatory object is not stored: " + object);
 			throw new RuntimeException("Mandatory object is not stored: " + object);
 		}
