@@ -52,9 +52,6 @@ public abstract class MessageManager implements Runnable {
 	
 	protected final PluginRespirator mPluginRespirator;
 	
-
-	/* FIXME: This really has to be tweaked before release. I set it quite short for debugging */
-	
 	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (3 * 60 * 1000);
 	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (15 * 60 * 1000);
 	
