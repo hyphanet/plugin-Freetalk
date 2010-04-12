@@ -494,13 +494,15 @@ public final class ThreadPage extends WebPageImpl {
         	firstMessage = myThread.getMessage();
         }
         catch (MessageNotFetchedException e) { // The thread was not downloaded yet, we use it's first reply for obtaining the information in the breadcrumb
-        	for(BoardReplyLink ref : board.getAllThreadReplies(myThread.getThreadID(), true)) { // FIXME: Synchronization is lacking.
+        	synchronized(board) {
+        	for(BoardReplyLink ref : board.getAllThreadReplies(myThread.getThreadID(), true)) {
         		try  {
         			firstMessage = ref.getMessage();
         		} catch(MessageNotFetchedException e1) {
         			throw new RuntimeException(e1); // Should not happen: BoardReplyLink objects are only created if a message was fetched already.
         		}
         		break;
+        	}
         	}
         }
         

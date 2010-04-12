@@ -84,7 +84,7 @@ public class NewReplyPage extends WebPageImpl {
                         "NewReplyPage.ReplyCreated.BackToBoard",
                         new String[] { "link", "boardname", "/link" }, 
                         new String[] {
-                                "<a href=\"" + BoardPage.getURI(mBoard) + "\">", // FIXME: URI without id name, ok?
+                                "<a href=\"" + BoardPage.getURI(mBoard) + "\">",
                                 mBoard.getName(),
                                 "</a>" });
 			} catch (Exception e) {

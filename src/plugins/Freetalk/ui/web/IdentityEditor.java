@@ -60,7 +60,7 @@ public final class IdentityEditor extends WebPageImpl {
 					lastUpdateCell.addChild(new HTMLNode("a", "href", "/" + id.getRequestURI().toString(), id.getLastInsert().toString()));
 				}
 				*/
-				/* FIXME: repair, i.e. make it use the WoT plugin */
+				/* TODO: repair, i.e. make it use the WoT plugin */
 				/*
 				HTMLNode deleteCell = row.addChild("td");
 				HTMLNode deleteForm = ft.mPluginRespirator.addFormChild(deleteCell, Freetalk.PLUGIN_URI + "/deleteOwnIdentity", "deleteForm");
@@ -70,7 +70,7 @@ public final class IdentityEditor extends WebPageImpl {
 			}
 		}
 
-		/* FIXME: repair, i.e. make it use the WoT plugin */
+		/* TODO: repair, i.e. make it use the WoT plugin */
 		/* contentNode.addChild(createNewOwnIdentityBox(ft)); */
 	}
 
@@ -93,7 +93,7 @@ public final class IdentityEditor extends WebPageImpl {
 			row.addChild("td", id.getShortestUniqueName());
 			row.addChild("td", id.getFreetalkAddress());
 			//HTMLNode deleteCell = row.addChild("td");
-			/* FIXME: repair, i.e. make it use the WoT plugin */
+			/* TODO: repair, i.e. make it use the WoT plugin */
 			/*
 			HTMLNode deleteForm = ft.mPluginRespirator.addFormChild(deleteCell, Freetalk.PLUGIN_URI + "/deleteIdentity", "deleteForm");
 			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identity", id.getRequestURI().toACIIString()});
@@ -101,7 +101,7 @@ public final class IdentityEditor extends WebPageImpl {
 			*/
 		}
 
-		/* FIXME: repair, i.e. make it use the WoT plugin */
+		/* TODO: repair, i.e. make it use the WoT plugin */
 		/* contentNode.addChild(createNewKnownIdentityBox(ft)); */
 	}
 	
