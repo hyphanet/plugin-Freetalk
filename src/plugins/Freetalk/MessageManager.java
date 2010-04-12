@@ -1189,20 +1189,6 @@ public abstract class MessageManager implements Runnable {
 		}
 	}
 	
-	/**
-	 * Get the next index of which a message from the selected identity is not stored.
-	 */
-//	public int getUnavailableMessageIndex(FTIdentity messageAuthor) {
-//		Query q = db.query();
-//		q.constrain(Message.class);
-//		q.constrain(OwnMessage.class).not(); /* We also download our own message. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
-//		q.descend("mAuthor").constrain(messageAuthor);
-//		q.descend("mIndex").orderDescending(); /* FIXME: Write a native db4o query which just looks for the maximum! */
-//		ObjectSet<Message> result = q.execute();
-//		
-//		return result.size() > 0 ? result.next().getIndex()+1 : 0;
-//	}
-	
 	@SuppressWarnings("unchecked")
 	public synchronized ObjectSet<OwnMessage> notInsertedMessageIterator() {
 		final Query query = db.query();
