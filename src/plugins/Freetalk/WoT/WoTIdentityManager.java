@@ -49,7 +49,6 @@ import freenet.support.io.NativeThread;
  */
 public final class WoTIdentityManager extends IdentityManager {
 	
-	/* FIXME: This really has to be tweaked before release. */  
 	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (30 * 1000) : (5 * 60 * 1000);
 	
 	/** The amount of time between each attempt to connect to the WoT plugin */
@@ -579,7 +578,7 @@ public final class WoTIdentityManager extends IdentityManager {
 	 */
 	private void onIdentityCreated(WoTIdentity newIdentity) throws Exception {
 		if(newIdentity instanceof WoTOwnIdentity) {
-			/* FIXME: Only add the context if the user actually uses the identity with Freetalk */
+			/* TODO: Only add the context if the user actually uses the identity with Freetalk */
 			addFreetalkContext(newIdentity);
 			
 			PersistentTask introductionTask = new IntroduceIdentityTask((WoTOwnIdentity)newIdentity);
@@ -604,7 +603,7 @@ public final class WoTIdentityManager extends IdentityManager {
 		
 		for(idx = 0; ; idx++) {
 			String identityID = params.get("Identity"+idx);
-			if(identityID == null || identityID.equals("")) /* FIXME: Figure out whether the second condition is necessary */
+			if(identityID == null || identityID.equals("")) /* TODO: Figure out whether the second condition is necessary */
 				break;
 			String requestURI = params.get("RequestURI"+idx);
 			String insertURI = bOwnIdentities ? params.get("InsertURI"+idx) : null;

@@ -35,8 +35,8 @@ import freenet.support.io.NativeThread;
 
 public final class WoTMessageListInserter extends MessageListInserter {
 	
-	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 1000) : (1 * 60 * 1000); // FIXME: Tweak before release.
-	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (2 * 60 * 1000) : (5 * 60 * 1000); // FIXME: Tweak before release.
+	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 1000) : (10 * 60 * 1000);
+	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (2 * 60 * 1000) : (10 * 60 * 1000);
 	private static final int MAX_PARALLEL_MESSAGELIST_INSERT_COUNT = 8;
 
 	private final WoTMessageManager mMessageManager;
@@ -97,7 +97,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 		synchronized(mMessageManager) {
 			for(WoTOwnMessageList list : mMessageManager.getNotInsertedOwnMessageLists()) {
 				try {
-					/* FIXME: Ensure that after creation of a message list we wait for at least a few minutes so that if the author writes 
+					/* TODO: Ensure that after creation of a message list we wait for at least a few minutes so that if the author writes 
 					 * more messages they will be put in the same list */
 					insertMessageList(list);
 				}

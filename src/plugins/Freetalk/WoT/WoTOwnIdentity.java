@@ -16,9 +16,6 @@ import freenet.keys.FreenetURI;
  * This means that WoTOwnIdentity can be activated to a depth of only 1 when querying them from the database.
  * All methods automatically activate the object to any needed higher depth.
  * 
- * FIXME: The above is currently not valid. We do not activate the TreeMap mAssessed because trees have a varying depth by nature! The TreeMap MUST BE removed
- * ASAP and replaced with separately stored objects for rating messages. Storing growing lists of objects in a member variable is wrong design anyway.
- * 
  * TODO: Change all code which queries for identities to use the lowest possible activation depth to benefit from automatic activation.
  * 
  * @author xor (xor@freenetproject.org)
@@ -57,7 +54,9 @@ public final class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 			throw new IllegalArgumentException();
 		
 		try {
-			return getScoreFor((WoTIdentity)identity) >= 0;	/* FIXME: this has to be configurable */
+			// TODO: Investigate whether we could make the lower limit configurable. It would require us not to delete the identities if the configurated limit is
+			// below zero. That would involve chaning WoT though. Or we could only allow positive limits.
+			return getScoreFor((WoTIdentity)identity) >= 0;
 		}
 		catch(NotInTrustTreeException e) {
 			return false;

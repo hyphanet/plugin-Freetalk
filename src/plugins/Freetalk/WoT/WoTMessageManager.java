@@ -311,7 +311,7 @@ public final class WoTMessageManager extends MessageManager {
 		query.constrain(WoTMessageList.class);
 		query.constrain(WoTOwnMessageList.class).not();
 		query.descend("mAuthor").constrain(identity).identity();
-		query.descend("mIndex").orderDescending(); // FIXME: This is inefficient!
+		query.descend("mIndex").orderDescending(); // TODO: This is inefficient!
 		ObjectSet<WoTMessageList> result = query.execute();
 		
 		if(result.size() == 0)
@@ -326,7 +326,7 @@ public final class WoTMessageManager extends MessageManager {
 		query.constrain(WoTMessageList.class);
 		query.constrain(WoTOwnMessageList.class).not();
 		query.descend("mAuthor").constrain(identity).identity();
-		query.descend("mIndex").orderDescending(); // FIXME: This is inefficient!
+		query.descend("mIndex").orderDescending(); // TODO: This is inefficient!
 		ObjectSet<WoTMessageList> result = query.execute();
 		
 		if(result.size() == 0)
@@ -338,7 +338,7 @@ public final class WoTMessageManager extends MessageManager {
 			--freeIndex;
 		}
 		
-		/* FIXME: To avoid always checking ALL messagelists for a missing one, store somewhere in the FTIdentity what the latest index is up to
+		/* TODO: To avoid always checking ALL messagelists for a missing one, store somewhere in the FTIdentity what the latest index is up to
 		 * which all messagelists are available! */
 		
 		return freeIndex >= 0 ? freeIndex : latestAvailableIndex+1;
@@ -354,7 +354,7 @@ public final class WoTMessageManager extends MessageManager {
 		/* We query for MessageList and not OwnMessageList because the user might have deleted his own messages or lost his database */
 		q.constrain(MessageList.class);
 		q.descend("mAuthor").constrain(messageAuthor).identity();
-		q.descend("mIndex").orderDescending(); // FIXME: This is inefficient!
+		q.descend("mIndex").orderDescending(); // TODO: This is inefficient!
 		ObjectSet<MessageList> result = q.execute();
 		
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;

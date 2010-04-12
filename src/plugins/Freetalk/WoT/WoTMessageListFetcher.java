@@ -123,7 +123,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		
 		ArrayList<WoTIdentity> identitiesToFetchFrom = new ArrayList<WoTIdentity>(MAX_PARALLEL_MESSAGELIST_FETCH_COUNT + 1);
 		
-		// FIXME: Order the identities by date of modification
+		// TODO: Order the identities by date of modification
 		
 		synchronized(mIdentities) {
 			for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
