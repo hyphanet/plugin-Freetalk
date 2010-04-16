@@ -155,6 +155,14 @@ public abstract class MessageManager implements Runnable {
 						ref.clearMessageWasDownloadedFlag();
 						ref.storeWithoutCommit();
 					}
+					
+					for(Message reply : getAllRepliesToMessage(message)) {
+						reply.clearParent();
+					}
+					
+					for(Message threadReply : getAllThreadRepliesToMessage(message)) {
+						threadReply.clearThread();
+					}
 
 					message.deleteWithoutCommit();
 					message.checkedCommit(this);
