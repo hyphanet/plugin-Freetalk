@@ -395,10 +395,10 @@ public abstract class MessageManager implements Runnable {
 				deleteMessageRating(messageRating);
 			}
 		}
-				
-				for(Message message : getMessagesBy(identity)) {
-					deleteMessage(message);
-				}
+
+		for(Message message : getMessagesBy(identity)) {
+			deleteMessage(message);
+		}
 
 		synchronized(db.lock()) {
 			try {
