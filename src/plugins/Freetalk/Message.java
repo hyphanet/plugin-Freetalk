@@ -439,7 +439,15 @@ public abstract class Message extends Persistent {
 		if(!newParentThread.getID().equals(mThreadID)) // mThreadID needs no activation
 			throw new IllegalArgumentException("Trying to set a message as thread which has the wrong ID: " + newParentThread.getID());
 		
+		if(newParentThread instanceof OwnMessage)
+			throw new IllegalArgumentException("Trying to set an OwnMessage as parent thread: " + newParentThread);
+		
 		mThread = newParentThread;
+		storeWithoutCommit();
+	}
+	
+	protected synchronized void clearThread() {
+		mThread = null;
 		storeWithoutCommit();
 	}
 
@@ -463,7 +471,15 @@ public abstract class Message extends Persistent {
 		if(!newParent.getID().equals(mParentID)) // mParentID needs no activation
 			throw new IllegalArgumentException("Trying to set a message as parent which has the wrong ID: " + newParent.getID());
 		
+		if(newParent instanceof OwnMessage)
+			throw new IllegalArgumentException("Trying to set an OwnMessage as parent: " + newParent);
+		
 		mParent = newParent;
+		storeWithoutCommit();
+	}
+	
+	protected synchronized void clearParent() {
+		mParent = null;
 		storeWithoutCommit();
 	}
 	

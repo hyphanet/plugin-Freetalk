@@ -367,6 +367,14 @@ public abstract class MessageManager implements Runnable {
 					ref.storeWithoutCommit();
 				}
 				
+				for(Message reply : getAllRepliesToMessage(message)) {
+					reply.clearParent();
+				}
+				
+				for(Message threadReply : getAllThreadRepliesToMessage(message)) {
+					threadReply.clearThread();
+				}
+				
 				message.deleteWithoutCommit();
 				message.checkedCommit(this);
 			}
@@ -411,6 +419,9 @@ public abstract class MessageManager implements Runnable {
 					
 					for(final OwnMessage message : getOwnMessagesBy(ownId)) {
 						message.deleteWithoutCommit();
+						
+						// We don't need to delete it from the boards because own messages are not being added to boards
+						// We don't need to set parent/thread pointers to this message to null because parent/thread pointers are never set to an OwnMessage 
 					}
 
 					for(final OwnMessageList messageList : getOwnMessageListsBy(ownId)) {
@@ -854,6 +865,22 @@ public abstract class MessageManager implements Runnable {
 		query.constrain(OwnMessageList.OwnMessageReference.class).not();
 		query.descend("mMessageID").constrain(id);
 		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query.execute());
+	}
+	
+	private ObjectSet<Message> getAllRepliesToMessage(Message message) {
+		final Query query = db.query();
+		query.constrain(Message.class);
+		query.constrain(OwnMessage.class).not();
+		query.descend("mParent").constrain(message).identity();
+		return new Persistent.InitializingObjectSet<Message>(mFreetalk, query);
+	}
+	
+	private ObjectSet<Message> getAllThreadRepliesToMessage(Message message) {
+		final Query query = db.query();
+		query.constrain(Message.class);
+		query.constrain(OwnMessage.class).not();
+		query.descend("mThread").constrain(message).identity();
+		return new Persistent.InitializingObjectSet<Message>(mFreetalk, query);
 	}
 
 	/**
