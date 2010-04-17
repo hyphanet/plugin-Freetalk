@@ -4,7 +4,6 @@
 package plugins.Freetalk.WoT;
 
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -200,7 +199,7 @@ public final class WoTMessageManager extends MessageManager {
 		query.descend("iWasInserted").constrain(false);
 		query.descend("iAmBeingInserted").constrain(false);
 		
-		for(WoTOwnMessageList list : generalGetOwnMessageListIterable(query)) {
+		for(WoTOwnMessageList list : new Persistent.InitializingObjectSet<WoTOwnMessageList>(mFreetalk, query)) {
 			try {
 				// FIXME: list.addMessage is synchronized and the caller of this function synchronizes on db.lock() - wrong order! This could cause deadlocks.
 				list.addMessage(message);
@@ -222,67 +221,11 @@ public final class WoTMessageManager extends MessageManager {
 		Logger.debug(this, "Found no list with free space, created the new list " + list.getID() + " for own message " + message.getID());
 	}
 
-	@SuppressWarnings("unchecked")
-	public synchronized Iterable<WoTOwnMessage> getNotInsertedOwnMessages() {
-		return new Iterable<WoTOwnMessage>() {
-			public Iterator<WoTOwnMessage> iterator() {
-				return new Iterator<WoTOwnMessage>() {
-					private Iterator<WoTOwnMessage> iter;
-
-					{
-						Query query = db.query();
-						query.constrain(WoTOwnMessage.class);
-						query.descend("mRealURI").constrain(null).identity();
-						iter = query.execute().iterator();
-					}
-
-					public boolean hasNext() {
-						return iter.hasNext();
-					}
-
-					public WoTOwnMessage next() {
-						WoTOwnMessage next = iter.next();
-						next.initializeTransient(mFreetalk);
-						return next;
-					}
-
-					public void remove() {
-						throw new UnsupportedOperationException();
-					}
-				};
-			}
-		};
-	}
-	
-	/**
-	 * For a database Query of result type <code>ObjectSet\<WoTOwnMessageList\></code>, this function provides an <code>Iterable</code>. The
-	 * iterator of the ObjectSet cannot be used instead because it will not call initializeTransient() on the objects. The iterator which is
-	 * returned by this function takes care of that.
-	 * Please synchronize on the <code>WoTMessageManager</code> when using this function, it is not synchronized itself.
-	 */
-	protected Iterable<WoTOwnMessageList> generalGetOwnMessageListIterable(final Query query) {
-		return new Iterable<WoTOwnMessageList>(){
-			@SuppressWarnings("unchecked")
-			public Iterator<WoTOwnMessageList> iterator() {
-				return new Iterator<WoTOwnMessageList>() {
-					private Iterator<WoTOwnMessageList> iter = query.execute().iterator();
-					
-					public boolean hasNext() {
-						return iter.hasNext();
-					}
-
-					public WoTOwnMessageList next() {
-						WoTOwnMessageList next = iter.next();
-						next.initializeTransient(mFreetalk);
-						return next;
-					}
-
-					public void remove() {
-						throw new UnsupportedOperationException();
-					}
-				};
-			}
-		};
+	public synchronized ObjectSet<WoTOwnMessage> getNotInsertedOwnMessages() {
+		final Query query = db.query();
+		query.constrain(WoTOwnMessage.class);
+		query.descend("mRealURI").constrain(null).identity();
+		return new Persistent.InitializingObjectSet<WoTOwnMessage>(mFreetalk, query);
 	}
 
 	/**
@@ -290,19 +233,19 @@ public final class WoTMessageManager extends MessageManager {
 	 * being inserted, they are not filtered out because in the current implementation the WoTMessageListInserter will cancel all inserts
 	 * before using this function.
 	 */
-	public synchronized Iterable<WoTOwnMessageList> getNotInsertedOwnMessageLists() {
+	public synchronized ObjectSet<WoTOwnMessageList> getNotInsertedOwnMessageLists() {
 		Query query = db.query();
 		query.constrain(WoTOwnMessageList.class);
 		query.descend("iWasInserted").constrain(false);
-		return generalGetOwnMessageListIterable(query);
+		return new Persistent.InitializingObjectSet<WoTOwnMessageList>(mFreetalk, query);
 	}
 	
-	public synchronized Iterable<WoTOwnMessageList> getBeingInsertedOwnMessageLists() {
+	public synchronized ObjectSet<WoTOwnMessageList> getBeingInsertedOwnMessageLists() {
 		Query query = db.query();
 		query.constrain(WoTOwnMessageList.class);
 		query.descend("iWasInserted").constrain(false);
 		query.descend("iAmBeingInserted").constrain(true);
-		return generalGetOwnMessageListIterable(query);
+		return new Persistent.InitializingObjectSet<WoTOwnMessageList>(mFreetalk, query);
 	}
 
 	@SuppressWarnings("unchecked")
