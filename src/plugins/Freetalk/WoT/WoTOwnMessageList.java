@@ -27,7 +27,7 @@ public final class WoTOwnMessageList extends OwnMessageList {
 	}
 	
 	public WoTOwnIdentity getAuthor() {
-		return (WoTOwnIdentity)mAuthor;
+		return (WoTOwnIdentity)super.getAuthor();
 	}
 
 	/**
