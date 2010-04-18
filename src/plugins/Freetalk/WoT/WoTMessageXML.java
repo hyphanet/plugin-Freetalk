@@ -30,6 +30,7 @@ import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.Message.Attachment;
+import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
 
@@ -83,11 +84,12 @@ public final class WoTMessageXML {
 			}
 			messageTag.appendChild(boardsTag);
 			
-			if(m.getReplyToBoard() != null) {
+			try {
+				final Board replyToBoard = m.getReplyToBoard();
 				Element replyBoardTag = xmlDoc.createElement("ReplyBoard");
-				replyBoardTag.appendChild(xmlDoc.createCDATASection(m.getReplyToBoard().getName()));
+				replyBoardTag.appendChild(xmlDoc.createCDATASection(replyToBoard.getName()));
 				messageTag.appendChild(replyBoardTag);
-			}
+			} catch(NoSuchBoardException e) {}
 
 			if(!m.isThread()) {
 				Element inReplyToTag = xmlDoc.createElement("InReplyTo");

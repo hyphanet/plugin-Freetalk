@@ -171,8 +171,14 @@ public final class ThreadPage extends WebPageImpl {
     	// mBoard is a SubscribedBoard, getBoards() only returns a list of Board objects, so we must call getParentBoard()
     	if(Arrays.binarySearch(threadWhichIsNoThread.getBoards(), mBoard.getParentBoard()) >= 0)
     		realThreadBoard = mBoard;
-    	else
-    		realThreadBoard = threadWhichIsNoThread.getReplyToBoard();
+    	else {
+    		try {
+    			realThreadBoard = threadWhichIsNoThread.getReplyToBoard();
+    		} catch(NoSuchBoardException e) {
+    			// TODO: List all boards to which the original thread was sent, not only the first one
+    			realThreadBoard = threadWhichIsNoThread.getBoards()[0];
+    		}
+    	}
     	
     	String uri = getURI(realThreadBoard.getName(), realThreadID);
     	

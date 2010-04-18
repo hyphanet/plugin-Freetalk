@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
@@ -343,9 +344,11 @@ public abstract class Message extends Persistent {
 		return mBoards;
 	}
 	
-	public Board getReplyToBoard() {
+	public Board getReplyToBoard() throws NoSuchBoardException {
 		checkedActivate(2);
-		assert(mReplyToBoard != null);
+		
+		if(mReplyToBoard == null)
+			throw new NoSuchBoardException();
 		
 		mReplyToBoard.initializeTransient(mFreetalk);
 		return mReplyToBoard;

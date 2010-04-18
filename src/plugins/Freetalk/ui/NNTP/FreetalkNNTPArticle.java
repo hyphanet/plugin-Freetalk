@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.support.Logger;
 
@@ -165,11 +166,12 @@ public class FreetalkNNTPArticle {
 			return builder.toString();
 
 		case FOLLOWUP_TO:
-			final Board board = mMessage.getReplyToBoard();
-			if (board == null)
-				return "";
-			else
+			try {
+				final Board board = mMessage.getReplyToBoard();
 				return FreetalkNNTPGroup.boardToGroupName(board.getName());
+			} catch(NoSuchBoardException e) {
+				return "";
+			}
 
 		case DATE:
 			synchronized(mDateFormat) {
