@@ -455,12 +455,9 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	
 	public FTIdentity getAuthor() {
 		checkedActivate(2);
-		if(!(mAuthor instanceof Persistent)) {
-			throw new IllegalArgumentException("WTF? mAuthor==" + mAuthor);
+		if(mAuthor instanceof Persistent) {
+			((Persistent)mAuthor).initializeTransient(mFreetalk);
 		}
-		
-		((Persistent)mAuthor).initializeTransient(mFreetalk);
-		
 		return mAuthor;
 	}
 	
