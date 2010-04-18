@@ -29,13 +29,17 @@ public abstract class OwnMessageList extends MessageList {
 	public OwnMessageList(FTOwnIdentity newAuthor, int newIndex) {
 		super(newAuthor, newIndex);
 	}
+	
+	public FTOwnIdentity getAuthor() {
+		return (FTOwnIdentity)super.getAuthor();
+	}
 
 	/**
 	 * Get the SSK insert URI of this message list.
 	 * @return
 	 */
 	public FreenetURI getInsertURI() {
-		return generateURI(((FTOwnIdentity)mAuthor).getInsertURI(), mIndex).sskForUSK();
+		return generateURI(getAuthor().getInsertURI(), mIndex).sskForUSK();
 	}
 
 	/**
