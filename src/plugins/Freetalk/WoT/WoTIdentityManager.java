@@ -835,7 +835,6 @@ public final class WoTIdentityManager extends IdentityManager {
 		
 		Arrays.sort(identities, new Comparator<WoTIdentity>() {
 
-			@Override
 			public int compare(WoTIdentity i1, WoTIdentity i2) {
 				return i1.getFreetalkAddress().compareToIgnoreCase(i2.getFreetalkAddress());
 			}
