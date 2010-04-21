@@ -37,7 +37,7 @@ public class NewReplyPage extends WebPageImpl {
 
 	public void make() {
 		makeBreadcrumbs();
-		if(mRequest.isPartSet("CreateReply")) {
+		if(mRequest.isPartSet("CreateReply") && mRequest.getMethod().equals("POST")) {
 			HashSet<Board> boards = new HashSet<Board>();
 			boards.add(mBoard);
 			String replySubject = mRequest.getPartAsString("ReplySubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH);

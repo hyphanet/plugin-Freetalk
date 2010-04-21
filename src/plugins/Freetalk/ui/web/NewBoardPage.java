@@ -23,7 +23,7 @@ public final class NewBoardPage extends WebPageImpl {
 			throw new RedirectException(logIn);
 		}
 		
-		if(mRequest.isPartSet("CreateBoard")) {
+		if(mRequest.isPartSet("CreateBoard") && mRequest.getMethod().equals("POST")) {
 		    final int boardLanguageLength = 8;
 		    final int maxBoardNameLength = Board.MAX_BOARDNAME_TEXT_LENGTH - boardLanguageLength - 1; // +1 for the '.'
 		    String boardLanguage = mRequest.getPartAsString("BoardLanguage", boardLanguageLength);

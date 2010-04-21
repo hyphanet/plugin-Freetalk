@@ -37,7 +37,7 @@ public class SelectBoardsPage extends WebPageImpl {
 		boolean subscribe = mRequest.isPartSet("Subscribe");
 		boolean unsubscribe = mRequest.isPartSet("Unsubscribe");
 		
-		if(subscribe ^ unsubscribe) {
+		if((subscribe ^ unsubscribe) && mRequest.getMethod().equals("POST")) {
 			String boardName = mRequest.getPartAsString("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH);
 		
 			try {

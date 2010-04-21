@@ -24,7 +24,7 @@ public final class NewThreadPage extends WebPageImpl {
 	}
 	
 	public void make() {
-		if(mRequest.isPartSet("CreateThread")) { 
+		if(mRequest.isPartSet("CreateThread") && mRequest.getMethod().equals("POST")) { 
 			HashSet<Board> boards = new HashSet<Board>();
 			boards.add(mBoard);
 			String threadSubject = mRequest.getPartAsString("ThreadSubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH);

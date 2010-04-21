@@ -70,7 +70,8 @@ public final class IdentityEditor extends WebPageImpl {
 			}
 		}
 
-		/* TODO: repair, i.e. make it use the WoT plugin */
+		/* TODO: repair, i.e. make it use the WoT plugin. 
+		 * SECURITY: Only accept new identity creation etc from POST's. */
 		/* contentNode.addChild(createNewOwnIdentityBox(ft)); */
 	}
 

@@ -32,7 +32,7 @@ public class SettingsPage extends WebPageImpl {
         
         makeBreadcrumbs();
         
-        if (mRequest.isPartSet("submit")) {
+        if (mRequest.isPartSet("submit") && mRequest.getMethod().equals("POST")) {
             
             boolean enableNntpServer = mRequest.getPartAsString("EnableNntpServer", 4).equals("true");
             String nntpServerBindTo = mRequest.getPartAsString("nntpServerBindTo", 1024);

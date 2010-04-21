@@ -218,7 +218,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 		}
 		
 		/* Step 4: Create the identity */
-		else if(requestedStep == 4) {
+		else if(requestedStep == 4 && mRequest.getMethod().equals("POST")) {
 			addHiddenFormData(createForm, requestedStep, requestedStep);
 			
 			try {
