@@ -258,6 +258,10 @@ public final class WebInterface {
 			if(!mFreetalk.wotConnected())
 				return new WoTIsMissingPage(webInterface, request, mFreetalk.wotOutdated(), l10n());
 
+			// Rating a message is always a POST form, for consistency's sake, and because GET's don't check formPassword.
+			if(!request.getMethod().equals("POST"))
+				return new Welcome(webInterface, getLoggedInOwnIdentity(context), request, l10n());
+			
 			// TODO: These casts are ugly.
 			final WoTOwnIdentity own = (WoTOwnIdentity)webInterface.getLoggedInOwnIdentity(context);
 			WebPage errorPage = null;
