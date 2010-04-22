@@ -233,9 +233,10 @@ public final class ThreadPage extends WebPageImpl {
         // Your trust value
         authorNode.addChild("br");
         
+        Integer intTrust = null;
         String trust;
         try {
-            final int intTrust = ((WoTOwnIdentity)mOwnIdentity).getTrustIn((WoTIdentity)message.getAuthor());
+            intTrust = ((WoTOwnIdentity)mOwnIdentity).getTrustIn((WoTIdentity)message.getAuthor());
             trust = Integer.toString(intTrust); 
         } catch (NotTrustedException e) {
             trust = l10n().getString("ThreadPage.Author.YourTrustNone");
@@ -277,8 +278,12 @@ public final class ThreadPage extends WebPageImpl {
         		WoTMessageRating rating = mFreetalk.getMessageManager().getMessageRating(mOwnIdentity, message);
         		addRemoveRatingButton(modButtons, message, rating);
         	} catch(NoSuchMessageRatingException e) {
-    			addRateButton(modButtons, message, 10);
-    			addRateButton(modButtons, message, -10);        		
+        		if(intTrust == null || (intTrust+10) <= 100) { // TODO: Use constants
+        			addRateButton(modButtons, message, 10);
+        		}
+        		if(intTrust == null || (intTrust-10) >= -100) { // TODO: Use constants
+        			addRateButton(modButtons, message, -10);        
+        		}
         	}
         }
 		title.addChild("div", "class", "text", message.getTitle());
