@@ -85,7 +85,8 @@ public final class NewThreadPage extends WebPageImpl {
 				new String[] {"text", "ThreadSubject", "100", Integer.toString(Message.MAX_MESSAGE_TITLE_TEXT_LENGTH), threadSubject});		
 		
 		HTMLNode textBox = newThreadForm.addChild(getContentBox(l10n().getString("NewThreadPage.ThreadBox.Text")));
-		textBox.addChild("textarea", new String[] { "name", "cols", "rows" }, new String[] { "ThreadText", "80", "30" }, threadText);
+		textBox.addChild("textarea", new String[] { "name", "cols", "rows", "style" }, // TODO: Use a CSS stylesheet file
+				new String[] { "ThreadText", "80", "30", "font-size: medium;" }, threadText);
 		
 		newThreadForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateThread", l10n().getString("NewThreadPage.ThreadBox.SubmitButton")});
 		newThreadForm.addChild(PreviewPane.createPreviewButton(l10n(), "CreatePreview"));

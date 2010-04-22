@@ -130,7 +130,8 @@ public class NewReplyPage extends WebPageImpl {
 									new String[] {"text", "ReplySubject", "100", Integer.toString(Message.MAX_MESSAGE_TITLE_TEXT_LENGTH), replySubject});		
 		
 		HTMLNode textBox = newReplyForm.addChild(getContentBox(l10n().getString("NewReplyPage.ReplyBox.Text")));
-		textBox.addChild("textarea", new String[] { "name", "cols", "rows" }, new String[] { "ReplyText", "80", "30" }, replyText);
+		textBox.addChild("textarea", new String[] { "name", "cols", "rows", "style" }, // TODO: Use a CSS stylesheet file
+				new String[] { "ReplyText", "80", "30", "font-size: medium;" }, replyText);
 		
 		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateReply", l10n().getString("NewReplyPage.ReplyBox.SubmitButton")});
 		newReplyForm.addChild(PreviewPane.createPreviewButton(l10n(), "CreatePreview"));
