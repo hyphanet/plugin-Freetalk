@@ -51,7 +51,12 @@ public class WoTIdentity extends Persistent implements FTIdentity {
 		if(myID.length() == 0) throw new IllegalArgumentException("ID.length() == 0");
 		if(myRequestURI == null) throw new IllegalArgumentException("RequestURI == null");
 		if(myNickname == null) throw new IllegalArgumentException("Nickname == null");
-		if(myNickname.length() == 0) throw new IllegalArgumentException("Nickname.length() == 0");
+		
+		try {
+			validateNickname(myNickname);
+		} catch (InvalidParameterException e) {
+			throw new IllegalArgumentException(e);
+		}
 		
 		mID = myID;
 		mRequestURI = myRequestURI;
