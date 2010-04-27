@@ -229,7 +229,7 @@ public final class Config extends Persistent {
 		}
 		
 		if (!containsBoolean(NNTP_SERVER_ENABLED)) {
-		    set(NNTP_SERVER_ENABLED, true);
+			set(NNTP_SERVER_ENABLED, false);
 		}
 	}
 }

@@ -9,6 +9,9 @@ package plugins.Freetalk;
  *
  */
 public class Version {
+
+	public static final String gitRevision = "@custom@";
+
 	/** Version number of the plugin for getRealVersion(). Increment this on making
 	 * a major change, a significant bugfix etc. These numbers are used in auto-update 
 	 * etc, at a minimum any build inserted into auto-update should have a unique 
@@ -22,9 +25,7 @@ public class Version {
 	public static final long latestVersion = version;
 	
 
-	public static String getMarketingVersion() {
-		return "0.1 beta";
-	}
+	public static final String longVersionString = "0.1 beta "+gitRevision;
 
 	public static long getRealVersion() {
 		return version;

@@ -105,7 +105,11 @@ public final class BoardPage extends WebPageImpl {
 					
 					try {
 					// TODO: Get rid of the cast somehow, we should maybe call this WoTBoardPage :|
-						authorScore = Integer.toString(((WoTOwnIdentity)mOwnIdentity).getScoreFor((WoTIdentity)thread.getAuthor()));
+						final int score = ((WoTOwnIdentity)mOwnIdentity).getScoreFor((WoTIdentity)thread.getAuthor());
+						if (score == Integer.MAX_VALUE)
+							authorScore = "n/a";
+						else
+							authorScore = Integer.toString(score);
 					}
 					catch(NotInTrustTreeException e) {
 						authorScore = "null"; // FIXME: Decide about this we should display something better
