@@ -608,7 +608,14 @@ public final class WoTIdentityManager extends IdentityManager {
 			String requestURI = params.get("RequestURI"+idx);
 			String insertURI = bOwnIdentities ? params.get("InsertURI"+idx) : null;
 			String nickname = params.get("Nickname"+idx);
-
+			
+			if(nickname.length() == 0) {
+				// If an identity publishes an invalid nickname in one of its first WoT inserts then WoT will return an empty
+				// nickname for that identity until a new XML was published with a valid nickname. We ignore the identity until
+				// then to prevent confusing error logs.
+				// TODO: Maybe handle this in WoT. Would require checks in many places though.
+				continue;
+			}
 			
 			synchronized(this) { /* We lock here and not during the whole function to allow other threads to execute */
 			synchronized(taskManager) {
