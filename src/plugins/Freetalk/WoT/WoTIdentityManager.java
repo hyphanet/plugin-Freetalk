@@ -789,11 +789,14 @@ public final class WoTIdentityManager extends IdentityManager {
 			Logger.debug(this, "Identity manager loop finished. Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
 
 			try {
-				Thread.sleep(sleepTime); // TODO: Maybe use a Ticker implementation instead?
+				synchronized(this) {
+					// sleep/interrupt protocol seems unreliable...
+					wait(sleepTime);
+				}
 			}
 			catch (InterruptedException e)
 			{
-				mThread.interrupt();
+				Logger.debug(this, "Identity manager loop interrupted. isRunning="+isRunning);
 			}
 		}
 		}
@@ -814,9 +817,9 @@ public final class WoTIdentityManager extends IdentityManager {
 	public void terminate() {
 		Logger.debug(this, "Stopping ...");
 		isRunning = false;
-		mThread.interrupt();
 		synchronized(this) {
 			while(!shutdownFinished) {
+				notifyAll();
 				try {
 					wait();
 				}
