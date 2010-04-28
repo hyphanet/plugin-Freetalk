@@ -507,7 +507,7 @@ public final class WebInterface {
 				}
 				
 				dataBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, puzzle.Data);
-				output = ContentFilter.filter(dataBucket, core.tempBucketFactory, puzzle.MimeType, uri, null, null);
+				output = ContentFilter.filter(dataBucket, core.tempBucketFactory, puzzle.MimeType, uri, null, null, null);
 				writeReply(ctx, 200, output.type, "OK", output.data);
 			}
 			catch(Exception e) {
@@ -600,7 +600,7 @@ public final class WebInterface {
 					cssBuffer = cssBufferOutputStream.toByteArray();
 				}
 				cssBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, cssBuffer);
-				FilterOutput filterOutput = ContentFilter.filter(cssBucket, core.tempBucketFactory, "text/css", uri, null, null);
+				FilterOutput filterOutput = ContentFilter.filter(cssBucket, core.tempBucketFactory, "text/css", uri, null, null, null);
 				writeReply(context, 200, "text/css", "OK", cssBucket);
 			} finally {
 				Closer.close(cssBucket);
