@@ -267,6 +267,12 @@ public abstract class Message extends Persistent {
 		return mMessageList;
 	}
 	
+	protected synchronized void clearMessageList() {
+		checkedActivate(2);
+		mMessageList = null;
+		storeWithoutCommit();
+	}
+	
 	/**
 	 * Get the MessageURI of the thread this message belongs to.
 	 * @throws NoSuchMessageException 

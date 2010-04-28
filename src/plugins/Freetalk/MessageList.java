@@ -408,6 +408,15 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 					failedRef.deleteWithoutCommit();
 				}
 				
+				// TODO: Its sort of awful to have this code here, maybe find a better place for it :|
+				// It's required to prevent zombie message lists.
+				query = mDB.query();
+				query.constrain(Message.class);
+				query.descend("mID").constrain(ref.getMessageID());
+				for(Message message : new Persistent.InitializingObjectSet<Message>(mFreetalk, query)) {
+					message.clearMessageList();
+				}
+				
 				ref.initializeTransient(mFreetalk);
 				ref.deleteWithoutCommit();
 			}
