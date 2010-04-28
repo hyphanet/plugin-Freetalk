@@ -42,12 +42,15 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	private final WoTMessageManager mMessageManager;
 	
 	private final Random mRandom;
+	
+	private final WoTMessageListXML mXML;
 
 	public WoTMessageListInserter(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager,
-			WoTMessageManager myMessageManager) {
+			WoTMessageManager myMessageManager, WoTMessageListXML myMessageListXML) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
 		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
+		mXML = myMessageListXML;
 	}
 	
 	@Override
@@ -121,7 +124,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 			// so it must be guranteed that the "being inserted" mark does not change while we encode the XML etc.
 			mMessageManager.onMessageListInsertStarted(list);
 			
-			WoTMessageListXML.encode(mMessageManager, list, os);
+			mXML.encode(mMessageManager, list, os);
 			os.close(); os = null;
 			tempB.setReadOnly();
 

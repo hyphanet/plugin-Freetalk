@@ -50,7 +50,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 
 	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 1000) : (5 * 60 * 1000);
 	
-	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (3 * 60 * 1000) : (15 * 60 * 1000);	// TODO: Make configurable
+	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (5 * 60 * 1000) : (15 * 60 * 1000);	// TODO: Make configurable
 	
 	/**
 	 * How many message lists do we attempt to fetch in parallel? TODO: This should be configurable.
@@ -73,13 +73,17 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	
 	private final Random mRandom;
 	
-	public WoTMessageListFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager) {
+	private final WoTMessageListXML mXML;
+	
+	public WoTMessageListFetcher(Node myNode, HighLevelSimpleClient myClient, String myName,
+			WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager, WoTMessageListXML myMessageListXML) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
 		mIdentityManager = myIdentityManager;
 		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
 		clientContext = mNode.clientCore.clientContext;
 		mRequestClient = mMessageManager.mRequestClient;
+		mXML = myMessageListXML;
 	}
 
 	@Override
@@ -231,7 +235,7 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 			synchronized(mMessageManager) {
 			bucket = result.asBucket();			
 			inputStream = bucket.getInputStream();
-			WoTMessageList list = WoTMessageListXML.decode(mMessageManager, identity, state.getURI(), inputStream);
+			WoTMessageList list = mXML.decode(mMessageManager, identity, state.getURI(), inputStream);
 			mMessageManager.onMessageListReceived(list);
 			}
 		}

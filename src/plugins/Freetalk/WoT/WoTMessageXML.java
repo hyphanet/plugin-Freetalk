@@ -40,17 +40,43 @@ import freenet.keys.FreenetURI;
 public final class WoTMessageXML {
 	private static final int XML_FORMAT_VERSION = 1;
 	
-	private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-	private static final SimpleDateFormat mTimeFormat = new SimpleDateFormat("HH:mm:ss");
+	private final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	private final SimpleDateFormat mTimeFormat = new SimpleDateFormat("HH:mm:ss");
 	
-	public static void encode(Message m, OutputStream os) throws TransformerException, ParserConfigurationException {
-		synchronized(m) {
-			StreamResult resultStream = new StreamResult(os);
-
+	
+	private final DocumentBuilder mDocumentBuilder;
+	
+	private final DOMImplementation mDOM;
+	
+	private final Transformer mSerializer;
+	
+	public WoTMessageXML() {
+		try {
 			DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
-			DOMImplementation impl = xmlBuilder.getDOMImplementation();
-			Document xmlDoc = impl.createDocument(null, Freetalk.PLUGIN_TITLE, null);
+			xmlFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+			// DOM parser uses .setAttribute() to pass to underlying Xerces
+			xmlFactory.setAttribute("http://apache.org/xml/features/disallow-doctype-decl", true);
+			mDocumentBuilder = xmlFactory.newDocumentBuilder(); 
+			mDOM = mDocumentBuilder.getDOMImplementation();
+
+			mSerializer = TransformerFactory.newInstance().newTransformer();
+			mSerializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+			mSerializer.setOutputProperty(OutputKeys.INDENT, "no");
+			mSerializer.setOutputProperty(OutputKeys.STANDALONE, "no");
+		}
+		catch(Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	
+	public void encode(Message m, OutputStream os) throws TransformerException, ParserConfigurationException {
+		synchronized(m) {
+			Document xmlDoc;
+			synchronized(mDocumentBuilder) {
+				xmlDoc = mDOM.createDocument(null, Freetalk.PLUGIN_TITLE, null);
+			}
+			
 			Element rootElement = xmlDoc.getDocumentElement();
 
 			Element messageTag = xmlDoc.createElement("Message");
@@ -139,13 +165,10 @@ public final class WoTMessageXML {
 			rootElement.appendChild(messageTag);
 
 			DOMSource domSource = new DOMSource(xmlDoc);
-			TransformerFactory transformFactory = TransformerFactory.newInstance();
-			Transformer serializer = transformFactory.newTransformer();
-			
-			serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-			serializer.setOutputProperty(OutputKeys.INDENT, "no");
-			serializer.setOutputProperty(OutputKeys.STANDALONE, "no");
-			serializer.transform(domSource, resultStream);
+			StreamResult resultStream = new StreamResult(os);
+			synchronized(mSerializer) {
+				mSerializer.transform(domSource, resultStream);
+			}
 		}
 	}
 	
@@ -160,13 +183,11 @@ public final class WoTMessageXML {
 	 * @throws Exception
 	 */
 	@SuppressWarnings("deprecation")
-	public static Message decode(MessageManager messageManager, InputStream inputStream, WoTMessageList messageList, FreenetURI uri) throws Exception {
-		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
-		xmlFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-		// DOM parser use .setAttribute() to pass to underlying Xerces
-		xmlFactory.setAttribute("http://apache.org/xml/features/disallow-doctype-decl", true);
-		DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
-		Document xml = xmlBuilder.parse(inputStream);
+	public Message decode(MessageManager messageManager, InputStream inputStream, WoTMessageList messageList, FreenetURI uri) throws Exception {
+		Document xml;
+		synchronized(mDocumentBuilder) {
+			xml = mDocumentBuilder.parse(inputStream);
+		}
 		
 		Element messageElement = (Element)xml.getElementsByTagName("Message").item(0);
 		

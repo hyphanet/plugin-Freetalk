@@ -14,7 +14,6 @@ import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
-import plugins.Freetalk.ui.NNTP.FreetalkNNTPArticle;
 import freenet.keys.FreenetURI;
 import freenet.support.MultiValueTable;
 
@@ -36,6 +35,8 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 	
 	
 	private String mHardcodedEncodedMessageList;
+	
+	private WoTMessageListXML mXML;
 
 	@SuppressWarnings("deprecation")
 	public void setUp() throws Exception {
@@ -43,6 +44,7 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 		
 		mFreetalk = new Freetalk(db);
 		mMessageManager = mFreetalk.getMessageManager();
+		mXML = new WoTMessageListXML();
 		
 		HashSet<Board> myBoards1 = new HashSet<Board>();
 			myBoards1.add(mMessageManager.getOrCreateBoard("en.board1"));
@@ -119,7 +121,7 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 		
 		System.gc(); db.purge(); System.gc();
 		
-		WoTMessageListXML.encode(mMessageManager, (WoTOwnMessageList)mMessageManager.getOwnMessageList(mMessageListID), encodedMessageList);
+		mXML.encode(mMessageManager, (WoTOwnMessageList)mMessageManager.getOwnMessageList(mMessageListID), encodedMessageList);
 		
 		assertEquals(mHardcodedEncodedMessageList, encodedMessageList.toString().replaceAll("[\r\n]", ""));
 	}
@@ -130,7 +132,7 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 		{
 			ByteArrayInputStream is = new ByteArrayInputStream(mHardcodedEncodedMessageList.getBytes("UTF-8"));
 			WoTOwnMessageList messageList = (WoTOwnMessageList)mMessageManager.getOwnMessageList(mMessageListID);
-			decodedList = WoTMessageListXML.decode(mMessageManager, messageList.getAuthor(), messageList.getURI(), is);
+			decodedList = mXML.decode(mMessageManager, messageList.getAuthor(), messageList.getURI(), is);
 			decodedList.initializeTransient(mFreetalk);
 		}
 

@@ -25,6 +25,8 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 	
 	private Freetalk mFreetalk;
 	private MessageManager mMessageManager;
+	private WoTMessageXML mXML;
+	
 	private FreenetURI mMessageRealURI;
 	
 	private String mMessageListID;
@@ -37,6 +39,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		
 		mFreetalk = new Freetalk(db);
 		mMessageManager = mFreetalk.getMessageManager();
+		mXML = new WoTMessageXML();
 		
 		Board myBoard = mMessageManager.getOrCreateBoard("en.board1");
 		HashSet<Board> myBoards = new HashSet<Board>();
@@ -125,7 +128,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		System.gc(); db.purge(); System.gc();
 		
 		ByteArrayOutputStream encodedMessage = new ByteArrayOutputStream(4096);
-		WoTMessageXML.encode(mMessageManager.get(mMessageID), encodedMessage);
+		mXML.encode(mMessageManager.get(mMessageID), encodedMessage);
 		
 		assertEquals(mHardcodedEncodedMessage, encodedMessage.toString().replace("\r\n", "\n"));
 	}
@@ -135,9 +138,9 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		
 		ByteArrayInputStream is = new ByteArrayInputStream(mHardcodedEncodedMessage.getBytes("UTF-8"));
 		ByteArrayOutputStream decodedAndEncodedMessage = new ByteArrayOutputStream(4096);
-		Message decodedMessage = WoTMessageXML.decode(mMessageManager, is, (WoTMessageList)mMessageManager.getMessageList(mMessageListID), mMessageRealURI);
+		Message decodedMessage = mXML.decode(mMessageManager, is, (WoTMessageList)mMessageManager.getMessageList(mMessageListID), mMessageRealURI);
 		decodedMessage.initializeTransient(mFreetalk);
-		WoTMessageXML.encode(decodedMessage, decodedAndEncodedMessage);		
+		mXML.encode(decodedMessage, decodedAndEncodedMessage);		
 		
 		assertEquals(mHardcodedEncodedMessage, decodedAndEncodedMessage.toString().replace("\r\n", "\n"));
 	}

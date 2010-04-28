@@ -65,11 +65,15 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	 */
 	private final HashSet<FreenetURI> mMessages = new HashSet<FreenetURI>(MAX_PARALLEL_MESSAGE_FETCH_COUNT * 2);
 	
+	private final WoTMessageXML mXML;
+	
 
-	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager) {
+	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager,
+			WoTMessageXML myMessageXML) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
 		mRandom = mNode.fastWeakRandom;
 		requestClient = myMessageManager.mRequestClient;
+		mXML = myMessageXML;
 	}
 
 	@Override
@@ -175,7 +179,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
-			Message message = WoTMessageXML.decode(mMessageManager, inputStream, list, state.getURI());
+			Message message = mXML.decode(mMessageManager, inputStream, list, state.getURI());
 			mMessageManager.onMessageReceived(message);
 			
 			fetchMoreMessages = true;

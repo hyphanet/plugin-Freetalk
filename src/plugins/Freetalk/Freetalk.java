@@ -10,7 +10,9 @@ import plugins.Freetalk.WoT.WoTMessageFetcher;
 import plugins.Freetalk.WoT.WoTMessageInserter;
 import plugins.Freetalk.WoT.WoTMessageListFetcher;
 import plugins.Freetalk.WoT.WoTMessageListInserter;
+import plugins.Freetalk.WoT.WoTMessageListXML;
 import plugins.Freetalk.WoT.WoTMessageManager;
+import plugins.Freetalk.WoT.WoTMessageXML;
 import plugins.Freetalk.tasks.PersistentTaskManager;
 import plugins.Freetalk.ui.FCP.FCPInterface;
 import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
@@ -43,7 +45,7 @@ import freenet.support.api.Bucket;
  * @author saces
  * @author bback
  */
-public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, FredPluginBaseL10n, FredPluginThemed, FredPluginThreadless,
+public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, FredPluginBaseL10n, FredPluginThemed, FredPluginThreadless,
 	FredPluginVersioned, FredPluginRealVersioned {
 
 	/* Constants */
@@ -76,6 +78,10 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	private WoTIdentityManager mIdentityManager;
 	
 	private WoTMessageManager mMessageManager;
+	
+	private WoTMessageXML mMessageXML;
+	
+	private WoTMessageListXML mMessageListXML;
 	
 	private WoTMessageFetcher mMessageFetcher;
 	
@@ -132,20 +138,30 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 		mMessageManager.start();
 		mTaskManager.start();
 		
+		Logger.debug(this, "Creating message XML...");
+		mMessageXML = new WoTMessageXML();
+		
+		Logger.debug(this, "Creating message list XML...");
+		mMessageListXML = new WoTMessageListXML();
+		
 		Logger.debug(this, "Creating message fetcher...");
-		mMessageFetcher = new WoTMessageFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageFetcher", mIdentityManager, mMessageManager);
+		mMessageFetcher = new WoTMessageFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageFetcher",
+				mIdentityManager, mMessageManager, mMessageXML);
 		mMessageFetcher.start();
 		
 		Logger.debug(this, "Creating message inserter...");
-		mMessageInserter = new WoTMessageInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageInserter", mIdentityManager, mMessageManager);
+		mMessageInserter = new WoTMessageInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageInserter",
+				mIdentityManager, mMessageManager, mMessageXML);
 		mMessageInserter.start();
 		
 		Logger.debug(this, "Creating message list fetcher...");
-		mMessageListFetcher = new WoTMessageListFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageListFetcher", mIdentityManager, mMessageManager);
+		mMessageListFetcher = new WoTMessageListFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageListFetcher",
+				mIdentityManager, mMessageManager, mMessageListXML);
 		mMessageListFetcher.start();
 		
 		Logger.debug(this, "Creating message list inserter...");
-		mMessageListInserter = new WoTMessageListInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageListInserter", mIdentityManager, mMessageManager);
+		mMessageListInserter = new WoTMessageListInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageListInserter",
+				mIdentityManager, mMessageManager, mMessageListXML);
 		mMessageListInserter.start();
 
 		Logger.debug(this, "Creating FCP interface...");
@@ -367,7 +383,7 @@ public class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n, Fred
 	public PersistentTaskManager getTaskManager() {
 		return mTaskManager;
 	}
-	
+
 	public String getVersion() {
 		return Version.longVersionString;
 	}

@@ -66,12 +66,15 @@ public final class WoTMessageInserter extends MessageInserter {
 	 */
 	private final Hashtable<BaseClientPutter, String> mMessageIDs = new Hashtable<BaseClientPutter, String>(2*ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT);
 	
+	private final WoTMessageXML mXML;
+	
 	public WoTMessageInserter(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager,
-			WoTMessageManager myMessageManager) {
+			WoTMessageManager myMessageManager, WoTMessageXML myMessageXML) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
 		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
 		mRequestClient = mMessageManager.mRequestClient;
+		mXML = myMessageXML;
 	}
 
 	@Override
@@ -124,7 +127,7 @@ public final class WoTMessageInserter extends MessageInserter {
 		
 		try {
 			os = tempB.getOutputStream();
-			WoTMessageXML.encode(m, os);
+			mXML.encode(m, os);
 			os.close(); os = null;
 			tempB.setReadOnly();
 
