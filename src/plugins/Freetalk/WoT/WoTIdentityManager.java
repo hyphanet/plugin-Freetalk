@@ -55,11 +55,13 @@ public final class WoTIdentityManager extends IdentityManager {
 	private static final int WOT_RECONNECT_DELAY = 5 * 1000; 
 	
 	/** The minimal amount of time between fetching identities */
-	private static final int MINIMAL_IDENTITY_FETCH_DELAY = 1000;
+	private static final int MINIMAL_IDENTITY_FETCH_DELAY = 60 * 1000;
 	
 	/** The minimal amount of time between fetching own identities */
 	private static final int MINIMAL_OWN_IDENTITY_FETCH_DELAY = 1000;
 	
+	private boolean mIdentityFetchInProgress = false;
+	private boolean mOwnIdentityFetchInProgress = false;
 	private long mLastIdentityFetchTime = 0;
 	private long mLastOwnIdentityFetchTime = 0;
 	
@@ -523,20 +525,38 @@ public final class WoTIdentityManager extends IdentityManager {
 		// parseIdentities() acquires and frees the WoTIdentityManager-lock for each identity to allow other threads to access the identity manager while the
 		// parsing is in progress. Therefore, we do not take the lock for the whole execution of this function.
 		synchronized(this) {
-		long now = CurrentTimeUTC.getInMillis();
-		if((now - mLastIdentityFetchTime) < MINIMAL_IDENTITY_FETCH_DELAY)
-			return;
-		
-		mLastIdentityFetchTime = now;
+			if(mIdentityFetchInProgress)
+				return;
+			
+			long now = CurrentTimeUTC.getInMillis();
+			if((now - mLastIdentityFetchTime) < MINIMAL_IDENTITY_FETCH_DELAY)
+				return;
+			
+			mIdentityFetchInProgress = true;
 		}
-				
-		Logger.debug(this, "Requesting identities with positive score from WoT ...");
-		SimpleFieldSet p1 = new SimpleFieldSet(true);
-		p1.putOverwrite("Message", "GetIdentitiesByScore");
-		p1.putOverwrite("Selection", "+");
-		p1.putOverwrite("Context", Freetalk.WOT_CONTEXT);
-		parseIdentities(sendFCPMessageBlocking(p1, null, "Identities").params, false);
 		
+		try {
+			Logger.debug(this, "Requesting identities with positive score from WoT ...");
+			SimpleFieldSet p1 = new SimpleFieldSet(true);
+			p1.putOverwrite("Message", "GetIdentitiesByScore");
+			p1.putOverwrite("Selection", "+");
+			p1.putOverwrite("Context", Freetalk.WOT_CONTEXT);
+			parseIdentities(sendFCPMessageBlocking(p1, null, "Identities").params, false);
+			
+			synchronized(this) {
+				// We must update the fetch-time after the parsing and only if the parsing succeeded:
+				// If we updated before the parsing and parsing failed or took ages (the thread sometimes takes 2 hours to execute, don't ask me why)
+				// then the garbage collector would delete identities.
+				mLastIdentityFetchTime = CurrentTimeUTC.getInMillis();
+			}
+		}
+		finally {
+			synchronized(this) {
+				mIdentityFetchInProgress = false;
+			}
+		}
+	
+			
 		// We usually call garbageCollectIdentities() after calling this function, it updates the cache already...
 		// if(mShortestUniqueNicknameCacheNeedsUpdate)
 		//	updateShortestUniqueNicknameCache();
@@ -550,17 +570,34 @@ public final class WoTIdentityManager extends IdentityManager {
 		// parseIdentities() acquires and frees the WoTIdentityManager-lock for each identity to allow other threads to access the identity manager while the
 		// parsing is in progress. Therefore, we do not take the lock for the whole execution of this function.
 		synchronized(this) {
-		long now = CurrentTimeUTC.getInMillis();
-		if((now - mLastOwnIdentityFetchTime) < MINIMAL_OWN_IDENTITY_FETCH_DELAY)
-			return;
-		
-		mLastOwnIdentityFetchTime = now;
+			if(mOwnIdentityFetchInProgress)
+				return;
+
+			long now = CurrentTimeUTC.getInMillis();
+			if((now - mLastOwnIdentityFetchTime) < MINIMAL_OWN_IDENTITY_FETCH_DELAY)
+				return;
+			
+			mOwnIdentityFetchInProgress = true;
 		}
 		
-		Logger.debug(this, "Requesting own identities from WoT ...");
-		SimpleFieldSet p2 = new SimpleFieldSet(true);
-		p2.putOverwrite("Message","GetOwnIdentities");
-		parseIdentities(sendFCPMessageBlocking(p2, null, "OwnIdentities").params, true);
+		try {
+			Logger.debug(this, "Requesting own identities from WoT ...");
+			SimpleFieldSet p2 = new SimpleFieldSet(true);
+			p2.putOverwrite("Message","GetOwnIdentities");
+			parseIdentities(sendFCPMessageBlocking(p2, null, "OwnIdentities").params, true);
+			
+			synchronized(this) {
+				// We must update the fetch-time after the parsing and only if the parsing succeeded:
+				// If we updated before the parsing and parsing failed or took ages (the thread sometimes takes 2 hours to execute, don't ask me why)
+				// then the garbage collector would delete identities.
+				mLastIdentityFetchTime = CurrentTimeUTC.getInMillis();
+			}
+		}
+		finally {
+			synchronized(this) {
+				mOwnIdentityFetchInProgress = false;
+			}
+		}
 		
 		// We usually call garbageCollectIdentities() after calling this function, it updates the cache already...
 		// if(mShortestUniqueNicknameCacheNeedsUpdate)
@@ -594,8 +631,6 @@ public final class WoTIdentityManager extends IdentityManager {
 			Logger.debug(this, "Parsing received own identities...");
 		else
 			Logger.debug(this, "Parsing received identities...");
-		
-		long time = CurrentTimeUTC.getInMillis();
 		
 		final PersistentTaskManager taskManager = mFreetalk.getTaskManager();
 	
@@ -652,7 +687,9 @@ public final class WoTIdentityManager extends IdentityManager {
 					synchronized(id) {
 					synchronized(db.lock()) {
 						try {
-							id.setLastReceivedFromWoT(time);
+							// TODO: The thread sometimes takes hours to parse the identities and I don't know why.
+							// So right now its better to re-query the time for each identity.
+							id.setLastReceivedFromWoT(CurrentTimeUTC.getInMillis());
 							id.checkedCommit(this);
 						}
 						catch(RuntimeException e) {
@@ -671,13 +708,13 @@ public final class WoTIdentityManager extends IdentityManager {
 	
 	@SuppressWarnings("unchecked")
 	private void garbageCollectIdentities() {
-		if(mLastIdentityFetchTime == 0 || mLastOwnIdentityFetchTime == 0)
-			return;
-		
 		final MessageManager messageManager = mFreetalk.getMessageManager();
 		final PersistentTaskManager taskManager = mFreetalk.getTaskManager();
 		
 		synchronized(this) {
+			if(mIdentityFetchInProgress || mOwnIdentityFetchInProgress || mLastIdentityFetchTime == 0 || mLastOwnIdentityFetchTime == 0)
+				return;
+			
 		/* Executing the thread loop once will always take longer than THREAD_PERIOD. Therefore, if we set the limit to 3*THREAD_PERIOD,
 		 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */
 		long lastAcceptTime = Math.min(mLastIdentityFetchTime, mLastOwnIdentityFetchTime) - THREAD_PERIOD * 3;
