@@ -928,6 +928,10 @@ public final class SubscribedBoard extends Board {
 		public void markThreadAsUnread() {
 			markAsUnread();
 			mWasThreadRead = false;
+			
+			// TODO: This should mark all replies as unread to be consistent with the interpretation of the "thread was read" flag:
+			// The "thread was read" flag should be false if exactly the thread and all messages have their "was read" flag == false.
+			// Right now this is being done by class ThreadPage which breaks the core/UI separation
 		}
 		
     }

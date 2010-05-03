@@ -166,7 +166,15 @@ public final class BoardPage extends WebPageImpl {
 						Integer.toString(mBoard.threadReplyCount(threadReference.getThreadID())));
 				
 				/* Unread count */
-				int unreadCount = threadWasRead ? 0 : mBoard.threadUnreadReplyCount(threadReference.getThreadID());
+				int unreadCount = 0;
+				if(!threadWasRead) {
+					if(!threadReference.wasRead()) {
+						unreadCount++;
+					}
+					
+					unreadCount += mBoard.threadUnreadReplyCount(threadReference.getThreadID());
+				}
+				
 				row.addChild(threadWasRead ? "td" : "th", new String[] { "align" }, new String[] { "center" }, Integer.toString(unreadCount));
 			}
 		}
