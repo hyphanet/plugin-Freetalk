@@ -873,6 +873,7 @@ public final class SubscribedBoard extends Board {
     	
     	public void removeThreadMessage() {
     		mMessage = null;
+    		mMessageDate = null;
     		
     		// TODO: This assumes that getAllThreadReplies() obtains the sorted order using an index. This is not the case right now. If we do not
     		// optimize getAllThreadReplies() we should just iterate over the unsorted replies list and do minimum search.
@@ -911,6 +912,7 @@ public final class SubscribedBoard extends Board {
 				throw new IllegalArgumentException();
 			
 			mMessage = myThread;
+			mMessageDate = mMessage.getDate();
 			
 			markAsUnread(); // Mark the thread message itself as unread (not the whole thread).
 			
