@@ -590,7 +590,7 @@ public final class WoTIdentityManager extends IdentityManager {
 				// We must update the fetch-time after the parsing and only if the parsing succeeded:
 				// If we updated before the parsing and parsing failed or took ages (the thread sometimes takes 2 hours to execute, don't ask me why)
 				// then the garbage collector would delete identities.
-				mLastIdentityFetchTime = CurrentTimeUTC.getInMillis();
+				mLastOwnIdentityFetchTime = CurrentTimeUTC.getInMillis();
 			}
 		}
 		finally {
