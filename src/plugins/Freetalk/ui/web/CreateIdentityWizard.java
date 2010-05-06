@@ -72,7 +72,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 			if(insertURIproblem != null || requestURIproblem != null)
 				mIdentityURI = null;
 
-			/* FIXME: Check whether the URI pair is correct, i.e. if the insert URI really is one, if the request URI really is one and
+			/* TODO: Check whether the URI pair is correct, i.e. if the insert URI really is one, if the request URI really is one and
 			 * if the two belong together. How to do this? */
 		}
 

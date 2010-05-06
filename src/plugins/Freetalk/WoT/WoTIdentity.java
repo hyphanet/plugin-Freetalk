@@ -162,7 +162,7 @@ public class WoTIdentity extends Persistent implements FTIdentity {
 		|| !StringValidityChecker.containsNoLinebreaks(newNickname)
 		|| !StringValidityChecker.containsNoControlCharacters(newNickname)
 		|| !StringValidityChecker.containsNoInvalidFormatting(newNickname))
-			throw new InvalidParameterException("Nickname contains invalid characters"); /* FIXME: Tell the user which ones are invalid!!! */
+			throw new InvalidParameterException("Nickname contains invalid characters"); /* TODO: Tell the user which ones are invalid!!! */
 		
 		if(newNickname.length() == 0) throw new InvalidParameterException("Blank nickname.");
 		if(newNickname.length() > 50) throw new InvalidParameterException("Nickname is too long, the limit is 50 characters.");

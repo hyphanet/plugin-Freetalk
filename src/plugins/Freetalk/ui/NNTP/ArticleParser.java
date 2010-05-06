@@ -84,7 +84,7 @@ public class ArticleParser {
 
 	public String getParentID() throws NoSuchFieldException {
 		if(parentID == null)
-			throw new NoSuchFieldException(); /* FIXME: Also throw this in the other getter functions */
+			throw new NoSuchFieldException(); /* TODO: Also throw this in the other getter functions */
 		return parentID;
 	}
 
@@ -359,7 +359,7 @@ public class ArticleParser {
 	 * Parse the message body.
 	 */
 	private void parseBody(ByteBuffer bytes, ContentType type, String encodingName) {
-		// FIXME: handle multi-part content, upload non-text parts as
+		// TODO: handle multi-part content, upload non-text parts as
 		// attachments, etc.
 
 		Charset bodyCharset;

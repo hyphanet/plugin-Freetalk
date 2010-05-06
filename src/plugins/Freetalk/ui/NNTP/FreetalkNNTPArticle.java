@@ -182,7 +182,7 @@ public class FreetalkNNTPArticle {
 			return "<" + mMessage.getID() + ">";
 
 		case REFERENCES:
-			// FIXME: it would be good for the message to include a
+			// TODO: it would be good for the message to include a
 			// list of earlier messages in the thread, in case the
 			// parent message can't be retrieved.
 

@@ -264,10 +264,13 @@ public final class FCPInterface implements FredPluginFCP {
                 }
                 catch(MessageNotFetchedException e) {
                 	// The thread was not downloaded yet.
-                	// TODO: Maybe Add title guess = title of first reply. See BoardPage for how to obtain.
-                	// FIXME: The author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out
+                	// TODO: Add guesses for title and author ID.
+                	// Title guess = title of first reply. See BoardPage for how to obtain.
+                	// Further, the author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out
                 	// what the proper place for a function "getIdentityIDFromThreadID" is and whether I have already written one which can do that, and if
                 	// yes, where it is.
+                	// IMPORTANT: Those guesses should be marked as guesses in the reply (by using different field names) because it is not guranteed that
+                	// the author of the thread reply did not specify a faked thread ID / thread title.
                 }
                 replysender.send(sfs);
             }

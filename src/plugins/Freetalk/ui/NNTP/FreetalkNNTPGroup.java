@@ -36,7 +36,7 @@ public final class FreetalkNNTPGroup {
      * Convert a Freetalk board name into an NNTP group name.
      */
     public static String boardToGroupName(final String name) {
-        // FIXME: This does nothing at the moment.  In the future it
+        // TODO: This does nothing at the moment.  In the future it
         // could be used to quote names in ASCII, for older
         // newsreaders that only allow ASCII group names
         return name;
@@ -71,7 +71,7 @@ public final class FreetalkNNTPGroup {
     		return mBoard.getFirstMessageIndex();
     	}
     	catch(NoSuchMessageException e) {
-    		return 0; // FIXME: Does NNTP expect this if there are no messages??
+    		return 0; // TODO: Does NNTP expect this if there are no messages??
     	}
     }
 
@@ -83,7 +83,7 @@ public final class FreetalkNNTPGroup {
     		return mBoard.getLastMessageIndex();
     	}
     	catch(NoSuchMessageException e) {
-    		return 0; // FIXME: Does NNTP expect this if there are no messages??
+    		return 0; // TODO: Does NNTP expect this if there are no messages??
     	}
     }
 

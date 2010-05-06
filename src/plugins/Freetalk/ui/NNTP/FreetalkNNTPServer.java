@@ -85,7 +85,7 @@ public final class FreetalkNNTPServer implements Runnable {
 	public void run() {
 		try {
 			mInterface = NetworkInterface.create(mPort, mBindTo, mAllowedHosts, mFreetalk.getPluginRespirator().getNode().executor, true);
-			/* FIXME: NetworkInterface.accept() currently does not support being interrupted by Thread.interrupt(),
+			/* TODO: NetworkInterface.accept() currently does not support being interrupted by Thread.interrupt(),
 			 * shutdown works by timeout. This sucks and should be changed. As long as it is still like that,
 			 * we have to use a low timeout. */
 			mInterface.setSoTimeout(1000);
