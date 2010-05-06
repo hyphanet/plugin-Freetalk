@@ -55,7 +55,7 @@ public abstract class IdentityManager implements PrioRunnable {
 	public abstract Iterable<? extends FTIdentity> getAllIdentities();
 	
 	public synchronized int countKnownIdentities() {
-		/* FIXME: This should probably take an FTOwnIdentity as param and count the identities seen by it */
+		/* TODO: This should probably take an FTOwnIdentity as param and count the identities seen by it */
 		Query q = db.query();
 		q.constrain(FTIdentity.class);
 		q.constrain(FTOwnIdentity.class).not();
@@ -97,4 +97,33 @@ public abstract class IdentityManager implements PrioRunnable {
 	 * This function does not do any synchronization and does not require any synchronization, therefore you can use it everywhere without causing deadlocks.
 	 */
 	public abstract String getShortestUniqueName(FTIdentity identity);
+
+	/**
+	 * Extracts the OwnIdentity ID from the input Freetalk address 
+	 * @param freetalkAddress freetalk address
+	 * @return OwnIdentity ID or null on error
+	 */
+	public static String extractIdFromFreetalkAddress(final String freetalkAddress) {
+	    /*
+	     * Format of input:
+	     *   nickname@_ID_.freetalk
+	     * We want the _ID_
+	     */
+	    final String trailing = ".freetalk";
+	    try {
+	        // sanity checks
+	        if (!freetalkAddress.toLowerCase().endsWith(trailing)) {
+	            return null;
+	        }
+	        int ix = freetalkAddress.indexOf('@');
+	        if (ix < 0) {
+	            return null;
+	        }
+	        
+	        final String id = freetalkAddress.substring(ix+1, freetalkAddress.length()-trailing.length());
+	        return id;
+	    } catch(Exception ex) {
+	        throw new RuntimeException(ex);
+	    }
+	}
 }

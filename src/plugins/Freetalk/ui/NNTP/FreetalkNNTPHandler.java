@@ -44,7 +44,7 @@ import freenet.support.Logger;
  * @author bback
  * @author xor (xor@freenetproject.org)
  * 
- * FIXME: allow board subscribe by NNTP server
+ * TODO: allow board subscribe by NNTP server
  */
 public final class FreetalkNNTPHandler implements Runnable {
 
@@ -393,7 +393,7 @@ public final class FreetalkNNTPHandler implements Runnable {
 			printStatusLine("480 Authentification required");
 			return;
 		}
-        // FIXME: filter by wildmat
+        // TODO: filter by wildmat
         printStatusLine("215 List of newsgroups follows:");
 
         synchronized(mMessageManager) {
@@ -417,7 +417,7 @@ public final class FreetalkNNTPHandler implements Runnable {
 			printStatusLine("480 Authentification required");
 			return;
 		}
-        // FIXME: add filtering
+        // TODO: add filtering
         printStatusLine("215 Information follows:");
         synchronized(mMessageManager) {
         for (final Board board : mMessageManager.boardIteratorSortedByName()) { // TODO: Optimization: Use a non-sorting function.
@@ -578,7 +578,7 @@ public final class FreetalkNNTPHandler implements Runnable {
         
         FTOwnIdentity oi = null;
         try {
-        	final String id = extractIdFromFreetalkAddress(value);
+        	final String id = IdentityManager.extractIdFromFreetalkAddress(value);
             oi = mIdentityManager.getOwnIdentity(id);
         } catch (NoSuchIdentityException e) {
         }
@@ -588,35 +588,6 @@ public final class FreetalkNNTPHandler implements Runnable {
         } else {
             printStatusLine("281 Authentication accepted");
             mAuthenticatedUser = oi; // assign authenticated id
-        }
-    }
-    
-    /**
-     * Extracts the OwnIdentity ID from the input Freetalk address 
-     * @param freetalkAddress freetalk address
-     * @return OwnIdentity ID or null on error
-     */
-    private String extractIdFromFreetalkAddress(final String freetalkAddress) { // FIXME: Move to class FTIdentity
-        /*
-         * Format of input:
-         *   nickname@_ID_.freetalk
-         * We want the _ID_
-         */
-        final String trailing = ".freetalk";
-        try {
-            // sanity checks
-            if (!freetalkAddress.toLowerCase().endsWith(trailing)) {
-                return null;
-            }
-            int ix = freetalkAddress.indexOf('@');
-            if (ix < 0) {
-                return null;
-            }
-            
-            final String id = freetalkAddress.substring(ix+1, freetalkAddress.length()-trailing.length());
-            return id;
-        } catch(Exception ex) {
-            return null;
         }
     }
     
