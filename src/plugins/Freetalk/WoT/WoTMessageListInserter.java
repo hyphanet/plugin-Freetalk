@@ -28,6 +28,7 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
@@ -132,8 +133,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 			InsertBlock ib = new InsertBlock(tempB, null, list.getInsertURI());
 			InsertContext ictx = mClient.getInsertContext(true);
 
-			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this);
-			// pu.setPriorityClass(RequestStarter.UPDATE_PRIORITY_CLASS); /* pluginmanager defaults to interactive priority */
+			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 			addInsert(pu);
 			tempB = null;
 
