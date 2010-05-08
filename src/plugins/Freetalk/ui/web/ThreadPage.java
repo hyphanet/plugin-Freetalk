@@ -202,17 +202,19 @@ public final class ThreadPage extends WebPageImpl {
      * @param ref A reference to the message which is to be displayed. Can be null, then the "message was read?" information will be unavailable. 
      */
     private void addMessageBox(Message message, MessageReference ref) {
+    	
+    	final WoTIdentity author = (WoTIdentity)message.getAuthor();
 
 		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class" }, new String[] { "0", "100%", "message" });
 		HTMLNode row = table.addChild("tr", "class", "message");
 		HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width", "class" }, new String[] { "left", "top", "2", "15%", "author" }, "");
-		authorNode.addChild("a", new String[] { "class", "href", "title" }, new String[] { "identity-link", "/WoT/ShowIdentity?id=" + message.getAuthor().getID(), "Web of Trust Page" }).addChild("abbr", new String[] { "title" }, new String[] { message.getAuthor().getID() }).addChild("span", "class", "name", message.getAuthor().getShortestUniqueName());
+		authorNode.addChild("a", new String[] { "class", "href", "title" }, new String[] { "identity-link", "/WoT/ShowIdentity?id=" + author.getID(), "Web of Trust Page" }).addChild("abbr", new String[] { "title" }, new String[] { message.getAuthor().getID() }).addChild("span", "class", "name", message.getAuthor().getShortestUniqueName());
         authorNode.addChild("br");
-        authorNode.addChild("#", l10n().getString("ThreadPage.Author.Posts") + ": " + mFreetalk.getMessageManager().getMessagesBy(message.getAuthor()).size());
+        authorNode.addChild("#", l10n().getString("ThreadPage.Author.Posts") + ": " + mFreetalk.getMessageManager().getMessagesBy(author).size());
         authorNode.addChild("br");
         authorNode.addChild("#", l10n().getString("ThreadPage.Author.TrustersCount") + ": ");
         try {
-        	addTrustersInfo(authorNode, message.getAuthor());
+        	addTrustersInfo(authorNode, author);
         }
         catch(Exception e) {
         	Logger.error(this, "addTrustersInfo() failed", e);
@@ -222,46 +224,57 @@ public final class ThreadPage extends WebPageImpl {
         authorNode.addChild("br");
         authorNode.addChild("#", l10n().getString("ThreadPage.Author.TrusteesCount") + ": ");
         try {
-        	addTrusteesInfo(authorNode, message.getAuthor());
+        	addTrusteesInfo(authorNode, author);
         }
         catch(Exception e) {
         	Logger.error(this, "addTrusteesInfo() failed", e);
         	authorNode.addChild("#", l10n().getString("ThreadPage.Author.TrusteesCountUnknown"));
         }
         
-        // Your trust value
-        authorNode.addChild("br");
-        
         Integer intTrust = null;
-        String trust;
-        try {
-            intTrust = ((WoTOwnIdentity)mOwnIdentity).getTrustIn((WoTIdentity)message.getAuthor());
-            trust = Integer.toString(intTrust); 
-        } catch (NotTrustedException e) {
-            trust = l10n().getString("ThreadPage.Author.YourTrustNone");
-        } catch (Exception e) {
-        	Logger.error(this, "getTrust() failed", e);
-        	trust = l10n().getString("ThreadPage.Author.YourTrustUnknown");
+        
+        if(author == mOwnIdentity) {
+        	authorNode.addChild("br");
+        	authorNode.addChild("br");
+        	authorNode.addChild("#", l10n().getString("ThreadPage.Author.Yourself"));
+        	authorNode.addChild("br");
+        } else {
+	        // Your trust value
+	        authorNode.addChild("br");
+	        
+	        String trust;
+	        try {
+	            intTrust = ((WoTOwnIdentity)mOwnIdentity).getTrustIn(author);
+	            trust = Integer.toString(intTrust); 
+	        } catch (NotTrustedException e) {
+	            trust = l10n().getString("ThreadPage.Author.YourTrustNone");
+	        } catch (Exception e) {
+	        	Logger.error(this, "getTrust() failed", e);
+	        	trust = l10n().getString("ThreadPage.Author.YourTrustUnknown");
+	        }
+	        
+	        authorNode.addChild("#", l10n().getString("ThreadPage.Author.YourTrust") + ": "+trust);
+        
+        
+	        // Effective score of the identity
+	        authorNode.addChild("br");
+	        
+	        String txtScore;
+	        try {
+	        	final int score = ((WoTIdentityManager)mFreetalk.getIdentityManager()).getScore((WoTOwnIdentity)mOwnIdentity, author);
+	        	txtScore = Integer.toString(score);
+	        } catch(NotInTrustTreeException e) {
+	        	txtScore = l10n().getString("Common.WebOfTrust.ScoreNull");
+	        } catch(Exception e) {
+	        	Logger.error(this, "getScore() failed", e);
+	        	txtScore = l10n().getString("Common.WebOfTrust.ScoreNull");
+	        }
+	        
+	        authorNode.addChild("#", l10n().getString("Common.WebOfTrust.Score") + ": "+ txtScore);
         }
         
-        authorNode.addChild("#", l10n().getString("ThreadPage.Author.YourTrust") + ": "+trust);
-        
-        // Effective score of the identity
         authorNode.addChild("br");
-        
-        String txtScore;
-        try {
-        	final int score = ((WoTIdentityManager)mFreetalk.getIdentityManager()).getScore((WoTOwnIdentity)mOwnIdentity, (WoTIdentity)message.getAuthor());
-        	txtScore = Integer.toString(score);
-        } catch(NotInTrustTreeException e) {
-        	txtScore = l10n().getString("Common.WebOfTrust.ScoreNull");
-        } catch(Exception e) {
-        	Logger.error(this, "getScore() failed", e);
-        	txtScore = l10n().getString("Common.WebOfTrust.ScoreNull");
-        }
-        
-        authorNode.addChild("#", l10n().getString("Common.WebOfTrust.Score") + ": "+ txtScore);
-        authorNode.addChild("div", "class", "identicon").addChild("img", new String[] { "src", "width", "height" }, new String[] { "/WoT/GetIdenticon?identity=" + message.getAuthor().getID(), "128", "128"});
+        authorNode.addChild("div", "class", "identicon").addChild("img", new String[] { "src", "width", "height" }, new String[] { "/WoT/GetIdenticon?identity=" + author.getID(), "128", "128"});
 
         // Title of the message
 		HTMLNode title = row.addChild("td", new String[] { "align", "class" }, new String[] { "left", "title " + ((ref == null || ref.wasRead()) ? "read" : "unread") });
@@ -271,7 +284,7 @@ public final class ThreadPage extends WebPageImpl {
         if(ref != null && ref instanceof BoardThreadLink)
         	addMarkThreadAsUnreadButton(title, (BoardThreadLink)ref);
         
-        if(message.getAuthor() != mOwnIdentity) {
+        if(author != mOwnIdentity) {
         	HTMLNode modButtons = title.addChild("div", "class", "mod-buttons");
         	
         	try {

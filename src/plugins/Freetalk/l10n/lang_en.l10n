@@ -142,6 +142,7 @@ ThreadPage.Author.TrusteesCount=Trustees count
 ThreadPage.Author.YourTrust=Your trust
 ThreadPage.Author.TrustersCountUnknown=Unknown
 ThreadPage.Author.TrusteesCountUnknown=Unknown
+ThreadPage.Author.Yourself=This is you
 ThreadPage.Author.YourTrustNone=None
 ThreadPage.Author.YourTrustUnknown=UNKNOWN
 ThreadPage.ThreadIsNoThreadWarning.Header=This is a forked thread
