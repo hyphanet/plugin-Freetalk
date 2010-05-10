@@ -4,9 +4,6 @@
 package plugins.Freetalk;
 
 import plugins.Freetalk.WoT.WoTMessageURI;
-
-import com.db4o.ext.ExtObjectContainer;
-
 import freenet.keys.FreenetURI;
 
 
@@ -18,6 +15,7 @@ import freenet.keys.FreenetURI;
  * 
  * @author xor (xor@freenetproject.org)
  */
+//@Indexed // I can't think of any query which would need to get all MessageURI objects.
 public abstract class MessageURI extends Persistent {
 
 	/**

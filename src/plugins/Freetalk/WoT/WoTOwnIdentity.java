@@ -5,6 +5,7 @@ package plugins.Freetalk.WoT;
 
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Persistent.Indexed;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import plugins.Freetalk.exceptions.NotTrustedException;
 import freenet.keys.FreenetURI;
@@ -20,6 +21,7 @@ import freenet.keys.FreenetURI;
  * 
  * @author xor (xor@freenetproject.org)
  */
+@Indexed
 public final class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 	
 	/* Attributes, stored in the database. */
@@ -28,14 +30,7 @@ public final class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 
     /** If true then auto-subscribe to boards that were subscribed in the NNTP client */
     private boolean mNntpAutoSubscribeBoards;
-    
-	
-	/** Get a list of fields which the database should create an index on. */
-	static {
-		/* FIXME: Figure out whether indexed fields are inherited from parent classes. Otherwise we would have to also list the indexed fields
-		 * of WoTIdentity here. */
-		registerIndexedFields(WoTOwnIdentity.class, new String[] { }); 
-	}
+
 
 	public WoTOwnIdentity(String myID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
 		super(myID, myRequestURI, myNickname);

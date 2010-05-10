@@ -6,6 +6,7 @@ package plugins.Freetalk;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
+// @Indexed // I can't think of any query which would need to get all OwnMessageList objects.
 public abstract class OwnMessageList extends MessageList {
 
 	private boolean iAmBeingInserted = false;

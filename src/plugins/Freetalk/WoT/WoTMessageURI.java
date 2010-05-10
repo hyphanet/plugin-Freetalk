@@ -25,6 +25,7 @@ import freenet.support.Base64;
  * 
  * @author xor (xor@freenetproject.org)
  */
+// @Indexed // I can't think of any query which would need to get all WoTMessageURI objects.
 public final class WoTMessageURI extends MessageURI {
 
 	private final FreenetURI mFreenetURI;

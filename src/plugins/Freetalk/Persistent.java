@@ -3,8 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.Collection;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -15,7 +18,6 @@ import com.db4o.ext.ExtObjectSet;
 import com.db4o.query.Query;
 
 import freenet.support.Logger;
-
 /**
  * This is the base class for all classes which are stored in the Freetalk database.<br /><br />
  * 
@@ -34,33 +36,15 @@ public abstract class Persistent {
 	 * A reference to the database in which this Persistent object resists.
 	 */
 	protected transient ExtObjectContainer mDB;
-	
-	
-	/**
-	 * Holds a per-class list of indexed member variables. Indexed member variables are such where db4o is 
-	 * told to create an index on for fast queries.
-	 */
-	protected transient static final Hashtable<Class<? extends Persistent>, String[]> mIndexedFields = new Hashtable<Class<? extends Persistent>, String[]>();
 
 	/**
-	 * Function for registering the indexed fields of a class.
-	 * Has to be called in the "static{}" code block of the class - calling it after the static code block was executed will not have any effect!
-	 * 
-	 * @param clazz The class of which the fields are to be registered
-	 * @param fields The names of the fields in the Java source code.
+	 * This annotation should be added to all member variables (of Persistent classes) which the database should be configured to generate an index on.
+	 * If a class has indexed fields you MUST add it to the list of persistent classes in {@link Freetalk.openDatabase} 
 	 */
-	protected static final void registerIndexedFields(Class<? extends Persistent> clazz, String[] fields) {
-		mIndexedFields.put(clazz, fields);
-	}
-	
-	/**
-	 * Gets all indexed fields which were registered yet.
-	 * Must be called after the "static{}" code blocks were executed as the indexed fields are registered during that phase.
-	 * @return
-	 */
-	protected synchronized static final Hashtable<Class<? extends Persistent>, String[]> getIndexedFields() {
-		return mIndexedFields;
-	}
+	@Target( {ElementType.FIELD, ElementType.TYPE} )
+	@Retention( RetentionPolicy.RUNTIME )
+	public @interface Indexed { }
+
 	
 	/**
 	 * Must be called once after obtaining this object from the database before using any getter or setter member functions

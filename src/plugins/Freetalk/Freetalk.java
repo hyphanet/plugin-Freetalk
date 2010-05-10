@@ -3,17 +3,28 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import java.util.Map.Entry;
+import java.lang.reflect.Field;
 
+import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
+import plugins.Freetalk.WoT.WoTMessage;
 import plugins.Freetalk.WoT.WoTMessageFetcher;
 import plugins.Freetalk.WoT.WoTMessageInserter;
+import plugins.Freetalk.WoT.WoTMessageList;
 import plugins.Freetalk.WoT.WoTMessageListFetcher;
 import plugins.Freetalk.WoT.WoTMessageListInserter;
 import plugins.Freetalk.WoT.WoTMessageListXML;
 import plugins.Freetalk.WoT.WoTMessageManager;
+import plugins.Freetalk.WoT.WoTMessageRating;
+import plugins.Freetalk.WoT.WoTMessageURI;
 import plugins.Freetalk.WoT.WoTMessageXML;
+import plugins.Freetalk.WoT.WoTOwnIdentity;
+import plugins.Freetalk.WoT.WoTOwnMessage;
+import plugins.Freetalk.WoT.WoTOwnMessageList;
+import plugins.Freetalk.tasks.OwnMessageTask;
+import plugins.Freetalk.tasks.PersistentTask;
 import plugins.Freetalk.tasks.PersistentTaskManager;
+import plugins.Freetalk.tasks.WoT.IntroduceIdentityTask;
 import plugins.Freetalk.ui.FCP.FCPInterface;
 import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
 import plugins.Freetalk.ui.web.WebInterface;
@@ -193,27 +204,78 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	private ExtObjectContainer openDatabase(String filename) {
-		Configuration dbCfg = Db4o.newConfiguration();
-		dbCfg.reflectWith(new JdkReflector(getPluginClassLoader()));
-		dbCfg.exceptionsOnNotStorable(true);
-		dbCfg.activationDepth(5); /* FIXME: Figure out a reasonable value */
+		Configuration cfg = Db4o.newConfiguration();
 		
-        // TURN OFF SHUTDOWN HOOK.
-        // The shutdown hook does auto-commit. We do NOT want auto-commit: if a
-        // transaction hasn't commit()ed, it's not safe to commit it.
-        dbCfg.automaticShutDown(false);
+		// Required config options:
+		
+		cfg.reflectWith(new JdkReflector(getPluginClassLoader())); // Needed because the node uses it's own classloader for plugins
+		cfg.exceptionsOnNotStorable(true); // Notify us if we tried to store a class which db4o won't store
+		cfg.activationDepth(5); // TODO: Decrease to 1 after we have explicit activation everywhere.
+        cfg.automaticShutDown(false); // The shutdown hook does auto-commit() but we want to rollback(), we MUST NOT commit half-finished transactions
         
-        for(Entry<Class<? extends Persistent>, String[]> entry : Persistent.getIndexedFields().entrySet()) {
-        	Class<? extends Persistent> currentClass = entry.getKey();
+        // Performance config options:
+        cfg.callbacks(false); // We don't use callbacks yet. TODO: Investigate whether we might want to use them
+        cfg.classActivationDepthConfigurable(false);
+        cfg.reserveStorageSpace(1 * 1024 * 1024);
+        cfg.databaseGrowthSize(1 * 1024 * 1024);
+      
+        // Registration of indices (also performance)
+        
+        final Class<? extends Persistent>[] persistentClasses = new Class[] {
+        	Board.class,
+        	Board.BoardMessageLink.class,
+        	Config.class,
+        	FetchFailedMarker.class,
+        	Message.class,
+        	MessageList.class,
+        	MessageList.MessageReference.class,
+        	MessageList.MessageFetchFailedMarker.class,
+        	MessageList.MessageListFetchFailedMarker.class,
+        	MessageRating.class,
+        	MessageURI.class,
+        	OwnMessage.class,
+        	OwnMessageList.class,
+        	SubscribedBoard.class,
+        	SubscribedBoard.MessageReference.class,
+        	SubscribedBoard.BoardThreadLink.class,
+        	SubscribedBoard.BoardReplyLink.class,
+        	PersistentTask.class,
+        	OwnMessageTask.class,
+        	IntroduceIdentityTask.class,
+        	WoTIdentity.class,
+        	WoTMessage.class,
+        	WoTMessageList.class,
+        	WoTMessageRating.class,
+        	WoTMessageURI.class,
+        	WoTOwnIdentity.class,
+        	WoTOwnMessage.class,
+        	WoTOwnMessageList.class
+        };
+        
+        for(Class clazz : persistentClasses) {
+        	boolean classHasIndex = clazz.getAnnotation(Persistent.Indexed.class) != null;
         	
-        	for(String indexedField : entry.getValue()) { // FIXME: Test whether this actually works!
-        		dbCfg.objectClass(currentClass).objectField(indexedField).indexed(true);
+        	Logger.debug(this, "Peristent class: " + clazz.getCanonicalName() + "; hasIndex==" + classHasIndex);
+        	
+        	// TODO: Make very sure that it has no negative side effects if we disable class indices for some classes
+        	// Maybe benchmark in comparison to a database which has class indices enabled for ALL classes.
+        	cfg.objectClass(clazz).indexed(classHasIndex);
+   
+        	for(Field field : clazz.getDeclaredFields()) {
+        		if(field.getAnnotation(Persistent.Indexed.class) != null) {
+        			Logger.debug(this, "Registering indexed field " + clazz.getCanonicalName() + '.' + field.getName());
+        			cfg.objectClass(clazz).objectField(field.getName()).indexed(true);
+        		}
         	}
         }
+        
+        // TODO: We should check whether db4o inherits the indexed attribute to child classes, for example for this one:
+        // Unforunately, db4o does not provide any way to query the indexed() property of fields, you can only set it
+        // We might figure out whether inheritance works by writing a benchmark.
 		
-		
-		return Db4o.openFile(dbCfg, filename).ext();
+		return Db4o.openFile(cfg, filename).ext();
 	}
 	
 	/**

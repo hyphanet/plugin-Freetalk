@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.UUID;
 
+import plugins.Freetalk.Persistent.Indexed;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -27,6 +28,7 @@ import freenet.support.StringValidityChecker;
  *
  * @author xor
  */
+@Indexed // TODO: Check whether we need the index
 public class Board extends Persistent implements Comparable<Board> {
 
     /* Constants */
@@ -44,8 +46,10 @@ public class Board extends Persistent implements Comparable<Board> {
 
     /* Attributes, stored in the database */
     
+    @Indexed
     private final String mID;
 
+    @Indexed
     private final String mName;
 
     private final Date mFirstSeenDate;
@@ -55,13 +59,6 @@ public class Board extends Persistent implements Comparable<Board> {
     
     private int mNextFreeMessageIndex = 1;
 
-
-    /**
-     * Get a list of fields which the database should create an index on.
-     */
-    static {
-        registerIndexedFields(Board.class, new String[] { "mID", "mName" });
-    }
 
     public static String[] getAllowedLanguageCodes() {
         return Locale.getISOLanguages();
@@ -216,10 +213,13 @@ public class Board extends Persistent implements Comparable<Board> {
     	return false;
     }
     
+    // @Indexed // I can't think of any query which would need to get all BoardMessageLink objects.
     public static final class BoardMessageLink extends Persistent {
     	
+    	@Indexed
     	private final Board mBoard;
     	
+    	@Indexed
     	private final Message mMessage;
     	
     	private final int mMessageIndex;
@@ -237,10 +237,6 @@ public class Board extends Persistent implements Comparable<Board> {
     		mAuthor = myMessage.getAuthor();
     		
     		assert(mMessageIndex == (mBoard.mNextFreeMessageIndex-1));
-    	}
-    	
-    	static {
-    		registerIndexedFields(BoardMessageLink.class, new String[] { "mBoard" , "mMessage" });
     	}
     	
     	public Board getBoard() {

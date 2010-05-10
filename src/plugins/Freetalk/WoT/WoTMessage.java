@@ -38,6 +38,7 @@ import freenet.keys.FreenetURI;
  * 
  * @author xor
  */
+// @Indexed // I can't think of any query which would need to get all WoTMessage objects.
 public final class WoTMessage extends Message {
 
 	/**

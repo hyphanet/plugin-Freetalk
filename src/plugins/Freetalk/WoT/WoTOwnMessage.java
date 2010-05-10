@@ -14,6 +14,7 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 
+//@Indexed // I can't think of any query which would need to get all WoTOwnMessage objects.
 public final class WoTOwnMessage extends OwnMessage {
 
 	public static WoTOwnMessage construct(WoTMessageURI myParentThreadURI, Message newParentMessage, Set<Board> newBoards, Board newReplyToBoard, 

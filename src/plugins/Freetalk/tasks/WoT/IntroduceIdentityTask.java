@@ -16,6 +16,7 @@ import freenet.support.Logger;
  * This task checks every day whether the own identity which owns it needs to solve introduction puzzles to be visible to the web of trust.
  * An identity is considered to be needing introduction if it has written at least 1 message and if less than 5 identities trust it (the value of 5 is configurable).
  */
+// @Indexed // I can't think of any query which would need to get all IntroduceIdentityTask objects.
 public class IntroduceIdentityTask extends OwnMessageTask {
 	
 	/**

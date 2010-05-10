@@ -9,6 +9,7 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import freenet.keys.FreenetURI;
 
+//@Indexed // I can't think of any query which would need to get all WoTMessageList objects.
 public final class WoTMessageList extends MessageList {
 
 	public WoTMessageList(FTIdentity myAuthor, FreenetURI myURI, List<MessageReference> newMessages) throws InvalidParameterException,

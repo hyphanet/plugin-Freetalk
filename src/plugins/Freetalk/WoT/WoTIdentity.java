@@ -6,6 +6,7 @@ package plugins.Freetalk.WoT;
 import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Persistent;
+import plugins.Freetalk.Persistent.Indexed;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
@@ -24,10 +25,12 @@ import freenet.support.StringValidityChecker;
  * 
  * @author xor (xor@freenetproject.org)
  */
+@Indexed // TODO: Check whether we really need this index.
 public class WoTIdentity extends Persistent implements FTIdentity {
 	
 	/* Attributes, stored in the database. */
 	
+	@Indexed
 	private final String mID;
     
 	/** The requestURI used to fetch this identity from Freenet */
@@ -42,9 +45,6 @@ public class WoTIdentity extends Persistent implements FTIdentity {
 	 */
 	private long mLastReceivedFromWoT;
 
-	static {
-		registerIndexedFields(WoTIdentity.class, new String[] { "mID" });
-	}
 
 	public WoTIdentity(String myID, FreenetURI myRequestURI, String myNickname) {
 		if(myID == null) throw new IllegalArgumentException("ID == null");

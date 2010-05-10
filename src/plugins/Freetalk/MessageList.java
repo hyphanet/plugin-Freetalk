@@ -37,21 +37,20 @@ import freenet.support.Logger;
  * This means that objects of class MessageList can be activated to a depth of only 1 when querying them from the database.
  * All methods automatically activate the object to any needed higher depth.
  */
+// @Indexed // I can't think of any query which would need to get all MessageList objects.
 public abstract class MessageList extends Persistent implements Iterable<MessageList.MessageReference> {
 	
 	public static final int MAX_MESSAGES_PER_MESSAGELIST = 256;
 	
 	
+	@Indexed
 	protected String mID; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
 	
+	@Indexed
 	protected final FTIdentity mAuthor;
 	
+	@Indexed
 	protected int mIndex; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
-	
-	
-	static { 
-		registerIndexedFields(MessageList.class, new String[] { "mID", "mAuthor", "mIndex" });
-	}
 	
 	
 	/**
@@ -60,23 +59,25 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	 * objects which belong to a certain board - which is necessary because we only want to download messages from boards to which the
 	 * user is actually subscribed.
 	 */
+	// @Indexed // I can't think of any query which would need to get all MessageReference objects.
 	public static class MessageReference extends Persistent {
 		
 		private MessageList mMessageList = null;
 		
+		@Indexed
 		private final String mMessageID;
 		
 		private final FreenetURI mURI; 
 		
+		@Indexed
 		private final Board mBoard;
 		
+		@Indexed
 		private final Date mDate;
 		
+		@Indexed
 		private boolean mWasDownloaded = false;
-		
-		static  {
-			registerIndexedFields(MessageList.class, new String[] { "mMessageID", "mBoard", "mDate", "mWasDownloaded" });
-		}
+
 		
 		public MessageReference(String newMessageID, FreenetURI newURI, Board myBoard, Date myDate) {
 			if(newMessageID == null || newURI == null || (myBoard == null && !(this instanceof OwnMessageList.OwnMessageReference)))
@@ -184,13 +185,12 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		
 	}
 	
+	// @Indexed // I can't think of any query which would need to get all MessageListFetchFailedMarker objects.
 	public static final class MessageListFetchFailedMarker extends FetchFailedMarker {
 
+		@Indexed
 		private final String mMessageListID;
 		
-		static {
-			registerIndexedFields(MessageListFetchFailedMarker.class, new String[] { "mMessageListID" });
-		}
 		
 		public MessageListFetchFailedMarker(MessageList myMessageList, Reason myReason, Date myDate, Date myDateOfNextRetry) {
 			super(myReason, myDate, myDateOfNextRetry);
@@ -205,13 +205,12 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		
 	}
 
+	// @Indexed // I can't think of any query which would need to get all MessageFetchFailedMarker objects.
 	public static final class MessageFetchFailedMarker extends FetchFailedMarker {
 
+		@Indexed
 		private final MessageReference mMessageReference;
 		
-		static {
-			registerIndexedFields(MessageFetchFailedMarker.class, new String[] { "mMessageReference" });
-		}
 		
 		public MessageFetchFailedMarker(MessageReference myMessageReference, Reason myReason, Date myDate, Date myDateOfNextRetry) {
 			super(myReason, myDate, myDateOfNextRetry);

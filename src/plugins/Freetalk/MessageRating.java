@@ -24,32 +24,33 @@ import freenet.support.Logger;
  * 
  * @author xor (xor@freenetproject.org)
  */
+//@Indexed // I can't think of any query which would need to get all MessageRating objects.
 public abstract class MessageRating extends Persistent {
 	
 	/**
 	 * The {@link FTOwnIdentity} which has assigned this rating. 
 	 */
+	@Indexed
 	private final FTOwnIdentity mRater;
 
 	/**
 	 * The affected {@link Message}.
 	 */
+	@Indexed
 	private final Message mMessage;
 	
 	/**
 	 * The author of the affected {@link Message}
 	 */
+	@Indexed
 	private final FTIdentity mMessageAuthor;
 	
 	/**
 	 * The {@link Date} when this rating was assigned.
 	 */
 	private final Date mDate;
-	
-	static {
-		Persistent.registerIndexedFields(MessageRating.class, new String[] { "mRater", "mMessage", "mMessageAuthor" });
-	}
-	
+
+
 	/**
 	 * Constructor for being used be the implementing child classes.
 	 * 
