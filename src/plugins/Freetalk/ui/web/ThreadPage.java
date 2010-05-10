@@ -140,9 +140,10 @@ public final class ThreadPage extends WebPageImpl {
         HTMLNode table = mContentNode.addChild("table", new String[] {"border", "width" }, new String[] { "0", "100%" });
         HTMLNode row = table.addChild("tr");
         HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width" }, new String[] { "left", "top", "2", "15%" }, "");
-    	// FIXME: The author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out
+    	// TODO: The author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out
     	// what the proper place for a function "getIdentityIDFromThreadID" is and whether I have already written one which can do that, and if
-    	// yes, where it is.
+    	// yes, where it is. BUT we should display a warning that the fact "the original thread was written by X" might not be true because 
+		// thread-IDs can be spoofed.
         authorNode.addChild("b").addChild("i").addChild("#", l10n().getString("ThreadPage.ThreadNotDownloadedWarning.Author"));
 
         HTMLNode title = row.addChild(ref.wasRead() ? "td" : "th", "align", "left", "");

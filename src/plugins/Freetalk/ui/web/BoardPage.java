@@ -123,9 +123,10 @@ public final class BoardPage extends WebPageImpl {
 					thread = null;
 					threadTitle = "UNKNOWN";
 					
-	            	// FIXME: The author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out
+	            	// TODO: The author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out
 	            	// what the proper place for a function "getIdentityIDFromThreadID" is and whether I have already written one which can do that, and if
-	            	// yes, where it is.
+	            	// yes, where it is. BUT we should display a warning that the fact "the original thread was written by X" might not be true because 
+					// thread-IDs can be spoofed - dunno how to do that in the table, maybe with colors? 
 					authorText = "UNKNOWN";
 					authorScore = "UNKNOWN";
 					
