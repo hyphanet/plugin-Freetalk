@@ -368,7 +368,7 @@ public final class FCPInterface implements FredPluginFCP {
      *   BoardName=abc
      *   OwnIdentityID=ID
      *   ThreadID=ID                     (optional, if not specified retrieves all Messages of Board)
-     *   SortByMessageIndexAscending=true|false   (Optional, default is false)
+     *   SortByMessageDateAscending=true|false   (Optional, default is false)
      *   IncludeMessageText=true|false   (optional, default is false)
      * Format of reply: see sendSingleMessage()
      */
@@ -380,7 +380,7 @@ public final class FCPInterface implements FredPluginFCP {
         final String ownIdentityID = getMandatoryParameter(params, "OwnIdentityID");
         
         final String threadID = params.get("ThreadID");
-        final boolean sortByMessageIndexAscending = Boolean.parseBoolean(params.get("SortByMessageIndexAscending"));
+        final boolean sortByMessageDateAscending = Boolean.parseBoolean(params.get("SortByMessageDateAscending"));
         final boolean includeMessageText = Boolean.parseBoolean(params.get("IncludeMessageText"));
 
         //throws exception when not found
@@ -396,8 +396,7 @@ public final class FCPInterface implements FredPluginFCP {
                 sendSingleMessage(replysender, thread, threadLink.getIndex(), includeMessageText);
             }
 
-            /* FIXME: This actually sorts by date! Is the sorting by message index needed anyway?? */
-            messageRefList = board.getAllThreadReplies(thread.getID(), sortByMessageIndexAscending);
+            messageRefList = board.getAllThreadReplies(thread.getID(), sortByMessageDateAscending);
 
             // send all messages of thread
             for(final MessageReference reference : messageRefList) {
