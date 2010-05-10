@@ -262,7 +262,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         	// TODO: Make very sure that it has no negative side effects if we disable class indices for some classes
         	// Maybe benchmark in comparison to a database which has class indices enabled for ALL classes.
         	//cfg.objectClass(clazz).indexed(classHasIndex);
-        	cfg.objectClass(clazz).indexed(true);
+        	cfg.objectClass(clazz).indexed(true); // Notice: Db4o enables object indices for ALL classes by default anyway, this line is only to make it obvious.
    
         	for(Field field : clazz.getDeclaredFields()) {
         		if(field.getAnnotation(Persistent.Indexed.class) != null) {
