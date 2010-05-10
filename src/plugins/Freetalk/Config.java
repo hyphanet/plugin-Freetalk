@@ -187,7 +187,7 @@ public final class Config extends Persistent {
 		 * from the configuration.
 		 */
 
-		// FIXME: there is a null pointer somewhere in here. i don't have the
+		// TODO: there is a null pointer somewhere in here. i don't have the
 		// time for fixing it right now
 		return mStringParams.keySet().toArray(new String[mStringParams.size()]);
 	}
@@ -208,7 +208,7 @@ public final class Config extends Persistent {
 		 * from the configuration.
 		 */
 
-		// FIXME: there is a null pointer somewhere in here. i don't have the
+		// TODO: there is a null pointer somewhere in here. i don't have the
 		// time for fixing it right now
 		return mIntParams.keySet().toArray(new String[mIntParams.size()]);
 	}
