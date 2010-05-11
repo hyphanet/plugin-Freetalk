@@ -182,6 +182,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	@Override
 	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.debug(this, "Fetched message: " + state.getURI());
+		final String messageListID = mMessageLists.get(state);
 		removeFetch(state); // This must be called before we call fetchMessages() because fetchMessages has a parallel fetch count limit.
 		
 		Bucket bucket = null;
@@ -192,7 +193,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		
 		synchronized(mMessageManager) {
 		try {
-			list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
+			list = (WoTMessageList)mMessageManager.getMessageList(messageListID);
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
 			Message message = mXML.decode(mMessageManager, inputStream, list, state.getURI());
@@ -230,13 +231,14 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	
 	@Override
 	public synchronized void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+		final String messageListID = mMessageLists.get(state);
 		removeFetch(state); // This must be called before we call fetchMessages() because fetchMessages has a parallel fetch count limit.
 		
 			switch(e.getMode()) {
 				case FetchException.DATA_NOT_FOUND:
 					try {
 						synchronized(mMessageManager) {
-						WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(mMessageLists.get(state));
+						WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(messageListID);
 						mMessageManager.onMessageFetchFailed(list.getReference(state.getURI()), FetchFailedMarker.Reason.DataNotFound);
 						}
 						
