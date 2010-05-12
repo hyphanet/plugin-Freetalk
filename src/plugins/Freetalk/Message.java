@@ -630,11 +630,12 @@ public abstract class Message extends Persistent {
 	 * @see isTitleValid
 	 */
 	static public String makeTitleValid(String title) {
-		// FIXME: the newline handling here is based on the RFC 822
+		// TODO: the newline handling here is based on the RFC 822
 		// format (newline + linear white space = single space).  If
 		// necessary, we could move that part of the cleaning-up to
 		// ui.NNTP.ArticleParser, but the same algorithm should work
 		// fine in the general case.
+		// TODO: Why are we only replacing multiple whitespace with a single one if a newline is prefixed?
 
 		StringBuilder result = new StringBuilder();
 		boolean replacingNewline = false;
