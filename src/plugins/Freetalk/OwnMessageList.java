@@ -66,8 +66,6 @@ public abstract class OwnMessageList extends MessageList {
 			}
 			
 			newMessage.setMessageList(this);
-			
-			storeWithoutCommit();
 		}
 	}
 	

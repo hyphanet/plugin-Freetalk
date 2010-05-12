@@ -629,7 +629,11 @@ public abstract class MessageManager implements Runnable {
 	public synchronized void onMessageListReceived(MessageList list) {
 		list.initializeTransient(mFreetalk);
 		
-		synchronized(list) {
+		// It's not possible to keep the synchronization order of message lists to synchronize BEFORE synchronizing on db.lock() some places so we 
+		// do not synchronize here.
+		// And in this function we don't need to synchronize on it anyway because it is not known to anything which might modify it anyway.
+		// In general, due to those issues the functions which modify message lists just use the message manager as synchronization object. 
+		//synchronized(list) {
 		MessageListFetchFailedMarker marker;
 		MessageList ghostList;
 
@@ -664,14 +668,16 @@ public abstract class MessageManager implements Runnable {
 						}
 					}
 					
+					synchronized(list) {
 					list.storeWithoutCommit();
 					list.checkedCommit(this);
+					}
 				}
 				catch(RuntimeException ex) {
 					Persistent.checkedRollback(db, this, ex);
 				}
 		}
-		}
+		//}
 	}
 	
 	/**

@@ -137,7 +137,11 @@ public final class WoTMessageManager extends MessageManager {
 				}
 			}
 			
-			//synchronized(ghostList) {	// The object is only known by this function right now
+			// It's not possible to keep the synchronization order of message lists to synchronize BEFORE synchronizing on db.lock() some places so we 
+			// do not synchronize here.
+			// And in this function we don't need to synchronize on it anyway because it is not known to anything which might modify it anyway.
+			// In general, due to those issues the functions which modify message lists just use the message manager as synchronization object.
+			//synchronized(ghostList) {
 			synchronized(db.lock()) {
 				try {
 					Date date = CurrentTimeUTC.get();
@@ -201,8 +205,10 @@ public final class WoTMessageManager extends MessageManager {
 		
 		for(WoTOwnMessageList list : new Persistent.InitializingObjectSet<WoTOwnMessageList>(mFreetalk, query)) {
 			try {
-				// FIXME: list.addMessage is synchronized and the caller of this function synchronizes on db.lock() - wrong order! This could cause deadlocks.
+				synchronized(list) {
 				list.addMessage(message);
+				list.storeWithoutCommit();
+				}
 				Logger.debug(this, "Added own message " + message + " to list " + list);
 				return;
 			}
@@ -215,7 +221,6 @@ public final class WoTMessageManager extends MessageManager {
 		WoTOwnIdentity author = (WoTOwnIdentity)message.getAuthor();
 		WoTOwnMessageList list = new WoTOwnMessageList(author, getFreeOwnMessageListIndex(author));
 		list.initializeTransient(mFreetalk);
-		// FIXME: list.addMessage is synchronized and the caller of this function synchronizes on db.lock() - wrong order! This could cause deadlocks.
 		list.addMessage(message);
 		list.storeWithoutCommit();
 		Logger.debug(this, "Found no list with free space, created the new list " + list.getID() + " for own message " + message.getID());
