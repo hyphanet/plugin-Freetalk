@@ -73,8 +73,8 @@ public final class WoTIdentityManager extends IdentityManager {
 	private Thread mThread = null;
 
 	private PluginTalkerBlocking mTalker = null;
-	
-	
+
+
 	/**
 	 * Caches the shortest unique nickname for each identity. Key = Identity it, Value = Shortest nickname.
 	 */
@@ -152,7 +152,7 @@ public final class WoTIdentityManager extends IdentityManager {
 			try {
 				identity.initializeTransient(mFreetalk);
 				identity.storeWithoutCommit();
-				onIdentityCreated(identity);
+				onNewOwnIdentityAdded(identity);
 				db.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
@@ -187,7 +187,7 @@ public final class WoTIdentityManager extends IdentityManager {
 			try {
 				identity.initializeTransient(mFreetalk);
 				identity.storeWithoutCommit();
-				onIdentityCreated(identity);
+				onNewOwnIdentityAdded(identity);
 				db.commit(); Logger.debug(this, "COMMITED.");
 			}
 			catch(RuntimeException e) {
@@ -604,25 +604,54 @@ public final class WoTIdentityManager extends IdentityManager {
 		//	updateShortestUniqueNicknameCache();
 	}
 	
+
+	private void onNewIdentityAdded(FTIdentity identity) {
+		mShortestUniqueNicknameCacheNeedsUpdate = true;
+		
+		doNewIdentityCallbacks(identity);
+		
+		if(!(identity instanceof FTOwnIdentity))
+			onShouldFetchStateChanged(identity, false, true);
+	}
+
 	/**
 	 * Called by this WoTIdentityManager after a new WoTIdentity has been stored to the database and before committing the transaction.
-	 * 
 	 * 
 	 * You have to lock this WoTIdentityManager, the PersistentTaskManager and the database before calling this function.
 	 * 
 	 * @param newIdentity
 	 * @throws Exception If adding the Freetalk context to the identity in WoT failed.
 	 */
-	private void onIdentityCreated(WoTIdentity newIdentity) throws Exception {
-		if(newIdentity instanceof WoTOwnIdentity) {
-			/* TODO: Only add the context if the user actually uses the identity with Freetalk */
-			addFreetalkContext(newIdentity);
-			
-			PersistentTask introductionTask = new IntroduceIdentityTask((WoTOwnIdentity)newIdentity);
-			mFreetalk.getTaskManager().storeTaskWithoutCommit(introductionTask);
-		}
+	private void onNewOwnIdentityAdded(FTOwnIdentity identity) {
+		WoTOwnIdentity newIdentity = (WoTOwnIdentity)identity;
 		
-		mShortestUniqueNicknameCacheNeedsUpdate = true;
+		try {
+			addFreetalkContext(newIdentity);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+			
+		PersistentTask introductionTask = new IntroduceIdentityTask((WoTOwnIdentity)newIdentity);
+		mFreetalk.getTaskManager().storeTaskWithoutCommit(introductionTask);
+		
+		doNewOwnIdentityCallbacks(newIdentity);
+		onShouldFetchStateChanged(newIdentity, false, true);
+	}
+	
+	private void beforeIdentityDeletion(FTIdentity identity) {
+		doIdentityDeletedCallbacks(identity);
+		
+		if(!(identity instanceof FTOwnIdentity)) // Don't call it twice
+			onShouldFetchStateChanged(identity, true, false);
+	}
+	
+	private void beforeOwnIdentityDeletion(FTOwnIdentity identity) {
+		doOwnIdentityDeletedCallbacks(identity);
+		onShouldFetchStateChanged(identity, true, false);
+	}
+	
+	private void onShouldFetchStateChanged(FTIdentity author, boolean oldShouldFetch, boolean newShouldFetch) {
+		doShouldFetchStateChangedCallbacks(author, oldShouldFetch, newShouldFetch);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -670,7 +699,10 @@ public final class WoTIdentityManager extends IdentityManager {
 							id.initializeTransient(mFreetalk);
 							id.storeWithoutCommit();
 							
-							onIdentityCreated(id);
+							onNewIdentityAdded(id);
+							
+							if(bOwnIdentities)
+								onNewOwnIdentityAdded((WoTOwnIdentity)id);
 							
 							db.commit(); Logger.debug(this, "COMMITED.");
 						}
@@ -739,10 +771,10 @@ public final class WoTIdentityManager extends IdentityManager {
 	private synchronized void deleteIdentity(WoTIdentity identity, MessageManager messageManager, PersistentTaskManager taskManager) {
 		identity.initializeTransient(mFreetalk);
 		
-		messageManager.onIdentityDeletion(identity);
+		beforeIdentityDeletion(identity);
 
 		if(identity instanceof WoTOwnIdentity)
- 			taskManager.onOwnIdentityDeletion((WoTOwnIdentity)identity);
+ 			beforeOwnIdentityDeletion((WoTOwnIdentity)identity);
 		
 		synchronized(identity) {
 		synchronized(db.lock()) {
@@ -760,7 +792,7 @@ public final class WoTIdentityManager extends IdentityManager {
 		
 		mShortestUniqueNicknameCacheNeedsUpdate = true;
 	}
-	
+
 	private synchronized boolean connectToWoT() {
 		if(mTalker != null) { /* Old connection exists */
 			SimpleFieldSet sfs = new SimpleFieldSet(true);
@@ -934,4 +966,5 @@ public final class WoTIdentityManager extends IdentityManager {
 		
 		return nickname;
 	}
+
 }

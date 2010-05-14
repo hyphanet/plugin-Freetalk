@@ -338,7 +338,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 			verifyStructure(); 
 		}
 		
-		mMessageManager.onIdentityDeletion(mOwnIdentities[1]);
+		mMessageManager.beforeIdentityDeletion(mOwnIdentities[1]);
 		mOwnIdentities[1].deleteWithoutCommit();
 		db.commit();
 		

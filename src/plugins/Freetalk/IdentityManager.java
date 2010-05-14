@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import java.util.Hashtable;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
@@ -28,7 +28,16 @@ public abstract class IdentityManager implements PrioRunnable {
 
 	protected final Executor mExecutor;
 	
-	private final Hashtable<FTIdentity, String> mShortestUniqueNicknameCache = new Hashtable<FTIdentity, String>(1024);
+	
+	protected final ArrayList<NewIdentityCallback> mNewIdentityCallbacks = new ArrayList<NewIdentityCallback>();
+	
+	protected final ArrayList<NewOwnIdentityCallback> mNewOwnIdentityCallbacks = new ArrayList<NewOwnIdentityCallback>();
+	
+	protected final ArrayList<IdentityDeletedCallback> mIdentityDeletedCallbacks = new ArrayList<IdentityDeletedCallback>();
+	
+	protected final ArrayList<OwnIdentityDeletedCallback> mOwnIdentityDeletedCallbacks = new ArrayList<OwnIdentityDeletedCallback>();
+	
+	protected final ArrayList<ShouldFetchStateChangedCallback> mShouldFetchStateChangedCallbacks = new ArrayList<ShouldFetchStateChangedCallback>();
 	
 
 	public IdentityManager(Freetalk myFreetalk, Executor myExecutor) {
@@ -85,7 +94,96 @@ public abstract class IdentityManager implements PrioRunnable {
 
 		return noOwnIdentities ? true : false;
 	}
+
+
+	public interface NewIdentityCallback {
+		public void onNewIdentityAdded(FTIdentity identity);
+	}
 	
+	public interface NewOwnIdentityCallback {
+		public void onNewOwnIdentityAdded(FTOwnIdentity identity);
+	}
+	
+	public interface IdentityDeletedCallback {
+		public void beforeIdentityDeletion(FTIdentity identity);
+	}
+	
+	public interface OwnIdentityDeletedCallback {
+		public void beforeOwnIdentityDeletion(FTOwnIdentity identity);
+	}
+	
+	public interface ShouldFetchStateChangedCallback {
+		public void onShouldFetchStateChanged(FTIdentity messageAuthor, boolean oldShouldFetch, boolean newShouldFetch);
+	}
+
+
+	public final void registerNewIdentityCallback(final NewIdentityCallback listener, final boolean includeOwnIdentities) {
+		mNewIdentityCallbacks.add(listener);
+		
+		if(includeOwnIdentities) {
+			registerNewOwnIdentityCallback(new NewOwnIdentityCallback() {
+				public void onNewOwnIdentityAdded(FTOwnIdentity identity) {
+					listener.onNewIdentityAdded(identity);
+				}
+			});
+		}
+	}
+
+	public final void registerNewOwnIdentityCallback(final NewOwnIdentityCallback listener) {
+		mNewOwnIdentityCallbacks.add(listener);
+	}
+	
+	public final void registerIdentityDeletedCallback(final IdentityDeletedCallback listener, final boolean includeOwnIdentities) {
+		mIdentityDeletedCallbacks.add(listener);
+		
+		if(includeOwnIdentities) {
+			registerOwnIdentityDeletedCallback(new OwnIdentityDeletedCallback() {
+				public void beforeOwnIdentityDeletion(FTOwnIdentity identity) {
+					listener.beforeIdentityDeletion(identity);
+				}
+			});
+		}
+	}
+
+	public final void registerOwnIdentityDeletedCallback(final OwnIdentityDeletedCallback listener) {
+		mOwnIdentityDeletedCallbacks.add(listener);
+	}
+
+	public final void registerShouldFetchStateChangedCallback(final ShouldFetchStateChangedCallback listener) {
+		mShouldFetchStateChangedCallbacks.add(listener);
+	}
+	
+	protected final void doNewIdentityCallbacks(final FTIdentity identity) {
+		for(NewIdentityCallback callback : mNewIdentityCallbacks) {
+			callback.onNewIdentityAdded(identity);
+		}
+	}
+	
+	protected final void doNewOwnIdentityCallbacks(final FTOwnIdentity identity) {
+		for(NewOwnIdentityCallback callback : mNewOwnIdentityCallbacks) {
+			callback.onNewOwnIdentityAdded(identity);
+		}
+	}
+	
+	protected final void doIdentityDeletedCallbacks(final FTIdentity identity) {
+		for(IdentityDeletedCallback callback : mIdentityDeletedCallbacks) {
+			callback.beforeIdentityDeletion(identity);
+		}
+	}
+	
+	protected final void doOwnIdentityDeletedCallbacks(final FTOwnIdentity identity) {
+		for(OwnIdentityDeletedCallback callback : mOwnIdentityDeletedCallbacks) {
+			callback.beforeOwnIdentityDeletion(identity);
+		}
+	}
+	
+	protected final void doShouldFetchStateChangedCallbacks(final FTIdentity author, boolean oldShouldFetch, boolean newShouldFetch) {
+		for(ShouldFetchStateChangedCallback callback : mShouldFetchStateChangedCallbacks) {
+			callback.onShouldFetchStateChanged(author, oldShouldFetch, newShouldFetch);
+		}
+	}
+
+
 	public void start() {
 		mExecutor.execute(this, "Freetalk " + this.getClass().getSimpleName());
 		Logger.debug(this, "Started.");

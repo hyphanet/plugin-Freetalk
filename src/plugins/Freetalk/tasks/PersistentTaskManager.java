@@ -8,6 +8,7 @@ import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.Persistent;
+import plugins.Freetalk.IdentityManager.OwnIdentityDeletedCallback;
 import plugins.Freetalk.exceptions.DuplicateTaskException;
 import plugins.Freetalk.exceptions.NoSuchTaskException;
 
@@ -18,7 +19,7 @@ import com.db4o.query.Query;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 
-public class PersistentTaskManager implements Runnable {
+public class PersistentTaskManager implements Runnable, OwnIdentityDeletedCallback {
 	
 	private static final int THREAD_PERIOD = 5 * 60 * 1000; // TODO: Make configurable.
 	
@@ -210,7 +211,7 @@ public class PersistentTaskManager implements Runnable {
 	 * Deletes all it's tasks and commits the transaction.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized void onOwnIdentityDeletion(FTOwnIdentity identity) {
+	public synchronized void beforeOwnIdentityDeletion(FTOwnIdentity identity) {
 		Query q = mDB.query();
 		
 		q.constrain(PersistentTask.class);

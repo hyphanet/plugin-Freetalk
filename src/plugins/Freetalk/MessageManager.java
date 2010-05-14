@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import plugins.Freetalk.IdentityManager.IdentityDeletedCallback;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageList.MessageFetchFailedMarker;
 import plugins.Freetalk.MessageList.MessageListFetchFailedMarker;
@@ -42,7 +43,7 @@ import freenet.support.Logger;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public abstract class MessageManager implements Runnable {
+public abstract class MessageManager implements Runnable, IdentityDeletedCallback {
 
 	protected final IdentityManager mIdentityManager;
 	
@@ -103,6 +104,8 @@ public abstract class MessageManager implements Runnable {
 		// Therefore, we must call addMessagesToBoards (and synchronizeSubscribedBoards) during startup.
 		addMessagesToBoards();
 		synchronizeSubscribedBoards();
+		
+		mIdentityManager.registerIdentityDeletedCallback(this, true);
 	}
 	
 	/**
@@ -398,7 +401,7 @@ public abstract class MessageManager implements Runnable {
 	 * 
 	 * Deletes any messages and message lists referencing to it and commits the transaction.
 	 */
-	public synchronized void onIdentityDeletion(FTIdentity identity) {
+	public synchronized void beforeIdentityDeletion(FTIdentity identity) {
 		Logger.debug(this, "Deleting all objects of identity " + identity);
 		// We use multiple transactions here: We cannot acquire the db.lock() before board.deleteMessage because deleteMessage() synchronizes on board
 		// and therefore we must acquire the db.lock after synchronizing on each board.
