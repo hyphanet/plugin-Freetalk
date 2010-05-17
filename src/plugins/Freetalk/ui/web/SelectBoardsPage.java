@@ -1,7 +1,6 @@
 package plugins.Freetalk.ui.web;
 
 import java.text.DateFormat;
-import java.util.Iterator;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.FTOwnIdentity;
@@ -101,10 +100,7 @@ public class SelectBoardsPage extends WebPageImpl {
 		MessageManager messageManager = mFreetalk.getMessageManager(); 
 		
 		synchronized(messageManager) {
-			Iterator<Board> boards = messageManager.boardIteratorSortedByName();
-			
-			while(boards.hasNext()) {
-				Board board = boards.next();
+			for(final Board board : messageManager.boardIteratorSortedByName()) {
 				row = boardsTable.addChild("tr", "id", board.getName());
 
 				// Name

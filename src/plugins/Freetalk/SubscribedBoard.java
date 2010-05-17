@@ -455,16 +455,14 @@ public final class SubscribedBoard extends Board {
      * @param identity The identity viewing the board.
      * @return An iterator of the message which the identity will see (based on its trust levels).
      */
-    @SuppressWarnings("unchecked")
     public synchronized ObjectSet<BoardThreadLink> getThreads() {
     	final Query q = mDB.query();
     	q.constrain(BoardThreadLink.class);
     	q.descend("mBoard").constrain(SubscribedBoard.this).identity(); // TODO: Benchmark whether switching the order of those two constrains makes it faster.
     	q.descend("mLastReplyDate").orderDescending();
-    	return new Persistent.InitializingObjectSet<BoardThreadLink>(mFreetalk, q.execute());
+    	return new Persistent.InitializingObjectSet<BoardThreadLink>(mFreetalk, q);
     }
 
-    @SuppressWarnings("unchecked")
     public synchronized ObjectSet<MessageReference> getAllMessages(final boolean sortByMessageIndexAscending) {
     	final Query q = mDB.query();
         q.constrain(MessageReference.class);
@@ -472,7 +470,7 @@ public final class SubscribedBoard extends Board {
         if (sortByMessageIndexAscending) {
             q.descend("mMessageIndex").orderAscending(); /* Needed for NNTP */
         }
-        return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q.execute());
+        return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
     }
     
     @SuppressWarnings("unchecked")
@@ -542,7 +540,6 @@ public final class SubscribedBoard extends Board {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public synchronized ObjectSet<MessageReference> getMessagesByMinimumIndex(
             int minimumIndex,
             final boolean sortByMessageIndexAscending,
@@ -560,10 +557,9 @@ public final class SubscribedBoard extends Board {
         if (sortByMessageDateAscending) {
             q.descend("mMessageDate").orderAscending();
         }
-        return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q.execute());
+        return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
     }
 
-    @SuppressWarnings("unchecked")
     public synchronized ObjectSet<MessageReference> getMessagesByMinimumDate(
             long minimumDate,
             final boolean sortByMessageIndexAscending,
@@ -581,7 +577,7 @@ public final class SubscribedBoard extends Board {
         if (sortByMessageDateAscending) {
             q.descend("mMessageDate").orderAscending();
         }
-        return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q.execute());
+        return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
     }
 
     /**

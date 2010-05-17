@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -155,10 +154,7 @@ public final class FCPInterface implements FredPluginFCP {
     throws PluginNotFoundException
     {
         synchronized(mFreetalk.getMessageManager()) {
-            final Iterator<Board> boards = mFreetalk.getMessageManager().boardIteratorSortedByName(); // TODO: Optimization: Use a non-sorting function.
-            while(boards.hasNext()) {
-                final Board board = boards.next();
-
+            for(final Board board : mFreetalk.getMessageManager().boardIteratorSortedByName()) { // TODO: Optimization: Use a non-sorting function.
                 final SimpleFieldSet sfs = new SimpleFieldSet(true);
                 sfs.putOverwrite("Message", "Board");
                 sfs.putOverwrite("ID", board.getID());
@@ -195,11 +191,7 @@ public final class FCPInterface implements FredPluginFCP {
         FTOwnIdentity ownIdentity = mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID);
         
         synchronized(mFreetalk.getMessageManager()) {
-        	// TODO: Optimization: Use a non sorting function.
-            final Iterator<SubscribedBoard> boards = mFreetalk.getMessageManager().subscribedBoardIteratorSortedByName(ownIdentity);
-            while(boards.hasNext()) {
-                final SubscribedBoard board = boards.next();
-                
+            for(final SubscribedBoard board : mFreetalk.getMessageManager().subscribedBoardIteratorSortedByName(ownIdentity)) {	// TODO: Optimization: Use a non sorting function.
                 final SimpleFieldSet sfs = new SimpleFieldSet(true);
                 sfs.putOverwrite("Message", "SubscribedBoard");
                 sfs.putOverwrite("Name", board.getName());
@@ -574,10 +566,7 @@ public final class FCPInterface implements FredPluginFCP {
     private void handleListOwnIdentities(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException
     {
-        final Iterator<WoTOwnIdentity> ownIdentities = mFreetalk.getIdentityManager().ownIdentityIterator();
-        while (ownIdentities.hasNext()) {
-            final FTOwnIdentity id = ownIdentities.next();
-
+       for(final FTOwnIdentity id : mFreetalk.getIdentityManager().ownIdentityIterator()) {
             final SimpleFieldSet sfs = new SimpleFieldSet(true);
             sfs.putOverwrite("Message", "OwnIdentity");
             sfs.putOverwrite("ID", id.getID());

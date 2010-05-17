@@ -15,7 +15,6 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
-import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
@@ -370,8 +369,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			checkedRollbackAndThrow(e);
 		}
 	}
-	
-	@SuppressWarnings("unchecked")
+
 	protected void deleteWithoutCommit() {
 		try {
 			checkedActivate(3); // TODO: Figure out a suitable depth.
@@ -383,8 +381,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 				query.constrain(MessageListFetchFailedMarker.class);
 				query.descend("mMessageListID").constrain(getID());
 				
-				for(MessageListFetchFailedMarker failedRef : (ObjectSet<MessageListFetchFailedMarker>)query.execute()) {
-					failedRef.initializeTransient(mFreetalk);
+				for(MessageListFetchFailedMarker failedRef : new Persistent.InitializingObjectSet<MessageListFetchFailedMarker>(mFreetalk, query)) {
 					failedRef.deleteWithoutCommit();
 				}
 			}
@@ -402,8 +399,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 				query.descend("mMessageReference").constrain(ref).identity();
 				
 				// Before deleting the MessageReference itself, we must delete any MessageFetchFailedReference objects which point to it. 
-				for(MessageFetchFailedMarker failedRef : (ObjectSet<MessageFetchFailedMarker>)query.execute()) {
-					failedRef.initializeTransient(mFreetalk);
+				for(MessageFetchFailedMarker failedRef : new Persistent.InitializingObjectSet<MessageFetchFailedMarker>(mFreetalk, query)) {
 					failedRef.deleteWithoutCommit();
 				}
 				

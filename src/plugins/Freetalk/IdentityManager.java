@@ -4,10 +4,10 @@
 package plugins.Freetalk;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 
+import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
@@ -71,19 +71,17 @@ public abstract class IdentityManager implements PrioRunnable {
 		return q.execute().size();
 	}
 
-	public abstract Iterator<? extends FTOwnIdentity> ownIdentityIterator();
+	public abstract ObjectSet<? extends FTOwnIdentity> ownIdentityIterator();
 	
 	public abstract FTIdentity getIdentity(String id) throws NoSuchIdentityException;
 	
 	public abstract FTOwnIdentity getOwnIdentity(String id) throws NoSuchIdentityException;
 
-	public synchronized boolean anyOwnIdentityWantsMessagesFrom(FTIdentity identity) {
-		final Iterator<? extends FTOwnIdentity> iter = ownIdentityIterator();
+	public synchronized boolean anyOwnIdentityWantsMessagesFrom(FTIdentity identity) {		
 		boolean noOwnIdentities = true;
 
-		while (iter.hasNext()) {
+		for(final FTOwnIdentity oid : ownIdentityIterator()) {
 			noOwnIdentities = false;
-			FTOwnIdentity oid = iter.next();
 			try {
 				if (oid.wantsMessagesFrom(identity))
 					return true;

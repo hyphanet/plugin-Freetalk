@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -204,7 +203,7 @@ public final class WoTIdentityManager extends IdentityManager {
 		return new Persistent.InitializingObjectSet<WoTIdentity>(mFreetalk, q);
 	}
 	
-	public synchronized Iterator<WoTOwnIdentity> ownIdentityIterator() {
+	public synchronized ObjectSet<WoTOwnIdentity> ownIdentityIterator() {
 		try {
 			fetchOwnIdentities();
 			garbageCollectIdentities();

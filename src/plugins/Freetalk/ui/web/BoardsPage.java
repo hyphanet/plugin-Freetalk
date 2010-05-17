@@ -4,8 +4,6 @@
 package plugins.Freetalk.ui.web;
 
 import java.text.DateFormat;
-import java.util.Date;
-import java.util.Iterator;
 
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
@@ -56,11 +54,9 @@ public final class BoardsPage extends WebPageImpl {
 		int boardCount = 0;
 		
 		synchronized(mFreetalk.getMessageManager()) {
-			Iterator<SubscribedBoard> boards = mFreetalk.getMessageManager().subscribedBoardIteratorSortedByName(mOwnIdentity); // TODO: Optimization: Use a non-sorting function.
-			while(boards.hasNext()) {
+			for(final SubscribedBoard board : mFreetalk.getMessageManager().subscribedBoardIteratorSortedByName(mOwnIdentity)) { 
 				++boardCount;
 				
-				final SubscribedBoard board = boards.next();
 				row = boardsTable.addChild("tr");
 
 				HTMLNode nameCell = row.addChild("th", new String[] { "align" }, new String[] { "left" });

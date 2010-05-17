@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
-import java.util.Iterator;
-
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
@@ -44,12 +42,9 @@ public final class LogInPage extends WebPageImpl {
 	private final void makeLoginBox() {
 		HTMLNode loginBox = addContentBox(l10n().getString("LoginPage.LogIn.Header"));
 	
-		Iterator<WoTOwnIdentity> iter = mFreetalk.getIdentityManager().ownIdentityIterator();
-		
 		HTMLNode selectForm = addFormChild(loginBox, Freetalk.PLUGIN_URI + "/LogIn", "LogIn");
 		HTMLNode selectBox = selectForm.addChild("select", "name", "OwnIdentityID");
-		while(iter.hasNext()) {
-			FTOwnIdentity ownIdentity = iter.next();
+		for(WoTOwnIdentity ownIdentity : mFreetalk.getIdentityManager().ownIdentityIterator()) {
 			selectBox.addChild("option", "value", ownIdentity.getID(), ownIdentity.getShortestUniqueName());
 		}
 		selectForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("LoginPage.LogIn.Button") });

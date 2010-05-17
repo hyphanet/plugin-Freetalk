@@ -555,7 +555,6 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * 
 	 * @return True if there was at least one message which was linked in. False if no new messages were discovered.
 	 */
-	@SuppressWarnings("unchecked")
 	private synchronized boolean addMessagesToBoards() {
 		Logger.normal(this, "Adding messages to boards...");
 		
@@ -756,13 +755,12 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 				return new Date(now.getTime()  + MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY);
 		}		
 	}
-	
-	@SuppressWarnings("unchecked")
+
 	private ObjectSet<FetchFailedMarker> getFetchFailedMarkers(final Date now) {
 		final Query query = db.query();
 		query.constrain(FetchFailedMarker.class);
 		query.descend("mDateOfNextRetry").constrain(now).greater().not();
-		return new Persistent.InitializingObjectSet<FetchFailedMarker>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<FetchFailedMarker>(mFreetalk, query);
 	}
 	
 	private MessageFetchFailedMarker getMessageFetchFailedMarker(final MessageReference ref) throws NoSuchFetchFailedMarkerException {
@@ -875,13 +873,12 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * Get a list of all MessageReference objects to the given message ID. References to OwnMessage are not returned.
 	 * Used to mark the references to a message which was downloaded as downloaded.
 	 */
-	@SuppressWarnings("unchecked")
 	private ObjectSet<MessageList.MessageReference> getAllReferencesToMessage(final String id) {
 		final Query query = db.query();
 		query.constrain(MessageList.MessageReference.class);
 		query.constrain(OwnMessageList.OwnMessageReference.class).not();
 		query.descend("mMessageID").constrain(id);
-		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query);
 	}
 	
 	private ObjectSet<Message> getAllRepliesToMessage(Message message) {
@@ -1069,42 +1066,38 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * You have to synchronize on this MessageManager before calling this function and while processing the returned list.
 	 * The transient fields of the returned boards will be initialized already.
 	 */
-	@SuppressWarnings("unchecked")
 	public ObjectSet<Board> boardIteratorSortedByName() {
 		final Query query = db.query();
 		query.constrain(Board.class);
 		query.constrain(SubscribedBoard.class).not();
 		query.descend("mName").orderAscending();
-		return new Persistent.InitializingObjectSet<Board>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<Board>(mFreetalk, query);
 	}
 	
 	/**
 	 * Get all boards which are being subscribed to by at least one {@link FTOwnIdentity}, i.e. the boards from which we should download messages.
 	 */
-	@SuppressWarnings("unchecked")
 	public synchronized ObjectSet<Board> boardWithSubscriptionsIterator() {
 		final Query query = db.query();
 		query.constrain(Board.class);
 		query.descend("mHasSubscriptions").constrain(true);
-		return new Persistent.InitializingObjectSet<Board>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<Board>(mFreetalk, query);
 	}
-	
-	@SuppressWarnings("unchecked")
+
 	public synchronized ObjectSet<SubscribedBoard> subscribedBoardIterator() {
 		final Query query = db.query();
 		query.constrain(SubscribedBoard.class);
-		return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, query);
 	}
 	/**
 	 * Get an iterator of boards which were first seen after the given Date, sorted ascending by the date they were first seen at.
 	 */
-	@SuppressWarnings("unchecked")
 	public synchronized ObjectSet<SubscribedBoard> subscribedBoardIteratorSortedByDate(final FTOwnIdentity subscriber, final Date seenAfter) {
 		final Query query = db.query();
 		query.constrain(SubscribedBoard.class);
 		query.descend("mFirstSeenDate").constrain(seenAfter).greater();
 		query.descend("mFirstSeenDate").orderAscending();
-		return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, query);
 	}
 	
 	/**
@@ -1114,23 +1107,21 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * 
 	 * The transient fields of the returned objects will be initialized already. 
 	 */
-	@SuppressWarnings("unchecked")
 	public ObjectSet<SubscribedBoard> subscribedBoardIteratorSortedByName(final FTOwnIdentity subscriber) {
 		final Query query = db.query();
 		query.constrain(SubscribedBoard.class);
 		query.descend("mSubscriber").constrain(subscriber).identity();
 		query.descend("mName").orderAscending();
-		return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, query);
 	}
 	
-	@SuppressWarnings("unchecked")
 	private ObjectSet<SubscribedBoard> subscribedBoardIterator(String boardName) {
 		boardName = boardName.toLowerCase();
 		
     	final Query q = db.query();
     	q.constrain(SubscribedBoard.class);
     	q.descend("mName").constrain(boardName);
-    	return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, q.execute());
+    	return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, q);
     }
 	
     @SuppressWarnings("unchecked")
@@ -1232,14 +1223,13 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		}
 		}
 	}
-	
-	@SuppressWarnings("unchecked")
+
 	public synchronized ObjectSet<OwnMessage> notInsertedMessageIterator() {
 		final Query query = db.query();
 		query.constrain(OwnMessage.class);
 		query.descend("mRealURI").constrain(null).identity();
 		// TODO: Sort ascending by date if db4o is intelligent enough to evaluate the mRealURI constrain before sorting...
-		return new Persistent.InitializingObjectSet<OwnMessage>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<OwnMessage>(mFreetalk, query);
 
 	}
 	
@@ -1249,7 +1239,6 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * Filtering out unwanted authors is done at MessageList-level: MessageLists are only downloaded from identities which we want to read
 	 * messages from.
 	 */
-	@SuppressWarnings("unchecked")
 	public synchronized ObjectSet<MessageList.MessageReference> notDownloadedMessageIterator() {
 		// TODO: This query is very slow!
 		final Query query = db.query();
@@ -1262,7 +1251,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		// TODO: The date only contains day, month and year (the XML does not contain more). We have some randomization by sorting by date but we might
 		// want even more maybe - are there any security issues with not downloading messages in perfectly random order? Probably not?
 
-		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query.execute());		
+		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query);		
 	}
 
 
@@ -1276,13 +1265,12 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * @param author An identity or own identity.
 	 * @return All message lists of the given identity except those of class OwnMessageList.
 	 */
-	@SuppressWarnings("unchecked")
 	protected synchronized ObjectSet<MessageList> getMessageListsBy(final FTIdentity author) {
 		final Query query = db.query();
 		query.constrain(MessageList.class);
 		query.constrain(OwnMessageList.class).not();
 		query.descend("mAuthor").constrain(author).identity();
-		return new Persistent.InitializingObjectSet<MessageList>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<MessageList>(mFreetalk, query);
 	}
 	
 	/**
@@ -1297,12 +1285,11 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * @param author The author of the message lists.
 	 * @return All own message lists of the given own identity.
 	 */
-	@SuppressWarnings("unchecked")
 	protected synchronized ObjectSet<OwnMessageList> getOwnMessageListsBy(final FTOwnIdentity author) {
 		final Query query = db.query();
 		query.constrain(OwnMessageList.class);
 		query.descend("mAuthor").constrain(author).identity();
-		return new Persistent.InitializingObjectSet<OwnMessageList>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<OwnMessageList>(mFreetalk, query);
 	}
 	
 	
@@ -1318,13 +1305,12 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * @param author An identity or own identity.
 	 * @return All messages of the given identity except those of class OwnMessage.
 	 */
-	@SuppressWarnings("unchecked")
 	public ObjectSet<Message> getMessagesBy(final FTIdentity author) {
 		final Query query = db.query();
 		query.constrain(Message.class);
 		query.constrain(OwnMessage.class).not();
 		query.descend("mAuthor").constrain(author).identity();
-		return new Persistent.InitializingObjectSet<Message>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<Message>(mFreetalk, query);
 	}
 	
 	/**
@@ -1339,12 +1325,11 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * @param author The author of the messages.
 	 * @return All own messages of the given own identity.
 	 */
-	@SuppressWarnings("unchecked")
 	public synchronized ObjectSet<OwnMessage> getOwnMessagesBy(final FTOwnIdentity author) {
 		final Query query = db.query();
 		query.constrain(OwnMessage.class);
 		query.descend("mAuthor").constrain(author).identity();
-		return new Persistent.InitializingObjectSet<OwnMessage>(mFreetalk, query.execute());
+		return new Persistent.InitializingObjectSet<OwnMessage>(mFreetalk, query);
 	}
 
 	public IdentityManager getIdentityManager() {
