@@ -290,12 +290,12 @@ public abstract class Persistent {
 		private final Freetalk mFreetalk;
 		private final ObjectSet<Type> mObjectSet;
 		
-		public InitializingObjectSet(final Freetalk myFreetalk, final ObjectSet<Type> myObjectSet) {
+		@SuppressWarnings("unchecked") 	// "ObjectSet<Type> myObjectSet" won't compile against db4o-7.12 so we use the Suppress trick
+		public InitializingObjectSet(final Freetalk myFreetalk, final ObjectSet myObjectSet) {
 			mFreetalk = myFreetalk;
-			mObjectSet = myObjectSet;
+			mObjectSet = (ObjectSet<Type>)myObjectSet;
 		}
 		
-		@SuppressWarnings("unchecked")
 		public InitializingObjectSet(final Freetalk myFreetalk, final Query myQuery) {
 			this(myFreetalk, myQuery.execute());
 		}
