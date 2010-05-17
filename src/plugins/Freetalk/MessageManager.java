@@ -212,6 +212,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		if(ref != null) {
 			System.out.println("URI is null for " + ref);
 			
+			// The following happens with db4o 7.4, 7.12 and 8.0... Setting the "mURI" field to be indexed fixes it with 8.0, not with the others though:
 			if(ref.getURI() != null) {
 				System.out.println("DB4O ERROR: Db4o said that URI is null even though it is: "+ ref.getURI());
 				throw new RuntimeException("Query returned object which it should not have returned!");
