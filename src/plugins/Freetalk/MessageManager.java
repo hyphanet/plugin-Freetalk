@@ -198,6 +198,32 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		Logger.debug(this, "Finished looking for broken MessageList objects.");
 	}
 	
+	/**
+	 * Does various slow tests for database integrity. Returns false if any of them fails.
+	 */
+	private boolean testDatabaseIntegrity() {
+		final Query q = db.query();
+		q.constrain(MessageList.MessageReference.class);
+		q.descend("mURI").constrain(null).identity();
+		ObjectSet<MessageList.MessageReference> refs = new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
+		
+		MessageList.MessageReference ref = refs.hasNext() ? refs.next() : null;
+		
+		if(ref != null) {
+			System.out.println("URI is null for " + ref);
+			
+			if(ref.getURI() != null) {
+				System.out.println("DB4O ERROR: Db4o said that URI is null even though it is: "+ ref.getURI());
+				throw new RuntimeException("Query returned object which it should not have returned!");
+			}
+			
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
 	public void run() {
 		Logger.debug(this, "Message manager started.");
 		mThread = Thread.currentThread();
@@ -387,7 +413,10 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 				}
 				
 				message.deleteWithoutCommit();
+				
+				assert(testDatabaseIntegrity());
 				message.checkedCommit(this);
+				assert(testDatabaseIntegrity());
 			}
 			catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(db, this, e);
