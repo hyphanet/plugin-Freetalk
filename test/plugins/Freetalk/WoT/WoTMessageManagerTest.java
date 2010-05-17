@@ -16,7 +16,6 @@ import java.util.UUID;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.DatabaseBasedTest;
 import plugins.Freetalk.FetchFailedMarker;
-import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.SubscribedBoard;
@@ -38,7 +37,6 @@ import freenet.support.CurrentTimeUTC;
 
 public class WoTMessageManagerTest extends DatabaseBasedTest {
 	
-	private Freetalk mFreetalk;
 	private WoTMessageManager mMessageManager;
 	
 	private WoTOwnIdentity[] mOwnIdentities;
@@ -65,7 +63,6 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 	protected void setUp() throws Exception {
 		super.setUp();
 		
-		mFreetalk = new Freetalk(db);
 		mMessageManager = mFreetalk.getMessageManager();
 		
 		constructIdentities();

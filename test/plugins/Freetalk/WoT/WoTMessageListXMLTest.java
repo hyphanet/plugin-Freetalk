@@ -10,7 +10,6 @@ import javax.xml.transform.TransformerException;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.DatabaseBasedTest;
-import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
@@ -18,8 +17,6 @@ import freenet.keys.FreenetURI;
 import freenet.support.MultiValueTable;
 
 public class WoTMessageListXMLTest extends DatabaseBasedTest {
-	
-	private Freetalk mFreetalk;
 	
 	private WoTMessageManager mMessageManager;
 	
@@ -42,7 +39,6 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 	public void setUp() throws Exception {
 		super.setUp();
 		
-		mFreetalk = new Freetalk(db);
 		mMessageManager = mFreetalk.getMessageManager();
 		mXML = new WoTMessageListXML();
 		

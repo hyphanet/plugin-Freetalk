@@ -12,7 +12,6 @@ import java.util.List;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.DatabaseBasedTest;
-import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
@@ -22,8 +21,7 @@ import freenet.support.CurrentTimeUTC;
 
 
 public class WoTMessageXMLTest extends DatabaseBasedTest {
-	
-	private Freetalk mFreetalk;
+
 	private MessageManager mMessageManager;
 	private WoTMessageXML mXML;
 	
@@ -36,8 +34,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		
 	public void setUp() throws Exception {
 		super.setUp();
-		
-		mFreetalk = new Freetalk(db);
+
 		mMessageManager = mFreetalk.getMessageManager();
 		mXML = new WoTMessageXML();
 		

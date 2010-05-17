@@ -7,7 +7,6 @@ import java.io.File;
 
 import junit.framework.TestCase;
 
-import com.db4o.Db4o;
 import com.db4o.ext.ExtObjectContainer;
 
 /**
@@ -23,6 +22,8 @@ import com.db4o.ext.ExtObjectContainer;
  * @author xor
  */
 public class DatabaseBasedTest extends TestCase {
+	
+	protected Freetalk mFreetalk;
 
 	/**
 	 * The database used by this test.
@@ -47,9 +48,8 @@ public class DatabaseBasedTest extends TestCase {
 			databaseFile.delete();
 		assertFalse(databaseFile.exists());
 
-		
-		db = Db4o.openFile(getDatabaseFilename()).ext();
-		db.configure().exceptionsOnNotStorable(true);
+		mFreetalk = new Freetalk(getDatabaseFilename()); 
+		db = mFreetalk.getDatabase();
 	}
 
 	/**
