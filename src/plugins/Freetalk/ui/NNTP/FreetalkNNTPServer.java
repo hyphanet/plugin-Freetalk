@@ -11,7 +11,6 @@ import java.util.Iterator;
 
 import plugins.Freetalk.Freetalk;
 import freenet.io.NetworkInterface;
-import freenet.node.Node;
 import freenet.support.Logger;
 
 /**

@@ -12,7 +12,6 @@ import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
-import freenet.clients.http.RedirectException;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
