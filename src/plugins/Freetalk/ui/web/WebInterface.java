@@ -12,7 +12,6 @@ import java.net.URLConnection;
 
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
-import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTMessage;
 import plugins.Freetalk.WoT.WoTMessageManager;
@@ -601,7 +600,7 @@ public final class WebInterface {
 				}
 				cssBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, cssBuffer);
 				FilterOutput filterOutput = ContentFilter.filter(cssBucket, core.tempBucketFactory, "text/css", uri, null, null, null);
-				writeReply(context, 200, "text/css", "OK", cssBucket);
+				writeReply(context, 200, "text/css", "OK", filterOutput.data);
 			} finally {
 				Closer.close(cssBucket);
 				Closer.close(cssInputStream);
