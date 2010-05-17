@@ -114,10 +114,12 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	private FreetalkNNTPServer mNNTPServer;
 
 	/**
-	 * Default constructor, used by the node, do not remove it.
+	 * Constructor for unit tests.
 	 */
-	public Freetalk() {
-		
+	public Freetalk(String databaseFilename) {
+		db = openDatabase(databaseFilename);
+		mIdentityManager = new WoTIdentityManager(this);
+		mMessageManager = new WoTMessageManager(this);
 	}
 
 	public void runPlugin(PluginRespirator myPR) {
@@ -209,6 +211,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	
 	@SuppressWarnings("unchecked")
 	private ExtObjectContainer openDatabase(String filename) {
+		Logger.debug(this, "Using db4o " + Db4o.version());
+		
 		Configuration cfg = Db4o.newConfiguration();
 		
 		// Required config options:
@@ -280,15 +284,6 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         // We might figure out whether inheritance works by writing a benchmark.
 		
 		return Db4o.openFile(cfg, filename).ext();
-	}
-	
-	/**
-	 * Concstructor for being used by unit tests only.
-	 */
-	public Freetalk(ExtObjectContainer myDB) {
-		db = myDB;
-		mIdentityManager = new WoTIdentityManager(this);
-		mMessageManager = new WoTMessageManager(this);
 	}
 
 	private void upgradeDatabase() {
