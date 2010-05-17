@@ -3,6 +3,8 @@
 
 <project name="Freetalk" default="dist" basedir=".">
 	<property name="freenet-cvs-snapshot.location" location="../fred/lib/freenet-cvs-snapshot.jar"/>
+	<!-- you can modify and uncomment the following line if you want to experiment with newer db4o versions without recompiling freenet-ext.jar -->
+	<!-- <property name="db4o.location" location="../fred/db4o-7.12/lib/db4o-7.12.145.14409-all-java5.jar"/> -->
 	<property name="freenet-ext.location" location="../fred/lib/freenet-ext.jar"/>
 	<property name="debug-node-freetalk-plugin.location" location="../fred/plugins/Freetalk.jar"/>
 	<property name="svn.revision" value="@custom@"/>
@@ -18,6 +20,16 @@
 
 	<available file="src/plugins/Freetalk/Version.java" property="version.present"/>
 	<available file="${junit.location}" property="junit.present"/>
+	
+	<path id="libraries.classpath">
+		<pathelement location="${db4o.location}"/>
+		<pathelement location="${freenet-ext.location}"/>
+		<pathelement location="${freenet-cvs-snapshot.location}"/>
+	</path>
+	
+	<path id="junit.classpath">
+		<pathelement location="${junit.location}" />
+	</path>
 
 	<exec executable="git"
 		failifexecutionfails="false"
@@ -59,19 +71,13 @@
 
 		<!-- Force compile of Version.java in case compile of ${src} didn't trigger it -->
 		<javac srcdir="${build}" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}">
-			<classpath>
-				<pathelement location="${freenet-ext.location}"/>
-				<pathelement location="${freenet-cvs-snapshot.location}"/>
-			</classpath>
+			<classpath refid="libraries.classpath" />
 			<include name="${version.src}"/>
 		</javac>
 
 		<!-- FIXME: remove the debug and replace with optimize -->
 		<javac srcdir="src/" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}">
-			<classpath>
-				<pathelement location="${freenet-ext.location}"/>
-				<pathelement location="${freenet-cvs-snapshot.location}"/>
-			</classpath>
+			<classpath refid="libraries.classpath" />
 			<include name="**/*.java"/>
 			<exclude name="${version.src}"/>
 		</javac>
@@ -89,10 +95,10 @@
 		<javac srcdir="test/" destdir="${build-test}" debug="on" optimize="on" source="1.5">
 			<classpath>
 				<pathelement path="${build}"/>
-				<pathelement location="${freenet-ext.location}"/>
-				<pathelement location="${freenet-cvs-snapshot.location}"/>
-				<pathelement location="${junit.location}"/>
 			</classpath>
+			<classpath refid="libraries.classpath" />
+			<classpath refid="junit.classpath" />
+			
 			<compilerarg value="-Xlint"/>
 			<include name="**/*.java"/>
 		</javac>
@@ -103,10 +109,9 @@
 			<classpath>
 				<pathelement path="${build}"/>
 				<pathelement path="${build-test}"/>
-				<pathelement location="${freenet-ext.location}"/>
-				<pathelement location="${freenet-cvs-snapshot.location}"/>
-				<pathelement location="${junit.location}"/>
 			</classpath>
+			<classpath refid="libraries.classpath" />
+			<classpath refid="junit.classpath" />
 
 			<assertions><enable/></assertions>
 			<formatter type="plain" usefile="false"/>
