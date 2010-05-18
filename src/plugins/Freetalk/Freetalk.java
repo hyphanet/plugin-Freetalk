@@ -112,6 +112,13 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	private FCPInterface mFCPInterface;
 	
 	private FreetalkNNTPServer mNNTPServer;
+	
+	/**
+	 * Constructor for the node.
+	 */
+	public Freetalk() {
+		Logger.debug(this, "Freetalk plugin constructed.");
+	}
 
 	/**
 	 * Constructor for unit tests.
