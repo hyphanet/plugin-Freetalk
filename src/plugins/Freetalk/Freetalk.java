@@ -18,6 +18,7 @@ import plugins.Freetalk.WoT.WoTMessageManager;
 import plugins.Freetalk.WoT.WoTMessageRating;
 import plugins.Freetalk.WoT.WoTMessageURI;
 import plugins.Freetalk.WoT.WoTMessageXML;
+import plugins.Freetalk.WoT.WoTNewMessageListFetcher;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.WoT.WoTOwnMessage;
 import plugins.Freetalk.WoT.WoTOwnMessageList;
@@ -101,7 +102,9 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	
 	private WoTMessageInserter mMessageInserter;
 	
-	private WoTMessageListFetcher mMessageListFetcher;
+	private WoTMessageListFetcher mOldMessageListFetcher;
+	
+	private WoTNewMessageListFetcher mNewMessageListFetcher;
 	
 	private WoTMessageListInserter mMessageListInserter;
 	
@@ -145,8 +148,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		
 		upgradeDatabase();
 		
-		Logger.debug(this, "Creating Web interface...");
-		mWebInterface = new WebInterface(this);
+		// Create & start the core classes
 		
 		Logger.debug(this, "Creating identity manager...");
 		mIdentityManager = new WoTIdentityManager(this, mPluginRespirator.getNode().executor);
@@ -157,15 +159,21 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		Logger.debug(this, "Creating task manager...");
 		mTaskManager = new PersistentTaskManager(db, this);
 		
-		mIdentityManager.start();
-		mMessageManager.start();
-		mTaskManager.start();
-		
 		Logger.debug(this, "Creating message XML...");
 		mMessageXML = new WoTMessageXML();
 		
 		Logger.debug(this, "Creating message list XML...");
 		mMessageListXML = new WoTMessageListXML();
+		
+		Logger.debug(this, "Creating old-messagelist fetcher...");
+		mOldMessageListFetcher = new WoTMessageListFetcher(this, "Freetalk WoTOldMessageListFetcher", mMessageListXML);
+		// FIXME: Before re-enabling it class WoTMessageListFetcher needs to be changed to only fetch old ones because now we have the WoTNewMessageListFetcher...
+		// Also rename class WoTMessageListFetcher to WoTOldMessageListFetcher then.
+//		mOldMessageListFetcher.start();
+		
+		Logger.debug(this, "Creating new-messagelist fetcher...");
+		mNewMessageListFetcher = new WoTNewMessageListFetcher(this, "Freetalk WoTNewMessageListFetcher", mMessageListXML, db);
+		mNewMessageListFetcher.start();
 		
 		Logger.debug(this, "Creating message fetcher...");
 		mMessageFetcher = new WoTMessageFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageFetcher",
@@ -176,16 +184,23 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		mMessageInserter = new WoTMessageInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageInserter",
 				mIdentityManager, mMessageManager, mMessageXML);
 		mMessageInserter.start();
-		
-		Logger.debug(this, "Creating message list fetcher...");
-		mMessageListFetcher = new WoTMessageListFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageListFetcher",
-				mIdentityManager, mMessageManager, mMessageListXML);
-		mMessageListFetcher.start();
-		
+
 		Logger.debug(this, "Creating message list inserter...");
 		mMessageListInserter = new WoTMessageListInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageListInserter",
 				mIdentityManager, mMessageManager, mMessageListXML);
 		mMessageListInserter.start();
+		
+		// They need each users so they must be started after they exist all three.
+		// Further, we must start them after starting the message list fetches: Otherwise the message manager etc. might take locks for ages, effectively
+		// preventing this startup function from finishing. So we just start them after all core classes are running and before starting the UI.
+		mIdentityManager.start();
+		mMessageManager.start();
+		mTaskManager.start();
+		
+		// Create & start the UI
+		
+		Logger.debug(this, "Creating Web interface...");
+		mWebInterface = new WebInterface(this);
 
 		Logger.debug(this, "Creating FCP interface...");
 		mFCPInterface = new FCPInterface(this);
@@ -263,6 +278,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         	WoTMessageList.class,
         	WoTMessageRating.class,
         	WoTMessageURI.class,
+        	WoTNewMessageListFetcher.FetcherCommand.class,
         	WoTOwnIdentity.class,
         	WoTOwnMessage.class,
         	WoTOwnMessageList.class
@@ -381,7 +397,14 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		}
 		
 		try {
-			mMessageListFetcher.terminate();
+			mOldMessageListFetcher.terminate();
+		}
+		catch(Exception e) {
+			Logger.error(this, "Error during termination.", e);
+		}
+		
+		try {
+			mNewMessageListFetcher.stop();
 		}
 		catch(Exception e) {
 			Logger.error(this, "Error during termination.", e);
