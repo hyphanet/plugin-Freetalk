@@ -46,6 +46,53 @@ public abstract class Persistent {
 	public @interface Indexed { }
 
 	
+	
+	public void testDatabaseIntegrity() {
+		testDatabaseIntegrity(mFreetalk, mDB);
+	}
+	
+	/**
+	 * This function can be used for debugging, it is executed before and after delete() and commit().
+	 * If the code within this function is not too heavy you can also add calls to it in store().
+	 * (Right now it is too heavy so the calls in store are commented out)
+	 */
+	@SuppressWarnings("unchecked")
+	public static void testDatabaseIntegrity(Freetalk mFreetalk, ExtObjectContainer db) {
+		final Query q = db.query();
+		q.constrain(MessageList.MessageReference.class);
+		ObjectSet<MessageList.MessageReference> refs = q.execute();
+
+		for(MessageList.MessageReference ref : refs) {
+			ref.mFreetalk = mFreetalk;
+			ref.mDB = db;
+			
+			if(ref.getURI() == null)
+				assert(false);
+		}
+
+		//   FIXME: Investigate the consequences of the breakage in db4o which the following code reveals:
+		
+//		final Query q = db.query();
+//		q.constrain(MessageList.MessageReference.class);
+//		q.descend("mURI").constrain(null).identity();
+//		ObjectSet<MessageList.MessageReference> refs = new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
+//
+//		MessageList.MessageReference ref = refs.hasNext() ? refs.next() : null;
+//
+//		if(ref != null) {
+//			System.out.println("URI is null for " + ref);
+//
+//			// The following happens with db4o 7.4, 7.12 and 8.0... Setting the "mURI" field to be indexed fixes it with 8.0, not with the others though:
+//			if(ref.getURI() != null) {
+//				System.out.println("DB4O ERROR: Db4o said that URI is null even though it is: "+ ref.getURI());
+//				throw new RuntimeException("Query returned object which it should not have returned!");
+//			}
+//
+//			return false;
+//		}
+//
+//		return true;
+	}
 	/**
 	 * Must be called once after obtaining this object from the database before using any getter or setter member functions
 	 * and before calling storeWithoutCommit / deleteWithoutCommit.
@@ -92,7 +139,9 @@ public abstract class Persistent {
 	 * @param object
 	 */
 	protected final void checkedStore(final Object object) {
+		//testDatabaseIntegrity();
 		mDB.store(object);
+		//testDatabaseIntegrity();
 	}
 	
 	/**
@@ -101,7 +150,7 @@ public abstract class Persistent {
 	 * Same as a call to {@link checkedStore(this)}
 	 */
 	protected final void checkedStore() {
-		mDB.store(this);
+		checkedStore(this);
 	}
 	
 	/**
@@ -113,10 +162,12 @@ public abstract class Persistent {
 	 * This is to be used as an integrity check in deleteWithoutCommit() implementations. 
 	 */
 	protected final void checkedDelete(final Object object) {
+		testDatabaseIntegrity();
 		if(mDB.isStored(object))
 			mDB.delete(object);
 		else
 			Logger.error(this, "Trying to delete a inexistent object: " + object);
+		testDatabaseIntegrity();
 	}
 	
 	/**
@@ -262,9 +313,11 @@ public abstract class Persistent {
 	 * 	catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }<br />
 	 * } 
 	 */
-	protected static final void checkedCommit(final ExtObjectContainer db, final Object loggingObject) {
+	public static final void checkedCommit(final ExtObjectContainer db, final Object loggingObject) {
+		testDatabaseIntegrity(null, db);
 		db.commit();
 		Logger.debug(loggingObject, "COMMITED.");
+		testDatabaseIntegrity(null, db);
 	}
 	
 	/**
