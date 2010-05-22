@@ -48,7 +48,9 @@ import freenet.support.io.NativeThread;
  */
 public final class WoTIdentityManager extends IdentityManager {
 	
-	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (30 * 1000) : (5 * 60 * 1000);
+	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (3 * 60 * 1000) : (5 * 60 * 1000);
+	
+	private static final int GARBAGE_COLLECT_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (3 * THREAD_PERIOD);
 	
 	/** The amount of time between each attempt to connect to the WoT plugin */
 	private static final int WOT_RECONNECT_DELAY = 5 * 1000; 
@@ -152,7 +154,7 @@ public final class WoTIdentityManager extends IdentityManager {
 				identity.initializeTransient(mFreetalk);
 				identity.storeWithoutCommit();
 				onNewOwnIdentityAdded(identity);
-				db.commit(); Logger.debug(this, "COMMITED.");
+				identity.checkedCommit(this);
 			}
 			catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(db, this, e);
@@ -187,7 +189,7 @@ public final class WoTIdentityManager extends IdentityManager {
 				identity.initializeTransient(mFreetalk);
 				identity.storeWithoutCommit();
 				onNewOwnIdentityAdded(identity);
-				db.commit(); Logger.debug(this, "COMMITED.");
+				identity.checkedCommit(this);
 			}
 			catch(RuntimeException e) {
 				Persistent.checkedRollback(db, this, e);
@@ -687,6 +689,8 @@ public final class WoTIdentityManager extends IdentityManager {
 				q.descend("mID").constrain(identityID);
 				ObjectSet<WoTIdentity> result = q.execute();
 				WoTIdentity id = null; 
+				
+				// FIXME: If the identity exists as non-own-identity already and is a own identity, delete the non-own and create an own one...
 
 				if(result.size() == 0) {
 					synchronized(db.lock()) {
@@ -703,7 +707,7 @@ public final class WoTIdentityManager extends IdentityManager {
 							if(bOwnIdentities)
 								onNewOwnIdentityAdded((WoTOwnIdentity)id);
 							
-							db.commit(); Logger.debug(this, "COMMITED.");
+							id.checkedCommit(this);
 						}
 						catch(Exception e) {
 							Persistent.checkedRollback(db, this, e);
@@ -748,7 +752,7 @@ public final class WoTIdentityManager extends IdentityManager {
 			
 		/* Executing the thread loop once will always take longer than THREAD_PERIOD. Therefore, if we set the limit to 3*THREAD_PERIOD,
 		 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */
-		long lastAcceptTime = Math.min(mLastIdentityFetchTime, mLastOwnIdentityFetchTime) - THREAD_PERIOD * 3;
+		long lastAcceptTime = Math.min(mLastIdentityFetchTime, mLastOwnIdentityFetchTime) - GARBAGE_COLLECT_DELAY;
 		lastAcceptTime = Math.max(lastAcceptTime, 0); // This is not really needed but a time less than 0 does not make sense.;
 		
 		Query q = db.query();
@@ -844,8 +848,8 @@ public final class WoTIdentityManager extends IdentityManager {
 			
 			if(connected && currentTime >= nextIdentityRequestTime) {
 				try {
+					fetchOwnIdentities(); // Fetch the own identities first to prevent own-identities from being imported as normal identity...
 					fetchIdentities();
-					fetchOwnIdentities();
 					garbageCollectIdentities();
 				} catch (Exception e) {
 					Logger.error(this, "Fetching identities failed.", e);
