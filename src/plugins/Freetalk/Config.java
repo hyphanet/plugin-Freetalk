@@ -94,7 +94,7 @@ public final class Config extends Persistent {
 				mDB.store(mStringParams, 3);
 				mDB.store(mIntParams, 3);
 				checkedStore();
-				mDB.commit();
+				checkedCommit(this);
 			}
 			catch(RuntimeException e) {
 				checkedRollbackAndThrow(e);
