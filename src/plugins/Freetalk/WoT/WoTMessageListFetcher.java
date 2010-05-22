@@ -1,5 +1,6 @@
 package plugins.Freetalk.WoT;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,17 +17,16 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
-import freenet.node.Node;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
+import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
@@ -46,7 +46,7 @@ import freenet.support.io.NativeThread;
  * 
  * @author xor
  */
-public final class WoTMessageListFetcher extends MessageListFetcher {
+public final class WoTMessageListFetcher extends TransferThread implements MessageListFetcher {
 
 	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 1000) : (5 * 60 * 1000);
 	
@@ -75,14 +75,14 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 	
 	private final WoTMessageListXML mXML;
 	
-	public WoTMessageListFetcher(Node myNode, HighLevelSimpleClient myClient, String myName,
-			WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager, WoTMessageListXML myMessageListXML) {
-		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
-		mIdentityManager = myIdentityManager;
-		mMessageManager = myMessageManager;
-		mRandom = mNode.fastWeakRandom;
+	public WoTMessageListFetcher(Freetalk myFreetalk, String myName, WoTMessageListXML myMessageListXML) {
+		super(myFreetalk.getPluginRespirator().getNode(), myFreetalk.getPluginRespirator().getHLSimpleClient(), myName);
+		
+		mIdentityManager = myFreetalk.getIdentityManager();
+		mMessageManager = myFreetalk.getMessageManager();
 		clientContext = mNode.clientCore.clientContext;
 		mRequestClient = mMessageManager.mRequestClient;
+		mRandom = mNode.fastWeakRandom;
 		mXML = myMessageListXML;
 	}
 
@@ -211,7 +211,8 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
 		fetchContext.maxNonSplitfileRetries = 2;
-		ClientGetter g = mClient.fetch(uri, -1, mRequestClient, this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS);
+		fetchContext.maxOutputLength = WoTMessageListXML.MAX_XML_SIZE; // TODO: fetch() also takes a maxSize parameter, why?
+		ClientGetter g = mClient.fetch(uri, WoTMessageListXML.MAX_XML_SIZE, mRequestClient, this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS);
 		addFetch(g);
 		Logger.debug(this, "Trying to fetch MessageList from " + uri);
 		
@@ -229,29 +230,37 @@ public final class WoTMessageListFetcher extends MessageListFetcher {
 		InputStream inputStream = null;
 		WoTIdentity identity = null;
 		
-		synchronized(mIdentityManager) {
 		try {
-			identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI());
-			synchronized(mMessageManager) {
 			bucket = result.asBucket();			
 			inputStream = bucket.getInputStream();
-			WoTMessageList list = mXML.decode(mMessageManager, identity, state.getURI(), inputStream);
-			mMessageManager.onMessageListReceived(list);
+			
+			synchronized(mIdentityManager) {
+				identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI());
+				
+				synchronized(mMessageManager) {
+					try {
+						WoTMessageList list = mXML.decode(mMessageManager, identity, state.getURI(), inputStream);
+						mMessageManager.onMessageListReceived(list);
+					}
+					catch (Exception e) {
+						Logger.error(this, "Parsing failed for MessageList " + state.getURI(), e);
+						mMessageManager.onMessageListFetchFailed(identity, state.getURI(), FetchFailedMarker.Reason.ParsingFailed);
+					}
+				}
 			}
 		}
 		catch (NoSuchIdentityException e) {
 			Logger.normal(this, "Identity was deleted already, ignoring MessageList " + state.getURI());
 		}
-		catch (Exception e) {
-			Logger.error(this, "Parsing failed for MessageList " + state.getURI(), e);
-			mMessageManager.onMessageListFetchFailed(identity, state.getURI(), FetchFailedMarker.Reason.ParsingFailed);
+		catch (IOException e) {
+			Logger.error(this, "getInputStream() failed.", e);
 		}
 		finally {
 			Closer.close(inputStream);
 			Closer.close(bucket);
 			removeFetch(state);
 		}
-		}
+		
 		
 		if(identity != null) {
 		try {

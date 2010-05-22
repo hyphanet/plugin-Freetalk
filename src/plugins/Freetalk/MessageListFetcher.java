@@ -3,20 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import freenet.client.HighLevelSimpleClient;
-import freenet.node.Node;
-import freenet.support.TransferThread;
 
-public abstract class MessageListFetcher extends TransferThread {
-	
-	protected final IdentityManager mIdentityManager;
-	
-	protected final MessageManager mMessageManager;
-	
-	public MessageListFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, IdentityManager myIdentityManager, MessageManager myMessageManager) {
-		super(myNode, myClient, myName);
-		mIdentityManager = myIdentityManager;
-		mMessageManager = myMessageManager;
-	}
+public interface MessageListFetcher {
 
 }
