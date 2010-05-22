@@ -437,7 +437,10 @@ public abstract class Message extends Persistent {
 	}
 	
 	public synchronized void setThread(Message newParentThread) {
-		assert(mThread == null);
+		assert(mThread == null || mThread == newParentThread);
+		
+		if(mThread != null)
+			Logger.warning(this, "Thread already exists for " + this + ": existing==" + mThread + "; new==" + newParentThread);
 		
 		if(!newParentThread.getID().equals(mThreadID)) // mThreadID needs no activation
 			throw new IllegalArgumentException("Trying to set a message as thread which has the wrong ID: " + newParentThread.getID());
@@ -469,7 +472,10 @@ public abstract class Message extends Persistent {
 	}
 
 	public synchronized void setParent(Message newParent)  {
-		assert(mParent == null);
+		assert(mParent == null || newParent == mParent);
+		
+		if(mParent != null)
+			Logger.warning(this, "Parent already exists for " + this + ": existing==" + mParent + "; new==" + newParent);
 		
 		if(!newParent.getID().equals(mParentID)) // mParentID needs no activation
 			throw new IllegalArgumentException("Trying to set a message as parent which has the wrong ID: " + newParent.getID());
