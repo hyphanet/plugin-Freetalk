@@ -111,7 +111,7 @@ public final class WoTMessageManager extends MessageManager {
 				if(collision)
 					list.incrementInsertIndex();
 				
-				db.commit(); Logger.debug(this, "COMMITED.");
+				Persistent.checkedCommit(db, this);
 			}
 			catch(RuntimeException e) {
 				Persistent.checkedRollback(db, this, e);
@@ -167,8 +167,7 @@ public final class WoTMessageManager extends MessageManager {
 							+ ", number of retries: " + marker.getNumberOfRetries() + "): "
 							+  ghostList);
 					
-					db.commit();
-					Logger.debug(this, "COMMITED.");
+					Persistent.checkedCommit(db, this);
 				}
 				catch(Exception ex) {
 					Persistent.checkedRollback(db, this, ex);
@@ -184,7 +183,7 @@ public final class WoTMessageManager extends MessageManager {
 			try {
 				message.markAsInserted(realURI);
 				addMessageToMessageList(message);
-				db.commit(); Logger.debug(this, "COMMITED.");
+				Persistent.checkedCommit(db, this);
 			}
 			catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(db, this, e);
@@ -266,6 +265,11 @@ public final class WoTMessageManager extends MessageManager {
 			return 0;
 		
 		return result.next().getIndex() + 1;
+	}
+	
+	public int getNewMessageListIndexEditionHint(FTIdentity identity) {
+		// TODO: Implement storage of edition hints in message lists.
+		return getUnavailableNewMessageListIndex(identity);
 	}
 
 	@SuppressWarnings("unchecked")
