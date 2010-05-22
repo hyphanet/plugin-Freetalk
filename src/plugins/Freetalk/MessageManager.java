@@ -35,6 +35,7 @@ import freenet.keys.FreenetURI;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
+import freenet.support.TrivialTicker;
 
 /**
  * The MessageManager is the core connection between the UI and the backend of the plugin:
@@ -54,7 +55,9 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	protected final PluginRespirator mPluginRespirator;
 	
 	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (3 * 60 * 1000);
-	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (15 * 60 * 1000);
+	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (15 * 60 * 1000) : (15 * 60 * 1000);
+	
+	private static final int PROCESS_NEW_MESSAGES_DELAY = 1 * 60 * 1000;
 	
 	/**
 	 * When a {@link Message} fetch fails (DNF for example) the message is marked as fetch failed and the fetch will be retried after a growing amount of time.
@@ -85,6 +88,9 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	private volatile boolean isRunning = false;
 	private volatile boolean shutdownFinished = false;
 	private Thread mThread;
+	
+	private final TrivialTicker mTicker;
+	
 
 	public MessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager, Freetalk myFreetalk, PluginRespirator myPluginRespirator) {
 		assert(myDB != null);
@@ -97,13 +103,9 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		mFreetalk = myFreetalk;
 		mPluginRespirator = myPluginRespirator;
 		
-		deleteBrokenObjects();
+		mTicker = new TrivialTicker(mFreetalk.getPluginRespirator().getNode().executor);
 		
-		// It might happen that Freetalk is shutdown after a message has been downloaded and before addMessagesToBoards was called:
-		// Then the message will still be stored but not visible in the boards because storing a message and adding it to boards are separate transactions.
-		// Therefore, we must call addMessagesToBoards (and synchronizeSubscribedBoards) during startup.
-		addMessagesToBoards();
-		synchronizeSubscribedBoards();
+		deleteBrokenObjects();
 		
 		mIdentityManager.registerIdentityDeletedCallback(this, true);
 	}
@@ -116,6 +118,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		db = mFreetalk.getDatabase();
 		mIdentityManager = mFreetalk.getIdentityManager();
 		mPluginRespirator = null;
+		mTicker = null;
 	}
 	
 	/**
@@ -198,33 +201,6 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		Logger.debug(this, "Finished looking for broken MessageList objects.");
 	}
 	
-	/**
-	 * Does various slow tests for database integrity. Returns false if any of them fails.
-	 */
-	private boolean testDatabaseIntegrity() {
-		final Query q = db.query();
-		q.constrain(MessageList.MessageReference.class);
-		q.descend("mURI").constrain(null).identity();
-		ObjectSet<MessageList.MessageReference> refs = new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
-		
-		MessageList.MessageReference ref = refs.hasNext() ? refs.next() : null;
-		
-		if(ref != null) {
-			System.out.println("URI is null for " + ref);
-			
-			// The following happens with db4o 7.4, 7.12 and 8.0... Setting the "mURI" field to be indexed fixes it with 8.0, not with the others though:
-			if(ref.getURI() != null) {
-				System.out.println("DB4O ERROR: Db4o said that URI is null even though it is: "+ ref.getURI());
-				throw new RuntimeException("Query returned object which it should not have returned!");
-			}
-			
-			return false;
-		}
-		
-		return true;
-	}
-	
-	
 	public void run() {
 		Logger.debug(this, "Message manager started.");
 		mThread = Thread.currentThread();
@@ -248,13 +224,6 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 				// Must be called periodically because it is not called on demand.
 				clearExpiredFetchFailedMarkers();
 				
-				// Is called on demand, normally does not fail, but we call it to make sure.
-				addMessagesToBoards();
-				
-				// Is called on demand and CAN fail because SubscribedBoard.addeMessage() tries to query the Score of the author from WoT and this can
-				// fail due to connectivity issues (and currently most likely due to bugs in PluginTalker and especially BlockingPluginTalker!)
-				synchronizeSubscribedBoards();
-				
 				Logger.debug(this, "Message manager loop finished.");
 
 				try {
@@ -277,8 +246,40 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		}
 	}
 	
+	private final Runnable mNewMessageProcessor = new Runnable() {
+		@Override
+		public void run() {
+			Logger.debug(MessageManager.this, "Processing new messages...");
+			
+			boolean success1 = addMessagesToBoards(); // Normally does not fail
+			
+			// CAN fail because SubscribedBoard.addeMessage() tries to query the Score of the author from WoT and this can
+			// fail due to connectivity issues (and currently most likely due to bugs in PluginTalker and especially BlockingPluginTalker!)
+			boolean success2 = synchronizeSubscribedBoards();
+			
+			if(!success1 || !success2)
+				scheduleNewMessageProcessing();
+		}
+	};
+	
+	private void scheduleNewMessageProcessing() {
+		Logger.debug(this, "Scheduling new message processing to be run in " + PROCESS_NEW_MESSAGES_DELAY / (60*1000) + " minutes...");
+		if(mTicker != null)
+			mTicker.queueTimedJob(mNewMessageProcessor, "FT NewMessageProcessor", PROCESS_NEW_MESSAGES_DELAY, true, true);
+		else { // For unit tests
+			mNewMessageProcessor.run();
+		}
+	}
+	
+	
 	public void start() {
 		mPluginRespirator.getNode().executor.execute(this, "Freetalk " + this.getClass().getSimpleName());
+		
+		// It might happen that Freetalk is shutdown after a message has been downloaded and before addMessagesToBoards was called:
+		// Then the message will still be stored but not visible in the boards because storing a message and adding it to boards are separate transactions.
+		// Therefore, we must call addMessagesToBoards (and synchronizeSubscribedBoards) during startup.
+		scheduleNewMessageProcessing();
+		
 		Logger.debug(this, "Started.");
 	}
 
@@ -286,6 +287,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		Logger.debug(this, "Stopping ..."); 
 		isRunning = false;
 		mThread.interrupt();
+		mTicker.shutdown(); // First tell our main thread to exit, then the Ticker so they can shutdown simultaneously
 		synchronized(this) {
 			while(!shutdownFinished) {
 				try {
@@ -415,9 +417,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 				
 				message.deleteWithoutCommit();
 				
-				assert(testDatabaseIntegrity());
 				message.checkedCommit(this);
-				assert(testDatabaseIntegrity());
 			}
 			catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(db, this, e);
@@ -575,15 +575,11 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 			}
 		}
 		
-		// TODO: Instead of calling it immediately, schedule it to be executed in a few seconds. So if we receive a bunch of messages at once, they'll
-		// be bulk-added.
-		if(addMessagesToBoards())
-			synchronizeSubscribedBoards();
+		scheduleNewMessageProcessing();
 	}
 	
 	/**
-	 * 
-	 * @return True if there was at least one message which was linked in. False if no new messages were discovered.
+	 * @return True If adding new messages succeeded, false if not.
 	 */
 	private synchronized boolean addMessagesToBoards() {
 		Logger.normal(this, "Adding messages to boards...");
@@ -594,10 +590,10 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		q.constrain(OwnMessage.class).not();
 		ObjectSet<Message> invisibleMessages = new Persistent.InitializingObjectSet<Message>(mFreetalk, q);
 		
-		boolean addedMessages = false;
+		boolean allSuccessful = true;
 		
 		for(Message message : invisibleMessages) {
-			boolean allSuccessful = true;
+			boolean messageSuccessful = true;
 			
 			for(Board board : message.getBoards()) {
 				synchronized(board) {
@@ -607,10 +603,9 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 						Logger.debug(this, "Adding message to board: " + message);
 						board.addMessage(message);
 						board.checkedCommit(this);
-						addedMessages = true;
 					}
 					catch(Exception e) {
-						allSuccessful = false;
+						messageSuccessful = false;
 						Persistent.checkedRollback(db, this, e);			
 					}
 				}
@@ -618,23 +613,27 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 				}
 			}
 			
-			if(allSuccessful) {
+			if(messageSuccessful) {
 				synchronized(message) {
 				synchronized(db.lock()) {
 					message.setLinkedIn(true);
 					message.storeAndCommit();
 				}
 				}
+			} else {
+				allSuccessful = false;
 			}
 		}
 		
 		Logger.normal(this, "Finished adding messages to boards.");
 		
-		return addedMessages;
+		return allSuccessful;
 	}
 	
-	private synchronized void synchronizeSubscribedBoards() {
+	private synchronized boolean synchronizeSubscribedBoards() {
 		Logger.normal(this, "Synchronizing subscribed boards...");
+
+		boolean success = true;
 		
 		for(SubscribedBoard board : subscribedBoardIterator()) {
 			// No need to lock the parent board because we do not modify it and we've locked the MessageManager which prevents writes to the parent board.
@@ -646,6 +645,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 					board.checkedCommit(this);
 				}
 				catch(Exception e) {
+					success = false;
 					Persistent.checkedRollback(db, this, e);
 				}
 			}
@@ -656,6 +656,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		}
 		
 		Logger.normal(this, "Finished synchronizing subscribed boards.");
+		return success;
 	}
 	
 	public synchronized void onMessageListReceived(MessageList list) {
