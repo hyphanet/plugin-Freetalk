@@ -168,7 +168,8 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			// We MUST use a finite amount of retries because this function is specified to do so and the callers rely on that.
 			fetchContext.maxSplitfileBlockRetries = 2;
 			fetchContext.maxNonSplitfileRetries = 2;
-			ClientGetter g = mClient.fetch(uri, -1, requestClient, this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS);
+			fetchContext.maxOutputLength = WoTMessageXML.MAX_XML_SIZE; // TODO: fetch() also takes a maxSize parameter, why?
+			ClientGetter g = mClient.fetch(uri, WoTMessageXML.MAX_XML_SIZE, requestClient, this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS);
 			addFetch(g);
 			mMessageLists.put(g, ref.getMessageList().getID());
 			Logger.debug(this, "Trying to fetch message from " + uri);
