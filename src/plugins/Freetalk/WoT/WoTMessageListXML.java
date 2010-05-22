@@ -35,6 +35,8 @@ import freenet.keys.FreenetURI;
 
 public final class WoTMessageListXML {
 	
+	public static final int MAX_XML_SIZE = 128 * 1024;
+	
 	private static final int XML_FORMAT_VERSION = 1;
 	
 	private final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
