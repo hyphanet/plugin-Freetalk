@@ -15,6 +15,7 @@ import plugins.Freetalk.DatabaseBasedTest;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.Persistent;
 import plugins.Freetalk.Message.Attachment;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
@@ -63,7 +64,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		WoTMessageList messageList = new WoTMessageList(myAuthor, WoTMessageList.assembleURI(authorRequestSSK, 123), messageReferences);
 		messageList.initializeTransient(mFreetalk);
 		messageList.storeWithoutCommit();
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		mMessageListID = messageList.getID();
 		
 		List<Attachment> attachments = new ArrayList<Attachment>();

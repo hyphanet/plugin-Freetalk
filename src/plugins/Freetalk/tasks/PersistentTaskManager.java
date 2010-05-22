@@ -109,7 +109,7 @@ public class PersistentTaskManager implements Runnable, OwnIdentityDeletedCallba
 				try {
 					task.initializeTransient(mFreetalk);
 					task.deleteWithoutCommit();
-					mDB.commit();
+					Persistent.checkedCommit(mDB, this);
 				}
 				catch(RuntimeException e) {
 					Persistent.checkedRollback(mDB, this, e);
@@ -225,7 +225,8 @@ public class PersistentTaskManager implements Runnable, OwnIdentityDeletedCallba
 					task.deleteWithoutCommit();
 				}
 				
-				mDB.commit(); Logger.debug(this, "COMMITED: Deleted tasks of " + identity);
+				Logger.debug(this, "Deleted tasks of " + identity);
+				Persistent.checkedCommit(mDB, this);
 			}
 			catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);

@@ -11,6 +11,7 @@ import javax.xml.transform.TransformerException;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.DatabaseBasedTest;
 import plugins.Freetalk.MessageList;
+import plugins.Freetalk.Persistent;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import freenet.keys.FreenetURI;
@@ -77,7 +78,7 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 		WoTOwnMessageList messageList = new WoTOwnMessageList(myAuthor, 123);
 		messageList.initializeTransient(mFreetalk);
 		messageList.storeWithoutCommit();
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		
 		mMessageListID = messageList.getID();
 		

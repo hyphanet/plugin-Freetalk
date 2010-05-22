@@ -18,6 +18,7 @@ import plugins.Freetalk.DatabaseBasedTest;
 import plugins.Freetalk.FetchFailedMarker;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.Persistent;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.MessageList.MessageListFetchFailedMarker;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
@@ -98,7 +99,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 			mOwnIdentities[i].storeWithoutCommit();
 		}
 		
-		db.commit();
+		Persistent.checkedCommit(db, this);
 	}
 	
 	private void constructBoards() throws Exception {
@@ -117,7 +118,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		WoTMessageList list = new WoTMessageList(author, uri, references);
 		list.initializeTransient(mFreetalk);
 		list.storeWithoutCommit();
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		
 		return list;
 		
@@ -337,7 +338,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		
 		mMessageManager.beforeIdentityDeletion(mOwnIdentities[1]);
 		mOwnIdentities[1].deleteWithoutCommit();
-		db.commit();
+		Persistent.checkedCommit(db, this);
 		
 		// onIdentityDeletion should have deleted that thread because it only contains messages from the deleted identity.
 		mThreads.remove(thread0.getID());
@@ -400,7 +401,8 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		// Now we simulate a retry of the message list fetch
 		
 		marker.setDateOfNextRetry(marker.getDate());
-		marker.storeWithoutCommit(); db.commit();
+		marker.storeWithoutCommit();
+		Persistent.checkedCommit(db, this);
 				
 		mMessageManager.clearExpiredFetchFailedMarkers();
 		

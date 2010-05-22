@@ -132,7 +132,7 @@ public final class WoTMessageURI extends MessageURI {
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in removeFrom() !
 			
-			mDB.store(mFreenetURI);
+			checkedStore(mFreenetURI);
 			checkedStore();
 		}
 		catch(RuntimeException e) {
