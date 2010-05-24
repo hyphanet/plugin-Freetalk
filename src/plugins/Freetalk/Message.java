@@ -610,7 +610,8 @@ public abstract class Message extends Persistent {
 	 * - Not more than MAX_MESSAGE_TEXT_LENGTH characters or MAX_MESSAGE_TEXT_BYTE_LENGTH bytes.
 	 * - Valid UTF-8 encoding.
 	 * - Contains no invalid UTF formatting (unpaired direction or annotation characters).
-	 * - Control characters are allowed. FIXME: Check whether there are any dangerous control characters. If yes, only allow tabs, linebreaks. etc.
+	 * - Control characters are allowed: We want to allow other plugins to use Freetalk as their core, therefore we should not be too restrictive about
+	 *   message content. Freetalk user interfaces have to take care on their own to be secure against weird control characters.
 	 */
 	static public boolean isTextValid(String text) {
         if (text == null) {
