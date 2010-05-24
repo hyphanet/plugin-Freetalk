@@ -190,7 +190,7 @@ public abstract class Message extends Persistent {
 		}
 		
 		mURI = newURI;
-		mRealURI = newRealURI.clone(); // Prevent db4o problems.
+		mRealURI = newRealURI != null ? newRealURI.clone() : null;
 		mMessageList = newMessageList;
 		mAuthor = newAuthor;
 		mID = newID;
