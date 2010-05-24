@@ -112,7 +112,7 @@ public final class BoardPage extends WebPageImpl {
 							authorScore = Integer.toString(score);
 					}
 					catch(NotInTrustTreeException e) {
-						authorScore = "null"; // FIXME: Decide about this we should display something better
+						authorScore = "null"; // TODO: We should display something better
 					}
 					catch(Exception e) {
 						Logger.error(this, "getScoreFor() failed", e);
