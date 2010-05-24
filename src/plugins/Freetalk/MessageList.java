@@ -66,6 +66,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		@Indexed
 		private final String mMessageID;
 		
+		@Indexed
 		private final FreenetURI mURI; 
 		
 		@Indexed
@@ -83,7 +84,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 				throw new IllegalArgumentException(); /* TODO: Be more verbose */
 			
 			mMessageID = newMessageID;
-			mURI = newURI;
+			mURI = newURI.clone(); // Prevent weird db4o problems.
 			mBoard = myBoard;
 			mDate = myDate;
 		}
@@ -386,11 +387,6 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 				}
 			}
 			
-			
-			// Then we delete our list of MessageReferences before we delete each of it's MessageReferences 
-			// - less work of db4o, it does not have to null all the pointers to them.
-			checkedDelete(mMessages);
-			
 			for(MessageReference ref : mMessages) {
 				// TODO: This requires that we have locked the MessageManager, which is currently the case for every call to deleteWithoutCommit()
 				// However, we should move the code elsewhere to ensure the locking...
@@ -415,6 +411,11 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 				ref.initializeTransient(mFreetalk);
 				ref.deleteWithoutCommit();
 			}
+			
+			// Then we delete our list of MessageReferences before we delete each of it's MessageReferences 
+			// - less work of db4o, it does not have to null all the pointers to them.
+			checkedDelete(mMessages);
+			mMessages.clear();
 			
 			// We delete this at last because each MessageReference object had a pointer to it - less work for db4o, it doesn't have to null them all
 			checkedDelete();
