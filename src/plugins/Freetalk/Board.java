@@ -33,7 +33,7 @@ public class Board extends Persistent implements Comparable<Board> {
 
     /* Constants */
 
-    private static transient final HashSet<String> ISOLanguages = new HashSet<String>(Arrays.asList(getAllowedLanguageCodes()));
+    private static transient final HashSet<String> ISOLanguages = getAllowedLanguageCodes();
 
     // Characters not allowed in board names:
     //  ! , ? * [ \ ] (space)  not allowed by NNTP
@@ -60,8 +60,10 @@ public class Board extends Persistent implements Comparable<Board> {
     private int mNextFreeMessageIndex = 1;
 
 
-    public static String[] getAllowedLanguageCodes() {
-        return Locale.getISOLanguages();
+    public static HashSet<String> getAllowedLanguageCodes() {
+    	HashSet<String> languages = new HashSet<String>(Arrays.asList(Locale.getISOLanguages()));
+    	languages.add("multilingual");
+        return languages;
     }
 
     /**
@@ -274,7 +276,7 @@ public class Board extends Persistent implements Comparable<Board> {
         }
         
     	protected void deleteWithoutCommit() {
-    		deleteWithoutCommit(3); // TODO: Figure out a suitable depth.
+    		deleteWithoutCommit(3); // TODO: Figure out a suitable depth.  // XXX: ERROR
 		}
     	
     }
