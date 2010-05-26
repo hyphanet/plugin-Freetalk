@@ -33,7 +33,9 @@ public class Board extends Persistent implements Comparable<Board> {
 
     /* Constants */
 
-    private static transient final HashSet<String> ISOLanguages = getAllowedLanguageCodes();
+    private static transient final HashSet<String> ALLOWED_LANGUAGES = getAllowedLanguages();
+    
+    private static transient final String[] ALLOWED_LANGUAGES_ARRAY = (String[])getAllowedLanguages().toArray(new String[1]);
 
     // Characters not allowed in board names:
     //  ! , ? * [ \ ] (space)  not allowed by NNTP
@@ -60,10 +62,14 @@ public class Board extends Persistent implements Comparable<Board> {
     private int mNextFreeMessageIndex = 1;
 
 
-    public static HashSet<String> getAllowedLanguageCodes() {
+    private static HashSet<String> getAllowedLanguages() {
     	HashSet<String> languages = new HashSet<String>(Arrays.asList(Locale.getISOLanguages()));
     	languages.add("multilingual");
         return languages;
+    }
+    
+    public static String[] getAllowedLanguageCodes() {
+    	return ALLOWED_LANGUAGES_ARRAY;
     }
 
     /**
@@ -144,7 +150,7 @@ public class Board extends Persistent implements Comparable<Board> {
 
         // first part of name must be a recognized language code
 
-        return (ISOLanguages.contains(parts[0]));
+        return (ALLOWED_LANGUAGES.contains(parts[0]));
     }
     
     /**
