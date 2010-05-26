@@ -20,20 +20,30 @@ public final class NewThreadPage extends WebPageImpl {
 	
 	public NewThreadPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) throws NoSuchBoardException {
 		super(myWebInterface, viewer, request, _baseL10n);
-		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getPartAsString("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
+		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getPartAsStringFailsafe("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
 	}
 	
 	public void make() {
-		if(mRequest.isPartSet("CreateThread") && mRequest.getMethod().equals("POST")) { 
+		String threadSubject = "";
+		String threadText = "";
+		
+		if((mRequest.isPartSet("CreateThread") || mRequest.isPartSet("CreatePreview")) && mRequest.getMethod().equals("POST")) { 
 			HashSet<Board> boards = new HashSet<Board>();
 			boards.add(mBoard);
-			String threadSubject = mRequest.getPartAsString("ThreadSubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH);
-			String threadText = mRequest.getPartAsString("ThreadText", Message.MAX_MESSAGE_TEXT_LENGTH);
-			
-			/* FIXME: Add code which warns the user if the subject / text is to long. Currently, getPartAsString just returns an empty string if it is.
-			 * For the subject this might be okay because the <input type="text" ...> can and does specify a max length, but the <textarea> cannot AFAIK. */
 
 			try {
+				threadSubject = mRequest.getPartAsStringFailsafe("ThreadSubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH * 2);
+				threadText = mRequest.getPartAsStringFailsafe("ThreadText", Message.MAX_MESSAGE_TEXT_LENGTH * 2);
+				
+				if(threadSubject.length() > Message.MAX_MESSAGE_TITLE_TEXT_LENGTH)
+					throw new Exception(l10n().getString("Common.Message.Subject.TooLong", "limit", Integer.toString(Message.MAX_MESSAGE_TITLE_TEXT_LENGTH)));
+				
+				if(threadText.length() > Message.MAX_MESSAGE_TEXT_LENGTH)
+					throw new Exception(l10n().getString("Common.Message.Text.TooLong", "limit", Integer.toString(Message.MAX_MESSAGE_TEXT_LENGTH)));
+				
+				if (mRequest.isPartSet("CreatePreview")) {
+					mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), threadSubject, threadText));
+				} else {
 				mFreetalk.getMessageManager().postMessage(null, null, boards, mBoard, mOwnIdentity, threadSubject, null, threadText, null);
 
 				HTMLNode successBox = addContentBox(l10n().getString("NewThreadPage.ThreadCreated.Header"));
@@ -48,6 +58,7 @@ public final class NewThreadPage extends WebPageImpl {
                                 "<a href=\"" + Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + mBoard.getName() + "\">",
                                 mBoard.getName(),
                                 "</a>" });
+				}
 			} catch (Exception e) {
 				HTMLNode alertBox = addAlertBox(l10n().getString("NewThreadPage.ThreadFailed.Header"));
 				alertBox.addChild("div", e.getMessage());
@@ -56,14 +67,8 @@ public final class NewThreadPage extends WebPageImpl {
 			}
 			return;
 		}
-		String threadSubject = "";
-		String threadText = "";
-		if (mRequest.isPartSet("CreatePreview")) {
-			threadSubject = mRequest.getPartAsString("ThreadSubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH);
-			threadText = mRequest.getPartAsString("ThreadText", Message.MAX_MESSAGE_TEXT_LENGTH);
-			mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), threadSubject, threadText));
-		}
-		makeNewThreadPage(threadSubject, threadText);
+		else
+			makeNewThreadPage(threadSubject, threadText);
 	}
 
 	private void makeNewThreadPage(String threadSubject, String threadText) {

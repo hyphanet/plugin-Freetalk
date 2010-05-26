@@ -29,33 +29,45 @@ public class NewReplyPage extends WebPageImpl {
 	public NewReplyPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) 
 	throws NoSuchBoardException, NoSuchMessageException {
 		super(myWebInterface, viewer, request, _baseL10n);
-		mBoard = mFreetalk.getMessageManager().getSubscription(mOwnIdentity, request.getPartAsString("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
+		mBoard = mFreetalk.getMessageManager().getSubscription(mOwnIdentity, request.getPartAsStringFailsafe("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
 		
-		mParentThread = mBoard.getThreadLink(request.getPartAsString("ParentThreadID", 128));
-		mParentMessage = mFreetalk.getMessageManager().get(request.getPartAsString("ParentMessageID", 128)); /* TODO: adapt to maximal ID length when it has been decided */
+		mParentThread = mBoard.getThreadLink(request.getPartAsStringFailsafe("ParentThreadID", 128));
+		mParentMessage = mFreetalk.getMessageManager().get(request.getPartAsStringFailsafe("ParentMessageID", 128)); /* TODO: adapt to maximal ID length when it has been decided */
 	}
 
 	public void make() {
 		makeBreadcrumbs();
-		if(mRequest.isPartSet("CreateReply") && mRequest.getMethod().equals("POST")) {
+		
+		if((mRequest.isPartSet("CreateReply") || mRequest.isPartSet("CreatePreview")) && mRequest.getMethod().equals("POST")) {
 			HashSet<Board> boards = new HashSet<Board>();
 			boards.add(mBoard);
-			String replySubject = mRequest.getPartAsString("ReplySubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH);
-			String replyText = mRequest.getPartAsString("ReplyText", Message.MAX_MESSAGE_TEXT_LENGTH);
 			
-			/* FIXME: Add code which warns the user if the subject / text is to long. Currently, getPartAsString just returns an empty string if it is.
-			 * For the subject this might be okay because the <input type="text" ...> can and does specify a max length, but the <textarea> cannot AFAIK. */
-
+			String replySubject = "";
+			String replyText = "";
+			
 			try {
-				MessageURI parentThreadURI;
+				 replySubject = mRequest.getPartAsStringFailsafe("ReplySubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH * 2);
+				 replyText = mRequest.getPartAsStringFailsafe("ReplyText", Message.MAX_MESSAGE_TEXT_LENGTH * 2);
 				
+				if(replySubject.length() > Message.MAX_MESSAGE_TITLE_TEXT_LENGTH)
+					throw new Exception(l10n().getString("Common.Message.Subject.TooLong", "limit", Integer.toString(Message.MAX_MESSAGE_TITLE_TEXT_LENGTH)));
+				
+				if(replyText.length() > Message.MAX_MESSAGE_TEXT_LENGTH)
+					throw new Exception(l10n().getString("Common.Message.Text.TooLong", "limit", Integer.toString(Message.MAX_MESSAGE_TEXT_LENGTH)));
+				
+				if (mRequest.isPartSet("CreatePreview")) {
+					mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), replySubject, replyText));
+				}
+				else {
+				MessageURI parentThreadURI;
+					
 				try {
 					parentThreadURI = mParentThread.getMessage().getURI();
 				}
 				catch(MessageNotFetchedException e) {
 					parentThreadURI = mParentMessage.getThreadURI();
 				}
-				
+					
 				// We do not always use the thread URI of the parent message because it might be the thread itself, then getThreadURI() will fail - threads have none.
 				// Further, we cannot do "parentThreadURI = mParentMessage.isThread() ? mParentMessage.getURI() : mParentMessage.getThreadURI()" because
 				// the parent thread might be a forked thread, i.e. isThread() will return false and getThreadURI() will return the URI of the original thread
@@ -87,6 +99,7 @@ public class NewReplyPage extends WebPageImpl {
                                 "<a href=\"" + BoardPage.getURI(mBoard) + "\">",
                                 mBoard.getName(),
                                 "</a>" });
+				}
 			} catch (Exception e) {
 				HTMLNode alertBox = addAlertBox(l10n().getString("NewReplyPage.ReplyFailed.Header"));
 				alertBox.addChild("div", e.getMessage());
@@ -94,18 +107,15 @@ public class NewReplyPage extends WebPageImpl {
 				makeNewReplyPage(replySubject, replyText);
 			}
 			return;
+		} else {
+			String subject = mParentMessage.getTitle();
+			if(!subject.startsWith("Re:"))
+				subject = "Re: " + subject;
+			
+			String text = Quoting.getFullQuote(mParentMessage);
+	
+			makeNewReplyPage(subject, text);
 		}
-		String subject = mParentMessage.getTitle();
-		if(!subject.startsWith("Re:"))
-			subject = "Re: " + subject;
-		String text = Quoting.getFullQuote(mParentMessage);
-		if (mRequest.isPartSet("CreatePreview")) {
-			subject = mRequest.getPartAsString("ReplySubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH);
-			text = mRequest.getPartAsString("ReplyText", Message.MAX_MESSAGE_TEXT_LENGTH);
-			mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), subject, text));
-		}
-
-		makeNewReplyPage(subject, text);
 	}
 
 	private void makeNewReplyPage(String replySubject, String replyText) {
