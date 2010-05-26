@@ -433,20 +433,24 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 */
 	public synchronized void beforeIdentityDeletion(FTIdentity identity) {
 		Logger.debug(this, "Deleting all objects of identity " + identity);
-		// We use multiple transactions here: We cannot acquire the db.lock() before board.deleteMessage because deleteMessage() synchronizes on board
-		// and therefore we must acquire the db.lock after synchronizing on each board.
-		// So the FIXME is: Add some mechanism similar to addMessagesToBoards()/synchronizeSubscribedBoards which handles half-deleted identities.
+		// We use multiple transactions here: We cannot acquire the db.lock() before deleteMessageRatting, board.deleteWithoutCommit and
+		// deleteMessage. Each of them synchronize on message ratings / boards, therefore we must acquire the db.lock after synchronizing on each object.
+		// TODO: Check whether this can result in bad side effects. IMHO it cannot.
+		// If it can, add some mechanism similar to addMessagesToBoards()/synchronizeSubscribedBoards which handles half-deleted identities.
 		
 		if(identity instanceof FTOwnIdentity) {
 			final FTOwnIdentity ownId = (FTOwnIdentity)identity;
 			for(final MessageRating messageRating : getAllMessageRatingsBy(ownId)) {
-				// This does a single transaction and commits it.
-				deleteMessageRating(messageRating);
+				deleteMessageRating(messageRating); // This does a full transaction and commits it.
+			}
+						
+			for(SubscribedBoard board : subscribedBoardIteratorSortedByName((FTOwnIdentity)identity)) { // TODO: Optimization: Use a non-sorting function.
+				unsubscribeFromBoard(ownId, board); // This does a full transaction and commits it.
 			}
 		}
 
 		for(Message message : getMessagesBy(identity)) {
-			deleteMessage(message);
+			deleteMessage(message); // This does a full transaction and commits it.
 		}
 
 		synchronized(db.lock()) {
@@ -468,12 +472,6 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 					for(final OwnMessageList messageList : getOwnMessageListsBy(ownId)) {
 						messageList.deleteWithoutCommit();
 					}
-					
-					// FIXME: We do not lock the boards. Ensure that the UI cannot re-use the board by calling storeAndCommit somewhere even though the board
-					// has been deleted. This can be ensured by having isStored() checks in all storeAndCommit() functions which use boards.
-					
-					for(SubscribedBoard board : subscribedBoardIteratorSortedByName((FTOwnIdentity)identity)) // TODO: Optimization: Use a non-sorting function.
-						board.deleteWithoutCommit();
 				}
 				Logger.debug(this, "Messages and message lists deleted for " + identity);
 				Persistent.checkedCommit(db, this);
@@ -1222,6 +1220,32 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		}
 	}
 	
+	protected synchronized void unsubscribeFromBoard(FTOwnIdentity subscriber, SubscribedBoard subscribedBoard) {
+		synchronized(subscribedBoard) {
+			synchronized(db.lock()) {
+				try {
+					subscribedBoard.deleteWithoutCommit();
+					
+					if(subscribedBoardIterator(subscribedBoard.getName()).isEmpty()) {
+						try {
+							Board board = getBoardByName(subscribedBoard.getName());
+							Logger.debug(this, "Last subscription to board " + board + " removed, clearing it's HasSubscriptions flag.");
+							board.setHasSubscriptions(false);
+							board.storeWithoutCommit();
+						} catch (NoSuchBoardException e) { 
+							throw new RuntimeException(e); // Should not happen. 
+						}
+					}
+					
+					subscribedBoard.checkedCommit(this);
+				}
+				catch(RuntimeException e) {
+					Persistent.checkedRollbackAndThrow(db, this, e);
+				}
+			}
+		}
+	}
+	
 	/**
 	 * You do NOT need to synchronize on the IdentityManager when calling this function. 
 	 */
@@ -1230,27 +1254,8 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		subscriber = mIdentityManager.getOwnIdentity(subscriber.getID()); // Ensure that the identity still exists so the caller does not have to synchronize.
 			
 		synchronized(this) {		
-		SubscribedBoard subscribedBoard = getSubscription(subscriber, boardName);
-		
-		synchronized(subscribedBoard) {
-		synchronized(db.lock()) {
-			try {
-				subscribedBoard.deleteWithoutCommit();
-				
-				if(subscribedBoardIterator(subscribedBoard.getName()).iterator().hasNext() == false) {
-					Board board = getBoardByName(subscribedBoard.getName());
-					Logger.debug(this, "Last subscription to board " + board + " removed, clearing it's HasSubscriptions flag.");
-					board.setHasSubscriptions(false);
-					board.storeWithoutCommit();
-				}
-				
-				subscribedBoard.checkedCommit(this);
-			}
-			catch(RuntimeException e) {
-				Persistent.checkedRollbackAndThrow(db, this, e);
-			}
-		}
-		}
+			SubscribedBoard subscribedBoard = getSubscription(subscriber, boardName);
+			unsubscribeFromBoard(subscriber, subscribedBoard);
 		}
 		}
 	}
