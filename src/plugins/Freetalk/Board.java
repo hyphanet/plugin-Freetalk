@@ -276,7 +276,7 @@ public class Board extends Persistent implements Comparable<Board> {
         }
         
     	protected void deleteWithoutCommit() {
-    		deleteWithoutCommit(3); // TODO: Figure out a suitable depth.  // XXX: ERROR
+    		deleteWithoutCommit(3); // TODO: Figure out a suitable depth.
 		}
     	
     }
