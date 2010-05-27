@@ -387,7 +387,14 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 				}
 			}
 			
-			for(MessageReference ref : mMessages) {
+			
+			// Then we delete our list of MessageReferences before we delete each of it's MessageReferences 
+			// - less work of db4o, it does not have to null all the pointers to them.
+			MessageReference[] messages = mMessages.toArray(new MessageReference[mMessages.size()]);
+			mMessages.clear(); // I don't know why I'm doing this but it seems better to me - it makes clear that we delete the MessageReference objects on our own.
+			checkedDelete(mMessages);
+			
+			for(MessageReference ref : messages) {
 				// TODO: This requires that we have locked the MessageManager, which is currently the case for every call to deleteWithoutCommit()
 				// However, we should move the code elsewhere to ensure the locking...
 				Query query = mDB.query();
@@ -411,11 +418,6 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 				ref.initializeTransient(mFreetalk);
 				ref.deleteWithoutCommit();
 			}
-			
-			// Then we delete our list of MessageReferences before we delete each of it's MessageReferences 
-			// - less work of db4o, it does not have to null all the pointers to them.
-			checkedDelete(mMessages);
-			mMessages.clear();
 			
 			// We delete this at last because each MessageReference object had a pointer to it - less work for db4o, it doesn't have to null them all
 			checkedDelete();
