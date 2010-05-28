@@ -52,25 +52,25 @@ public abstract class Persistent {
 	}
 	
 	/**
-	 * This function can be used for debugging, it is executed before and after delete() and commit().
-	 * If the code within this function is not too heavy you can also add calls to it in store().
-	 * (Right now it is too heavy so the calls in store are commented out)
+	 * This function can be used for debugging, it is executed before and after store(), delete() and commit().
 	 */
-	@SuppressWarnings("unchecked")
 	public static void testDatabaseIntegrity(Freetalk mFreetalk, ExtObjectContainer db) {
-		final Query q = db.query();
-		q.constrain(MessageList.MessageReference.class);
-		ObjectSet<MessageList.MessageReference> refs = q.execute();
+		// The URI==null problem seems fixed.
+		
+//		final Query q = db.query();
+//		q.constrain(MessageList.MessageReference.class);
+//		ObjectSet<MessageList.MessageReference> refs = q.execute();
+//
+//		for(MessageList.MessageReference ref : refs) {
+//			ref.mFreetalk = mFreetalk;
+//			ref.mDB = db;
+//			
+//			if(ref.getURI() == null)
+//				assert(false);
+//		}
 
-		for(MessageList.MessageReference ref : refs) {
-			ref.mFreetalk = mFreetalk;
-			ref.mDB = db;
-			
-			if(ref.getURI() == null)
-				assert(false);
-		}
-
-		//   FIXME: Investigate the consequences of the breakage in db4o which the following code reveals:
+		// TODO: Investigate the consequences of the breakage in db4o which the following code reveals
+		// (It is a TODO only because I have added checks to all constrain(null) code which check whether the query really works.)
 		
 //		final Query q = db.query();
 //		q.constrain(MessageList.MessageReference.class);
@@ -139,9 +139,9 @@ public abstract class Persistent {
 	 * @param object
 	 */
 	protected final void checkedStore(final Object object) {
-		//testDatabaseIntegrity();
+		testDatabaseIntegrity();
 		mDB.store(object);
-		//testDatabaseIntegrity();
+		testDatabaseIntegrity();
 	}
 	
 	/**
@@ -212,10 +212,12 @@ public abstract class Persistent {
 	 */
 	public static final void checkedRollback(final ExtObjectContainer db, final Object loggingObject, final Throwable error) {
 		// As of db4o 7.4 it seems necessary to call gc(); to cause rollback() to work.
+		testDatabaseIntegrity(null, db);
 		System.gc();
 		db.rollback();
 		System.gc(); 
 		Logger.error(loggingObject, "ROLLED BACK!", error);
+		testDatabaseIntegrity(null, db);
 	}
 
 	/**

@@ -110,6 +110,10 @@ public final class WoTMessageInserter extends MessageInserter {
 		synchronized(mMessageManager) {
 			for(WoTOwnMessage message : mMessageManager.getNotInsertedOwnMessages()) {
 				try {
+					// TODO: Remove the debug code if we are sure that db4o works
+					if(!message.testRealURIisNull())
+						continue;
+					
 					insertMessage(message);
 				}
 				catch(Exception e) {

@@ -135,6 +135,11 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		q.descend("mAuthor").constrain(null).identity();
 		
 		for(Message message : new Persistent.InitializingObjectSet<Message>(mFreetalk, q)) {
+			if(message.getAuthor() != null) {
+				Logger.error(this, "descend(\"mAuthor\").constrain(null) did not work for " + message);
+				continue;
+			}
+			
 			synchronized(db.lock()) {
 				Logger.error(this, "Deleting Message with mAuthor == null: " + message);
 				

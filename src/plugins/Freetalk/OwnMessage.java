@@ -42,6 +42,16 @@ public abstract class OwnMessage extends Message {
 		
 		return mRealURI;
 	}
+	
+	// TODO: Remove the debug code if we are sure that db4o works
+	public synchronized boolean testRealURIisNull() {
+		if(mRealURI != null) {
+			Logger.error(this, "descend(\"mRealURI\").constrain(null) did not work for " + this);
+			return false;
+		}
+		
+		return true;
+	}
 
 	/**
 	 * Set the message list at which this message is listed to the given one.
@@ -75,7 +85,7 @@ public abstract class OwnMessage extends Message {
     		if(uri != null)
     			return uri.toString();
     		
-    		FreenetURI realURI = getRealURI();
+    		FreenetURI realURI = mRealURI; // We cannot use the getter here because it throws if the URI is null.
     		if(realURI != null)
     			return realURI.toString();
     		
