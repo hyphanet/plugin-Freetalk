@@ -6,6 +6,7 @@ package plugins.Freetalk.ui.web;
 import java.util.HashSet;
 
 import plugins.Freetalk.Board;
+import plugins.Freetalk.FTIdentity;
 import plugins.Freetalk.FTOwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
@@ -13,14 +14,27 @@ import plugins.Freetalk.MessageURI;
 import plugins.Freetalk.Quoting;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
+import plugins.Freetalk.WoT.WoTIdentity;
+import plugins.Freetalk.WoT.WoTIdentityManager;
+import plugins.Freetalk.WoT.WoTMessage;
+import plugins.Freetalk.WoT.WoTMessageManager;
+import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.MessageNotFetchedException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.exceptions.NoSuchMessageRatingException;
+import plugins.Freetalk.exceptions.NotTrustedException;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
 public class NewReplyPage extends WebPageImpl {
+	
+	public static final byte INCREASE_TRUST_VALUE = 10;
+	
+	public static final byte DECREASE_TRUST_VALUE = -10;
+	
 
 	private final SubscribedBoard mBoard;
 	private final BoardThreadLink mParentThread;
@@ -44,6 +58,7 @@ public class NewReplyPage extends WebPageImpl {
 			
 			String replySubject = "";
 			String replyText = "";
+			byte selectedMessageRating = 0;
 			
 			try {
 				 replySubject = mRequest.getPartAsStringFailsafe("ReplySubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH * 2);
@@ -55,8 +70,11 @@ public class NewReplyPage extends WebPageImpl {
 				if(replyText.length() > Message.MAX_MESSAGE_TEXT_LENGTH)
 					throw new Exception(l10n().getString("Common.Message.Text.TooLong", "limit", Integer.toString(Message.MAX_MESSAGE_TEXT_LENGTH)));
 				
+				selectedMessageRating = getMessageRating(mRequest);
+				
 				if (mRequest.isPartSet("CreatePreview")) {
 					mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), replySubject, replyText));
+					makeNewReplyPage(replySubject, replyText, selectedMessageRating);
 				}
 				else {
 				MessageURI parentThreadURI;
@@ -99,12 +117,14 @@ public class NewReplyPage extends WebPageImpl {
                                 "<a href=\"" + BoardPage.getURI(mBoard) + "\">",
                                 mBoard.getName(),
                                 "</a>" });
+
+				rateMessage(selectedMessageRating); // Handles the case where no rating is desired
 				}
 			} catch (Exception e) {
 				HTMLNode alertBox = addAlertBox(l10n().getString("NewReplyPage.ReplyFailed.Header"));
 				alertBox.addChild("div", e.getMessage());
 				
-				makeNewReplyPage(replySubject, replyText);
+				makeNewReplyPage(replySubject, replyText, selectedMessageRating);
 			}
 			return;
 		} else {
@@ -114,11 +134,41 @@ public class NewReplyPage extends WebPageImpl {
 			
 			String text = Quoting.getFullQuote(mParentMessage);
 	
-			makeNewReplyPage(subject, text);
+			makeNewReplyPage(subject, text, null);
+		}
+	}
+	
+	private static byte getMessageRating(HTTPRequest request) {
+		if(!request.isPartSet("RateMessage"))
+			return 0;
+		
+		return (byte)request.getIntPart("RateMessage", 0);
+	}
+	
+	private void rateMessage(byte value) {
+		if(value == 0) // No change
+			return;
+		
+		try {
+			WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
+			WoTMessageManager messageManager = (WoTMessageManager)mFreetalk.getMessageManager();
+			
+			synchronized(identityManager) {
+			synchronized (messageManager) {
+				WoTMessage message = (WoTMessage)messageManager.get(mParentMessage.getID()); // It might have be deleted meanwhile, we must re-query
+				messageManager.rateMessage((WoTOwnIdentity)mOwnIdentity, message, value);
+				HTMLNode successBox = addContentBox(l10n().getString("NewReplyPage.RateMessageSucceededBox.Title"));
+				successBox.addChild("div", l10n().getString("NewReplyPage.RateMessageSucceededBox.Text", "value", Byte.toString(value)));
+			}
+			}
+		} catch(Exception e) {
+			HTMLNode alertBox = addAlertBox(l10n().getString("NewReplyPage.RateMessageFailedBox.Title"));
+			alertBox.addChild("div", l10n().getString("NewReplyPage.RateMessageFailedBox.Text"));
+			alertBox.addChild("div", e.getMessage());
 		}
 	}
 
-	private void makeNewReplyPage(String replySubject, String replyText) {
+	private void makeNewReplyPage(String replySubject, String replyText, Byte selectedMessageRating) {
 	    
 	    final String trnsl = l10n().getString(
 	            "NewReplyPage.ReplyBox.Header",
@@ -143,8 +193,107 @@ public class NewReplyPage extends WebPageImpl {
 		textBox.addChild("textarea", new String[] { "name", "cols", "rows", "style" }, // TODO: Use a CSS stylesheet file
 				new String[] { "ReplyText", "80", "30", "font-size: medium;" }, replyText);
 		
+		addRateMessageBox(newReplyForm, selectedMessageRating);
+		
 		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateReply", l10n().getString("NewReplyPage.ReplyBox.SubmitButton")});
 		newReplyForm.addChild(PreviewPane.createPreviewButton(l10n(), "CreatePreview"));
+	}
+	
+	private void addRateMessageBox(HTMLNode parent, Byte selectedMessageRating) {
+		FTIdentity identity = mParentMessage.getAuthor();
+		
+		HTMLNode rateMessageBox = getContentBox(l10n().getString(
+	            "NewReplyPage.RateMessageBox.Header",
+	            new String[] { "identityname" }, 
+	            new String[] { identity.getShortestUniqueName() }));
+		
+		parent.addChild(rateMessageBox);
+		
+		try {
+			mFreetalk.getMessageManager().getMessageRating(mOwnIdentity, mParentMessage);
+			rateMessageBox.addChild("#", l10n().getString("NewReplyPage.RateMessageBox.AlreadyRated"));
+			return;
+		} catch(NoSuchMessageRatingException e) { }
+		
+		Byte currentTrust = null;
+		
+		try {
+			currentTrust = mFreetalk.getIdentityManager().getTrust((WoTOwnIdentity)mOwnIdentity, (WoTIdentity)identity);
+		} catch(NotTrustedException e) {
+
+		} catch (Exception e) {
+			Logger.error(this, "Getting current trust failed", e);
+			rateMessageBox.addChild("p", l10n().getString("NewReplyPage.RateMessageBox.GetTrustError")); // TODO: Show the exception & stack trace
+			return;
+		}
+		
+		rateMessageBox.addChild("p", l10n().getString("NewReplyPage.RateMessageBox.CurrentTrust", "value",
+				(currentTrust!= null ? currentTrust.toString() : l10n().getString("Common.WebOfTrust.Trust.None"))));
+		
+		HTMLNode increaseTrustDiv = rateMessageBox.addChild("div");
+		HTMLNode keepTrustDiv = rateMessageBox.addChild("div");
+		HTMLNode decreaseTrustDiv = rateMessageBox.addChild("div");
+		
+		HTMLNode selectedRadio;
+		
+		if(selectedMessageRating == null)
+			selectedRadio = increaseTrustDiv;
+		else {
+			if(selectedMessageRating > 0)
+				selectedRadio = increaseTrustDiv;
+			else if(selectedMessageRating == 0)
+				selectedRadio = keepTrustDiv;
+			else
+				selectedRadio = decreaseTrustDiv;
+		}
+		
+		// TODO: Move those computations to class WoTMessageRating... there it is also explained why we dont just check for currentTrust<100 ...
+		final boolean increasePossible = currentTrust == null || (currentTrust+INCREASE_TRUST_VALUE)<=100;  // TODO: Use a constant 
+		final boolean decreasePossible = currentTrust == null || (currentTrust+DECREASE_TRUST_VALUE) >= -100;
+		final boolean increaseWillUnIgnore = currentTrust != null && currentTrust<0 && (currentTrust+INCREASE_TRUST_VALUE) >= 0; 
+		final boolean decreaseWillIgnore = currentTrust == null || (currentTrust >=0 && (currentTrust+DECREASE_TRUST_VALUE) < 0); 
+		
+		if(increasePossible) {
+			HTMLNode increaseTrustRadio = increaseTrustDiv.addChild("input",
+				new String[] { "type", "name", "value"},
+				new String[] { "radio", "RateMessage" , Integer.toString(INCREASE_TRUST_VALUE)});
+			
+			if(selectedRadio == increaseTrustDiv)
+				increaseTrustRadio.addAttribute("checked", "checked");
+			
+			if(!increaseWillUnIgnore)
+				increaseTrustDiv.addChild("#", l10n().getString("NewReplyPage.RateMessageBox.IncreaseTrust", "value", Byte.toString(INCREASE_TRUST_VALUE)));
+			else
+				increaseTrustDiv.addChild("#", l10n().getString("NewReplyPage.RateMessageBox.IncreaseTrustToPositive", "value", Byte.toString(INCREASE_TRUST_VALUE)));
+		}
+		
+		HTMLNode keepTrustRadio = keepTrustDiv.addChild("input",
+			new String[] { "type", "name", "value" },
+			new String[] { "radio", "RateMessage" , "0"});
+		
+		if(selectedRadio == keepTrustDiv || 
+				(selectedRadio == increaseTrustDiv && !increasePossible) ||
+				(selectedRadio == decreaseTrustDiv && !decreasePossible))  {
+			keepTrustRadio.addAttribute("checked", "checked");
+		}
+		
+		keepTrustDiv.addChild("#", l10n().getString("NewReplyPage.RateMessageBox.KeepTrust"));
+			
+
+		if(decreasePossible) {
+			HTMLNode decreaseTrustRadio = decreaseTrustDiv.addChild("input",
+					new String[] { "type", "name", "value" },
+					new String[] { "radio", "RateMessage" , Integer.toString(DECREASE_TRUST_VALUE)});
+			
+			if(selectedRadio == decreaseTrustDiv)
+				decreaseTrustRadio.addAttribute("checked", "checked");
+			
+			if(!decreaseWillIgnore)
+				decreaseTrustDiv.addChild("#", l10n().getString("NewReplyPage.RateMessageBox.DecreaseTrust", "value", Byte.toString(DECREASE_TRUST_VALUE)));
+			else
+				decreaseTrustDiv.addChild("#", l10n().getString("NewReplyPage.RateMessageBox.DecreaseTrustToNegative", "value", Byte.toString(DECREASE_TRUST_VALUE)));
+		}
+
 	}
 
 	private void makeBreadcrumbs() {

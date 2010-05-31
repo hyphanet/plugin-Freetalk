@@ -43,6 +43,7 @@ public final class NewThreadPage extends WebPageImpl {
 				
 				if (mRequest.isPartSet("CreatePreview")) {
 					mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), threadSubject, threadText));
+					makeNewThreadPage(threadSubject, threadText);
 				} else {
 				mFreetalk.getMessageManager().postMessage(null, null, boards, mBoard, mOwnIdentity, threadSubject, null, threadText, null);
 
