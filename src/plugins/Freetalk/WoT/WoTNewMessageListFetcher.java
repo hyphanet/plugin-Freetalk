@@ -464,7 +464,6 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	 * 
 	 * Schedules start-fetch/abort-fetch commands.
 	 */
-	@Override
 	public void onShouldFetchStateChanged(FTIdentity messageAuthor, boolean oldShouldFetch, boolean newShouldFetch) {
 		if(oldShouldFetch == newShouldFetch) {
 			throw new IllegalArgumentException("oldShouldFetch==newShouldFetch==" + newShouldFetch);
