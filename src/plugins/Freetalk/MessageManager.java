@@ -229,6 +229,8 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 				// Must be called periodically because it is not called on demand.
 				clearExpiredFetchFailedMarkers();
 				
+				recheckUnwantedMessages();
+				
 				Logger.debug(this, "Message manager loop finished.");
 
 				try {
@@ -901,6 +903,24 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		q.descend("mDateOfNextRetry").constrain(now).greater();
 		
 		Logger.normal(this, "Number of non-expired MessageFetchFailedMarker: " + q.execute().size());
+	}
+	
+	/**
+	 * Only for being used by the MessageManager itself and by unit tests.
+	 * 
+	 * Checks whether there are any messages in subscribed boards which the subscriber did not want to read (because he does not like the author) and now
+	 * wants to read ... they must be added to the boards then.
+	 */
+	protected synchronized void recheckUnwantedMessages() {
+		Logger.normal(this, "Rechecking unwanted messages...");
+		
+		Date now = CurrentTimeUTC.get();
+		
+		for(SubscribedBoard board : subscribedBoardIterator()) {
+			board.retryAllUnwantedMessages(now);
+		}
+		
+		Logger.normal(this, "Finished rechecking unwanted message");
 	}
 	
 	/**

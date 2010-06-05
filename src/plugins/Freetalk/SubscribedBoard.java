@@ -13,6 +13,7 @@ import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 
 /**
@@ -59,8 +60,11 @@ public final class SubscribedBoard extends Board {
 		try {
 			checkedActivate(3); // TODO: Figure out a suitable depth.
 			
+			for(UnwantedMessageLink link : getAllUnwantedMessages()) {
+				link.deleteWithoutCommit();
+			}
+			
 			for(MessageReference ref : getAllMessages(false)) {
-				ref.initializeTransient(mFreetalk);
 				ref.deleteWithoutCommit();
 			}
 
@@ -149,12 +153,7 @@ public final class SubscribedBoard extends Board {
      * @throws Exception If wantsMessagesFrom(author of newMessage) fails. 
      */
     protected synchronized final void addMessage(Message newMessage) throws Exception {
-    	if(!getSubscriber().wantsMessagesFrom(newMessage.getAuthor())) {
-    		// FIXME: Store a UnwantedMessageLink object for the message and periodically check whether the trust value of the author changed to positive
-    		// - then we need to add the unwanted messages of that author.
-    		Logger.error(this, "Ignoring message from " + newMessage.getAuthor().getNickname() + " because " + getSubscriber().getNickname() + " does not his messages.");
-    		return;
-    	}
+    	// Sanity checks
     	
     	if(newMessage instanceof OwnMessage) {
     		/* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
@@ -164,6 +163,30 @@ public final class SubscribedBoard extends Board {
     	
     	if(super.contains(newMessage) == false)
     		throw new IllegalArgumentException("addMessage called with a message which was not posted to this board (" + getName() + "): " + newMessage);
+    	
+    	
+    	// Check whether the subscriber wants the message
+    	if(!getSubscriber().wantsMessagesFrom(newMessage.getAuthor())) {
+    		Logger.normal(this, "Ignoring message from " + newMessage.getAuthor().getNickname() + " because " + getSubscriber().getNickname() + " does not his messages.");
+    		
+    		try {
+    			UnwantedMessageLink link = getUnwantedMessageLink(newMessage);
+    			link.countRetry();
+    			link.storeWithoutCommit();
+    		} catch(NoSuchMessageException e) {
+    			UnwantedMessageLink link = new UnwantedMessageLink(this, newMessage);
+    			link.storeWithoutCommit();
+    		}
+    		
+    		return;
+    	} else { // Delete an obsolete UnwantedMessageLink if it exists
+    		try {
+    			UnwantedMessageLink link = getUnwantedMessageLink(newMessage);
+    			link.deleteWithoutCommit();
+    		} catch(NoSuchMessageException e) {}
+    	}
+    	
+    	// The message is valid and the subscriber wants it, we link it in now
     	
     	BoardThreadLink ghostRef = null;
     	
@@ -249,11 +272,23 @@ public final class SubscribedBoard extends Board {
      * @throws NoSuchMessageException If the message does not exist in this Board.
      */
     protected synchronized void deleteMessage(Message message) throws NoSuchMessageException {
+    	boolean unwantedLinkDeleted = false;
+    	
+    	// Maybe delete UnwantedMessageLink
+    	
+    	try {
+    		UnwantedMessageLink link = getUnwantedMessageLink(message);
+    		link.deleteWithoutCommit();
+    		unwantedLinkDeleted = true;
+    	} catch(NoSuchMessageException e) { }
+
+    	
+    	// Maybe delete BoardThreadLink
     	
     	try {
     		// Check whether the message was listed as a thread.
     		BoardThreadLink threadLink = getThreadLink(message.getID());
-    		
+
     		// If it was listed as a thread and had no replies, we can delete it's ThreadLink.
 	    	if(threadReplyCount(message.getID()) == 0) {
 	    		threadLink.deleteWithoutCommit();
@@ -261,6 +296,10 @@ public final class SubscribedBoard extends Board {
 	    		// We do not delete the ThreadLink if it has replies already: We want the replies to stay visible and therefore the ThreadLink has to be kept,
 	    		// so we mark it as a ghost thread.
 	    		threadLink.removeThreadMessage();
+	    	}
+	    	
+	    	if(unwantedLinkDeleted) {
+	    		Logger.error(this, "Message was linked in even though it was marked as unwanted: " + message);
 	    	}
     	}
     	catch(NoSuchMessageException e) { // getThreadReference failed
@@ -270,14 +309,20 @@ public final class SubscribedBoard extends Board {
     		}
     	}
     	
+    	// Maybe delete BoardReplyLink
+    	
     	if(message.isThread() == false) {
 			try {
 				final String parentThreadID;
 				
 				{ // Delete the reply itself.
-					BoardReplyLink replyLink = getReplyLink(message);
+					BoardReplyLink replyLink = getReplyLink(message);	
 					parentThreadID = replyLink.getThreadID();
 					replyLink.deleteWithoutCommit();
+					
+			    	if(unwantedLinkDeleted) {
+			    		Logger.error(this, "Message was linked in even though it was marked as unwanted: " + message);
+			    	}
 				}
 				
 				// Update the parent thread of the reply
@@ -299,7 +344,6 @@ public final class SubscribedBoard extends Board {
 				
 				if(threadLink != null)
 					threadLink.onMessageRemoved(message);
-				
 			} catch (NoSuchMessageException e) {
 				Logger.error(this, "Should not happen: deleteMessage() called for a reply message which does not exist in this Board.", e);
 				throw e;
@@ -346,6 +390,25 @@ public final class SubscribedBoard extends Board {
 	    			threadReply.setThread(newMessage);
 	    		}
     		}
+    	}
+    }
+     
+    public synchronized UnwantedMessageLink getUnwantedMessageLink(final Message message) throws NoSuchMessageException {
+    	final Query q = mDB.query();
+    	q.constrain(UnwantedMessageLink.class);
+    	q.descend("mBoard").constrain(this).identity();
+    	q.descend("mMessage").constrain(message).identity();
+    	ObjectSet<UnwantedMessageLink> results = new Persistent.InitializingObjectSet<UnwantedMessageLink>(mFreetalk, q);
+    	
+    	switch(results.size()) {
+    		case 0:
+    			throw new NoSuchMessageException(message.getID());
+    		case 1:
+    			final UnwantedMessageLink link = results.next();
+    			assert(message.equals(link.mMessage));
+    			return link;
+    		default:
+    			throw new DuplicateMessageException(message.getID());
     	}
     }
     
@@ -471,6 +534,35 @@ public final class SubscribedBoard extends Board {
             q.descend("mMessageIndex").orderAscending(); /* Needed for NNTP */
         }
         return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
+    }
+    
+    private synchronized ObjectSet<UnwantedMessageLink> getAllUnwantedMessages() {
+    	final Query query = mDB.query();
+    	query.constrain(UnwantedMessageLink.class);
+    	query.descend("mBoard").constrain(this).identity();
+    	return new Persistent.InitializingObjectSet<UnwantedMessageLink>(mFreetalk, query);
+    }
+    
+    private synchronized ObjectSet<UnwantedMessageLink> getAllExpiredUnwantedMessages(Date now) {
+    	final Query query = mDB.query();
+    	query.constrain(UnwantedMessageLink.class);
+    	query.descend("mBoard").constrain(this).identity();
+    	query.descend("mDateOfNextRetry").constrain(now).greater().not();
+    	return new Persistent.InitializingObjectSet<UnwantedMessageLink>(mFreetalk, query);
+    }
+    
+    protected synchronized void retryAllUnwantedMessages(Date now) {
+    	for(UnwantedMessageLink link : getAllExpiredUnwantedMessages(now)) {
+    		if(link.retry() == false)
+    			link.storeWithoutCommit();
+    		else {
+    			try {
+    				addMessage(link.getMessage());
+    			} catch(Exception e) {
+    				Logger.error(this, "Adding message failed", e);
+    			}
+    		}
+    	}
     }
     
     @SuppressWarnings("unchecked")
@@ -650,6 +742,93 @@ public final class SubscribedBoard extends Board {
 //    	}
 //    	
 //    }
+
+    // @Indexed // I can't think of any query which would need to get all UnwantedMessageLink objects.
+    public static class UnwantedMessageLink extends Persistent {
+    	
+    	// TODO: Instead of periodic retrying, implement event subscription in the WoT plugin... 
+    	
+    	public static final long MINIMAL_RETRY_DELAY = 60 * 1000;
+    	
+    	public static final long MAXIMAL_RETRY_DELAY = 24 * 60 * 60 * 1000;
+    	
+    	@Indexed
+    	protected final SubscribedBoard mBoard;
+    	
+    	@Indexed
+    	protected final Message mMessage;
+    	
+    	protected final FTIdentity mAuthor;
+    	
+    	protected Date mLastRetryDate;
+    	
+    	@Indexed
+    	protected Date mNextRetryDate;
+    	
+    	protected int mNumberOfRetries;
+    	
+ 
+    	private UnwantedMessageLink(SubscribedBoard myBoard, Message myMessage) {
+    		if(myBoard == null) throw new NullPointerException();
+    		if(myMessage == null) throw new NullPointerException();
+    		
+    		mBoard = myBoard;
+    		mMessage = myMessage;
+    		mAuthor = mMessage.getAuthor();
+    		mLastRetryDate = CurrentTimeUTC.get();
+    		mNumberOfRetries = 1;
+    		mNextRetryDate = computeNextCheckDate();
+    	}
+    	
+    	protected SubscribedBoard getBoard() {
+    		checkedActivate(2);
+    		mBoard.initializeTransient(mFreetalk);
+    		return mBoard;
+    	}
+    	
+    	protected Message getMessage() {
+			checkedActivate(2);
+			mMessage.initializeTransient(mFreetalk);
+			return mMessage;
+		}
+    	
+    	protected FTIdentity getAuthor() {
+    		checkedActivate(2);
+    		if(mAuthor instanceof Persistent) {
+    			Persistent author = (Persistent)mAuthor;
+    			author.initializeTransient(mFreetalk);
+    		}
+    		return mAuthor;
+    	}
+
+		public boolean retry() {
+			try {
+				boolean result = getBoard().getSubscriber().wantsMessagesFrom(getAuthor());
+				countRetry(); // wantsMessagesFrom typically fails if we are not connected to the web of trust plugin so we only count the retry if it did not throw
+				return result;
+			} catch(Exception e) {
+				Logger.error(this, "Retry failed");
+				return false;
+			}
+		}
+
+		public void countRetry() {
+    		++mNumberOfRetries;
+    		mNextRetryDate = computeNextCheckDate();
+		}
+
+		private Date computeNextCheckDate() {
+			return new Date(mLastRetryDate.getTime() + Math.min(MINIMAL_RETRY_DELAY * (1<<mNumberOfRetries), MAXIMAL_RETRY_DELAY));
+    	}
+    	
+    	protected void storeWithoutCommit() {
+    		super.storeWithoutCommit(2);
+    	}
+    	
+    	protected void deleteWithoutCommit() {
+    		super.deleteWithoutCommit(2);
+    	}
+    }
 
     // @Indexed // I can't think of any query which would need to get all MessageReference objects.
     public static abstract class MessageReference extends Persistent {
