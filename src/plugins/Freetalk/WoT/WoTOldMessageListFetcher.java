@@ -2,13 +2,13 @@ package plugins.Freetalk.WoT;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Random;
 
 import plugins.Freetalk.FetchFailedMarker;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageListFetcher;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
