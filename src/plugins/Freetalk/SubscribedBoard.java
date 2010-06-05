@@ -304,7 +304,6 @@ public final class SubscribedBoard extends Board {
     	}
     	catch(NoSuchMessageException e) { // getThreadReference failed
     		if(message.isThread()) {
-				Logger.error(this, "Should not happen: deleteMessage() called for a thread which does not exist in this Board.", e);
 				throw e;
     		}
     	}
@@ -345,7 +344,6 @@ public final class SubscribedBoard extends Board {
 				if(threadLink != null)
 					threadLink.onMessageRemoved(message);
 			} catch (NoSuchMessageException e) {
-				Logger.error(this, "Should not happen: deleteMessage() called for a reply message which does not exist in this Board.", e);
 				throw e;
 			}
     	}
