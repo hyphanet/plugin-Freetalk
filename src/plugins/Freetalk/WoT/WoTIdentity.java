@@ -153,9 +153,6 @@ public class WoTIdentity extends Persistent implements Identity {
 	 */
 	/* IMPORTANT: This code is duplicated in plugins.WoT.Identity.isNicknameValid().
 	 * Please also modify it there if you modify it here */
-	// FIXME: Reconsider the length limit of 50 characters. Maybe 20 or 30 would be enough??
-	// IMHO the limit should be sufficiently short to allow the UI to always display unshortened nicknames: If we shorten nicknames, the caching of 
-	// shortest unique nicknames gets too complicated because we need multiple caches for different lengths.
 	public static void validateNickname(String newNickname) throws InvalidParameterException {
 		if(!StringValidityChecker.containsNoIDNBlacklistCharacters(newNickname)
 		|| !StringValidityChecker.containsNoInvalidCharacters(newNickname)
@@ -165,7 +162,7 @@ public class WoTIdentity extends Persistent implements Identity {
 			throw new InvalidParameterException("Nickname contains invalid characters"); /* TODO: Tell the user which ones are invalid!!! */
 		
 		if(newNickname.length() == 0) throw new InvalidParameterException("Blank nickname.");
-		if(newNickname.length() > 50) throw new InvalidParameterException("Nickname is too long, the limit is 50 characters.");
+		if(newNickname.length() > 30) throw new InvalidParameterException("Nickname is too long, the limit is 50 characters.");
 	}
 
 	protected void checkedCommit(Object loggingObject) {

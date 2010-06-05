@@ -11,7 +11,7 @@ import plugins.Freetalk.WoT.WoTMessage;
 import plugins.Freetalk.WoT.WoTMessageFetcher;
 import plugins.Freetalk.WoT.WoTMessageInserter;
 import plugins.Freetalk.WoT.WoTMessageList;
-import plugins.Freetalk.WoT.WoTMessageListFetcher;
+import plugins.Freetalk.WoT.WoTOldMessageListFetcher;
 import plugins.Freetalk.WoT.WoTMessageListInserter;
 import plugins.Freetalk.WoT.WoTMessageListXML;
 import plugins.Freetalk.WoT.WoTMessageManager;
@@ -102,7 +102,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	
 	private WoTMessageInserter mMessageInserter;
 	
-	private WoTMessageListFetcher mOldMessageListFetcher;
+	private WoTOldMessageListFetcher mOldMessageListFetcher;
 	
 	private WoTNewMessageListFetcher mNewMessageListFetcher;
 	
@@ -166,10 +166,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		mMessageListXML = new WoTMessageListXML();
 		
 		Logger.debug(this, "Creating old-messagelist fetcher...");
-		mOldMessageListFetcher = new WoTMessageListFetcher(this, "Freetalk WoTOldMessageListFetcher", mMessageListXML);
-		// FIXME: Before re-enabling it class WoTMessageListFetcher needs to be changed to only fetch old ones because now we have the WoTNewMessageListFetcher...
-		// Also rename class WoTMessageListFetcher to WoTOldMessageListFetcher then.
-//		mOldMessageListFetcher.start();
+		mOldMessageListFetcher = new WoTOldMessageListFetcher(this, "Freetalk WoTOldMessageListFetcher", mMessageListXML);
+		mOldMessageListFetcher.start();
 		
 		Logger.debug(this, "Creating new-messagelist fetcher...");
 		mNewMessageListFetcher = new WoTNewMessageListFetcher(this, "Freetalk WoTNewMessageListFetcher", mMessageListXML, db);

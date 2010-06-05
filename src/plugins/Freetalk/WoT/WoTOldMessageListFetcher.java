@@ -46,7 +46,7 @@ import freenet.support.io.NativeThread;
  * 
  * @author xor
  */
-public final class WoTMessageListFetcher extends TransferThread implements MessageListFetcher {
+public final class WoTOldMessageListFetcher extends TransferThread implements MessageListFetcher {
 
 	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 1000) : (5 * 60 * 1000);
 	
@@ -75,7 +75,7 @@ public final class WoTMessageListFetcher extends TransferThread implements Messa
 	
 	private final WoTMessageListXML mXML;
 	
-	public WoTMessageListFetcher(Freetalk myFreetalk, String myName, WoTMessageListXML myMessageListXML) {
+	public WoTOldMessageListFetcher(Freetalk myFreetalk, String myName, WoTMessageListXML myMessageListXML) {
 		super(myFreetalk.getPluginRespirator().getNode(), myFreetalk.getPluginRespirator().getHLSimpleClient(), myName);
 		
 		mIdentityManager = myFreetalk.getIdentityManager();
@@ -168,7 +168,7 @@ public final class WoTMessageListFetcher extends TransferThread implements Messa
 	}
 
 	/**
-	 * You have to synchronize on this <code>WoTMessageListFetcher</code> when using this function.
+	 * You have to synchronize on this <code>WoTOldMessageListFetcher</code> when using this function.
 	 * @throws FetchException 
 	 */
 	private void fetchMessageLists(WoTIdentity identity) throws FetchException {
