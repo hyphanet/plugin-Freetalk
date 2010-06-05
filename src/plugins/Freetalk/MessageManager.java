@@ -254,7 +254,6 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	}
 	
 	private final Runnable mNewMessageProcessor = new Runnable() {
-		@Override
 		public void run() {
 			Logger.debug(MessageManager.this, "Processing new messages...");
 			
