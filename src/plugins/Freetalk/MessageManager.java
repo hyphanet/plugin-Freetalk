@@ -878,30 +878,47 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		}
 		
 		Logger.normal(this, "Finished clearing " + amount + " expired FetchFailedMarkers.");
-		
-		// FIXME: Remove before release
 
+		assert(validateMessageFetchFailedMarkers(now));
+	}
+	
+	private boolean validateMessageFetchFailedMarkers(Date now) {
+		boolean valid = true;
+		
 		Query q = db.query();
+		q.constrain(MessageFetchFailedMarker.class);
+		q.descend("mDateOfNextRetry").constrain(now).greater();
+		ObjectSet<MessageFetchFailedMarker> messageMarkers = new Persistent.InitializingObjectSet<MessageFetchFailedMarker>(mFreetalk, q);
+		
+		for(MessageFetchFailedMarker marker : messageMarkers) {
+			if(!marker.getMessageReference().wasMessageDownloaded()) {
+				assert(false);
+				valid = false;
+				Logger.error(this, "Invalid MessageFetchFailedMarker: Date of next retry is in future but message is marked as not fetched: " + marker);
+			}
+		}
+		
+		Logger.normal(this, "Number of non-expired MessageFetchFailedMarker: " + messageMarkers.size());
+		
+
+		q = db.query();
 		q.constrain(MessageListFetchFailedMarker.class);
 		q.descend("mDateOfNextRetry").constrain(now).greater();
-		@SuppressWarnings("unchecked")
-		ObjectSet<MessageListFetchFailedMarker> markers = q.execute();
+		ObjectSet<MessageListFetchFailedMarker> listMarkers = new Persistent.InitializingObjectSet<MessageListFetchFailedMarker>(mFreetalk, q);
 		
-		for(MessageListFetchFailedMarker marker : markers) {
+		for(MessageListFetchFailedMarker marker : listMarkers) {
 			try {
 				getMessageList(marker.getMessageListID());
 			} catch(NoSuchMessageListException e) {
+				assert(false);
+				valid = false;
 				Logger.error(this, "Invalid MessageListFetchFailedMarker: Date of next retry is in future but there is no ghost message list for it: " + marker);
 			}
 		}
 		
-		Logger.normal(this, "Number of non-expired MessageListFetchFailedMarker: " + markers.size());
+		Logger.normal(this, "Number of non-expired MessageListFetchFailedMarker: " + listMarkers.size());
 		
-		q = db.query();
-		q.constrain(MessageFetchFailedMarker.class);
-		q.descend("mDateOfNextRetry").constrain(now).greater();
-		
-		Logger.normal(this, "Number of non-expired MessageFetchFailedMarker: " + q.execute().size());
+		return valid;
 	}
 	
 	/**
