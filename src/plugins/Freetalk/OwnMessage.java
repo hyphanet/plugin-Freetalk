@@ -14,10 +14,10 @@ import freenet.support.Logger;
 // @Indexed // I can't think of any query which would need to get all OwnMessage objects.
 public abstract class OwnMessage extends Message {
 
-	protected OwnMessage(MessageURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, MessageURI newThreadURI,
+	protected OwnMessage(MessageURI newURI, FreenetURI newFreenetURI, String newID, MessageList newMessageList, MessageURI newThreadURI,
 			MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate,
 			String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		super(newURI, newRealURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText,
+		super(newURI, newFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText,
 				newAttachments);
 	}
 
@@ -36,17 +36,17 @@ public abstract class OwnMessage extends Message {
 	 * @throws RuntimeException If the message was not inserted yet and therefore the real URI is unknown.
 	 * @return The CHK URI of the message.
 	 */
-	public synchronized FreenetURI getRealURI() {
-		if(mRealURI == null)
-			throw new RuntimeException("getRealURI() called on the not inserted message " + this);
+	public synchronized FreenetURI getFreenetURI() {
+		if(mFreenetURI == null)
+			throw new RuntimeException("getFreenetURI() called on the not inserted message " + this);
 		
-		return mRealURI;
+		return mFreenetURI;
 	}
 	
 	// TODO: Remove the debug code if we are sure that db4o works
-	public synchronized boolean testRealURIisNull() {
-		if(mRealURI != null) {
-			Logger.error(this, "descend(\"mRealURI\").constrain(null) did not work for " + this);
+	public synchronized boolean testFreenetURIisNull() {
+		if(mFreenetURI != null) {
+			Logger.error(this, "descend(\"mFreenetURI\").constrain(null) did not work for " + this);
 			return false;
 		}
 		
@@ -67,15 +67,15 @@ public abstract class OwnMessage extends Message {
 	 * The message might only become visible if the message list which lists it has been inserted. This is implementation dependent, for example {@see WoTOwnMessage}.
 	 */
 	public synchronized boolean wasInserted() {
-		return (mRealURI != null);
+		return (mFreenetURI != null);
 	}
 
 	/**
 	 * Marks the message as inserted by storing the given URI as it's URI.
 	 * Stores this OwnMessage in the database without committing the transaction. 
 	 */
-	public synchronized void markAsInserted(FreenetURI myRealURI) {
-		mRealURI = myRealURI;
+	public synchronized void markAsInserted(FreenetURI myFreenetURI) {
+		mFreenetURI = myFreenetURI;
 		storeWithoutCommit();
 	}
 
@@ -85,9 +85,9 @@ public abstract class OwnMessage extends Message {
     		if(uri != null)
     			return uri.toString();
     		
-    		FreenetURI realURI = mRealURI; // We cannot use the getter here because it throws if the URI is null.
-    		if(realURI != null)
-    			return realURI.toString();
+    		FreenetURI freenetURI = mFreenetURI; // We cannot use the getter here because it throws if the URI is null.
+    		if(freenetURI != null)
+    			return freenetURI.toString();
     		
     		return "ID:" + getID() + " (no URI present, inserted=" + wasInserted() + ")";
     	}

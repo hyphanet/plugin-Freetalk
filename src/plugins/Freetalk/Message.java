@@ -54,11 +54,9 @@ public abstract class Message extends Persistent {
 	protected MessageURI mURI; /* Not final because for OwnMessages it is set after the MessageList was inserted */
 	
 	/**
-	 * The CHK URI of the message. Null until the message was inserted and the URI is known.
+	 * The physical URI of the message. Null until the message was inserted and the URI is known.
 	 */
-	/* FIXME: Rename to "mUnsignedURI" so that we do not need to explain that messages are inserted as CHK in this class. We do not want to 
-	 * explain that here because this class is abstract and could be implemented with mRealURI being the same as mURI */
-	protected FreenetURI mRealURI; /* Not final because for OwnMessages it is set after the Message was inserted */
+	protected FreenetURI mFreenetURI; /* Not final because for OwnMessages it is set after the Message was inserted */
 	
 	/**
 	 * The ID of the message. Format: Hex encoded author routing key + "@" + hex encoded random UUID. 
@@ -158,7 +156,7 @@ public abstract class Message extends Persistent {
 	private boolean mWasLinkedIn = false;
 	
 	
-	protected Message(MessageURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, MessageURI newThreadURI, MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+	protected Message(MessageURI newURI, FreenetURI newFreenetURI, String newID, MessageList newMessageList, MessageURI newThreadURI, MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		if(newURI != null && Arrays.equals(newURI.getFreenetURI().getRoutingKey(), newAuthor.getRequestURI().getRoutingKey()) == false)
 			throw new InvalidParameterException("The URI of the given message does not match the author's URI: " + newURI);
 		
@@ -168,8 +166,8 @@ public abstract class Message extends Persistent {
 			throw new InvalidParameterException("The author of the given message list is not the author of this message: " + newURI);
 		
 		try {
-			if(newRealURI != null)
-				newMessageList.getReference(newRealURI);
+			if(newFreenetURI != null)
+				newMessageList.getReference(newFreenetURI);
 		}
 		catch(NoSuchMessageException e) {
 			throw new InvalidParameterException("The given message list does not contain this message: " + newURI);
@@ -190,7 +188,7 @@ public abstract class Message extends Persistent {
 		}
 		
 		mURI = newURI;
-		mRealURI = newRealURI != null ? newRealURI.clone() : null;
+		mFreenetURI = newFreenetURI != null ? newFreenetURI.clone() : null;
 		mMessageList = newMessageList;
 		mAuthor = newAuthor;
 		mID = newID;
@@ -242,11 +240,11 @@ public abstract class Message extends Persistent {
 	/**
 	 * Gets the FreenetURI where this message is actually stored, i.e. the CHK URI of the message.
 	 */
-	protected FreenetURI getRealURI() {
+	protected FreenetURI getFreenetURI() {
 		checkedActivate(2);
-		assert(mRealURI != null);
+		assert(mFreenetURI != null);
 		
-		return mRealURI;
+		return mFreenetURI;
 	}
 
 	public String getID() { /* Not synchronized because only OwnMessage might change the ID */
@@ -770,9 +768,9 @@ public abstract class Message extends Persistent {
 				mURI.initializeTransient(mFreetalk);
 				mURI.storeWithoutCommit();
 			}
-			if(mRealURI != null) {
+			if(mFreenetURI != null) {
 				// It's a FreenetURI so it does not extend Persistent.
-				checkedStore(mRealURI);
+				checkedStore(mFreenetURI);
 			}
 			if(mThreadURI != null) {
 				mThreadURI.initializeTransient(mFreetalk);
@@ -806,9 +804,9 @@ public abstract class Message extends Persistent {
 				mThreadURI.initializeTransient(mFreetalk);
 				mThreadURI.deleteWithoutCommit();
 			}
-			if(mRealURI != null) {
+			if(mFreenetURI != null) {
 				// It's a FreenetURI so there is no transient initialization
-				mRealURI.removeFrom(mDB);
+				mFreenetURI.removeFrom(mDB);
 			}
 			if(mURI != null) {
 				mURI.initializeTransient(mFreetalk);

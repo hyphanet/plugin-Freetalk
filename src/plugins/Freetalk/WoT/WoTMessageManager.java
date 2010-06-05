@@ -176,12 +176,12 @@ public final class WoTMessageManager extends MessageManager {
 			//}
 	}
 	
-	public synchronized void onOwnMessageInserted(String id, FreenetURI realURI) throws NoSuchMessageException {
+	public synchronized void onOwnMessageInserted(String id, FreenetURI freenetURI) throws NoSuchMessageException {
 		WoTOwnMessage message = (WoTOwnMessage) getOwnMessage(id);
 		synchronized(message) {
 		synchronized(db.lock()) {
 			try {
-				message.markAsInserted(realURI);
+				message.markAsInserted(freenetURI);
 				addMessageToMessageList(message);
 				Persistent.checkedCommit(db, this);
 			}
@@ -228,7 +228,7 @@ public final class WoTMessageManager extends MessageManager {
 	public synchronized ObjectSet<WoTOwnMessage> getNotInsertedOwnMessages() {
 		final Query query = db.query();
 		query.constrain(WoTOwnMessage.class);
-		query.descend("mRealURI").constrain(null).identity();
+		query.descend("mFreenetURI").constrain(null).identity();
 		return new Persistent.InitializingObjectSet<WoTOwnMessage>(mFreetalk, query);
 	}
 

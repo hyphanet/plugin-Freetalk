@@ -127,18 +127,18 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 	private WoTMessage createTestMessage(WoTOwnIdentity author, WoTMessage myParent, WoTMessageURI myThreadURI)
 		throws MalformedURLException, InvalidParameterException, NoSuchIdentityException, NoSuchMessageException {
 		
-		FreenetURI myRealURI = new FreenetURI("CHK@");
+		FreenetURI myFreenetURI = new FreenetURI("CHK@");
 		UUID myUUID = UUID.randomUUID();
 		FreenetURI myListURI = WoTMessageList.assembleURI(author.getRequestURI(), mMessageListIndex++);
 		WoTMessageURI myURI = new WoTMessageURI(myListURI + "#" + myUUID);
 		
-		MessageList.MessageReference ref = new MessageList.MessageReference(myURI.getMessageID(), myRealURI, mBoard, CurrentTimeUTC.get());
+		MessageList.MessageReference ref = new MessageList.MessageReference(myURI.getMessageID(), myFreenetURI, mBoard, CurrentTimeUTC.get());
 		
 		WoTMessageList myList = storeMessageList(author, myListURI, ref);
 		
 		WoTMessageURI myParentURI = myParent != null ? myParent.getURI() : null;
 		
-		WoTMessage message = WoTMessage.construct(myList, myRealURI, myURI.getMessageID(), myThreadURI, myParentURI,
+		WoTMessage message = WoTMessage.construct(myList, myFreenetURI, myURI.getMessageID(), myThreadURI, myParentURI,
 				mBoards, mBoards.iterator().next(),  author, "message " + myUUID, CurrentTimeUTC.get(), "message body " + myUUID, null);
 		
 		message.initializeTransient(mFreetalk);

@@ -111,7 +111,7 @@ public final class WoTMessageInserter extends MessageInserter {
 			for(WoTOwnMessage message : mMessageManager.getNotInsertedOwnMessages()) {
 				try {
 					// TODO: Remove the debug code if we are sure that db4o works
-					if(!message.testRealURIisNull())
+					if(!message.testFreenetURIisNull())
 						continue;
 					
 					insertMessage(message);

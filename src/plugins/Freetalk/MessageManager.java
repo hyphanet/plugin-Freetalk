@@ -347,7 +347,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	public synchronized int countUnsentMessages() {
 		Query q = db.query();
 		q.constrain(OwnMessage.class);
-		q.descend("mRealURI").constrain(null).identity();
+		q.descend("mFreenetURI").constrain(null).identity();
 		int unsentCount = q.execute().size();
 		
 		q = db.query();
@@ -1287,8 +1287,8 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	public synchronized ObjectSet<OwnMessage> notInsertedMessageIterator() {
 		final Query query = db.query();
 		query.constrain(OwnMessage.class);
-		query.descend("mRealURI").constrain(null).identity();
-		// TODO: Sort ascending by date if db4o is intelligent enough to evaluate the mRealURI constrain before sorting...
+		query.descend("mFreenetURI").constrain(null).identity();
+		// TODO: Sort ascending by date if db4o is intelligent enough to evaluate the mFreenetURI constrain before sorting...
 		return new Persistent.InitializingObjectSet<OwnMessage>(mFreetalk, query);
 
 	}

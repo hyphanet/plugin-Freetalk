@@ -91,7 +91,7 @@ public final class WoTMessageListXML {
 				
 				Element messageTag = xmlDoc.createElement("Message");
 				messageTag.setAttribute("ID", message.getID());
-				messageTag.setAttribute("URI", message.getRealURI().toString());
+				messageTag.setAttribute("URI", message.getFreenetURI().toString());
 				synchronized(mDateFormat) {
 					messageTag.setAttribute("Date", mDateFormat.format(message.getDate()));
 				}

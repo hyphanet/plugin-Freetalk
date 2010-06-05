@@ -44,20 +44,20 @@ public final class WoTMessage extends Message {
 	/**
 	 * Constructor for received messages.
 	 */
-	public static WoTMessage construct(MessageList newMessageList, FreenetURI myRealURI, String newID, WoTMessageURI newThreadURI, WoTMessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+	public static WoTMessage construct(MessageList newMessageList, FreenetURI myFreenetURI, String newID, WoTMessageURI newThreadURI, WoTMessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		if (newMessageList == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
 		if (newMessageList.getAuthor() != newAuthor)
 			throw new InvalidParameterException("Trying to construct a message of " + newAuthor + " with a messagelist which belong to a different author: " + newMessageList.getAuthor());
 		
-		return new WoTMessage(calculateURI(newMessageList, newID), myRealURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
+		return new WoTMessage(calculateURI(newMessageList, newID), myFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
 
-	protected WoTMessage(WoTMessageURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, WoTMessageURI newThreadURI,
+	protected WoTMessage(WoTMessageURI newURI, FreenetURI newFreenetURI, String newID, MessageList newMessageList, WoTMessageURI newThreadURI,
 			WoTMessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate,
 			String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		super(newURI, newRealURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText,
+		super(newURI, newFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText,
 				newAttachments);
 	}
 
