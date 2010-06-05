@@ -273,7 +273,7 @@ public final class WoTMessageManager extends MessageManager {
 	}
 
 	@SuppressWarnings("unchecked")
-	public synchronized int getUnavailableOldMessageListIndex(Identity identity) {
+	public synchronized int getUnavailableOldMessageListIndex(Identity identity) throws NoSuchMessageListException {
 		Query query = db.query();
 		query.constrain(WoTMessageList.class);
 		query.constrain(WoTOwnMessageList.class).not();
@@ -293,7 +293,10 @@ public final class WoTMessageManager extends MessageManager {
 		/* TODO: To avoid always checking ALL messagelists for a missing one, store somewhere in the Identity what the latest index is up to
 		 * which all messagelists are available! */
 		
-		return freeIndex >= 0 ? freeIndex : latestAvailableIndex+1;
+		if(freeIndex >= 0)
+			return freeIndex;
+		else
+			throw new NoSuchMessageListException("");
 	}
 
 	/**

@@ -11,6 +11,7 @@ import plugins.Freetalk.FetchFailedMarker;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageListFetcher;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
+import plugins.Freetalk.exceptions.NoSuchMessageListException;
 
 import com.db4o.ObjectContainer;
 
@@ -32,17 +33,15 @@ import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 
 /**
- * Periodically wakes up and fetches <code>MessageList</code>s from identities.
+ * Periodically wakes up and fetches "old" {@link MessageList}s from identities.
+ * 
+ * "Old" means that the message list is known to exist because we have already fetched a message list with a higher index. 
  * 
  * The policy currently is the following:
- * - When waking up, for each selected identity we try to fetch a <code>MessageList</code> with index =
- * (latest known <code>MessageList</code> index + 1) with USK redirects enabled. This means that the node will fetch a hopefully recent and new
- * <code>MessageList</code>. Further, we also try to fetch an older MessageList than the latest available one.
- * - In the onSuccess() method, for each fetched <code>MessageList</code>, a fetch is started for an unavailable <code>MessageList</code> which is
- * *older* than any available MessageList (unless all older MessageLists are available, then it tries to fetch a newer one). It tries to fetch the
- * most recent older ones first.
- * 
- * So the fetching of *new* MessageLists is done by the USK redirects, the fetching of old ones is done from newer to older.
+ * - We periodically wake up and check whether there are any old message lists to be fetched.
+ * 		If there are, we start up to MAX_PARALLEL_MESSAGELIST_FETCH_COUNT fetches
+ * - In the onSuccess() method, for each fetched <code>MessageList</code>, a fetch is started for another old message list It tries to fetch the
+ * 		most recent older ones first.
  * 
  * @author xor
  */
@@ -55,7 +54,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	/**
 	 * How many message lists do we attempt to fetch in parallel? TODO: This should be configurable.
 	 */
-	private static final int MAX_PARALLEL_MESSAGELIST_FETCH_COUNT = Freetalk.FAST_DEBUG_MODE ? 64 : 16;
+	private static final int MAX_PARALLEL_MESSAGELIST_FETCH_COUNT = Freetalk.FAST_DEBUG_MODE ? 64 : 32;
 	
 	/**
 	 * How many identities do we keep in the LRU Hashtable? The hashtable is a queue which is used to ensure that we fetch message lists from different identities
@@ -111,82 +110,61 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 		return THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
 	}
 
+	protected void iterate() {
+		fetchMessageLists();
+	}
+
 	/**
 	 * Starts fetches of MessageLists from MAX_PARALLEL_MESSAGELIST_FETCH_COUNT different identities. For each identity, it is attempted to start a fetch
-	 * of the latest news message list (by allowing USK redirects) and a fetch of an old message list.
+	 * of the latest old message list.
 	 * 
 	 * The identities are put in a LRU queue, so in the next iteration, fetches will not be allowed from identities of the previous iteration.
-	 *  
-	 * Further, for each succeeded/failed MessageList fetch, the onSuccess() / onFailure() method starts a new fetch from the same identity.
-	 * 
-	 * Therefore, each identity for which fetches are started in iterate() gets the chance to get as many message lists downloaded as the node can fetch within
-	 * the THREAD_PERIOD timespan.
 	 */
-	protected synchronized void iterate() {
-		abortAllTransfers();
+	private synchronized void fetchMessageLists() {
+		if(fetchCount() >= MAX_PARALLEL_MESSAGELIST_FETCH_COUNT) { // Check before we do the expensive database query.
+			Logger.debug(this, "Got " + fetchCount() + " fetches, not fetching any more.");
+			return;
+		}
 		
-		ArrayList<WoTIdentity> identitiesToFetchFrom = new ArrayList<WoTIdentity>(MAX_PARALLEL_MESSAGELIST_FETCH_COUNT + 1);
+		fetchMessageListsCore();
 		
+		if(fetchCount() == 0 && !mIdentities.isEmpty()) {
+			synchronized(mIdentities) {
+				mIdentities.clear();
+				fetchMessageListsCore();
+			}
+		}
+	}
+	
+	private void fetchMessageListsCore() {
 		// TODO: Order the identities by date of modification
 		
 		synchronized(mIdentities) {
 			for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
 				if(!mIdentities.contains(identity.getID()) && mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
-					identitiesToFetchFrom.add(identity);
-
-					if(identitiesToFetchFrom.size() >= MAX_PARALLEL_MESSAGELIST_FETCH_COUNT)
-						break;
+					try {
+						int unavailableIndex = mMessageManager.getUnavailableOldMessageListIndex(identity);
+						
+						fetchMessageList((WoTIdentity)identity, unavailableIndex);
+						
+						if(fetchCount() >= MAX_PARALLEL_MESSAGELIST_FETCH_COUNT)
+							break;
+					}
+					catch(NoSuchMessageListException e) {
+						// This identity has no unavailable old list, we skip it
+					}
+					catch(Exception e) {
+						Logger.error(this, "Fetching of MessageList failed for " + identity, e);
+					}
 				}
 			}
-		}
-		
-		/* mIdentities contains all identities which are available, so we have to flush it. */
-		if(identitiesToFetchFrom.size() == 0) {
-			Logger.debug(this, "Ran out of identities to fetch from, clearing the LRUQueue...");
-			synchronized(mIdentities) {
-			mIdentities.clear();
-			}
-
-			for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
-				if(mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
-					identitiesToFetchFrom.add(identity);
-
-					if(identitiesToFetchFrom.size() >= MAX_PARALLEL_MESSAGELIST_FETCH_COUNT)
-						break;
-				}
-			}
-		}
-		
-		for(WoTIdentity identity : identitiesToFetchFrom) {
-			try {
-				fetchMessageLists((WoTIdentity)identity);
-			}
-			catch(Exception e) {
-				Logger.error(this, "Fetching of messages from " + identity.getNickname() + " failed.", e);
-			}
-		}
-	}
-
-	/**
-	 * You have to synchronize on this <code>WoTOldMessageListFetcher</code> when using this function.
-	 * @throws FetchException 
-	 */
-	private void fetchMessageLists(WoTIdentity identity) throws FetchException {
-		int newIndex = mMessageManager.getUnavailableNewMessageListIndex(identity);
-		fetchMessageList(identity, newIndex, true);
-		
-		if(newIndex > 0) {
-			int oldIndex = mMessageManager.getUnavailableOldMessageListIndex(identity);
-			if(oldIndex != newIndex)
-				fetchMessageList(identity, oldIndex, false); 
 		}
 	}
 
 	/**
 	 * You have to synchronize on this <code>WoTMessageFetcher</code> when using this function.
-	 * @param followRedirectsToHigherIndex If true, the USK redirects will be used to download the latest instead of the specified index.
 	 */
-	private void fetchMessageList(WoTIdentity identity, int index, boolean followRedirectsToHigherIndex) throws FetchException {
+	private void fetchMessageList(WoTIdentity identity, int index) throws FetchException {
 		synchronized(mIdentities) {
 			// mIdentities contains up to IDENTITIES_LRU_QUEUE_SIZE_LIMIT identities of which we have recently downloaded MessageLists. This queue is used to ensure
 			// that we download MessageLists from different identities and not always from the same ones. 
@@ -205,9 +183,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 			mIdentities.push(identity.getID()); // put this identity at the beginning of the LRUQueue
 		}
 		
-		FreenetURI uri = WoTMessageList.generateURI(identity, index);
-		if(!followRedirectsToHigherIndex)
-			uri = uri.sskForUSK();
+		FreenetURI uri = WoTMessageList.generateURI(identity, index).sskForUSK(); // We must use a SSK to disallow redirects.
 		FetchContext fetchContext = mClient.getFetchContext();
 		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
 		fetchContext.maxNonSplitfileRetries = 2;
@@ -230,6 +206,8 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 		InputStream inputStream = null;
 		WoTIdentity identity = null;
 		
+		boolean fetchMoreLists = false;
+		
 		try {
 			bucket = result.asBucket();			
 			inputStream = bucket.getInputStream();
@@ -241,10 +219,12 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 					try {
 						WoTMessageList list = mXML.decode(mMessageManager, identity, state.getURI(), inputStream);
 						mMessageManager.onMessageListReceived(list);
+						fetchMoreLists = true;
 					}
 					catch (Exception e) {
 						Logger.error(this, "Parsing failed for MessageList " + state.getURI(), e);
 						mMessageManager.onMessageListFetchFailed(identity, state.getURI(), FetchFailedMarker.Reason.ParsingFailed);
+						fetchMoreLists = true;
 					}
 				}
 			}
@@ -260,17 +240,11 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 			Closer.close(bucket);
 			removeFetch(state);
 		}
-		
-		
-		if(identity != null) {
-		try {
-			int unavailableIndex = mMessageManager.getUnavailableOldMessageListIndex(identity);
-			boolean unavailableIsNewer = unavailableIndex > state.getURI().getEdition(); /* Follow redirects then! */
-			fetchMessageList(identity, unavailableIndex , unavailableIsNewer);
-		} catch(Exception e) {
-			Logger.error(this, "Fetching of next MessageList failed.", e);
-		}
-		}
+
+		// We only call fetchMessageLists() if we know that the current list was marked as fetched in the database,
+		// otherwise the fetch thread could get stuck in a busy loop: "fetch(), onSuccess(), fetch(), onSuccess(), ..."
+		if(fetchMoreLists)
+			fetchMessageLists();
 	}
 
 	@Override
@@ -278,35 +252,30 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 		try {
 			switch(e.getMode()) {
 				case FetchException.DATA_NOT_FOUND:
+					assert(state.getURI().isSSK());
+					
 					// We requested an old MessageList, i.e. it's index is lower than the index of the latest known MessageList, so the requested MessageList
 					// must have existed but has fallen out of Freenet, we mark it as DNF so it does not spam the request queue.
-					if(state.getURI().isSSK()) { 
-						Logger.normal(this, "DNF for old MessageList " + state.getURI());
-						
-						try {
-							synchronized(mIdentityManager) {
-							final WoTIdentity identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI());
-							//synchronized(mMessageManager) {	// Would only be needed if we call more functions..
-							mMessageManager.onMessageListFetchFailed(identity, state.getURI(), FetchFailedMarker.Reason.DataNotFound);
-							//}
-							}
-						} catch (NoSuchIdentityException ex) {
-							Logger.normal(this, "Identity was deleted already, not marking MessageList as DNF: " + state.getURI());
-						}
-					} else { // The requested MessageList was a new USK index (higher than the latest known) and does not exist yet => Do not mark as DNF.
-						Logger.normal(this, "DNF for new MessageList " + state.getURI());
-					}
 					
+					Logger.normal(this, "DNF for old MessageList " + state.getURI());
+						
+					try {
+						synchronized(mIdentityManager) {
+						final WoTIdentity identity = (WoTIdentity)mIdentityManager.getIdentityByURI(state.getURI());
+						//synchronized(mMessageManager) {	// Would only be needed if we call more functions..
+						mMessageManager.onMessageListFetchFailed(identity, state.getURI(), FetchFailedMarker.Reason.DataNotFound);
+						//}
+						}
+							
+						// We only call fetchMessageLists() if we know that the current list was marked as fetched in the database,
+						// otherwise the fetch thread could get stuck in a busy loop: "fetch(), onSuccess(), fetch(), onSuccess(), ..."
+						fetchMessageLists();
+					} catch (NoSuchIdentityException ex) {
+						Logger.normal(this, "Identity was deleted already, not marking MessageList as DNF: " + state.getURI());
+					}
+
 					break;
 				
-				case FetchException.PERMANENT_REDIRECT:
-					try {
-						state.restart(e.newURI, null, clientContext);
-					} catch (FetchException e1) {
-						Logger.error(this, "Request restart failed.", e1);
-					}
-					break;
-					
 				case FetchException.CANCELLED:
 					Logger.debug(this, "Cancelled downloading MessageList " + state.getURI());
 					break;
