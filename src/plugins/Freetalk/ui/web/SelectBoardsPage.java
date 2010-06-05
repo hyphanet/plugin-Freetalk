@@ -150,7 +150,7 @@ public class SelectBoardsPage extends WebPageImpl {
 					
 					nameCell.addChild("#", board.getName());
 					latestMessageCell.addChild("#", "-");
-					messageCountCell.addChild("#", "-");
+					messageCountCell.addChild("#", l10n().getString("Common.EstimationPrefix") + " " + board.getMessageCount());
 					
 					HTMLNode subscribeForm = addFormChild(subscribeCell, Freetalk.PLUGIN_URI + "/SelectBoards" + "#" + board.getName(), "Subscribe");
 					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID()});

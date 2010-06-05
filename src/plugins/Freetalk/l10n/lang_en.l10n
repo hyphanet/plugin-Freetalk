@@ -46,6 +46,7 @@ CreateIdentityWizard.Step3.TrustList.PublishTrustListCheckbox=Publish the trust 
 CreateIdentityWizard.Step4.Header=Identity created
 CreateIdentityWizard.Step4.Success=Your identity was successfully created. You can log in with it now.
 CreateIdentityWizard.Step4.Failure=Sorry, there was a problem creating your identity
+Common.EstimationPrefix=~
 Common.WebOfTrust.Score=Effective Trust
 Common.WebOfTrust.ScoreNull=None
 Common.WebOfTrust.Trust.None=None

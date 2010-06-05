@@ -325,6 +325,13 @@ public class Board extends Persistent implements Comparable<Board> {
         return new Persistent.InitializingObjectSet(mFreetalk, q.execute());
     }
     
+    public synchronized int getMessageCount() {
+    	final Query query = mDB.query();
+    	query.constrain(BoardMessageLink.class);
+    	query.descend("mBoard").constrain(this).identity();
+    	return query.execute().size();
+    }
+    
     /**
      * Called by the {@link MessageManager} when a new message was fetched.
      * Stores any messages in this board, does not check whether any {@link OwnIdentity} actually wants the messages.
