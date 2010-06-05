@@ -162,7 +162,7 @@ public class WoTIdentity extends Persistent implements Identity {
 			throw new InvalidParameterException("Nickname contains invalid characters"); /* TODO: Tell the user which ones are invalid!!! */
 		
 		if(newNickname.length() == 0) throw new InvalidParameterException("Blank nickname.");
-		if(newNickname.length() > 30) throw new InvalidParameterException("Nickname is too long, the limit is 50 characters.");
+		if(newNickname.length() > 30) throw new InvalidParameterException("Nickname is too long, the limit is 30 characters.");
 	}
 
 	protected void checkedCommit(Object loggingObject) {
