@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.Set;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.FTIdentity;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Identity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.SubscribedBoard;
@@ -188,7 +188,7 @@ public final class FCPInterface implements FredPluginFCP {
     throws PluginNotFoundException, InvalidParameterException, NoSuchIdentityException
     {
         final String ownIdentityID = getMandatoryParameter(params, "OwnIdentityID");
-        FTOwnIdentity ownIdentity = mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID);
+        OwnIdentity ownIdentity = mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID);
         
         synchronized(mFreetalk.getMessageManager()) {
             for(final SubscribedBoard board : mFreetalk.getMessageManager().subscribedBoardIteratorSortedByName(ownIdentity)) {	// TODO: Optimization: Use a non sorting function.
@@ -536,8 +536,8 @@ public final class FCPInterface implements FredPluginFCP {
     private void handleListKnownIdentities(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException
     {
-        for(final FTIdentity id : mFreetalk.getIdentityManager().getAllIdentities()) {
-            if (id instanceof FTOwnIdentity) {
+        for(final Identity id : mFreetalk.getIdentityManager().getAllIdentities()) {
+            if (id instanceof OwnIdentity) {
                 continue;
             }
             final SimpleFieldSet sfs = new SimpleFieldSet(true);
@@ -566,7 +566,7 @@ public final class FCPInterface implements FredPluginFCP {
     private void handleListOwnIdentities(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException
     {
-       for(final FTOwnIdentity id : mFreetalk.getIdentityManager().ownIdentityIterator()) {
+       for(final OwnIdentity id : mFreetalk.getIdentityManager().ownIdentityIterator()) {
             final SimpleFieldSet sfs = new SimpleFieldSet(true);
             sfs.putOverwrite("Message", "OwnIdentity");
             sfs.putOverwrite("ID", id.getID());
@@ -840,7 +840,7 @@ public final class FCPInterface implements FredPluginFCP {
 
                 // evaluate authorIdentity
                 final String authorIdentityIDString = getMandatoryParameter(params, "AuthorIdentityID");
-                final FTOwnIdentity authorIdentity;
+                final OwnIdentity authorIdentity;
                 try {
                     authorIdentity = mFreetalk.getIdentityManager().getOwnIdentity(authorIdentityIDString);
                 } catch(final NoSuchIdentityException e) {

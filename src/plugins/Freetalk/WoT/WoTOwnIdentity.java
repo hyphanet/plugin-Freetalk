@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import plugins.Freetalk.FTIdentity;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Identity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Persistent.Indexed;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import plugins.Freetalk.exceptions.NotTrustedException;
@@ -22,7 +22,7 @@ import freenet.keys.FreenetURI;
  * @author xor (xor@freenetproject.org)
  */
 @Indexed
-public final class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
+public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 	
 	/* Attributes, stored in the database. */
 
@@ -44,7 +44,7 @@ public final class WoTOwnIdentity extends WoTIdentity implements FTOwnIdentity {
 		return mInsertURI;
 	}
 
-	public boolean wantsMessagesFrom(FTIdentity identity) throws Exception {
+	public boolean wantsMessagesFrom(Identity identity) throws Exception {
 		if(!(identity instanceof WoTIdentity))
 			throw new IllegalArgumentException();
 		

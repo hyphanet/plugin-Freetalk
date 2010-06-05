@@ -27,12 +27,12 @@ public abstract class OwnMessageList extends MessageList {
 
 	}
 
-	public OwnMessageList(FTOwnIdentity newAuthor, int newIndex) {
+	public OwnMessageList(OwnIdentity newAuthor, int newIndex) {
 		super(newAuthor, newIndex);
 	}
 	
-	public FTOwnIdentity getAuthor() {
-		return (FTOwnIdentity)super.getAuthor();
+	public OwnIdentity getAuthor() {
+		return (OwnIdentity)super.getAuthor();
 	}
 
 	/**

@@ -99,7 +99,7 @@ public abstract class Message extends Persistent {
 	
 	protected final Board mReplyToBoard;
 	
-	protected final FTIdentity mAuthor;
+	protected final Identity mAuthor;
 
 	protected final String mTitle;
 	
@@ -158,7 +158,7 @@ public abstract class Message extends Persistent {
 	private boolean mWasLinkedIn = false;
 	
 	
-	protected Message(MessageURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, MessageURI newThreadURI, MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+	protected Message(MessageURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, MessageURI newThreadURI, MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		if(newURI != null && Arrays.equals(newURI.getFreenetURI().getRoutingKey(), newAuthor.getRequestURI().getRoutingKey()) == false)
 			throw new InvalidParameterException("The URI of the given message does not match the author's URI: " + newURI);
 		
@@ -223,7 +223,7 @@ public abstract class Message extends Persistent {
 	 * Verifies that the given message ID begins with the routing key of the author.
 	 * @throws InvalidParameterException If the ID is not valid. 
 	 */
-	public static void verifyID(FTIdentity author, String id) throws InvalidParameterException {
+	public static void verifyID(Identity author, String id) throws InvalidParameterException {
 		if(id.endsWith(Base64.encode(author.getRequestURI().getRoutingKey())) == false)
 			throw new InvalidParameterException("Illegal id:" + id);
 	}
@@ -357,7 +357,7 @@ public abstract class Message extends Persistent {
 	/**
 	 * Get the author of the message.
 	 */
-	public FTIdentity getAuthor() {
+	public Identity getAuthor() {
 		checkedActivate(2);
 		assert(mAuthor != null);
 		

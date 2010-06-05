@@ -174,7 +174,7 @@ public class Board extends Persistent implements Comparable<Board> {
         return mName;
     }
     
-    public String getDescription(FTOwnIdentity viewer) {
+    public String getDescription(OwnIdentity viewer) {
 		// TODO: Implement: Use the description which most of the known identities have chosen.
 		return "";
     }
@@ -232,7 +232,7 @@ public class Board extends Persistent implements Comparable<Board> {
     	
     	private final int mMessageIndex;
     	
-    	private final FTIdentity mAuthor;
+    	private final Identity mAuthor;
     	
     	private BoardMessageLink(Board myBoard, Message myMessage, int myIndex) {
     		if(myBoard == null) throw new NullPointerException();
@@ -260,7 +260,7 @@ public class Board extends Persistent implements Comparable<Board> {
     		return mMessageIndex;
     	}
     	
-    	public FTIdentity getAuthor() {
+    	public Identity getAuthor() {
     		return mAuthor;
     	}
     	
@@ -327,7 +327,7 @@ public class Board extends Persistent implements Comparable<Board> {
     
     /**
      * Called by the {@link MessageManager} when a new message was fetched.
-     * Stores any messages in this board, does not check whether any {@link FTOwnIdentity} actually wants the messages.
+     * Stores any messages in this board, does not check whether any {@link OwnIdentity} actually wants the messages.
      * 
      * The purpose of this is:
      * - that the message manager can fill a new {@link SubscribedBoard} with already downloaded messages from it's parent {@link Board}

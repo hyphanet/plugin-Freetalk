@@ -2,7 +2,7 @@ package plugins.Freetalk.tasks;
 
 import java.util.Random;
 
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.MessageManager;
@@ -177,7 +177,7 @@ public class PersistentTaskManager implements Runnable, OwnIdentityDeletedCallba
 		return q;
 	}
 	
-	private Query getOwnMessageTasks(FTOwnIdentity owner) {
+	private Query getOwnMessageTasks(OwnIdentity owner) {
 		Query q = mDB.query();
 		q.constrain(OwnMessageTask.class);
 		q.descend("mOwner").constrain(owner).identity();
@@ -190,7 +190,7 @@ public class PersistentTaskManager implements Runnable, OwnIdentityDeletedCallba
 	 * @return The tasks which should be displayed on the web interface right now.
 	 */
 	@SuppressWarnings("unchecked")
-	public ObjectSet<PersistentTask> getVisibleTasks(FTOwnIdentity owner) {
+	public ObjectSet<PersistentTask> getVisibleTasks(OwnIdentity owner) {
 		Query q = mDB.query();
 		
 		long time = CurrentTimeUTC.get().getTime();
@@ -211,7 +211,7 @@ public class PersistentTaskManager implements Runnable, OwnIdentityDeletedCallba
 	 * Deletes all it's tasks and commits the transaction.
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized void beforeOwnIdentityDeletion(FTOwnIdentity identity) {
+	public synchronized void beforeOwnIdentityDeletion(OwnIdentity identity) {
 		Query q = mDB.query();
 		
 		q.constrain(PersistentTask.class);
@@ -241,7 +241,7 @@ public class PersistentTaskManager implements Runnable, OwnIdentityDeletedCallba
 	 * does not lock the identity manager before.
 	 */
 	public void onOwnMessagePosted(OwnMessage message) {
-		proccessTasks(getOwnMessageTasks((FTOwnIdentity)message.getAuthor()), CurrentTimeUTC.getInMillis());
+		proccessTasks(getOwnMessageTasks((OwnIdentity)message.getAuthor()), CurrentTimeUTC.getInMillis());
 	}
 	
 	public void storeTaskWithoutCommit(PersistentTask task) {

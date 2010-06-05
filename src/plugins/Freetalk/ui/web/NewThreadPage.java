@@ -6,7 +6,7 @@ package plugins.Freetalk.ui.web;
 import java.util.HashSet;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
@@ -18,7 +18,7 @@ public final class NewThreadPage extends WebPageImpl {
 
 	private final Board mBoard;
 	
-	public NewThreadPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) throws NoSuchBoardException {
+	public NewThreadPage(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) throws NoSuchBoardException {
 		super(myWebInterface, viewer, request, _baseL10n);
 		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getPartAsStringFailsafe("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
 	}

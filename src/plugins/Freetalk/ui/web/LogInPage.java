@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import freenet.clients.http.RedirectException;
@@ -51,7 +51,7 @@ public final class LogInPage extends WebPageImpl {
 		selectForm.addChild("p", l10n().getString("LoginPage.CookiesRequired.Text"));
 	}
 	
-	protected static final void addLoginButton(WebPageImpl page, HTMLNode contentNode, FTOwnIdentity identity, BaseL10n l10n) {
+	protected static final void addLoginButton(WebPageImpl page, HTMLNode contentNode, OwnIdentity identity, BaseL10n l10n) {
 		HTMLNode logInForm = page.addFormChild(contentNode, Freetalk.PLUGIN_URI + "/LogIn", "LogIn");
 		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", identity.getID() });
 		logInForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n.getString("LoginPage.LogIn.Button") });

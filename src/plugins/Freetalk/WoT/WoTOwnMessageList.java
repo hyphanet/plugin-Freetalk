@@ -1,13 +1,13 @@
 package plugins.Freetalk.WoT;
 
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.OwnMessageList;
 import freenet.keys.FreenetURI;
 
 //@Indexed // I can't think of any query which would need to get all WoTOwnMessageList objects.
 public final class WoTOwnMessageList extends OwnMessageList {
 
-	public WoTOwnMessageList(FTOwnIdentity newAuthor, int newIndex) {
+	public WoTOwnMessageList(OwnIdentity newAuthor, int newIndex) {
 		super(newAuthor, newIndex);
 		// TODO Auto-generated constructor stub
 	}

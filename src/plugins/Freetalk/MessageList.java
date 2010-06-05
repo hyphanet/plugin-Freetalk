@@ -46,7 +46,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	protected String mID; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
 	
 	@Indexed
-	protected final FTIdentity mAuthor;
+	protected final Identity mAuthor;
 	
 	@Indexed
 	protected int mIndex; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
@@ -242,7 +242,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	 * @throws InvalidParameterException
 	 * @throws NoSuchIdentityException
 	 */
-	public MessageList(final FTIdentity myAuthor, final FreenetURI myURI, final List<MessageReference> newMessages)
+	public MessageList(final Identity myAuthor, final FreenetURI myURI, final List<MessageReference> newMessages)
 		throws InvalidParameterException, NoSuchIdentityException {
 		
 		this(myAuthor, myURI, new ArrayList<MessageReference>(newMessages));
@@ -310,14 +310,14 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	 * @param myAuthor
 	 * @param myURI
 	 */
-	public MessageList(FTIdentity myAuthor, FreenetURI myURI) {
+	public MessageList(Identity myAuthor, FreenetURI myURI) {
 		this(myAuthor, myURI, new ArrayList<MessageReference>(0));
 	}
 	
 	/**
 	 * General constructor for being used by public constructors.
 	 */
-	protected MessageList(FTIdentity myAuthor, FreenetURI myURI, ArrayList<MessageReference> newMessages) {
+	protected MessageList(Identity myAuthor, FreenetURI myURI, ArrayList<MessageReference> newMessages) {
 		if(myURI == null)
 			throw new IllegalArgumentException("Trying to construct a MessageList with null URI.");
 		
@@ -333,7 +333,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		mMessages = newMessages;
 	}
 	
-	protected MessageList(FTOwnIdentity myAuthor, int newIndex) {
+	protected MessageList(OwnIdentity myAuthor, int newIndex) {
 		if(myAuthor == null)
 			throw new IllegalArgumentException("Trying to construct a MessageList with no author");
 		
@@ -431,7 +431,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		return calculateID(mAuthor, mIndex);
 	}
 	
-	public static String calculateID(FTIdentity author, int index) {
+	public static String calculateID(Identity author, int index) {
 		return index + "@" + Base64.encode(author.getRequestURI().getRoutingKey());
 	}
 	
@@ -460,7 +460,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	 */
 	protected abstract FreenetURI generateURI(FreenetURI baseURI, int index);
 	
-	public FTIdentity getAuthor() {
+	public Identity getAuthor() {
 		checkedActivate(2);
 		if(mAuthor instanceof Persistent) {
 			((Persistent)mAuthor).initializeTransient(mFreetalk);

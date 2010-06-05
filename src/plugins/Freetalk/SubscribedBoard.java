@@ -17,13 +17,13 @@ import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 
 /**
- * A SubscribedBoard is a {@link Board} which only stores messages which the subscriber (a {@link FTOwnIdentity}) wants to read,
- * according to the implementation of {@link FTOwnIdentity.wantsMessagesFrom}.
+ * A SubscribedBoard is a {@link Board} which only stores messages which the subscriber (a {@link OwnIdentity}) wants to read,
+ * according to the implementation of {@link OwnIdentity.wantsMessagesFrom}.
  */
 @Indexed
 public final class SubscribedBoard extends Board {
 
-	private final FTOwnIdentity mSubscriber;
+	private final OwnIdentity mSubscriber;
 	
 	private Board mParentBoard;
 	
@@ -38,7 +38,7 @@ public final class SubscribedBoard extends Board {
 	private int	mHighestSynchronizedParentMessageIndex = 0;
 
 	
-	public SubscribedBoard(Board myParentBoard, FTOwnIdentity mySubscriber) throws InvalidParameterException {
+	public SubscribedBoard(Board myParentBoard, OwnIdentity mySubscriber) throws InvalidParameterException {
 		super(myParentBoard.getName());
 		
 		if(myParentBoard == null) throw new NullPointerException();
@@ -76,7 +76,7 @@ public final class SubscribedBoard extends Board {
 
 	}
 	
-	public FTOwnIdentity getSubscriber() {
+	public OwnIdentity getSubscriber() {
     	if(mSubscriber instanceof Persistent) {
     		final Persistent subscriber = (Persistent)mSubscriber;
     		subscriber.initializeTransient(mFreetalk);
@@ -264,7 +264,7 @@ public final class SubscribedBoard extends Board {
     
     /**
      * Called by the {@link MessageManager} before a {@link Message} object is deleted from the database.
-     * This usually happens when an {@link FTIdentity} is being deleted.
+     * This usually happens when an {@link Identity} is being deleted.
      * 
      * Does not delete the Message object itself, this is to be done by the callee.
      * 
@@ -513,7 +513,7 @@ public final class SubscribedBoard extends Board {
 
 
     /**
-     * Get all threads in the board. The view is specified to the FTOwnIdentity who has subscribed to this board.
+     * Get all threads in the board. The view is specified to the OwnIdentity who has subscribed to this board.
      * The transient fields of the returned messages will be initialized already.
      * @param identity The identity viewing the board.
      * @return An iterator of the message which the identity will see (based on its trust levels).
@@ -729,7 +729,7 @@ public final class SubscribedBoard extends Board {
 //    	
 //    	protected final Message mMessage;
 //    	
-//    	protected final FTIdentity mAuthor;
+//    	protected final Identity mAuthor;
 //    
 //    	
 //    	private UnwantedMessageLink(SubscribedBoard myBoard, Message myMessage) {
@@ -758,7 +758,7 @@ public final class SubscribedBoard extends Board {
     	@Indexed
     	protected final Message mMessage;
     	
-    	protected final FTIdentity mAuthor;
+    	protected final Identity mAuthor;
     	
     	protected Date mLastRetryDate;
     	
@@ -792,7 +792,7 @@ public final class SubscribedBoard extends Board {
 			return mMessage;
 		}
     	
-    	protected FTIdentity getAuthor() {
+    	protected Identity getAuthor() {
     		checkedActivate(2);
     		if(mAuthor instanceof Persistent) {
     			Persistent author = (Persistent)mAuthor;

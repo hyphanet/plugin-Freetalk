@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
-import plugins.Freetalk.FTIdentity;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Identity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 
 import com.db4o.ObjectSet;
@@ -20,7 +20,7 @@ import freenet.support.api.HTTPRequest;
  */
 public final class IdentityEditor extends WebPageImpl {
 
-	public IdentityEditor(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
+	public IdentityEditor(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
 		super(myWebInterface, viewer, request, _baseL10n);
 	}
 
@@ -45,7 +45,7 @@ public final class IdentityEditor extends WebPageImpl {
 			row.addChild("th", "Freetalk address");
 
 			while (ownIdentities.hasNext()) {
-				FTOwnIdentity id = ownIdentities.next();
+				OwnIdentity id = ownIdentities.next();
 				row = identitiesTable.addChild("tr");
 				row.addChild("td", id.getNickname());
 
@@ -87,8 +87,8 @@ public final class IdentityEditor extends WebPageImpl {
 		row.addChild("th", "Freetalk address");
 		//row.addChild("th");
 
-		for(FTIdentity id : mFreetalk.getIdentityManager().getAllIdentities()) {
-			if (id instanceof FTOwnIdentity)
+		for(Identity id : mFreetalk.getIdentityManager().getAllIdentities()) {
+			if (id instanceof OwnIdentity)
 				continue;
 
 			row = identitiesTable.addChild("tr");
@@ -291,7 +291,7 @@ public final class IdentityEditor extends WebPageImpl {
 		}
 	}
 	
-	public static final void addNewOwnIdentity(Freetalk ft, FTOwnIdentity identity, List<String> err) {
+	public static final void addNewOwnIdentity(Freetalk ft, OwnIdentity identity, List<String> err) {
 		try {
 			ft.getIdentityManager().addNewOwnIdentity(identity);
 		} catch (Throwable t) {
@@ -300,7 +300,7 @@ public final class IdentityEditor extends WebPageImpl {
 		}
 	}
 	
-	public static final void addNewKnownIdentity(Freetalk ft, FTIdentity identity, List<String> err) {
+	public static final void addNewKnownIdentity(Freetalk ft, Identity identity, List<String> err) {
 		try {
 			ft.getIdentityManager().addNewIdentity(identity);
 		} catch (Throwable t) {

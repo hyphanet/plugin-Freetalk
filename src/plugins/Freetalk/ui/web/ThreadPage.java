@@ -9,8 +9,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.FTIdentity;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Identity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.SubscribedBoard;
@@ -45,7 +45,7 @@ public final class ThreadPage extends WebPageImpl {
 
     private static final DateFormat mLocalDateFormat = DateFormat.getDateTimeInstance();
 
-    public ThreadPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n)
+    public ThreadPage(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n)
     throws NoSuchMessageException, NoSuchBoardException {
         super(myWebInterface, viewer, request, _baseL10n);
         
@@ -311,7 +311,7 @@ public final class ThreadPage extends WebPageImpl {
         addReplyButton(text, message);
     }
 
-    private void addTrustersInfo(HTMLNode parent, FTIdentity author) throws Exception {
+    private void addTrustersInfo(HTMLNode parent, Identity author) throws Exception {
     	WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 
         int trustedBy = identityManager.getReceivedTrustsCount(author, 1);
@@ -326,7 +326,7 @@ public final class ThreadPage extends WebPageImpl {
         		String.valueOf(distrustedBy));
     }
     
-    private void addTrusteesInfo(HTMLNode parent, FTIdentity author) throws Exception {
+    private void addTrusteesInfo(HTMLNode parent, Identity author) throws Exception {
     	WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 
         int trustsCount = identityManager.getGivenTrustsCount(author, 1);

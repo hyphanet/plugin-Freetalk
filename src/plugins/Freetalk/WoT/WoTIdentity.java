@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import plugins.Freetalk.FTIdentity;
+import plugins.Freetalk.Identity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Persistent;
 import plugins.Freetalk.Persistent.Indexed;
@@ -26,7 +26,7 @@ import freenet.support.StringValidityChecker;
  * @author xor (xor@freenetproject.org)
  */
 @Indexed // TODO: Check whether we really need this index.
-public class WoTIdentity extends Persistent implements FTIdentity {
+public class WoTIdentity extends Persistent implements Identity {
 	
 	/* Attributes, stored in the database. */
 	

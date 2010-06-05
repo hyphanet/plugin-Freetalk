@@ -6,7 +6,7 @@ package plugins.Freetalk.ui.web;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.tasks.PersistentTask;
 import plugins.Freetalk.tasks.PersistentTaskManager;
@@ -39,9 +39,9 @@ public abstract class WebPageImpl implements WebPage {
 	protected final HTTPRequest mRequest;
 	
 	/**
-	 * The FTOwnIdentity which is viewing this page.
+	 * The OwnIdentity which is viewing this page.
 	 */
-	protected final FTOwnIdentity mOwnIdentity;
+	protected final OwnIdentity mOwnIdentity;
 	
 	protected HTMLNode mContentNode;
 
@@ -52,7 +52,7 @@ public abstract class WebPageImpl implements WebPage {
 	/**
 	 * Creates a new WebPageImpl. It is abstract because only a subclass can run
 	 * the desired make() method to generate the content.
-	 * @param viewer The FTOwnIdentity which is viewing this page.
+	 * @param viewer The OwnIdentity which is viewing this page.
 	 * @param request
 	 *            the request from the user.
 	 * @param _baseL10n TODO
@@ -60,7 +60,7 @@ public abstract class WebPageImpl implements WebPage {
 	 *            a reference to Freetalk, used to get references to database,
 	 *            client, whatever is needed.
 	 */
-	public WebPageImpl(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
+	public WebPageImpl(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
 		
 		try {
 			logIn = new URI(Freetalk.PLUGIN_URI+"/LogIn");

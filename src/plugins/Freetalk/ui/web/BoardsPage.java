@@ -5,7 +5,7 @@ package plugins.Freetalk.ui.web;
 
 import java.text.DateFormat;
 
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.SubscribedBoard.MessageReference;
@@ -16,13 +16,13 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
- * Shows the boards to which the logged-in {@link FTOwnIdentity} has subscribed to.
+ * Shows the boards to which the logged-in {@link OwnIdentity} has subscribed to.
  * 
  * @author xor (xor@freenetproject.org)
  */
 public final class BoardsPage extends WebPageImpl {
 
-	public BoardsPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
+	public BoardsPage(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
 		super(myWebInterface, viewer, request, _baseL10n);
 	}
 

@@ -3,7 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import plugins.Freetalk.FTIdentity;
+import plugins.Freetalk.Identity;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 
 /**
@@ -12,10 +12,10 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 public final class WoTTrust {
 
 	/** The identity which gives the trust. */
-	private final FTIdentity mTruster;
+	private final Identity mTruster;
 	
 	/** The identity which receives the trust. */
-	private final FTIdentity mTrustee;
+	private final Identity mTrustee;
 	
 	/** The value assigned with the trust, from -100 to +100 where negative means distrust */
 	private byte mValue;
@@ -58,7 +58,7 @@ public final class WoTTrust {
 	 * @param comment A comment to explain the numeric trust value
 	 * @throws InvalidParameterException if the trust value is not between -100 and +100
 	 */
-	public WoTTrust(FTIdentity truster, FTIdentity trustee, byte value, String comment) throws InvalidParameterException {
+	public WoTTrust(Identity truster, Identity trustee, byte value, String comment) throws InvalidParameterException {
 		if(truster == null)
 			throw new NullPointerException();
 		
@@ -77,12 +77,12 @@ public final class WoTTrust {
 	}
 
 	/** @return The Identity that gives this trust. */
-	public FTIdentity getTruster() {
+	public Identity getTruster() {
 		return mTruster;
 	}
 
 	/** @return The Identity that receives this trust. */
-	public FTIdentity getTrustee() {
+	public Identity getTrustee() {
 		return mTrustee;
 	}
 

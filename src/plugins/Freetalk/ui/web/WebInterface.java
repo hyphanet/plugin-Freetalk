@@ -10,7 +10,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLConnection;
 
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTMessage;
@@ -225,7 +225,7 @@ public final class WebInterface {
 			}
 
 			try {
-				FTOwnIdentity ownIdentity = mFreetalk.getIdentityManager().getOwnIdentity(request.getPartAsString("OwnIdentityID", 64));
+				OwnIdentity ownIdentity = mFreetalk.getIdentityManager().getOwnIdentity(request.getPartAsString("OwnIdentityID", 64));
 				mSessionManager.createSession(ownIdentity.getID(), ctx);
 			} catch(NoSuchIdentityException e) {
 				throw new RedirectException(logIn);
@@ -619,7 +619,7 @@ public final class WebInterface {
 
 	}
 
-	private FTOwnIdentity getLoggedInOwnIdentity(ToadletContext context) throws RedirectException {
+	private OwnIdentity getLoggedInOwnIdentity(ToadletContext context) throws RedirectException {
 		try {
 			Session session = mSessionManager.useSession(context);
 			

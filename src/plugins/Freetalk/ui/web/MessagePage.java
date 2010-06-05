@@ -4,7 +4,7 @@
 package plugins.Freetalk.ui.web;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageManager;
@@ -34,7 +34,7 @@ public class MessagePage extends WebPageImpl {
 	private BoardThreadLink mThread;
 	private Message mMessage;
 
-	public MessagePage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _basel10n) {
+	public MessagePage(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _basel10n) {
 		super(myWebInterface, viewer, request, _basel10n);
 		
         String boardName = request.getParam("BoardName");

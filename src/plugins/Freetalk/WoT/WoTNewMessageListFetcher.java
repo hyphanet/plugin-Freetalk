@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Hashtable;
 
-import plugins.Freetalk.FTIdentity;
+import plugins.Freetalk.Identity;
 import plugins.Freetalk.FetchFailedMarker;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
@@ -464,7 +464,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	 * 
 	 * Schedules start-fetch/abort-fetch commands.
 	 */
-	public void onShouldFetchStateChanged(FTIdentity messageAuthor, boolean oldShouldFetch, boolean newShouldFetch) {
+	public void onShouldFetchStateChanged(Identity messageAuthor, boolean oldShouldFetch, boolean newShouldFetch) {
 		if(oldShouldFetch == newShouldFetch) {
 			throw new IllegalArgumentException("oldShouldFetch==newShouldFetch==" + newShouldFetch);
 		}

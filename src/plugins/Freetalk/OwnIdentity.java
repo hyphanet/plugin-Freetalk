@@ -9,7 +9,7 @@ import freenet.keys.FreenetURI;
  * @author saces, xor
  *
  */
-public interface FTOwnIdentity extends FTIdentity { // FIXME: Rename to "OwnIdentity"
+public interface OwnIdentity extends Identity {
 	
 	public FreenetURI getInsertURI();
 	
@@ -29,5 +29,5 @@ public interface FTOwnIdentity extends FTIdentity { // FIXME: Rename to "OwnIden
 	/**
 	 * @throws Exception If the decision cannot be made right now. Practically this means that the connection to the WoT plugin is not working right now.
 	 */
-	public boolean wantsMessagesFrom(FTIdentity identity) throws Exception;
+	public boolean wantsMessagesFrom(Identity identity) throws Exception;
 }

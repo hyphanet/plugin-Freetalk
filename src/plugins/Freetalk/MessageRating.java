@@ -9,7 +9,7 @@ import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 
 /**
- * A MessageRating is an assignment of a "good" / "bad" value from a {@link FTOwnIdentity} to a {@link Message}.
+ * A MessageRating is an assignment of a "good" / "bad" value from a {@link OwnIdentity} to a {@link Message}.
  * 
  * MessageRating objects are stored in the database.
  * There can only be one rating in the database for each message, therefore if the message is posted to multiple {@link Board}s and you rate it in one
@@ -28,10 +28,10 @@ import freenet.support.Logger;
 public abstract class MessageRating extends Persistent {
 	
 	/**
-	 * The {@link FTOwnIdentity} which has assigned this rating. 
+	 * The {@link OwnIdentity} which has assigned this rating. 
 	 */
 	@Indexed
-	private final FTOwnIdentity mRater;
+	private final OwnIdentity mRater;
 
 	/**
 	 * The affected {@link Message}.
@@ -43,7 +43,7 @@ public abstract class MessageRating extends Persistent {
 	 * The author of the affected {@link Message}
 	 */
 	@Indexed
-	private final FTIdentity mMessageAuthor;
+	private final Identity mMessageAuthor;
 	
 	/**
 	 * The {@link Date} when this rating was assigned.
@@ -59,7 +59,7 @@ public abstract class MessageRating extends Persistent {
 	 * @throws NullPointerException If any of the arguments is null.
 	 * @throws IllegalArgumentException If the given Message is an instance of OwnMessage.
 	 */
-	protected MessageRating(final FTOwnIdentity myRater, final Message myMessage) {
+	protected MessageRating(final OwnIdentity myRater, final Message myMessage) {
 		if(myRater == null)
 			throw new NullPointerException("No own identity specified.");
 		
@@ -76,12 +76,12 @@ public abstract class MessageRating extends Persistent {
 	}
 	
 	/**
-	 * Get the {@link FTOwnIdentity} which has assigned this rating.
+	 * Get the {@link OwnIdentity} which has assigned this rating.
 	 * 
 	 * Before using any getter functions you must call {@link initializeTransient} once after having obtained this object from the database.
 	 * The transient fields of the returned object will be initialized by this getter already though.
 	 */
-	public final FTOwnIdentity getRater() {
+	public final OwnIdentity getRater() {
 		checkedActivate(2); assert(mRater != null);
 		if(mRater instanceof Persistent) {
 			Persistent rater = (Persistent)mRater;
@@ -102,7 +102,7 @@ public abstract class MessageRating extends Persistent {
 		return mMessage;
 	}
 	
-	public final FTIdentity getMessageAuthor() {
+	public final Identity getMessageAuthor() {
 		checkedActivate(2); assert(mMessageAuthor != null);
 		
 		if(mMessageAuthor instanceof Persistent)

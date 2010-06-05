@@ -56,37 +56,37 @@ public abstract class IdentityManager implements PrioRunnable {
 		mExecutor = null;
 	}
 	
-	public abstract FTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles) throws Exception;
+	public abstract OwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles) throws Exception;
 	
-	public abstract FTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles,
+	public abstract OwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles,
 			FreenetURI requestURI, FreenetURI insertURI) throws Exception;
 
-	public abstract Iterable<? extends FTIdentity> getAllIdentities();
+	public abstract Iterable<? extends Identity> getAllIdentities();
 	
 	public synchronized int countKnownIdentities() {
-		/* TODO: This should probably take an FTOwnIdentity as param and count the identities seen by it */
+		/* TODO: This should probably take an OwnIdentity as param and count the identities seen by it */
 		Query q = db.query();
-		q.constrain(FTIdentity.class);
-		q.constrain(FTOwnIdentity.class).not();
+		q.constrain(Identity.class);
+		q.constrain(OwnIdentity.class).not();
 		return q.execute().size();
 	}
 
-	public abstract ObjectSet<? extends FTOwnIdentity> ownIdentityIterator();
+	public abstract ObjectSet<? extends OwnIdentity> ownIdentityIterator();
 	
-	public abstract FTIdentity getIdentity(String id) throws NoSuchIdentityException;
+	public abstract Identity getIdentity(String id) throws NoSuchIdentityException;
 	
-	public abstract FTOwnIdentity getOwnIdentity(String id) throws NoSuchIdentityException;
+	public abstract OwnIdentity getOwnIdentity(String id) throws NoSuchIdentityException;
 
-	public synchronized boolean anyOwnIdentityWantsMessagesFrom(FTIdentity identity) {		
+	public synchronized boolean anyOwnIdentityWantsMessagesFrom(Identity identity) {		
 		boolean noOwnIdentities = true;
 
-		for(final FTOwnIdentity oid : ownIdentityIterator()) {
+		for(final OwnIdentity oid : ownIdentityIterator()) {
 			noOwnIdentities = false;
 			try {
 				if (oid.wantsMessagesFrom(identity))
 					return true;
 			} catch(Exception e) {
-				Logger.error(this, "anyOwnIdentityWantsMessagesFrom: wantsMessagesFrom() failed, skipping the current FTOwnIdentity.", e);
+				Logger.error(this, "anyOwnIdentityWantsMessagesFrom: wantsMessagesFrom() failed, skipping the current OwnIdentity.", e);
 			}
 		}
 
@@ -95,23 +95,23 @@ public abstract class IdentityManager implements PrioRunnable {
 
 
 	public interface NewIdentityCallback {
-		public void onNewIdentityAdded(FTIdentity identity);
+		public void onNewIdentityAdded(Identity identity);
 	}
 	
 	public interface NewOwnIdentityCallback {
-		public void onNewOwnIdentityAdded(FTOwnIdentity identity);
+		public void onNewOwnIdentityAdded(OwnIdentity identity);
 	}
 	
 	public interface IdentityDeletedCallback {
-		public void beforeIdentityDeletion(FTIdentity identity);
+		public void beforeIdentityDeletion(Identity identity);
 	}
 	
 	public interface OwnIdentityDeletedCallback {
-		public void beforeOwnIdentityDeletion(FTOwnIdentity identity);
+		public void beforeOwnIdentityDeletion(OwnIdentity identity);
 	}
 	
 	public interface ShouldFetchStateChangedCallback {
-		public void onShouldFetchStateChanged(FTIdentity messageAuthor, boolean oldShouldFetch, boolean newShouldFetch);
+		public void onShouldFetchStateChanged(Identity messageAuthor, boolean oldShouldFetch, boolean newShouldFetch);
 	}
 
 
@@ -120,7 +120,7 @@ public abstract class IdentityManager implements PrioRunnable {
 		
 		if(includeOwnIdentities) {
 			registerNewOwnIdentityCallback(new NewOwnIdentityCallback() {
-				public void onNewOwnIdentityAdded(FTOwnIdentity identity) {
+				public void onNewOwnIdentityAdded(OwnIdentity identity) {
 					listener.onNewIdentityAdded(identity);
 				}
 			});
@@ -136,7 +136,7 @@ public abstract class IdentityManager implements PrioRunnable {
 		
 		if(includeOwnIdentities) {
 			registerOwnIdentityDeletedCallback(new OwnIdentityDeletedCallback() {
-				public void beforeOwnIdentityDeletion(FTOwnIdentity identity) {
+				public void beforeOwnIdentityDeletion(OwnIdentity identity) {
 					listener.beforeIdentityDeletion(identity);
 				}
 			});
@@ -151,31 +151,31 @@ public abstract class IdentityManager implements PrioRunnable {
 		mShouldFetchStateChangedCallbacks.add(listener);
 	}
 	
-	protected final void doNewIdentityCallbacks(final FTIdentity identity) {
+	protected final void doNewIdentityCallbacks(final Identity identity) {
 		for(NewIdentityCallback callback : mNewIdentityCallbacks) {
 			callback.onNewIdentityAdded(identity);
 		}
 	}
 	
-	protected final void doNewOwnIdentityCallbacks(final FTOwnIdentity identity) {
+	protected final void doNewOwnIdentityCallbacks(final OwnIdentity identity) {
 		for(NewOwnIdentityCallback callback : mNewOwnIdentityCallbacks) {
 			callback.onNewOwnIdentityAdded(identity);
 		}
 	}
 	
-	protected final void doIdentityDeletedCallbacks(final FTIdentity identity) {
+	protected final void doIdentityDeletedCallbacks(final Identity identity) {
 		for(IdentityDeletedCallback callback : mIdentityDeletedCallbacks) {
 			callback.beforeIdentityDeletion(identity);
 		}
 	}
 	
-	protected final void doOwnIdentityDeletedCallbacks(final FTOwnIdentity identity) {
+	protected final void doOwnIdentityDeletedCallbacks(final OwnIdentity identity) {
 		for(OwnIdentityDeletedCallback callback : mOwnIdentityDeletedCallbacks) {
 			callback.beforeOwnIdentityDeletion(identity);
 		}
 	}
 	
-	protected final void doShouldFetchStateChangedCallbacks(final FTIdentity author, boolean oldShouldFetch, boolean newShouldFetch) {
+	protected final void doShouldFetchStateChangedCallbacks(final Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
 		for(ShouldFetchStateChangedCallback callback : mShouldFetchStateChangedCallbacks) {
 			callback.onShouldFetchStateChanged(author, oldShouldFetch, newShouldFetch);
 		}
@@ -192,7 +192,7 @@ public abstract class IdentityManager implements PrioRunnable {
 	/**
 	 * This function does not do any synchronization and does not require any synchronization, therefore you can use it everywhere without causing deadlocks.
 	 */
-	public abstract String getShortestUniqueName(FTIdentity identity);
+	public abstract String getShortestUniqueName(Identity identity);
 
 	/**
 	 * Extracts the OwnIdentity ID from the input Freetalk address 

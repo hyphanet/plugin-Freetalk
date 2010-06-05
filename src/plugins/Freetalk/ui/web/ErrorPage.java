@@ -6,7 +6,7 @@ package plugins.Freetalk.ui.web;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -17,7 +17,7 @@ public final class ErrorPage extends WebPageImpl {
 	private final String mErrorTitle;
 	private final String mErrorMessage;
 
-	public ErrorPage(WebInterface webInterface, FTOwnIdentity viewer, HTTPRequest request, String errorTitle, Throwable t, BaseL10n _baseL10n) {
+	public ErrorPage(WebInterface webInterface, OwnIdentity viewer, HTTPRequest request, String errorTitle, Throwable t, BaseL10n _baseL10n) {
 		super(webInterface, viewer, request, _baseL10n);
 		mErrorTitle = errorTitle;
 		

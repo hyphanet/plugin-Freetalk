@@ -4,7 +4,7 @@
 package plugins.Freetalk.ui.web;
 
 import plugins.Freetalk.Config;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
@@ -21,7 +21,7 @@ import freenet.support.api.HTTPRequest;
  */
 public class SettingsPage extends WebPageImpl {
 
-    public SettingsPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
+    public SettingsPage(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
         super(myWebInterface, viewer, request, _baseL10n);
     }
 

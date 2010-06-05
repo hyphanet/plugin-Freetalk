@@ -6,8 +6,8 @@ package plugins.Freetalk.ui.web;
 import java.util.HashSet;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.FTIdentity;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Identity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageURI;
@@ -40,7 +40,7 @@ public class NewReplyPage extends WebPageImpl {
 	private final BoardThreadLink mParentThread;
 	private final Message mParentMessage;
 
-	public NewReplyPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) 
+	public NewReplyPage(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) 
 	throws NoSuchBoardException, NoSuchMessageException {
 		super(myWebInterface, viewer, request, _baseL10n);
 		mBoard = mFreetalk.getMessageManager().getSubscription(mOwnIdentity, request.getPartAsStringFailsafe("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
@@ -200,7 +200,7 @@ public class NewReplyPage extends WebPageImpl {
 	}
 	
 	private void addRateMessageBox(HTMLNode parent, Byte selectedMessageRating) {
-		FTIdentity identity = mParentMessage.getAuthor();
+		Identity identity = mParentMessage.getAuthor();
 		
 		HTMLNode rateMessageBox = getContentBox(l10n().getString(
 	            "NewReplyPage.RateMessageBox.Header",

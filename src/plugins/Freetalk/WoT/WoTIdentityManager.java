@@ -10,8 +10,8 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Random;
 
-import plugins.Freetalk.FTIdentity;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Identity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.MessageManager;
@@ -237,7 +237,7 @@ public final class WoTIdentityManager extends IdentityManager {
 		}
 	}
 	
-	public FTIdentity getIdentityByURI(FreenetURI uri) throws NoSuchIdentityException {
+	public Identity getIdentityByURI(FreenetURI uri) throws NoSuchIdentityException {
 		return getIdentity(WoTIdentity.getIDFromURI(uri));
 	}
 	
@@ -263,7 +263,7 @@ public final class WoTIdentityManager extends IdentityManager {
 	/**
 	 * Not synchronized, the involved identities might be deleted during the query - which is not really a problem.
 	 */
-	private String getProperty(FTOwnIdentity treeOwner, FTIdentity target, String property) throws Exception {
+	private String getProperty(OwnIdentity treeOwner, Identity target, String property) throws Exception {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "GetIdentity");
 		sfs.putOverwrite("TreeOwner", treeOwner.getID());
@@ -306,7 +306,7 @@ public final class WoTIdentityManager extends IdentityManager {
 	 * Not synchronized, the involved identities might be deleted during the query or some other WoT client might modify the trust value
 	 * during the query - which is not really a problem, you should not be modifying trust values of your own identity with multiple clients simultaneously.
 	 */
-	public void setTrust(FTOwnIdentity treeOwner, FTIdentity identity, int trust, String comment) throws Exception {
+	public void setTrust(OwnIdentity treeOwner, Identity identity, int trust, String comment) throws Exception {
 		SimpleFieldSet request = new SimpleFieldSet(true);
 		request.putOverwrite("Message", "SetTrust");
 		request.putOverwrite("Truster", treeOwner.getID());
@@ -320,7 +320,7 @@ public final class WoTIdentityManager extends IdentityManager {
 	/**
 	 * Not synchronized, the involved identity might be deleted during the query - which is not really a problem.
 	 */
-	public List<WoTTrust> getReceivedTrusts(FTIdentity trustee) throws Exception {
+	public List<WoTTrust> getReceivedTrusts(Identity trustee) throws Exception {
 		List<WoTTrust> result = new ArrayList<WoTTrust>();
 
 		SimpleFieldSet request = new SimpleFieldSet(true);
@@ -349,7 +349,7 @@ public final class WoTIdentityManager extends IdentityManager {
 	/**
 	 * Not synchronized, the involved identity might be deleted during the query - which is not really a problem.
 	 */
-	public int getReceivedTrustsCount(FTIdentity trustee) throws Exception {
+	public int getReceivedTrustsCount(Identity trustee) throws Exception {
 		SimpleFieldSet request = new SimpleFieldSet(true);
 		request.putOverwrite("Message", "GetTrustersCount");
 		request.putOverwrite("Identity", trustee.getID());
@@ -373,7 +373,7 @@ public final class WoTIdentityManager extends IdentityManager {
 	 * @param selection Use 1 for counting trust values greater than or equal to zero, 0 for counting trust values exactly equal to 0 and -1 for counting trust
 	 * 		values less than zero.
 	 */
-	public int getReceivedTrustsCount(FTIdentity trustee, int selection) throws Exception {
+	public int getReceivedTrustsCount(Identity trustee, int selection) throws Exception {
 		SimpleFieldSet request = new SimpleFieldSet(true);
 		request.putOverwrite("Message", "GetTrustersCount");
 		request.putOverwrite("Identity", trustee.getID());
@@ -395,7 +395,7 @@ public final class WoTIdentityManager extends IdentityManager {
 		}
 	}
 	
-	public int getGivenTrustsCount(FTIdentity trustee, int selection) throws Exception {
+	public int getGivenTrustsCount(Identity trustee, int selection) throws Exception {
 		SimpleFieldSet request = new SimpleFieldSet(true);
 		request.putOverwrite("Message", "GetTrusteesCount");
 		request.putOverwrite("Identity", trustee.getID());
@@ -606,12 +606,12 @@ public final class WoTIdentityManager extends IdentityManager {
 	}
 	
 
-	private void onNewIdentityAdded(FTIdentity identity) {
+	private void onNewIdentityAdded(Identity identity) {
 		mShortestUniqueNicknameCacheNeedsUpdate = true;
 		
 		doNewIdentityCallbacks(identity);
 		
-		if(!(identity instanceof FTOwnIdentity))
+		if(!(identity instanceof OwnIdentity))
 			onShouldFetchStateChanged(identity, false, true);
 	}
 
@@ -623,7 +623,7 @@ public final class WoTIdentityManager extends IdentityManager {
 	 * @param newIdentity
 	 * @throws Exception If adding the Freetalk context to the identity in WoT failed.
 	 */
-	private void onNewOwnIdentityAdded(FTOwnIdentity identity) {
+	private void onNewOwnIdentityAdded(OwnIdentity identity) {
 		WoTOwnIdentity newIdentity = (WoTOwnIdentity)identity;
 		
 		try {
@@ -639,19 +639,19 @@ public final class WoTIdentityManager extends IdentityManager {
 		onShouldFetchStateChanged(newIdentity, false, true);
 	}
 	
-	private void beforeIdentityDeletion(FTIdentity identity) {
+	private void beforeIdentityDeletion(Identity identity) {
 		doIdentityDeletedCallbacks(identity);
 		
-		if(!(identity instanceof FTOwnIdentity)) // Don't call it twice
+		if(!(identity instanceof OwnIdentity)) // Don't call it twice
 			onShouldFetchStateChanged(identity, true, false);
 	}
 	
-	private void beforeOwnIdentityDeletion(FTOwnIdentity identity) {
+	private void beforeOwnIdentityDeletion(OwnIdentity identity) {
 		doOwnIdentityDeletedCallbacks(identity);
 		onShouldFetchStateChanged(identity, true, false);
 	}
 	
-	private void onShouldFetchStateChanged(FTIdentity author, boolean oldShouldFetch, boolean newShouldFetch) {
+	private void onShouldFetchStateChanged(Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
 		doShouldFetchStateChangedCallbacks(author, oldShouldFetch, newShouldFetch);
 	}
 	
@@ -960,7 +960,7 @@ public final class WoTIdentityManager extends IdentityManager {
 	}
 
 	@Override
-	public String getShortestUniqueName(FTIdentity identity) {
+	public String getShortestUniqueName(Identity identity) {
 		// We must not synchronize anything according to the specification of this function (to prevent deadlocks)
 		String nickname = mShortestUniqueNicknameCache.get(identity.getID());
 		

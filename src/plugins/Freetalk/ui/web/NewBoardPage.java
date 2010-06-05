@@ -4,7 +4,7 @@
 package plugins.Freetalk.ui.web;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.SubscribedBoard;
 import freenet.clients.http.RedirectException;
@@ -14,7 +14,7 @@ import freenet.support.api.HTTPRequest;
 
 public final class NewBoardPage extends WebPageImpl {
 
-	public NewBoardPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
+	public NewBoardPage(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
 		super(myWebInterface, viewer, request, _baseL10n);
 	}
 

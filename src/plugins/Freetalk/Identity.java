@@ -5,7 +5,7 @@ package plugins.Freetalk;
 
 import freenet.keys.FreenetURI;
 
-public interface FTIdentity { // FIXME: Rename to "Identity"
+public interface Identity {
 	
 	public String getID();
 	

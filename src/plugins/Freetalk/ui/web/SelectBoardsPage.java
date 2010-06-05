@@ -3,7 +3,7 @@ package plugins.Freetalk.ui.web;
 import java.text.DateFormat;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.SubscribedBoard;
@@ -22,7 +22,7 @@ import freenet.support.api.HTTPRequest;
  */
 public class SelectBoardsPage extends WebPageImpl {
 
-	public SelectBoardsPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
+	public SelectBoardsPage(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
 		super(myWebInterface, viewer, request, _baseL10n);
 	}
 

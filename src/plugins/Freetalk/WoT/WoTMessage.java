@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.FTIdentity;
+import plugins.Freetalk.Identity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.exceptions.InvalidParameterException;
@@ -44,7 +44,7 @@ public final class WoTMessage extends Message {
 	/**
 	 * Constructor for received messages.
 	 */
-	public static WoTMessage construct(MessageList newMessageList, FreenetURI myRealURI, String newID, WoTMessageURI newThreadURI, WoTMessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+	public static WoTMessage construct(MessageList newMessageList, FreenetURI myRealURI, String newID, WoTMessageURI newThreadURI, WoTMessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		if (newMessageList == null || newBoards == null || newAuthor == null)
 			throw new IllegalArgumentException();
 		
@@ -55,7 +55,7 @@ public final class WoTMessage extends Message {
 	}
 
 	protected WoTMessage(WoTMessageURI newURI, FreenetURI newRealURI, String newID, MessageList newMessageList, WoTMessageURI newThreadURI,
-			WoTMessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, FTIdentity newAuthor, String newTitle, Date newDate,
+			WoTMessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate,
 			String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		super(newURI, newRealURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText,
 				newAttachments);

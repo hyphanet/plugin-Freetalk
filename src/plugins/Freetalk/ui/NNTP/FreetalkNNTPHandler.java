@@ -23,7 +23,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
@@ -60,8 +60,8 @@ public final class FreetalkNNTPHandler implements Runnable {
     /** Current message number within the group */
     private int mCurrentMessageNum;
     
-    /** Authenticated FTOwnIdentity **/
-    private FTOwnIdentity mAuthenticatedUser = null;
+    /** Authenticated OwnIdentity **/
+    private OwnIdentity mAuthenticatedUser = null;
 
     
     /** Line ending required by NNTP **/
@@ -576,7 +576,7 @@ public final class FreetalkNNTPHandler implements Runnable {
             return;
         }
         
-        FTOwnIdentity oi = null;
+        OwnIdentity oi = null;
         try {
         	final String id = IdentityManager.extractIdFromFreetalkAddress(value);
             oi = mIdentityManager.getOwnIdentity(id);

@@ -6,7 +6,7 @@ package plugins.Freetalk.ui.web;
 import java.text.DateFormat;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.SubscribedBoard;
@@ -32,7 +32,7 @@ public final class BoardPage extends WebPageImpl {
 	private final SubscribedBoard mBoard;
     private final boolean mMarkAllThreadsAsRead;
 	
-	public BoardPage(WebInterface myWebInterface, FTOwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) throws NoSuchBoardException {
+	public BoardPage(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) throws NoSuchBoardException {
 		super(myWebInterface, viewer, request, _baseL10n);
 		mBoard = mFreetalk.getMessageManager().getSubscription(viewer, request.getParam("name"));
 		mMarkAllThreadsAsRead = mRequest.isPartSet("MarkAllThreadsAsRead");

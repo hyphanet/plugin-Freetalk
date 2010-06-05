@@ -2,7 +2,7 @@ package plugins.Freetalk.WoT;
 
 import java.util.List;
 
-import plugins.Freetalk.FTIdentity;
+import plugins.Freetalk.Identity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.exceptions.InvalidParameterException;
@@ -12,13 +12,13 @@ import freenet.keys.FreenetURI;
 //@Indexed // I can't think of any query which would need to get all WoTMessageList objects.
 public final class WoTMessageList extends MessageList {
 
-	public WoTMessageList(FTIdentity myAuthor, FreenetURI myURI, List<MessageReference> newMessages) throws InvalidParameterException,
+	public WoTMessageList(Identity myAuthor, FreenetURI myURI, List<MessageReference> newMessages) throws InvalidParameterException,
 			NoSuchIdentityException {
 		super(myAuthor, myURI, newMessages);
 		// TODO Auto-generated constructor stub
 	}
 
-	public WoTMessageList(FTIdentity myAuthor, FreenetURI myURI) {
+	public WoTMessageList(Identity myAuthor, FreenetURI myURI) {
 		super(myAuthor, myURI);
 	}
 	

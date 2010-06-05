@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.tasks;
 
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 
 /**
  * An OwnMessageTask is a task which is processed not only when it's processing time is due but also when it's owner posts a new message.
@@ -11,7 +11,7 @@ import plugins.Freetalk.FTOwnIdentity;
 // @Indexed // I can't think of any query which would need to get all OwnMessageTask objects.
 public abstract class OwnMessageTask extends PersistentTask {
 
-	protected OwnMessageTask(FTOwnIdentity myOwner) {
+	protected OwnMessageTask(OwnIdentity myOwner) {
 		super(myOwner);
 	}
 

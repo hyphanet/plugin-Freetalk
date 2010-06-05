@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Set;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.FTIdentity;
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.Identity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.FetchFailedMarker;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
@@ -76,7 +76,7 @@ public final class WoTMessageManager extends MessageManager {
 	}
 
 	public WoTOwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, 
-			FTOwnIdentity myAuthor, String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
+			OwnIdentity myAuthor, String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
 		WoTOwnMessage m;
 		
 		if(myParentThreadURI != null && !(myParentThreadURI instanceof WoTMessageURI))
@@ -119,7 +119,7 @@ public final class WoTMessageManager extends MessageManager {
 		}
 	}
 	
-	public synchronized void onMessageListFetchFailed(FTIdentity author, FreenetURI uri, FetchFailedMarker.Reason reason) {
+	public synchronized void onMessageListFetchFailed(Identity author, FreenetURI uri, FetchFailedMarker.Reason reason) {
 		WoTMessageList ghostList = new WoTMessageList(author, uri);
 		ghostList.initializeTransient(mFreetalk);
 		MessageList.MessageListFetchFailedMarker marker;
@@ -253,7 +253,7 @@ public final class WoTMessageManager extends MessageManager {
 	}
 
 	@SuppressWarnings("unchecked")
-	public synchronized int getUnavailableNewMessageListIndex(FTIdentity identity) {
+	public synchronized int getUnavailableNewMessageListIndex(Identity identity) {
 		Query query = db.query();
 		query.constrain(WoTMessageList.class);
 		query.constrain(WoTOwnMessageList.class).not();
@@ -267,13 +267,13 @@ public final class WoTMessageManager extends MessageManager {
 		return result.next().getIndex() + 1;
 	}
 	
-	public int getNewMessageListIndexEditionHint(FTIdentity identity) {
+	public int getNewMessageListIndexEditionHint(Identity identity) {
 		// TODO: Implement storage of edition hints in message lists.
 		return getUnavailableNewMessageListIndex(identity);
 	}
 
 	@SuppressWarnings("unchecked")
-	public synchronized int getUnavailableOldMessageListIndex(FTIdentity identity) {
+	public synchronized int getUnavailableOldMessageListIndex(Identity identity) {
 		Query query = db.query();
 		query.constrain(WoTMessageList.class);
 		query.constrain(WoTOwnMessageList.class).not();
@@ -290,7 +290,7 @@ public final class WoTMessageManager extends MessageManager {
 			--freeIndex;
 		}
 		
-		/* TODO: To avoid always checking ALL messagelists for a missing one, store somewhere in the FTIdentity what the latest index is up to
+		/* TODO: To avoid always checking ALL messagelists for a missing one, store somewhere in the Identity what the latest index is up to
 		 * which all messagelists are available! */
 		
 		return freeIndex >= 0 ? freeIndex : latestAvailableIndex+1;
@@ -329,7 +329,7 @@ public final class WoTMessageManager extends MessageManager {
 	/**
 	 * This function is not synchronized to allow calls to it when only having locked a {@link Board} and not the whole MessageManager.
 	 */
-	public WoTMessageRating getMessageRating(final FTOwnIdentity rater, final Message message) throws NoSuchMessageRatingException {
+	public WoTMessageRating getMessageRating(final OwnIdentity rater, final Message message) throws NoSuchMessageRatingException {
 		if(!(rater instanceof WoTOwnIdentity))
 			throw new IllegalArgumentException("No WoT identity: " + rater);
 		
@@ -356,7 +356,7 @@ public final class WoTMessageManager extends MessageManager {
 		return new Persistent.InitializingObjectSet<WoTMessageRating>(mFreetalk, query);
 	}
 	
-	public ObjectSet<? extends MessageRating> getAllMessageRatingsBy(FTOwnIdentity rater) {
+	public ObjectSet<? extends MessageRating> getAllMessageRatingsBy(OwnIdentity rater) {
 		final Query query = db.query();
 		query.constrain(WoTMessageRating.class);
 		query.descend("mRater").constrain(rater).identity();

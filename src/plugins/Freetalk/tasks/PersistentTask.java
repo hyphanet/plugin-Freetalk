@@ -5,7 +5,7 @@ package plugins.Freetalk.tasks;
 
 import java.util.UUID;
 
-import plugins.Freetalk.FTOwnIdentity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Persistent;
 import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;
@@ -31,7 +31,7 @@ public abstract class PersistentTask extends Persistent {
 	protected final String mID;
 	
 	@Indexed
-	protected final FTOwnIdentity mOwner;
+	protected final OwnIdentity mOwner;
 	
 	@Indexed
 	protected long mNextProcessingTime;
@@ -43,7 +43,7 @@ public abstract class PersistentTask extends Persistent {
 	protected long mDeleteTime;
 	
 	
-	protected PersistentTask(FTOwnIdentity myOwner) {
+	protected PersistentTask(OwnIdentity myOwner) {
 		if(myOwner == null)
 			throw new NullPointerException();
 		

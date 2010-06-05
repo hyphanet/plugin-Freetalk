@@ -322,11 +322,11 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * @throws InvalidParameterException Invalid board names, invalid title, invalid body.
 	 * @throws Exception 
 	 */
-	public abstract OwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, FTOwnIdentity myAuthor,
+	public abstract OwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, OwnIdentity myAuthor,
 			String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws InvalidParameterException, Exception;
 
 	public OwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<String> myBoards, String myReplyToBoard,
-			FTOwnIdentity myAuthor, String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
+			OwnIdentity myAuthor, String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
 
 		HashSet<Board> boardSet = new HashSet<Board>();
 		for (Iterator<String> i = myBoards.iterator(); i.hasNext(); ) {
@@ -437,20 +437,20 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * 
 	 * Deletes any messages and message lists referencing to it and commits the transaction.
 	 */
-	public synchronized void beforeIdentityDeletion(FTIdentity identity) {
+	public synchronized void beforeIdentityDeletion(Identity identity) {
 		Logger.debug(this, "Deleting all objects of identity " + identity);
 		// We use multiple transactions here: We cannot acquire the db.lock() before deleteMessageRatting, board.deleteWithoutCommit and
 		// deleteMessage. Each of them synchronize on message ratings / boards, therefore we must acquire the db.lock after synchronizing on each object.
 		// TODO: Check whether this can result in bad side effects. IMHO it cannot.
 		// If it can, add some mechanism similar to addMessagesToBoards()/synchronizeSubscribedBoards which handles half-deleted identities.
 		
-		if(identity instanceof FTOwnIdentity) {
-			final FTOwnIdentity ownId = (FTOwnIdentity)identity;
+		if(identity instanceof OwnIdentity) {
+			final OwnIdentity ownId = (OwnIdentity)identity;
 			for(final MessageRating messageRating : getAllMessageRatingsBy(ownId)) {
 				deleteMessageRating(messageRating); // This does a full transaction and commits it.
 			}
 						
-			for(SubscribedBoard board : subscribedBoardIteratorSortedByName((FTOwnIdentity)identity)) { // TODO: Optimization: Use a non-sorting function.
+			for(SubscribedBoard board : subscribedBoardIteratorSortedByName((OwnIdentity)identity)) { // TODO: Optimization: Use a non-sorting function.
 				unsubscribeFromBoard(ownId, board); // This does a full transaction and commits it.
 			}
 		}
@@ -465,8 +465,8 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 					messageList.deleteWithoutCommit();
 				}
 
-				if(identity instanceof FTOwnIdentity) {
-					final FTOwnIdentity ownId = (FTOwnIdentity)identity;
+				if(identity instanceof OwnIdentity) {
+					final OwnIdentity ownId = (OwnIdentity)identity;
 					
 					for(final OwnMessage message : getOwnMessagesBy(ownId)) {
 						message.deleteWithoutCommit();
@@ -721,7 +721,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * Abstract because we need to store an object of a child class of MessageList which is chosen dependent on which implementation of the
 	 * messaging system we are using.
 	 */
-	public abstract void onMessageListFetchFailed(FTIdentity author, FreenetURI uri, FetchFailedMarker.Reason reason);
+	public abstract void onMessageListFetchFailed(Identity author, FreenetURI uri, FetchFailedMarker.Reason reason);
 	
 	public synchronized void onMessageFetchFailed(MessageReference messageReference, FetchFailedMarker.Reason reason) {
 		try {
@@ -1128,7 +1128,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	}
 	
 	/**
-	 * Get all boards which are being subscribed to by at least one {@link FTOwnIdentity}, i.e. the boards from which we should download messages.
+	 * Get all boards which are being subscribed to by at least one {@link OwnIdentity}, i.e. the boards from which we should download messages.
 	 */
 	public synchronized ObjectSet<Board> boardWithSubscriptionsIterator() {
 		final Query query = db.query();
@@ -1145,7 +1145,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	/**
 	 * Get an iterator of boards which were first seen after the given Date, sorted ascending by the date they were first seen at.
 	 */
-	public synchronized ObjectSet<SubscribedBoard> subscribedBoardIteratorSortedByDate(final FTOwnIdentity subscriber, final Date seenAfter) {
+	public synchronized ObjectSet<SubscribedBoard> subscribedBoardIteratorSortedByDate(final OwnIdentity subscriber, final Date seenAfter) {
 		final Query query = db.query();
 		query.constrain(SubscribedBoard.class);
 		query.descend("mFirstSeenDate").constrain(seenAfter).greater();
@@ -1160,7 +1160,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * 
 	 * The transient fields of the returned objects will be initialized already. 
 	 */
-	public ObjectSet<SubscribedBoard> subscribedBoardIteratorSortedByName(final FTOwnIdentity subscriber) {
+	public ObjectSet<SubscribedBoard> subscribedBoardIteratorSortedByName(final OwnIdentity subscriber) {
 		final Query query = db.query();
 		query.constrain(SubscribedBoard.class);
 		query.descend("mSubscriber").constrain(subscriber).identity();
@@ -1178,7 +1178,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
     }
 	
     @SuppressWarnings("unchecked")
-	public synchronized SubscribedBoard getSubscription(final FTOwnIdentity subscriber, String boardName) throws NoSuchBoardException {
+	public synchronized SubscribedBoard getSubscription(final OwnIdentity subscriber, String boardName) throws NoSuchBoardException {
     	boardName = boardName.toLowerCase();
     	
     	final Query q = db.query();
@@ -1200,7 +1200,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	/**
 	 * You do NOT need to synchronize on the IdentityManager when calling this function.
 	 */
-	public SubscribedBoard subscribeToBoard(FTOwnIdentity subscriber, String boardName) throws InvalidParameterException, NoSuchIdentityException, NoSuchBoardException {
+	public SubscribedBoard subscribeToBoard(OwnIdentity subscriber, String boardName) throws InvalidParameterException, NoSuchIdentityException, NoSuchBoardException {
 		boardName = boardName.toLowerCase();
 		
 		synchronized(mIdentityManager) {
@@ -1244,7 +1244,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		}
 	}
 	
-	protected synchronized void unsubscribeFromBoard(FTOwnIdentity subscriber, SubscribedBoard subscribedBoard) {
+	protected synchronized void unsubscribeFromBoard(OwnIdentity subscriber, SubscribedBoard subscribedBoard) {
 		synchronized(subscribedBoard) {
 			synchronized(db.lock()) {
 				try {
@@ -1273,7 +1273,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	/**
 	 * You do NOT need to synchronize on the IdentityManager when calling this function. 
 	 */
-	public void unsubscribeFromBoard(FTOwnIdentity subscriber, String boardName) throws NoSuchBoardException, NoSuchIdentityException {
+	public void unsubscribeFromBoard(OwnIdentity subscriber, String boardName) throws NoSuchBoardException, NoSuchIdentityException {
 		synchronized(mIdentityManager) {
 		subscriber = mIdentityManager.getOwnIdentity(subscriber.getID()); // Ensure that the identity still exists so the caller does not have to synchronize.
 			
@@ -1317,7 +1317,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 
 	/**
 	 * Get a list of all message lists from the given identity.
-	 * If the identity is an {@link FTOwnIdentity}, it's own message lists are only returned if they have been downloaded as normal message lists.
+	 * If the identity is an {@link OwnIdentity}, it's own message lists are only returned if they have been downloaded as normal message lists.
 	 * Technically, this means that no objects of class {@link OwnMessageList} are returned.
 	 * 
 	 * The purpose of this behavior is to ensure that own messages are only displayed to the user if they have been successfully inserted.
@@ -1325,7 +1325,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * @param author An identity or own identity.
 	 * @return All message lists of the given identity except those of class OwnMessageList.
 	 */
-	protected synchronized ObjectSet<MessageList> getMessageListsBy(final FTIdentity author) {
+	protected synchronized ObjectSet<MessageList> getMessageListsBy(final Identity author) {
 		final Query query = db.query();
 		query.constrain(MessageList.class);
 		query.constrain(OwnMessageList.class).not();
@@ -1345,7 +1345,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * @param author The author of the message lists.
 	 * @return All own message lists of the given own identity.
 	 */
-	protected synchronized ObjectSet<OwnMessageList> getOwnMessageListsBy(final FTOwnIdentity author) {
+	protected synchronized ObjectSet<OwnMessageList> getOwnMessageListsBy(final OwnIdentity author) {
 		final Query query = db.query();
 		query.constrain(OwnMessageList.class);
 		query.descend("mAuthor").constrain(author).identity();
@@ -1355,7 +1355,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	
 	/**
 	 * Get a list of all messages from the given identity.
-	 * If the identity is an {@link FTOwnIdentity}, it's own messages are only returned if they have been downloaded as normal messages.
+	 * If the identity is an {@link OwnIdentity}, it's own messages are only returned if they have been downloaded as normal messages.
 	 * Technically, this means that no objects of class {@link OwnMessage} are returned.
 	 * 
 	 * The purpose of this behavior is to ensure that own messages are only displayed to the user if they have been successfully inserted.
@@ -1365,7 +1365,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * @param author An identity or own identity.
 	 * @return All messages of the given identity except those of class OwnMessage.
 	 */
-	public ObjectSet<Message> getMessagesBy(final FTIdentity author) {
+	public ObjectSet<Message> getMessagesBy(final Identity author) {
 		final Query query = db.query();
 		query.constrain(Message.class);
 		query.constrain(OwnMessage.class).not();
@@ -1385,7 +1385,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * @param author The author of the messages.
 	 * @return All own messages of the given own identity.
 	 */
-	public synchronized ObjectSet<OwnMessage> getOwnMessagesBy(final FTOwnIdentity author) {
+	public synchronized ObjectSet<OwnMessage> getOwnMessagesBy(final OwnIdentity author) {
 		final Query query = db.query();
 		query.constrain(OwnMessage.class);
 		query.descend("mAuthor").constrain(author).identity();
@@ -1397,11 +1397,11 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	}
 	
 	
-	public abstract MessageRating getMessageRating(FTOwnIdentity rater, Message message) throws NoSuchMessageRatingException;
+	public abstract MessageRating getMessageRating(OwnIdentity rater, Message message) throws NoSuchMessageRatingException;
 	
 	public abstract ObjectSet<? extends MessageRating> getAllMessageRatings(Message message);
 	
-	public abstract ObjectSet<? extends MessageRating> getAllMessageRatingsBy(FTOwnIdentity rater);
+	public abstract ObjectSet<? extends MessageRating> getAllMessageRatingsBy(OwnIdentity rater);
 
 	public abstract void deleteMessageRating(final MessageRating rating);
 
