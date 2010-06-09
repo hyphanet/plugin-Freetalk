@@ -167,7 +167,6 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		
 		Logger.debug(this, "Creating old-messagelist fetcher...");
 		mOldMessageListFetcher = new WoTOldMessageListFetcher(this, "Freetalk WoTOldMessageListFetcher", mMessageListXML);
-		mOldMessageListFetcher.start();
 		
 		Logger.debug(this, "Creating new-messagelist fetcher...");
 		mNewMessageListFetcher = new WoTNewMessageListFetcher(this, "Freetalk WoTNewMessageListFetcher", mMessageListXML, db);
@@ -194,6 +193,9 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		mIdentityManager.start();
 		mMessageManager.start();
 		mTaskManager.start();
+		
+		// This must be started after the identity manager because it will need the identity manager to be connected to WoT.
+		mOldMessageListFetcher.start();
 		
 		// Create & start the UI
 		
