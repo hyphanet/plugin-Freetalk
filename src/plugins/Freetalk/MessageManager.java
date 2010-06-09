@@ -1330,6 +1330,14 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 
 		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query);		
 	}
+	
+	public synchronized int getDownloadableMessageCount(final Board board) {
+		final Query query = db.query();
+		query.constrain(MessageList.MessageReference.class);
+		query.constrain(OwnMessageList.OwnMessageReference.class).not();
+		query.descend("mBoard").constrain(board).identity();
+		return query.execute().size();
+	}
 
 
 	/**
