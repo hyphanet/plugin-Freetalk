@@ -29,8 +29,8 @@ import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.clients.http.SessionManager.Session;
-import freenet.clients.http.filter.ContentFilter;
-import freenet.clients.http.filter.ContentFilter.FilterOutput;
+import freenet.client.filter.ContentFilter;
+import freenet.client.filter.ContentFilter.FilterOutput;
 import freenet.l10n.BaseL10n;
 import freenet.node.NodeClientCore;
 import freenet.support.Logger;
@@ -506,7 +506,7 @@ public final class WebInterface {
 				}
 				
 				dataBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, puzzle.Data);
-				output = ContentFilter.filter(dataBucket, core.tempBucketFactory, puzzle.MimeType, uri, null, null, null);
+				output = ContentFilter.filter(dataBucket, core.tempBucketFactory.makeBucket(0), puzzle.MimeType, uri, null, null, null);
 				writeReply(ctx, 200, output.type, "OK", output.data);
 			}
 			catch(Exception e) {
@@ -599,7 +599,7 @@ public final class WebInterface {
 					cssBuffer = cssBufferOutputStream.toByteArray();
 				}
 				cssBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, cssBuffer);
-				FilterOutput filterOutput = ContentFilter.filter(cssBucket, core.tempBucketFactory, "text/css", uri, null, null, null);
+				FilterOutput filterOutput = ContentFilter.filter(cssBucket, core.tempBucketFactory.makeBucket(0), "text/css", uri, null, null, null);
 				writeReply(context, 200, "text/css", "OK", filterOutput.data);
 			} finally {
 				Closer.close(cssBucket);
