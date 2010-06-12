@@ -367,6 +367,7 @@ public class ArticleParser {
 			bodyCharset = Charset.forName(type.charset);
 		}
 		catch (IllegalArgumentException e) {
+			Logger.error(this, "Illegal charset received", e);
 			bodyCharset = Charset.forName("UTF-8");
 		}
 
