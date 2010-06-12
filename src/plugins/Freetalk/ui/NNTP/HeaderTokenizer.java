@@ -129,6 +129,8 @@ public class HeaderTokenizer {
 		int start = position - 1;
 		while (position < text.length()) {
 			c = text.charAt(position);
+			// TODO: Can atoms have tabs in them???
+			// TODO: This code is ugly, we shouldnt use "<=" magic for detecting character classes!!
 			if (c <= ' ' || c == 127 || (useQuotes && c == '"')
 				|| specials.indexOf(c) != -1)
 				break;
