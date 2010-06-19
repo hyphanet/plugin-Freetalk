@@ -63,13 +63,13 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * When a {@link Message} fetch fails (DNF for example) the message is marked as fetch failed and the fetch will be retried after a growing amount of time.
 	 * This is the minimal delay.
 	 */
-	public static final long MINIMAL_MESSAGE_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) :  (4 * 60 * 60 * 1000); // TODO: Make configurable.
+	public static final long MINIMAL_MESSAGE_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (30 * 60 * 1000) :  (4 * 60 * 60 * 1000); // TODO: Make configurable.
 	
 	/**
 	 * When a {@link Message} fetch fails (DNF for example) the message is marked as fetch failed and the fetch will be retried after a growing amount of time.
 	 * This is the maximal delay.
 	 */
-	public static final long MAXIMAL_MESSAGE_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (7 * 24 * 60 *60 * 1000); // TODO: Make configurable
+	public static final long MAXIMAL_MESSAGE_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (30 * 60 * 1000) : (7 * 24 * 60 *60 * 1000); // TODO: Make configurable
 		
 	/**
 	 * When a {@link MessageList} fetch fails (DNF for example) the {@link MessageList} is marked as fetch failed and the fetch will be retried after a
@@ -83,7 +83,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * growing amount of time. This is the maximal delay.
 	 * Notice that this only applies to "old" message lists - that is message lists with an edition number lower than the latest successfully fetched edition.
 	 */
-	public static final long MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);  // TODO: Make configurable.
+	public static final long MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (20 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);  // TODO: Make configurable.
 	
 	private volatile boolean isRunning = false;
 	private volatile boolean shutdownFinished = false;
@@ -751,6 +751,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 					
 					ref.setMessageWasDownloadedFlag();
 					ref.storeWithoutCommit();
+					// failedMarker.setAllowRetryNow(false); // setDateOfNextRetry does this for us
 					failedMarker.storeWithoutCommit();
 				
 					
@@ -791,10 +792,11 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		}		
 	}
 
-	private ObjectSet<FetchFailedMarker> getFetchFailedMarkers(final Date now) {
+	private ObjectSet<FetchFailedMarker> getExpiredFetchFailedMarkers(final Date now) {
 		final Query query = db.query();
 		query.constrain(FetchFailedMarker.class);
 		query.descend("mDateOfNextRetry").constrain(now).greater().not();
+		query.descend("mRetryAllowedNow").constrain(false);
 		return new Persistent.InitializingObjectSet<FetchFailedMarker>(mFreetalk, query);
 	}
 	
@@ -846,7 +848,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		
 		int amount = 0;
 		
-		for(FetchFailedMarker marker : getFetchFailedMarkers(now)) {
+		for(FetchFailedMarker marker : getExpiredFetchFailedMarkers(now)) {
 			synchronized(db.lock()) {
 				try {
 					if(marker instanceof MessageFetchFailedMarker) {
@@ -869,6 +871,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 					++amount;
 					
 					Logger.debug(this, "Cleared marker " + marker);
+					marker.setAllowRetryNow(true);
 					marker.checkedCommit(this);
 				}
 				catch(RuntimeException e) {
@@ -891,6 +894,12 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		ObjectSet<MessageFetchFailedMarker> messageMarkers = new Persistent.InitializingObjectSet<MessageFetchFailedMarker>(mFreetalk, q);
 		
 		for(MessageFetchFailedMarker marker : messageMarkers) {
+			if(marker.isRetryAllowedNow()) {
+				assert(false);
+				Logger.error(this, "Invalid MessageFetchFailedMarker: Date of next retry is in future but isRetryAllowedNow==true: " + marker);
+				valid = false;
+			}
+				
 			if(!marker.getMessageReference().wasMessageDownloaded()) {
 				assert(false);
 				valid = false;
@@ -907,6 +916,12 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		ObjectSet<MessageListFetchFailedMarker> listMarkers = new Persistent.InitializingObjectSet<MessageListFetchFailedMarker>(mFreetalk, q);
 		
 		for(MessageListFetchFailedMarker marker : listMarkers) {
+			if(marker.isRetryAllowedNow()) {
+				assert(false);
+				Logger.error(this, "Invalid MessageListFetchFailedMarker: Date of next retry is in future but isRetryAllowedNow==true: " + marker);
+				valid = false;
+			}
+			
 			try {
 				getMessageList(marker.getMessageListID());
 			} catch(NoSuchMessageListException e) {

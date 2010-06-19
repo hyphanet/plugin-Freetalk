@@ -391,6 +391,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		
 		assertTrue((CurrentTimeUTC.getInMillis() - marker.getDate().getTime()) < 10 * 1000);
 		assertEquals(marker.getDate().getTime() + MessageManager.MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY, marker.getDateOfNextRetry().getTime());
+		assertEquals(false, marker.isRetryAllowedNow());
 		
 		q = db.query();
 		q.constrain(MessageList.class);
@@ -401,6 +402,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		// Now we simulate a retry of the message list fetch
 		
 		marker.setDateOfNextRetry(marker.getDate());
+		marker.setAllowRetryNow(false); // Needed for clearExpiredFetchFailedMarkers to process the marker
 		marker.storeWithoutCommit();
 		Persistent.checkedCommit(db, this);
 				
@@ -428,6 +430,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		assertEquals(marker.getDate().getTime() + Math.min(MessageManager.MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY*2, MessageManager.MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY),
 					marker.getDateOfNextRetry().getTime());
 		assertEquals(1, marker.getNumberOfRetries());
+		assertEquals(false, marker.isRetryAllowedNow());
 		
 		q = db.query();
 		q.constrain(MessageList.class);

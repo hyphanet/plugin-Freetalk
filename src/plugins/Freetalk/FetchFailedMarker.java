@@ -31,6 +31,9 @@ public class FetchFailedMarker extends Persistent {
 	
 	@Indexed
 	private Date mDateOfNextRetry;
+	
+	@Indexed
+	private boolean mRetryAllowedNow;
 
 
 	public FetchFailedMarker(Reason myReason, Date myDate, Date myDateOfNextRetry) {
@@ -42,6 +45,7 @@ public class FetchFailedMarker extends Persistent {
 		mDate = myDate;
 		mNumberOfRetries = 0;
 		mDateOfNextRetry = myDateOfNextRetry;
+		mRetryAllowedNow = !mDateOfNextRetry.after(mDate);
 	}
 	
 	/**
@@ -97,6 +101,15 @@ public class FetchFailedMarker extends Persistent {
 	 */
 	public void setDateOfNextRetry(Date newDate) {
 		mDateOfNextRetry = newDate;
+		setAllowRetryNow(!mDateOfNextRetry.after(mDate));
+	}
+	
+	public boolean isRetryAllowedNow() {
+		return mRetryAllowedNow;
+	}
+	
+	public void setAllowRetryNow(boolean allowRetryNow) {
+		mRetryAllowedNow = allowRetryNow;
 	}
 
 	public void storeWithoutCommit() {

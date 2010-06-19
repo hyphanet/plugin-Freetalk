@@ -161,6 +161,7 @@ public final class WoTMessageManager extends MessageManager {
 						marker.setDateOfNextRetry(dateOfNextRetry);
 					}
 				
+					// marker.setAllowRetryNow(false); // setDateOfNextRetry does this for us
 					marker.storeWithoutCommit();
 					
 					Logger.normal(this, "Marked MessageList as download failed with reason " + reason + " (next retry is at " + dateOfNextRetry
