@@ -182,7 +182,7 @@ public class ArticleParser {
 
 					local = current.toString();
 					inDomain = true;
-					current = new StringBuilder();
+					current.setLength(0);
 				}
 				else if (c == '.') {
 					current.append('.');
