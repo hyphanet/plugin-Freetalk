@@ -7,6 +7,15 @@ import java.nio.ByteBuffer;
 
 /**
  * The MIME Base64 encoding.  (See RFC 2045.)
+ * 
+ * TODO: Use fred's base64, we should not duplicate code!
+ * I have asked the original author of this code why he did not use it and he said:
+ * Uhh... because I didn't think of it. :)
+ * Also, to use that code for decoding base64 messages you'd have to
+ * strip out non-base64 characters (such as line breaks) beforehand; to
+ * use it for encoding messages, you'd need to insert line breaks; and
+ * either way involves another byte[] <-> String conversion step.  So
+ * rewriting it probably was easier
  */
 public class Base64Encoding extends TransferEncoding {
 
