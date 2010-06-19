@@ -61,6 +61,9 @@ public class Base64Encoding extends TransferEncoding {
 				result = appendByte(result, encodeChar(bits));
 				byteCount = 0;
 				charCount += 4;
+				
+				// FIXME: toad said: "Should bits be reset here?"
+				// Either fix this OR just use fred's base64.
 
 				if (charCount >= 76) {
 					result = appendByte(result, (byte) '\r');
