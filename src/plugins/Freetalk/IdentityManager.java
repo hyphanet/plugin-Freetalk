@@ -50,7 +50,7 @@ public abstract class IdentityManager implements PrioRunnable {
 	/**
 	 * For being used in JUnit tests to run without a node.
 	 */
-	public IdentityManager(Freetalk myFreetalk) {
+	protected IdentityManager(Freetalk myFreetalk) {
 		mFreetalk = myFreetalk;
 		db = mFreetalk.getDatabase();
 		mExecutor = null;
