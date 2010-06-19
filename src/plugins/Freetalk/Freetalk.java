@@ -507,7 +507,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 
 	public void setTheme(THEME newTheme) {
 		mTheme = newTheme;
-		Logger.error(this, "Set THEME to: " + mTheme.code);
+		Logger.debug(this, "Set THEME to: " + mTheme.code);
 	}
 
     /**
