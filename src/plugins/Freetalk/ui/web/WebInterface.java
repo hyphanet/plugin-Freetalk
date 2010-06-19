@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +22,7 @@ import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager;
@@ -30,7 +32,6 @@ import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.clients.http.SessionManager.Session;
 import freenet.client.filter.ContentFilter;
-import freenet.client.filter.ContentFilter.FilterOutput;
 import freenet.l10n.BaseL10n;
 import freenet.node.NodeClientCore;
 import freenet.support.Logger;
@@ -491,9 +492,10 @@ public final class WebInterface {
 			
 			WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 			
-			Bucket dataBucket = null;
-			FilterOutput output = null;
-			
+			ByteArrayInputStream puzzleInputStream = null;
+			ByteArrayOutputStream puzzleOutputStream = null;
+			Bucket puzzleDataBucket = null;
+			FilterStatus filterStatus = null;
 			try {
 				IntroductionPuzzle puzzle = identityManager.getIntroductionPuzzle(req.getParam("PuzzleID"));
 				
@@ -504,19 +506,21 @@ public final class WebInterface {
 					
 					throw new Exception("Mime type '" + puzzle.MimeType + "' not allowed for introduction puzzles.");
 				}
-				
-				dataBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, puzzle.Data);
-				output = ContentFilter.filter(dataBucket, core.tempBucketFactory.makeBucket(0), puzzle.MimeType, uri, null, null, null);
-				writeReply(ctx, 200, output.type, "OK", output.data);
+
+				puzzleInputStream = new ByteArrayInputStream(puzzle.Data);
+				puzzleOutputStream = new ByteArrayOutputStream();
+				filterStatus = ContentFilter.filter(puzzleInputStream, puzzleOutputStream, puzzle.MimeType, uri, null, null, null);
+				puzzleDataBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, puzzleOutputStream.toByteArray());
+				writeReply(ctx, 200, filterStatus.mimeType, "OK", puzzleDataBucket);
 			}
 			catch(Exception e) {
 				sendErrorPage(ctx, 404, "Introduction puzzle not available", e.getMessage());
 				Logger.error(this, "GetPuzzle failed", e);
 			}
 			finally {
-				if(output != null)
-					Closer.close(output.data);
-				Closer.close(dataBucket);
+				Closer.close(puzzleInputStream);
+				Closer.close(puzzleOutputStream);
+				Closer.close(puzzleDataBucket);
 			}
 		}
 		
@@ -581,7 +585,6 @@ public final class WebInterface {
 		public void handleMethodGET(URI uri, HTTPRequest httpRequest, ToadletContext context) throws ToadletContextClosedException, IOException, RedirectException {
 			InputStream cssInputStream = null;
 			ByteArrayOutputStream cssBufferOutputStream = null;
-			Bucket cssBucket = null;
 			byte[] cssBuffer = new byte[0];
 			try {
 				String cssFilename = uri.getPath();
@@ -591,18 +594,11 @@ public final class WebInterface {
 				cssInputStream = cssUrlConnection.getInputStream();
 				if (cssInputStream != null) {
 					cssBufferOutputStream = new ByteArrayOutputStream();
-					byte[] buffer = new byte[65536];
-					int read;
-					while ((read = cssInputStream.read(buffer)) != -1) {
-						cssBufferOutputStream.write(buffer, 0, read);
-					}
+					ContentFilter.filter(cssInputStream, cssBufferOutputStream, "text/css", uri, null, null, null);
 					cssBuffer = cssBufferOutputStream.toByteArray();
 				}
-				cssBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, cssBuffer);
-				FilterOutput filterOutput = ContentFilter.filter(cssBucket, core.tempBucketFactory.makeBucket(0), "text/css", uri, null, null, null);
-				writeReply(context, 200, "text/css", "OK", filterOutput.data);
+				writeReply(context, 200, "text/css", "OK", cssBuffer, 0, cssBuffer.length);
 			} finally {
-				Closer.close(cssBucket);
 				Closer.close(cssInputStream);
 				Closer.close(cssBufferOutputStream);
 			}

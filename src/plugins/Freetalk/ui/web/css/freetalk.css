@@ -45,4 +45,5 @@
 
 .freetalk .message .body {
 	white-space: pre-wrap;
+	vertical-align: top;
 }
