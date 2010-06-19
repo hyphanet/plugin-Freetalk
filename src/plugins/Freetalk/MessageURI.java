@@ -16,7 +16,7 @@ import freenet.keys.FreenetURI;
  * @author xor (xor@freenetproject.org)
  */
 //@Indexed // I can't think of any query which would need to get all MessageURI objects.
-public abstract class MessageURI extends Persistent {
+public abstract class MessageURI extends Persistent implements Cloneable {
 
 	/**
 	 * Get the FreenetURI of the container which stores the message. Typically it is the URI of a message list, therefore it is not a fully qualified 
@@ -38,6 +38,9 @@ public abstract class MessageURI extends Persistent {
 	 */
 	@Override
 	public abstract String toString();
+	
+	@Override
+	public abstract MessageURI clone();
 	
 	// TODO: Add a fromString() instead of the constructor in WoTMessageURI
 	

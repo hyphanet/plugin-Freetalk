@@ -187,17 +187,17 @@ public abstract class Message extends Persistent {
 			newBoards.add(newReplyToBoard);
 		}
 		
-		mURI = newURI;
+		mURI = newURI != null ? newURI.clone() : null;
 		mFreenetURI = newFreenetURI != null ? newFreenetURI.clone() : null;
 		mMessageList = newMessageList;
 		mAuthor = newAuthor;
 		mID = newID;
 		
-		mParentURI = newParentURI != null ? newParentURI : newThreadURI;
+		mParentURI = newParentURI != null ? newParentURI.clone() : (newThreadURI != null ? newThreadURI.clone() : null);
 		mParentID = mParentURI != null ? mParentURI.getMessageID() : null;
 
 		/* If the given thread URI is null, the message will be a thread */ 
-		mThreadURI = newThreadURI;
+		mThreadURI = newThreadURI != null ? newThreadURI.clone() : null;
 		mThreadID = newThreadURI != null ? newThreadURI.getMessageID() : null;
 		
 		mBoards = newBoards.toArray(new Board[newBoards.size()]);

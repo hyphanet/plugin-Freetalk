@@ -26,7 +26,7 @@ import freenet.support.Base64;
  * @author xor (xor@freenetproject.org)
  */
 // @Indexed // I can't think of any query which would need to get all WoTMessageURI objects.
-public final class WoTMessageURI extends MessageURI {
+public final class WoTMessageURI extends MessageURI implements Cloneable {
 
 	private final FreenetURI mFreenetURI;
 	private final String mMessageID;
@@ -39,7 +39,7 @@ public final class WoTMessageURI extends MessageURI {
 			throw new IllegalArgumentException("Trying to create a WoTMessageURI without an ID.");
 			
 		
-		mFreenetURI = myFreenetURI.isUSK() ? myFreenetURI.sskForUSK() : myFreenetURI;
+		mFreenetURI = myFreenetURI.isUSK() ? myFreenetURI.sskForUSK() : myFreenetURI.clone();
 		if(!mFreenetURI.isSSK())
 			throw new IllegalArgumentException("Trying to create a WoTMessageURI with illegal key type: " + myFreenetURI.getKeyType());
 		 		
@@ -140,4 +140,9 @@ public final class WoTMessageURI extends MessageURI {
 		}
 	}
 
+	@Override
+	public WoTMessageURI clone() {
+		return new WoTMessageURI(mFreenetURI, mMessageID);
+	}
+	
 }
