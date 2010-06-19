@@ -12,6 +12,7 @@ import java.util.Set;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Identity;
+import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
@@ -536,7 +537,10 @@ public final class FCPInterface implements FredPluginFCP {
     private void handleListKnownIdentities(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException
     {
-        for(final Identity id : mFreetalk.getIdentityManager().getAllIdentities()) {
+    	final IdentityManager identityManager = mFreetalk.getIdentityManager();
+    	
+    	synchronized(identityManager) {
+        for(final Identity id : identityManager.getAllIdentities()) {
             if (id instanceof OwnIdentity) {
                 continue;
             }
@@ -547,6 +551,7 @@ public final class FCPInterface implements FredPluginFCP {
             sfs.putOverwrite("FreetalkAddress", id.getFreetalkAddress());
             replysender.send(sfs);
         }
+    	}
 
         final SimpleFieldSet sfs = new SimpleFieldSet(true);
         sfs.putOverwrite("Message", "EndListKnownIdentities");
@@ -566,7 +571,10 @@ public final class FCPInterface implements FredPluginFCP {
     private void handleListOwnIdentities(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException
     {
-       for(final OwnIdentity id : mFreetalk.getIdentityManager().ownIdentityIterator()) {
+    	final IdentityManager identityManager = mFreetalk.getIdentityManager();
+    	
+    	synchronized(identityManager) {
+    	for(final OwnIdentity id : identityManager.ownIdentityIterator()) {
             final SimpleFieldSet sfs = new SimpleFieldSet(true);
             sfs.putOverwrite("Message", "OwnIdentity");
             sfs.putOverwrite("ID", id.getID());
@@ -574,6 +582,7 @@ public final class FCPInterface implements FredPluginFCP {
             sfs.putOverwrite("FreetalkAddress", id.getFreetalkAddress());
             replysender.send(sfs);
         }
+    	}
 
         final SimpleFieldSet sfs = new SimpleFieldSet(true);
         sfs.putOverwrite("Message", "EndListOwnIdentities");
