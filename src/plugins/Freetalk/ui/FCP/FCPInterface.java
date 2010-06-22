@@ -6,16 +6,17 @@ package plugins.Freetalk.ui.FCP;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import plugins.Freetalk.Board;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Identity;
 import plugins.Freetalk.IdentityManager;
-import plugins.Freetalk.OwnIdentity;
-import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
@@ -332,7 +333,7 @@ public final class FCPInterface implements FredPluginFCP {
             if (minimumMessageIndex > 0) {
                 messageRefList = board.getMessagesByMinimumIndex(minimumMessageIndex, sortByMessageIndexAscending, sortByMessageDateAscending);
             } else if (minimumMessageDate > 0) {
-                messageRefList = board.getMessagesByMinimumDate(minimumMessageDate, sortByMessageIndexAscending, sortByMessageDateAscending);
+                messageRefList = board.getMessagesByMinimumDate(new Date(minimumMessageDate), sortByMessageIndexAscending, sortByMessageDateAscending);
             } else {
                 messageRefList = board.getAllMessages(sortByMessageIndexAscending);
             }

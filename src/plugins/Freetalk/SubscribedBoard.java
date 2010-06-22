@@ -651,16 +651,15 @@ public final class SubscribedBoard extends Board {
     }
 
     public synchronized ObjectSet<MessageReference> getMessagesByMinimumDate(
-            long minimumDate,
+    		Date minimumDate,
             final boolean sortByMessageIndexAscending,
             final boolean sortByMessageDateAscending)
     {
         final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
-        if (minimumDate > 0) {
-            q.descend("mMessageDate").constrain(minimumDate).smaller().not();
-        }
+        q.descend("mMessageDate").constrain(minimumDate).smaller().not();
+
         if (sortByMessageIndexAscending) {
             q.descend("mMessageIndex").orderAscending();
         }
