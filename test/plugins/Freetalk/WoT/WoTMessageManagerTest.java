@@ -16,6 +16,7 @@ import java.util.UUID;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.DatabaseBasedTest;
 import plugins.Freetalk.FetchFailedMarker;
+import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.Persistent;
@@ -153,25 +154,62 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		
 		Iterator<String> expectedThreads = mThreads.iterator();
 	
-		for(BoardThreadLink ref : mBoard.getThreads()) {
+		for(BoardThreadLink threadRef : mBoard.getThreads()) {
 			// Verify that the thread exists
 			assertTrue(expectedThreads.hasNext());
 			
 			// ... and that it is in the correct position
-			assertEquals(expectedThreads.next(), ref.getThreadID());
+			assertEquals(expectedThreads.next(), threadRef.getThreadID());
+			
+			Message thread;
+			try {
+				thread = threadRef.getMessage();
+			} catch(MessageNotFetchedException e) {
+				thread = null;
+			}
 			
 			// Verify the replies of the thread
 			
-			LinkedList<String> expectedRepliesList= mReplies.get(ref.getThreadID());
+			LinkedList<String> expectedRepliesList= mReplies.get(threadRef.getThreadID());
 			if(expectedRepliesList == null)
 				expectedRepliesList = new LinkedList<String>();
 			Iterator<String> expectedReplies = expectedRepliesList.iterator(); 
 			
-			for(MessageReference replyRef : mBoard.getAllThreadReplies(ref.getThreadID(), true)) {
+			for(MessageReference replyRef : mBoard.getAllThreadReplies(threadRef.getThreadID(), true)) {
 				assertTrue(expectedReplies.hasNext());
 				try {
-					assertEquals(expectedReplies.next(), replyRef.getMessage().getID());
+					String expectedID = expectedReplies.next();
+					
+					Message reply;
+					try {
+						reply = replyRef.getMessage();
+					} catch(MessageNotFetchedException e) {
+						reply = null;
+					}
+					
+					// Right now ghost replies are not supported.
+					assertNotNull(reply);
+					
+					if(reply != null) {
+						assertFalse(reply.isThread());
+						assertEquals(threadRef.getThreadID(), reply.getThreadID());
+						assertEquals(expectedID, reply.getID());
+					}
+
+					// We do not specify the parent message for some test messages, check whether its assigned correctly
+					if(reply.getParentID().equals(reply.getThreadID())) {
+						try {
+							assertEquals(thread, reply.getParent());
+						} catch(NoSuchMessageException e) {
+							assertNull(thread);
+						}
+					}
+					
+					// TODO: Check whether the parent is correct for non-thread-replies
+					
 				} catch(MessageNotFetchedException e) {
+					fail();
+				} catch(NoSuchMessageException e) {
 					fail();
 				}
 			}
@@ -277,7 +315,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 			WoTMessage thread4 = thread2reply1;
 			WoTMessage thread4reply0 = createTestMessage(mOwnIdentities[0], thread4, thread4.getURI()); // Fork a new thread off thread2reply1
 			WoTMessage thread4reply1 = createTestMessage(mOwnIdentities[1], thread4reply0, thread4.getURI()); // Reply to it
-			WoTMessage thread4reply2 = createTestMessage(mOwnIdentities[2], null, thread4.getURI()); // Specify no parent, should be set to thread2reply1 FIXME verify this
+			WoTMessage thread4reply2 = createTestMessage(mOwnIdentities[2], null, thread4.getURI()); // Specify no parent, should be set to thread2reply1
 			WoTMessage thread4reply3 = createTestMessage(mOwnIdentities[2], thread0, thread4.getURI()); // Specify different thread as parent
 				mMessageManager.onMessageReceived(thread4reply0);
 				mThreads.addFirst(thread4.getID());
