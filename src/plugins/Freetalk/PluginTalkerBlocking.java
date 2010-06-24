@@ -88,7 +88,7 @@ public class PluginTalkerBlocking implements FredPluginTalker {
 		// TODO: This has one more synchronization issue: If an old request times out and it's sendBlocking throws an exception therefore,
 		// the next call to sendBlocking might receive the late answer to the previous call as reply - that is the wrong reply!
 		// What is lacking in the FCP design is a unique ID for each request.
-		// I'm marking this as TODO and not as FIXME because timeouts should only happen when something is wrong anyway.
+		// I'm marking this as TO-DO and not as FIX-ME because timeouts should only happen when something is wrong anyway.
 		
 		synchronized(mLock) { // Synchronized for notifyAll()
 			if(!mWaitingForResult) {

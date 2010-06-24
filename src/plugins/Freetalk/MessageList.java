@@ -357,13 +357,16 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			
 			// mMessages contains MessageReference objects which keep a reference to this MessageList object
 			// AND this MessageList keeps a reference to mMessages - so there are mutual references. We first store mMessages because it's
-			// the more complex structure. FIXME: I hope that the implicit storage of this MessageList by ref.storeWithoutCommit() does not hurt?
+			// the more complex structure. 
+			
+			// TODO: Change class Persistent to provide a way to specify a store-depth so we can prevent implicit storage of this MessageList object in the
+			// following loop .. I hope that the implicit storage does not hurt meanwhile.. I have no sign of it so I'm marking as TO-DO and not FIX-ME,,,
 			
 			for(MessageReference ref : mMessages) {
 				ref.initializeTransient(mFreetalk);
 				ref.storeWithoutCommit();
 			}
-			mDB.store(mMessages, 1);
+			mDB.store(mMessages, 1); // TODO: Do not use the lowlevel db4o function, rather add something to class Persistent...
 			checkedStore();
 		}
 		catch(RuntimeException e) {
