@@ -175,6 +175,7 @@ public final class SubscribedBoard extends Board {
     			link.storeWithoutCommit();
     		} catch(NoSuchMessageException e) {
     			UnwantedMessageLink link = new UnwantedMessageLink(this, newMessage);
+    			link.initializeTransient(mFreetalk);
     			link.storeWithoutCommit();
     		}
     		
