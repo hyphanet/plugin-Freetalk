@@ -130,6 +130,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			return;
 		}
 		
+		synchronized(mIdentityManager) { // TODO: Get rid of this lock by making anyOwnIdentityWantsMessagesFrom use a cache
 		synchronized(mMessageManager) { 
 			/* TODO: Obtain WoTMessageLists only, not all. */
 			final ObjectSet<MessageList.MessageReference> notDownloadedMessages = mMessageManager.notDownloadedMessageIterator();
@@ -149,6 +150,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 					break;
 				}
 			}
+		}
 		}
 	}
 	
