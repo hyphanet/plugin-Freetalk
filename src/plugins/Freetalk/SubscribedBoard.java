@@ -153,6 +153,7 @@ public final class SubscribedBoard extends Board {
      * @throws Exception If wantsMessagesFrom(author of newMessage) fails. 
      */
     protected synchronized final void addMessage(Message newMessage) throws Exception {
+    	Logger.debug(this, "addMessage " + newMessage);
     	// Sanity checks
     	
     	if(newMessage instanceof OwnMessage) {
@@ -556,7 +557,9 @@ public final class SubscribedBoard extends Board {
     			link.storeWithoutCommit();
     		else {
     			try {
-    				addMessage(link.getMessage());
+    				final Message message = link.getMessage();
+    				Logger.debug(this, "Message state changed from unwanted to wanted, adding: " + message);
+    				addMessage(message);
     			} catch(Exception e) {
     				Logger.error(this, "Adding message failed", e);
     			}
