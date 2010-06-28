@@ -136,7 +136,9 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			
 			for(MessageList.MessageReference ref : notDownloadedMessages) {
 				try {
-					fetchMessage(ref);
+					// TODO: This should maybe be done inside the database query
+					if(mIdentityManager.anyOwnIdentityWantsMessagesFrom(ref.getMessageList().getAuthor()))
+						fetchMessage(ref);
 				}
 				catch(Exception e) {
 					Logger.error(this, "Error while trying to fetch message " + ref.getURI(), e);
