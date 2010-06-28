@@ -168,7 +168,7 @@ public final class SubscribedBoard extends Board {
     	
     	// Check whether the subscriber wants the message
     	if(!getSubscriber().wantsMessagesFrom(newMessage.getAuthor())) {
-    		Logger.normal(this, "Ignoring message from " + newMessage.getAuthor().getNickname() + " because " + getSubscriber().getNickname() + " does not his messages.");
+    		Logger.normal(this, "Ignoring message from " + newMessage.getAuthor().getNickname() + " because " + getSubscriber().getNickname() + " does not want his messages.");
     		
     		try {
     			UnwantedMessageLink link = getUnwantedMessageLink(newMessage);
