@@ -173,6 +173,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 
 		public MessageList getMessageList() {
 			checkedActivate(2);
+			mMessageList.initializeTransient(mFreetalk);
 			return mMessageList;
 		}
 		
