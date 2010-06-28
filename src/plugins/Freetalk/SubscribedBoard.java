@@ -749,9 +749,9 @@ public final class SubscribedBoard extends Board {
     	
     	// TODO: Instead of periodic retrying, implement event subscription in the WoT plugin... 
     	
-    	public static final long MINIMAL_RETRY_DELAY = 60 * 1000;
+    	public static final long MINIMAL_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (5 * 60 * 1000) : (5 * 60 * 1000);
     	
-    	public static final long MAXIMAL_RETRY_DELAY = 24 * 60 * 60 * 1000;
+    	public static final long MAXIMAL_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 60 * 6000) : (24 * 60 * 60 * 1000);
     	
     	@Indexed
     	protected final SubscribedBoard mBoard;

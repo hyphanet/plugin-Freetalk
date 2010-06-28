@@ -63,7 +63,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * When a {@link Message} fetch fails (DNF for example) the message is marked as fetch failed and the fetch will be retried after a growing amount of time.
 	 * This is the minimal delay.
 	 */
-	public static final long MINIMAL_MESSAGE_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (30 * 60 * 1000) :  (4 * 60 * 60 * 1000); // TODO: Make configurable.
+	public static final long MINIMAL_MESSAGE_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 60 * 1000) :  (4 * 60 * 60 * 1000); // TODO: Make configurable.
 	
 	/**
 	 * When a {@link Message} fetch fails (DNF for example) the message is marked as fetch failed and the fetch will be retried after a growing amount of time.
@@ -76,14 +76,14 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 * growing amount of time. This is the minimal delay.
 	 * Notice that this only applies to "old" message lists - that is message lists with an edition number lower than the latest successfully fetched edition.
 	 */
-	public static final long MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (4 * 60 * 60 * 1000); // TODO: Make configurable.
+	public static final long MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 60 * 1000) : (4 * 60 * 60 * 1000); // TODO: Make configurable.
 	
 	/**
 	 * When a {@link MessageList} fetch fails (DNF for example) the {@link MessageList}  is marked as fetch failed and the fetch will be retried after a
 	 * growing amount of time. This is the maximal delay.
 	 * Notice that this only applies to "old" message lists - that is message lists with an edition number lower than the latest successfully fetched edition.
 	 */
-	public static final long MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (20 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);  // TODO: Make configurable.
+	public static final long MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (30 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);  // TODO: Make configurable.
 	
 	private volatile boolean isRunning = false;
 	private volatile boolean shutdownFinished = false;
