@@ -10,11 +10,11 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Random;
 
-import plugins.Freetalk.Identity;
-import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.Identity;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Persistent;
 import plugins.Freetalk.PluginTalkerBlocking;
 import plugins.Freetalk.exceptions.DuplicateIdentityException;
@@ -71,7 +71,6 @@ public final class WoTIdentityManager extends IdentityManager {
 
 	private volatile boolean isRunning = false;
 	private volatile boolean shutdownFinished = false;
-	private Thread mThread = null;
 
 	private PluginTalkerBlocking mTalker = null;
 
@@ -537,7 +536,7 @@ public final class WoTIdentityManager extends IdentityManager {
 		}
 		
 		try {
-			Logger.debug(this, "Requesting identities with positive score from WoT ...");
+			Logger.normal(this, "Requesting identities with positive score from WoT ...");
 			SimpleFieldSet p1 = new SimpleFieldSet(true);
 			p1.putOverwrite("Message", "GetIdentitiesByScore");
 			p1.putOverwrite("Selection", "+");
@@ -582,7 +581,7 @@ public final class WoTIdentityManager extends IdentityManager {
 		}
 		
 		try {
-			Logger.debug(this, "Requesting own identities from WoT ...");
+			Logger.normal(this, "Requesting own identities from WoT ...");
 			SimpleFieldSet p2 = new SimpleFieldSet(true);
 			p2.putOverwrite("Message","GetOwnIdentities");
 			parseIdentities(sendFCPMessageBlocking(p2, null, "OwnIdentities").params, true);
@@ -655,16 +654,41 @@ public final class WoTIdentityManager extends IdentityManager {
 		doShouldFetchStateChangedCallbacks(author, oldShouldFetch, newShouldFetch);
 	}
 	
+	private void importIdentity(boolean ownIdentity, String identityID, String requestURI, String insertURI, String nickname) {
+		synchronized(mFreetalk.getTaskManager()) {
+		synchronized(db.lock()) {
+			try {
+				Logger.normal(this, "Importing identity from WoT: " + requestURI);
+				final WoTIdentity id = ownIdentity ? new WoTOwnIdentity(identityID, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
+					new WoTIdentity(identityID, new FreenetURI(requestURI), nickname);
+
+				id.initializeTransient(mFreetalk);
+				id.storeWithoutCommit();
+
+				onNewIdentityAdded(id);
+
+				if(ownIdentity)
+					onNewOwnIdentityAdded((WoTOwnIdentity)id);
+
+				id.checkedCommit(this);
+			}
+			catch(Exception e) {
+				Persistent.checkedRollbackAndThrow(db, this, new RuntimeException(e));
+			}
+		}
+		}
+	}
+	
 	@SuppressWarnings("unchecked")
 	private void parseIdentities(SimpleFieldSet params, boolean bOwnIdentities) {
 		if(bOwnIdentities)
-			Logger.debug(this, "Parsing received own identities...");
+			Logger.normal(this, "Parsing received own identities...");
 		else
-			Logger.debug(this, "Parsing received identities...");
-		
-		final PersistentTaskManager taskManager = mFreetalk.getTaskManager();
+			Logger.normal(this, "Parsing received identities...");
 	
 		int idx;
+		int ignoredCount = 0;
+		int newCount = 0;
 		
 		for(idx = 0; ; idx++) {
 			String identityID = params.get("Identity"+idx);
@@ -683,62 +707,61 @@ public final class WoTIdentityManager extends IdentityManager {
 			}
 			
 			synchronized(this) { /* We lock here and not during the whole function to allow other threads to execute */
-			synchronized(taskManager) {
-				Query q = db.query();
+				Query q = db.query(); // TODO: Encapsulate the query in a function...
 				q.constrain(WoTIdentity.class);
 				q.descend("mID").constrain(identityID);
 				ObjectSet<WoTIdentity> result = q.execute();
 				WoTIdentity id = null; 
 				
-				// FIXME: If the identity exists as non-own-identity already and is a own identity, delete the non-own and create an own one...
-
 				if(result.size() == 0) {
-					synchronized(db.lock()) {
-						try {
-							Logger.debug(this, "Importing identity from WoT: " + requestURI);
-							id = bOwnIdentities ?	new WoTOwnIdentity(identityID, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
-								new WoTIdentity(identityID, new FreenetURI(requestURI), nickname);
-
-							id.initializeTransient(mFreetalk);
-							id.storeWithoutCommit();
-							
-							onNewIdentityAdded(id);
-							
-							if(bOwnIdentities)
-								onNewOwnIdentityAdded((WoTOwnIdentity)id);
-							
-							id.checkedCommit(this);
-						}
-						catch(Exception e) {
-							Persistent.checkedRollback(db, this, e);
-						}
-					}
+					Logger.normal(this, "Importing new identity from WoT: " + requestURI);
+					importIdentity(bOwnIdentities, identityID, requestURI, insertURI, nickname);
+					++newCount;
 				} else {
 					Logger.debug(this, "Not importing already existing identity " + requestURI);
+					++ignoredCount;
+					
 					assert(result.size() == 1);
 					id = result.next();
 					id.initializeTransient(mFreetalk);
 					
-					synchronized(id) {
-					synchronized(db.lock()) {
+					if(bOwnIdentities && !(id instanceof WoTOwnIdentity)) {
+						// The identity was imported as normal identity previously and is an own identity now, we need to replace it with a WoTOwnIdentity
+						
 						try {
-							// TODO: The thread sometimes takes hours to parse the identities and I don't know why.
-							// So right now its better to re-query the time for each identity.
-							id.setLastReceivedFromWoT(CurrentTimeUTC.getInMillis());
-							id.checkedCommit(this);
+							Logger.normal(this, "Replacing WoTIdentity with WoTOwnIdentity: " + id);
+							// We MUST NOT take the following locks because deleteIdentity does other locks (MessageManager/TaskManager) which must happen before...
+							// synchronized(id)
+							// synchronized(db.lock()) 
+							deleteIdentity(id, mFreetalk.getMessageManager(), mFreetalk.getTaskManager());
+							importIdentity(bOwnIdentities, identityID, requestURI, insertURI, nickname);
 						}
 						catch(RuntimeException e) {
-							Persistent.checkedRollback(db, this, e);
+							Logger.error(this, "Replacing a WoTIdentity with WoTOwnIdentity failed.", e);
 						}
-					}
+						
+					} else { // Normal case: Update the last received time of the idefnt
+						synchronized(id) {
+						synchronized(db.lock()) {
+							try {
+								// TODO: The thread sometimes takes hours to parse the identities and I don't know why.
+								// So right now its better to re-query the time for each identity.
+								id.setLastReceivedFromWoT(CurrentTimeUTC.getInMillis());
+								id.checkedCommit(this);
+							}
+							catch(RuntimeException e) {
+								Persistent.checkedRollback(db, this, e);
+							}
+						}
+						}
 					}
 				}
 			}
-			}
+			
 			Thread.yield();
 		}
 		
-		Logger.debug(this, "parseIdentities received " + idx + " identities. bOwnIdentities==" + bOwnIdentities);
+		Logger.normal(this, "parseIdentities(bOwnIdentities==" + bOwnIdentities + " received " + idx + " identities. Ignored " + ignoredCount + "; New: " + newCount );
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -822,7 +845,6 @@ public final class WoTIdentityManager extends IdentityManager {
 
 	public void run() { 
 		Logger.debug(this, "Identity manager started.");
-		mThread = Thread.currentThread();
 		isRunning = true;
 		 
 		long nextIdentityRequestTime = 0;
