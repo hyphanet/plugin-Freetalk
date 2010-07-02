@@ -121,10 +121,14 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	 * The identities are put in a LRU queue, so in the next iteration, fetches will not be allowed from identities of the previous iteration.
 	 */
 	private synchronized void fetchMessageLists() {
-		if(fetchCount() >= MAX_PARALLEL_MESSAGELIST_FETCH_COUNT) { // Check before we do the expensive database query.
-			Logger.debug(this, "Got " + fetchCount() + " fetches, not fetching any more.");
+		final int fetchCount = fetchCount();
+		
+		if(fetchCount >= MAX_PARALLEL_MESSAGELIST_FETCH_COUNT) { // Check before we do the expensive database query.
+			Logger.debug(this, "Got " + fetchCount + " fetches, not fetching any more.");
 			return;
 		}
+		
+		Logger.debug(this, "Trying to start more message list fetches, amount of fetches now: " + fetchCount);
 		
 		fetchMessageListsCore();
 		
@@ -190,7 +194,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 		fetchContext.maxOutputLength = WoTMessageListXML.MAX_XML_SIZE; // TODO: fetch() also takes a maxSize parameter, why?
 		ClientGetter g = mClient.fetch(uri, WoTMessageListXML.MAX_XML_SIZE, mRequestClient, this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS);
 		addFetch(g);
-		Logger.debug(this, "Trying to fetch MessageList from " + uri);
+		Logger.normal(this, "Trying to fetch MessageList from " + uri);
 		
 		// Not necessary because it's not a HashSet but a fixed-length queue so the identity will get removed sometime anyway.
 		//catch(RuntimeException e) {
@@ -257,7 +261,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 					// We requested an old MessageList, i.e. it's index is lower than the index of the latest known MessageList, so the requested MessageList
 					// must have existed but has fallen out of Freenet, we mark it as DNF so it does not spam the request queue.
 					
-					Logger.normal(this, "DNF for old MessageList " + state.getURI());
+					Logger.normal(this, "Data not found for old MessageList " + state.getURI());
 						
 					try {
 						synchronized(mIdentityManager) {

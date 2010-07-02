@@ -125,10 +125,14 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	 * You have to synchronize on this <code>WoTMessageFetcher</code> when using this function.
 	 */
 	private void fetchMessages() {
-		if(fetchCount() >= MAX_PARALLEL_MESSAGE_FETCH_COUNT) { // Check before we do the expensive database query.
-			Logger.debug(this, "Got " + fetchCount() + "fetches, not fetching any more.");
+		final int fetchCount = fetchCount();
+		
+		if(fetchCount >= MAX_PARALLEL_MESSAGE_FETCH_COUNT) { // Check before we do the expensive database query.
+			Logger.minor(this, "Got " + fetchCount + "fetches, not fetching any more.");
 			return;
 		}
+		
+		Logger.minor(this, "Trying to start more message fetches, amount of fetches now: " + fetchCount);
 		
 		synchronized(mIdentityManager) { // TODO: Get rid of this lock by making anyOwnIdentityWantsMessagesFrom use a cache
 		synchronized(mMessageManager) { 
@@ -144,11 +148,9 @@ public final class WoTMessageFetcher extends MessageFetcher {
 				catch(Exception e) {
 					Logger.error(this, "Error while trying to fetch message " + ref.getURI(), e);
 				}
-				
-				if(fetchCount() >= MAX_PARALLEL_MESSAGE_FETCH_COUNT) {
-					Logger.debug(this, "Got " + fetchCount() + "fetches, not fetching any more.");
+
+				if(fetchCount() >= MAX_PARALLEL_MESSAGE_FETCH_COUNT)
 					break;
-				}
 			}
 		}
 		}
@@ -176,7 +178,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			ClientGetter g = mClient.fetch(uri, WoTMessageXML.MAX_XML_SIZE, requestClient, this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS);
 			addFetch(g);
 			mMessageLists.put(g, ref.getMessageList().getID());
-			Logger.debug(this, "Trying to fetch message from " + uri);
+			Logger.normal(this, "Trying to fetch message from " + uri);
 		}
 		catch(RuntimeException e) {
 			mMessages.remove(uri);
@@ -186,7 +188,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 
 	@Override
 	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-		Logger.debug(this, "Fetched message: " + state.getURI());
+		Logger.normal(this, "Fetched message: " + state.getURI());
 		final String messageListID = mMessageLists.get(state);
 		removeFetch(state); // This must be called before we call fetchMessages() because fetchMessages has a parallel fetch count limit.
 		
@@ -241,6 +243,8 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		
 			switch(e.getMode()) {
 				case FetchException.DATA_NOT_FOUND:
+					Logger.normal(this, "Data not found for message: " + state.getURI());
+					
 					try {
 						synchronized(mMessageManager) {
 						WoTMessageList list = (WoTMessageList)mMessageManager.getMessageList(messageListID);
@@ -255,9 +259,6 @@ public final class WoTMessageFetcher extends MessageFetcher {
 					} catch (Exception ex) {
 						Logger.error(this, "SHOULD NOT HAPPEN", ex);
 						assert(false);
-					}
-					finally {
-						Logger.normal(this, "DNF for message " + state.getURI());
 					}
 					break;
 					

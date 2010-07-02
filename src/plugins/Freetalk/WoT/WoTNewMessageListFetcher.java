@@ -8,9 +8,9 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Hashtable;
 
-import plugins.Freetalk.Identity;
 import plugins.Freetalk.FetchFailedMarker;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.Identity;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.MessageListFetcher;
 import plugins.Freetalk.Persistent;
@@ -482,7 +482,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	public void onFound(USK origUSK, long edition, FetchResult result) {
 		final FreenetURI uri = origUSK.getURI().setSuggestedEdition(edition);
 		
-		Logger.debug(this, "Fetched WoTMessageList: " + uri);
+		Logger.normal(this, "Fetched WoTMessageList: " + uri);
 
 		Bucket bucket = null;
 		InputStream inputStream = null;
