@@ -547,7 +547,7 @@ public final class SubscribedBoard extends Board {
     	final Query query = mDB.query();
     	query.constrain(UnwantedMessageLink.class);
     	query.descend("mBoard").constrain(this).identity();
-    	query.descend("mDateOfNextRetry").constrain(now).greater().not();
+    	query.descend("mNextRetryDate").constrain(now).greater().not();
     	return new Persistent.InitializingObjectSet<UnwantedMessageLink>(mFreetalk, query);
     }
     
@@ -564,6 +564,12 @@ public final class SubscribedBoard extends Board {
     				Logger.error(this, "Adding message failed", e);
     			}
     		}
+    	}
+    	
+    	if(Logger.shouldLog(Logger.LogLevel.DEBUG, this)) {
+    		final int remaining = getAllUnwantedMessages().size();
+    		if(remaining > 0)
+    			Logger.debug(this, "Remaining unwanted count: " + remaining);
     	}
     }
     
@@ -828,6 +834,11 @@ public final class SubscribedBoard extends Board {
     	
     	protected void deleteWithoutCommit() {
     		super.deleteWithoutCommit(2);
+    	}
+    	
+    	public String toString() {
+    		return "author: " + mAuthor.getNickname() + "; messageID: " + mMessage.getID() + "; numberOfRetries: " + mNumberOfRetries + 
+    			"; lastRetry: " + mLastRetryDate + "; nextRetry: " + mNextRetryDate;
     	}
     }
 
