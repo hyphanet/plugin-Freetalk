@@ -1,6 +1,5 @@
 package plugins.Freetalk;
 
-import java.util.Arrays;
 import java.util.Date;
 
 import plugins.Freetalk.Persistent.Indexed;
@@ -247,9 +246,9 @@ public final class SubscribedBoard extends Board {
     		try {
     			// Try to find the parent message of the message
     			
-    			// FIXME: This allows crossposting. Figure out whether we need to handle it specially:
-    			// What happens if the message has specified a parent thread which belongs to this board BUT a parent message which is in a different board
-    			// and does not belong to the parent thread
+    			// Notice that this allows cross-posting:
+    			// The parent-thread of this message might be in this board but the parent message might be in a different board.
+    			// It should not cause any harm because the parent-message attribute of a message is not used 
     			newMessage.setParent(mFreetalk.getMessageManager().get(newMessage.getParentID()));
     		}
     		catch(NoSuchMessageException e) {
@@ -485,16 +484,17 @@ public final class SubscribedBoard extends Board {
     		try {
     			final Message parentThread = mFreetalk.getMessageManager().get(parentThreadID);
     			
-    			if(Arrays.binarySearch(parentThread.getBoards(), getParentBoard()) < 0) {
+    			if(!getParentBoard().contains(parentThread)) {
     				// The parent thread is not a message in this board.
     				// TODO: Decide whether we should maybe store a flag in the BoardThreadLink which marks it.
     				// IMHO it is part of the UI's job to read the board list of the actual Message object and display something if the thread is not
     				// really a message to this board.
     			}
 
-    			// The parent thread was downloaded and is no thread actually, we create a BoardThreadLink for it and therefore 'fork' a new thread off
-    			// that message. The parent thread message will still be displayed as a reply to it's original thread, but it will also appear as a new thread
-    			// which is the parent of the message which was passed to this function.
+    			// The parent thread was downloaded and is no thread actually or/and does not reside in this board, we create a BoardThreadLink for it and
+    			// therefore 'fork' a new thread off that message. The parent thread message will still be displayed as a reply to it's original thread (or as a 
+    			// thread in its original board if it was from a different board), but it will also appear as a new thread which is the parent thread of
+    			// the message which was passed to this function.
 
     			BoardThreadLink parentThreadRef = new BoardThreadLink(this, parentThread, takeFreeMessageIndexWithoutCommit());
     			parentThreadRef.initializeTransient(mFreetalk);
