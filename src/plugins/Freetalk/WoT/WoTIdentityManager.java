@@ -730,11 +730,11 @@ public final class WoTIdentityManager extends IdentityManager {
 					id = result.next();
 					id.initializeTransient(mFreetalk);
 					
-					if(bOwnIdentities && !(id instanceof WoTOwnIdentity)) {
-						// The identity was imported as normal identity previously and is an own identity now, we need to replace it with a WoTOwnIdentity
+					if(bOwnIdentities != (id instanceof WoTOwnIdentity)) {
+						// The type of the identity changed so we need to delete and re-import it.
 						
 						try {
-							Logger.normal(this, "Replacing WoTIdentity with WoTOwnIdentity: " + id);
+							Logger.normal(this, "Identity type changed, replacing it: " + id);
 							// We MUST NOT take the following locks because deleteIdentity does other locks (MessageManager/TaskManager) which must happen before...
 							// synchronized(id)
 							// synchronized(db.lock()) 
