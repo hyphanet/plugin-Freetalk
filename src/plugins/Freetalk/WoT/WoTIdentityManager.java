@@ -715,8 +715,13 @@ public final class WoTIdentityManager extends IdentityManager {
 				
 				if(result.size() == 0) {
 					Logger.normal(this, "Importing new identity from WoT: " + requestURI);
-					importIdentity(bOwnIdentities, identityID, requestURI, insertURI, nickname);
-					++newCount;
+					try {
+						importIdentity(bOwnIdentities, identityID, requestURI, insertURI, nickname);
+						++newCount;
+					}
+					catch(Exception e) {
+						Logger.error(this, "Importing a new identity failed.", e);
+					}
 				} else {
 					Logger.debug(this, "Not importing already existing identity " + requestURI);
 					++ignoredCount;
@@ -736,7 +741,7 @@ public final class WoTIdentityManager extends IdentityManager {
 							deleteIdentity(id, mFreetalk.getMessageManager(), mFreetalk.getTaskManager());
 							importIdentity(bOwnIdentities, identityID, requestURI, insertURI, nickname);
 						}
-						catch(RuntimeException e) {
+						catch(Exception e) {
 							Logger.error(this, "Replacing a WoTIdentity with WoTOwnIdentity failed.", e);
 						}
 						
@@ -749,7 +754,7 @@ public final class WoTIdentityManager extends IdentityManager {
 								id.setLastReceivedFromWoT(CurrentTimeUTC.getInMillis());
 								id.checkedCommit(this);
 							}
-							catch(RuntimeException e) {
+							catch(Exception e) {
 								Persistent.checkedRollback(db, this, e);
 							}
 						}
