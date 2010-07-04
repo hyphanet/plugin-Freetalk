@@ -294,7 +294,7 @@ public final class WebInterface {
 				errorPage = new ErrorPage(webInterface, webInterface.getLoggedInOwnIdentity(context), request, "Rating the message failed", e, l10n());
 			}
 			try {
-				// FIXME: The current WebPageImpl does not support adding one page to another page outside of make() !
+				// TODO: The current WebPageImpl does not support adding one page to another page outside of make() !
 				if(errorPage != null)
 					return  errorPage;
 				
