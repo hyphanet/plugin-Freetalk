@@ -46,7 +46,7 @@ public abstract class Persistent {
 	 * It can be very useful for debugging purposes or sanitizing old databases.
 	 * Also it is needed in many cases for the UI.
 	 */
-	protected final Date mCreationDate;
+	protected final Date mCreationDate = CurrentTimeUTC.get();
 
 	/**
 	 * This annotation should be added to all member variables (of Persistent classes) which the database should be configured to generate an index on.
@@ -67,11 +67,6 @@ public abstract class Persistent {
 	 * If a class is indexed you MUST add it to the list of persistent classes in {@link Freetalk.openDatabase} 
 	 */
 	public @interface IndexedClass { }
-
-	
-	public Persistent() {
-		mCreationDate = CurrentTimeUTC.get();
-	}
 	
 	public void testDatabaseIntegrity() {
 		testDatabaseIntegrity(mFreetalk, mDB);
