@@ -285,8 +285,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         	WoTOwnMessageList.class
         };
         
-        for(Class clazz : persistentClasses) {
-        	boolean classHasIndex = clazz.getAnnotation(Persistent.IndexedField.class) != null;
+        for(Class<? extends Persistent> clazz : persistentClasses) {
+        	boolean classHasIndex = clazz.getAnnotation(Persistent.IndexedClass.class) != null;
         	
         	Logger.debug(this, "Peristent class: " + clazz.getCanonicalName() + "; hasIndex==" + classHasIndex);
         	

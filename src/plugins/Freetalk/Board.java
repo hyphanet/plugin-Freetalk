@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.UUID;
 
-import plugins.Freetalk.Persistent.IndexedField;
+import plugins.Freetalk.Persistent.IndexedClass;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -28,7 +28,7 @@ import freenet.support.StringValidityChecker;
  *
  * @author xor
  */
-@IndexedField // TODO: Check whether we need the index
+@IndexedClass // TODO: Check whether we need the index
 public class Board extends Persistent implements Comparable<Board> {
 
     /* Constants */

@@ -2,7 +2,7 @@ package plugins.Freetalk;
 
 import java.util.Date;
 
-import plugins.Freetalk.Persistent.IndexedField;
+import plugins.Freetalk.Persistent.IndexedClass;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.MessageNotFetchedException;
@@ -19,7 +19,7 @@ import freenet.support.Logger;
  * A SubscribedBoard is a {@link Board} which only stores messages which the subscriber (a {@link OwnIdentity}) wants to read,
  * according to the implementation of {@link OwnIdentity.wantsMessagesFrom}.
  */
-@IndexedField
+@IndexedClass
 public final class SubscribedBoard extends Board {
 
 	private final OwnIdentity mSubscriber;

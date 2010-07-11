@@ -5,7 +5,7 @@ package plugins.Freetalk.WoT;
 
 import plugins.Freetalk.Identity;
 import plugins.Freetalk.OwnIdentity;
-import plugins.Freetalk.Persistent.IndexedField;
+import plugins.Freetalk.Persistent.IndexedClass;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import plugins.Freetalk.exceptions.NotTrustedException;
 import freenet.keys.FreenetURI;
@@ -21,7 +21,7 @@ import freenet.keys.FreenetURI;
  * 
  * @author xor (xor@freenetproject.org)
  */
-@IndexedField
+@IndexedClass
 public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 	
 	/* Attributes, stored in the database. */

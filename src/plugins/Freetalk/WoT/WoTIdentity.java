@@ -3,10 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
-import plugins.Freetalk.Identity;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.Identity;
 import plugins.Freetalk.Persistent;
-import plugins.Freetalk.Persistent.IndexedField;
+import plugins.Freetalk.Persistent.IndexedClass;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
@@ -25,7 +25,7 @@ import freenet.support.StringValidityChecker;
  * 
  * @author xor (xor@freenetproject.org)
  */
-@IndexedField // TODO: Check whether we really need this index.
+@IndexedClass // TODO: Check whether we really need this index.
 public class WoTIdentity extends Persistent implements Identity {
 	
 	/* Attributes, stored in the database. */

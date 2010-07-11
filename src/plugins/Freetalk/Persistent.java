@@ -52,9 +52,15 @@ public abstract class Persistent {
 	 * This annotation should be added to all member variables (of Persistent classes) which the database should be configured to generate an index on.
 	 * If a class has indexed fields you MUST add it to the list of persistent classes in {@link Freetalk.openDatabase} 
 	 */
-	@Target( {ElementType.FIELD, ElementType.TYPE} )
+	@Target( {ElementType.FIELD} )
 	@Retention( RetentionPolicy.RUNTIME )
 	public @interface IndexedField { }
+
+	/**
+	 * This annotation should be added to all Persistent classes which the database should be configured to generate an index on.
+	 * If a class is indexed you MUST add it to the list of persistent classes in {@link Freetalk.openDatabase} 
+	 */
+	public @interface IndexedClass { }
 
 	
 	public Persistent() {
