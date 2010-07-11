@@ -302,6 +302,14 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         		if(field.getAnnotation(Persistent.IndexedField.class) != null) {
         			Logger.debug(this, "Registering indexed field " + clazz.getCanonicalName() + '.' + field.getName());
         			cfg.objectClass(clazz).objectField(field.getName()).indexed(true);
+        		} else {
+        			// Check whether the class itself has an @IndexedField annotation
+        			Persistent.IndexedField annotation =  clazz.getAnnotation(Persistent.IndexedField.class);
+        			if(annotation != null) {
+	        			for(String fieldName : annotation.names()) {
+	        				cfg.objectClass(clazz).objectField(fieldName).indexed(true);
+	        			}
+        			}
         		}
         	}
         }

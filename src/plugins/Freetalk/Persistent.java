@@ -50,11 +50,17 @@ public abstract class Persistent {
 
 	/**
 	 * This annotation should be added to all member variables (of Persistent classes) which the database should be configured to generate an index on.
+	 * 
+	 * If you want to make a field of a parent class indexed only via adding this annotation in the child class, add this annotation to the child class
+	 * as a class-annotation and set the "name" parameter of the annotation to the name of the field.
+	 * 
 	 * If a class has indexed fields you MUST add it to the list of persistent classes in {@link Freetalk.openDatabase} 
 	 */
-	@Target( {ElementType.FIELD} )
+	@Target( {ElementType.FIELD, ElementType.TYPE} )
 	@Retention( RetentionPolicy.RUNTIME )
-	public @interface IndexedField { }
+	public @interface IndexedField {
+		String[] names() default {""};
+	}
 
 	/**
 	 * This annotation should be added to all Persistent classes which the database should be configured to generate an index on.
