@@ -200,7 +200,14 @@ public abstract class Message extends Persistent {
 		Arrays.sort(mBoards);		
 		mReplyToBoard = newReplyToBoard;
 		mTitle = makeTitleValid(newTitle);
-		mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
+		
+		if(newDate.after(getFetchDate())) {
+			Logger.warning(this, "Received bogus message date: Now = " + getFetchDate() + "; message date = " + newDate + "; message=" + mURI);
+			mDate = getFetchDate();
+		} else {
+			mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
+		}
+		
 		mText = makeTextValid(newText);
 		
 		if (!isTitleValid(mTitle))
