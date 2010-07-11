@@ -14,7 +14,7 @@ import java.util.Date;
  * fetch the message (list) again in the future. For example when the user installs a new version of the plugin we can fetch all messages(list)
  * again with failed XML parsing if the new version has fixed a bug in the XML parser.
  */
-// @IndexedField // I can't think of any query which would need to get all FetchFailedMarker objects.
+// @IndexedClass // I can't think of any query which would need to get all FetchFailedMarker objects.
 public class FetchFailedMarker extends Persistent {
 	
 	public static enum Reason {

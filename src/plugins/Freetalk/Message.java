@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import plugins.Freetalk.Persistent.IndexedField;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -31,7 +32,8 @@ import freenet.support.StringValidityChecker;
  * @author xor (xor@freenetproject.org)
  * @author saces
  */
-// @IndexedField // I can't think of any query which would need to get all Message objects.
+// @IndexedClass // I can't think of any query which would need to get all Message objects.
+@IndexedField(names = {"mCreationDate"})
 public abstract class Message extends Persistent {
     
     /* Public constants */
@@ -105,12 +107,6 @@ public abstract class Message extends Persistent {
 	 * The date when the message was written in <strong>UTC time</strong>.
 	 */
 	protected final Date mDate;
-	
-	/**
-	 * The date when the message was downloaded.
-	 */
-	@IndexedField /* IndexedField because Frost needs to query for all messages after the time it has last done so */
-	protected final Date mFetchDate;
 	
 	protected final String mText;
 	
@@ -205,7 +201,6 @@ public abstract class Message extends Persistent {
 		mReplyToBoard = newReplyToBoard;
 		mTitle = makeTitleValid(newTitle);
 		mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
-		mFetchDate = CurrentTimeUTC.get();
 		mText = makeTextValid(newText);
 		
 		if (!isTitleValid(mTitle))
@@ -391,9 +386,9 @@ public abstract class Message extends Persistent {
 	 */
 	public Date getFetchDate() {
 		// checkedActivate(1);
-		assert(mFetchDate != null);
+		assert(mCreationDate != null);
 		
-		return mFetchDate;
+		return mCreationDate;
 	}
 
 	/**

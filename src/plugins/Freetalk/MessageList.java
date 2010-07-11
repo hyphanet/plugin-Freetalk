@@ -36,7 +36,7 @@ import freenet.support.Logger;
  * This means that objects of class MessageList can be activated to a depth of only 1 when querying them from the database.
  * All methods automatically activate the object to any needed higher depth.
  */
-// @IndexedField // I can't think of any query which would need to get all MessageList objects.
+// @IndexedClass // I can't think of any query which would need to get all MessageList objects.
 public abstract class MessageList extends Persistent implements Iterable<MessageList.MessageReference> {
 	
 	public static final int MAX_MESSAGES_PER_MESSAGELIST = 256;
@@ -58,7 +58,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	 * objects which belong to a certain board - which is necessary because we only want to download messages from boards to which the
 	 * user is actually subscribed.
 	 */
-	// @IndexedField // I can't think of any query which would need to get all MessageReference objects.
+	// @IndexedClass // I can't think of any query which would need to get all MessageReference objects.
 	public static class MessageReference extends Persistent {
 		
 		private MessageList mMessageList = null;

@@ -24,7 +24,7 @@ import freenet.support.Logger;
  * 
  * @author xor (xor@freenetproject.org)
  */
-//@IndexedField // I can't think of any query which would need to get all MessageRating objects.
+//@IndexedClass // I can't think of any query which would need to get all MessageRating objects.
 public abstract class MessageRating extends Persistent {
 	
 	/**
@@ -44,11 +44,6 @@ public abstract class MessageRating extends Persistent {
 	 */
 	@IndexedField
 	private final Identity mMessageAuthor;
-	
-	/**
-	 * The {@link Date} when this rating was assigned.
-	 */
-	private final Date mDate;
 
 
 	/**
@@ -72,7 +67,6 @@ public abstract class MessageRating extends Persistent {
 		mRater = myRater;
 		mMessage = myMessage;
 		mMessageAuthor = mMessage.getAuthor();
-		mDate = CurrentTimeUTC.get();
 	}
 	
 	/**
@@ -114,7 +108,7 @@ public abstract class MessageRating extends Persistent {
 	public final Date getDate() {
 		// 1 is the default activation depth so we don't need to activate this because Date is a native type for db4o
 		// checkedActivate(1); assert(mDate != null);
-		return mDate;
+		return mCreationDate;
 	}
 	
 	protected void storeWithoutCommit() {

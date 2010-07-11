@@ -15,7 +15,7 @@ import freenet.keys.FreenetURI;
  * 
  * @author xor (xor@freenetproject.org)
  */
-//@IndexedField // I can't think of any query which would need to get all MessageURI objects.
+//@IndexedClass // I can't think of any query which would need to get all MessageURI objects.
 public abstract class MessageURI extends Persistent implements Cloneable {
 
 	/**

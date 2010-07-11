@@ -24,7 +24,7 @@ import freenet.support.CurrentTimeUTC;
  * @author xor (xor@freenetproject.org)
  * 
  */
-// @IndexedField // I can't think of any query which would need to get all PersistentTask objects.
+// @IndexedClass // I can't think of any query which would need to get all PersistentTask objects.
 public abstract class PersistentTask extends Persistent {
 	
 	@IndexedField

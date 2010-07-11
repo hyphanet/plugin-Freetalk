@@ -14,6 +14,7 @@ import plugins.Freetalk.Identity;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.MessageListFetcher;
 import plugins.Freetalk.Persistent;
+import plugins.Freetalk.Persistent.IndexedClass;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 
 import com.db4o.ObjectSet;
@@ -89,7 +90,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		mIdentityManager.registerShouldFetchStateChangedCallback(this);
 	}
 
-	public static class FetcherCommand extends Persistent {
+	public static abstract class FetcherCommand extends Persistent {
 		
 		@IndexedField
 		private final String mIdentityID;
@@ -113,6 +114,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 
 	}
 	
+	@IndexedClass
 	private static final class StartFetchCommand extends FetcherCommand {
 
 		protected StartFetchCommand(WoTIdentity identity) {
@@ -125,6 +127,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		
 	}
 	
+	@IndexedClass
 	private static final class AbortFetchCommand extends FetcherCommand {
 
 		protected AbortFetchCommand(WoTIdentity identity) {
@@ -133,6 +136,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		
 	}
 	
+	@IndexedClass
 	private static final class UpdateEditionHintCommand extends FetcherCommand {
 
 		protected UpdateEditionHintCommand(WoTIdentity identity) {

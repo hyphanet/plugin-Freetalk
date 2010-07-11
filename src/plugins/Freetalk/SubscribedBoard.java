@@ -752,7 +752,7 @@ public final class SubscribedBoard extends Board {
 //    	
 //    }
 
-    // @IndexedField // I can't think of any query which would need to get all UnwantedMessageLink objects.
+    // @IndexedClass // I can't think of any query which would need to get all UnwantedMessageLink objects.
     public static class UnwantedMessageLink extends Persistent {
     	
     	// TODO: Instead of periodic retrying, implement event subscription in the WoT plugin... 
@@ -844,7 +844,7 @@ public final class SubscribedBoard extends Board {
     	}
     }
 
-    // @IndexedField // I can't think of any query which would need to get all MessageReference objects.
+    // @IndexedClass // I can't think of any query which would need to get all MessageReference objects.
     public static abstract class MessageReference extends Persistent {
     	
     	@IndexedField

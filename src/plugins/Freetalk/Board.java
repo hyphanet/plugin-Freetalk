@@ -17,7 +17,6 @@ import plugins.Freetalk.exceptions.NoSuchMessageException;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
-import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 
@@ -53,8 +52,6 @@ public class Board extends Persistent implements Comparable<Board> {
 
     @IndexedField
     private final String mName;
-
-    private final Date mFirstSeenDate;
     
     /** True if at least one {@link SubscribedBoard} for this Board exists, i.e. if we should download messages of this board. */
     private boolean mHasSubscriptions;
@@ -86,7 +83,6 @@ public class Board extends Persistent implements Comparable<Board> {
 
         mID = UUID.randomUUID().toString();
         mName = newName.toLowerCase();
-        mFirstSeenDate = CurrentTimeUTC.get();
         mHasSubscriptions = false;
     }
 
@@ -179,7 +175,7 @@ public class Board extends Persistent implements Comparable<Board> {
     }
 
     public Date getFirstSeenDate() {
-        return mFirstSeenDate;
+        return mCreationDate;
     }
     
     /**
@@ -220,7 +216,7 @@ public class Board extends Persistent implements Comparable<Board> {
     	return false;
     }
     
-    // @IndexedField // I can't think of any query which would need to get all BoardMessageLink objects.
+    // @IndexedClass // I can't think of any query which would need to get all BoardMessageLink objects.
     public static final class BoardMessageLink extends Persistent {
     	
     	@IndexedField
