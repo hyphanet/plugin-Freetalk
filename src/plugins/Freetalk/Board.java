@@ -61,7 +61,6 @@ public class Board extends Persistent implements Comparable<Board> {
     
     private int mNextFreeMessageIndex = 1;
 
-
     private static HashSet<String> getAllowedLanguages() {
     	HashSet<String> languages = new HashSet<String>(Arrays.asList(Locale.getISOLanguages()));
     	languages.add("multilingual");
@@ -316,13 +315,12 @@ public class Board extends Persistent implements Comparable<Board> {
 		return result;
     }
     
-    @SuppressWarnings("unchecked")
     protected Iterable<BoardMessageLink> getMessagesAfterIndex(int index) {
         Query q = mDB.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mMessageIndex").constrain(index).greater();
-        return new Persistent.InitializingObjectSet(mFreetalk, q.execute());
+        return new Persistent.InitializingObjectSet<BoardMessageLink>(mFreetalk, q.execute());
     }
     
     public synchronized int getMessageCount() {
