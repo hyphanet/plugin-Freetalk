@@ -288,12 +288,15 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         for(Class<? extends Persistent> clazz : persistentClasses) {
         	boolean classHasIndex = clazz.getAnnotation(Persistent.IndexedClass.class) != null;
         	
+        	// TODO: We enable class indexes for all classes to make sure nothing breaks because it is the db4o default, check whether enabling them only
+        	// for the classes where we need them does not cause any harm.
+        	classHasIndex = true;
+        	
         	Logger.debug(this, "Peristent class: " + clazz.getCanonicalName() + "; hasIndex==" + classHasIndex);
         	
         	// TODO: Make very sure that it has no negative side effects if we disable class indices for some classes
         	// Maybe benchmark in comparison to a database which has class indices enabled for ALL classes.
-        	//cfg.objectClass(clazz).indexed(classHasIndex);
-        	cfg.objectClass(clazz).indexed(true); // Notice: Db4o enables object indices for ALL classes by default anyway, this line is only to make it obvious.
+        	cfg.objectClass(clazz).indexed(classHasIndex);
    
         	for(Field field : clazz.getDeclaredFields()) {
         		if(field.getAnnotation(Persistent.IndexedField.class) != null) {
