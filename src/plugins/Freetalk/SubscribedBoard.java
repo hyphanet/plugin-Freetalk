@@ -2,7 +2,7 @@ package plugins.Freetalk;
 
 import java.util.Date;
 
-import plugins.Freetalk.Persistent.Indexed;
+import plugins.Freetalk.Persistent.IndexedField;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.MessageNotFetchedException;
@@ -19,7 +19,7 @@ import freenet.support.Logger;
  * A SubscribedBoard is a {@link Board} which only stores messages which the subscriber (a {@link OwnIdentity}) wants to read,
  * according to the implementation of {@link OwnIdentity.wantsMessagesFrom}.
  */
-@Indexed
+@IndexedField
 public final class SubscribedBoard extends Board {
 
 	private final OwnIdentity mSubscriber;
@@ -752,7 +752,7 @@ public final class SubscribedBoard extends Board {
 //    	
 //    }
 
-    // @Indexed // I can't think of any query which would need to get all UnwantedMessageLink objects.
+    // @IndexedField // I can't think of any query which would need to get all UnwantedMessageLink objects.
     public static class UnwantedMessageLink extends Persistent {
     	
     	// TODO: Instead of periodic retrying, implement event subscription in the WoT plugin... 
@@ -761,17 +761,17 @@ public final class SubscribedBoard extends Board {
     	
     	public static final long MAXIMAL_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 60 * 6000) : (24 * 60 * 60 * 1000);
     	
-    	@Indexed
+    	@IndexedField
     	protected final SubscribedBoard mBoard;
     	
-    	@Indexed
+    	@IndexedField
     	protected final Message mMessage;
     	
     	protected final Identity mAuthor;
     	
     	protected Date mLastRetryDate;
     	
-    	@Indexed
+    	@IndexedField
     	protected Date mNextRetryDate;
     	
     	protected int mNumberOfRetries;
@@ -844,19 +844,19 @@ public final class SubscribedBoard extends Board {
     	}
     }
 
-    // @Indexed // I can't think of any query which would need to get all MessageReference objects.
+    // @IndexedField // I can't think of any query which would need to get all MessageReference objects.
     public static abstract class MessageReference extends Persistent {
     	
-    	@Indexed
+    	@IndexedField
     	protected final SubscribedBoard mBoard;
     	
-    	@Indexed
+    	@IndexedField
     	protected Message mMessage;
     	
-    	@Indexed
+    	@IndexedField
     	protected Date mMessageDate;
     	
-    	@Indexed
+    	@IndexedField
     	protected final int mMessageIndex;
 
     	private boolean mWasRead = false;
@@ -960,10 +960,10 @@ public final class SubscribedBoard extends Board {
     /**
      * Helper class to associate messages with boards in the database
      */
-    // @Indexed // I can't think of any query which would need to get all BoardReplyLink objects.
+    // @IndexedField // I can't think of any query which would need to get all BoardReplyLink objects.
     public static class BoardReplyLink extends MessageReference { /* TODO: This is only public for configuring db4o. Find a better way */
         
-    	@Indexed
+    	@IndexedField
         private final String mThreadID;
 
 
@@ -995,10 +995,10 @@ public final class SubscribedBoard extends Board {
 
     }
 
-    // @Indexed // I can't think of any query which would need to get all BoardThreadLink objects.
+    // @IndexedField // I can't think of any query which would need to get all BoardThreadLink objects.
     public final static class BoardThreadLink  extends MessageReference {
         
-    	@Indexed
+    	@IndexedField
         private final String mThreadID;
         
     	private Date mLastReplyDate;

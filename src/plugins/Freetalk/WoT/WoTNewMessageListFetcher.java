@@ -91,7 +91,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 
 	public static class FetcherCommand extends Persistent {
 		
-		@Indexed
+		@IndexedField
 		private final String mIdentityID;
 
 

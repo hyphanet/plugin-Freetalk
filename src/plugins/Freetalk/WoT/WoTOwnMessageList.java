@@ -4,7 +4,7 @@ import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.OwnMessageList;
 import freenet.keys.FreenetURI;
 
-//@Indexed // I can't think of any query which would need to get all WoTOwnMessageList objects.
+//@IndexedField // I can't think of any query which would need to get all WoTOwnMessageList objects.
 public final class WoTOwnMessageList extends OwnMessageList {
 
 	public WoTOwnMessageList(OwnIdentity newAuthor, int newIndex) {

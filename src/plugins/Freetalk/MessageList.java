@@ -36,19 +36,19 @@ import freenet.support.Logger;
  * This means that objects of class MessageList can be activated to a depth of only 1 when querying them from the database.
  * All methods automatically activate the object to any needed higher depth.
  */
-// @Indexed // I can't think of any query which would need to get all MessageList objects.
+// @IndexedField // I can't think of any query which would need to get all MessageList objects.
 public abstract class MessageList extends Persistent implements Iterable<MessageList.MessageReference> {
 	
 	public static final int MAX_MESSAGES_PER_MESSAGELIST = 256;
 	
 	
-	@Indexed
+	@IndexedField
 	protected String mID; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
 	
-	@Indexed
+	@IndexedField
 	protected final Identity mAuthor;
 	
-	@Indexed
+	@IndexedField
 	protected int mIndex; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
 	
 	
@@ -58,24 +58,24 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	 * objects which belong to a certain board - which is necessary because we only want to download messages from boards to which the
 	 * user is actually subscribed.
 	 */
-	// @Indexed // I can't think of any query which would need to get all MessageReference objects.
+	// @IndexedField // I can't think of any query which would need to get all MessageReference objects.
 	public static class MessageReference extends Persistent {
 		
 		private MessageList mMessageList = null;
 		
-		@Indexed
+		@IndexedField
 		private final String mMessageID;
 		
-		@Indexed
+		@IndexedField
 		private final FreenetURI mURI; 
 		
-		@Indexed
+		@IndexedField
 		private final Board mBoard;
 		
-		@Indexed
+		@IndexedField
 		private final Date mDate;
 		
-		@Indexed
+		@IndexedField
 		private boolean mWasDownloaded = false;
 
 		
@@ -186,10 +186,10 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		
 	}
 	
-	// @Indexed // I can't think of any query which would need to get all MessageListFetchFailedMarker objects.
+	// @IndexedField // I can't think of any query which would need to get all MessageListFetchFailedMarker objects.
 	public static final class MessageListFetchFailedMarker extends FetchFailedMarker {
 
-		@Indexed
+		@IndexedField
 		private final String mMessageListID;
 		
 		
@@ -206,10 +206,10 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		
 	}
 
-	// @Indexed // I can't think of any query which would need to get all MessageFetchFailedMarker objects.
+	// @IndexedField // I can't think of any query which would need to get all MessageFetchFailedMarker objects.
 	public static final class MessageFetchFailedMarker extends FetchFailedMarker {
 
-		@Indexed
+		@IndexedField
 		private final MessageReference mMessageReference;
 		
 		

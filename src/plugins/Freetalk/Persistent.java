@@ -8,6 +8,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -17,6 +18,7 @@ import com.db4o.ext.ExtObjectContainer;
 import com.db4o.ext.ExtObjectSet;
 import com.db4o.query.Query;
 
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 /**
  * This is the base class for all classes which are stored in the Freetalk database.<br /><br />
@@ -36,6 +38,15 @@ public abstract class Persistent {
 	 * A reference to the database in which this Persistent object resists.
 	 */
 	protected transient ExtObjectContainer mDB;
+	
+	
+	/**
+	 * The date when this persistent object was created. 
+	 * - This is contained in class Persistent because it is something which we should store for all persistent objects:
+	 * It can be very useful for debugging purposes or sanitizing old databases.
+	 * Also it is needed in many cases for the UI.
+	 */
+	protected final Date mCreationDate;
 
 	/**
 	 * This annotation should be added to all member variables (of Persistent classes) which the database should be configured to generate an index on.
@@ -43,9 +54,12 @@ public abstract class Persistent {
 	 */
 	@Target( {ElementType.FIELD, ElementType.TYPE} )
 	@Retention( RetentionPolicy.RUNTIME )
-	public @interface Indexed { }
+	public @interface IndexedField { }
 
 	
+	public Persistent() {
+		mCreationDate = CurrentTimeUTC.get();
+	}
 	
 	public void testDatabaseIntegrity() {
 		testDatabaseIntegrity(mFreetalk, mDB);

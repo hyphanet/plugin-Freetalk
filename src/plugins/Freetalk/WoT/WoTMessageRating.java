@@ -27,7 +27,7 @@ import freenet.support.Logger;
  * 
  * @author xor (xor@freenetproject.org)
  */
-//@Indexed // I can't think of any query which would need to get all WoTMessageRating objects.
+//@IndexedField // I can't think of any query which would need to get all WoTMessageRating objects.
 public final class WoTMessageRating extends MessageRating {
 	
 	private final byte mValue;

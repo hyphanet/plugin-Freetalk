@@ -24,25 +24,25 @@ import freenet.support.Logger;
  * 
  * @author xor (xor@freenetproject.org)
  */
-//@Indexed // I can't think of any query which would need to get all MessageRating objects.
+//@IndexedField // I can't think of any query which would need to get all MessageRating objects.
 public abstract class MessageRating extends Persistent {
 	
 	/**
 	 * The {@link OwnIdentity} which has assigned this rating. 
 	 */
-	@Indexed
+	@IndexedField
 	private final OwnIdentity mRater;
 
 	/**
 	 * The affected {@link Message}.
 	 */
-	@Indexed
+	@IndexedField
 	private final Message mMessage;
 	
 	/**
 	 * The author of the affected {@link Message}
 	 */
-	@Indexed
+	@IndexedField
 	private final Identity mMessageAuthor;
 	
 	/**

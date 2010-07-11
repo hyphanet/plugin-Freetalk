@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.UUID;
 
-import plugins.Freetalk.Persistent.Indexed;
+import plugins.Freetalk.Persistent.IndexedField;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -28,7 +28,7 @@ import freenet.support.StringValidityChecker;
  *
  * @author xor
  */
-@Indexed // TODO: Check whether we need the index
+@IndexedField // TODO: Check whether we need the index
 public class Board extends Persistent implements Comparable<Board> {
 
     /* Constants */
@@ -48,10 +48,10 @@ public class Board extends Persistent implements Comparable<Board> {
 
     /* Attributes, stored in the database */
     
-    @Indexed
+    @IndexedField
     private final String mID;
 
-    @Indexed
+    @IndexedField
     private final String mName;
 
     private final Date mFirstSeenDate;
@@ -220,13 +220,13 @@ public class Board extends Persistent implements Comparable<Board> {
     	return false;
     }
     
-    // @Indexed // I can't think of any query which would need to get all BoardMessageLink objects.
+    // @IndexedField // I can't think of any query which would need to get all BoardMessageLink objects.
     public static final class BoardMessageLink extends Persistent {
     	
-    	@Indexed
+    	@IndexedField
     	private final Board mBoard;
     	
-    	@Indexed
+    	@IndexedField
     	private final Message mMessage;
     	
     	private final int mMessageIndex;

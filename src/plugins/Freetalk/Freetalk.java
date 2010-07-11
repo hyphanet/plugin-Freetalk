@@ -286,7 +286,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         };
         
         for(Class clazz : persistentClasses) {
-        	boolean classHasIndex = clazz.getAnnotation(Persistent.Indexed.class) != null;
+        	boolean classHasIndex = clazz.getAnnotation(Persistent.IndexedField.class) != null;
         	
         	Logger.debug(this, "Peristent class: " + clazz.getCanonicalName() + "; hasIndex==" + classHasIndex);
         	
@@ -296,7 +296,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         	cfg.objectClass(clazz).indexed(true); // Notice: Db4o enables object indices for ALL classes by default anyway, this line is only to make it obvious.
    
         	for(Field field : clazz.getDeclaredFields()) {
-        		if(field.getAnnotation(Persistent.Indexed.class) != null) {
+        		if(field.getAnnotation(Persistent.IndexedField.class) != null) {
         			Logger.debug(this, "Registering indexed field " + clazz.getCanonicalName() + '.' + field.getName());
         			cfg.objectClass(clazz).objectField(field.getName()).indexed(true);
         		}

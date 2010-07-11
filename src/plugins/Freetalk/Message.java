@@ -31,7 +31,7 @@ import freenet.support.StringValidityChecker;
  * @author xor (xor@freenetproject.org)
  * @author saces
  */
-// @Indexed // I can't think of any query which would need to get all Message objects.
+// @IndexedField // I can't think of any query which would need to get all Message objects.
 public abstract class Message extends Persistent {
     
     /* Public constants */
@@ -61,7 +61,7 @@ public abstract class Message extends Persistent {
 	/**
 	 * The ID of the message. Format: Hex encoded author routing key + "@" + hex encoded random UUID. 
 	 */
-	@Indexed /* Indexed because it is our primary key */
+	@IndexedField /* IndexedField because it is our primary key */
 	protected final String mID;
 	
 	protected MessageList mMessageList; /* Not final because OwnMessages are assigned to message lists after a certain delay */
@@ -76,7 +76,7 @@ public abstract class Message extends Persistent {
 	/**
 	 * The parent thread ID which was calculated from {@link mThreadURI}
 	 */
-	@Indexed /* Indexed for being able to query all messages of a thread */
+	@IndexedField /* IndexedField for being able to query all messages of a thread */
 	protected final String mThreadID;
 	
 	/**
@@ -87,7 +87,7 @@ public abstract class Message extends Persistent {
 	/**
 	 * The parent message ID which was calculated from {@link mParentURI} 
 	 */
-	@Indexed /* Indexed for being able to get all replies to a message */
+	@IndexedField /* IndexedField for being able to get all replies to a message */
 	protected final String mParentID;
 	
 	/**
@@ -109,7 +109,7 @@ public abstract class Message extends Persistent {
 	/**
 	 * The date when the message was downloaded.
 	 */
-	@Indexed /* Indexed because Frost needs to query for all messages after the time it has last done so */
+	@IndexedField /* IndexedField because Frost needs to query for all messages after the time it has last done so */
 	protected final Date mFetchDate;
 	
 	protected final String mText;
@@ -152,7 +152,7 @@ public abstract class Message extends Persistent {
 	/**
 	 * Whether this message was linked into all it's boards. For an explanation of this flag please read the documentation of {@link wasLinkedIn}.
 	 */
-	@Indexed /* Indexed because the message manager needs to query for all messages which have not been linked in */
+	@IndexedField /* IndexedField because the message manager needs to query for all messages which have not been linked in */
 	private boolean mWasLinkedIn = false;
 	
 	

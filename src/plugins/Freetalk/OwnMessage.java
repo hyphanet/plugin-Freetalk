@@ -11,7 +11,7 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
-// @Indexed // I can't think of any query which would need to get all OwnMessage objects.
+// @IndexedField // I can't think of any query which would need to get all OwnMessage objects.
 public abstract class OwnMessage extends Message {
 
 	protected OwnMessage(MessageURI newURI, FreenetURI newFreenetURI, String newID, MessageList newMessageList, MessageURI newThreadURI,

@@ -6,7 +6,7 @@ package plugins.Freetalk.WoT;
 import plugins.Freetalk.Identity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Persistent;
-import plugins.Freetalk.Persistent.Indexed;
+import plugins.Freetalk.Persistent.IndexedField;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
@@ -25,12 +25,12 @@ import freenet.support.StringValidityChecker;
  * 
  * @author xor (xor@freenetproject.org)
  */
-@Indexed // TODO: Check whether we really need this index.
+@IndexedField // TODO: Check whether we really need this index.
 public class WoTIdentity extends Persistent implements Identity {
 	
 	/* Attributes, stored in the database. */
 	
-	@Indexed
+	@IndexedField
 	private final String mID;
     
 	/** The requestURI used to fetch this identity from Freenet */

@@ -5,7 +5,7 @@ package plugins.Freetalk;
 
 import java.util.HashMap;
 
-import plugins.Freetalk.Persistent.Indexed;
+import plugins.Freetalk.Persistent.IndexedField;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -21,7 +21,7 @@ import freenet.support.Logger;
  * 
  * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
  */
-@Indexed
+@IndexedField
 public final class Config extends Persistent {
 
 	/* Names of the config parameters */
