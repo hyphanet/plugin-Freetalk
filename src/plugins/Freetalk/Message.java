@@ -168,10 +168,7 @@ public abstract class Message extends Persistent {
 		catch(NoSuchMessageException e) {
 			throw new InvalidParameterException("The given message list does not contain this message: " + newURI);
 		}
-		
-		if(newParentURI != null && newThreadURI == null) 
-			Logger.error(this, "Message with parent URI but without thread URI created: " + newURI);
-		
+
 		if (newBoards.isEmpty())
 			throw new InvalidParameterException("No boards in message " + newURI);
 		
@@ -188,6 +185,19 @@ public abstract class Message extends Persistent {
 		mMessageList = newMessageList;
 		mAuthor = newAuthor;
 		mID = newID;
+		
+    	// There are 4 possible combinations:
+    	// Thread URI specified, parent URI specified: We are replying to the given message in the given thread.
+    	// Thread URI specified, parent URI not specified: We are replying to the given thread directly, parent URI will be set to thread URI.
+    	// Thread URI not specified, parent URI not specified: We are creating a new thread.
+    	// Thread URI not specified, parent URI specified: Invalid, we throw an exception.
+    	// 
+		// The last case is invalid because the thread URI of a message is the primary information which decides in which thread it is displayed
+    	// and you can link replies into multiple threads by replying to them with different thread URIs... so if there is only a parent URI and
+    	// no thread URI we cannot decide to which thread the message belongs because the parent might belong to multiple thread.
+		
+		if(newParentURI != null && newThreadURI == null) 
+			Logger.error(this, "Message with parent URI but without thread URI created: " + newURI);
 		
 		mParentURI = newParentURI != null ? newParentURI.clone() : (newThreadURI != null ? newThreadURI.clone() : null);
 		mParentID = mParentURI != null ? mParentURI.getMessageID() : null;

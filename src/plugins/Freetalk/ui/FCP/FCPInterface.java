@@ -789,6 +789,15 @@ public final class FCPInterface implements FredPluginFCP {
         synchronized(mFreetalk.getMessageManager()) {
 
             try {
+            	// There are 4 possible combinations:
+            	// Thread URI specified, parent URI specified: We are replying to the given message in the given thread.
+            	// Thread URI specified, parent URI not specified: We are replying to the given thread directly, parent URI will be set to thread URI.
+            	// Thread URI not specified, parent URI not specified: We are creating a new thread.
+            	// Thread URI not specified, parent URI specified: Invalid, the message constructor will throw an exception.
+            	// 
+        		// The last case is invalid because the thread URI of a message is the primary information which decides in which thread it is displayed
+            	// and you can link replies into multiple threads by replying to them with different thread URIs... so if there is only a parent URI and
+            	// no thread URI we cannot decide to which thread the message belongs because the parent might belong to multiple threads.
             	
                 // evaluate parentThread
                 final String parentThreadID = params.get("ParentThreadID"); // may be null
@@ -797,7 +806,7 @@ public final class FCPInterface implements FredPluginFCP {
                     try {
                         parentThread = mFreetalk.getMessageManager().get(parentThreadID);
                     } catch(final NoSuchMessageException e) {
-                        throw new InvalidParameterException("Message specified by ParentThreadID was not found");
+                        throw new InvalidParameterException("Message specified by ParentThreadID was not found.");
                     }
                 } else {
                 	parentThread = null;
@@ -805,13 +814,15 @@ public final class FCPInterface implements FredPluginFCP {
                 
                 // evaluate parentMessage
                 final String parentMsgId = params.get("ParentID"); // may be null
-                Message parentMessage = null;
+                final Message parentMessage;
                 if (parentMsgId != null) {
                     try {
                         parentMessage = mFreetalk.getMessageManager().get(parentMsgId);
                     } catch(final NoSuchMessageException e) {
                         throw new InvalidParameterException("Message specified by ParentID was not found");
                     }
+                } else {
+                	parentMessage = null;
                 }
 
                 // evaluate targetBoards
