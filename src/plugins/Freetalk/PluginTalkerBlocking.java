@@ -13,7 +13,11 @@ import freenet.support.api.Bucket;
 
 public class PluginTalkerBlocking implements FredPluginTalker {
 	
-	public static final long TIMEOUT = 3 * 60 * 1000;
+	/**
+	 * Timeout when waiting for FCP replies from WoT. This is set to a very high value because nodes which are under very heavy load sometimes cause
+	 * the FCP thread to stall for very long times...
+	 */
+	public static final long TIMEOUT = 10 * 60 * 1000;
 	
 	private PluginTalker mTalker;
 	
