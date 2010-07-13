@@ -1047,15 +1047,18 @@ public final class SubscribedBoard extends Board {
     		synchronized(mBoard) {
     	    		// TODO: This assumes that getAllThreadReplies() obtains the sorted order using an index. This is not the case right now. If we do not
     	    		// optimize getAllThreadReplies() we should just iterate over the unsorted replies list and do maximum search.
+    			
+    				// TODO: Put this in a function "computeLastReplyDate"....
     				
-    				mLastReplyDate = mMessageDate;
-    				
-    				for(BoardReplyLink reply : mBoard.getAllThreadReplies(mThreadID, true)) {
-    					mLastReplyDate = reply.getDate();
-    				}
+    				final ObjectSet<BoardReplyLink> replies = mBoard.getAllThreadReplies(mThreadID, true);
+    				final int repliesCount = replies.size();
+    				if(repliesCount>0)
+    					mLastReplyDate = replies.get(repliesCount-1).getDate();
+    				else
+    					mLastReplyDate = mMessageDate;
     		}
 
-    		// TODO: I decided not to change the "therad was read flag:" If the thread was unread before, then it is probably still unread now.
+    		// TODO: I decided not to change the "thread was read flag:" If the thread was unread before, then it is probably still unread now.
     		// If it was read before, removing a message won't change that.
     	}
     	
