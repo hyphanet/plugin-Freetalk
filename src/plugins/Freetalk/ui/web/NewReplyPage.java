@@ -202,6 +202,9 @@ public class NewReplyPage extends WebPageImpl {
 	private void addRateMessageBox(HTMLNode parent, Byte selectedMessageRating) {
 		Identity identity = mParentMessage.getAuthor();
 		
+		if(identity == mOwnIdentity)
+			return;
+		
 		HTMLNode rateMessageBox = getContentBox(l10n().getString(
 	            "NewReplyPage.RateMessageBox.Header",
 	            new String[] { "identityname" }, 

@@ -85,6 +85,7 @@ NewBoardPage.NewBoardBox.BoardNameBox.Header=Board name
 NewBoardPage.NewBoardBox.BoardNameBox.Text=Please try to make the name as self-explanatory as possible. You should split the name in categories separated by dots whenever possible, for example 'Freenet.Support' instead of just 'Support'. Board names are case insensitive, the boards "freenet" and "Freenet" are the same.
 NewBoardPage.NewBoardButton=Create the board
 NewReplyPage.RateMessageFailedBox.Title=Rating the message failed
+NewReplyPage.RateMessageFailedBox.Text=Changing the trust value of the author of the parent message failed.
 NewReplyPage.RateMessageSucceededBox.Title=Message rated
 NewReplyPage.RateMessageSucceededBox.Text=The author of the parent message was given ${value} trust points.
 NewReplyPage.RateMessageBox.AlreadyRated=You have already rated the parent message.
