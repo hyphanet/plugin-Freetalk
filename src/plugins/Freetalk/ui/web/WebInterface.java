@@ -198,7 +198,7 @@ public final class WebInterface {
 		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
 			if(!mFreetalk.wotConnected())
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
-			// FIXME: Secure log out against malicious links. 
+			// TODO: Secure log out against malicious links (by using POST with form password instead of GET)
 			// At the moment it is just a link and unsecured i.e. no form password check etc.
 			mSessionManager.deleteSession(context);
 			throw new RedirectException(logIn);
