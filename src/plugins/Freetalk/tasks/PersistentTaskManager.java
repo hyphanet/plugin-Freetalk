@@ -2,13 +2,13 @@ package plugins.Freetalk.tasks;
 
 import java.util.Random;
 
-import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.IdentityManager;
+import plugins.Freetalk.IdentityManager.OwnIdentityDeletedCallback;
 import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.Persistent;
-import plugins.Freetalk.IdentityManager.OwnIdentityDeletedCallback;
 import plugins.Freetalk.exceptions.DuplicateTaskException;
 import plugins.Freetalk.exceptions.NoSuchTaskException;
 
@@ -16,10 +16,13 @@ import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
+import freenet.node.PrioRunnable;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
+import freenet.support.TrivialTicker;
+import freenet.support.io.NativeThread;
 
-public class PersistentTaskManager implements Runnable, OwnIdentityDeletedCallback {
+public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCallback {
 	
 	private static final int THREAD_PERIOD = 5 * 60 * 1000; // TODO: Make configurable.
 	
@@ -27,73 +30,52 @@ public class PersistentTaskManager implements Runnable, OwnIdentityDeletedCallba
 	
 	protected ExtObjectContainer mDB;
 	
-	private volatile boolean isRunning = false;
-	private volatile boolean shutdownFinished = false;
-	private Thread mThread = null;
+	private final TrivialTicker mTicker;
+	private final Random mRandom;
+	
 	
 	public PersistentTaskManager(ExtObjectContainer myDB, Freetalk myFreetalk) {
 		assert(myDB != null);
 		
 		mDB = myDB;
 		mFreetalk = myFreetalk;
+		
+		mTicker = new TrivialTicker(mFreetalk.getPluginRespirator().getNode().executor);
+		mRandom = mFreetalk.getPluginRespirator().getNode().fastWeakRandom;
+	}
+	
+	public int getPriority() {
+		return NativeThread.LOW_PRIORITY;
 	}
 	
 	public void run() {
-		Logger.debug(this, "Task manager started.");
-		mThread = Thread.currentThread();
-		isRunning = true;
-		
-		Random random = mFreetalk.getPluginRespirator().getNode().fastWeakRandom;
-		
-		try {
-		while(isRunning) {
-			Thread.interrupted();
-			Logger.debug(this, "Task manager loop running...");
+		Logger.debug(this, "Main loop running...");
 
+		try {
 			long now = CurrentTimeUTC.getInMillis();
 			proccessTasks(getPendingTasks(now), now);
-			
-			Logger.debug(this, "Task manager loop finished.");
-
-			try {
-				Thread.sleep(THREAD_PERIOD/2 + random.nextInt(THREAD_PERIOD)); // TODO: Maybe use a Ticker implementation instead?
-			}
-			catch (InterruptedException e)
-			{
-				mThread.interrupt();
-			}
-		}
+		
+			// TODO: Its nonsense to sleep for random times and check whether a task has expired, we should rather sleep until the next task will
+			// expire... Implement that!
+		} finally {
+			final long sleepTime =  THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
+			Logger.debug(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
+			mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), sleepTime, false, true);
 		}
 		
-		finally {
-			synchronized (this) {
-				shutdownFinished = true;
-				Logger.debug(this, "Task manager thread exiting.");
-				notify();
-			}
-		}
+		Logger.debug(this, "Main loop finished.");
 	}
 	
 	public void start() {
-		mFreetalk.getPluginRespirator().getNode().executor.execute(this, "Freetalk " + this.getClass().getSimpleName());
+		Logger.debug(this, "Starting...");
+		mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), 0, false, true);
 		Logger.debug(this, "Started.");
 	}
 	
 	public void terminate() {
-		Logger.debug(this, "Stopping ...");
-		isRunning = false;
-		mThread.interrupt();
-		synchronized(this) {
-			while(!shutdownFinished) {
-				try {
-					wait();
-				}
-				catch (InterruptedException e) {
-					Thread.interrupted();
-				}
-			}
-		}
-		Logger.debug(this, "Stopped.");
+		Logger.debug(this, "Terminating ...");
+		mTicker.shutdown();
+		Logger.debug(this, "Terminated.");
 	}
 	
 	@SuppressWarnings("unchecked")

@@ -31,6 +31,7 @@ import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
+import freenet.node.PrioRunnable;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
@@ -38,6 +39,7 @@ import freenet.support.Executor;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
 
@@ -46,7 +48,7 @@ import freenet.support.io.NativeThread;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public final class WoTIdentityManager extends IdentityManager {
+public final class WoTIdentityManager extends IdentityManager implements PrioRunnable {
 	
 	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (3 * 60 * 1000) : (5 * 60 * 1000);
 	
@@ -61,6 +63,8 @@ public final class WoTIdentityManager extends IdentityManager {
 	/** The minimal amount of time between fetching own identities */
 	private static final int MINIMAL_OWN_IDENTITY_FETCH_DELAY = 1000;
 	
+	private boolean mConnectedToWoT = false;
+	
 	private boolean mIdentityFetchInProgress = false;
 	private boolean mOwnIdentityFetchInProgress = false;
 	private long mLastIdentityFetchTime = 0;
@@ -69,8 +73,9 @@ public final class WoTIdentityManager extends IdentityManager {
 	/** If true, this identity manager is being use in a unit test - it will return 0 for any score / trust value then */
 	private final boolean mIsUnitTest;
 
-	private volatile boolean isRunning = false;
-	private volatile boolean shutdownFinished = false;
+
+	private final TrivialTicker mTicker;
+	private final Random mRandom;
 
 	private PluginTalkerBlocking mTalker = null;
 
@@ -84,8 +89,11 @@ public final class WoTIdentityManager extends IdentityManager {
 	
 
 	public WoTIdentityManager(Freetalk myFreetalk, Executor myExecutor) {
-		super(myFreetalk, myExecutor);
+		super(myFreetalk);
 		mIsUnitTest = false;
+		
+		mTicker = new TrivialTicker(myExecutor);
+		mRandom = mFreetalk.getPluginRespirator().getNode().fastWeakRandom;
 	}
 	
 	/**
@@ -94,6 +102,8 @@ public final class WoTIdentityManager extends IdentityManager {
 	public WoTIdentityManager(Freetalk myFreetalk) {
 		super(myFreetalk);
 		mIsUnitTest = true;
+		mTicker = null;
+		mRandom = null;
 	}
 	
 	
@@ -849,31 +859,12 @@ public final class WoTIdentityManager extends IdentityManager {
 	}
 
 	public void run() { 
-		Logger.debug(this, "Identity manager started.");
-		isRunning = true;
+		Logger.debug(this, "Main loop running...");
 		 
-		long nextIdentityRequestTime = 0;
-		
-		Random random = mFreetalk.getPluginRespirator().getNode().fastWeakRandom;
-		
 		try {
-			updateShortestUniqueNicknameCache();
-		} catch(Exception e) {
-			Logger.error(this, "Initializing shortest unique nickname cache failed", e);
-		}
+			mConnectedToWoT = connectToWoT();
 		
-		try {
-		while(isRunning) {
-			Thread.interrupted();
-			Logger.debug(this, "Identity manager loop running...");
-			
-			boolean connected = connectToWoT();
-
-			long currentTime = System.currentTimeMillis();
-			
-			long sleepTime = connected ? (THREAD_PERIOD/2 + random.nextInt(THREAD_PERIOD)) : WOT_RECONNECT_DELAY;
-			
-			if(connected && currentTime >= nextIdentityRequestTime) {
+			if(mConnectedToWoT) {
 				try {
 					fetchOwnIdentities(); // Fetch the own identities first to prevent own-identities from being imported as normal identity...
 					fetchIdentities();
@@ -881,53 +872,38 @@ public final class WoTIdentityManager extends IdentityManager {
 				} catch (Exception e) {
 					Logger.error(this, "Fetching identities failed.", e);
 				}
-				
-				nextIdentityRequestTime = currentTime + sleepTime;
 			}
-			
-			Logger.debug(this, "Identity manager loop finished. Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
-
-			try {
-				synchronized(this) {
-					// sleep/interrupt protocol seems unreliable...
-					wait(sleepTime);
-				}
-			}
-			catch (InterruptedException e)
-			{
-				Logger.debug(this, "Identity manager loop interrupted. isRunning="+isRunning);
-			}
-		}
+		} finally {
+			final long sleepTime =  mConnectedToWoT ? (THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD)) : WOT_RECONNECT_DELAY;
+			Logger.debug(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
+			mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), sleepTime, false, true);
 		}
 		
-		finally {
-			synchronized (this) {
-				shutdownFinished = true;
-				Logger.debug(this, "Identity manager thread exiting.");
-				notify();
-			}
-		}
+		Logger.debug(this, "Main loop finished.");
 	}
 	
 	public int getPriority() {
 		return NativeThread.MIN_PRIORITY;
 	}
 	
-	public void terminate() {
-		Logger.debug(this, "Stopping ...");
-		isRunning = false;
-		synchronized(this) {
-			while(!shutdownFinished) {
-				notifyAll();
-				try {
-					wait();
-				}
-				catch (InterruptedException e) {
-					Thread.interrupted();
-				}
-			}
+	public void start() {
+		Logger.debug(this, "Starting...");
+		mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), 0, false, true);
+		
+		// TODO: Queue this as a job aswell.
+		try {
+			updateShortestUniqueNicknameCache();
+		} catch(Exception e) {
+			Logger.error(this, "Initializing shortest unique nickname cache failed", e);
 		}
-		Logger.debug(this, "Stopped.");
+		
+		Logger.debug(this, "Started.");
+	}
+	
+	public void terminate() {
+		Logger.debug(this, "Terminating ...");
+		mTicker.shutdown();
+		Logger.debug(this, "Terminated.");
 	}
 
 	

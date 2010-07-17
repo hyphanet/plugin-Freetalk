@@ -30,12 +30,14 @@ import freenet.client.async.USKRetriever;
 import freenet.client.async.USKRetrieverCallback;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
+import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
+import freenet.support.io.NativeThread;
 
 /**
  * Permanently subscribes to the {@link WoTMessageList} USKs of all known identities.
@@ -44,7 +46,7 @@ import freenet.support.io.Closer;
  *  
  * @author xor (xor@freenetproject.org)
  */
-public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRetrieverCallback, Runnable, IdentityManager.ShouldFetchStateChangedCallback {
+public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRetrieverCallback, PrioRunnable, IdentityManager.ShouldFetchStateChangedCallback {
 
 	private static final long PROCESS_COMMANDS_DELAY = 60 * 1000;
 	
@@ -273,7 +275,11 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	}
 	
 	private void scheduleCommandProcessing() {
-		mTicker.queueTimedJob(this, "FT IdentityFetcher", PROCESS_COMMANDS_DELAY, true, true);
+		mTicker.queueTimedJob(this, "FT IdentityFetcher", PROCESS_COMMANDS_DELAY, false, true);
+	}
+	
+	public int getPriority() {
+		return NativeThread.LOW_PRIORITY;
 	}
 	
 	public void start() { 

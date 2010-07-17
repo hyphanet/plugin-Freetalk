@@ -20,13 +20,11 @@ import freenet.support.Logger;
  * @author xor (xor@freenetproject.org)
  * @author saces
  */
-public abstract class IdentityManager implements PrioRunnable {
+public abstract class IdentityManager {
 
 	protected final Freetalk mFreetalk;
 	
 	protected final ExtObjectContainer db;
-
-	protected final Executor mExecutor;
 	
 	
 	protected final ArrayList<NewIdentityCallback> mNewIdentityCallbacks = new ArrayList<NewIdentityCallback>();
@@ -44,7 +42,6 @@ public abstract class IdentityManager implements PrioRunnable {
 		Logger.debug(this, "Creating identity manager...");
 		mFreetalk = myFreetalk;
 		db = mFreetalk.getDatabase();
-		mExecutor = myExecutor;
 	}
 
 	/**
@@ -53,7 +50,6 @@ public abstract class IdentityManager implements PrioRunnable {
 	protected IdentityManager(Freetalk myFreetalk) {
 		mFreetalk = myFreetalk;
 		db = mFreetalk.getDatabase();
-		mExecutor = null;
 	}
 	
 	public abstract OwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles) throws Exception;
@@ -182,10 +178,7 @@ public abstract class IdentityManager implements PrioRunnable {
 	}
 
 
-	public void start() {
-		mExecutor.execute(this, "Freetalk " + this.getClass().getSimpleName());
-		Logger.debug(this, "Started.");
-	}
+	public abstract void start();
 
 	public abstract void terminate();
 

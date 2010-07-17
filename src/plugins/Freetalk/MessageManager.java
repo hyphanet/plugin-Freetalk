@@ -32,10 +32,12 @@ import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
+import freenet.node.PrioRunnable;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.TrivialTicker;
+import freenet.support.io.NativeThread;
 
 /**
  * The MessageManager is the core connection between the UI and the backend of the plugin:
@@ -44,7 +46,7 @@ import freenet.support.TrivialTicker;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public abstract class MessageManager implements Runnable, IdentityDeletedCallback {
+public abstract class MessageManager implements PrioRunnable, IdentityDeletedCallback {
 
 	protected final IdentityManager mIdentityManager;
 	
@@ -85,11 +87,8 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	 */
 	public static final long MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (30 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);  // TODO: Make configurable.
 	
-	private volatile boolean isRunning = false;
-	private volatile boolean shutdownFinished = false;
-	private Thread mThread;
-	
 	private final TrivialTicker mTicker;
+	private final Random mRandom;
 	
 
 	public MessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager, Freetalk myFreetalk, PluginRespirator myPluginRespirator) {
@@ -104,6 +103,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		mPluginRespirator = myPluginRespirator;
 		
 		mTicker = new TrivialTicker(mFreetalk.getPluginRespirator().getNode().executor);
+		mRandom = mPluginRespirator.getNode().fastWeakRandom;
 		
 		deleteBrokenObjects();
 		
@@ -119,6 +119,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		mIdentityManager = mFreetalk.getIdentityManager();
 		mPluginRespirator = null;
 		mTicker = null;
+		mRandom = null;
 	}
 	
 	/**
@@ -206,54 +207,32 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 		Logger.debug(this, "Finished looking for broken MessageList objects.");
 	}
 	
-	public void run() {
-		Logger.debug(this, "Message manager started.");
-		mThread = Thread.currentThread();
-		isRunning = true;
-		
-		Random random = mPluginRespirator.getNode().fastWeakRandom;
-		
-		try {
-			Logger.debug(this, "Waiting for the node to start up...");
-			Thread.sleep(STARTUP_DELAY/2 + random.nextInt(STARTUP_DELAY));
-		}
-		catch (InterruptedException e)
-		{
-			mThread.interrupt();
-		}
-		
-		try {
-			while(isRunning) {
-				Logger.debug(this, "Message manager loop running...");
-				
-				// Must be called periodically because it is not called on demand.
-				clearExpiredFetchFailedMarkers();
-				
-				recheckUnwantedMessages();
-				
-				Logger.debug(this, "Message manager loop finished.");
-
-				try {
-					Thread.sleep(THREAD_PERIOD/2 + random.nextInt(THREAD_PERIOD));  // TODO: Maybe use a Ticker implementation instead?
-				}
-				catch (InterruptedException e)
-				{
-					mThread.interrupt();
-					Logger.debug(this, "Message manager loop interrupted!");
-				}
-			}
-		}
-		
-		finally {
-			synchronized (this) {
-				shutdownFinished = true;
-				Logger.debug(this, "Message manager thread exiting.");
-				notify();
-			}
-		}
+	public int getPriority() {
+		return NativeThread.MIN_PRIORITY;
 	}
 	
-	private final Runnable mNewMessageProcessor = new Runnable() {
+	public void run() {
+		Logger.debug(this, "Main loop running...");
+		
+		try {
+			// Must be called periodically because it is not called on demand.
+			clearExpiredFetchFailedMarkers();
+
+			recheckUnwantedMessages();
+		}  finally {
+			long sleepTime = THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
+			Logger.debug(this, "Sleeping for " + sleepTime/(60*1000) + " minutes.");
+			mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), sleepTime, false, true);
+		}
+		
+		Logger.debug(this, "Main loop finished.");
+	}
+	
+	private final Runnable mNewMessageProcessor = new PrioRunnable() {
+		public int getPriority() {
+			return NativeThread.NORM_PRIORITY;
+		}
+		
 		public void run() {
 			Logger.debug(MessageManager.this, "Processing new messages...");
 			
@@ -271,7 +250,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	private void scheduleNewMessageProcessing() {
 		Logger.debug(this, "Scheduling new message processing to be run in " + PROCESS_NEW_MESSAGES_DELAY / (60*1000) + " minutes...");
 		if(mTicker != null)
-			mTicker.queueTimedJob(mNewMessageProcessor, "FT NewMessageProcessor", PROCESS_NEW_MESSAGES_DELAY, true, true);
+			mTicker.queueTimedJob(mNewMessageProcessor, "Freetalk " + this.getClass().getSimpleName(), PROCESS_NEW_MESSAGES_DELAY, false, true);
 		else { // For unit tests
 			mNewMessageProcessor.run();
 		}
@@ -279,7 +258,11 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 	
 	
 	public void start() {
-		mPluginRespirator.getNode().executor.execute(this, "Freetalk " + this.getClass().getSimpleName());
+		Logger.debug(this, "Starting...");
+		
+		long startupDelay = STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY); 
+		Logger.debug(this, "Main loop will run in " + startupDelay/(60*1000) + " minutes.");
+		mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), startupDelay, false, true);
 		
 		// It might happen that Freetalk is shutdown after a message has been downloaded and before addMessagesToBoards was called:
 		// Then the message will still be stored but not visible in the boards because storing a message and adding it to boards are separate transactions.
@@ -291,19 +274,7 @@ public abstract class MessageManager implements Runnable, IdentityDeletedCallbac
 
 	public void terminate() {
 		Logger.debug(this, "Stopping ..."); 
-		isRunning = false;
-		mThread.interrupt();
-		mTicker.shutdown(); // First tell our main thread to exit, then the Ticker so they can shutdown simultaneously
-		synchronized(this) {
-			while(!shutdownFinished) {
-				try {
-					wait();
-				}
-				catch (InterruptedException e) {
-					Thread.interrupted();
-				}
-			}
-		}
+		mTicker.shutdown();
 		Logger.debug(this, "Stopped.");
 	}
 	
