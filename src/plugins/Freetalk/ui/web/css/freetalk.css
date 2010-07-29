@@ -13,6 +13,10 @@
 	color: #c00;
 }
 
+.freetalk .message .title {
+	height: 1.2em;
+}
+
 .freetalk .message .title.unread {
 	background-color: #ddd;
 }
