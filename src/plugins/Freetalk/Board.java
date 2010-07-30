@@ -223,9 +223,10 @@ public class Board extends Persistent implements Comparable<Board> {
     	private final Board mBoard;
     	
     	@IndexedField
-    	private final Message mMessage;
+    	private final int mIndex;
     	
-    	private final int mMessageIndex;
+    	@IndexedField
+    	private final Message mMessage;
     	
     	private final Identity mAuthor;
     	
@@ -236,10 +237,10 @@ public class Board extends Persistent implements Comparable<Board> {
     		
     		mBoard = myBoard;
     		mMessage = myMessage;
-    		mMessageIndex = myIndex;
+    		mIndex = myIndex;
     		mAuthor = myMessage.getAuthor();
     		
-    		assert(mMessageIndex == (mBoard.mNextFreeMessageIndex-1));
+    		assert(mIndex == (mBoard.mNextFreeMessageIndex-1));
     	}
     	
     	public Board getBoard() {
@@ -252,7 +253,7 @@ public class Board extends Persistent implements Comparable<Board> {
     	}
     	
     	public int getMessageIndex() {
-    		return mMessageIndex;
+    		return mIndex;
     	}
     	
     	public Identity getAuthor() {
@@ -315,7 +316,7 @@ public class Board extends Persistent implements Comparable<Board> {
         Query q = mDB.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
-        q.descend("mMessageIndex").constrain(index).greater();
+        q.descend("mIndex").constrain(index).greater();
         return new Persistent.InitializingObjectSet<BoardMessageLink>(mFreetalk, q.execute());
     }
     
@@ -324,6 +325,22 @@ public class Board extends Persistent implements Comparable<Board> {
     	query.constrain(BoardMessageLink.class);
     	query.descend("mBoard").constrain(this).identity();
     	return query.execute().size();
+    }
+    
+    /**
+     * Sanity check function for checking whether the given message really belongs to this board.
+     * @throws IllegalArgumentException If the message does not belong to this board according to its board list or if it is an OwnMessage.
+     */
+    protected final void throwIfNotAllowedInThisBoard(Message newMessage) {
+    	if(newMessage instanceof OwnMessage) {
+    		/* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
+    		 * successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
+    		throw new IllegalArgumentException("Adding OwnMessages to a board is not allowed.");
+    	}
+    	
+    	if(contains(newMessage) == false)
+    		throw new IllegalArgumentException("addMessage called with a message which was not posted to this board (" + getName() + "): " +
+    				newMessage);
     }
     
     /**
@@ -338,14 +355,7 @@ public class Board extends Persistent implements Comparable<Board> {
      * @throws RuntimeException If storing this Board to the database fails. 
      */
     protected synchronized void addMessage(Message newMessage) throws Exception {
-    	if(newMessage instanceof OwnMessage) {
-    		// We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
-    		// successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug
-    		throw new IllegalArgumentException("Adding OwnMessages to a board is not allowed.");
-    	}
-    	
-    	if(contains(newMessage) == false)
-    		throw new IllegalArgumentException("addMessage called with a message which was not posted to this board (" + getName() + "): " + newMessage);
+    	throwIfNotAllowedInThisBoard(newMessage);
     	
     	try {
     		getMessageLink(newMessage);
