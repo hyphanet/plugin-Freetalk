@@ -242,7 +242,8 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 			// fail due to connectivity issues (and currently most likely due to bugs in PluginTalker and especially BlockingPluginTalker!)
 			boolean success2 = synchronizeSubscribedBoards();
 			
-			if(!success1 || !success2)
+			// If it didn't work we re-schedule it... but not in unit tests, they would infinite loop..
+			if(mTicker != null && (!success1 || !success2))
 				scheduleNewMessageProcessing();
 		}
 	};
@@ -516,7 +517,7 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		
 		boolean wasDownloadedAlready;
 		try {
-			get(message.getID());
+			message = get(message.getID());
 			wasDownloadedAlready = true;
 			Logger.error(this, "Downloaded a message which we already have: " + message.getURI());
 		}
@@ -541,6 +542,31 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 					
 					ref.setMessageWasDownloadedFlag();
 					ref.storeWithoutCommit();
+				}
+				
+				if(wasDownloadedAlready) {
+					Persistent.checkedCommit(db, this);
+					return;
+				}
+				
+				try {
+					message.setThread(get(message.getThreadID())); // Calls storeWithoutCommit
+				} catch(NoSuchMessageException e) {
+					// The message has no thread ID or the parent thread was not downloaded yet
+				}
+				
+				try {
+					message.setParent(get(message.getParentID()));  // Calls storeWithoutCommit
+				} catch(NoSuchMessageException e) {
+					// The message has no parent ID or the parent message was not downloaded yet
+				}
+				
+				for(Message reply : getAllRepliesToMessage(message.getID())) {
+					reply.setParent(message); // Calls storeWithoutCommit
+				}
+				
+				for(Message threadReply : getAllThreadRepliesToMessage(message.getID())) {
+					threadReply.setThread(message); // Calls storeWithoutCommit
 				}
 
 				Persistent.checkedCommit(db, this);
@@ -937,11 +963,27 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query);
 	}
 	
+	private ObjectSet<Message> getAllRepliesToMessage(String messageID) {
+		final Query query = db.query();
+		query.constrain(Message.class);
+		query.constrain(OwnMessage.class).not();
+		query.descend("mParentID").constrain(messageID);
+		return new Persistent.InitializingObjectSet<Message>(mFreetalk, query);
+	}
+	
 	private ObjectSet<Message> getAllRepliesToMessage(Message message) {
 		final Query query = db.query();
 		query.constrain(Message.class);
 		query.constrain(OwnMessage.class).not();
 		query.descend("mParent").constrain(message).identity();
+		return new Persistent.InitializingObjectSet<Message>(mFreetalk, query);
+	}
+	
+	private ObjectSet<Message> getAllThreadRepliesToMessage(String threadID) {
+		final Query query = db.query();
+		query.constrain(Message.class);
+		query.constrain(OwnMessage.class).not();
+		query.descend("mThreadID").constrain(threadID);
 		return new Persistent.InitializingObjectSet<Message>(mFreetalk, query);
 	}
 	
