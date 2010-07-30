@@ -5,14 +5,15 @@ package plugins.Freetalk.ui.web;
 
 import java.text.DateFormat;
 import java.util.Arrays;
+import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.Identity;
-import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.Identity;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
@@ -23,6 +24,7 @@ import plugins.Freetalk.WoT.WoTMessageRating;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.MessageNotFetchedException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageRatingException;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
@@ -46,16 +48,16 @@ public final class ThreadPage extends WebPageImpl {
     private static final DateFormat mLocalDateFormat = DateFormat.getDateTimeInstance();
 
     public ThreadPage(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n)
-    throws NoSuchMessageException, NoSuchBoardException {
+    throws NoSuchMessageException, NoSuchBoardException, NoSuchElementException {
         super(myWebInterface, viewer, request, _baseL10n);
         
         String boardName = request.getParam("BoardName");
         if(boardName.length() == 0) // Also allow POST requests.
-        	boardName = request.getPartAsString("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH);
+        	boardName = request.getPartAsStringFailsafe("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH);
         
         String threadID = request.getParam("ThreadID");
         if(threadID.length() == 0)
-        	threadID = request.getPartAsString("ThreadID", 256); // TODO: Use a constant for max thread ID length
+        	threadID = request.getPartAsStringFailsafe("ThreadID", 256); // TODO: Use a constant for max thread ID length
         
         mMarktThreadAsUnread = mRequest.isPartSet("MarkThreadAsUnread");
         
@@ -75,12 +77,11 @@ public final class ThreadPage extends WebPageImpl {
             	mThread = mBoard.getThreadLink(mThreadID);
             	
             	makeBreadcrumbs();
-           
-            	if(mMarktThreadAsUnread && mThread.wasThreadRead()) { // Mark thread as unread if requested.
-        			mThread.markThreadAsUnread();
-        			mThread.storeAndCommit();
-        		}
             	
+            	// Mark as unread first, then display
+            	if(mMarktThreadAsUnread)
+        			mThread.markThreadAndRepliesAsUnreadAndCommit();
+           
             	try {
             		Message threadMessage = mThread.getMessage();
             		
@@ -92,30 +93,26 @@ public final class ThreadPage extends WebPageImpl {
             	catch(MessageNotFetchedException e) {
             		addThreadNotDownloadedWarning(mThread);
             	}
-            	
-        		if(!mMarktThreadAsUnread && !mThread.wasThreadRead()) { // After displaying it to the user, mark it as read 
-	        		mThread.markAsRead();
-	        		mThread.markThreadAsRead();
-	            	mThread.storeAndCommit();
-        		}
 
                 for(BoardReplyLink reference : mBoard.getAllThreadReplies(mThread.getThreadID(), true)) {
-                	if(mMarktThreadAsUnread && reference.wasRead()) { // If requested, mark the messages of the thread as unread
-                    	reference.markAsUnread();
-                     	reference.storeAndCommit();
-                    }
-                	
                 	try {
                 		addMessageBox(reference.getMessage(), reference);
-                	} catch(NoSuchMessageException e) {
-                		throw new RuntimeException(e); // getMessage() should never fail for BoardReplyLink.
+                	} catch(MessageNotFetchedException e) {
+                		addReplyNotDownloadedWarning(reference);
+                		// TODO: Ensure that the warning is not displayed before a message whose parent is present:
+                		// An attacker whose is trying to attack a message X might post a message A with an invalid parent ID and set the date 
+                		// of A to the date of X. The SubscribedBoard code will then guess the date of A's parent as its date minus 1
+                		// millisecond,  resulting in the construction of a ghost BoardReplyLink for A's parent with date == date of X - 1ms.
+                		// Therefore, the "Reply not downloaded" warning will be displayed before X even though X's parent might be available
+                		// This problem is inherent to flat (i.e. non-treeview) thread display and therefore not fixed in SubscribedBoard...
+                		// Right now this is only a TO-DO and not FIX-ME because the l10n of the not-downloaded-warning has been chosen carefully
+                		// so it does not state that the not-downloaded message is parent of the next message, it just says "a message is missing here"
                 	}
-
-                    if(!mMarktThreadAsUnread && !reference.wasRead()) { // After displaying the messages to the user, mark them as read
-	                    reference.markAsRead();
-	                   	reference.storeAndCommit();
-                    }
                 }
+                
+                // After most of the displaying-code has not failed we mark as read
+                if(!mMarktThreadAsUnread)
+            		mThread.markThreadAndRepliesAsReadAndCommit();
         	}
 			}
         } catch(NoSuchMessageException e) {
@@ -137,41 +134,65 @@ public final class ThreadPage extends WebPageImpl {
     }
     
     private void addThreadNotDownloadedWarning(BoardThreadLink ref) {
-        HTMLNode table = mContentNode.addChild("table", new String[] {"border", "width" }, new String[] { "0", "100%" });
-        HTMLNode row = table.addChild("tr");
-        HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width" }, new String[] { "left", "top", "2", "15%" }, "");
-    	// TODO: The author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out
-    	// what the proper place for a function "getIdentityIDFromThreadID" is and whether I have already written one which can do that, and if
-    	// yes, where it is. BUT we should display a warning that the fact "the original thread was written by X" might not be true because 
-		// thread-IDs can be spoofed.
-        authorNode.addChild("b").addChild("i").addChild("#", l10n().getString("ThreadPage.ThreadNotDownloadedWarning.Author"));
-
-        HTMLNode title = row.addChild(ref.wasRead() ? "td" : "th", "align", "left", "");
-
-        addMarkThreadAsUnreadButton(title, (BoardThreadLink)ref);
+		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class" }, new String[] { "0", "100%", "message" });
+		HTMLNode row = table.addChild("tr", "class", "message");
         
-        title.addChild("b", l10n().getString("ThreadPage.ThreadNotDownloadedWarning.Title"));
+        try {
+        	addAuthorNode(row, mFreetalk.getIdentityManager().getIdentity(ref.getAuthorID()));
+        } catch(NoSuchIdentityException e) {
+            HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width" },
+            		new String[] { "left", "top", "2", "15%" }, "");
+            authorNode.addChild("b").addChild("i").addChild("#", l10n().getString("ThreadPage.ThreadNotDownloadedWarning.Author"));	
+        }
+
+        HTMLNode title = row.addChild("td", new String[] { "align", "class" }, 
+        		new String[] { "left", "title " + ((ref == null || ref.wasRead()) ? "read" : "unread") });
+        title.addChild("div", "class", "date", mLocalDateFormat.format(ref.getMessageDate()));
         
+        addMarkThreadAsUnreadButton(title, ref);
+        
+        title.addChild("div", "class", "text", l10n().getString("ThreadPage.ThreadNotDownloadedWarning.Title"));
+        
+        // Body of the message        
         row = table.addChild("tr");
         HTMLNode text = row.addChild("td", "align", "left", "");
         text.addChild("div", "class", "infobox-error", l10n().getString("ThreadPage.ThreadNotDownloadedWarning.Content"));
     }
     
+    private void addReplyNotDownloadedWarning(BoardReplyLink ref) {
+		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class" }, new String[] { "0", "100%", "message" });
+		HTMLNode row = table.addChild("tr", "class", "message");
+        
+        try {
+        	addAuthorNode(row, mFreetalk.getIdentityManager().getIdentity(ref.getAuthorID()));
+        } catch(NoSuchIdentityException e) {
+            HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width" },
+            		new String[] { "left", "top", "2", "15%" }, "");
+            authorNode.addChild("b").addChild("i").addChild("#", l10n().getString("ThreadPage.ReplyNotDownloadedWarning.Author"));	
+        }
+
+        HTMLNode title = row.addChild("td", new String[] { "align", "class" }, 
+        		new String[] { "left", "title " + ((ref == null || ref.wasRead()) ? "read" : "unread") });
+        title.addChild("div", "class", "date", mLocalDateFormat.format(ref.getMessageDate()));
+        
+        
+        title.addChild("div", "class", "text", l10n().getString("ThreadPage.ReplyNotDownloadedWarning.Title"));
+        
+        // Body of the message        
+        row = table.addChild("tr");
+        HTMLNode text = row.addChild("td", "align", "left", "");
+        text.addChild("div", "class", "infobox-error", l10n().getString("ThreadPage.ReplyNotDownloadedWarning.Content"));
+    }
+    
     private void addThreadIsNoThreadWarning(Message threadWhichIsNoThread) {
     	HTMLNode div = addAlertBox(l10n().getString("ThreadPage.ThreadIsNoThreadWarning.Header")).addChild("div");
     	
-    	String realThreadID;
-    		
-    	try {
-    		realThreadID = threadWhichIsNoThread.getThreadID();
-    	}
-    	catch (NoSuchMessageException e) {
-    	    throw new IllegalArgumentException("SHOULD NOT HAPPEN: addThreadIsNoThreadWarning called for a thread: " + mThread.getThreadID());
-    	}
-    	
+    	String realThreadID = threadWhichIsNoThread.getThreadIDSafe();
+    
     	Board realThreadBoard;
     	
     	// mBoard is a SubscribedBoard, getBoards() only returns a list of Board objects, so we must call getParentBoard()
+    	// TODO: This should be encapsulated in a function Message.containedInBoard(Board board)
     	if(Arrays.binarySearch(threadWhichIsNoThread.getBoards(), mBoard.getParentBoard()) >= 0)
     		realThreadBoard = mBoard;
     	else {
@@ -193,23 +214,15 @@ public final class ThreadPage extends WebPageImpl {
                         "<a href=\""+uri+"\">",
                         "</a>" });
     }
-
-    /**
-     * Shows the given message.
-     * 
-     * You have to synchronize on mLocalDateFormat when using this function
-     * 
-     * @param message The message which shall be shown. Must not be null.
-     * @param ref A reference to the message which is to be displayed. Can be null, then the "message was read?" information will be unavailable. 
-     */
-    private void addMessageBox(Message message, MessageReference ref) {
-    	
-    	final WoTIdentity author = (WoTIdentity)message.getAuthor();
-
-		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class" }, new String[] { "0", "100%", "message" });
-		HTMLNode row = table.addChild("tr", "class", "message");
-		HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width", "class" }, new String[] { "left", "top", "2", "15%", "author" }, "");
-		authorNode.addChild("a", new String[] { "class", "href", "title" }, new String[] { "identity-link", "/WoT/ShowIdentity?id=" + author.getID(), "Web of Trust Page" }).addChild("abbr", new String[] { "title" }, new String[] { message.getAuthor().getID() }).addChild("span", "class", "name", message.getAuthor().getShortestUniqueName());
+    
+    private void addAuthorNode(HTMLNode parent, WoTIdentity author) {
+		HTMLNode authorNode = parent.addChild("td", new String[] { "align", "valign", "rowspan", "width", "class" }, new String[] { "left", "top", "2", "15%", "author" }, "");
+		
+		authorNode.addChild("a", new String[] { "class", "href", "title" },
+				new String[] { "identity-link", "/WoT/ShowIdentity?id=" + author.getID(), "Web of Trust Page" })
+				.addChild("abbr", new String[] { "title" }, new String[] { author.getID() })
+				.addChild("span", "class", "name", author.getShortestUniqueName());
+		
         authorNode.addChild("br");
         authorNode.addChild("#", l10n().getString("ThreadPage.Author.Posts") + ": " + mFreetalk.getMessageManager().getMessagesBy(author).size());
         authorNode.addChild("br");
@@ -276,6 +289,24 @@ public final class ThreadPage extends WebPageImpl {
         
         authorNode.addChild("br");
         authorNode.addChild("div", "class", "identicon").addChild("img", new String[] { "src", "width", "height" }, new String[] { "/WoT/GetIdenticon?identity=" + author.getID(), "128", "128"});
+    }
+
+    /**
+     * Shows the given message.
+     * 
+     * You have to synchronize on mLocalDateFormat when using this function
+     * 
+     * @param message The message which shall be shown. Must not be null.
+     * @param ref A reference to the message which is to be displayed. Can be null, then the "message was read?" information will be unavailable. 
+     */
+    private void addMessageBox(Message message, MessageReference ref) {
+    	
+    	final WoTIdentity author = (WoTIdentity)message.getAuthor();
+
+		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class" }, new String[] { "0", "100%", "message" });
+		HTMLNode row = table.addChild("tr", "class", "message");
+
+		addAuthorNode(row, author);
 
         // Title of the message
 		HTMLNode title = row.addChild("td", new String[] { "align", "class" }, new String[] { "left", "title " + ((ref == null || ref.wasRead()) ? "read" : "unread") });
@@ -292,6 +323,14 @@ public final class ThreadPage extends WebPageImpl {
         		WoTMessageRating rating = mFreetalk.getMessageManager().getMessageRating(mOwnIdentity, message);
         		addRemoveRatingButton(modButtons, message, rating);
         	} catch(NoSuchMessageRatingException e) {
+    	        Integer intTrust;
+    	        
+    	        try {
+    	            intTrust = ((WoTOwnIdentity)mOwnIdentity).getTrustIn(author); 
+    	        } catch(Exception e2) {
+    	        	intTrust = null;
+    	        }
+    	        
         		if(intTrust == null || (intTrust+10) <= 100) { // TODO: Use constants
         			addRateButton(modButtons, message, 10);
         		}
@@ -308,7 +347,7 @@ public final class ThreadPage extends WebPageImpl {
         HTMLNode text = row.addChild("td", "align", "left", "");
         String messageBody = message.getText();
         text.addChild(convertMessageBody(messageBody, null));
-        addReplyButton(text, message);
+        addReplyButton(text, message.getID());
     }
 
     private void addTrustersInfo(HTMLNode parent, Identity author) throws Exception {
@@ -343,13 +382,13 @@ public final class ThreadPage extends WebPageImpl {
         		String.valueOf(distrustsCount));
     }
 
-    private void addReplyButton(HTMLNode parent, Message parentMessage) {
+    private void addReplyButton(HTMLNode parent, String parentMessageID) {
         parent = parent.addChild("div", "align", "right");
         HTMLNode newReplyForm = addFormChild(parent, Freetalk.PLUGIN_URI + "/NewReply", "NewReplyPage");
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ParentThreadID", mThread.getThreadID()});
-        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ParentMessageID", parentMessage.getID()});
+        newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ParentMessageID", parentMessageID});
         newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("ThreadPage.ReplyButton") });
     }
 
@@ -532,10 +571,8 @@ public final class ThreadPage extends WebPageImpl {
         	for(BoardReplyLink ref : board.getAllThreadReplies(myThread.getThreadID(), true)) {
         		try  {
         			firstMessage = ref.getMessage();
-        		} catch(MessageNotFetchedException e1) {
-        			throw new RuntimeException(e1); // Should not happen: BoardReplyLink objects are only created if a message was fetched already.
-        		}
-        		break;
+        			break;
+        		} catch(MessageNotFetchedException e1) { }
         	}
         	}
         }

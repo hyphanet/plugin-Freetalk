@@ -6,16 +6,15 @@ package plugins.Freetalk.ui.web;
 import java.text.DateFormat;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
-import plugins.Freetalk.Message;
+import plugins.Freetalk.Identity;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.SubscribedBoard;
-import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
-import plugins.Freetalk.exceptions.MessageNotFetchedException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
@@ -88,61 +87,51 @@ public final class BoardPage extends WebPageImpl {
 		synchronized(mBoard) {
 		    
 			for(BoardThreadLink threadReference : mBoard.getThreads()) {
-				Message thread;
-				String threadTitle;
+				// TODO: The author in the threadReference is guessed from the ID if the thread was not downloaded...
+				// we should display a warning that the fact "the original thread was written by X" might not be true because 
+				// thread-IDs can be spoofed - dunno how to do that in the table, maybe with colors? 
+				
 				String authorText;
-				String authorScore; 
-
-                // mark thread read if requested ...
-                if (mMarkAllThreadsAsRead) {
-                    markThreadRead(threadReference);
-                }
-
-				try {
-					thread = threadReference.getMessage();
-					threadTitle = thread.getTitle();
-					authorText = thread.getAuthor().getShortestUniqueName();
+				String authorScore;
+				
+				// Author related stuff
+				{
+					Identity author = null;
+					
+					// TODO: Use a colored "unknown" if the author/score is unknown
+					// TODO: Use a special color if author == yourself
+					authorText = "?"; // TODO: l10n 
+					authorScore = "?"; 
 					
 					try {
-					// TODO: Get rid of the cast somehow, we should maybe call this WoTBoardPage :|
-						final int score = ((WoTOwnIdentity)mOwnIdentity).getScoreFor((WoTIdentity)thread.getAuthor());
+						author = mFreetalk.getIdentityManager().getIdentity(threadReference.getAuthorID());
+						authorText = author.getShortestUniqueName();
+						
+						// TODO: Get rid of the cast somehow, we should maybe call this WoTBoardPage :|
+						final int score = ((WoTOwnIdentity)mOwnIdentity).getScoreFor((WoTIdentity)author);
 						if (score == Integer.MAX_VALUE)
-							authorScore = "n/a";
+							authorScore = "-"; // TODO: l10n
 						else
 							authorScore = Integer.toString(score);
-					}
-					catch(NotInTrustTreeException e) {
-						authorScore = "null"; // TODO: We should display something better
-					}
-					catch(Exception e) {
+					} catch(NoSuchIdentityException e) { 
+					} catch(NotInTrustTreeException e) {
+						authorScore = "none"; // FIXME: l10n
+					} catch(Exception e) {
 						Logger.error(this, "getScoreFor() failed", e);
-						authorScore = "UNKNOWN";
 					}
 				}
-				catch(MessageNotFetchedException e) {
-					thread = null;
-					threadTitle = "UNKNOWN";
-					
-	            	// TODO: The author can be reconstructed from the thread id because it contains the id of the author. We just need to figure out
-	            	// what the proper place for a function "getIdentityIDFromThreadID" is and whether I have already written one which can do that, and if
-	            	// yes, where it is. BUT we should display a warning that the fact "the original thread was written by X" might not be true because 
-					// thread-IDs can be spoofed - dunno how to do that in the table, maybe with colors? 
-					authorText = "UNKNOWN";
-					authorScore = "UNKNOWN";
-					
-					// The thread was not downloaded yet, we use the title of it's first reply as it's title.
-					for(BoardReplyLink messageRef : mBoard.getAllThreadReplies(threadReference.getThreadID(), true)) {
-						try {
-							threadTitle = messageRef.getMessage().getTitle();
-						} catch(MessageNotFetchedException e1) {
-							throw new RuntimeException(e1); // Should not happen: BoardReplyLink objects are only created if a message was fetched already.
-						}
-						break;
-					}
-				}
+				
+				String threadTitle = threadReference.getMessageTitle();
+				
+                // mark thread read if requested ...
+                if (mMarkAllThreadsAsRead) {
+                    threadReference.markThreadAndRepliesAsReadAndCommit();
+                }
+                
 
 				row = table.addChild("tr");
-				threadTitle = maxLength(threadTitle, 70); // TODO: Adjust
+				 // FIXME: Use the HTML trick in the bugtracker which tells the browser to only display as much as there is room in the table
+				threadTitle = maxLength(threadTitle, 70);
 
 				HTMLNode titleCell = row.addChild("td", new String[] { "align" }, new String[] { "left" });
 				
@@ -180,33 +169,6 @@ public final class BoardPage extends WebPageImpl {
 			}
 		}
 	}
-
-    /**
-     * @param threadReference
-     */
-    private void markThreadRead(BoardThreadLink threadReference) {
-        // maybe mark thread and top level message read
-        boolean doStore = false;
-        if (!threadReference.wasThreadRead()) {
-            threadReference.markThreadAsRead();
-            doStore = true;
-        }
-        if (!threadReference.wasRead()) {
-            threadReference.markAsRead();
-            doStore = true;
-        }
-        if (doStore) {
-            threadReference.storeAndCommit();
-        }
-        
-        // mark all thread replies as read
-        for(BoardReplyLink reference : mBoard.getAllThreadReplies(threadReference.getThreadID(), true)) {
-            if(!reference.wasRead()) {
-                reference.markAsRead();
-                reference.storeAndCommit();
-            }
-        }
-    }
 
 	private void makeBreadcrumbs() {
 		BreadcrumbTrail trail = new BreadcrumbTrail(l10n());
