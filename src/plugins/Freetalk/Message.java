@@ -15,7 +15,6 @@ import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
-import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 
@@ -230,13 +229,31 @@ public abstract class Message extends Persistent {
 	}
 	
 	/**
+	 * Get the author ID from the given message ID
+	 * @throws InvalidParameterException If the message ID is invalid.
+	 */
+	public static final String getAuthorIDFromMessageID(String messageID) throws InvalidParameterException {
+		final String tokens[] = messageID.split("[@]");
+		
+		if(tokens.length != 2)
+			throw new InvalidParameterException("Invalid message ID: " + messageID);
+		
+		// TODO: Further verification
+		
+		return tokens[1];
+	}
+	
+	/**
 	 * Verifies that the given message ID begins with the routing key of the author.
 	 * @throws InvalidParameterException If the ID is not valid. 
 	 */
-	public static void verifyID(Identity author, String id) throws InvalidParameterException {
-		if(id.endsWith(Base64.encode(author.getRequestURI().getRoutingKey())) == false)
+	public static final void verifyID(Identity author, String id) throws InvalidParameterException {
+		final String authorID = getAuthorIDFromMessageID(id);
+		
+		if(authorID.equals(Base64.encode(author.getRequestURI().getRoutingKey())) == false)
 			throw new InvalidParameterException("Illegal id:" + id);
 	}
+	
 	
 	/**
 	 * Get the URI of the message.
@@ -259,11 +276,11 @@ public abstract class Message extends Persistent {
 		return mFreenetURI;
 	}
 
-	public String getID() { /* Not synchronized because only OwnMessage might change the ID */
+	public final String getID() { /* Not synchronized because only OwnMessage might change the ID */
 		return mID;
 	}
 	
-	public synchronized MessageList getMessageList() {
+	public final synchronized MessageList getMessageList() {
 		checkedActivate(2);
 		assert(mMessageList != null);
 		
@@ -271,7 +288,7 @@ public abstract class Message extends Persistent {
 		return mMessageList;
 	}
 	
-	protected synchronized void clearMessageList() {
+	protected final synchronized void clearMessageList() {
 		checkedActivate(2);
 		mMessageList = null;
 		storeWithoutCommit();
@@ -281,7 +298,7 @@ public abstract class Message extends Persistent {
 	 * Get the MessageURI of the thread this message belongs to.
 	 * @throws NoSuchMessageException 
 	 */
-	public synchronized MessageURI getThreadURI() throws NoSuchMessageException {
+	public final synchronized MessageURI getThreadURI() throws NoSuchMessageException {
 		checkedActivate(2);
 		
 		if(mThreadURI == null)
@@ -300,7 +317,7 @@ public abstract class Message extends Persistent {
 	 * @return The ID of the message's parent thread.
 	 * @throws NoSuchMessageException If the message is a thread itself.
 	 */
-	public synchronized String getThreadID() throws NoSuchMessageException {
+	public final synchronized String getThreadID() throws NoSuchMessageException {
 		// checkedActivate(1);
 		
 		if(mThreadID == null)
@@ -310,9 +327,25 @@ public abstract class Message extends Persistent {
 	}
 	
 	/**
+	 * Gets the thread ID and throws a RuntimeException if it does not exist.
+	 * 
+	 * getThreadID() would throw a NoSuchMessageException which is not a RuntimeException - if you have checked that isThread()==false already
+	 * you want a RuntimeException because getThreadID should not throw.
+	 * 
+	 * @return
+	 */
+	public final String getThreadIDSafe() {
+		try {
+			return getThreadID();
+		} catch(NoSuchMessageException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
 	 * Get the MessageURI to which this message is a reply. Null if the message is a thread.
 	 */
-	public MessageURI getParentURI() throws NoSuchMessageException {
+	public final MessageURI getParentURI() throws NoSuchMessageException {
 		checkedActivate(3); // It's likely that the URI will be used so we fully activate it.
 		
 		if(mParentURI == null)
@@ -322,7 +355,7 @@ public abstract class Message extends Persistent {
 		return mParentURI;
 	}
 	
-	public String getParentID() throws NoSuchMessageException {
+	public final String getParentID() throws NoSuchMessageException {
 		// checkedActivate(1);
 		
 		if(mParentID == null)
@@ -332,10 +365,26 @@ public abstract class Message extends Persistent {
 	}
 	
 	/**
+	 * Gets the parent ID and throws a RuntimeException if it does not exist.
+	 * 
+	 * getParentID() would throw a NoSuchMessageException which is not a RuntimeException - if you have checked that isThread()==false already
+	 * you want a RuntimeException because getParentID should not throw.
+	 * 
+	 * @return
+	 */
+	public final String getParentIDSafe() {
+		try {
+			return getParentID();
+		} catch(NoSuchMessageException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
 	 * Returns true if the message is a thread. A message is considered as a thread if and only if it does not specify the URI of a parent thread - even if it does
 	 * specify the URI of a parent message it is still a thread if there is no parent thread URI!
 	 */
-	public boolean isThread() {
+	public final boolean isThread() {
 		checkedActivate(2);
 		
 		return mThreadURI == null;
@@ -345,7 +394,7 @@ public abstract class Message extends Persistent {
 	 * Get the boards to which this message was posted. The boards are returned in alphabetical order.
 	 * The transient fields of the returned boards are initialized already.
 	 */
-	public Board[] getBoards() {
+	public final Board[] getBoards() {
 		checkedActivate(2);
 		assert(mBoards != null);
 		
@@ -354,7 +403,7 @@ public abstract class Message extends Persistent {
 		return mBoards;
 	}
 	
-	public Board getReplyToBoard() throws NoSuchBoardException {
+	public final Board getReplyToBoard() throws NoSuchBoardException {
 		checkedActivate(2);
 		
 		if(mReplyToBoard == null)
@@ -367,7 +416,7 @@ public abstract class Message extends Persistent {
 	/**
 	 * Get the author of the message.
 	 */
-	public Identity getAuthor() {
+	public final Identity getAuthor() {
 		checkedActivate(2);
 		assert(mAuthor != null);
 		
@@ -381,7 +430,7 @@ public abstract class Message extends Persistent {
 	/**
 	 * Get the title of the message.
 	 */
-	public String getTitle() {
+	public final String getTitle() {
 		// checkedActivate(1);
 		assert(mTitle != null);
 		
@@ -391,7 +440,7 @@ public abstract class Message extends Persistent {
 	/**
 	 * Get the date when the message was written in <strong>UTC time</strong>.
 	 */
-	public Date getDate() {
+	public final Date getDate() {
 		// checkedActivate(1);
 		assert(mDate != null);
 		
@@ -401,7 +450,7 @@ public abstract class Message extends Persistent {
 	/**
 	 * Get the date when the message was fetched by Freetalk.
 	 */
-	public Date getFetchDate() {
+	public final Date getFetchDate() {
 		// checkedActivate(1);
 		assert(mCreationDate != null);
 		
@@ -411,7 +460,7 @@ public abstract class Message extends Persistent {
 	/**
 	 * Get the text of the message.
 	 */
-	public String getText() {
+	public final String getText() {
 		// checkedActivate(1);
 		assert(mText != null);
 		
@@ -421,7 +470,7 @@ public abstract class Message extends Persistent {
 	/**
 	 * Get the attachments of the message, in the order in which they were received.
 	 */
-	public Attachment[] getAttachments() {
+	public final Attachment[] getAttachments() {
 		checkedActivate(3);
 		
 		return mAttachments;
@@ -435,7 +484,7 @@ public abstract class Message extends Persistent {
 	 * 
 	 * @throws NoSuchMessageException If the parent thread of this message was not downloaded yet.
 	 */
-	public synchronized Message getThread() throws NoSuchMessageException {
+	public final synchronized Message getThread() throws NoSuchMessageException {
 		/* TODO: Find all usages of this function and check whether we might want to use a higher depth here */
 		checkedActivate(2);
 		
@@ -446,7 +495,7 @@ public abstract class Message extends Persistent {
 		return mThread;
 	}
 	
-	public synchronized void setThread(Message newParentThread) {
+	public final synchronized void setThread(Message newParentThread) {
 		assert(mThread == null || mThread == newParentThread);
 		
 		if(mThread != null)
@@ -462,7 +511,7 @@ public abstract class Message extends Persistent {
 		storeWithoutCommit();
 	}
 	
-	protected synchronized void clearThread() {
+	protected final synchronized void clearThread() {
 		mThread = null;
 		storeWithoutCommit();
 	}
@@ -481,7 +530,7 @@ public abstract class Message extends Persistent {
 		return mParent;
 	}
 
-	public synchronized void setParent(Message newParent)  {
+	public final synchronized void setParent(Message newParent)  {
 		assert(mParent == null || newParent == mParent);
 		
 		if(mParent != null)
@@ -497,7 +546,7 @@ public abstract class Message extends Persistent {
 		storeWithoutCommit();
 	}
 	
-	protected synchronized void clearParent() {
+	protected final synchronized void clearParent() {
 		mParent = null;
 		storeWithoutCommit();
 	}
@@ -507,7 +556,7 @@ public abstract class Message extends Persistent {
 	 * 			A message will only be visible in boards where it was linked in - the sole storage of a object of type Message does not make it visible.
 	 * 
 	 */
-	protected synchronized boolean wasLinkedIn() {
+	protected final synchronized boolean wasLinkedIn() {
 		// checkedActivate(1);
 		return mWasLinkedIn;
 	}
@@ -516,70 +565,9 @@ public abstract class Message extends Persistent {
 	 * Sets the wasLinkedIn flag of this message.
 	 * For an explanation of this flag please read the documentation of {@link wasLinkedIn}.
 	 */
-	protected synchronized void setLinkedIn(boolean wasLinkedIn) {
+	protected final synchronized void setLinkedIn(boolean wasLinkedIn) {
 		mWasLinkedIn = wasLinkedIn;
 	}
-	
-	/**
-	 * Returns an iterator over the children of the message, sorted descending by date.
-	 * The transient fields of the children will be initialized already.
-	 */
-	/*
-	@SuppressWarnings("unchecked")
-	public synchronized Iterable<Message> getChildren(final Board targetBoard) {
-		return new Iterable<Message>() {
-		public Iterator<Message> iterator() {
-		return new Iterator<Message>() {
-			private Iterator<Message> iter;
-			private Board board;
-			private Message next;
-			
-			{
-				board = targetBoard;
-				
-				Query q = db.query();
-				q.constrain(Message.class);
-				q.descend("mParentID").constrain(mParentID);
-				q.descend("mDate").orderDescending();
-				
-				iter = q.execute().iterator();
-				next = iter.hasNext() ? iter.next() : null;
-			}
-
-			public boolean hasNext() {
-				if(board == null)
-					return next != null;
-				
-				while(next != null) {
-					if(Arrays.binarySearch(next.getBoards(), board) >= 0)
-						return true;
-					
-					next = iter.hasNext() ? iter.next() : null;
-				}
-				
-				return false;
-			}
-
-			public Message next() {
-				if(!hasNext()) { // We have to call hasNext() to ignore messages which do not belong to the selected board
-					assert(false); // However, the users of the function should do this for us
-					throw new NoSuchElementException();
-				}
-				
-				Message child = next;
-				next = iter.hasNext() ? iter.next() : null;
-				child.initializeTransient(db, mMessageManager);
-				return child;
-			}
-
-			public void remove() {
-				throw new UnsupportedOperationException("Use child.setParent(null) instead.");
-			}
-		};
-		}
-		};
-	}
-	*/
 	
 	/**
 	 * Checks whether the title of the message is valid. Validity conditions:
@@ -590,7 +578,7 @@ public abstract class Message extends Persistent {
 	 * - No invalid UTF formatting (unpaired direction or annotation characters).
 	 * - Not too long
 	 */
-	static public boolean isTitleValid(String title) {
+	public static final boolean isTitleValid(String title) {
 		if(title == null)
 			return false;
 		
@@ -623,7 +611,7 @@ public abstract class Message extends Persistent {
 	 * - Control characters are allowed: We want to allow other plugins to use Freetalk as their core, therefore we should not be too restrictive about
 	 *   message content. Freetalk user interfaces have to take care on their own to be secure against weird control characters.
 	 */
-	static public boolean isTextValid(String text) {
+	public static final boolean isTextValid(String text) {
         if (text == null) {
             return false;
         }
@@ -646,7 +634,7 @@ public abstract class Message extends Persistent {
 	 * Makes the passed title valid in means of <code>isTitleValid()</code>
 	 * @see isTitleValid
 	 */
-	static public String makeTitleValid(String title) {
+	public static final String makeTitleValid(String title) {
 		// TODO: the newline handling here is based on the RFC 822
 		// format (newline + linear white space = single space).  If
 		// necessary, we could move that part of the cleaning-up to
@@ -745,11 +733,11 @@ public abstract class Message extends Persistent {
 	 * Makes the passed text valid in means of <code>isTextValid()</code>
 	 * @see isTextValid
 	 */
-	static public String makeTextValid(String text) {
+	public static final String makeTextValid(String text) {
 		return text.replace("\r\n", "\n");
 	}
 	
-	public synchronized void storeAndCommit() {
+	public final synchronized void storeAndCommit() {
 		synchronized(mDB.lock()) {
 			try {
 				storeWithoutCommit();
