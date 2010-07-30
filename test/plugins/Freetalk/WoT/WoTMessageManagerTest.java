@@ -192,6 +192,9 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 				try {
 					final String expectedReplyID = expectedReplies.next();
 					
+					assertEquals(expectedReplyID, replyRef.getMessageID());
+					assertEquals(threadRef.getThreadID(), replyRef.getThreadID());
+					
 					// Verify that the Message object exists if it should
 					Message reply;
 					try {
@@ -199,12 +202,25 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 						assertTrue(mFetchedStates.get(expectedReplyID));
 					} catch(MessageNotFetchedException e) {
 						reply = null;
-						assertFalse(mFetchedStates.get(expectedReplyID));
+						try {
+							Message ignoredRealReply = mMessageManager.get(expectedReplyID);
+							// The reply was NOT set on this reply link because it does not belong to this thread...
+							try {
+								assertFalse(ignoredRealReply.getThreadID().equals(threadRef.getThreadID()));
+							} catch(NoSuchMessageException e2) { // is a thread itself
+								// BoardReplyLinks should NOT be created if the parent is the thread itself
+								assertFalse(ignoredRealReply.getID().equals(threadRef.getThreadID()));
+							}
+						} catch(NoSuchMessageException e3) {
+							assertFalse(mFetchedStates.get(expectedReplyID));
+						}
 					}
 					
+					Message replyParent;
+					
 					if(reply != null) {
-						assertEquals(expectedReplyID, reply.getID());
 						assertFalse(reply.isThread());
+						assertEquals(expectedReplyID, reply.getID());
 						assertEquals(expectedThreadID, reply.getThreadID());
 						
 						try {
@@ -212,23 +228,25 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 						} catch(NoSuchMessageException e) {
 							assertNull(thread);
 						}
+					
+						final String replyParentID = reply.getParentID();
+					
+						try {
+							replyParent = reply.getParent();
+							assertTrue(mFetchedStates.get(replyParentID));
+						} catch(NoSuchMessageException e) {
+							replyParent = null;
+							assertFalse(mFetchedStates.get(replyParentID));
+						}
+					} else {
+						replyParent = null;
 					}
 					
-					final String replyParentID = reply.getParentID();
-					Message replyParent;
-					try {
-						replyParent = reply.getParent();
-						assertTrue(mFetchedStates.get(replyParentID));
-					} catch(NoSuchMessageException e) {
-						replyParent = null;
-						assertFalse(mFetchedStates.get(replyParentID));
-					}
-
 					// We do not specify the parent message for some test messages, check whether its assigned correctly
 					
 					if(replyParent != null) {
-						assertEquals(replyParentID, replyParent.getID());
-						if(replyParentID.equals(expectedThreadID)) {
+						assertEquals(reply.getParentID(), replyParent.getID());
+						if(reply.getParentID().equals(expectedThreadID)) {
 							assertEquals(thread, replyParent);
 						}
 					}
@@ -347,11 +365,17 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 			// Four replies, onMessageReceived called in random order
 			mReplies.put(thread3.getID(), new LinkedList<String>());
 			mMessageManager.onMessageReceived(thread3reply3); mFetchedStates.put(thread3reply3.getID(), true);
+			// It's parent should be created as ghost reply because it is not fetched yet
+			mReplies.get(thread3.getID()).addLast(thread3reply3.getParentID()); mFetchedStates.put(thread3reply3.getParentID(), false);
 			mReplies.get(thread3.getID()).addLast(thread3reply3.getID()); 
 			verifyStructure();
 			
 			mMessageManager.onMessageReceived(thread3reply2); mFetchedStates.put(thread3reply2.getID(), true);
 			mReplies.get(thread3.getID()).addFirst(thread3reply2.getID());
+			// The ghost reference to its parent should get its date-guess updated and appear at front of the thread
+			mReplies.get(thread3.getID()).remove(thread3reply2.getParentID());
+			mReplies.get(thread3.getID()).addFirst(thread3reply2.getParentID());
+			mFetchedStates.put(thread3reply2.getParentID(), false); // This was done already but we do it again to make it clear
 			verifyStructure(); 
 			
 			mMessageManager.onMessageReceived(thread3reply0); mFetchedStates.put(thread3reply0.getID(), true);
@@ -359,7 +383,10 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 			verifyStructure();
 			
 			mMessageManager.onMessageReceived(thread3reply1); mFetchedStates.put(thread3reply1.getID(), true);
+			// The ghost reference to reply1 should be converted to a real reference now and be moved to front
+			mReplies.get(thread3.getID()).remove(thread3reply1.getID());
 			mReplies.get(thread3.getID()).add(1, thread3reply1.getID());
+			// TODO: Check whether the date is set correctly...
 			verifyStructure();
 		}
 		
@@ -368,7 +395,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 			WoTMessage thread4reply0 = createTestMessage(mOwnIdentities[0], thread4, thread4.getURI()); // Fork a new thread off thread2reply1
 			WoTMessage thread4reply1 = createTestMessage(mOwnIdentities[1], thread4reply0, thread4.getURI()); // Reply to it
 			WoTMessage thread4reply2 = createTestMessage(mOwnIdentities[2], null, thread4.getURI()); // Specify no parent, should be set to thread2reply1
-			WoTMessage thread4reply3 = createTestMessage(mOwnIdentities[2], thread0, thread4.getURI()); // Specify different thread as parent
+			WoTMessage thread4reply3 = createTestMessage(mOwnIdentities[2], thread0, thread4.getURI()); // Specify different thread as parent message
 			
 			// Prevent NPE due to the booleans not being in the table...
 			mFetchedStates.put(thread4reply0.getID(), false);
@@ -384,15 +411,20 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 				
 				// Insert the replies in random order, TODO: Try all different orders
 				mMessageManager.onMessageReceived(thread4reply2); mFetchedStates.put(thread4reply2.getID(), true);
+				// We don't need to update the ghost parent reply here because reply2 is a direct reply to the thread and the thread exists...
 				mReplies.get(thread4.getID()).addLast(thread4reply2.getID());
 				verifyStructure();
 				
 				mMessageManager.onMessageReceived(thread4reply1); mFetchedStates.put(thread4reply1.getID(), true);
+				// We don't need to update the ghost parent reply here because the parent of reply1 exists already
 				mReplies.get(thread4.getID()).add(1, thread4reply1.getID());
 				verifyStructure();
 				
 				mMessageManager.onMessageReceived(thread4reply3); mFetchedStates.put(thread4reply3.getID(), true);
-				mReplies.get(thread4.getID()).add(3, thread4reply3.getID());
+				mReplies.get(thread4.getID()).addLast(thread4reply3.getParentID());
+				// The fetched state is ignored by verify structure because the parent is a thread...
+				// mFetchedStates.put(thread4reply3.getParentID(), true);
+				mReplies.get(thread4.getID()).addLast(thread4reply3.getID());
 				verifyStructure();
 		}
 		
