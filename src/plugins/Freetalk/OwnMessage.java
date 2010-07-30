@@ -21,7 +21,8 @@ public abstract class OwnMessage extends Message {
 				newAttachments);
 	}
 
-	/* Override for synchronization */
+	// TODO: I doubt that this is needed, was probably a quickshot. Remove it if not and make the parent function final.
+	/* Override for synchronization */	
 	@Override
 	public synchronized MessageURI getURI() {
 		return mURI;
