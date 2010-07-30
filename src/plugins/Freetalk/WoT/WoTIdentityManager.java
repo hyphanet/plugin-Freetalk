@@ -114,7 +114,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	 * 
 	 * @param params The params of the FCP message.
 	 * @param expectedReplyMessage The excepted content of the "Message" field of the SimpleFieldSet of the reply message.
-	 * @return The unmodified Result object which was returned by the PluginTalker.
+	 * @return The unmodified HashResult object which was returned by the PluginTalker.
 	 * @throws WoTDisconnectedException If the connection to WoT was lost. 
 	 * @throws Exception If the WoT plugin replied with an error message or not with the expected message.
 	 */
