@@ -103,20 +103,17 @@ public final class SubscribedBoard extends Board {
      * 
      * @throws NoSuchMessageException If the board is empty.
      */
-    @SuppressWarnings("unchecked")
 	public synchronized MessageReference getLatestMessage() throws NoSuchMessageException {
     	// TODO: We can probably cache the latest message date in this SubscribedBoard object.
     	
         final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this);
-        q.descend("mMessageDate").orderDescending();
-        ObjectSet<MessageReference> allMessages = q.execute();
-
+        q.descend("mDate").orderDescending();
+      
         // Do not use a constrain() because the case where the latest message has no message object should not happen very often.
-        for(MessageReference ref : allMessages) {
+        for(MessageReference ref : new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q)) {
         	try {
-        		ref.initializeTransient(mFreetalk);
         		ref.getMessage(); // Check whether the message was downloaded
         		return ref;
         	}
@@ -144,6 +141,122 @@ public final class SubscribedBoard extends Board {
     }
     
     /**
+     * Checks whether the subscriber wants the given message.
+     * @return True if the message is wanted.
+     */
+    private final boolean isMessageWanted(Message newMessage) throws Exception {
+    	return getSubscriber().wantsMessagesFrom(newMessage.getAuthor());
+    }
+    
+    /**
+     * Stores an {@link UnwantedMessageLink} for the given message.
+     * If there is one already, its retry count is incremented (which effectively increases the delay until the next retry will be done).
+     */
+    private final void storeOrUpdateUnwantedMessageLink(Message newMessage) {
+		Logger.normal(this, "Ignoring message from " + newMessage.getAuthor().getNickname() + " because " +
+				getSubscriber().getNickname() + " does not want his messages.");
+		
+		try {
+			UnwantedMessageLink link = getUnwantedMessageLink(newMessage);
+			link.countRetry();
+			link.storeWithoutCommit();
+		} catch(NoSuchMessageException e) {
+			UnwantedMessageLink link = new UnwantedMessageLink(this, newMessage);
+			link.initializeTransient(mFreetalk);
+			link.storeWithoutCommit();
+		}
+    }
+    
+    /**
+     * Checks whether there is an {@link UnwantedMessageLink} stored for the given message.
+     * Deletes it if yes, if not, does nothing.
+     */
+    private final void maybeDeleteUnwantedMessageLink(Message newMessage) {
+		try {
+			UnwantedMessageLink link = getUnwantedMessageLink(newMessage);
+			link.deleteWithoutCommit();
+		} catch(NoSuchMessageException e) {}
+    }
+    
+    /**
+     * Checks whether there are any {@link BoardThreadLink} or {@link BoardReplyLink} stored which reference the given message by ID.
+     * If yes, they are given the reference to the given message object - their pointer to the message object was probably null because
+     * the message is new.
+     */
+    private final void updateExistingReferencesToNewMessage(Message newMessage) {
+    	final String newMessageID = newMessage.getID();
+    	
+    	try {
+    		// If there was a ghost thread reference for the new message, we associate the message with it - even if it is no thread:
+    		// People are allowed to reply to non-threads as if they were threads, which results in a 'forked' thread.
+    		final BoardThreadLink ghostThreadRef = getThreadLink(newMessageID);
+    		ghostThreadRef.setMessage(newMessage);
+    		ghostThreadRef.storeWithoutCommit();
+    	} catch(NoSuchMessageException e) { }
+    	
+    	
+    	// Check whether someone has already replied to the message... If yes, then there is a BoardReplyLink for it with getMessage()==null
+    	// and we must setMessage(newMessage) on it... 
+    	
+    	
+    	String newMessageThreadID;
+    	
+		try {
+			newMessageThreadID = newMessage.getThreadID();
+		} catch(NoSuchMessageException e) {
+			newMessageThreadID = null;
+		}
+		
+		for(final BoardReplyLink ghostReplyRef : getReplyLinks(newMessageID)) {
+			if(newMessageThreadID == null) {
+				Logger.warning(this, "Not updating ghost BoardReplyLink: Parent message is a thread, not a reply: " + ghostReplyRef);
+				continue;
+			}
+			
+			if(newMessageThreadID.equals(ghostReplyRef.getThreadID())) {
+				ghostReplyRef.setMessage(newMessage);
+				ghostReplyRef.storeWithoutCommit();
+
+				// The thread must update its lastReplyTime...
+				try {
+					final BoardThreadLink thread = getThreadLink(ghostReplyRef.getThreadID());
+					thread.onMessageAdded(newMessage);
+					thread.storeWithoutCommit();
+				} catch(NoSuchMessageException e) {
+					// There are BoardReplyLinks for a non-existent thread... this should not happen.
+					throw new RuntimeException(e);
+				}
+			} else {
+				Logger.warning(this, "Not updating ghost BoardReplyLink: Parent message is no reply to this thread: " + ghostReplyRef);
+			}
+
+		}	
+		
+		// Check whether there is a ghost link for the parent message. If yes, we must update it's date guess
+		
+		if(newMessageThreadID != null) {
+			try {
+				// getReplyLink and getParentID might throw NoSuchMessageException, both are included in the concept of this code 
+				final BoardReplyLink ghostLink = getReplyLink(newMessageThreadID, newMessage.getParentID());
+				
+				try {
+					ghostLink.getMessage();
+				} catch(MessageNotFetchedException e) {
+					final Date parentDateGuess = new Date(newMessage.getDate().getTime() - 1);
+					// Update it's date guess if necessary
+					if(parentDateGuess.before(ghostLink.getMessageDate())) {
+						ghostLink.setMessageDate(parentDateGuess);
+						ghostLink.storeWithoutCommit();
+					}
+					// TODO: Maybe we also want to do something about the title guess?
+				}
+			} catch(NoSuchMessageException e) {
+				// The message had no parent ID or there was no ghost link for the parent yet.
+			}
+		}
+    }
+    
+    /**
      * The job for this function is to find the right place in the thread-tree for the new message and to move around older messages
      * if a parent message of them is received.
      * 
@@ -155,110 +268,66 @@ public final class SubscribedBoard extends Board {
      */
     protected synchronized final void addMessage(Message newMessage) throws Exception {
     	Logger.debug(this, "addMessage " + newMessage);
+    	
     	// Sanity checks
-    	
-    	if(newMessage instanceof OwnMessage) {
-    		/* We do not add the message to the boards it is posted to because the user should only see the message if it has been downloaded
-    		 * successfully. This helps the user to spot problems: If he does not see his own messages we can hope that he reports a bug */
-    		throw new IllegalArgumentException("Adding OwnMessages to a board is not allowed.");
-    	}
-    	
-    	if(super.contains(newMessage) == false)
-    		throw new IllegalArgumentException("addMessage called with a message which was not posted to this board (" + getName() + "): " + newMessage);
-    	
+    	throwIfNotAllowedInThisBoard(newMessage);
     	
     	// Check whether the subscriber wants the message
-    	if(!getSubscriber().wantsMessagesFrom(newMessage.getAuthor())) {
-    		Logger.normal(this, "Ignoring message from " + newMessage.getAuthor().getNickname() + " because " + getSubscriber().getNickname() + " does not want his messages.");
-    		
-    		try {
-    			UnwantedMessageLink link = getUnwantedMessageLink(newMessage);
-    			link.countRetry();
-    			link.storeWithoutCommit();
-    		} catch(NoSuchMessageException e) {
-    			UnwantedMessageLink link = new UnwantedMessageLink(this, newMessage);
-    			link.initializeTransient(mFreetalk);
-    			link.storeWithoutCommit();
-    		}
-    		
+    	if(isMessageWanted(newMessage)) {
+    		// Maybe delete an obsolete UnwantedMessageLink if it exists
+    		maybeDeleteUnwantedMessageLink(newMessage);
+    	} else {
+    		storeOrUpdateUnwantedMessageLink(newMessage);
     		return;
-    	} else { // Delete an obsolete UnwantedMessageLink if it exists
-    		try {
-    			UnwantedMessageLink link = getUnwantedMessageLink(newMessage);
-    			link.deleteWithoutCommit();
-    		} catch(NoSuchMessageException e) {}
     	}
     	
     	// The message is valid and the subscriber wants it, we link it in now
     	
-    	BoardThreadLink ghostRef = null;
+    	// Check whether there are BoardThreadLink or BoardReplyLink which reference the message by ID and give them the message object
+    	updateExistingReferencesToNewMessage(newMessage);
     	
-    	try {
-    		// If there was a ghost thread reference for the new message, we associate the message with it - even if it is no thread:
-    		// People are allowed to reply to non-threads as if they were threads, which results in a 'forked' thread.
-    		ghostRef = getThreadLink(newMessage.getID());
-    		ghostRef.setMessage(newMessage);
-    		ghostRef.storeWithoutCommit();
-    		
-    		linkThreadRepliesToNewParent(newMessage.getID(), newMessage);
-    	}
-    	catch(NoSuchMessageException e) {
-    		// If there was no ghost reference, we must store a BoardThreadLink if the new message is a thread 
-			if(newMessage.isThread()) {
+    	final String newMessageID = newMessage.getID();
+    
+		// If there was no ghost reference, we must store a BoardThreadLink if the new message is a thread 
+		if(newMessage.isThread()) {
+			try {
+				getThreadLink(newMessageID);
+			} catch(NoSuchMessageException e) {
 	    		BoardThreadLink threadRef = new BoardThreadLink(this, newMessage, takeFreeMessageIndexWithoutCommit());
 	    		threadRef.initializeTransient(mFreetalk);
 	    		threadRef.storeWithoutCommit();
-	    		
-	    		// We do not call linkThreadRepliesToNewParent() here because if there was no ghost reference for the new message this means that no replies to
-	    		// it were received yet.
 			}
-    	}
-    
-    	if(newMessage.isThread() == false) {
+		}
+		else {
+			final String threadID = newMessage.getThreadIDSafe();
+			final String parentID = newMessage.getParentIDSafe();
+
     		// The new message is no thread. We must:
-    		
+			
     		// 1. Find it's parent thread, create a ghost reference for it if it does not exist.
     		BoardThreadLink parentThreadRef = findOrCreateParentThread(newMessage);
     		
-    		// 2. Tell it about it's parent thread if it exists.
-    		try {
-    			newMessage.setThread(parentThreadRef.getMessage());
-    		} catch(MessageNotFetchedException e) {
-    			// Can happen if the parent thread was not downloaded yet, then it's a ghost reference.
-    		}
-    		
-    		// 3. Tell the parent thread that a new message was added. This updates the last reply date and the "was read"-flag of the thread.
+    		// 2. Tell the parent thread that a new message was added. This updates the last reply date and the "was read"-flag of the thread.
     		parentThreadRef.onMessageAdded(newMessage);
     		parentThreadRef.storeWithoutCommit();
     		
+    		// 3. If the parent message did not exist, create a ghost reply link for it.
+    		// - The ghost link allows the UI to display a "Message is not downloaded yet" warning for the parent message
+    		if(!parentID.equals(threadID)) {
+    			findOrCreateParentMessage(newMessage);
+    		}
+    		
     		// 4. Store a BoardReplyLink for the new message
-    		BoardReplyLink messageRef;
     		try {
-    			// If addMessage() was called already for the given message (this might happen due to transaction management of the message manager), we must
-    			// use the already stored reply link for the message.
-    			messageRef = getReplyLink(newMessage);
+    			getReplyLink(threadID, newMessageID);
+    			// The reply link exists already, either because it was a ghost link or addMessage was called already for this message
+    			// In either case it was already updated by updateExistingReferencesToNewMessage so we don't do anything here.
     		}
     		catch(NoSuchMessageException e) {
-    			messageRef = new BoardReplyLink(this, newMessage, takeFreeMessageIndexWithoutCommit());
+    			final BoardReplyLink messageRef = new BoardReplyLink(this, newMessage, takeFreeMessageIndexWithoutCommit());
     			messageRef.initializeTransient(mFreetalk);
     			messageRef.storeWithoutCommit();
     		}
-    		
-    		// 5. Try to find the new message's parent message and tell it about it's parent message if it exists.
-    		try {
-    			// Try to find the parent message of the message
-    			
-    			// Notice that this allows cross-posting:
-    			// The parent-thread of this message might be in this board but the parent message might be in a different board.
-    			// It should not cause any harm because the parent-message attribute of a message is not used 
-    			newMessage.setParent(mFreetalk.getMessageManager().get(newMessage.getParentID()));
-    		}
-    		catch(NoSuchMessageException e) {
-    			// The parent message of the message was not downloaded yet
-    			// TODO: The MessageManager should try to download the parent message if it's poster has enough trust.
-    		}
-
-    		linkThreadRepliesToNewParent(parentThreadRef.getThreadID(), newMessage);
     	}
 
     	storeWithoutCommit();
@@ -277,6 +346,8 @@ public final class SubscribedBoard extends Board {
     protected synchronized void deleteMessage(Message message) throws NoSuchMessageException {
     	boolean unwantedLinkDeleted = false;
     	
+    	final String messageID = message.getID();
+    	
     	// Maybe delete UnwantedMessageLink
     	
     	try {
@@ -290,10 +361,10 @@ public final class SubscribedBoard extends Board {
     	
     	try {
     		// Check whether the message was listed as a thread.
-    		BoardThreadLink threadLink = getThreadLink(message.getID());
+    		BoardThreadLink threadLink = getThreadLink(messageID);
 
     		// If it was listed as a thread and had no replies, we can delete it's ThreadLink.
-	    	if(threadReplyCount(message.getID()) == 0) {
+	    	if(threadReplyCount(messageID) == 0) {
 	    		threadLink.deleteWithoutCommit();
 	    	} else {
 	    		// We do not delete the ThreadLink if it has replies already: We want the replies to stay visible and therefore the ThreadLink has to be kept,
@@ -311,86 +382,88 @@ public final class SubscribedBoard extends Board {
     		}
     	}
     	
-    	// Maybe delete BoardReplyLink
+    	String threadID;
     	
-    	if(message.isThread() == false) {
-			try {
-				final String parentThreadID;
-				
-				{ // Delete the reply itself.
-					BoardReplyLink replyLink = getReplyLink(message);	
-					parentThreadID = replyLink.getThreadID();
-					replyLink.deleteWithoutCommit();
-					
-			    	if(unwantedLinkDeleted) {
-			    		Logger.error(this, "Message was linked in even though it was marked as unwanted: " + message);
-			    	}
-				}
-				
-				// Update the parent thread of the reply
-				
-				BoardThreadLink threadLink = getThreadLink(parentThreadID);
-				
-				try {
-					threadLink.getMessage();
-				}
-				catch(MessageNotFetchedException e) {
-					// If the thread itself is a ghost thread and it has no more replies, we must delete it:
-					// It might happen that the caller first calls deleteMessage(thread) and then deleteMessage(all replies). The call to
-					// deleteMessage(thread) did not delete the thread because it still had replies. Now it has no more replies and we must delete it.
-					if(threadReplyCount(parentThreadID) == 0) {
-						threadLink.deleteWithoutCommit();
-						threadLink = null;
-					} 
-				}
-				
-				if(threadLink != null)
-					threadLink.onMessageRemoved(message);
-			} catch (NoSuchMessageException e) {
-				throw e;
-			}
+    	try {
+    		threadID = message.getThreadID();
+    	} catch(NoSuchMessageException e) {
+    		threadID = null;
     	}
-    }
-
-    /**
-     * For a new thread, calls setParent() for all messages which are a reply to it and setThread() for all messages which belong to the new thread.
-     * For a new message, i.e. reply to a thread, calls setParent() for all messages which are a reply to it.
-     *      
-     * Assumes that the transient fields of the newMessage are initialized already.
-     */
-    private synchronized void linkThreadRepliesToNewParent(String parentThreadID, Message newMessage) {
     	
-    	boolean newMessageIsThread = (newMessage.getID().equals(parentThreadID));
- 
-    	for(BoardReplyLink ref : getAllThreadReplies(parentThreadID, false)) {
-    		Message threadReply;
+    	// Maybe delete BoardReplyLinks to the message
+
+    	// NOTICE1: Even though we loop over all reply links to the message, getMessage() should only return the object on one of them: 
+    	// If you reply to a message in a thread in which it did not exist, a BoardReplyLink is created there for allowing the UI to display
+    	// "Message not fetched". However, as soon as the message IS fetched, it will only be added to the thread IF the thread is actually
+    	// the thread in which the author wanted to post.
+    	// All BoardReplyLinks in wrong threads will stay ghosts forever (i.e. getMessage() will fail)
+    	
+    	// NOITCE2: We loop instead of just doing getReplyLink(threadID, messageID) for getting bonus checks whether the database is consistent 
+    	
+    	for(final BoardReplyLink replyLink : getReplyLinks(message.getID())) {	
+			final String replyLinkThreadID = replyLink.getThreadID();
+			
 			try {
-				threadReply = ref.getMessage();
-			} catch (MessageNotFetchedException e1) {
-				throw new RuntimeException(e1); // Should not happen: BoardReplyLink objects are only created if a message was fetched already.
+				// Check whether the reply link has the Message object associated
+				final Message replyLinkMessage = replyLink.getMessage();
+				assert(replyLinkMessage == message);
+				
+				if(!replyLinkThreadID.equals(threadID))
+					Logger.error(this, "Invalid BoardReplyLink found in database: Message was not null even though it is the wrong thread: " 
+							+ replyLink);
+					
+			} catch(NoSuchMessageException e) {
+				continue; // Keep the ghost links intact
 			}
-    		
-    		try {
-    			threadReply.getParent();
-    		}
-    		catch(NoSuchMessageException e) {
-    			try {
-    				if(threadReply.getParentID().equals(newMessage.getID()))
-    					threadReply.setParent(newMessage);
-    			}
-    			catch(NoSuchMessageException ex) {
-    				Logger.debug(this, "SHOULD NOT HAPPEN: getParentID() failed for a thread reply: " + threadReply, ex);
-    			}
-    		}
-    		
-    		if(newMessageIsThread) {
-	    		try {
-	    			threadReply.getThread();
-	    		}
-	    		catch(NoSuchMessageException e) {
-	    			threadReply.setThread(newMessage);
-	    		}
-    		}
+			
+			if(!replyLinkThreadID.equals(threadID))
+				continue; // Keep the ghost links intact
+			
+			// Now we are in the right thread (thread ID matches) and the current replyLink has the message object we are looking for
+			// Now we must delete the replyLink if no other replies reference the message.
+			// If they do, we must only removeMessage on it to give the other messages a ghost parent
+			// TODO: Unit test this.
+			
+			if(unwantedLinkDeleted) {
+				Logger.error(this, "Message was linked in even though it was marked as unwanted: " + message);
+			}
+			
+			boolean keepReplyLink = false;
+			
+			for(BoardReplyLink otherReply : getAllThreadReplies(threadID, false)) {
+				try {
+					if(otherReply.getMessage().getParentID().equals(messageID)) {
+						keepReplyLink = true;
+						break;
+					}
+				} catch(NoSuchMessageException e) {} // TODO: This might be an error...
+			}
+			
+			if(keepReplyLink)
+				replyLink.removeMessage();
+			else
+				replyLink.deleteWithoutCommit();
+
+				
+			// Update the parent thread of the reply
+			BoardThreadLink threadLink = getThreadLink(replyLinkThreadID);
+				
+			try {
+				threadLink.getMessage();
+			}
+			catch(MessageNotFetchedException e) {
+				// If the thread itself is a ghost thread and it has no more replies, we must delete it:
+				// It might happen that the caller first calls deleteMessage(thread) and then deleteMessage(all replies). The call to
+				// deleteMessage(thread) did not delete the thread because it still had replies. Now it has no more replies and we
+				// must delete it.
+				if(threadReplyCount(replyLinkThreadID) == 0) {
+					threadLink.deleteWithoutCommit();
+					threadLink = null;
+				}
+			}
+			
+			if(threadLink != null)
+				threadLink.onMessageRemoved(message);
     	}
     }
      
@@ -413,26 +486,36 @@ public final class SubscribedBoard extends Board {
     	}
     }
     
-    @SuppressWarnings("unchecked")
-	public synchronized BoardReplyLink getReplyLink(final Message message) throws NoSuchMessageException {
+	public synchronized ObjectSet<BoardReplyLink> getReplyLinks(final String messageID) {
         final Query q = mDB.query();
         q.constrain(BoardReplyLink.class);
         q.descend("mBoard").constrain(this).identity();
-        q.descend("mMessage").constrain(message).identity();
-        ObjectSet<BoardReplyLink> results = q.execute();
+        q.descend("mMessageID").constrain(messageID);
+        return new Persistent.InitializingObjectSet<SubscribedBoard.BoardReplyLink>(mFreetalk, q);
+    }
+   
+	public synchronized BoardReplyLink getReplyLink(final String threadID, final String messageID) throws NoSuchMessageException {
+        final Query q = mDB.query();
+        q.constrain(BoardReplyLink.class);
+        q.descend("mBoard").constrain(this).identity();
+        q.descend("mThreadID").constrain(threadID);
+        q.descend("mMessageID").constrain(messageID);
+
+        final ObjectSet<BoardReplyLink> results = new Persistent.InitializingObjectSet<SubscribedBoard.BoardReplyLink>(mFreetalk, q);
         
         switch(results.size()) {
 	        case 1:
-				final BoardReplyLink messageRef = results.next();
-				messageRef.initializeTransient(mFreetalk);
-				assert(message.equals(messageRef.mMessage)); // The query works
-				return messageRef;
+				final BoardReplyLink replyRef = results.next();
+				assert(threadID.equals(replyRef.mThreadID)); // The query works
+				assert(messageID.equals(replyRef.mMessageID)); // The query works
+				return replyRef;
 	        case 0:
-	        	throw new NoSuchMessageException(message.getID());
+	        	throw new NoSuchMessageException(messageID);
 	        default:
-	        	throw new DuplicateMessageException(message.getID());
+	        	throw new DuplicateMessageException(messageID);
         }
     }
+    
     
     @SuppressWarnings("unchecked")
 	public synchronized BoardThreadLink getThreadLink(final String threadID) throws NoSuchMessageException {
@@ -467,15 +550,7 @@ public final class SubscribedBoard extends Board {
      * @throws NoSuchMessageException
      */
     private synchronized BoardThreadLink findOrCreateParentThread(final Message newMessage) {
-    	String parentThreadID;
-    	
-    	try {
-    		parentThreadID = newMessage.getThreadID();
-    	}
-    	catch(NoSuchMessageException e) {
-    		Logger.error(this, "SHOULD NOT HAPPEN: findOrCreateParentThread called for a message where getThreadID failed: " + e);
-    		throw new IllegalArgumentException(e);
-    	}
+    	String parentThreadID = newMessage.getThreadIDSafe();
 
     	try {
     		// The parent thread was downloaded and marked as a thread already, we return its BoardThreadLink
@@ -505,12 +580,43 @@ public final class SubscribedBoard extends Board {
     		}
     		catch(NoSuchMessageException ex) { 
     			// The message manager did not find the parentThreadID, so the parent thread was not downloaded yet, we create a ghost thread reference for it.
-    			BoardThreadLink ghostThreadRef = new BoardThreadLink(this, parentThreadID, newMessage.getDate(), takeFreeMessageIndexWithoutCommit());
+    			BoardThreadLink ghostThreadRef = new BoardThreadLink(this, parentThreadID, newMessage.getTitle(), newMessage.getDate(), 
+    					takeFreeMessageIndexWithoutCommit());
     			ghostThreadRef.initializeTransient(mFreetalk);
     			ghostThreadRef.storeWithoutCommit();
     			return ghostThreadRef;
     		}		
     	}
+    }
+    
+    private BoardReplyLink findOrCreateParentMessage(Message newMessage) {
+    	final String threadID = newMessage.getThreadIDSafe();
+    	final String parentID = newMessage.getParentIDSafe();
+    	
+    	if(parentID.contains(threadID))
+    		throw new RuntimeException("parentID equals threadID, you should use findOrCreateParentThread for this");
+    	
+		try {
+			return getReplyLink(threadID, parentID);
+		} catch(NoSuchMessageException e) {
+			// We do not query the message manager whether a message with the parent ID exists and instead always create a ghost link
+			// if no reply link was found for the parent message:
+			// If it was downloaded already it should have been linked in to this thread anyway if it did belong there.
+			// If the parent message actually is no reply to this thread we want the ghost link to stay ghost link forever
+			// - forking parent messages into threads which do not belong there would make the thread displaying UI very complex...
+			
+			final Date parentDateGuess = new Date(newMessage.getDate().getTime() - 1);
+			// TODO: Improve the title guess: If it doesnt start with "Re:" we should rather guess from the thread title ...
+			// Subtract 1ms so the parent appears before the reply
+			String parentTitleGuess = newMessage.getTitle();
+			
+			final BoardReplyLink ghostParentRef = new BoardReplyLink(this, 
+					threadID, parentID, parentTitleGuess, parentDateGuess, takeFreeMessageIndexWithoutCommit());
+			ghostParentRef.initializeTransient(mFreetalk);
+			ghostParentRef.storeWithoutCommit();
+			
+			return ghostParentRef;
+		}
     }
 
 
@@ -533,7 +639,7 @@ public final class SubscribedBoard extends Board {
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         if (sortByMessageIndexAscending) {
-            q.descend("mMessageIndex").orderAscending(); /* Needed for NNTP */
+            q.descend("mIndex").orderAscending(); /* Needed for NNTP */
         }
         return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
     }
@@ -580,7 +686,7 @@ public final class SubscribedBoard extends Board {
     	final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
-        q.descend("mMessageIndex").orderAscending();
+        q.descend("mIndex").orderAscending();
         ObjectSet<MessageReference> result = q.execute();
         
         if(result.size() == 0)
@@ -594,7 +700,7 @@ public final class SubscribedBoard extends Board {
     	final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
-        q.descend("mMessageIndex").orderDescending();
+        q.descend("mIndex").orderDescending();
         ObjectSet<MessageReference> result = q.execute();
         
         if(result.size() == 0)
@@ -627,7 +733,7 @@ public final class SubscribedBoard extends Board {
     	final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
-        q.descend("mMessageIndex").constrain(index);
+        q.descend("mIndex").constrain(index);
         final ObjectSet<MessageReference> result = q.execute();
         
         switch(result.size()) {
@@ -651,13 +757,13 @@ public final class SubscribedBoard extends Board {
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
         if (minimumIndex > 0) {
-            q.descend("mMessageIndex").constrain(minimumIndex).smaller().not();
+            q.descend("mIndex").constrain(minimumIndex).smaller().not();
         }
         if (sortByMessageIndexAscending) {
-            q.descend("mMessageIndex").orderAscending();
+            q.descend("mIndex").orderAscending();
         }
         if (sortByMessageDateAscending) {
-            q.descend("mMessageDate").orderAscending();
+            q.descend("mDate").orderAscending();
         }
         return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
     }
@@ -670,13 +776,13 @@ public final class SubscribedBoard extends Board {
         final Query q = mDB.query();
         q.constrain(MessageReference.class);
         q.descend("mBoard").constrain(this).identity();
-        q.descend("mMessageDate").constrain(minimumDate).smaller().not();
+        q.descend("mDate").constrain(minimumDate).smaller().not();
 
         if (sortByMessageIndexAscending) {
-            q.descend("mMessageIndex").orderAscending();
+            q.descend("mIndex").orderAscending();
         }
         if (sortByMessageDateAscending) {
-            q.descend("mMessageDate").orderAscending();
+            q.descend("mDate").orderAscending();
         }
         return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
     }
@@ -704,6 +810,7 @@ public final class SubscribedBoard extends Board {
     
     /**
      * Get the number of unread replies to the given thread.
+     * TODO: This should rather be cached in the BoardThreadLink
      */
     public synchronized int threadUnreadReplyCount(String threadID) {
     	final Query q = mDB.query();
@@ -718,7 +825,6 @@ public final class SubscribedBoard extends Board {
     /**
      * Get all replies to the given thread, sorted ascending by date if requested
      */
-    @SuppressWarnings("unchecked")
     public synchronized ObjectSet<BoardReplyLink> getAllThreadReplies(final String threadID, final boolean sortByDateAscending) {
     	final Query q = mDB.query();
         q.constrain(BoardReplyLink.class);
@@ -726,10 +832,10 @@ public final class SubscribedBoard extends Board {
         q.descend("mThreadID").constrain(threadID);
         
         if (sortByDateAscending) {
-            q.descend("mMessageDate").orderAscending();
+            q.descend("mDate").orderAscending();
         }
         
-		return new Persistent.InitializingObjectSet(mFreetalk, q.execute());
+		return new Persistent.InitializingObjectSet<BoardReplyLink>(mFreetalk, q);
     }
     
 //    public static final class UnwantedMessageLink {
@@ -850,80 +956,148 @@ public final class SubscribedBoard extends Board {
     	@IndexedField
     	protected final SubscribedBoard mBoard;
     	
+    	protected final String mAuthorID;
+    	
     	@IndexedField
+    	protected final String mThreadID;
+    	
+    	@IndexedField
+    	protected final String mMessageID;
+    	
     	protected Message mMessage;
     	
-    	@IndexedField
-    	protected Date mMessageDate;
+    	protected String mTitle;
     	
     	@IndexedField
-    	protected final int mMessageIndex;
+    	protected Date mDate;
+    	
+    	@IndexedField
+    	protected final int mIndex;
 
     	private boolean mWasRead = false;
 
 
-    	private MessageReference(SubscribedBoard myBoard, int myMessageIndex) {
-        	if(myBoard == null)
-        		throw new NullPointerException();
-        	
+    	private MessageReference(SubscribedBoard myBoard, String myThreadID, String myMessageID, String myMessageTitleGuess,
+    			Date myMessageDateGuess, int myMessageIndex) {
+        	if(myBoard == null) throw new NullPointerException();
+        	if(myThreadID == null) throw new NullPointerException();
+        	if(myMessageID == null) throw new NullPointerException();
+        	if(myMessageDateGuess == null) throw new NullPointerException();
+        	if(myMessageIndex < 0) throw new IllegalArgumentException();
+
     		mBoard = myBoard;
+    		try {
+				mAuthorID = Message.getAuthorIDFromMessageID(myMessageID);
+			} catch (InvalidParameterException e1) {
+				throw new RuntimeException(e1);
+			}
+    		mThreadID = myThreadID;
+    		mMessageID = myMessageID;
     		mMessage = null;
-    		mMessageDate = null;
-    		mMessageIndex = myMessageIndex;
+    		mTitle = myMessageTitleGuess;
+    		mDate = myMessageDateGuess;
+    		mIndex = myMessageIndex;
     		
     		try {
-				assert(mMessageIndex > mBoard.getLastMessageIndex());
+				assert(mIndex > mBoard.getLastMessageIndex());
 			} catch (NoSuchMessageException e) {
 			}
     	}
 
-		private MessageReference(SubscribedBoard myBoard, Message myMessage, int myMessageIndex) {
-    		this(myBoard, myMessageIndex);
-    		
-    		if(myMessage == null)
-    			throw new NullPointerException();
-    		
+		private MessageReference(SubscribedBoard myBoard, String myThreadID, Message myMessage, int myMessageIndex) {
+			this(myBoard, myThreadID, myMessage.getID(), myMessage.getTitle(), myMessage.getDate(), myMessageIndex);
+
+			// Done implicitely by .getID() above...
+			// if(myMessage == null) throw new NullPointerException();
+			
     		mMessage = myMessage;
-    		mMessageDate = mMessage.getDate();
     	}
+		
+        public final String getAuthorID() {
+        	return mAuthorID;
+        }
+		
+        public final String getThreadID() {
+        	return mThreadID;
+        }
+        
+        public final String getMessageID() {
+        	return mMessageID;
+        }
     	
         /**
          * Get the message to which this reference points.
          * @throws MessageNotFetchedException If the message belonging to this reference was not fetched yet.
          */
-        public Message getMessage() throws MessageNotFetchedException {
+        public final Message getMessage() throws MessageNotFetchedException {
         	checkedActivate(2);
+        	if(mMessage == null)
+        		throw new MessageNotFetchedException(mMessageID);
+        	
         	mMessage.initializeTransient(mFreetalk);
             return mMessage;
         }
         
-        public Date getMessageDate() {
-        	return mMessageDate;
+		protected void setMessage(Message myMessage) {
+			if(myMessage == null)
+				throw new NullPointerException();
+			
+			mMessage = myMessage;
+			mTitle = mMessage.getTitle();
+			mDate = mMessage.getDate();
+			
+			markAsUnread();
+		}
+		
+		protected void removeMessage() {
+			mMessage = null;
+		}
+		
+		public final String getMessageTitle() {
+			return mTitle;
+		}
+		
+		protected final void setMessageTitle(String title) {
+			if(Message.isTitleValid(title))
+				throw new IllegalArgumentException("Title is not valid: " + title);
+			
+			mTitle = title;
+		}
+        
+        public final Date getMessageDate() {
+        	return mDate;
         }
+        
+    	protected void setMessageDate(Date date) {
+    		if(date.after(mDate))
+    			throw new RuntimeException("Increasing the date guess does not make sense");
+    		
+    		mDate = date;
+    	}
         
         /** Get an unique index number of this message in the board where which the query for the message was executed.
          * This index number is needed for NNTP and for synchronization with client-applications: They can check whether they have all messages by querying
          * for the highest available index number. */
-        public int getIndex() {
-        	return mMessageIndex;
+        public final int getIndex() {
+        	return mIndex;
         }
         
-		public boolean wasRead() {
+		public final boolean wasRead() {
 			return mWasRead;
 		}
 		
-		public void markAsRead() {
+		protected final void markAsRead() {
 			mWasRead = true;
 		}
 		
-		public void markAsUnread() { 
+		protected final void markAsUnread() { 
 			mWasRead = false;
 		}
         
         /**
          * Does not provide synchronization, you have to lock the MessageManager, this Board and then the database before calling this function.
          */
-        protected void storeWithoutCommit(ExtObjectContainer db) {
+        protected final void storeWithoutCommit(ExtObjectContainer db) {
         	try {
         		checkedActivate(3); // TODO: Figure out a suitable depth.
         		throwIfNotStored(mBoard);
@@ -939,7 +1113,7 @@ public final class SubscribedBoard extends Board {
         /**
          * Does not provide synchronization, you have to lock this Board before calling this function.
          */
-        public void storeAndCommit() {
+        public final void storeAndCommit() {
         	synchronized(mDB.lock()) {
         		try {
 	        		storeWithoutCommit();
@@ -951,8 +1125,7 @@ public final class SubscribedBoard extends Board {
         	}
         }
         
-        
-    	protected void deleteWithoutCommit(ExtObjectContainer db) {
+    	protected final void deleteWithoutCommit(ExtObjectContainer db) {
     		deleteWithoutCommit(3); // TODO: Figure out a suitable depth.
 		}
     }
@@ -960,46 +1133,36 @@ public final class SubscribedBoard extends Board {
     /**
      * Helper class to associate messages with boards in the database
      */
-    // @IndexedField // I can't think of any query which would need to get all BoardReplyLink objects.
+    // @Indexed // I can't think of any query which would need to get all BoardReplyLink objects.
     public static class BoardReplyLink extends MessageReference { /* TODO: This is only public for configuring db4o. Find a better way */
-        
-    	@IndexedField
-        private final String mThreadID;
+    	
+		/**
+    	 * For constructing reply-links for messages which have been downloaded already.
+    	 */
+    	protected BoardReplyLink(SubscribedBoard myBoard, Message myMessage, int myMessageIndex) {
+    		super(myBoard, myMessage.getThreadIDSafe(), myMessage, myMessageIndex);
+    	}
 
-
-        protected BoardReplyLink(SubscribedBoard myBoard, Message myMessage, int myIndex) {
-        	super(myBoard, myMessage, myIndex);
-            
-            try {
-            	mThreadID = mMessage.getThreadID();
-            }
-            catch(NoSuchMessageException e) {
-            	throw new IllegalArgumentException("Trying to create a BoardReplyLink for a thread, should be a BoardThreadLink.");
-            }
-            
-        }
         /**
-         * @throws MessageNotFetchedException For BoardReplyLink objects, this should never throw a MessageNotFetchedException in the current implementation.
+         * For construction reply-links for messages which have not been downloaded - this is done when a other message states that
+         * the given message is its parent message.
+         * 
+         * @param myBoard The board in which the message is supposed to exist.
+         * @param myThreadID The ID of the thread in which the message is supposed to exist
+         * @param myMessageID The ID of the hypothetical message.
+         * @param myTitleGuess A guess for the title of the hypothetical message.
+         * @param myDateGuess A guess for the date of the hypothetical message
+         * @param myIndex The index which will be assigned to this reply link.
          */
-        public Message getMessage() throws MessageNotFetchedException {
-        	return super.getMessage();
-        }
-        
-        public String getThreadID() {
-        	return mThreadID;
-        }
-        
-		public Date getDate() {
-			return mMessageDate;
-		}
+		protected BoardReplyLink(SubscribedBoard myBoard, String myThreadID, String myMessageID, 
+				String myTitleGuess, Date myDateGuess, int myIndex) {
+    		super(myBoard, myThreadID, myMessageID, myTitleGuess, myDateGuess, myIndex);
+    	}
 
     }
 
-    // @IndexedField // I can't think of any query which would need to get all BoardThreadLink objects.
+    // @Indexed // I can't think of any query which would need to get all BoardThreadLink objects.
     public final static class BoardThreadLink  extends MessageReference {
-        
-    	@IndexedField
-        private final String mThreadID;
         
     	private Date mLastReplyDate;
     	
@@ -1007,37 +1170,44 @@ public final class SubscribedBoard extends Board {
 
 
     	protected BoardThreadLink(SubscribedBoard myBoard, Message myThread, int myMessageIndex) {
-    		super(myBoard, myThread, myMessageIndex);
+    		super(myBoard, myThread.getID(), myThread, myMessageIndex);
     		
-    		if(myThread == null)
-    			throw new NullPointerException();
+    		// Done implicitely by .getID() above
+    		// if(myThread == null) throw new NullPointerException();
     		
-    		mThreadID = mMessage.getID();
     		mLastReplyDate = myThread.getDate();
     	}
 
 		/**
-    	 * @param myLastReplyDate The date of the last reply to this thread. This parameter must be specified at creation to prevent threads from being hidden if
-    	 * 							the user of this constructor forgot to call updateLastReplyDate() - thread display is sorted descending by reply date!
+    	 * @param myLastReplyDate The date of the last reply to this thread. This parameter must be specified at creation to prevent threads 
+    	 * 		from being hidden if the user of this constructor forgot to call updateLastReplyDate() - thread display is sorted descending 
+    	 * 		by reply date!
     	 */
-    	protected BoardThreadLink(SubscribedBoard myBoard, String myThreadID, Date myLastReplyDate, int myMessageIndex) {
-    		super(myBoard, myMessageIndex);
-    		
-    		if(myThreadID == null)
-    			throw new NullPointerException();
+    	protected BoardThreadLink(SubscribedBoard myBoard, String myThreadID, String myMessageTitle,
+    			Date myLastReplyDate, int myMessageIndex) {
+    		super(myBoard, myThreadID, myThreadID, myMessageTitle, myLastReplyDate, myMessageIndex);
     		
     		// TODO: We might validate the thread id here. Should be safe not to do so because it is taken from class Message which validates it.
     		
-    		mThreadID = myThreadID;
     		mLastReplyDate = myLastReplyDate;
     	}
     	
     	protected void onMessageAdded(Message newMessage) {
-    		mWasThreadRead = false;
+    		markThreadAsUnread();
     		
-    		Date newDate = newMessage.getDate();
+    		final Date newDate = newMessage.getDate();
+    		
+    		checkedActivate(2);
+    		if(mMessage == null) {
+    			// The thread has not been downloaded, we adjust its date to be the date of the first reply
+    			if(newDate.before(mDate))
+    				setMessageDate(newDate);
+    		}
+    		
 			if(newDate.after(mLastReplyDate))
 				mLastReplyDate = newDate;
+			
+			// TODO: If the thread message was not downloaded, set the title guess to the most-seen title of all replies...
 		}
     	
     	protected void onMessageRemoved(Message removedMessage) {
@@ -1053,81 +1223,105 @@ public final class SubscribedBoard extends Board {
     				final ObjectSet<BoardReplyLink> replies = mBoard.getAllThreadReplies(mThreadID, true);
     				final int repliesCount = replies.size();
     				if(repliesCount>0)
-    					mLastReplyDate = replies.get(repliesCount-1).getDate();
+    					mLastReplyDate = replies.get(repliesCount-1).getMessageDate();
     				else
-    					mLastReplyDate = mMessageDate;
+    					mLastReplyDate = mDate;
     		}
 
     		// TODO: I decided not to change the "thread was read flag:" If the thread was unread before, then it is probably still unread now.
     		// If it was read before, removing a message won't change that.
+    		
+			// TODO: If the thread message was not downloaded, set the title guess to the most-seen title of all replies...
     	}
     	
     	
     	public void removeThreadMessage() {
     		mMessage = null;
-    		mMessageDate = null;
+    		// TODO: I cannot remember why I made the code delete the date. It should be kept instead of using guesses...
+    		// If re-enabling the deletion, the following code should also be modified to delete the title and guess it instead...
     		
-    		// TODO: This assumes that getAllThreadReplies() obtains the sorted order using an index. This is not the case right now. If we do not
-    		// optimize getAllThreadReplies() we should just iterate over the unsorted replies list and do minimum search.
-    		for(BoardReplyLink reply : mBoard.getAllThreadReplies(mThreadID, true)) {
-    			mLastReplyDate = reply.getDate();
-    			return;
-    		}
+//    		mDate = null;
+//    		
+//    		// TODO: This assumes that getAllThreadReplies() obtains the sorted order using an index. This is not the case right now. If we do not
+//    		// optimize getAllThreadReplies() we should just iterate over the unsorted replies list and do minimum search.
+//    		for(BoardReplyLink reply : mBoard.getAllThreadReplies(mThreadID, true)) {
+//    			mLastReplyDate = reply.getMessageDate();
+//    			return;
+//    		}
 		}
 		
 		public Date getLastReplyDate() {
 			return mLastReplyDate;
 		}
-    	
-		public String getThreadID() {
-			return mThreadID;
-		}
-		
-		/**
-		 * Gets the actual message of this thread.
-		 * 
-		 * @throws MessageNotFetchedException If the message was not downloaded yet! This happens when a reply to a thread is downloaded before the actual
-		 * thread was downloaded.
-		 */
-		public Message getMessage() throws MessageNotFetchedException {
-			if(mMessage == null)
-				throw new MessageNotFetchedException(mThreadID);
-			
-			return super.getMessage();
-		}
 		
 		public void setMessage(Message myThread) {
-			if(myThread == null)
-				throw new NullPointerException();
-			
 			if(myThread.getID().equals(mThreadID) == false)
 				throw new IllegalArgumentException();
 			
-			mMessage = myThread;
-			mMessageDate = mMessage.getDate();
-			
-			markAsUnread(); // Mark the thread message itself as unread (not the whole thread).
-			
+			super.setMessage(myThread);
+
 			onMessageAdded(myThread); // This also marks the whole thread as unread.
 		}
 		
+		/**
+		 * Gets the "thread was read flag". This is false if the thread contains a single unread message.
+		 */
 		public boolean wasThreadRead() {
 			return mWasThreadRead;
 		}
 		
-		public void markThreadAsRead() {
+		private void markThreadAsRead() {
 			mWasThreadRead = true;
 		}
 		
-		public void markThreadAsUnread() {
-			markAsUnread();
+		private void markThreadAsUnread() {
 			mWasThreadRead = false;
-			
-			// TODO: This should mark all replies as unread to be consistent with the interpretation of the "thread was read" flag:
-			// The "thread was read" flag should be false if exactly the thread and all messages have their "was read" flag == false.
-			// Right now this is being done by class ThreadPage which breaks the core/UI separation
 		}
 		
+		private void changeThreadAndRepliesReadStateAndCommit(boolean newReadState) {
+			synchronized(mBoard) {
+			synchronized(mDB.lock()) {
+				try {
+					// Mark this object as unread
+					if(newReadState) {
+						markAsRead();
+						markThreadAsRead();
+					} else {
+						markAsUnread();
+						markThreadAsUnread();
+					}
+					
+					mWasThreadRead = newReadState;
+					storeWithoutCommit();
+
+					// Mark its replies as unread
+					for(BoardReplyLink reference : mBoard.getAllThreadReplies(mThreadID, false)) {
+						if(reference.wasRead() != newReadState) {
+							// TODO: Encapsulate in MessageReference
+							if(newReadState)
+								reference.markAsRead();
+							else 
+								reference.markAsUnread();
+							reference.storeWithoutCommit();
+						}
+					}
+
+					checkedCommit(this);
+				}
+				catch(RuntimeException e) {
+					checkedRollbackAndThrow(e);
+				}
+			}
+			}
+		}
+		
+		public void markThreadAndRepliesAsUnreadAndCommit() {
+			changeThreadAndRepliesReadStateAndCommit(false);
+		}
+		
+		public void markThreadAndRepliesAsReadAndCommit() {
+			changeThreadAndRepliesReadStateAndCommit(true);
+		}
     }
 
 }
