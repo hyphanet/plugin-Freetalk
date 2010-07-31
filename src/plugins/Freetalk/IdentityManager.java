@@ -12,7 +12,6 @@ import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
-import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.Logger;
 
@@ -74,19 +73,18 @@ public abstract class IdentityManager {
 	public abstract OwnIdentity getOwnIdentity(String id) throws NoSuchIdentityException;
 
 	public synchronized boolean anyOwnIdentityWantsMessagesFrom(Identity identity) {		
-		boolean noOwnIdentities = true;
-
 		for(final OwnIdentity oid : ownIdentityIterator()) {
-			noOwnIdentities = false;
 			try {
 				if (oid.wantsMessagesFrom(identity))
 					return true;
+			} catch(NoSuchIdentityException e) {
+				// The own identity was deleted meanwhile, ignore
 			} catch(Exception e) {
 				Logger.error(this, "anyOwnIdentityWantsMessagesFrom: wantsMessagesFrom() failed, skipping the current OwnIdentity.", e);
 			}
 		}
 
-		return noOwnIdentities ? true : false;
+		return false;
 	}
 
 
