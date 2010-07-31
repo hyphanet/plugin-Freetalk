@@ -361,8 +361,6 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	}
 
 	/**
-	 * DO ONLY USE THIS METHOD AT STARTUP OF FREETALK. Use {@link #storeStartFetchCommandWithoutCommit(String)} everywhere else.
-	 * 
 	 * Subscribes to the {@link WoTMessageListUSK} of the given identity, using the latest unavailable message list index.
 	 * If the identity is already being fetched, logs an error and does nothing.
 	 */
