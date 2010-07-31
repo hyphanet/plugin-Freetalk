@@ -49,7 +49,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	protected final Identity mAuthor;
 	
 	@IndexedField
-	protected int mIndex; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
+	protected long mIndex; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
 	
 	
 	/**
@@ -322,7 +322,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		if(myURI == null)
 			throw new IllegalArgumentException("Trying to construct a MessageList with null URI.");
 		
-		mIndex = (int) myURI.getEdition();
+		mIndex = myURI.getEdition();
 		if(mIndex < 0)
 			throw new IllegalArgumentException("Trying to construct a message list with invalid index " + mIndex);
 		
@@ -334,7 +334,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		mMessages = newMessages;
 	}
 	
-	protected MessageList(OwnIdentity myAuthor, int newIndex) {
+	protected MessageList(OwnIdentity myAuthor, long newIndex) {
 		if(myAuthor == null)
 			throw new IllegalArgumentException("Trying to construct a MessageList with no author");
 		
@@ -412,11 +412,10 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 				
 				// TODO: Its sort of awful to have this code here, maybe find a better place for it :|
 				// It's required to prevent zombie message lists.
-				query = mDB.query();
-				query.constrain(Message.class);
-				query.descend("mID").constrain(ref.getMessageID());
-				for(Message message : new Persistent.InitializingObjectSet<Message>(mFreetalk, query)) {
-					message.clearMessageList();
+				try {
+					mFreetalk.getMessageManager().get(ref.getMessageID()).clearMessageList();
+				} catch(NoSuchMessageException e) {
+					
 				}
 				
 				ref.initializeTransient(mFreetalk);
@@ -435,7 +434,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		return calculateID(mAuthor, mIndex);
 	}
 	
-	public static String calculateID(Identity author, int index) {
+	public static String calculateID(Identity author, long index) {
 		return index + "@" + Base64.encode(author.getRequestURI().getRoutingKey());
 	}
 	
@@ -462,7 +461,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	 * @param index
 	 * @return
 	 */
-	protected abstract FreenetURI generateURI(FreenetURI baseURI, int index);
+	protected abstract FreenetURI generateURI(FreenetURI baseURI, long index);
 	
 	public Identity getAuthor() {
 		checkedActivate(2);
@@ -472,7 +471,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		return mAuthor;
 	}
 	
-	public int getIndex() {
+	public long getIndex() {
 		// checkedActivate(1);
 		return mIndex;
 	}

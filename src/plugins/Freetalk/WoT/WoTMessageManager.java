@@ -254,7 +254,7 @@ public final class WoTMessageManager extends MessageManager {
 	}
 
 	@SuppressWarnings("unchecked")
-	public synchronized int getUnavailableNewMessageListIndex(Identity identity) {
+	public synchronized long getUnavailableNewMessageListIndex(Identity identity) {
 		Query query = db.query();
 		query.constrain(WoTMessageList.class);
 		query.constrain(WoTOwnMessageList.class).not();
@@ -268,13 +268,13 @@ public final class WoTMessageManager extends MessageManager {
 		return result.next().getIndex() + 1;
 	}
 	
-	public int getNewMessageListIndexEditionHint(Identity identity) {
+	public long getNewMessageListIndexEditionHint(Identity identity) {
 		// TODO: Implement storage of edition hints in message lists.
 		return getUnavailableNewMessageListIndex(identity);
 	}
 
 	@SuppressWarnings("unchecked")
-	public synchronized int getUnavailableOldMessageListIndex(Identity identity) throws NoSuchMessageListException {
+	public synchronized long getUnavailableOldMessageListIndex(Identity identity) throws NoSuchMessageListException {
 		Query query = db.query();
 		query.constrain(WoTMessageList.class);
 		query.constrain(WoTOwnMessageList.class).not();
@@ -285,8 +285,8 @@ public final class WoTMessageManager extends MessageManager {
 		if(result.size() == 0)
 			return 0;
 		
-		int latestAvailableIndex = result.next().getIndex();
-		int freeIndex = latestAvailableIndex - 1;
+		long latestAvailableIndex = result.next().getIndex();
+		long freeIndex = latestAvailableIndex - 1;
 		for(; result.hasNext() && result.next().getIndex() == freeIndex; ) {
 			--freeIndex;
 		}
@@ -305,7 +305,7 @@ public final class WoTMessageManager extends MessageManager {
 	 * function does not provide synchronization.
 	 */
 	@SuppressWarnings("unchecked")
-	public int getFreeOwnMessageListIndex(WoTOwnIdentity messageAuthor)  {
+	public long getFreeOwnMessageListIndex(WoTOwnIdentity messageAuthor)  {
 		Query q = db.query();
 		/* We query for MessageList and not OwnMessageList because the user might have deleted his own messages or lost his database */
 		q.constrain(MessageList.class);

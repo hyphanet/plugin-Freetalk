@@ -7,13 +7,13 @@ import freenet.keys.FreenetURI;
 //@IndexedField // I can't think of any query which would need to get all WoTOwnMessageList objects.
 public final class WoTOwnMessageList extends OwnMessageList {
 
-	public WoTOwnMessageList(OwnIdentity newAuthor, int newIndex) {
+	public WoTOwnMessageList(OwnIdentity newAuthor, long newIndex) {
 		super(newAuthor, newIndex);
 		// TODO Auto-generated constructor stub
 	}
 
 	@Override
-	protected FreenetURI generateURI(FreenetURI baseURI, int index) {
+	protected FreenetURI generateURI(FreenetURI baseURI, long index) {
 		return WoTMessageList.assembleURI(baseURI, index);
 	}
 
@@ -21,7 +21,7 @@ public final class WoTOwnMessageList extends OwnMessageList {
 	 * Only to be used by the WoTMessageManager, which provides the necessary synchronization.
 	 */
 	protected synchronized void incrementInsertIndex() {
-		int freeIndex = mFreetalk.getMessageManager().getFreeOwnMessageListIndex(getAuthor());
+		long freeIndex = mFreetalk.getMessageManager().getFreeOwnMessageListIndex(getAuthor());
 		mIndex = Math.max(mIndex+1, freeIndex);
 		mID = calculateID();
 		storeWithoutCommit();

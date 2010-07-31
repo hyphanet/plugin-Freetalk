@@ -27,7 +27,7 @@ public abstract class OwnMessageList extends MessageList {
 
 	}
 
-	public OwnMessageList(OwnIdentity newAuthor, int newIndex) {
+	public OwnMessageList(OwnIdentity newAuthor, long newIndex) {
 		super(newAuthor, newIndex);
 	}
 	

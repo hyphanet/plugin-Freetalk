@@ -33,7 +33,7 @@ public final class WoTMessageList extends MessageList {
 		return assembleURI(getAuthor().getRequestURI(), mIndex).sskForUSK();
 	}
 	
-	protected FreenetURI generateURI(FreenetURI baseURI, int index) {
+	protected FreenetURI generateURI(FreenetURI baseURI, long index) {
 		return assembleURI(baseURI, index);
 	}
 	
@@ -43,11 +43,11 @@ public final class WoTMessageList extends MessageList {
 	 * @param index
 	 * @return
 	 */
-	public static FreenetURI generateURI(WoTIdentity identity, int index) {
+	public static FreenetURI generateURI(WoTIdentity identity, long index) {
 		return assembleURI(identity.getRequestURI(), index);
 	}
 	
-	public static FreenetURI assembleURI(FreenetURI baseURI, int index) {
+	public static FreenetURI assembleURI(FreenetURI baseURI, long index) {
 		baseURI = baseURI.setKeyType("USK");
 		baseURI = baseURI.setDocName(Freetalk.PLUGIN_TITLE + "|" + "MessageList");
 		baseURI = baseURI.setSuggestedEdition(index);

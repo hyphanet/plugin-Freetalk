@@ -147,7 +147,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 			for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
 				if(!mIdentities.contains(identity.getID()) && mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
 					try {
-						int unavailableIndex = mMessageManager.getUnavailableOldMessageListIndex(identity);
+						long unavailableIndex = mMessageManager.getUnavailableOldMessageListIndex(identity);
 						
 						fetchMessageList((WoTIdentity)identity, unavailableIndex);
 						
@@ -168,7 +168,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	/**
 	 * You have to synchronize on this <code>WoTMessageFetcher</code> when using this function.
 	 */
-	private void fetchMessageList(WoTIdentity identity, int index) throws FetchException {
+	private void fetchMessageList(WoTIdentity identity, long index) throws FetchException {
 		synchronized(mIdentities) {
 			// mIdentities contains up to IDENTITIES_LRU_QUEUE_SIZE_LIMIT identities of which we have recently downloaded MessageLists. This queue is used to ensure
 			// that we download MessageLists from different identities and not always from the same ones. 
