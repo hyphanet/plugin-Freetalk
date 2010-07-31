@@ -284,10 +284,11 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	
 	public void start() { 
 		Logger.debug(this, "Starting new-messagelist-fetches of all identities...");
-		synchronized(mIdentityManager) {
 		synchronized(this) {
+		synchronized(mIdentityManager) {
 			for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
-				// The connection to WoT might not exist yet so we just fetch all identities. The identity manager will abort the fetches of obsolete identities.
+				// The connection to WoT might not exist yet so we just fetch all identities.
+				// The identity manager will abort the fetches of obsolete identities while garbage collecting them
 				//if(mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
 					try {
 						fetch(identity);
