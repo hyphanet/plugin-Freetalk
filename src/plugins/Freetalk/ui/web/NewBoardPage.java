@@ -23,16 +23,21 @@ public final class NewBoardPage extends WebPageImpl {
 			throw new RedirectException(logIn);
 		}
 		
+		String boardLanguage = "";
+		String boardName = "";
+		
 		if(mRequest.isPartSet("CreateBoard") && mRequest.getMethod().equals("POST")) {
-		    final int boardLanguageLength = 8;
-		    final int maxBoardNameLength = Board.MAX_BOARDNAME_TEXT_LENGTH - boardLanguageLength - 1; // +1 for the '.'
-		    String boardLanguage = mRequest.getPartAsString("BoardLanguage", boardLanguageLength);
-			String boardName = mRequest.getPartAsString("BoardName", maxBoardNameLength);
-			String fullBoardName = boardLanguage + "." + boardName;
-			
 			try {
+				// TODO: Maybe introduce a specific limit for the language length... its not so important though, we have a limit, thats sufficient.
+			    boardLanguage = mRequest.getPartAsStringThrowing("BoardLanguage", Board.MAX_BOARDNAME_TEXT_LENGTH);
+				boardName = mRequest.getPartAsStringThrowing("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH);
+				
+				final String fullBoardName = boardLanguage + "." + boardName;
+				
 				mFreetalk.getMessageManager().getOrCreateBoard(fullBoardName);
+				
 				SubscribedBoard subscribedBoard = mFreetalk.getMessageManager().subscribeToBoard(mOwnIdentity, fullBoardName);
+				
 				HTMLNode successBox = addContentBox(l10n().getString("NewBoardPage.CreateBoardSuccess.Header"));
 	            l10n().addL10nSubstitution(
 	                    successBox.addChild("div"), 
