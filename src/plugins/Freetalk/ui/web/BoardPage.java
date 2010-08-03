@@ -12,6 +12,7 @@ import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
 import plugins.Freetalk.WoT.WoTIdentity;
+import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
@@ -41,17 +42,18 @@ public final class BoardPage extends WebPageImpl {
 		makeBreadcrumbs();
 
 		HTMLNode threadsBox = addContentBox(l10n().getString("BoardPage.Threads.Header", "boardname" , mBoard.getName()));
+		threadsBox = threadsBox.addChild("div", "class", "threads");
 		
 		// Button for creating a new thread
 		HTMLNode buttonRow = threadsBox.addChild("div", "class", "button-row");
-		HTMLNode newThreadButton = buttonRow.addChild("span", "style", "float: left;");
+		HTMLNode newThreadButton = buttonRow.addChild("span", "class", "new-thread-button");
 		HTMLNode newThreadForm = addFormChild(newThreadButton, Freetalk.PLUGIN_URI + "/NewThread", "NewThreadPage");
 			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID() });
 			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "BoardName", mBoard.getName() });
 			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("BoardPage.CreateNewThreadButton") });
 			
         // Button to mark all threads read
-		HTMLNode markAllAsReadButton = buttonRow.addChild("span", "style", "float: right;");
+		HTMLNode markAllAsReadButton = buttonRow.addChild("span", "class", "mark-all-read-button");
         HTMLNode markAllAsReadButtonForm = addFormChild(markAllAsReadButton, getURI(mBoard.getName()), "BoardPage");
         	markAllAsReadButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
         	markAllAsReadButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "name", mBoard.getName()});
@@ -59,10 +61,11 @@ public final class BoardPage extends WebPageImpl {
         	markAllAsReadButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("BoardPage.MarkAllThreadsAsReadButton") });
 
         // Clear margins after button row.
+        // TODO: Move to freetalk.css
         threadsBox.addChild("div", "style", "clear: both;");
 
 		// Threads table
-		HTMLNode threadsTable = threadsBox.addChild("table", new String[] { "border", "width" }, new String[] { "0", "100%" });
+		HTMLNode threadsTable = threadsBox.addChild("table", new String[] { "border", "width", "class" }, new String[] { "0", "100%", "threads-table" });
 		
 		// Tell the browser the table columns and their size 
 		HTMLNode colgroup = threadsTable.addChild("colgroup");
@@ -71,8 +74,9 @@ public final class BoardPage extends WebPageImpl {
 			colgroup.addChild("col"); // Trust
 			colgroup.addChild("col"); // Date
 			colgroup.addChild("col"); // Replies
+			colgroup.addChild("col"); // Unread count
 		
-		HTMLNode row = threadsTable.addChild("thead");
+		HTMLNode row = threadsTable.addChild("thead").addChild("tr");
 			row.addChild("th", l10n().getString("BoardPage.ThreadTableHeader.Title"));
 			row.addChild("th", l10n().getString("BoardPage.ThreadTableHeader.Author"));
 			row.addChild("th", l10n().getString("BoardPage.ThreadTableHeader.Trust"));
@@ -84,6 +88,12 @@ public final class BoardPage extends WebPageImpl {
 		
 		HTMLNode table = threadsTable.addChild("tbody");
 		
+		final WoTIdentityManager identityManager = mFreetalk.getIdentityManager();
+		
+		// TODO: We don't want to lock the identity manager here to make the displaying of the board FAST - it shouldn't wait until the lock
+		// is available: Introduce a non-locking getIdentity() in the identity manager and use it - the locking one will cause deadlocks
+		// if we do not lock the identity manager before the board.
+		synchronized(identityManager) {
 		synchronized(mBoard) {
 		    
 			for(BoardThreadLink threadReference : mBoard.getThreads()) {
@@ -104,7 +114,7 @@ public final class BoardPage extends WebPageImpl {
 					authorScore = "?"; 
 					
 					try {
-						author = mFreetalk.getIdentityManager().getIdentity(threadReference.getAuthorID());
+						author = identityManager.getIdentity(threadReference.getAuthorID());
 						authorText = author.getShortestUniqueName();
 						
 						// TODO: Get rid of the cast somehow, we should maybe call this WoTBoardPage :|
@@ -121,39 +131,35 @@ public final class BoardPage extends WebPageImpl {
 					}
 				}
 				
-				String threadTitle = threadReference.getMessageTitle();
 				
                 // mark thread read if requested ...
                 if (mMarkAllThreadsAsRead) {
                     threadReference.markThreadAndRepliesAsReadAndCommit();
                 }
+
+                final boolean threadWasRead = threadReference.wasThreadRead();
+                final String threadTitle = threadReference.getMessageTitle();
                 
+                // FIXME: We have a HTML trick available in the bugtracker which we can use for making the HTML limit the title length so
+                // the table will fit on screen - use it!
 
 				row = table.addChild("tr");
-				 // FIXME: Use the HTML trick in the bugtracker which tells the browser to only display as much as there is room in the table
-				threadTitle = maxLength(threadTitle, 70);
 
-				HTMLNode titleCell = row.addChild("td", new String[] { "align" }, new String[] { "left" });
-				
-				final boolean threadWasRead = threadReference.wasThreadRead();
-				if(threadWasRead== false)
-					titleCell = titleCell.addChild("b");
-				
+				/* Title */
+				HTMLNode titleCell = row.addChild("td", "class", threadWasRead ? "title-read" : "title-unread");
 				titleCell.addChild(new HTMLNode("a", "href", ThreadPage.getURI(mBoard, threadReference), threadTitle));
 
 				/* Author */
-				row.addChild("td", new String[] { "align" }, new String[] { "left" }, authorText);
+				row.addChild("td", "class", "author-name", authorText);
 
 				/* Trust */
-				row.addChild("td", new String[] { "align" }, new String[] { "left" }, authorScore);
+				row.addChild("td", "class", "author-score", authorScore);
 
 				/* Date of last reply */
-				row.addChild("td", new String[] { "align" , "style" }, new String[] { "center" , "white-space:nowrap;"}, 
-						dateFormat.format(threadReference.getLastReplyDate()));
+				row.addChild("td", "class", "date", dateFormat.format(threadReference.getLastReplyDate()));
 
 				/* Reply count */
-				row.addChild("td", new String[] { "align" }, new String[] { "center" }, 
-						Integer.toString(mBoard.threadReplyCount(threadReference.getThreadID())));
+				row.addChild("td", "class", "reply-count",  Integer.toString(mBoard.threadReplyCount(threadReference.getThreadID())));
 				
 				/* Unread count */
 				int unreadCount = 0;
@@ -165,8 +171,9 @@ public final class BoardPage extends WebPageImpl {
 					unreadCount += mBoard.threadUnreadReplyCount(threadReference.getThreadID());
 				}
 				
-				row.addChild(threadWasRead ? "td" : "th", new String[] { "align" }, new String[] { "center" }, Integer.toString(unreadCount));
+				row.addChild("td", "class", threadWasRead ? "unread-count-0" : "unread-count", Integer.toString(unreadCount));
 			}
+		}
 		}
 	}
 

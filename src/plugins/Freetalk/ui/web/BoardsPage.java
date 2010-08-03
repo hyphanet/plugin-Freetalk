@@ -83,6 +83,8 @@ public final class BoardsPage extends WebPageImpl {
 			        latestMessageDateString = "-";
 				} 
 				
+				// TODO: This should always be a td, use a CSS class instead with font-weight:bold
+				
 			    /* Unread messages count, bold when there are unread messages */
 	            row.addChild((unreadMessageCount == 0) ? "td" : "th", new String[] { "align" }, new String[] { "center" }, Integer.toString(unreadMessageCount));
 

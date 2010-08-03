@@ -1,5 +1,50 @@
 /* Freetalk Main CSS Header File */
 
+/* Threads page */
+
+.freetalk * .threads .button-row .new-thread-button {
+	float: left;
+}
+.freetalk * .threads .button-row .mark-all-read-button {
+	float: right;
+}
+
+.freetalk * .threads .threads-table .title-read {
+	overflow: hidden;
+}
+
+.freetalk * .threads .threads-table .title-unread {
+	overflow: hidden;
+	font-weight: bold;
+}
+
+.freetalk * .threads .threads-table .author-name {
+	text-align: left;
+}
+.freetalk * .threads .threads-table .author-score {
+	text-align: right;
+}
+
+.freetalk * .threads .threads-table .date {
+	text-align: center;
+	white-space:nowrap;
+}
+
+.freetalk * .threads .threads-table .reply-count {
+	text-align: right;
+}
+
+.freetalk * .threads .threads-table .unread-count {
+	text-align: right;
+	font-weight: bold;
+}
+
+.freetalk * .threads .threads-table .unread-count-0 {
+	text-align: right;
+}
+
+/* Thread page */
+
 .freetalk .message .author .name {
 	font-weight: bold;
 	font-style: italic;
