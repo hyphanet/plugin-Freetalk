@@ -87,6 +87,8 @@ public final class ThreadPage extends WebPageImpl {
             		
             		if(threadMessage.isThread() == false)
             			addThreadIsNoThreadWarning(threadMessage);
+            		else if(mBoard.contains(threadMessage) == false) // Do "else", one link to the original thread is enough.
+            			addThreadBelongsToDifferentBoardWarning(threadMessage);
 
             		addMessageBox(threadMessage, mThread);
             	}
@@ -209,6 +211,29 @@ public final class ThreadPage extends WebPageImpl {
         l10n().addL10nSubstitution(
                 div, 
                 "ThreadPage.ThreadIsNoThreadWarning.Text",
+                new String[] { "link", "/link" }, 
+                new String[] {
+                        "<a href=\""+uri+"\">",
+                        "</a>" });
+    }
+    
+    private void addThreadBelongsToDifferentBoardWarning(Message thread) {
+    	HTMLNode div = addAlertBox(l10n().getString("ThreadPage.ThreadBelongsToDifferentBoardWarning.Header")).addChild("div");
+    
+    	Board realThreadBoard;
+    	
+    	try {
+    		realThreadBoard = thread.getReplyToBoard();
+    	} catch(NoSuchBoardException e) {
+    		// TODO: List all boards to which the original thread was sent, not only the first one
+    		realThreadBoard = thread.getBoards()[0];
+    	}
+    	
+    	String uri = getURI(realThreadBoard.getName(), thread.isThread() ? thread.getID() : thread.getThreadIDSafe());
+    	
+        l10n().addL10nSubstitution(
+                div, 
+                "ThreadPage.ThreadBelongsToDifferentBoardWarning.Text",
                 new String[] { "link", "/link" }, 
                 new String[] {
                         "<a href=\""+uri+"\">",
