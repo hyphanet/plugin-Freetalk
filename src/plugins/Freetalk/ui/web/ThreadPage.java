@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
@@ -42,6 +44,7 @@ public final class ThreadPage extends WebPageImpl {
 
     private final SubscribedBoard mBoard;
     private final String mThreadID;
+    private final String mDisplayMessageID;
     private BoardThreadLink mThread;
     private final boolean mMarktThreadAsUnread;
 
@@ -58,6 +61,13 @@ public final class ThreadPage extends WebPageImpl {
         String threadID = request.getParam("ThreadID");
         if(threadID.length() == 0)
         	threadID = request.getPartAsStringFailsafe("ThreadID", 256); // TODO: Use a constant for max thread ID length
+        
+        if(request.isParameterSet("MessageID"))
+        	mDisplayMessageID = request.getParam("MessageID");
+        else if(request.isPartSet("MessageID"))
+        	mDisplayMessageID = request.getPartAsStringFailsafe("MessageID", 256);
+        else
+        	mDisplayMessageID = null;
         
         mMarktThreadAsUnread = mRequest.isPartSet("MarkThreadAsUnread");
         
@@ -136,7 +146,12 @@ public final class ThreadPage extends WebPageImpl {
     }
     
     private void addThreadNotDownloadedWarning(BoardThreadLink ref) {
-		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class" }, new String[] { "0", "100%", "message" });
+		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class", "id" },
+				new String[] { "0", "100%", "message", ref.getMessageID()});
+		
+		if(mDisplayMessageID != null && ref.getMessageID().equals(mDisplayMessageID))
+			table.addAttribute("onload", "this.focus();");
+		
 		HTMLNode row = table.addChild("tr", "class", "message");
         
         try {
@@ -162,7 +177,12 @@ public final class ThreadPage extends WebPageImpl {
     }
     
     private void addReplyNotDownloadedWarning(BoardReplyLink ref) {
-		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class" }, new String[] { "0", "100%", "message" });
+		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class", "id"},
+				new String[] { "0", "100%", "message", ref.getMessageID() });
+		
+		if(mDisplayMessageID != null && ref.getMessageID().equals(mDisplayMessageID))
+			table.addAttribute("onload", "this.focus();");
+		
 		HTMLNode row = table.addChild("tr", "class", "message");
         
         try {
@@ -328,7 +348,12 @@ public final class ThreadPage extends WebPageImpl {
     	
     	final WoTIdentity author = (WoTIdentity)message.getAuthor();
 
-		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class" }, new String[] { "0", "100%", "message" });
+		HTMLNode table = mContentNode.addChild("table", new String[] { "border", "width", "class", "id" },
+				new String[] { "0", "100%", "message", ref.getMessageID()});
+		
+		if(mDisplayMessageID != null && ref.getMessageID().equals(mDisplayMessageID))
+			table.addAttribute("onload", "this.focus();"); // FIXME: This does not work, why?
+		
 		HTMLNode row = table.addChild("tr", "class", "message");
 
 		addAuthorNode(row, author);
@@ -488,6 +513,14 @@ public final class ThreadPage extends WebPageImpl {
     
     public static String getURI(final String boardName, final String threadID) {
     	return Freetalk.PLUGIN_URI + "/showThread?BoardName=" + boardName + "&ThreadID=" + threadID;
+    }
+    
+    public static URI getURI(final String boardName, final String threadID, final String messageID) {
+    	try {
+			return new URI(Freetalk.PLUGIN_URI + "/showThread?BoardName=" + boardName + "&ThreadID=" + threadID + "&MessageID=" + messageID);
+		} catch (URISyntaxException e) {
+			throw new RuntimeException(e);
+		}
     }
 
 	/**

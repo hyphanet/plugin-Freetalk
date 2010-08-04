@@ -11,6 +11,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLConnection;
 
+import plugins.Freetalk.Board;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.WoT.WoTIdentityManager;
@@ -264,25 +265,36 @@ public final class WebInterface {
 			if(!request.getMethod().equals("POST"))
 				return new Welcome(webInterface, getLoggedInOwnIdentity(context), request, l10n());
 			
+			final String pass = request.getPartAsStringFailsafe("formPassword", 32);
+			if ((pass.length() == 0) || !pass.equals(core.formPassword))
+				return new Welcome(webInterface, getLoggedInOwnIdentity(context), request, l10n());
+
+			
 			// TODO: These casts are ugly.
-			final WoTOwnIdentity own = (WoTOwnIdentity)webInterface.getLoggedInOwnIdentity(context);
+
 			WebPage errorPage = null;
 			
+			final String boardName = request.getPartAsStringFailsafe("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH); 
+			final String threadID = request.getPartAsStringFailsafe("ThreadID", 128);
+			final String messageID = request.getPartAsStringFailsafe("MessageID", 128);
+			
 			try {
+				
 				WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 				WoTMessageManager messageManager = (WoTMessageManager)mFreetalk.getMessageManager();
-				
+
 				synchronized(identityManager) {
-					boolean removeRating = request.getPartAsString("RemoveRating", 16).equals("true");
+					final WoTOwnIdentity own = (WoTOwnIdentity)webInterface.getLoggedInOwnIdentity(context);
+					boolean removeRating = request.getPartAsStringFailsafe("RemoveRating", 16).equals("true");
 					
 					try {						
 						synchronized (messageManager) {
 						synchronized(own) {
-							WoTMessage message = (WoTMessage)messageManager.get(request.getPartAsString("MessageID", 128));
+							WoTMessage message = (WoTMessage)messageManager.get(messageID);
 							if(removeRating)
 								messageManager.deleteMessageRating(messageManager.getMessageRating(own, message));
 							else
-								messageManager.rateMessage(own, message, Byte.parseByte(request.getPartAsString("TrustChange", 5)));
+								messageManager.rateMessage(own, message, Byte.parseByte(request.getPartAsStringFailsafe("TrustChange", 5)));
 						}
 						}
 					} catch (NoSuchMessageException e) {
@@ -293,16 +305,12 @@ public final class WebInterface {
 			} catch(Exception e) {
 				errorPage = new ErrorPage(webInterface, webInterface.getLoggedInOwnIdentity(context), request, "Rating the message failed", e, l10n());
 			}
-			try {
-				// TODO: The current WebPageImpl does not support adding one page to another page outside of make() !
-				if(errorPage != null)
-					return  errorPage;
-				
-				WebPage result = new ThreadPage(webInterface, own, request, l10n());
-				return result;
-			} catch(Exception e) {
-				throw new RuntimeException(e);
-			}
+			
+			// TODO: The current WebPageImpl does not support adding one page to another page outside of make() !
+			if(errorPage != null)
+				return  errorPage;
+			else
+				throw new RedirectException(ThreadPage.getURI(boardName, threadID, messageID));
 		}
 		
 		@Override
