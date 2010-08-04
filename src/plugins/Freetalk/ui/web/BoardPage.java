@@ -65,11 +65,11 @@ public final class BoardPage extends WebPageImpl {
         threadsBox.addChild("div", "style", "clear: both;");
 
 		// Threads table
-		HTMLNode threadsTable = threadsBox.addChild("table", new String[] { "border", "width", "class" }, new String[] { "0", "100%", "threads-table" });
+		HTMLNode threadsTable = threadsBox.addChild("table", "class", "threads-table");
 		
-		// Tell the browser the table columns and their size 
+		// Tell the browser the table columns and their sizes. 
 		HTMLNode colgroup = threadsTable.addChild("colgroup");
-			colgroup.addChild("col", "width", "100%"); // Title, should use as much space as possible, the other columns should have minimal size
+			colgroup.addChild("col", "width", "100%"); // Title, specifying the size only in CSS does not work.
 			colgroup.addChild("col"); // Author
 			colgroup.addChild("col"); // Trust
 			colgroup.addChild("col"); // Date
@@ -140,10 +140,7 @@ public final class BoardPage extends WebPageImpl {
                 final boolean threadWasRead = threadReference.wasThreadRead();
                 final String threadTitle = threadReference.getMessageTitle();
                 
-                // FIXME: We have a HTML trick available in the bugtracker which we can use for making the HTML limit the title length so
-                // the table will fit on screen - use it!
-
-				row = table.addChild("tr");
+				row = table.addChild("tr", "class", "thread-row");
 
 				/* Title */
 				HTMLNode titleCell = row.addChild("td", "class", threadWasRead ? "title-read" : "title-unread");

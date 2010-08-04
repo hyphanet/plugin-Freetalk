@@ -9,12 +9,23 @@
 	float: right;
 }
 
+.freetalk * .threads .threads-table {
+	width: 100%;
+}
+
+.freetalk * .threads .threads-table .thread-row {
+	height: 1.1em;
+}
+
 .freetalk * .threads .threads-table .title-read {
 	overflow: hidden;
+	display: block;
 }
 
 .freetalk * .threads .threads-table .title-unread {
 	overflow: hidden;
+	display: block;
+	
 	font-weight: bold;
 }
 
