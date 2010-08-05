@@ -255,23 +255,14 @@ public final class WebInterface {
 		protected ChangeTrustWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
-
-		@Override
-		WebPage makeWebPage(HTTPRequest request, ToadletContext context) throws RedirectException {
-			if(!mFreetalk.wotConnected())
-				return new WoTIsMissingPage(webInterface, request, mFreetalk.wotOutdated(), l10n());
-
-			// Rating a message is always a POST form, for consistency's sake, and because GET's don't check formPassword.
-			if(!request.getMethod().equals("POST"))
-				return new Welcome(webInterface, getLoggedInOwnIdentity(context), request, l10n());
-			
-			final String pass = request.getPartAsStringFailsafe("formPassword", 32);
-			if ((pass.length() == 0) || !pass.equals(core.formPassword))
-				return new Welcome(webInterface, getLoggedInOwnIdentity(context), request, l10n());
-
-			
-			// TODO: These casts are ugly.
-
+		
+		public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext context) throws ToadletContextClosedException, IOException, RedirectException {
+			String pass = request.getPartAsStringFailsafe("formPassword", 32);
+			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
+				writeHTMLReply(context, 403, "Forbidden", "Invalid form password.");
+				return;
+			}
+	
 			WebPage errorPage = null;
 			
 			final String boardName = request.getPartAsStringFailsafe("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH); 
@@ -279,10 +270,9 @@ public final class WebInterface {
 			final String messageID = request.getPartAsStringFailsafe("MessageID", 128);
 			
 			try {
-				
-				WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
-				WoTMessageManager messageManager = (WoTMessageManager)mFreetalk.getMessageManager();
-
+				WoTIdentityManager identityManager = mFreetalk.getIdentityManager();
+				WoTMessageManager messageManager = mFreetalk.getMessageManager();
+	
 				synchronized(identityManager) {
 					final WoTOwnIdentity own = (WoTOwnIdentity)webInterface.getLoggedInOwnIdentity(context);
 					boolean removeRating = request.getPartAsStringFailsafe("RemoveRating", 16).equals("true");
@@ -303,24 +293,32 @@ public final class WebInterface {
 					
 				}
 			} catch(Exception e) {
-				errorPage = new ErrorPage(webInterface, webInterface.getLoggedInOwnIdentity(context), request, "Rating the message failed", e, l10n());
+				errorPage = new ErrorPage(webInterface, webInterface.getLoggedInOwnIdentity(context), request,
+						"Rating the message failed",  e, l10n()); // TODO: l10n
 			}
 			
 			// TODO: The current WebPageImpl does not support adding one page to another page outside of make() !
-			if(errorPage != null)
-				return  errorPage;
-			else
-				throw new RedirectException(ThreadPage.getURI(boardName, threadID, messageID));
+			if(errorPage != null) {
+				writeHTMLReply(context, 200, "OK", errorPage.toHTML(context));
+			} else {
+				writeTemporaryRedirect(context, "The rating was applied, redirecting to orignal message.", // TODO: l10n
+					ThreadPage.getURI(boardName, threadID, messageID).toString());
+			}
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
 		}
 		
 		@Override
 		public Toadlet showAsToadlet() {
 			return homeToadlet;
 		}
-		
-		@Override
-		public boolean isEnabled(ToadletContext ctx) {
-			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
+
+		WebPage makeWebPage(HTTPRequest httpRequest, ToadletContext context) {
+			/* will not be reached. */
+			return null;
 		}
 	}
 	
