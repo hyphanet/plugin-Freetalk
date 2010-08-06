@@ -169,7 +169,7 @@ public class MessageBodyConverterTest extends TestCase {
 		assertEquals("messageNode.getFirstTag()", "a", messageNode.getFirstTag());
 		assertEquals("messageNode.generate()", "This is a usenet message and it has a line break in the link <a href=\"/KSK@abc\">KSK@abc</a>\ndef/foo/bar/baz which is not beautiful.", messageNode.generate());
 
-		messageBody = "This is a usenet message and it has a line break in the link CHK@9F3g6E3VtQ3113zeU2AiG3GxBm1-XDnVfyVQS2kWWr4,bNZl5ibJE\nYE7a0UTsWcLhbsVwgvSvHdk-KImh8D5hs0,AAIC--8/GPL-3 which is not beautiful.";
+		messageBody = "This is a usenet message and it has a line break in the link CHK@9F3g6E3VtQ3113zeU2AiG3GxBm1-XDnVfyVQS2kWWr4,bNZl5ibJE\nYE7a0UTsWcLhbsVwgvSvHdk\n-KImh8D5hs0,AAIC--8/GPL-3 which is not beautiful.";
 		messageNode = ThreadPage.convertMessageBody(messageBody);
 		assertNotNull("messageNode", messageNode);
 		assertEquals("messageNode.getFirstTag()", "a", messageNode.getFirstTag());
