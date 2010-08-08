@@ -66,7 +66,7 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 		return mFreetalk.getIdentityManager().getTrust(this, identity);
 	}
 
-	public void setTrust(WoTIdentity identity, int trust, String comment) throws Exception {
+	public void setTrust(WoTIdentity identity, byte trust, String comment) throws Exception {
 		mFreetalk.getIdentityManager().setTrust(this, identity, trust, comment);
 	}
 	

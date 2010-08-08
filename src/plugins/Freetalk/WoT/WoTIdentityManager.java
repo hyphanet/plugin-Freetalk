@@ -37,6 +37,7 @@ import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Executor;
 import freenet.support.IllegalBase64Exception;
+import freenet.support.LRUCache;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TrivialTicker;
@@ -79,13 +80,14 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 
 	private PluginTalkerBlocking mTalker = null;
 
-
 	/**
 	 * Caches the shortest unique nickname for each identity. Key = Identity it, Value = Shortest nickname.
 	 */
 	private volatile Hashtable<String, String> mShortestUniqueNicknameCache = new Hashtable<String, String>();
 	
 	private boolean mShortestUniqueNicknameCacheNeedsUpdate = true;
+	
+	private WebOfTrustCache mWoTCache = new WebOfTrustCache();
 	
 
 	public WoTIdentityManager(Freetalk myFreetalk, Executor myExecutor) {
@@ -284,46 +286,54 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	/**
 	 * Not synchronized, the involved identities might be deleted during the query - which is not really a problem.
 	 */
-	public int getScore(WoTOwnIdentity treeOwner, WoTIdentity target) throws NotInTrustTreeException, Exception {
+	public int getScore(final WoTOwnIdentity treeOwner, final WoTIdentity target) throws NotInTrustTreeException, Exception {
 		if(mIsUnitTest)
 			return 0;
 		
-		String score = getProperty(treeOwner, target, "Score");
+		final String score = getProperty(treeOwner, target, "Score");
 		
 		if(score.equals("null"))
 			throw new NotInTrustTreeException(treeOwner, target);
 		
-		return Integer.parseInt(score);
+		final int value = Integer.parseInt(score);
+		mWoTCache.putScore(treeOwner, target, value);
+		return value;
 	}
 
 	/**
 	 * Not synchronized, the involved identities might be deleted during the query - which is not really a problem.
 	 */
-	public byte getTrust(WoTOwnIdentity treeOwner, WoTIdentity target) throws NotTrustedException, Exception {
+	public byte getTrust(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotTrustedException, Exception {
 		if(mIsUnitTest)
 			return 0;
 		
-		String trust = getProperty(treeOwner, target, "Trust");
+		final String trust = getProperty(truster, trustee, "Trust");
 		
 		if(trust.equals("null"))
-			throw new NotTrustedException(treeOwner, target);
+			throw new NotTrustedException(truster, trustee);
 		
-		return Byte.parseByte(trust);
+		final byte value = Byte.parseByte(trust);
+		mWoTCache.putTrust(truster, trustee, value);
+		return value;
 	}
 
 	/**
 	 * Not synchronized, the involved identities might be deleted during the query or some other WoT client might modify the trust value
 	 * during the query - which is not really a problem, you should not be modifying trust values of your own identity with multiple clients simultaneously.
 	 */
-	public void setTrust(OwnIdentity treeOwner, Identity identity, int trust, String comment) throws Exception {
+	public void setTrust(OwnIdentity truster, Identity trustee, byte trust, String comment) throws Exception {
+		WoTOwnIdentity wotTruster = (WoTOwnIdentity)truster;
+		WoTIdentity wotTrustee = (WoTIdentity)trustee;
+		
 		SimpleFieldSet request = new SimpleFieldSet(true);
 		request.putOverwrite("Message", "SetTrust");
-		request.putOverwrite("Truster", treeOwner.getID());
-		request.putOverwrite("Trustee", identity.getID());
+		request.putOverwrite("Truster", wotTruster.getID());
+		request.putOverwrite("Trustee", wotTrustee.getID());
 		request.putOverwrite("Value", Integer.toString(trust));
 		request.putOverwrite("Comment", comment);
 
 		sendFCPMessageBlocking(request, null, "TrustSet");
+		mWoTCache.putTrust(wotTruster, wotTrustee, trust);
 	}
 
 	/**
@@ -343,7 +353,10 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				if(id == null || id.equals("")) /* TODO: Figure out whether the second condition is necessary */
 					break;
 				try {
-					result.add(new WoTTrust(getIdentity(id), trustee, (byte)Integer.parseInt(answer.get("Value"+idx)), answer.get("Comment"+idx)));
+					final WoTTrust trust = new WoTTrust(getIdentity(id), trustee, (byte)Integer.parseInt(answer.get("Value"+idx)), 
+							answer.get("Comment"+idx));
+					mWoTCache.putTrust(trust);
+					result.add(trust);
 				} catch (NoSuchIdentityException e) {
 				} catch (InvalidParameterException e) {
 				}
@@ -971,6 +984,68 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			nickname = identity.getFreetalkAddress();
 		
 		return nickname;
+	}
+	
+	private final class WebOfTrustCache {
+		public static final long EXPIRATION_DELAY = 5 * 60 * 1000;
+		
+		private final class TrustKey {
+			public final String mTrusterID;
+			public final String mTrusteeID;
+			
+			public TrustKey(final WoTTrust trust) {
+				mTrusterID = trust.getTruster().getID();
+				mTrusteeID = trust.getTrustee().getID();
+			}
+			
+			public TrustKey(final WoTIdentity truster, final WoTIdentity trustee) {
+				mTrusterID = truster.getID();
+				mTrusteeID = trustee.getID();
+			}
+			
+			public boolean equals(final Object o) {
+				final TrustKey other = (TrustKey)o;
+				return mTrusterID.equals(other.mTrusterID) && mTrusteeID.equals(other.mTrusteeID);
+			}
+		}
+		
+		private final LRUCache<TrustKey, Byte> mTrustCache = new LRUCache<TrustKey, Byte>(256, EXPIRATION_DELAY);
+		private final LRUCache<TrustKey, Integer> mScoreCache = new LRUCache<TrustKey, Integer>(256, EXPIRATION_DELAY);
+		
+		// FIXME: Create getter methods in WoTIdentityManager which actually use this caching function...
+		public synchronized byte getTrust(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotTrustedException, Exception {
+			{
+				final Byte cachedValue = mTrustCache.get(new TrustKey(truster, trustee));
+				if(cachedValue != null)
+					return cachedValue;
+			}
+			
+			return WoTIdentityManager.this.getTrust(truster, trustee);	// This will update the cache
+		}
+
+		// FIXME: Create getter methods in WoTIdentityManager which actually use this caching function...
+		public synchronized int getScore(final WoTOwnIdentity treeOwner, final WoTIdentity target) throws NotInTrustTreeException, Exception {
+			{
+				final Integer cachedValue = mScoreCache.get(new TrustKey(treeOwner, target));
+				if(cachedValue != null)
+					return cachedValue;
+			}
+			
+			return WoTIdentityManager.this.getScore(treeOwner, target);	// This will update the cache
+		}
+		
+		public synchronized void putTrust(final WoTIdentity truster, final WoTIdentity trustee, final byte value) {
+			mTrustCache.put(new TrustKey(truster, trustee), value);
+		}
+		
+		public synchronized void putTrust(final WoTTrust trust) {
+			mTrustCache.put(new TrustKey(trust), trust.getValue());
+		}
+		
+		public synchronized void putScore(final WoTOwnIdentity treeOwner, final WoTIdentity target, final int value) {
+			mScoreCache.put(new TrustKey(treeOwner, target), value);
+		}
+
 	}
 
 }
