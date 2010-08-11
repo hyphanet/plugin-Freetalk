@@ -321,6 +321,11 @@ public final class WoTMessageManager extends MessageManager {
 		synchronized(this) {
 			// We do not have to re-query the rater/message because MessageRating.storeWithout commit throws if they are not stored anymore
 			
+			try {
+				getMessageRating(rater, message);
+				throw new IllegalArgumentException("The message was already rated");
+			} catch(NoSuchMessageRatingException e) {}
+			
 			final WoTMessageRating rating = new WoTMessageRating(rater, message, value);
 			rating.initializeTransient(mFreetalk);
 			rating.storeAndCommit();
