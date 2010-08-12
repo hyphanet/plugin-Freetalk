@@ -110,8 +110,8 @@ public final class WoTMessageInserter extends MessageInserter {
 		synchronized(mMessageManager) {
 			for(WoTOwnMessage message : mMessageManager.getNotInsertedOwnMessages()) {
 				try {
-					// TODO: Remove the debug code if we are sure that db4o works
-					if(!message.testFreenetURIisNull())
+					// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
+					if(!message.testFreenetURIisNull()) // Logs an error for us
 						continue;
 					
 					insertMessage(message);

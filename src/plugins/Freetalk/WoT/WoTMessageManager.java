@@ -226,6 +226,10 @@ public final class WoTMessageManager extends MessageManager {
 		Logger.debug(this, "Found no list with free space, created the new list " + list.getID() + " for own message " + message.getID());
 	}
 
+	/**
+	 * ATTENTION: Due to a db4o bug you must check whether the messages are really not inserted by using testFreenetURIisNull() on them
+	 * TODO: Remove this workaround notice for the db4o bug as soon as we are sure that it does not happen anymore.
+	 */
 	public synchronized ObjectSet<WoTOwnMessage> getNotInsertedOwnMessages() {
 		final Query query = db.query();
 		query.constrain(WoTOwnMessage.class);

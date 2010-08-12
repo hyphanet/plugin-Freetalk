@@ -137,7 +137,8 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		
 		for(Message message : new Persistent.InitializingObjectSet<Message>(mFreetalk, q)) {
 			if(message.getAuthor() != null) {
-				Logger.error(this, "descend(\"mAuthor\").constrain(null) did not work for " + message);
+				// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
+				Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + message);
 				continue;
 			}
 			
@@ -192,6 +193,12 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		q.descend("mAuthor").constrain(null).identity();
 		
 		for(MessageList list : new Persistent.InitializingObjectSet<MessageList>(mFreetalk, q)) {
+			if(list.getAuthor() != null) {
+				// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
+				Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + list);
+				continue;
+			}
+			
 			synchronized(db.lock()) {
 				Logger.error(this, "Deleting MessageList with mAuthor == null: " + list);
 				
@@ -320,7 +327,15 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		Query q = db.query();
 		q.constrain(OwnMessage.class);
 		q.descend("mFreenetURI").constrain(null).identity();
-		int unsentCount = q.execute().size();
+		int unsentCount = 0;
+		
+		for(OwnMessage m : new Persistent.InitializingObjectSet<OwnMessage>(mFreetalk, q)) {
+			// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
+			if(!m.testFreenetURIisNull()) // Logs an error for us
+				continue;
+		
+			++unsentCount;
+		}
 		
 		q = db.query();
 		q.constrain(OwnMessageList.class);

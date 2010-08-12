@@ -47,7 +47,7 @@ public abstract class OwnMessage extends Message {
 	// TODO: Remove the debug code if we are sure that db4o works
 	public synchronized boolean testFreenetURIisNull() {
 		if(mFreenetURI != null) {
-			Logger.error(this, "descend(\"mFreenetURI\").constrain(null) did not work for " + this);
+			Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + this);
 			return false;
 		}
 		
