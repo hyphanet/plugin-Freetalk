@@ -535,7 +535,7 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		try {
 			message = get(message.getID());
 			wasDownloadedAlready = true;
-			Logger.error(this, "Downloaded a message which we already have: " + message.getURI());
+			Logger.error(this, "Downloaded a message which we already have: " + message);
 		}
 		catch(NoSuchMessageException e) {
 			wasDownloadedAlready = false;
