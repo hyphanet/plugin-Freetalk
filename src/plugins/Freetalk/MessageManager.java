@@ -14,6 +14,7 @@ import plugins.Freetalk.IdentityManager.IdentityDeletedCallback;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageList.MessageFetchFailedMarker;
 import plugins.Freetalk.MessageList.MessageListFetchFailedMarker;
+import plugins.Freetalk.MessageList.MessageListID;
 import plugins.Freetalk.MessageList.MessageReference;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
 import plugins.Freetalk.exceptions.DuplicateFetchFailedMarkerException;
@@ -507,7 +508,7 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 	public synchronized void onMessageListInsertSucceeded(FreenetURI uri) throws NoSuchMessageListException {
 		synchronized(db.lock()) {
 			try {
-				OwnMessageList list = getOwnMessageList(MessageList.getIDFromURI(uri));
+				OwnMessageList list = getOwnMessageList(MessageListID.construct(uri).toString());
 				list.markAsInserted();
 				list.checkedCommit(this);
 			}

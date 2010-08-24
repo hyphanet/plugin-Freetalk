@@ -23,7 +23,7 @@ public final class WoTOwnMessageList extends OwnMessageList {
 	protected synchronized void incrementInsertIndex() {
 		long freeIndex = mFreetalk.getMessageManager().getFreeOwnMessageListIndex(getAuthor());
 		mIndex = Math.max(mIndex+1, freeIndex);
-		mID = calculateID();
+		mID = MessageListID.construct(mAuthor, mIndex).toString();
 		storeWithoutCommit();
 	}
 	

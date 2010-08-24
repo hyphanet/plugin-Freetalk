@@ -2,6 +2,7 @@ package plugins.Freetalk;
 
 import java.util.Date;
 
+import plugins.Freetalk.Message.MessageID;
 import plugins.Freetalk.Persistent.IndexedClass;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.InvalidParameterException;
@@ -986,11 +987,7 @@ public final class SubscribedBoard extends Board {
         	if(myMessageIndex < 0) throw new IllegalArgumentException();
 
     		mBoard = myBoard;
-    		try {
-				mAuthorID = Message.getAuthorIDFromMessageID(myMessageID);
-			} catch (InvalidParameterException e1) {
-				throw new RuntimeException(e1);
-			}
+			mAuthorID = MessageID.construct(myMessageID).getAuthorID().toString(); // TODO: Change this function to eat a MessageID, not String
     		mThreadID = myThreadID;
     		mMessageID = myMessageID;
     		mMessage = null;

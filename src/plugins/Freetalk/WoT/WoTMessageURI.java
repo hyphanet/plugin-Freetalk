@@ -4,11 +4,14 @@
 package plugins.Freetalk.WoT;
 
 import java.net.MalformedURLException;
+import java.util.StringTokenizer;
 import java.util.UUID;
 
+import plugins.Freetalk.Identity.IdentityID;
+import plugins.Freetalk.Message.MessageID;
+import plugins.Freetalk.Identity;
 import plugins.Freetalk.MessageURI;
 import freenet.keys.FreenetURI;
-import freenet.support.Base64;
 
 
 /**
@@ -31,7 +34,7 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 	private final FreenetURI mFreenetURI;
 	private final String mMessageID;
 
-	public WoTMessageURI(FreenetURI myFreenetURI, String myMessageID) {
+	public WoTMessageURI(FreenetURI myFreenetURI, MessageID myMessageID) {
 		if(myFreenetURI == null)
 			throw new IllegalArgumentException("Trying to create a WoTMessageURI without a FreenetURI.");
 		
@@ -42,19 +45,10 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 		mFreenetURI = myFreenetURI.isUSK() ? myFreenetURI.sskForUSK() : myFreenetURI.clone();
 		if(!mFreenetURI.isSSK())
 			throw new IllegalArgumentException("Trying to create a WoTMessageURI with illegal key type: " + myFreenetURI.getKeyType());
+		
+		myMessageID.throwIfAuthorDoesNotMatch(IdentityID.constructFromURI(myFreenetURI));
 		 		
-		mMessageID = myMessageID;
-		String[] tokens = mMessageID.split("[@]", 2);
-		
-		try {
-			UUID.fromString(tokens[0]);
-		}
-		catch(IllegalArgumentException e) {
-			throw new IllegalArgumentException("Invalid UUID in message ID:" + mMessageID);
-		}
-		
-		if(tokens[1].equals(Base64.encode(mFreenetURI.getRoutingKey())) == false)
-			throw new IllegalArgumentException("ID does not match URI: " + mMessageID);
+		mMessageID = myMessageID.toString();
 	}
 
 	/**
@@ -66,22 +60,27 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 		if(uri == null)
 			throw new IllegalArgumentException("Trying to create an empty WoTMessageURI");
 		
-		String[] tokens = uri.split("[#]", 2);
+		StringTokenizer tokenizer = new StringTokenizer(uri, "#");
 		
-		if(tokens.length < 2)
+		if(tokenizer.countTokens() < 2)
 			throw new MalformedURLException("Invalid Message URI: Message list specified but no UUID given: " + uri);
 		
-		FreenetURI tempURI = new FreenetURI(tokens[0]);
+		FreenetURI tempURI = new FreenetURI(tokenizer.nextToken());
 		mFreenetURI = tempURI.isUSK() ? tempURI.sskForUSK() : tempURI;
 		if(!mFreenetURI.isSSK()) /* TODO: USK is only allowed for legacy because there are broken message lists in the network. Remove */
 			throw new MalformedURLException("Trying to create a WoTMessageURI with illegal key type " + mFreenetURI.getKeyType());
 		
+		String stringUUID = tokenizer.nextToken();
+		UUID uuid;
+		
 		try {
-			mMessageID = UUID.fromString(tokens[1]) + "@" + Base64.encode(mFreenetURI.getRoutingKey());
+			uuid = UUID.fromString(stringUUID);
 		}
 		catch(IllegalArgumentException e) {
-			throw new MalformedURLException("Invalid UUID: " + tokens[1]);
+			throw new MalformedURLException("Invalid UUID: " + stringUUID);
 		}
+		
+		mMessageID = MessageID.construct(uuid, mFreenetURI).toString();
 	}
 
 	@Override
@@ -93,6 +92,12 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 	public String getMessageID() {
 		return mMessageID;
 	}
+	
+	@Override
+	public void throwIfAuthorDoesNotMatch(Identity newAuthor) {
+		MessageID.construct(mMessageID).throwIfAuthorDoesNotMatch(newAuthor);
+	}
+	
 
 	@Override
 	public boolean equals(Object obj) {
@@ -108,7 +113,7 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 	 */
 	@Override
 	public String toString() {
-		return mFreenetURI.toString() + "#" + mMessageID.split("[@]", 2)[0];
+		return mFreenetURI.toString() + "#" + MessageID.construct(mMessageID).getUUID();
 	}
 
 	@Override
@@ -142,7 +147,7 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 
 	@Override
 	public WoTMessageURI clone() {
-		return new WoTMessageURI(mFreenetURI, mMessageID);
+		return new WoTMessageURI(mFreenetURI, MessageID.construct(mMessageID));
 	}
 	
 }

@@ -17,6 +17,7 @@ import plugins.Freetalk.Board;
 import plugins.Freetalk.DatabaseBasedTest;
 import plugins.Freetalk.FetchFailedMarker;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.Message.MessageID;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.Persistent;
@@ -139,14 +140,16 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		FreenetURI myListURI = WoTMessageList.assembleURI(author.getRequestURI(), mMessageListIndex++);
 		WoTMessageURI myURI = new WoTMessageURI(myListURI + "#" + myUUID);
 		
-		MessageList.MessageReference ref = new MessageList.MessageReference(myURI.getMessageID(), myFreenetURI, mBoard, CurrentTimeUTC.get());
+		MessageList.MessageReference ref = new MessageList.MessageReference(MessageID.construct(myURI.getMessageID()),
+				myFreenetURI, mBoard, CurrentTimeUTC.get());
 		
 		WoTMessageList myList = storeMessageList(author, myListURI, ref);
 		
 		WoTMessageURI myParentURI = myParent != null ? myParent.getURI() : null;
 		
-		WoTMessage message = WoTMessage.construct(myList, myFreenetURI, myURI.getMessageID(), myThreadURI, myParentURI,
-				mBoards, mBoards.iterator().next(),  author, "message " + myUUID, CurrentTimeUTC.get(), "message body " + myUUID, null);
+		WoTMessage message = WoTMessage.construct(myList, myFreenetURI, MessageID.construct(myURI.getMessageID()),
+				myThreadURI, myParentURI, mBoards, mBoards.iterator().next(),  author, "message " + myUUID, CurrentTimeUTC.get(),
+				"message body " + myUUID, null);
 		
 		message.initializeTransient(mFreetalk);
 		

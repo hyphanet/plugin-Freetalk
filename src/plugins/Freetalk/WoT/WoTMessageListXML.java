@@ -28,6 +28,7 @@ import org.w3c.dom.NodeList;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.Message.MessageID;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -116,19 +117,22 @@ public final class WoTMessageListXML {
 	}
 	
 	public WoTMessageList decode(WoTMessageManager messageManager, WoTIdentity author, FreenetURI uri, InputStream inputStream) throws Exception {
+		if(inputStream.available() > MAX_XML_SIZE)
+			throw new IllegalArgumentException("XML contains too many bytes: " + inputStream.available());
+		
 		Document xml;
 		synchronized(mDocumentBuilder) {
 			xml = mDocumentBuilder.parse(inputStream);
 		}
 		
-		Element listElement = (Element)xml.getElementsByTagName("MessageList").item(0);
+		final Element listElement = (Element)xml.getElementsByTagName("MessageList").item(0);
 		
 		if(Integer.parseInt(listElement.getAttribute("Version")) > XML_FORMAT_VERSION)
 			throw new Exception("Version " + listElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);
 				
-		NodeList messageElements = listElement.getElementsByTagName("Message");
+		final NodeList messageElements = listElement.getElementsByTagName("Message");
 		
-		// The message list constructor does all validity checks for message lists, but we duplicate the easy size checks here to prevent memory DoS
+		// The MessageList constructor does all validity checks for lists, but we duplicate the easy size checks here to prevent memory DoS
 		if(messageElements.getLength() > MessageList.MAX_MESSAGES_PER_MESSAGELIST)
 			throw new IllegalArgumentException("Too many messages in MessageList: " + messageElements.getLength());
 		
@@ -136,17 +140,18 @@ public final class WoTMessageListXML {
 		ArrayList<MessageList.MessageReference> messages = new ArrayList<MessageList.MessageReference>(messageElements.getLength() * 2);
 		
 		for(int messageIndex = 0; messageIndex < messageElements.getLength(); ++messageIndex) {
-			Element messageElement = (Element)messageElements.item(messageIndex);
+			final Element messageElement = (Element)messageElements.item(messageIndex);
 			
-			String messageID = messageElement.getAttribute("ID");
-			FreenetURI messageURI = new FreenetURI(messageElement.getAttribute("URI"));
+			final MessageID messageID = MessageID.construct(messageElement.getAttribute("ID"));
+			messageID.throwIfAuthorDoesNotMatch(author); // Double check, the MessageList constructor will also check this.
+			final FreenetURI messageURI = new FreenetURI(messageElement.getAttribute("URI")); // TODO: FreenetURI won't throw if too long
 			final Date messageDate;
 			
 			synchronized(mDateFormat) {
 				messageDate = mDateFormat.parse(messageElement.getAttribute("Date"));
 			}
 		
-			NodeList boardElements = messageElement.getElementsByTagName("Board");
+			final NodeList boardElements = messageElement.getElementsByTagName("Board");
 			
 			if(boardElements.getLength() > Message.MAX_BOARDS_PER_MESSAGE)
 				throw new IllegalArgumentException("Too many boards for message " + messageID + ": " + boardElements.getLength());

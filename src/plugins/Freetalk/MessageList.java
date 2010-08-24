@@ -4,13 +4,15 @@
 package plugins.Freetalk;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.StringTokenizer;
 
+import plugins.Freetalk.Identity.IdentityID;
+import plugins.Freetalk.Message.MessageID;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -18,7 +20,6 @@ import plugins.Freetalk.exceptions.NoSuchMessageException;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
-import freenet.support.Base64;
 import freenet.support.Logger;
 
 /**
@@ -53,6 +54,83 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	
 	
 	/**
+	 * A class for representing and especially verifying message IDs.
+	 * We do not use it as a type for storing it because that would make the database queries significantly slower.
+	 */
+	public static final class MessageListID {
+		
+		private final String mID;
+		
+		private final IdentityID mAuthorID;
+		
+		private final long mIndex;
+		
+		
+		private MessageListID(String id) {
+			mID = id;
+			
+			final StringTokenizer tokenizer = new StringTokenizer(id, "@");
+			
+			mIndex = Long.parseLong(tokenizer.nextToken());
+			
+			if(mIndex < 0)
+				throw new IllegalArgumentException("Invalid index: " + mIndex);
+			
+			mAuthorID = IdentityID.construct(tokenizer.nextToken());
+			
+			if(tokenizer.hasMoreTokens())
+				throw new IllegalArgumentException("Invalid MessageListID: " + id);
+		}
+		
+		private MessageListID(String authorID, long index) {
+			if(index < 0)
+				throw new IllegalArgumentException("Invalid index: " + index);
+			
+			mID = index + "@" + authorID;
+			mIndex = index;
+			mAuthorID = IdentityID.construct(authorID);
+		}
+		
+		private MessageListID(Identity author, long index) {
+			this(author.getID(), index);
+		}
+	
+		private MessageListID(FreenetURI messageListURI) {
+			this(IdentityID.constructFromURI(messageListURI).toString(), messageListURI.getEdition());
+		}
+		
+		public static final MessageListID construct(String id) {
+			return new MessageListID(id); // TODO: Optimization: Write a non-validating constructor & use it in callers when possible.
+		}
+		
+		public static final MessageListID construct(Identity author, long index) {
+			return new MessageListID(author, index);
+		}
+		
+		public static final MessageListID construct(FreenetURI messageListURI) {
+			return new MessageListID(messageListURI);
+		}
+		
+		public final void throwIfAuthorDoesNotMatch(Identity author) {
+			if(!mAuthorID.equals(author.getID()))
+				throw new IllegalArgumentException("MessageListID contains the wrong author ID, should be "
+						+ author.getID() + " but is " + mAuthorID);
+		}
+		
+		public final long getIndex() {
+			return mIndex;
+		}
+		
+		public final IdentityID getAuthorID() {
+			return mAuthorID;
+		}
+		
+		public final String toString() {
+			return mID;
+		}
+	}
+	
+	/**
 	 * Stores the <code>FreenetURI</code> and the <code>Board</code> of a not downloaded message. If a message is posted to multiple boards, a
 	 * <code>MessageReference</code> is stored for each board. This is done to allow querying the database for <code>MessageReference</code>
 	 * objects which belong to a certain board - which is necessary because we only want to download messages from boards to which the
@@ -79,11 +157,17 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		private boolean mWasDownloaded = false;
 
 		
-		public MessageReference(String newMessageID, FreenetURI newURI, Board myBoard, Date myDate) {
-			if(newMessageID == null || newURI == null || (myBoard == null && !(this instanceof OwnMessageList.OwnMessageReference)))
-				throw new IllegalArgumentException(); /* TODO: Be more verbose */
+		public MessageReference(MessageID newMessageID, FreenetURI newURI, Board myBoard, Date myDate) {			
+			if(newURI == null)
+				throw new NullPointerException("Message URI is null."); 
+				
+			if(myBoard == null && !(this instanceof OwnMessageList.OwnMessageReference))
+				throw new IllegalArgumentException("Board is null and this is no own message reference.");
 			
-			mMessageID = newMessageID;
+			if(myDate == null)
+				throw new NullPointerException("Message date is null.");
+			
+			mMessageID = newMessageID.toString();
 			mURI = newURI.clone(); // Prevent weird db4o problems.
 			mBoard = myBoard;
 			mDate = myDate;
@@ -282,10 +366,12 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		for(MessageReference ref : mMessages) {
 			ref.setMessageList(this);
 			
+			 // Don't use getter methods because initializeTransient does not happen before the constructor
+			
 			try {
-				Message.verifyID(mAuthor, ref.mMessageID); // Don't use getter methods because initializeTransient does not happen before the constructor
+				MessageID.construct(ref.mMessageID).throwIfAuthorDoesNotMatch(myAuthor);
 			}
-			catch(InvalidParameterException e) {
+			catch(Exception e) {
 				throw new IllegalArgumentException("Trying to create a MessageList which contains a Message with an ID which does not belong to the author of the MessageList");
 			}
 			
@@ -322,15 +408,12 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		if(myURI == null)
 			throw new IllegalArgumentException("Trying to construct a MessageList with null URI.");
 		
-		mIndex = myURI.getEdition();
-		if(mIndex < 0)
-			throw new IllegalArgumentException("Trying to construct a message list with invalid index " + mIndex);
+		final MessageListID myID = new MessageListID(myURI);
+		myID.throwIfAuthorDoesNotMatch(myAuthor);
 		
-		if(myAuthor == null || Arrays.equals(myAuthor.getRequestURI().getRoutingKey(), myURI.getRoutingKey()) == false)
-			throw new IllegalArgumentException("Trying to construct a message list with a wrong author " + myAuthor);
-		
+		mID = myID.toString();
 		mAuthor = myAuthor;
-		mID = calculateID();
+		mIndex = myID.getIndex();
 		mMessages = newMessages;
 	}
 	
@@ -338,12 +421,11 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		if(myAuthor == null)
 			throw new IllegalArgumentException("Trying to construct a MessageList with no author");
 		
-		if(newIndex < 0)
-			throw new IllegalArgumentException("Trying to construct a message list with invalid index " + newIndex);
+		final MessageListID myID = new MessageListID(myAuthor, newIndex);
 		
+		mID = myID.toString();
 		mAuthor = myAuthor;
-		mIndex = newIndex;
-		mID = calculateID();
+		mIndex = myID.getIndex();
 		mMessages = new ArrayList<MessageReference>(16); /* TODO: Find a reasonable value */
 	}
 	
@@ -428,18 +510,6 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		catch(RuntimeException e) {
 			checkedRollbackAndThrow(e);
 		}
-	}
-	
-	protected String calculateID() {
-		return calculateID(mAuthor, mIndex);
-	}
-	
-	public static String calculateID(Identity author, long index) {
-		return index + "@" + Base64.encode(author.getRequestURI().getRoutingKey());
-	}
-	
-	public static String getIDFromURI(FreenetURI uri) {
-		return uri.getEdition() + "@" + Base64.encode(uri.getRoutingKey());
 	}
 	
 	public String getID() {

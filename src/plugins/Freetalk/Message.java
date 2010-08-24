@@ -8,7 +8,10 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.UUID;
 
+import plugins.Freetalk.Identity.IdentityID;
 import plugins.Freetalk.Persistent.IndexedField;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
@@ -46,6 +49,8 @@ public abstract class Message extends Persistent {
     public final static int MAX_MESSAGE_TEXT_BYTE_LENGTH  = 64*1024; // byte[].length
     
     public final static int MAX_BOARDS_PER_MESSAGE = 16;
+    
+    public final static int MAX_ATTACHMENTS_PER_MESSAGE = 256;
 	
 	/* Attributes, stored in the database */
 	
@@ -151,11 +156,117 @@ public abstract class Message extends Persistent {
 	private boolean mWasLinkedIn = false;
 	
 	
-	protected Message(MessageURI newURI, FreenetURI newFreenetURI, String newID, MessageList newMessageList, MessageURI newThreadURI, MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		if(newURI != null && Arrays.equals(newURI.getFreenetURI().getRoutingKey(), newAuthor.getRequestURI().getRoutingKey()) == false)
-			throw new InvalidParameterException("The URI of the given message does not match the author's URI: " + newURI);
+	/**
+	 * A class for representing and especially verifying message IDs.
+	 * We do not use it as a type for storing it because that would make the database queries significantly slower.
+	 */
+	public static final class MessageID {
+		/**
+		 * UUID length + "@" length + identity ID length
+		 */
+	    public final static int MAX_MESSAGE_ID_LENGTH = 36 + 1 + Identity.IdentityID.MAX_IDENTITY_ID_LENGTH;
+	    
+	    private final String mID;
+	    private final IdentityID mAuthorID;
+	    private final UUID mUUID;
+	    
+	    
+	    private MessageID(String id) {
+	    	if(id.length() > MAX_MESSAGE_ID_LENGTH)
+	    		throw new IllegalArgumentException("ID is too long, length: " + id.length());
+	    		
+	    	mID = id;
+	    	
+	    	final StringTokenizer tokenizer = new StringTokenizer(id, "@");
+	    	
+	    	// TODO: Further verification
+	    	try {
+	    		mUUID = UUID.fromString(tokenizer.nextToken());
+	    	} catch(IllegalArgumentException e) {
+	    		throw new IllegalArgumentException("Invalid UUID in message ID:" + id);
+	    	}
+
+	    	mAuthorID = IdentityID.construct(tokenizer.nextToken());
+	    	
+	    	if(tokenizer.hasMoreTokens())
+	    		throw new IllegalArgumentException("Invalid MessageID: " + id);
+	    }
+	    
+	    private MessageID(UUID uuid, FreenetURI authorRequestURI) {
+	    	if(uuid == null)
+	    		throw new NullPointerException("UUID is null");
+	    	
+	    	if(authorRequestURI == null)
+	    		throw new NullPointerException("URI is null");
+	    	
+	    	if(!authorRequestURI.isUSK() && !authorRequestURI.isSSK())
+	    		throw new IllegalArgumentException("URI is no USK/SSK");
+	    	
+	    	mUUID = uuid;
+	    	mAuthorID = IdentityID.constructFromURI(authorRequestURI);
+	    	mID = mUUID + "@" + mAuthorID;
+	    }
+	    
+	    public static final MessageID construct(String id) {
+	    	return new MessageID(id); // TODO: Optimization: Write a nonvalidating constructor & change callers to use it if possible.
+	    }
+	    
+	    public static final MessageID construct(Message fromMessage) {
+	    	return new MessageID(fromMessage.getID()); // TODO: Optimization: Write and use a non-validating constructor.
+	    }
+	    
+	    public static final MessageID construct(UUID uuid, FreenetURI authorRequestURI) {
+	    	return new MessageID(uuid, authorRequestURI);
+	    }
+
+		public static final MessageID constructRandomID(Identity author) {
+			return new MessageID(UUID.randomUUID() + "@" + author.getID());
+		}
+	   
+	    public final void throwIfAuthorDoesNotMatch(Identity author) {
+	    	if(!mAuthorID.equals(author.getID()))
+	    		throw new IllegalArgumentException("Message ID contains the wrong author ID (should be " + author.getID()  + "): " + mID);
+	    }
+	    
+	    public final void throwIfAuthorDoesNotMatch(IdentityID authorID) {
+	    	if(!mAuthorID.equals(authorID))
+	    		throw new IllegalArgumentException("Message ID contains the wrong author ID (should be " + authorID  + "): " + mID);
+	    }
+
+		public final String toString() {
+			return mID;
+		}
 		
-		verifyID(newAuthor, newID);
+		public final UUID getUUID() {
+			return mUUID;
+		}
+		
+		public final IdentityID getAuthorID() {
+			return mAuthorID;
+		}
+		
+		public final boolean equals(final Object o) {
+			if(o instanceof MessageID)
+				return mID.equals(((MessageID)o).mID);
+			
+			if(o instanceof String)
+				return mID.equals(o);
+			
+			return false;
+		}
+	}
+	
+	
+	protected Message(MessageURI newURI, FreenetURI newFreenetURI, MessageID newID, MessageList newMessageList, MessageURI newThreadURI, MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {		
+		if(newURI != null) // May be null first for own messages
+			newURI.throwIfAuthorDoesNotMatch(newAuthor);
+		// newFreenetURI cannot be validated, it is allowed to be CHK
+		if(newFreenetURI != null) {
+			if(!newFreenetURI.isCHK())
+				throw new IllegalArgumentException("Invalid FreenetURI, not CHK:" + newFreenetURI);
+		}
+			
+		newID.throwIfAuthorDoesNotMatch(newAuthor);
 		
 		if(newMessageList != null && newMessageList.getAuthor() != newAuthor)
 			throw new InvalidParameterException("The author of the given message list is not the author of this message: " + newURI);
@@ -183,7 +294,7 @@ public abstract class Message extends Persistent {
 		mFreenetURI = newFreenetURI != null ? newFreenetURI.clone() : null;
 		mMessageList = newMessageList;
 		mAuthor = newAuthor;
-		mID = newID;
+		mID = newID.toString();
 		
     	// There are 4 possible combinations:
     	// Thread URI specified, parent URI specified: We are replying to the given message in the given thread.
@@ -219,41 +330,21 @@ public abstract class Message extends Persistent {
 		
 		mText = makeTextValid(newText);
 		
-		if (!isTitleValid(mTitle))
+		if (!isTitleValid(mTitle)) // TODO: Usability: Change the function to "throwIfTitleIsInvalid" so it can give a reason.
 			throw new InvalidParameterException("Invalid message title in message " + newURI);
 		
-		if (!isTextValid(mText))
+		if (!isTextValid(mText)) // TODO: Usability: Change the function to "throwIfTextIsInvalid" so it can give a reason.
 			throw new InvalidParameterException("Invalid message text in message " + newURI);
 		
-		mAttachments = newAttachments == null ? null : newAttachments.toArray(new Attachment[newAttachments.size()]);
+		if(newAttachments != null) {
+			if(newAttachments.size() > MAX_ATTACHMENTS_PER_MESSAGE)
+				throw new InvalidParameterException("Too many attachments in message: " + newAttachments.size());
+			
+			mAttachments = newAttachments.toArray(new Attachment[newAttachments.size()]);
+		} else {
+			mAttachments = null;
+		}
 	}
-	
-	/**
-	 * Get the author ID from the given message ID
-	 * @throws InvalidParameterException If the message ID is invalid.
-	 */
-	public static final String getAuthorIDFromMessageID(String messageID) throws InvalidParameterException {
-		final String tokens[] = messageID.split("[@]");
-		
-		if(tokens.length != 2)
-			throw new InvalidParameterException("Invalid message ID: " + messageID);
-		
-		// TODO: Further verification
-		
-		return tokens[1];
-	}
-	
-	/**
-	 * Verifies that the given message ID begins with the routing key of the author.
-	 * @throws InvalidParameterException If the ID is not valid. 
-	 */
-	public static final void verifyID(Identity author, String id) throws InvalidParameterException {
-		final String authorID = getAuthorIDFromMessageID(id);
-		
-		if(authorID.equals(Base64.encode(author.getRequestURI().getRoutingKey())) == false)
-			throw new InvalidParameterException("Illegal id:" + id);
-	}
-	
 	
 	/**
 	 * Get the URI of the message.
@@ -276,8 +367,8 @@ public abstract class Message extends Persistent {
 		return mFreenetURI;
 	}
 
-	public final String getID() { /* Not synchronized because only OwnMessage might change the ID */
-		return mID;
+	public final String getID() {
+		return mID; // Is final.
 	}
 	
 	public final synchronized MessageList getMessageList() {

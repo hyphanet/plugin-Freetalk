@@ -28,8 +28,9 @@ import org.w3c.dom.NodeList;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
-import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.Message.Attachment;
+import plugins.Freetalk.Message.MessageID;
+import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
@@ -40,6 +41,8 @@ import freenet.keys.FreenetURI;
 public final class WoTMessageXML {
 	
 	public static final int MAX_XML_SIZE = 128 * 1024;
+	
+	public static final int MAX_LISTED_PARENT_MESSAGES = 32;
 	
 	private static final int XML_FORMAT_VERSION = 1;
 	
@@ -156,6 +159,7 @@ public final class WoTMessageXML {
 				Element attachmentsTag = xmlDoc.createElement("Attachments");
 				for(Attachment a : attachments) {
 					Element fileTag = xmlDoc.createElement("File"); 
+					// FIXME: Rename to URI
 						Element keyTag = xmlDoc.createElement("Key"); keyTag.appendChild(xmlDoc.createCDATASection(a.getURI().toString()));
 						Element sizeTag = xmlDoc.createElement("Size"); sizeTag.appendChild(xmlDoc.createCDATASection(Long.toString(a.getSize())));
 					fileTag.appendChild(keyTag);
@@ -187,39 +191,61 @@ public final class WoTMessageXML {
 	 */
 	@SuppressWarnings("deprecation")
 	public Message decode(MessageManager messageManager, InputStream inputStream, WoTMessageList messageList, FreenetURI uri) throws Exception {
-		Document xml;
+		if(inputStream.available() > MAX_XML_SIZE)
+			throw new IllegalArgumentException("XML contains too many bytes: " + inputStream.available());
+		
+		final Document xml;
 		synchronized(mDocumentBuilder) {
 			xml = mDocumentBuilder.parse(inputStream);
 		}
 		
-		Element messageElement = (Element)xml.getElementsByTagName("Message").item(0);
+		final Element messageElement = (Element)xml.getElementsByTagName("Message").item(0);
 		
 		if(Integer.parseInt(messageElement.getAttribute("version")) > XML_FORMAT_VERSION)
 			throw new Exception("Version " + messageElement.getAttribute("version") + " > " + XML_FORMAT_VERSION);
 		
-		String messageID = messageElement.getElementsByTagName("MessageID").item(0).getTextContent();
+		final MessageID messageID = MessageID.construct(messageElement.getElementsByTagName("MessageID").item(0).getTextContent());
+		messageID.throwIfAuthorDoesNotMatch(messageList.getAuthor()); // Double check, the message constructor should also do this.
 		
-		String messageTitle = messageElement.getElementsByTagName("Subject").item(0).getTextContent();
+		final String messageTitle = messageElement.getElementsByTagName("Subject").item(0).getTextContent();
 
-		Date messageDate = mDateFormat.parse(messageElement.getElementsByTagName("Date").item(0).getTextContent());
-		Date messageTime = mTimeFormat.parse(messageElement.getElementsByTagName("Time").item(0).getTextContent());
+		final Date messageDate;
+		synchronized(mDateFormat) {
+			messageDate = mDateFormat.parse(messageElement.getElementsByTagName("Date").item(0).getTextContent());
+		}
+		final Date messageTime;
+		synchronized(mTimeFormat) {
+			messageTime= mTimeFormat.parse(messageElement.getElementsByTagName("Time").item(0).getTextContent());
+		}
 		messageDate.setHours(messageTime.getHours()); messageDate.setMinutes(messageTime.getMinutes()); messageDate.setSeconds(messageTime.getSeconds());
 		
-		Set<Board> messageBoards = new HashSet<Board>();
-		Element boardsElement = (Element)messageElement.getElementsByTagName("Boards").item(0);
-		NodeList boardList = boardsElement.getElementsByTagName("Board");
+		final Set<Board> messageBoards = new HashSet<Board>();
+		final Element boardsElement = (Element)messageElement.getElementsByTagName("Boards").item(0);
+		final NodeList boardList = boardsElement.getElementsByTagName("Board");
+		
+		if(boardList.getLength() > Message.MAX_BOARDS_PER_MESSAGE)
+			throw new IllegalArgumentException("Too many boards: " + boardList.getLength());
+		
 		for(int i = 0; i < boardList.getLength(); ++i)
 			messageBoards.add(messageManager.getOrCreateBoard(boardList.item(i).getTextContent()));
 		
-		Node replyToBoardElement = messageElement.getElementsByTagName("ReplyBoard").item(0);
-		Board messageReplyToBoard =  replyToBoardElement != null ? messageManager.getOrCreateBoard(replyToBoardElement.getTextContent()) : null; 
+		final Node replyToBoardElement = messageElement.getElementsByTagName("ReplyBoard").item(0);
+		final Board messageReplyToBoard =  replyToBoardElement != null ? messageManager.getOrCreateBoard(replyToBoardElement.getTextContent()) :
+												null; 
 		
 		WoTMessageURI parentMessageURI = null;
 		WoTMessageURI parentThreadURI = null;
 		
-		Element inReplyToElement = (Element)messageElement.getElementsByTagName("InReplyTo").item(0);
+		final Element inReplyToElement = (Element)messageElement.getElementsByTagName("InReplyTo").item(0);
 		if(inReplyToElement != null) {
-			NodeList parentMessages = inReplyToElement.getElementsByTagName("Message");
+			final NodeList parentMessages = inReplyToElement.getElementsByTagName("Message");
+			
+			// FIXME: We should get rid of the Order stuff, we are not FMS compatible anyway.
+			// Listing the parent messages does not help us because we use CHK message URIs...
+			
+			if(parentMessages.getLength() > MAX_LISTED_PARENT_MESSAGES)
+				throw new IllegalArgumentException("Too many parent messages listed in message: " + parentMessages.getLength());
+			
 			for(int i = 0; i < parentMessages.getLength(); ++i) {
 				Element parentMessage = (Element)parentMessages.item(i);
 				if(parentMessage.getElementsByTagName("Order").item(0).getTextContent().equals("0"))
@@ -231,17 +257,21 @@ public final class WoTMessageXML {
 				parentThreadURI = new WoTMessageURI(threadElement.getElementsByTagName("MessageURI").item(0).getTextContent());
 		}
 		
-		String messageBody = messageElement.getElementsByTagName("Body").item(0).getTextContent();
+		final String messageBody = messageElement.getElementsByTagName("Body").item(0).getTextContent();
 		
+		final Element attachmentsElement = (Element)messageElement.getElementsByTagName("Attachments").item(0);
 		ArrayList<Message.Attachment> messageAttachments = null;
-		Element attachmentsElement = (Element)messageElement.getElementsByTagName("Attachments").item(0);
 		if(attachmentsElement != null) {
-			NodeList fileElements = attachmentsElement.getElementsByTagName("File");
-			messageAttachments = new ArrayList<Message.Attachment>(fileElements.getLength());
+			final NodeList fileElements = attachmentsElement.getElementsByTagName("File");
+			
+			if(fileElements.getLength() > Message.MAX_ATTACHMENTS_PER_MESSAGE)
+				throw new IllegalArgumentException("Too many attachments listed in message: " + fileElements.getLength());
+						
+			messageAttachments = new ArrayList<Message.Attachment>(fileElements.getLength() + 1);
 			
 			for(int i = 0; i < fileElements.getLength(); ++i) {
 				Element fileElement = (Element)fileElements.item(i);
-				Node keyElement = fileElement.getElementsByTagName("Key").item(0);
+				Node keyElement = fileElement.getElementsByTagName("Key").item(0); // FIXME: Rename to URI
 				Node sizeElement = fileElement.getElementsByTagName("Size").item(0);
 				messageAttachments.add(new Message.Attachment(	new FreenetURI(keyElement.getTextContent()),
 																sizeElement != null ? Long.parseLong(sizeElement.getTextContent()) : -1));

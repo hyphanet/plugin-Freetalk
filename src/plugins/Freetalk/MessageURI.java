@@ -28,6 +28,8 @@ public abstract class MessageURI extends Persistent implements Cloneable {
 	 * Get the ID of the message, it is globally unique for all messages - this is ensured by the fact that message IDs contain the routing keys of their author.
 	 */
 	public abstract String getMessageID();
+	
+	public abstract void throwIfAuthorDoesNotMatch(Identity newAuthor);
 
 	@Override
 	public abstract boolean equals(Object obj);

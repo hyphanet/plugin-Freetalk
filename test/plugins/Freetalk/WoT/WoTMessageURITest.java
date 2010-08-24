@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 import java.util.UUID;
 
 import junit.framework.TestCase;
+import plugins.Freetalk.Message.MessageID;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 
@@ -21,36 +22,34 @@ public class WoTMessageURITest extends TestCase {
 	/* Attributes of first testing WoTMessageURI */
 	private FreenetURI mSSK;
 	private UUID mUUID;
-	private String mMessageID;
+	private MessageID mMessageID;
 	
 	/* Attributes of second testing WoTMessageURI */
 	private FreenetURI mOtherSSK;
 	private UUID mOtherUUID;
-	private String mMessageID_withOtherSSKbutSameUUID;
-	private String mMessageID_withOtherUUIDbutSameSSK;
+	private MessageID mMessageID_withOtherSSKbutSameUUID;
+	private MessageID mMessageID_withOtherUUIDbutSameSSK;
 	
 	/* Invalid key types*/
 	private FreenetURI mKSK, mCHK;
 	
 	private String mInvalidUUID;
-	private String mInvalidMessageID;
 	
 
 	public void setUp() throws Exception {
 		mSSK = new FreenetURI("SSK@SZmdqGtog7v1wN3buILoMpucyD6V5krsYrVqFUfHosg,SLsRq9Q9ZlrmUS9KeyK2pmheJ4wbtW602UwX0o0E~w0,AQACAAE/Freetalk|MessageList-1");
 		mUUID = UUID.fromString("d5b0dcc4-91cb-4870-8ab9-8588e895fa5d");
-		mMessageID = mUUID + "@" + Base64.encode(mSSK.getRoutingKey());
+		mMessageID = MessageID.construct(mUUID, mSSK);
 		
 		mOtherSSK = new FreenetURI("SSK@tqaux3Nm4eH9wxTBVXx6vshv23LLpkwtBh7pE40st2o,NG5Ar~2yA6r5M16b-q~i3ODj~doLinvCuRYDNs1b9Ew,AQACAAE7/Freetalk|MessageList-1");
 		mOtherUUID = UUID.fromString("6d01e2f0-dfdd-4be9-9e93-7a35c03f3f12");
-		mMessageID_withOtherSSKbutSameUUID = mUUID + "@" + Base64.encode(mOtherSSK.getRoutingKey());
-		mMessageID_withOtherUUIDbutSameSSK = mOtherUUID + "@" + Base64.encode(mSSK.getRoutingKey());
+		mMessageID_withOtherSSKbutSameUUID = MessageID.construct(mUUID, mOtherSSK);
+		mMessageID_withOtherUUIDbutSameSSK = MessageID.construct(mOtherUUID, mSSK);
 		
 		mKSK = new FreenetURI("KSK@test");
 		mCHK = new FreenetURI("CHK@7qMS7LklYIhbZ88i0~u97lxrLKS2uxNwZWQOjPdXnJw,IlA~FSjWW2mPWlzWx7FgpZbBErYdLkqie1uSrcN~LbM,AAIA--8");
 		
 		mInvalidUUID = "d5b0dcc491cb48708ab98588e895fa5d";
-		mInvalidMessageID = mInvalidUUID + "@" + Base64.encode(mSSK.getRoutingKey());
 	}
 
 	public void tearDown() throws Exception {
@@ -86,12 +85,6 @@ public class WoTMessageURITest extends TestCase {
 		try {
 			new WoTMessageURI(mKSK, mMessageID);
 			fail("Construction of WoTMessageURI with invalid key type is possible.");
-		}
-		catch(IllegalArgumentException e) { }
-		
-		try {
-			new WoTMessageURI(mSSK, mInvalidMessageID);
-			fail("Construction of WoTMessageURI with invalid UUID is possible.");
 		}
 		catch(IllegalArgumentException e) { }
 		

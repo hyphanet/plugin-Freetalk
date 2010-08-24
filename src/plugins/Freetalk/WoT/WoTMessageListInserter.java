@@ -12,6 +12,7 @@ import javax.xml.transform.TransformerException;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageListInserter;
+import plugins.Freetalk.MessageList.MessageListID;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
 
@@ -170,7 +171,8 @@ public final class WoTMessageListInserter extends MessageListInserter {
 						// We must call getOwnMessageList() before calling onMessageListInsertFailed() because the latter will increment the message list's
 						// index, resulting in the ID of the message list changing - getIDFromURI would fail with the old state.getURI() if we called it after
 						// onMessageListInsertFailed()
-						WoTOwnMessageList list = (WoTOwnMessageList)mMessageManager.getOwnMessageList(MessageList.getIDFromURI(state.getURI()));
+						WoTOwnMessageList list = (WoTOwnMessageList)mMessageManager.getOwnMessageList(
+								MessageListID.construct(state.getURI()).toString());
 						mMessageManager.onMessageListInsertFailed(state.getURI(), true);
 						insertMessageList(list);
 					}

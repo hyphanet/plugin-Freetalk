@@ -20,6 +20,7 @@ import plugins.Freetalk.MessageRating;
 import plugins.Freetalk.MessageURI;
 import plugins.Freetalk.Persistent;
 import plugins.Freetalk.Message.Attachment;
+import plugins.Freetalk.MessageList.MessageListID;
 import plugins.Freetalk.Persistent.InitializingObjectSet;
 import plugins.Freetalk.exceptions.DuplicateElementException;
 import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
@@ -105,7 +106,7 @@ public final class WoTMessageManager extends MessageManager {
 	public synchronized void onMessageListInsertFailed(FreenetURI uri,boolean collision) throws NoSuchMessageListException {
 		synchronized(db.lock()) {
 			try {
-				WoTOwnMessageList list = (WoTOwnMessageList)getOwnMessageList(MessageList.getIDFromURI(uri));
+				WoTOwnMessageList list = (WoTOwnMessageList)getOwnMessageList(MessageListID.construct(uri).toString());
 				list.cancelInsert();
 				
 				if(collision)

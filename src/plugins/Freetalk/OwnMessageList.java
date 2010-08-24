@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import plugins.Freetalk.Message.MessageID;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
@@ -22,7 +23,7 @@ public abstract class OwnMessageList extends MessageList {
 	public final class OwnMessageReference extends MessageReference {
 		
 		public OwnMessageReference(OwnMessage myMessage) {
-			super(myMessage.getID(), myMessage.getFreenetURI(), null, myMessage.getDate());
+			super(MessageID.construct(myMessage), myMessage.getFreenetURI(), null, myMessage.getDate());
 		}
 
 	}

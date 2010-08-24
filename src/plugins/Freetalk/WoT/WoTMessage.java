@@ -44,24 +44,22 @@ public final class WoTMessage extends Message {
 	/**
 	 * Constructor for received messages.
 	 */
-	public static WoTMessage construct(MessageList newMessageList, FreenetURI myFreenetURI, String newID, WoTMessageURI newThreadURI, WoTMessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		if (newMessageList == null || newBoards == null || newAuthor == null)
-			throw new IllegalArgumentException();
-		
-		if (newMessageList.getAuthor() != newAuthor)
-			throw new InvalidParameterException("Trying to construct a message of " + newAuthor + " with a messagelist which belong to a different author: " + newMessageList.getAuthor());
+	public static WoTMessage construct(MessageList newMessageList, FreenetURI myFreenetURI, MessageID newID, WoTMessageURI newThreadURI, WoTMessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+		// The Message constructor allows MessageList to be null, we don't since every WoT message should be obtained from a MessageList
+		if(newMessageList == null)
+			throw new NullPointerException("MessageList is null");
 		
 		return new WoTMessage(calculateURI(newMessageList, newID), myFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
 
-	protected WoTMessage(WoTMessageURI newURI, FreenetURI newFreenetURI, String newID, MessageList newMessageList, WoTMessageURI newThreadURI,
+	protected WoTMessage(WoTMessageURI newURI, FreenetURI newFreenetURI, MessageID newID, MessageList newMessageList, WoTMessageURI newThreadURI,
 			WoTMessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate,
 			String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		super(newURI, newFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText,
 				newAttachments);
 	}
 
-	public static WoTMessageURI calculateURI(MessageList myMessageList, String myID) {
+	public static WoTMessageURI calculateURI(MessageList myMessageList, MessageID myID) {
 		return new WoTMessageURI(myMessageList.getURI(), myID);
 	}
 	
