@@ -32,6 +32,14 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 	
 	protected int mPuzzlesToSolve;
 	
+	/**
+	 * True if the user pressed the "Hide until tomorrow" button and the next processing time is the time after which the warning may
+	 * be displayed again.
+	 * If true, the task may not display even if its processing is started because an own message was posted.
+	 * If false, the task may always display  when its processing is started (= due to expiration or posting of an own message).
+	 */
+	protected boolean mWasHidden;
+	
 	public IntroduceIdentityTask(WoTOwnIdentity myOwner) {
 		super(myOwner);
 		
@@ -47,11 +55,16 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 		
 		long now = CurrentTimeUTC.getInMillis(); 
 		
+		if(mWasHidden && now < mNextProcessingTime)
+			return;
+
+		mWasHidden = false;
+		
 		try {
 			MessageManager messageManager = mFreetalk.getMessageManager();
-			
+	
 			// We must tell the user to solve puzzles if he as written a message ...
-			if(messageManager.getOwnMessagesBy(mOwner).size() > 0  
+			if(messageManager.getOwnMessagesBy(mOwner).size() > 0   // TODO: Optimization: Create & use get(Own)MessageCount() ...
 				|| messageManager.getMessagesBy(mOwner).size() > 0) { // Also check for messages which are not stored as own messages anymore.  
 				
 				int minimumTrusterCount = mFreetalk.getConfig().getInt(Config.MINIMUM_TRUSTER_COUNT); 
@@ -79,6 +92,7 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 	}
 	
 	public synchronized void onHideForSomeTime() {
+		mWasHidden = true;
 		mPuzzlesToSolve = 0;
 		mNextProcessingTime = CurrentTimeUTC.getInMillis() + PROCESSING_INTERVAL;
 		mNextDisplayTime = Long.MAX_VALUE;
