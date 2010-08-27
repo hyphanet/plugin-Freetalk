@@ -66,6 +66,7 @@ public abstract class OwnMessageList extends MessageList {
 				throw new IllegalStateException("OwnMessageList is full."); /* TODO: Chose a better exception */
 			}
 			
+			ref.setMessageList(this);			
 			newMessage.setMessageList(this);
 		}
 	}

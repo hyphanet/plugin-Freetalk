@@ -106,6 +106,7 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		mTicker = new TrivialTicker(mFreetalk.getPluginRespirator().getNode().executor);
 		mRandom = mPluginRespirator.getNode().fastWeakRandom;
 		
+		verifyDatabaseIntegrity();
 		deleteBrokenObjects();
 		
 		mIdentityManager.registerIdentityDeletedCallback(this, true);
@@ -417,6 +418,73 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 				Persistent.checkedRollbackAndThrow(db, this, e);
 			}
 		}
+		}
+	}
+	
+	public synchronized void deleteEmptyBoards() {
+		Logger.normal(this, "Attempting to delete empty boards...");
+		
+		// TODO: Optimization: This might speed things up... or slow them down.
+		// addMessagesToBoards();
+		
+		final ObjectSet<OwnMessage> notInsertedOwnMessages = notInsertedMessageIterator();
+		
+		for(final Board board: boardIteratorSortedByName()) { // TODO: Optimization: Implement & use a non-sorting function.
+			if(board.hasSubscriptions()) {
+				Logger.normal(this, "Not deleting board because it has subscriptions: " + board);
+				continue;
+			}
+			
+			// TODO: This is debug code, remove it when we are sure that it does not happen.
+			if(subscribedBoardIterator(board.getName()).size() != 0) {
+				Logger.error(this, "Board.hasSubscriptions()==false but subscribed boards exist, not deleting: " + board);
+				continue;
+			}
+			
+			if(board.getMessageCount() != 0) {
+				Logger.normal(this, "Not deleting board because getMessageCount()!=0: " + board);
+				continue;
+			}
+			
+			if(getOwnMessages(board).size() > 0) {
+				// TODO: We should provide functionality for deleting them.
+				// I did not implement this yet because the goal of this function is to provide the ability to delete large amounts of
+				// boards which were created as spam, the user is not very likely to have posted in them. Yet we WILL need provide the
+				// ability to delete boards which only contain own messages.
+				Logger.warning(this, "Cannot delete board because there are own messages in it: " + board);
+				continue;
+			}
+
+			{ // Check for not inserted own messages...
+				boolean containsNotInsertedOwnMessage = false;
+				
+				for(final OwnMessage notInserted : notInsertedOwnMessages) {
+					if(board.contains(notInserted)) {
+						containsNotInsertedOwnMessage = true;
+						break;
+					}
+				}
+				
+				if(containsNotInsertedOwnMessage) {
+					Logger.warning(this, "Cannot delete board because there are own messages in it: " + board);
+					continue;
+				}
+			}
+			
+			if(getDownloadableMessageCount(board) > 0) {
+				Logger.normal(this, "Not deleting board because it is referenced in message lists: " + board);
+				continue;
+			}
+			
+			synchronized(db.lock()) {
+				try {
+					Logger.normal(this, "Deleting empty board " + board);
+					board.deleteWithoutCommit();
+					board.checkedCommit(this);
+				} catch(RuntimeException e) {
+					Persistent.checkedRollback(db, this, e);
+				}
+			}
 		}
 	}
 	
@@ -1421,7 +1489,6 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		return new Persistent.InitializingObjectSet<OwnMessageList>(mFreetalk, query);
 	}
 	
-	
 	/**
 	 * Get a list of all messages from the given identity.
 	 * If the identity is an {@link OwnIdentity}, it's own messages are only returned if they have been downloaded as normal messages.
@@ -1460,6 +1527,13 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		query.descend("mAuthor").constrain(author).identity();
 		return new Persistent.InitializingObjectSet<OwnMessage>(mFreetalk, query);
 	}
+	
+	private ObjectSet<OwnMessageList.OwnMessageReference> getOwnMessages(final Board board) {
+		final Query query = db.query();
+		query.constrain(OwnMessageList.OwnMessageReference.class);
+		query.descend("mBoard").constrain(board).identity();
+		return new Persistent.InitializingObjectSet<OwnMessageList.OwnMessageReference>(mFreetalk, query);
+	}
 
 	public IdentityManager getIdentityManager() {
 		return mIdentityManager;
@@ -1474,4 +1548,138 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 
 	public abstract void deleteMessageRating(final MessageRating rating);
 
+	
+	private synchronized void verifyDatabaseIntegrity() {
+		Logger.normal(this, "Verifying database integrity...");
+		
+		{
+			Logger.normal(this, "Checking for MessageLists with mAuthor==null...");
+			
+			final Query q = db.query();
+			q.constrain(MessageList.class);
+			q.descend("mAuthor").constrain(null).identity();
+			
+			for(final MessageList list : new Persistent.InitializingObjectSet<MessageList>(mFreetalk, q)) {
+				if(list.getAuthor() != null) {
+					// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
+					Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + list);
+					continue;
+				}
+				
+				Logger.error(this, "MessageList has mAuthor==null: " + list);
+			}
+		}
+		
+		{
+			Logger.normal(this, "Checking for MessageList.MessageReferences with mBoard==null...");
+			
+			final Query q = db.query();
+			q.constrain(MessageList.MessageReference.class);
+			q.constrain(OwnMessageList.OwnMessageReference.class).not(); // OwnMessageReference are allowed to have mBoard==null
+			q.descend("mBoard").constrain(null).identity();
+			
+			for(final MessageList.MessageReference ref : new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, q)) {
+				if(ref.getBoard() != null) {
+					// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
+					Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + ref);
+					continue;
+				}
+				
+				Logger.error(this, "MessageList.MessageReference has mBoard==null: " + ref);
+			}
+		}
+		
+		{
+			Logger.normal(this, "Checking for MessageList.MessageReferences with mMessageList==null...");
+			
+			final Query q = db.query();
+			q.constrain(MessageList.MessageReference.class);
+			q.descend("mMessageList").constrain(null).identity();
+			
+			for(final MessageList.MessageReference ref : new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, q)) {
+				try {
+					if(ref.getMessageList() != null) {
+						// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
+						Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + ref);
+						continue;
+					}
+				} catch(NullPointerException e) {
+					Logger.error(this, "MessageList.MessageReference has mMessageList==null: " + ref);
+				}
+			}
+		}
+		
+		{
+			Logger.normal(this, "Checking for MessageList.MessageFetchFailedMarker with mMessageReference==null...");
+			
+			final Query q = db.query();
+			q.constrain(MessageList.MessageFetchFailedMarker.class);
+			q.descend("mMessageReference").constrain(null).identity();
+			
+			for(final MessageList.MessageFetchFailedMarker m : 
+					new Persistent.InitializingObjectSet<MessageList.MessageFetchFailedMarker>(mFreetalk, q)) {
+				try {
+					if(m.getMessageReference() != null) {
+						// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
+						Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + m);
+						continue;
+					}
+				} catch(NullPointerException e) {
+					Logger.error(this, "MessageList.MessageFetchFailedMarker has mMessageReference==null: " + m);
+				}
+			}
+			
+		}
+		
+		{
+			Logger.normal(this, "Checking board and author references of all messages...");
+			
+			final Query q = db.query();
+			q.constrain(Message.class);
+			
+			for(final Message message : new Persistent.InitializingObjectSet<Message>(mFreetalk, q)) {
+				if(message.getAuthor() == null)
+					Logger.error(this, "Message has mAuthor==null: " + message);
+				
+				for(Board board : message.mBoards) { // The getter would cause an NPE
+					if(board == null)
+						Logger.error(this, "Message contains null board: " + message);
+				}
+				
+				if(message.mMessageList == null) {
+					if(message instanceof OwnMessage) {
+						if(message.mFreenetURI != null)
+							Logger.error(this, "OwnMessage is marked as inserted but not added to a message list: " + message);
+					} else {
+						Logger.error(this, "Message has mMessageList==null: " + message);
+					}
+				}
+			}
+		}
+		
+		{
+			Logger.normal(this, "Checking for MessageRatings with missing rater, message author or message...");
+			
+			final Query q = db.query();
+			q.constrain(MessageRating.class);
+			
+			for(final MessageRating rating : new Persistent.InitializingObjectSet<MessageRating>(mFreetalk, q)) {				
+				if(rating.getRater() == null) 
+					Logger.error(this, "MessageRating has mRater==null: " + rating);
+				
+				if(rating.getMessageAuthor() == null)
+					Logger.error(this, "MessageRating has mMessageAuthor==null: " + rating);
+				
+				try {
+					if(rating.getMessage() == null) // Double check in case someone changes the getter to not throw an NPE
+						Logger.error(this, "MessageRating has mMessage==null: " + rating);
+				} catch(NullPointerException e) {
+					Logger.error(this, "MessageRating has mMessage==null: " + rating);
+				}
+
+			}
+		}
+		
+		Logger.normal(this, "Finished verifying the database integrity.");
+	}
 }
