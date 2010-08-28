@@ -107,8 +107,7 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		mRandom = mPluginRespirator.getNode().fastWeakRandom;
 		
 		verifyDatabaseIntegrity();
-		deleteBrokenObjects();
-		
+
 		mIdentityManager.registerIdentityDeletedCallback(this, true);
 	}
 	
@@ -122,98 +121,6 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		mPluginRespirator = null;
 		mTicker = null;
 		mRandom = null;
-	}
-	
-	/**
-	 * Called during startup to delete objects from the database which lack required information, such as messages with mAuthor == null.
-	 * This is only a workaround until we find the reason of their existence.
-	 * 
-	 * This function MUST NOT be executed when any other threads could have accessed the MessageManager already:
-	 * It does not do proper locking of the involved boards.
-	 */
-	private synchronized void deleteBrokenObjects() {
-		Logger.debug(this, "Looking for broken Message objects...");
-		Query q = db.query();
-		q.constrain(Message.class);
-		q.descend("mAuthor").constrain(null).identity();
-		
-		for(Message message : new Persistent.InitializingObjectSet<Message>(mFreetalk, q)) {
-			if(message.getAuthor() != null) {
-				// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
-				Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + message);
-				continue;
-			}
-			
-			synchronized(db.lock()) {
-				Logger.error(this, "Deleting Message with mAuthor == null: " + message);
-				
-				try {
-					for(MessageRating rating : getAllMessageRatings(message)) {
-						deleteMessageRating(rating);
-					}
-					
-					for(Board board : message.getBoards()) {
-						try {
-							board.deleteMessage(message);
-							board.storeWithoutCommit();
-						} catch(NoSuchMessageException e) { }
-										
-						for(SubscribedBoard subscribedBoard : subscribedBoardIterator(board.getName())) {
-							try {
-								subscribedBoard.deleteMessage(message);
-								subscribedBoard.checkedCommit(this);
-							} catch (NoSuchMessageException e) { }
-						}
-					}
-					
-					for(MessageReference ref : getAllReferencesToMessage(message.getID())) {
-						ref.clearMessageWasDownloadedFlag();
-						ref.storeWithoutCommit();
-					}
-					
-					for(Message reply : getAllRepliesToMessage(message)) {
-						reply.clearParent();
-					}
-					
-					for(Message threadReply : getAllThreadRepliesToMessage(message)) {
-						threadReply.clearThread();
-					}
-
-					message.deleteWithoutCommit();
-					message.checkedCommit(this);
-				} catch(Exception e) {
-					Persistent.checkedRollback(db, this, e);
-				}
-			}
-		}
-		
-		Logger.debug(this, "Finished looking for broken Message objects.");
-		
-		Logger.debug(this, "Looking for broken MessageList objects...");
-		q = db.query();
-		q.constrain(MessageList.class);
-		q.descend("mAuthor").constrain(null).identity();
-		
-		for(MessageList list : new Persistent.InitializingObjectSet<MessageList>(mFreetalk, q)) {
-			if(list.getAuthor() != null) {
-				// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
-				Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + list);
-				continue;
-			}
-			
-			synchronized(db.lock()) {
-				Logger.error(this, "Deleting MessageList with mAuthor == null: " + list);
-				
-				try {
-					// We don't use deleteMessageList because it could fail for broken MessageList objects.
-					list.deleteWithoutCommit();
-					list.checkedCommit(this);
-				} catch(Exception e) {
-					Persistent.checkedRollback(db, this, e);
-				}
-			}
-		}
-		Logger.debug(this, "Finished looking for broken MessageList objects.");
 	}
 	
 	public int getPriority() {
@@ -1550,6 +1457,7 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 
 	
 	private synchronized void verifyDatabaseIntegrity() {
+		try {
 		Logger.normal(this, "Verifying database integrity...");
 		
 		{
@@ -1680,6 +1588,57 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 			}
 		}
 		
+		{
+			Logger.normal(this, "Checking SubscribedBoard integrity...");
+			
+			{
+				Logger.normal(this, "Checking for SubscribedBoard.MessageReference with mBoard==null...");
+				
+				final Query q = db.query();
+				q.constrain(SubscribedBoard.MessageReference.class);
+				q.descend("mBoard").constrain(null).identity();
+				
+				for(final SubscribedBoard.MessageReference ref : 
+						new Persistent.InitializingObjectSet<SubscribedBoard.MessageReference>(mFreetalk, q)) {
+					
+					if(ref.mBoard != null) {
+						// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
+						Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + ref);
+						continue;
+					}
+						
+					Logger.error(this, "SubscribedBoard.MessageReference has mBoard==null: " + ref);
+				}
+			}
+			
+			{
+				Logger.normal(this, "Checking for SubscribedBoard.UnwantedMessageLink with mBoard==null ...");
+				final Query q = db.query();
+				q.constrain(SubscribedBoard.UnwantedMessageLink.class);
+				q.descend("mBoard").constrain(null).identity();
+				
+				for(final SubscribedBoard.UnwantedMessageLink ref : 
+					new Persistent.InitializingObjectSet<SubscribedBoard.UnwantedMessageLink>(mFreetalk, q)) {
+				
+				if(ref.mBoard != null) {
+					// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
+					Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + ref);
+					continue;
+				}
+					
+				Logger.error(this, "SubscribedBoard.UnwantedMessageLink has mBoard==null: " + ref);
+			}
+			}
+			
+			for(final SubscribedBoard board : subscribedBoardIterator()) {
+				board.verifyDatabaseIntegrity();
+			}
+		}
+		
 		Logger.normal(this, "Finished verifying the database integrity.");
+		}
+		catch(Exception e) {
+			Logger.error(this, "Verifying the database integrity failed", e);
+		}
 	}
 }

@@ -838,29 +838,9 @@ public final class SubscribedBoard extends Board {
         
 		return new Persistent.InitializingObjectSet<BoardReplyLink>(mFreetalk, q);
     }
-    
-//    public static final class UnwantedMessageLink {
-//    	
-//    	protected final SubscribedBoard mBoard;
-//    	
-//    	protected final Message mMessage;
-//    	
-//    	protected final Identity mAuthor;
-//    
-//    	
-//    	private UnwantedMessageLink(SubscribedBoard myBoard, Message myMessage) {
-//    		if(myBoard == null) throw new NullPointerException();
-//    		if(myMessage == null) throw new NullPointerException();
-//    		
-//    		mBoard = myBoard;
-//    		mMessage = myMessage;
-//    		mAuthor = mMessage.getAuthor();
-//    	}
-//    	
-//    }
 
     // @IndexedClass // I can't think of any query which would need to get all UnwantedMessageLink objects.
-    public static class UnwantedMessageLink extends Persistent {
+    public static final class UnwantedMessageLink extends Persistent {
     	
     	// TODO: Instead of periodic retrying, implement event subscription in the WoT plugin... 
     	
@@ -1321,4 +1301,79 @@ public final class SubscribedBoard extends Board {
 		}
     }
 
+    protected synchronized void verifyDatabaseIntegrity() {
+    	if(mSubscriber == null)
+    		Logger.error(this, "SubscribedBoard has mSubscriber==null: " + this);
+    	
+    	if(mParentBoard == null)
+    		Logger.error(this, "SubscribedBoard has mParentBoard==null: " + this);
+    	
+    	for(final BoardThreadLink thread : getThreads()) {
+    		boolean hasReplies = false;
+    		boolean threadWasRead = thread.wasRead();
+    		
+    		for(final BoardReplyLink reply : getAllThreadReplies(thread.getThreadID(), true)) {
+    			hasReplies = true;
+    			
+				if(!reply.mThreadID.equals(thread.mThreadID))
+					Logger.error(this, "BoardReplyLink has wrong thread ID: " + reply);
+    			
+    			try {
+    				final Message replyMessage = reply.getMessage();
+    				
+    				if(!reply.mMessageID.equals(replyMessage.getID()))
+    					Logger.error(this, "BoardReplyLink has message with wrong ID: " + reply);
+    				
+    				if(!reply.mAuthorID.equals(replyMessage.getAuthor().getID()))
+    					Logger.error(this, "BoardReplyLink has message of wrong author: " + reply);
+    				
+    				if(!reply.mThreadID.equals(replyMessage.getThreadIDSafe()))
+    					Logger.error(this, "BoardReplyLink has message of wrong thread: " + reply);
+    				
+    				if(!reply.mTitle.equals(replyMessage.getTitle()))
+    					Logger.error(this, "BoardReplyLink has wrong title: " + reply);
+    				
+    				if(!reply.wasRead())
+    					threadWasRead = false;
+    				
+    				// TODO: Verify the date.
+    			} catch(MessageNotFetchedException e) {}
+    		}
+    		
+    		if(thread.wasThreadRead() != threadWasRead)
+    			Logger.error(this, "BoardThreadLink has wrong was-whole-thread-read status: " + thread);
+    		
+    		try {
+    			final Message threadMessage = thread.getMessage();
+    			
+    			if(!thread.mThreadID.equals(threadMessage.getID()))
+    				Logger.error(this, "BoardThreadLink has message of wrong ID: " + thread);
+    			
+    			if(!thread.mMessageID.equals(thread.mThreadID))
+    				Logger.error(this, "BoardThreadLink has mismatch in thread and message ID: " + thread);
+    			
+    			if(!thread.mAuthorID.equals(threadMessage.getAuthor().getID()))
+    				Logger.error(this, "BoardThreadLink has message of wrong author: " + thread);
+    		} catch(NoSuchMessageException e) { 
+    			if(!hasReplies)
+    				Logger.error(this, "BoardThreadLink has no message and no replies: " + thread);
+    		}
+    	}
+    	
+    	for(final UnwantedMessageLink u : getAllUnwantedMessages()) {
+        	if(u.mMessage == null)
+        		Logger.error(this, "UnwantedMessageLink has mMessage==null: " + u);
+        	
+        	if(u.mAuthor == null)
+        		Logger.error(this, "UnwantedMessageLink has mAuthor==null: " + u);
+        	
+        	final Date minNextRetry = new Date(u.mLastRetryDate.getTime() + UnwantedMessageLink.MINIMAL_RETRY_DELAY);
+        	final Date maxNextRetry = new Date(u.mLastRetryDate.getTime() + UnwantedMessageLink.MAXIMAL_RETRY_DELAY);
+        	
+        	if(u.mNextRetryDate.before(minNextRetry))
+        		Logger.error(this, "UnwantedMessageLink has invalid next retry date, too early: " + u);
+        	else  if(u.mNextRetryDate.after(maxNextRetry))
+        		Logger.error(this, "UnwantedMessageLink has invalid next retry date, too far in the future: " + u);
+    	}
+    }
 }
