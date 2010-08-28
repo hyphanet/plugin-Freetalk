@@ -1309,17 +1309,17 @@ public final class SubscribedBoard extends Board {
     		Logger.error(this, "SubscribedBoard has mParentBoard==null: " + this);
     	
     	for(final BoardThreadLink thread : getThreads()) {
-    		boolean hasReplies = false;
+    		boolean hasActuallyFetchedReplies = false;
     		boolean threadWasRead = thread.wasRead();
     		
     		for(final BoardReplyLink reply : getAllThreadReplies(thread.getThreadID(), true)) {
-    			hasReplies = true;
-    			
 				if(!reply.mThreadID.equals(thread.mThreadID))
 					Logger.error(this, "BoardReplyLink has wrong thread ID: " + reply);
     			
     			try {
     				final Message replyMessage = reply.getMessage();
+    				
+    				hasActuallyFetchedReplies = true;
     				
     				if(!reply.mMessageID.equals(replyMessage.getID()))
     					Logger.error(this, "BoardReplyLink has message with wrong ID: " + reply);
@@ -1355,7 +1355,7 @@ public final class SubscribedBoard extends Board {
     			if(!thread.mAuthorID.equals(threadMessage.getAuthor().getID()))
     				Logger.error(this, "BoardThreadLink has message of wrong author: " + thread);
     		} catch(NoSuchMessageException e) { 
-    			if(!hasReplies)
+    			if(!hasActuallyFetchedReplies)
     				Logger.error(this, "BoardThreadLink has no message and no replies: " + thread);
     		}
     	}
