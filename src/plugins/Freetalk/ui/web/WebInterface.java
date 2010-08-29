@@ -69,6 +69,7 @@ public final class WebInterface {
 	private final WebInterfaceToadlet newThreadToadlet;
 	private final WebInterfaceToadlet showBoardToadlet;
 	private final WebInterfaceToadlet showThreadToadlet;
+	private final WebInterfaceToadlet showNotFetchedMessagesToadlet;
 	private final WebInterfaceToadlet newReplyToadlet;
 	private final WebInterfaceToadlet newBoardToadlet;
 	private final WebInterfaceToadlet changeTrustToadlet;
@@ -431,6 +432,31 @@ public final class WebInterface {
 		}
 	}
 	
+	class ShowNotFetchedMessagesWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected ShowNotFetchedMessagesWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
+
+			try {
+				return new NotFetchedMessagesPage(webInterface, getLoggedInOwnIdentity(context), req, l10n());
+			} catch (NoSuchBoardException e) {
+				// TODO: l10n
+				return new ErrorPage(webInterface, getLoggedInOwnIdentity(context), req, "Unknown board "+req.getParam("name"), e, l10n());
+			}
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
+		}
+	}
+	
 	class NewReplyWebInterfaceToadlet extends WebInterfaceToadlet {
 
 		protected NewReplyWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
@@ -682,6 +708,7 @@ public final class WebInterface {
 		newThreadToadlet = new NewThreadWebInterfaceToadlet(null, this, clientCore, "NewThread");
 		showBoardToadlet = new ShowBoardWebInterfaceToadlet(null, this, clientCore, "showBoard");
 		showThreadToadlet = new ShowThreadWebInterfaceToadlet(null, this, clientCore, "showThread");
+		showNotFetchedMessagesToadlet = new ShowNotFetchedMessagesWebInterfaceToadlet(null, this, clientCore, "showNotFetchedMessages");
 		newReplyToadlet = new NewReplyWebInterfaceToadlet(null, this, clientCore, "NewReply");
 		newBoardToadlet = new NewBoardWebInterfaceToadlet(null, this, clientCore, "NewBoard");
 		changeTrustToadlet = new ChangeTrustWebInterfaceToadlet(null, this, clientCore, "ChangeTrust");
@@ -694,6 +721,7 @@ public final class WebInterface {
 		container.register(newThreadToadlet, null, Freetalk.PLUGIN_URI + "/NewThread", true, false);
 		container.register(showBoardToadlet, null, Freetalk.PLUGIN_URI + "/showBoard", true, false);
 		container.register(showThreadToadlet, null, Freetalk.PLUGIN_URI + "/showThread", true, false);
+		container.register(showNotFetchedMessagesToadlet, null, Freetalk.PLUGIN_URI + "/showNotFetchedMessages", true, false);
 		container.register(newReplyToadlet, null, Freetalk.PLUGIN_URI + "/NewReply", true, false);
 		container.register(newBoardToadlet, null, Freetalk.PLUGIN_URI + "/NewBoard", true, false);
 		container.register(changeTrustToadlet, null, Freetalk.PLUGIN_URI + "/ChangeTrust", true, false);
@@ -725,6 +753,7 @@ public final class WebInterface {
 				newThreadToadlet,
 				showBoardToadlet,
 				showThreadToadlet,
+				showNotFetchedMessagesToadlet,
 				newReplyToadlet,
 				newBoardToadlet,
 				getPuzzleToadlet,

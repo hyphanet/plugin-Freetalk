@@ -788,7 +788,7 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		return new Persistent.InitializingObjectSet<FetchFailedMarker>(mFreetalk, query);
 	}
 	
-	private MessageFetchFailedMarker getMessageFetchFailedMarker(final MessageReference ref) throws NoSuchFetchFailedMarkerException {
+	public MessageFetchFailedMarker getMessageFetchFailedMarker(final MessageReference ref) throws NoSuchFetchFailedMarkerException {
 		final Query q = db.query();
 		q.constrain(MessageFetchFailedMarker.class);
 		q.descend("mMessageReference").constrain(ref).identity();
@@ -1356,6 +1356,15 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		query.constrain(OwnMessageList.OwnMessageReference.class).not();
 		query.descend("mBoard").constrain(board).identity();
 		return query.execute().size();
+	}
+
+	public ObjectSet<MessageList.MessageReference> getDownloadableMessagesSortedByDate(final Board board) {
+		final Query query = db.query();
+		query.constrain(MessageList.MessageReference.class);
+		query.constrain(OwnMessageList.OwnMessageReference.class).not();
+		query.descend("mBoard").constrain(board).identity();
+		query.descend("mDate").orderDescending();
+		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query);
 	}
 
 
