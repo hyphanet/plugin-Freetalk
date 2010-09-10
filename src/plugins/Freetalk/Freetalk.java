@@ -298,20 +298,22 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         	// Maybe benchmark in comparison to a database which has class indices enabled for ALL classes.
         	cfg.objectClass(clazz).indexed(classHasIndex);
    
+        	// Check the class' fields for @IndexedField annotations
         	for(Field field : clazz.getDeclaredFields()) {
         		if(field.getAnnotation(Persistent.IndexedField.class) != null) {
         			Logger.debug(this, "Registering indexed field " + clazz.getCanonicalName() + '.' + field.getName());
         			cfg.objectClass(clazz).objectField(field.getName()).indexed(true);
-        		} else {
-        			// Check whether the class itself has an @IndexedField annotation
-        			Persistent.IndexedField annotation =  clazz.getAnnotation(Persistent.IndexedField.class);
-        			if(annotation != null) {
-	        			for(String fieldName : annotation.names()) {
-	        				cfg.objectClass(clazz).objectField(fieldName).indexed(true);
-	        			}
-        			}
         		}
         	}
+        	
+    		// Check whether the class itself has an @IndexedField annotation
+    		final Persistent.IndexedField annotation =  clazz.getAnnotation(Persistent.IndexedField.class);
+    		if(annotation != null) {
+        		for(String fieldName : annotation.names()) {
+        			Logger.debug(this, "Registering indexed field " + clazz.getCanonicalName() + '.' + fieldName);
+        			cfg.objectClass(clazz).objectField(fieldName).indexed(true);
+        		}
+    		}
         }
         
         // TODO: We should check whether db4o inherits the indexed attribute to child classes, for example for this one:
