@@ -358,6 +358,14 @@ public abstract class Persistent {
 	}
 	
 	/**
+	 * Get the date when this persistent object was created.
+	 * This date is stored in the database so it is constant for a given persistent object.
+	 */
+	public final Date getCreationDate() {
+		return mCreationDate;
+	}
+	
+	/**
 	 * An implementation of ObjectSet which encapsulates a given ObjectSet of objects which extend Persistent and calls initializeTransient() for each returned object
 	 * automatically.
 	 */
