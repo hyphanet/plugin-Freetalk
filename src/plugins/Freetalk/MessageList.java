@@ -137,6 +137,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	 * user is actually subscribed.
 	 */
 	// @IndexedClass // I can't think of any query which would need to get all MessageReference objects.
+	@IndexedField(names = {"mCreationDate"})
 	public static class MessageReference extends Persistent {
 		
 		private MessageList mMessageList = null;

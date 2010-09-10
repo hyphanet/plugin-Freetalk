@@ -1,5 +1,38 @@
 /* Freetalk Main CSS Header File */
 
+/* Not fetched messages page */ 
+
+.freetalk * .messages .messages-table {
+	width: 100%;
+}
+
+.freetalk * .messages .messages-table .message-row {
+	height: 1.1em;
+}
+
+.freetalk * .messages .messages-table .uri {
+	overflow: hidden;
+	display: block;
+}
+
+.freetalk * .messages .messages-table .author-name {
+	text-align: left;
+}
+.freetalk * .messages .messages-table .author-score {
+	text-align: right;
+}
+
+.freetalk * .messages .messages-table .date {
+	text-align: center;
+	white-space: nowrap;
+}
+
+.freetalk * .messages .messages-table .failed-fetches {
+	text-align: right;
+}
+
+
+
 /* Threads page */
 
 .freetalk * .threads .button-row .new-thread-button {

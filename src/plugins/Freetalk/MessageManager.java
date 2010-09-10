@@ -1358,12 +1358,16 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		return query.execute().size();
 	}
 
+	/**
+	 * Gets all downloadable messages for the given board and sorts them descending by date.
+	 * The date here is NOT the date specified by the author but the date when we got to know about the message.
+	 */
 	public ObjectSet<MessageList.MessageReference> getDownloadableMessagesSortedByDate(final Board board) {
 		final Query query = db.query();
 		query.constrain(MessageList.MessageReference.class);
 		query.constrain(OwnMessageList.OwnMessageReference.class).not();
 		query.descend("mBoard").constrain(board).identity();
-		query.descend("mDate").orderDescending();
+		query.descend("mCreationDate").orderDescending();
 		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query);
 	}
 

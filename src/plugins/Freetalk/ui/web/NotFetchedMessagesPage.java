@@ -101,10 +101,10 @@ public class NotFetchedMessagesPage extends WebPageImpl {
 					}
 				}
                 
-				row = table.addChild("tr", "class", "thread-row");
+				row = table.addChild("tr", "class", "message-row");
 
 				/* URI */
-				row.addChild("td", ref.getURI().toString());
+				row.addChild("td", "class", "uri", ref.getURI().toString());
 
 				/* Author */
 				row.addChild("td", "class", "author-name", authorText);
@@ -113,7 +113,7 @@ public class NotFetchedMessagesPage extends WebPageImpl {
 				row.addChild("td", "class", "author-score", authorScore);
 
 				/* Date */
-				row.addChild("td", "class", "date", dateFormat.format(ref.getDate()));
+				row.addChild("td", "class", "date", dateFormat.format(ref.getCreationDate()));
 				
 				/* Fetched fail count */
 				row.addChild("td", "class", "failed-fetches", Integer.toString(failedFetches));
