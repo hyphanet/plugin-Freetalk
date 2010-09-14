@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -328,12 +329,21 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		}
 	}
 	
-	public synchronized void deleteEmptyBoards() {
+	/**
+	 * Deletes all boards which are empty.
+	 * A board is considered empty if:
+	 * - There are no subscriptions to it
+	 * - There are no fetched messages or message lists for it
+	 * - There are no own messages or own message lists in it
+	 * @return The list of the deleted boards' names.
+	 */
+	public synchronized ArrayList<String> deleteEmptyBoards() {
 		Logger.normal(this, "Attempting to delete empty boards...");
 		
 		// TODO: Optimization: This might speed things up... or slow them down.
 		// addMessagesToBoards();
 		
+		final ArrayList<String> deletedBoards = new ArrayList<String>();
 		final ObjectSet<OwnMessage> notInsertedOwnMessages = notInsertedMessageIterator();
 		
 		for(final Board board: boardIteratorSortedByName()) { // TODO: Optimization: Implement & use a non-sorting function.
@@ -388,11 +398,14 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 					Logger.normal(this, "Deleting empty board " + board);
 					board.deleteWithoutCommit();
 					board.checkedCommit(this);
+					deletedBoards.add(board.getName());
 				} catch(RuntimeException e) {
 					Persistent.checkedRollback(db, this, e);
 				}
 			}
 		}
+		
+		return deletedBoards;
 	}
 	
 	/**
