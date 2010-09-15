@@ -72,6 +72,7 @@ public final class WebInterface {
 	private final WebInterfaceToadlet showNotFetchedMessagesToadlet;
 	private final WebInterfaceToadlet newReplyToadlet;
 	private final WebInterfaceToadlet newBoardToadlet;
+	private final WebInterfaceToadlet deleteEmptyBoardsToadlet;
 	private final WebInterfaceToadlet changeTrustToadlet;
 	private final WebInterfaceToadlet getPuzzleToadlet;
 	private final WebInterfaceToadlet introduceIdentityToadlet;
@@ -512,6 +513,24 @@ public final class WebInterface {
 		}
 	}
 	
+	private final class DeleteEmptyBoardsToadlet extends WebInterfaceToadlet {
+		
+		protected DeleteEmptyBoardsToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			return new DeleteEmptyBoardsPage(webInterface, getLoggedInOwnIdentity(context), req, l10n());
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && !mSessionManager.sessionExists(ctx);
+		}
+
+	}
+	
 	public class GetPuzzleWebInterfaceToadlet extends WebInterfaceToadlet {
 
 		protected GetPuzzleWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
@@ -711,6 +730,7 @@ public final class WebInterface {
 		showNotFetchedMessagesToadlet = new ShowNotFetchedMessagesWebInterfaceToadlet(null, this, clientCore, "showNotFetchedMessages");
 		newReplyToadlet = new NewReplyWebInterfaceToadlet(null, this, clientCore, "NewReply");
 		newBoardToadlet = new NewBoardWebInterfaceToadlet(null, this, clientCore, "NewBoard");
+		deleteEmptyBoardsToadlet = new DeleteEmptyBoardsToadlet(null, this, clientCore, "DeleteEmptyBoards");
 		changeTrustToadlet = new ChangeTrustWebInterfaceToadlet(null, this, clientCore, "ChangeTrust");
 		getPuzzleToadlet = new GetPuzzleWebInterfaceToadlet(null, this, clientCore, "GetPuzzle");
 		introduceIdentityToadlet = new IntroduceIdentityWebInterfaceToadlet(null, this, clientCore, "IntroduceIdentity");
@@ -724,6 +744,7 @@ public final class WebInterface {
 		container.register(showNotFetchedMessagesToadlet, null, Freetalk.PLUGIN_URI + "/showNotFetchedMessages", true, false);
 		container.register(newReplyToadlet, null, Freetalk.PLUGIN_URI + "/NewReply", true, false);
 		container.register(newBoardToadlet, null, Freetalk.PLUGIN_URI + "/NewBoard", true, false);
+		container.register(deleteEmptyBoardsToadlet, null, Freetalk.PLUGIN_URI + "/DeleteEmptyBoards", true, false);
 		container.register(changeTrustToadlet, null, Freetalk.PLUGIN_URI + "/ChangeTrust", true, false);
 		container.register(getPuzzleToadlet, null, Freetalk.PLUGIN_URI + "/GetPuzzle", true, false);
 		container.register(introduceIdentityToadlet, null, Freetalk.PLUGIN_URI + "/IntroduceIdentity", true, false);
@@ -756,6 +777,7 @@ public final class WebInterface {
 				showNotFetchedMessagesToadlet,
 				newReplyToadlet,
 				newBoardToadlet,
+				deleteEmptyBoardsToadlet,
 				getPuzzleToadlet,
 				introduceIdentityToadlet,
 				cssToadlet,

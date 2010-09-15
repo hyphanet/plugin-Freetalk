@@ -1,5 +1,17 @@
 /* Freetalk Main CSS Header File */
 
+/* General stuff */
+
+.freetalk * .button-row {
+	float: left;
+	margin-right: 1ex;
+}
+
+.freetalk * .button-row-button {
+	float: left;
+	display: inline;
+}
+
 /* Not fetched messages page */ 
 
 .freetalk * .messages .messages-table {
@@ -113,19 +125,6 @@
 .freetalk .message .title .date {
 	float: right;
 	margin-left: 1ex;
-}
-
-.freetalk .message .title .mod-buttons {
-	float: left;
-	margin-right: 1ex;
-}
-
-.freetalk .message .title .mod-button {
-	float: left;
-}
-
-.freetalk .message .title .mod-button form {
-	display: inline;
 }
 
 .freetalk .message .title .text {

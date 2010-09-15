@@ -80,10 +80,21 @@ public class SelectBoardsPage extends WebPageImpl {
 		HTMLNode boardsBox = addContentBox(l10n().getString("SelectBoardsPage.SelectBoardsBox.Header"));
 		
 		boardsBox.addChild("p", l10n().getString("SelectBoardsPage.SelectBoardsBox.Text"));
-
-		HTMLNode newBoardForm = addFormChild(boardsBox, Freetalk.PLUGIN_URI + "/NewBoard", "NewBoardPage");
+		
+		HTMLNode buttonRow = boardsBox.addChild("div", "class", "button-row");
+		
+		HTMLNode buttonDiv = buttonRow.addChild("div", "class", "button-row-button");
+		HTMLNode newBoardForm = addFormChild(buttonDiv, Freetalk.PLUGIN_URI + "/NewBoard", "NewBoardPage");
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("SelectBoardsPage.NewBoardButton") });
+		
+		buttonDiv = buttonRow.addChild("div", "class", "button-row-button");
+		HTMLNode deleteEmptyBoardsForm = addFormChild(buttonDiv, Freetalk.PLUGIN_URI + "/DeleteEmptyBoards", "DeleteEmptyBoards");
+		deleteEmptyBoardsForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
+		deleteEmptyBoardsForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("SelectBoardsPage.SelectBoardsBox.DeleteEmptyBoardsButton") });
+		
+        // Clear margins after button row. TODO: Refactoring: Move to CSS
+        boardsBox.addChild("div", "style", "clear: both;");
 		
 		HTMLNode boardsTable = boardsBox.addChild("table", "border", "0");
 		HTMLNode row = boardsTable.addChild("tr");
