@@ -43,6 +43,11 @@
 	text-align: right;
 }
 
+.freetalk * .messages .messages-table .failure-reason {
+	text-align: center;
+}
+
+
 
 
 /* Threads page */
@@ -51,6 +56,10 @@
 	float: left;
 }
 .freetalk * .threads .button-row .mark-all-read-button {
+	float: right;
+}
+
+.freetalk * .threads .button-row .show-not-fetched-button {
 	float: right;
 }
 

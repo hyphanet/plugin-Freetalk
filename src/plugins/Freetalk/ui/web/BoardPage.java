@@ -48,18 +48,21 @@ public final class BoardPage extends WebPageImpl {
 		HTMLNode buttonRow = threadsBox.addChild("div", "class", "button-row");
 		HTMLNode newThreadButton = buttonRow.addChild("span", "class", "new-thread-button");
 		HTMLNode newThreadForm = addFormChild(newThreadButton, Freetalk.PLUGIN_URI + "/NewThread", "NewThreadPage");
-			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID() });
 			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "BoardName", mBoard.getName() });
 			newThreadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", l10n().getString("BoardPage.CreateNewThreadButton") });
 			
         // Button to mark all threads read
 		HTMLNode markAllAsReadButton = buttonRow.addChild("span", "class", "mark-all-read-button");
         HTMLNode markAllAsReadButtonForm = addFormChild(markAllAsReadButton, getURI(mBoard.getName()), "BoardPage");
-        	markAllAsReadButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
         	markAllAsReadButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "name", mBoard.getName()});
         	markAllAsReadButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "MarkAllThreadsAsRead", "true"});
         	markAllAsReadButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("BoardPage.MarkAllThreadsAsReadButton") });
-
+        	
+        // Button to view not fetched messages
+        HTMLNode showNotFetchedButton = buttonRow.addChild("span", "class", "show-not-fetched-button");
+        HTMLNode showNotFetchedButtonForm = addFormChild(showNotFetchedButton, NotFetchedMessagesPage.getURI(mBoard), "NotFetchedMessagesPage");
+	    	showNotFetchedButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("BoardPage.ShowNotFetchedMessagesButton") });
+    	
         // Clear margins after button row.
         // TODO: Move to freetalk.css
         threadsBox.addChild("div", "style", "clear: both;");

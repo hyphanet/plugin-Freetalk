@@ -6,6 +6,7 @@ import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Identity;
 import plugins.Freetalk.MessageList;
+import plugins.Freetalk.MessageList.MessageFetchFailedMarker;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTMessageManager;
@@ -21,10 +22,19 @@ import freenet.support.api.HTTPRequest;
 public class NotFetchedMessagesPage extends WebPageImpl {
 
 	private final Board mBoard;
+	private final boolean mBoardIsSubscribed;
 	
 	public NotFetchedMessagesPage(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) throws NoSuchBoardException {
 		super(myWebInterface, viewer, request, _baseL10n);
 		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getParam("BoardName"));
+		
+		boolean boardIsSubscribed = false;
+		try {
+			mFreetalk.getMessageManager().getSubscription(mOwnIdentity, mBoard.getName());
+			boardIsSubscribed = true;
+		} catch(NoSuchBoardException e) { }
+		
+		mBoardIsSubscribed = boardIsSubscribed;
 	}
 	
 	public final void make() {
@@ -45,6 +55,7 @@ public class NotFetchedMessagesPage extends WebPageImpl {
 			colgroup.addChild("col"); // Trust
 			colgroup.addChild("col"); // Date
 			colgroup.addChild("col"); // Failed fetches
+			colgroup.addChild("col"); // Latest failure reason
 		
 		HTMLNode row = messagesTable.addChild("thead").addChild("tr");
 			row.addChild("th", l10n().getString("NotFetchedMessagesPage.MessageTableHeader.URI"));
@@ -52,6 +63,7 @@ public class NotFetchedMessagesPage extends WebPageImpl {
 			row.addChild("th", l10n().getString("NotFetchedMessagesPage.MessageTableHeader.Trust"));
 			row.addChild("th", l10n().getString("NotFetchedMessagesPage.MessageTableHeader.Date"));
 			row.addChild("th", l10n().getString("NotFetchedMessagesPage.MessageTableHeader.FailedFetches"));
+			row.addChild("th", l10n().getString("NotFetchedMessagesPage.MessageTableHeader.LatestFailureReason"));
 		
 		DateFormat dateFormat = DateFormat.getInstance();
 		
@@ -61,10 +73,12 @@ public class NotFetchedMessagesPage extends WebPageImpl {
 		
 		synchronized(messageManager) {
 			for(final MessageList.MessageReference ref : messageManager.getDownloadableMessagesSortedByDate(mBoard)) {
+				MessageFetchFailedMarker failureMarker = null;
 				int failedFetches;
 				
 				try {
-					failedFetches = messageManager.getMessageFetchFailedMarker(ref).getNumberOfRetries();
+					failureMarker = messageManager.getMessageFetchFailedMarker(ref);
+					failedFetches = failureMarker.getNumberOfRetries();
 				} catch(NoSuchFetchFailedMarkerException e) {
 					if(ref.wasMessageDownloaded())
 						continue; // We are the unfetched messages page, don't display fetched ones
@@ -117,6 +131,9 @@ public class NotFetchedMessagesPage extends WebPageImpl {
 				
 				/* Fetched fail count */
 				row.addChild("td", "class", "failed-fetches", Integer.toString(failedFetches));
+				
+				/* Last fail reason. TODO: l10n */
+				row.addChild("td", "class", "failure-reason", failureMarker == null ? "-" : failureMarker.getReason().toString());
 			}
 		}
 	}
@@ -125,17 +142,22 @@ public class NotFetchedMessagesPage extends WebPageImpl {
 		BreadcrumbTrail trail = new BreadcrumbTrail(l10n());
 		Welcome.addBreadcrumb(trail);
 		BoardsPage.addBreadcrumb(trail);
-		SelectBoardsPage.addBreadcrumb(trail);
-		NotFetchedMessagesPage.addBreadcrumb(trail, mBoard);
+		
+		if(mBoardIsSubscribed) 
+			BoardPage.addBreadcrumb(trail, mBoard);
+		else
+			SelectBoardsPage.addBreadcrumb(trail);
+		
+		addBreadcrumb(trail, mBoard);
 		mContentNode.addChild(trail.getHTMLNode());
 	}
 
 	public static void addBreadcrumb(BreadcrumbTrail trail, Board board) {
-		trail.addBreadcrumbInfo(board.getName(), getURI(board));
+		addBreadcrumb(trail, board.getName());
 	}
 	
 	public static void addBreadcrumb(BreadcrumbTrail trail, String boardName) {
-		trail.addBreadcrumbInfo(boardName, getURI(boardName));
+		trail.addBreadcrumbInfo(trail.getL10n().getString("NotFetchedMessagesPage.Messages.Header", "boardname" , boardName), getURI(boardName));
 	}
 	
 	public static String getURI(Board board) {
