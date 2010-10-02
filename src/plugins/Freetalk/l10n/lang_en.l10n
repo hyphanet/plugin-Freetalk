@@ -218,6 +218,7 @@ Welcome.WelcomeBox.Text2=You can use Freetalk via the webinterface or with a new
 Welcome.WelcomeBox.Text3=${bold}For the newsreader${/bold}: As the account name, specify the nickname of an own identity and as the e-mail address specify the Freetalk address. You can look it up on the identities page. When you are asked for a user name during authentication, specify the Freetalk address. A password is not required. ${bold}For Thunderbird${/bold}: In Account->Server settings, enable 'Always request authentication when connecting to server'.
 Welcome.OverviewBox.Header=Overview
 Welcome.OverviewBox.KnownIdentities=Known Identities
+Welcome.OverviewBox.DownloadedMessages=Downloaded messages
 Welcome.OverviewBox.MessagesWaiting=Messages waiting to be sent
 WoTIsMissingPage.WotOutdated.Header=Your Web of Trust plugin is outdated
 WoTIsMissingPage.WotOutdated.Text=This Freetalk version is incompatible with the WoT plugin version which you have installed.  Please upgrade the WoT plugin at ${link}your Freenet node's plugin page${/link}.

@@ -257,6 +257,19 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		return unsentCount;
 	}
 	
+	public synchronized int countMessages() {
+		final Query q = db.query();
+		q.constrain(Message.class);
+		// This should use indexes and be O(1) therefore, which I'm not sure about with using "q.constrain(OwnMessage.class).not();"
+		return q.execute().size() - countOwnMessages();
+	}
+	
+	public synchronized int countOwnMessages() {
+		final Query q = db.query();
+		q.constrain(OwnMessage.class);
+		return q.execute().size();
+	}
+
 	private synchronized void deleteMessage(Message message) {
 		for(MessageRating rating : getAllMessageRatings(message)) {
 			// This call does a full transaction.

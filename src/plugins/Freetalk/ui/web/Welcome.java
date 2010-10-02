@@ -48,6 +48,7 @@ public final class Welcome extends WebPageImpl {
 		HTMLNode overviewBox = addContentBox(l10n().getString("Welcome.OverviewBox.Header"));
 		HTMLNode list = overviewBox.addChild("ul");
 		list.addChild(new HTMLNode("li", l10n().getString("Welcome.OverviewBox.KnownIdentities") + ": " + mFreetalk.getIdentityManager().countKnownIdentities()));
+		list.addChild(new HTMLNode("li", l10n().getString("Welcome.OverviewBox.DownloadedMessages") + ": " + mFreetalk.getMessageManager().countMessages()));
 		list.addChild(new HTMLNode("li", l10n().getString("Welcome.OverviewBox.MessagesWaiting") + ": " + mFreetalk.getMessageManager().countUnsentMessages()));
 	}
 
