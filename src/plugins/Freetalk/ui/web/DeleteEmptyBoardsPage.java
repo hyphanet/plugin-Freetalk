@@ -15,7 +15,6 @@ public class DeleteEmptyBoardsPage extends WebPageImpl {
 		super(myWebInterface, viewer, request, _baseL10n);
 	}
 
-	@Override
 	public void make() throws RedirectException {
 		if(mOwnIdentity == null)
 			throw new RedirectException(logIn);
