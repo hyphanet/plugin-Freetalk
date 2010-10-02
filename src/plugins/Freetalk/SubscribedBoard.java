@@ -341,6 +341,8 @@ public final class SubscribedBoard extends Board {
      * 
      * Does not delete the Message object itself, this is to be done by the callee.
      * 
+     * TODO: Write a sophisticated unit test
+     * 
      * @param message The message which is about to be deleted. It must still be stored within the database so that queries on it work.
      * @throws NoSuchMessageException If the message does not exist in this Board.
      */
@@ -409,62 +411,98 @@ public final class SubscribedBoard extends Board {
 				final Message replyLinkMessage = replyLink.getMessage();
 				assert(replyLinkMessage == message);
 				
-				if(!replyLinkThreadID.equals(threadID))
+				if(!replyLinkThreadID.equals(threadID)) {
 					Logger.error(this, "Invalid BoardReplyLink found in database: Message was not null even though it is the wrong thread: " 
 							+ replyLink);
+					continue; // Keep the ghost links intact
+				}
 					
 			} catch(NoSuchMessageException e) {
 				continue; // Keep the ghost links intact
 			}
-			
-			if(!replyLinkThreadID.equals(threadID))
-				continue; // Keep the ghost links intact
+				
 			
 			// Now we are in the right thread (thread ID matches) and the current replyLink has the message object we are looking for
-			// Now we must delete the replyLink if no other replies reference the message.
-			// If they do, we must only removeMessage on it to give the other messages a ghost parent
-			// TODO: Unit test this.
-			
+
 			if(unwantedLinkDeleted) {
 				Logger.error(this, "Message was linked in even though it was marked as unwanted: " + message);
 			}
 			
-			boolean keepReplyLink = false;
+			// Remember:
+			// - A ghost BoardReplyLink/BoardThreadLink is a message reference to a message which has not been downloaded 
+			// - Ghosts are created when a reply references a thread or parent message which was not downloaded yet.
+			// - Ghosts MAY ONLY EXIST if there is at least one really downloaded message referencing them - ghosts may not exist because
+			//	 other ghosts reference them. We must ensure that now...
 			
-			for(BoardReplyLink otherReply : getAllThreadReplies(threadID, false)) {
+			// We must check whether there is a ghost BoardReplyLink for the parent of this reply and delete it maybe
+			{
 				try {
-					if(otherReply.getMessage().getParentID().equals(messageID)) {
-						keepReplyLink = true;
-						break;
+					final BoardReplyLink parentLink = getReplyLink(threadID, message.getParentID());
+					try {
+						parentLink.getMessage();
+						// Parent is no ghost, keep it
+					} catch(MessageNotFetchedException e) {
+						// Parent IS a ghost, we must delete it, but only if it is not referenced by any other replies.
+						boolean deleteParentLink = true;
+						for(BoardReplyLink otherReply : getAllThreadReplies(threadID, false)) {
+							try {
+								// Only a non-ghost reply can cause a ghost reply to exist.
+								// Therefore we do getMessage() to ensure that the reply is not a ghost.
+								if(otherReply.getMessage().getParentID().equals(parentLink.getMessageID())) {
+									deleteParentLink = false;
+									break;
+								}
+							} catch(NoSuchMessageException e2) {}
+						}
+						
+						if(deleteParentLink)
+							parentLink.deleteWithoutCommit();
 					}
-				} catch(NoSuchMessageException e) {} // TODO: This might be an error...
+				} catch(NoSuchMessageException e) {}
 			}
-			
-			if(keepReplyLink)
-				replyLink.removeMessage();
-			else
-				replyLink.deleteWithoutCommit();
-
 				
-			// Update the parent thread of the reply
-			BoardThreadLink threadLink = getThreadLink(replyLinkThreadID);
+			// Now we must check whether the reply link should be deleted or kept as ghost because it is the parent of other replies.
+			{
+				boolean deleteReplyLink = true;
 				
-			try {
-				threadLink.getMessage();
-			}
-			catch(MessageNotFetchedException e) {
-				// If the thread itself is a ghost thread and it has no more replies, we must delete it:
-				// It might happen that the caller first calls deleteMessage(thread) and then deleteMessage(all replies). The call to
-				// deleteMessage(thread) did not delete the thread because it still had replies. Now it has no more replies and we
-				// must delete it.
-				if(threadReplyCount(replyLinkThreadID) == 0) {
-					threadLink.deleteWithoutCommit();
-					threadLink = null;
+				for(BoardReplyLink otherReply : getAllThreadReplies(threadID, false)) {
+					try {
+						// Only a non-ghost reply can cause a ghost reply to exist.
+						// Therefore we do getMessage() to ensure that the reply is not a ghost.
+						if(otherReply.getMessage().getParentID().equals(messageID)) {
+							deleteReplyLink = false;
+							break;
+						}
+					} catch(NoSuchMessageException e) {} // TODO: This might be an error...
 				}
+				
+				if(deleteReplyLink)
+					replyLink.deleteWithoutCommit();
+				else
+					replyLink.removeMessage();
 			}
 			
-			if(threadLink != null)
-				threadLink.onMessageRemoved(message);
+			// Now we must update the parent thread or delete it if has become a ghost 
+			{
+				BoardThreadLink threadLink = getThreadLink(replyLinkThreadID);
+					
+				try {
+					threadLink.getMessage();
+				}
+				catch(MessageNotFetchedException e) {
+					// If the thread itself is a ghost thread and it has no more replies, we must delete it:
+					// It might happen that the caller first calls deleteMessage(thread) and then deleteMessage(all replies). The call to
+					// deleteMessage(thread) did not delete the thread because it still had replies. Now it has no more replies and we
+					// must delete it.
+					if(threadReplyCount(replyLinkThreadID) == 0) {
+						threadLink.deleteWithoutCommit();
+						threadLink = null;
+					}
+				}
+				
+				if(threadLink != null)
+					threadLink.onMessageRemoved(message);
+			}
     	}
     }
      
