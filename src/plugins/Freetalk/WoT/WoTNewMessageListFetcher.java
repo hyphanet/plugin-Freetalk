@@ -275,7 +275,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	}
 	
 	private void scheduleCommandProcessing() {
-		mTicker.queueTimedJob(this, "FT IdentityFetcher", PROCESS_COMMANDS_DELAY, false, true);
+		mTicker.queueTimedJob(this, "FT NewMessageListFetcher", PROCESS_COMMANDS_DELAY, false, true);
 	}
 	
 	public int getPriority() {
