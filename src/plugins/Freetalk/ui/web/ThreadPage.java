@@ -72,6 +72,10 @@ public final class ThreadPage extends WebPageImpl {
     public final void make() {
 		try {
 			synchronized (mLocalDateFormat) {
+				
+			// TODO: Optimization: We do NOT want to lock the identity manager here. We have to do it to prevent deadlocks because there is
+			// no non-locking getIdentity() which could be used in addThreadNotDownloadedWarning/addReplyNotDownloadedWarning
+			synchronized(mFreetalk.getIdentityManager()) {
         	
         	// Normally, we would have to lock the MessageManager because we call storeAndCommit() on MessageReference objects:
         	// The board might be deleted between getSubscription() and the synchronized(mBoard) - the storeAndCommit() would result in orphan objects.
@@ -120,6 +124,7 @@ public final class ThreadPage extends WebPageImpl {
                 if(!mMarktThreadAsUnread)
             		mThread.markThreadAndRepliesAsReadAndCommit();
         	}
+			}
 			}
         } catch(NoSuchMessageException e) {
         	mThread = null;
