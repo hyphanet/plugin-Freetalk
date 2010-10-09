@@ -448,7 +448,7 @@ public final class SubscribedBoard extends Board {
 							try {
 								// Only a non-ghost reply can cause a ghost reply to exist.
 								// Therefore we do getMessage() to ensure that the reply is not a ghost.
-								if(otherReply.getMessage().getParentID().equals(parentLink.getMessageID())) {
+								if(!otherReply.equals(replyLink) && otherReply.getMessage().getParentID().equals(parentLink.getMessageID())) {
 									deleteParentLink = false;
 									break;
 								}
@@ -470,6 +470,7 @@ public final class SubscribedBoard extends Board {
 						// Only a non-ghost reply can cause a ghost reply to exist.
 						// Therefore we do getMessage() to ensure that the reply is not a ghost.
 						if(otherReply.getMessage().getParentID().equals(messageID)) {
+							// (Messages cannot be their own parents so we don't have to check for otherReply.equals(replyLink))
 							deleteReplyLink = false;
 							break;
 						}
