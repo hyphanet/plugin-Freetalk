@@ -16,6 +16,7 @@ import freenet.support.Logger;
  */
 public class IdentityStatistics extends Persistent {
 	
+	@IndexedField
 	private final Identity mIdentity;
 
 	/**
