@@ -14,7 +14,7 @@ import freenet.support.Logger;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public class IdentityStatistics extends Persistent {
+public final class IdentityStatistics extends Persistent {
 	
 	@IndexedField
 	private final Identity mIdentity;
@@ -34,6 +34,11 @@ public class IdentityStatistics extends Persistent {
 		mIdentity = myIdentity;
 	}
 	
+	public final Identity getIdentity() {
+		if(mIdentity instanceof Persistent) ((Persistent)mIdentity).initializeTransient(mFreetalk);
+		return mIdentity;
+	}
+	
 
 	/**
 	 * Get the highest message list index number which we have seen from this identity.
@@ -46,14 +51,14 @@ public class IdentityStatistics extends Persistent {
 	 * - The numbers returned by this function are supposed to be used for message list fetching, its not bad if we fetch the same message list
 	 * twice.
 	 */
-	public synchronized long getIndexOfLatestAvailableMessageList() throws NoSuchMessageListException {
+	public final synchronized long getIndexOfLatestAvailableMessageList() throws NoSuchMessageListException {
 		if(mHighestFetchedMessageListIndex == -1)
 			throw new NoSuchMessageListException(null);
 		
 		return mHighestFetchedMessageListIndex;
 	}
 	
-	protected synchronized void setIndexOfLatestAvailableMessageList(long index) {
+	protected final synchronized void setIndexOfLatestAvailableMessageList(long index) {
 		if(index < mLowestFetchedMessageListIndex)
 			throw new RuntimeException("Illegal index: "+ index);
 		
@@ -73,14 +78,14 @@ public class IdentityStatistics extends Persistent {
 	 * - The numbers returned by this function are supposed to be used for message list fetching, its not bad if we fetch the same message list
 	 * twice.
 	 */
-	public synchronized long getIndexOfOldestAvailableMessageList() throws NoSuchMessageListException {
+	public final synchronized long getIndexOfOldestAvailableMessageList() throws NoSuchMessageListException {
 		if(mLowestFetchedMessageListIndex == -1)
 			throw new NoSuchMessageListException(null);
 		
 		return mLowestFetchedMessageListIndex;
 	}
 	
-	protected synchronized void setIndexOfOldestAvailableMessageList(long index) {
+	protected final synchronized void setIndexOfOldestAvailableMessageList(long index) {
 		if(index > mHighestFetchedMessageListIndex)
 			throw new RuntimeException("Illegal index: " + index);
 		
@@ -89,7 +94,7 @@ public class IdentityStatistics extends Persistent {
 		storeWithoutCommit();
 	}
 	
-	private void expandHighestAvailableMessageListIndex() {
+	private final void expandHighestAvailableMessageListIndex() {
 		final MessageManager messageManager = mFreetalk.getMessageManager();
 		
 		// TODO: Optimization: We should observe the typical amount of lists which are skipped by this function. If it is high then it 
@@ -112,7 +117,7 @@ public class IdentityStatistics extends Persistent {
 		assert(messageListIndicesAreValid());
 	}
 	
-	private void expandLowestAvailableMessageListIndex() {
+	private final void expandLowestAvailableMessageListIndex() {
 		final MessageManager messageManager = mFreetalk.getMessageManager();
 		
 		// TODO: Optimization: We should observe the typical amount of lists which are skipped by this function. If it is high then it 
@@ -135,7 +140,7 @@ public class IdentityStatistics extends Persistent {
 		assert(messageListIndicesAreValid());
 	}
 	
-	protected void onMessageListFetched(final MessageList messageList) {
+	protected final void onMessageListFetched(final MessageList messageList) {
 		if(messageList instanceof OwnMessageList)
 			throw new RuntimeException("OwnMessageList are not allowed: " + messageList);
 		
@@ -181,7 +186,7 @@ public class IdentityStatistics extends Persistent {
 				+ "new index=" + newIndex);
 	}
 	
-	protected void onMessageListDeleted(final MessageList messageList) {
+	protected final void onMessageListDeleted(final MessageList messageList) {
 		if(messageList instanceof OwnMessageList)
 			throw new RuntimeException("OwnMessageList are not allowed: " + messageList);
 		
@@ -209,7 +214,7 @@ public class IdentityStatistics extends Persistent {
 				+ "deleted index=" + deletedIndex);
 	}
 	
-	private boolean messageListIndicesAreValid() {
+	private final boolean messageListIndicesAreValid() {
 		final MessageManager messageManager = mFreetalk.getMessageManager();
 		
 		for(long i = mLowestFetchedMessageListIndex; i <= mHighestFetchedMessageListIndex; ++i) {
@@ -225,4 +230,17 @@ public class IdentityStatistics extends Persistent {
 		return true;
 	}
 
+	protected final void storeWithoutCommit() {
+		try {		
+			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(2);
+			
+			throwIfNotStored(mIdentity);
+			
+			checkedStore();
+		}
+		catch(final RuntimeException e) {
+			checkedRollbackAndThrow(e);
+		}
+	}
 }
