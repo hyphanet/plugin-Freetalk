@@ -64,7 +64,6 @@ public final class IdentityStatistics extends Persistent {
 		
 		mHighestFetchedMessageListIndex = index;
 		assert(messageListIndicesAreValid());
-		storeWithoutCommit();
 	}
 	
 	/**
@@ -91,7 +90,6 @@ public final class IdentityStatistics extends Persistent {
 		
 		mLowestFetchedMessageListIndex = index;
 		assert(messageListIndicesAreValid());
-		storeWithoutCommit();
 	}
 	
 	private final void expandHighestAvailableMessageListIndex() {
