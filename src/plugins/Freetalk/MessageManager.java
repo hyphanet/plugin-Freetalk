@@ -18,6 +18,7 @@ import plugins.Freetalk.MessageList.MessageListFetchFailedMarker;
 import plugins.Freetalk.MessageList.MessageListID;
 import plugins.Freetalk.MessageList.MessageReference;
 import plugins.Freetalk.exceptions.DuplicateBoardException;
+import plugins.Freetalk.exceptions.DuplicateElementException;
 import plugins.Freetalk.exceptions.DuplicateFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.DuplicateMessageException;
 import plugins.Freetalk.exceptions.DuplicateMessageListException;
@@ -28,6 +29,7 @@ import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import plugins.Freetalk.exceptions.NoSuchMessageRatingException;
+import plugins.Freetalk.exceptions.NoSuchObjectException;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -452,6 +454,8 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 			try {
 				for(MessageList messageList : getMessageListsBy(identity)) {
 					messageList.deleteWithoutCommit();
+					// We do not call onMessageListDeleted for the IdentityStatistics since the statistics object will be deleted within
+					// this transaction anyway.
 				}
 
 				if(identity instanceof OwnIdentity) {
@@ -468,7 +472,12 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 						messageList.deleteWithoutCommit();
 					}
 				}
-				Logger.debug(this, "Messages and message lists deleted for " + identity);
+				
+				try {
+					getIdentityStatistics(identity).deleteWithoutCommit();
+				} catch(NoSuchObjectException e) {}
+
+				Logger.debug(this, "beforeIdentityDeletion finished for " + identity);
 				Persistent.checkedCommit(db, this);
 			}
 			catch(RuntimeException e) {
@@ -716,13 +725,18 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 						if(ghostList != null) {
 							Logger.error(this, "MessageList was fetched even though a ghost list existed for it! Deleting the ghost list: " + ghostList);
 							ghostList.deleteWithoutCommit();
+							// We don't call onMessageListDeleted on the IdentityStatistics since we will call onMessageListFetched for the 
+							// list with the same ID in this transaction anyway. 
 						}
 					}
 					
-					synchronized(list) {
 					list.storeWithoutCommit();
+					
+					final IdentityStatistics stats = getOrCreateIdentityStatistics(list.getAuthor());
+					stats.onMessageListFetched(list);
+					stats.storeWithoutCommit();
+					
 					list.checkedCommit(this);
-					}
 				}
 				catch(RuntimeException ex) {
 					Persistent.checkedRollback(db, this, ex);
@@ -873,7 +887,13 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 					} else if(marker instanceof MessageListFetchFailedMarker) {
 						MessageListFetchFailedMarker m = (MessageListFetchFailedMarker)marker;
 						try {
-							getMessageList(m.getMessageListID()).deleteWithoutCommit();
+							MessageList list = getMessageList(m.getMessageListID());
+							list.deleteWithoutCommit();
+							
+							final IdentityStatistics stats = getOrCreateIdentityStatistics(list.getAuthor());
+							stats.onMessageListDeleted(list);
+							stats.storeWithoutCommit();
+							
 							m.storeWithoutCommit(); // MessageList.deleteWithoutCommit deletes it.
 						}
 						catch(NoSuchMessageListException e) {
@@ -1494,6 +1514,31 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 
 	public abstract void deleteMessageRating(final MessageRating rating);
 
+	protected final synchronized IdentityStatistics getIdentityStatistics(final Identity identity) throws NoSuchObjectException {
+		final Query query = db.query();
+		query.constrain(IdentityStatistics.class);
+		query.descend("mIdentity").constrain(identity).identity();
+		final ObjectSet<IdentityStatistics> result = new Persistent.InitializingObjectSet<IdentityStatistics>(mFreetalk, query);
+		
+		switch(result.size()) {
+			case 1: return result.next();
+			case 0: throw new NoSuchObjectException();
+			default: throw new DuplicateElementException("Duplicate IdentityStatistics for " + identity);
+		}
+	}
+	
+	/**
+	 * Not synchronized because it is typically being used in a transaction anyway - we need to store the created object.
+	 */
+	protected final IdentityStatistics getOrCreateIdentityStatistics(final Identity identity)  {
+		try {
+			return getIdentityStatistics(identity);
+		} catch(NoSuchObjectException e) {
+			IdentityStatistics stats = new IdentityStatistics(identity);
+			stats.initializeTransient(mFreetalk);
+			return stats;
+		}
+	}
 	
 	private synchronized void verifyDatabaseIntegrity() {
 		try {
@@ -1624,6 +1669,23 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 					Logger.error(this, "MessageRating has mMessage==null: " + rating);
 				}
 
+			}
+		}
+		
+		{
+			Logger.normal(this, "Checking for IdentityStatistics with mIdentity==null");
+			final Query q = db.query();
+			q.constrain(IdentityStatistics.class);
+			q.descend("mIdentity").constrain(null).identity();
+			
+			for(final IdentityStatistics stats : new Persistent.InitializingObjectSet<IdentityStatistics>(mFreetalk, q)) {
+				if(stats.getIdentity() != null) {
+					// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
+					Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + stats);
+					continue;
+				}
+				
+				Logger.error(this, "IdentityStatistics has mIdentity==null: " + stats);
 			}
 		}
 		
