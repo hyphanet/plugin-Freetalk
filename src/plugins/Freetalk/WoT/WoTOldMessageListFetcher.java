@@ -256,6 +256,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 		try {
 			switch(e.getMode()) {
 				case FetchException.DATA_NOT_FOUND:
+				case FetchException.ALL_DATA_NOT_FOUND:
 					assert(state.getURI().isSSK());
 					
 					// We requested an old MessageList, i.e. it's index is lower than the index of the latest known MessageList, so the requested MessageList
