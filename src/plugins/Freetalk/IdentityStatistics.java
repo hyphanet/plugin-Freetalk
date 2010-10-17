@@ -205,13 +205,19 @@ public final class IdentityStatistics extends Persistent {
 			expandHighestAvailableMessageListIndex();
 			return;
 		}
+
+		if(deletedIndex == mHighestFetchedMessageListIndex) {
+			setIndexOfLatestAvailableMessageList(deletedIndex-1);
+			assert(messageListIndicesAreValid());
+			return;
+		}
+		
+		if(deletedIndex >= mLowestFetchedMessageListIndex) {
+			setIndexOfOldestAvailableMessageList(deletedIndex+1);
+			assert(messageListIndicesAreValid());
+			return;
+		}
 	
-		
-		setIndexOfLatestAvailableMessageList(deletedIndex-1);	
-		setIndexOfOldestAvailableMessageList(deletedIndex+1);
-		
-		assert(messageListIndicesAreValid());
-		
 		// This should not happen:
 		throw new RuntimeException("Unhandled case: lowest index=" + mLowestFetchedMessageListIndex + "; "
 				+ "highest index=" + mHighestFetchedMessageListIndex + "; "
