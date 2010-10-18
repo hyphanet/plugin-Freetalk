@@ -274,10 +274,10 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	/**
 	 * Not synchronized, the involved identities might be deleted during the query - which is not really a problem.
 	 */
-	private String getProperty(OwnIdentity treeOwner, Identity target, String property) throws Exception {
+	private String getProperty(OwnIdentity truster, Identity target, String property) throws Exception {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putOverwrite("Message", "GetIdentity");
-		sfs.putOverwrite("TreeOwner", treeOwner.getID());
+		sfs.putOverwrite("Truster", truster.getID());
 		sfs.putOverwrite("Identity", target.getID());
 
 		return sendFCPMessageBlocking(sfs, null, "Identity").params.get(property);
@@ -286,17 +286,17 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	/**
 	 * Not synchronized, the involved identities might be deleted during the query - which is not really a problem.
 	 */
-	public int getScore(final WoTOwnIdentity treeOwner, final WoTIdentity target) throws NotInTrustTreeException, Exception {
+	public int getScore(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotInTrustTreeException, Exception {
 		if(mIsUnitTest)
 			return 0;
 		
-		final String score = getProperty(treeOwner, target, "Score");
+		final String score = getProperty(truster, trustee, "Score");
 		
 		if(score.equals("null"))
-			throw new NotInTrustTreeException(treeOwner, target);
+			throw new NotInTrustTreeException(truster, trustee);
 		
 		final int value = Integer.parseInt(score);
-		mWoTCache.putScore(treeOwner, target, value);
+		mWoTCache.putScore(truster, trustee, value);
 		return value;
 	}
 
@@ -1024,14 +1024,14 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		}
 
 		// FIXME: Create getter methods in WoTIdentityManager which actually use this caching function...
-		public synchronized int getScore(final WoTOwnIdentity treeOwner, final WoTIdentity target) throws NotInTrustTreeException, Exception {
+		public synchronized int getScore(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotInTrustTreeException, Exception {
 			{
-				final Integer cachedValue = mScoreCache.get(new TrustKey(treeOwner, target));
+				final Integer cachedValue = mScoreCache.get(new TrustKey(truster, trustee));
 				if(cachedValue != null)
 					return cachedValue;
 			}
 			
-			return WoTIdentityManager.this.getScore(treeOwner, target);	// This will update the cache
+			return WoTIdentityManager.this.getScore(truster, trustee);	// This will update the cache
 		}
 		
 		public synchronized void putTrust(final WoTIdentity truster, final WoTIdentity trustee, final byte value) {
@@ -1042,8 +1042,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			mTrustCache.put(new TrustKey(trust), trust.getValue());
 		}
 		
-		public synchronized void putScore(final WoTOwnIdentity treeOwner, final WoTIdentity target, final int value) {
-			mScoreCache.put(new TrustKey(treeOwner, target), value);
+		public synchronized void putScore(final WoTOwnIdentity truster, final WoTIdentity trustee, final int value) {
+			mScoreCache.put(new TrustKey(truster, trustee), value);
 		}
 
 	}
