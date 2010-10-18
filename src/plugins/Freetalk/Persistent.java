@@ -21,6 +21,8 @@ import com.db4o.query.Query;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 /**
+ * ATTENTION: This class is duplicated in the Web Of Trust plugin. Backport any changes!
+ * 
  * This is the base class for all classes which are stored in the Freetalk database.<br /><br />
  * 
  * It provides common functions which are needed for storing, updating, retrieving and deleting objects.
