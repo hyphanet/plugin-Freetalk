@@ -242,14 +242,13 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader())); // Needed because the node uses it's own classloader for plugins
 		cfg.exceptionsOnNotStorable(true); // Notify us if we tried to store a class which db4o won't store
 		cfg.activationDepth(5); // TODO: Decrease to 1 after we have explicit activation everywhere.
+		cfg.exceptionsOnNotStorable(true);
         cfg.automaticShutDown(false); // The shutdown hook does auto-commit() but we want to rollback(), we MUST NOT commit half-finished transactions
         
         // Performance config options:
         cfg.callbacks(false); // We don't use callbacks yet. TODO: Investigate whether we might want to use them
         cfg.classActivationDepthConfigurable(false);
-        cfg.reserveStorageSpace(1 * 1024 * 1024);
-        cfg.databaseGrowthSize(1 * 1024 * 1024);
-      
+
         // Registration of indices (also performance)
         
         final Class<? extends Persistent>[] persistentClasses = new Class[] {
