@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import java.util.HashMap;
+import java.util.Hashtable;
 
 import plugins.Freetalk.Persistent.IndexedClass;
 
@@ -38,20 +38,18 @@ public final class Config extends Persistent {
 	/** Parameter name for the {@code allowedHosts} parameter. */
 	public static final String NNTP_SERVER_ALLOWED_HOSTS = "NNTP.AllowedHosts";
 
-	/**
-	 * The HashMap that contains all cofiguration parameters
-	 */
-	private final HashMap<String, String> mStringParams;
+
+	private final Hashtable<String, String> mStringParams;
 	
-	private final HashMap<String, Integer> mIntParams;
+	private final Hashtable<String, Integer> mIntParams;
 
 	/**
 	 * Creates a new Config object and stores the default values in it.
 	 */
 	protected Config(Freetalk myFreetalk) {
 		initializeTransient(myFreetalk);
-		mStringParams = new HashMap<String, String>();
-		mIntParams = new HashMap<String, Integer>();
+		mStringParams = new Hashtable<String, String>();
+		mIntParams = new Hashtable<String, Integer>();
 		setDefaultValues(false);
 	}
 	
