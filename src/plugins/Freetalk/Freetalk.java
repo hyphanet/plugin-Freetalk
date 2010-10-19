@@ -231,6 +231,9 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		}
 	}
 	
+	/**
+	 * ATTENTION: This function is duplicated in the Web Of Trust plugin, please backport any changes.
+	 */
 	@SuppressWarnings("unchecked")
 	private ExtObjectContainer openDatabase(String filename) {
 		Logger.debug(this, "Using db4o " + Db4o.version());
