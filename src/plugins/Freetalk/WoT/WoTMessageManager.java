@@ -9,6 +9,7 @@ import java.util.Set;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Identity;
+import plugins.Freetalk.IdentityStatistics;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.FetchFailedMarker;
 import plugins.Freetalk.Freetalk;
@@ -24,9 +25,11 @@ import plugins.Freetalk.MessageList.MessageListID;
 import plugins.Freetalk.Persistent.InitializingObjectSet;
 import plugins.Freetalk.exceptions.DuplicateElementException;
 import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import plugins.Freetalk.exceptions.NoSuchMessageRatingException;
+import plugins.Freetalk.exceptions.NoSuchObjectException;
 import plugins.Freetalk.tasks.PersistentTaskManager;
 
 import com.db4o.ObjectContainer;
@@ -147,8 +150,12 @@ public final class WoTMessageManager extends MessageManager {
 				try {
 					Date date = CurrentTimeUTC.get();
 					Date dateOfNextRetry;
-
+					
 					ghostList.storeWithoutCommit();
+					
+					final IdentityStatistics stats = getOrCreateIdentityStatistics(author);
+					stats.onMessageListFetched(ghostList);
+					stats.storeWithoutCommit();
 					
 					if(marker == null) {
 						dateOfNextRetry = calculateDateOfNextMessageListFetchRetry(reason, date, 0);
@@ -258,51 +265,51 @@ public final class WoTMessageManager extends MessageManager {
 		return new Persistent.InitializingObjectSet<WoTOwnMessageList>(mFreetalk, query);
 	}
 
-	@SuppressWarnings("unchecked")
+	/**
+	 * Get the highest index of a not fetched message list of the given identity.
+	 * 
+	 * Notice that this uses a cached number from the IdentityStatistics object and it is possible that there are message lists with
+	 * higher index numbers which HAVE been fetched already. This function is for being used in scheduling message list fetches so this is
+	 * not a problem.
+	 */
 	public synchronized long getUnavailableNewMessageListIndex(Identity identity) {
-		Query query = db.query();
-		query.constrain(WoTMessageList.class);
-		query.constrain(WoTOwnMessageList.class).not();
-		query.descend("mAuthor").constrain(identity).identity();
-		query.descend("mIndex").orderDescending(); // TODO: This is inefficient!
-		ObjectSet<WoTMessageList> result = query.execute();
-		
-		if(result.size() == 0)
+		try {
+			return getIdentityStatistics(identity).getIndexOfLatestAvailableMessageList() + 1;
+		} catch(NoSuchObjectException e) {
 			return 0;
-		
-		return result.next().getIndex() + 1;
+		}
 	}
 	
+	/**
+	 * Get a hint for the highest index of a not fetched message list of the given identity.
+	 * In the current implementation, this just calls {@link getUnavailableNewMessageListIndex}
+	 * 
+	 * Notice that this uses a cached number from the IdentityStatistics object and it is possible that there are message lists with
+	 * higher index numbers which HAVE been fetched already. This function is for being used in scheduling message list fetches so this is
+	 * not a problem.
+	 */
 	public long getNewMessageListIndexEditionHint(Identity identity) {
 		// TODO: Implement storage of edition hints in message lists.
 		return getUnavailableNewMessageListIndex(identity);
 	}
 
-	@SuppressWarnings("unchecked")
+
+	/**
+	 * Get a hint for the lowest index of a not fetched message list of the given identity.
+	 * 
+	 * Notice that this uses a cached number from the IdentityStatistics object and it is possible that there are message lists with
+	 * lower index numbers which HAVE been fetched already. This function is for being used in scheduling message list fetches so this is
+	 * not a problem.
+	 */
 	public synchronized long getUnavailableOldMessageListIndex(Identity identity) throws NoSuchMessageListException {
-		Query query = db.query();
-		query.constrain(WoTMessageList.class);
-		query.constrain(WoTOwnMessageList.class).not();
-		query.descend("mAuthor").constrain(identity).identity();
-		query.descend("mIndex").orderDescending(); // TODO: This is inefficient!
-		ObjectSet<WoTMessageList> result = query.execute();
-		
-		if(result.size() == 0)
+		try {
+			long unavailableIndex = getIdentityStatistics(identity).getIndexOfOldestAvailableMessageList() - 1;
+			if(unavailableIndex < 0)
+				throw new NoSuchMessageListException("");
+			return unavailableIndex;
+		} catch(NoSuchObjectException e) {
 			return 0;
-		
-		long latestAvailableIndex = result.next().getIndex();
-		long freeIndex = latestAvailableIndex - 1;
-		for(; result.hasNext() && result.next().getIndex() == freeIndex; ) {
-			--freeIndex;
 		}
-		
-		/* TODO: To avoid always checking ALL messagelists for a missing one, store somewhere in the Identity what the latest index is up to
-		 * which all messagelists are available! */
-		
-		if(freeIndex >= 0)
-			return freeIndex;
-		else
-			throw new NoSuchMessageListException("");
 	}
 
 	/**
@@ -311,8 +318,10 @@ public final class WoTMessageManager extends MessageManager {
 	 */
 	@SuppressWarnings("unchecked")
 	public long getFreeOwnMessageListIndex(WoTOwnIdentity messageAuthor)  {
+		// We do not use IdentityStatistics since it does not guarantee to return the highest existing list, it just guarantees that
+		// the index after the one which it has returned does not exist. We must of course not re-use own message list indices.
 		Query q = db.query();
-		/* We query for MessageList and not OwnMessageList because the user might have deleted his own messages or lost his database */
+		// We query for MessageList and not OwnMessageList because the user might have deleted his own messages or lost his database
 		q.constrain(MessageList.class);
 		q.descend("mAuthor").constrain(messageAuthor).identity();
 		q.descend("mIndex").orderDescending(); // TODO: This is inefficient!

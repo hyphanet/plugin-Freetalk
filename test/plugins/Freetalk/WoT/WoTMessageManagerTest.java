@@ -524,6 +524,11 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		assertEquals(0, q.execute().size());
 		
 		mMessageManager.onMessageListFetchFailed(author, WoTMessageList.assembleURI(author.getRequestURI(), 1), FetchFailedMarker.Reason.DataNotFound);
+		
+		q = db.query();
+		q.constrain(FetchFailedMarker.class);
+		assertEquals(1, q.execute().size());
+		
 		mMessageManager.clearExpiredFetchFailedMarkers();
 		
 		q = db.query();

@@ -344,6 +344,12 @@ public abstract class Message extends Persistent {
 		mThreadURI = newThreadURI != null ? newThreadURI.clone() : null;
 		mThreadID = newThreadURI != null ? newThreadURI.getMessageID() : null;
 		
+		if(mID.equals(mParentID))
+			throw new InvalidParameterException("A message cannot be parent of itself.");
+		
+		if(mID.equals(mThreadID))
+			throw new InvalidParameterException("A message cannot have itself as thread.");
+		
 		mBoards = newBoards.toArray(new Board[newBoards.size()]);
 		Arrays.sort(mBoards);		
 		mReplyToBoard = newReplyToBoard;

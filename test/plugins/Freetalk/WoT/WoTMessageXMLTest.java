@@ -54,12 +54,16 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		FreenetURI myThreadFreenetURI = new FreenetURI("CHK@7qMS7LklYIhbZ88i0~u97lxrLKS2uxNwZWQOjPdXnJw,IlA~FSjWW2mPWlzWx7FgpZbBErYdLkqie1uSrcN~LbM,AAIA--8");
 		MessageID myThreadID = MessageID.construct("afe6519b-7fb2-4533-b172-1f966e79d127" + "@" + myAuthor.getID());
 		
+		FreenetURI myParentFreenetURI = new FreenetURI("CHK@H4nfdTqgQUQ0CkdPzvrs2F~IIkjOCnfEn~S042jUxuw,wkCrKtmvmYQzuo3f4v2JlB87wJkK0dspmGJ~ivztYP8,AAIA--8");
+		MessageID myParentID = MessageID.construct("d5b0dcc4-91cb-4870-8ab9-8588e895fa5d" + "@" + myAuthor.getID());
+		
 		mMessageFreenetURI = new FreenetURI("CHK@7qMS7LklYIhbZ88i0~u97lxrLKS2uxNwZWQOjPdXnJw,IlA~FSjWW2mPWlzWx7FgpZbBErYdLkqie1uSrcN~LbM,AAIA--8");
 		MessageID myMessageID = MessageID.construct("2a3a8e7e-9e53-4978-a8fd-17b2d92d949c" + "@" + myAuthor.getID());
 		
 		List<MessageList.MessageReference> messageReferences = new ArrayList<MessageList.MessageReference>(2);
 		for(Board board : myBoards) {
 			messageReferences.add(new MessageList.MessageReference(myThreadID, myThreadFreenetURI, board, CurrentTimeUTC.get()));
+			messageReferences.add(new MessageList.MessageReference(myParentID, myParentFreenetURI, board, CurrentTimeUTC.get()));
 			messageReferences.add(new MessageList.MessageReference(myMessageID, mMessageFreenetURI, board, CurrentTimeUTC.get()));
 		}
 		WoTMessageList messageList = new WoTMessageList(myAuthor, WoTMessageList.assembleURI(authorRequestSSK, 123), messageReferences);
@@ -72,8 +76,10 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		attachments.add(new Attachment(new FreenetURI("KSK@attachment1"), 10001));
 		attachments.add(new Attachment(new FreenetURI("KSK@attachment2"), 10002));
 		
-		WoTMessage message = WoTMessage.construct(messageList, mMessageFreenetURI, myMessageID, new WoTMessageURI(messageList.getURI(), myMessageID),
-				new WoTMessageURI(messageList.getURI(), myThreadID), myBoards, myBoard, myAuthor,
+		WoTMessage message = WoTMessage.construct(messageList, mMessageFreenetURI, myMessageID,
+				new WoTMessageURI(messageList.getURI(), myThreadID), // Thread
+				new WoTMessageURI(messageList.getURI(), myParentID), // Parent
+				myBoards, myBoard, myAuthor,
 				"Message title", new Date(109, 4, 3, 16, 15, 14), "Message body\nNew line", attachments);
 		
 		mMessageID = message.getID();
@@ -98,12 +104,12 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 			"<InReplyTo>" +
 			"<Message>" +
 			"<Order>0</Order>" +
-			"<MessageID><![CDATA[afe6519b-7fb2-4533-b172-1f966e79d127@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>" +
-			"<MessageURI><![CDATA[SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#afe6519b-7fb2-4533-b172-1f966e79d127]]></MessageURI>" +
+			"<MessageID><![CDATA[d5b0dcc4-91cb-4870-8ab9-8588e895fa5d@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>" +
+			"<MessageURI><![CDATA[SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#d5b0dcc4-91cb-4870-8ab9-8588e895fa5d]]></MessageURI>" +
 			"</Message>" +
 			"<Thread>" +
-			"<MessageID><![CDATA[2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>" +
-			"<MessageURI><![CDATA[SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#2a3a8e7e-9e53-4978-a8fd-17b2d92d949c]]></MessageURI>" +
+			"<MessageID><![CDATA[afe6519b-7fb2-4533-b172-1f966e79d127@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>" +
+			"<MessageURI><![CDATA[SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#afe6519b-7fb2-4533-b172-1f966e79d127]]></MessageURI>" +
 			"</Thread>" +
 			"</InReplyTo>" +
 			"<Body><![CDATA[Message body\n" +
