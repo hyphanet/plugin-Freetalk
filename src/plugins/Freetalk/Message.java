@@ -3,13 +3,18 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import java.lang.Math;
+
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import plugins.Freetalk.Identity.IdentityID;
 import plugins.Freetalk.Persistent.IndexedField;
@@ -20,6 +25,7 @@ import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
+import freenet.support.URLEncoder;
 
 /**
  * A Freetalk message. This class is supposed to be used by the UI directly for reading messages. The UI can obtain message objects by querying
@@ -136,6 +142,28 @@ public abstract class Message extends Persistent {
 		
 		public long getSize() {
 			return mSize;
+		}
+	}
+	
+	public class TextElement {
+		public String type;
+		public String content;
+		public List<TextElement> children;
+		public int consumedLength;
+		
+		public TextElement() {
+			type = "error";
+			content = "";
+			children = new ArrayList<TextElement>();
+			consumedLength = 0;
+		}
+		public String getContentText() {
+			// own content + that of our children
+			String result = content;
+			for (final TextElement t : children) {
+				content += t.getContentText();
+			}
+			return content;
 		}
 	}
 	
@@ -556,6 +584,103 @@ public abstract class Message extends Persistent {
 		assert(mText != null);
 		
 		return mText;
+	}
+
+	public final TextElement parseMessageText() {
+		return parseText(mText, "", "");
+	}
+	
+	public final TextElement parseText(String currentText, String tag, String arg) {
+		TextElement result = new TextElement();
+		if (tag.equals("")) {
+			result.type = "";
+		}
+		if (tag.equals("b")) {
+			result.type = "bold";
+		}
+		if (tag.equals("i")) {
+			result.type = "italic";
+		}
+		if (tag.equals("code")) {
+			result.type = "code";
+		}
+		if (tag.equals("key")) {
+			result.type = "key";
+		}
+		if (tag.equals("url")) {
+			result.type = "url";
+		}
+		if (tag.equals("quote"))
+		{
+			result.content = arg;
+			result.type = "quote";
+		}
+		// for tags without closing tag (if we ever want to support those)
+		// just return result here
+		
+		if (currentText.substring(0,1).equals("\n")) {
+			// skip a starting \n (which is what the user expects to happen)
+			result.consumedLength++;
+		}
+
+		// [foo] or [/foo] or [foo="bar"] or [foo=bar] or (invalid!) [/foo="bar"]
+		Pattern tagPattern = Pattern.compile("\\[(.+?)(?:=\"?(.+?)\"?)?\\]", Pattern.MULTILINE|Pattern.DOTALL);
+		Matcher tagMatcher = tagPattern.matcher(currentText);
+		// we detect a freenet key as a key type, an @ and then any characters that are valid to be in the key
+		// TODO: we might want to allow linebreaks in the first (cryptographic key) part
+		String keyRegex = "(CH|SS|US|KS)K@[%,~" + URLEncoder.getSafeURLCharacters() + "]+";
+		Pattern keyPattern = Pattern.compile(keyRegex, Pattern.MULTILINE|Pattern.DOTALL);
+		Matcher keyMatcher = keyPattern.matcher(currentText);
+
+		while (result.consumedLength < currentText.length()) {
+			// we look for a tag and for a key
+			int tagPos = currentText.length();
+			if (tagMatcher.find(result.consumedLength))
+				tagPos = tagMatcher.start();
+			int keyPos = currentText.length();
+			if (keyMatcher.find(result.consumedLength))
+				keyPos = keyMatcher.start();
+			int textEndPos = Math.min(tagPos, keyPos);
+			
+			if (textEndPos > result.consumedLength)
+			{
+				TextElement newElement = new TextElement();
+				newElement.type = "text";
+				newElement.content = currentText.substring(result.consumedLength, textEndPos);
+				newElement.consumedLength = textEndPos-result.consumedLength;
+				result.children.add(newElement);
+				result.consumedLength += newElement.consumedLength;
+			}
+			if (tagPos < currentText.length() && tagPos < keyPos) {
+				result.consumedLength += tagMatcher.group().length();
+				String t = tagMatcher.group(1);
+				String a = tagMatcher.group(2);
+				if (t.equals("/"+tag))
+					return result;
+				if (t.substring(0,1).equals("/")) {
+					// closing tag
+					// ERROR
+					TextElement newElement = new TextElement();
+					newElement.type = "error";
+					newElement.content = tagMatcher.group();
+					newElement.consumedLength = newElement.content.length();
+					result.children.add(newElement);
+				} else {
+					// it's an opening tag
+					TextElement subElement = parseText(currentText.substring(tagMatcher.end()), t, a);
+					result.children.add(subElement);
+					result.consumedLength += subElement.consumedLength;
+				}
+			} else if (keyPos < currentText.length()) {
+				TextElement newElement = new TextElement();
+				newElement.type = "key";
+				newElement.content = keyMatcher.group();
+				newElement.consumedLength = newElement.content.length();
+				result.children.add(newElement);
+				result.consumedLength += newElement.consumedLength;
+			}
+		}
+		return result;
 	}
 	
 	/**

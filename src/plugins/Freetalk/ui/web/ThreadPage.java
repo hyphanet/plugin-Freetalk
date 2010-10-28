@@ -8,6 +8,7 @@ import java.net.URISyntaxException;
 import java.net.MalformedURLException;
 import java.text.DateFormat;
 import java.util.Arrays;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,6 +17,7 @@ import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Identity;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.Message.TextElement;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
@@ -380,9 +382,82 @@ public final class ThreadPage extends WebPageImpl {
         // Body of the message
 		row = table.addChild("tr", "class", "body");
         HTMLNode text = row.addChild("td", "align", "left", "");
-        String messageBody = message.getText();
-        text.addChild(convertMessageBody(messageBody, null));
+        TextElement element = message.parseMessageText();
+        elementsToHTML(text, element.children);
         addReplyButton(text, message.getID());
+    }
+    
+    private void elementsToHTML(HTMLNode parent, List<TextElement> elements) {
+        for (final TextElement t : elements) {
+            if (t.type.equals("text")) {
+                parent.addChild("#", t.content);
+            }
+            else if (t.type.equals("bold")) {
+                HTMLNode child = parent.addChild("b", "");
+                elementsToHTML(child, t.children);
+            }
+            else if (t.type.equals("key")) {
+                String uriKey = t.getContentText().replaceAll("\n","");
+                try {
+                    FreenetURI uri = new FreenetURI(uriKey);
+                    HTMLNode linkNode = new HTMLNode("a", "href", "/" + uri.toString(), uriKey);
+                    parent.addChild(linkNode);
+                } catch (MalformedURLException e) {
+                    parent.addChild("#", uriKey);
+                }
+            }
+            else if (t.type.equals("url")) {
+                String url = t.getContentText().replaceAll("\n","");
+                if (url.substring(0,4) != "http") {
+                    url = "http://" + url;
+                }
+                HTMLNode linkNode = new HTMLNode("a", "href", "/?_CHECKED_HTTP_="+url, url);
+                parent.addChild(linkNode);
+            }
+            else if (t.type.equals("italic")) {
+                HTMLNode child = parent.addChild("i", "");
+                elementsToHTML(child, t.children);
+            }
+            else if (t.type.equals("code")) {
+                HTMLNode child = parent.addChild("div", "class", "code");
+                elementsToHTML(child, t.children);
+            }
+            else if (t.type.equals("quote")) {
+                HTMLNode child = parent.addChild("div", "class", "quote");
+                HTMLNode authorNode = child.addChild("div", "class", "author");
+                if (t.content != null)
+                {
+                    try {
+                        // mNickname + "@" + mID + "." + Freetalk.WOT_CONTEXT.toLowerCase();	
+                        Pattern pattern = Pattern.compile(".*?@(.*)."+ Freetalk.WOT_CONTEXT.toLowerCase());
+                        Matcher matcher = pattern.matcher(t.content);
+                        if (!matcher.matches()) {
+                            child.addChild("b", t.content + " (Invalid Freetalk address)");
+                        } else {
+                            WoTIdentity author = (WoTIdentity)mFreetalk.getIdentityManager().getIdentity(matcher.group(1));
+                            authorNode.addChild("a", new String[] { "class", "href", "title" },
+                                    new String[] { "identity-link", "/WoT/ShowIdentity?id=" + author.getID(), "Web of Trust Page" })
+                                    .addChild("abbr", new String[] { "title" }, new String[] { author.getID() })
+                                    .addChild("span", "class", "name", author.getShortestUniqueName());
+                        }
+                    } catch (NoSuchIdentityException e) {
+                        authorNode.addChild("b", t.content + " (Unknow identity)");
+                    }
+                    authorNode.addChild("#", " wrote:");
+                }
+                elementsToHTML(child, t.children);
+            }
+            else if (t.type.equals("key")) {
+                HTMLNode child = parent.addChild("i", t.content);
+            }
+            else if (t.type.equals("error")) {
+                HTMLNode child = parent.addChild("u", "{"+t.type+"-"+t.content+"}"); // FIXME: rood maken?
+                elementsToHTML(child, t.children);
+            } else {
+                HTMLNode child = parent.addChild("u", "{!"+t.type+"-"+t.content+"}");
+                elementsToHTML(child, t.children);
+            }
+        }
     }
 
     private void addTrustersInfo(HTMLNode parent, Identity author) throws Exception {
