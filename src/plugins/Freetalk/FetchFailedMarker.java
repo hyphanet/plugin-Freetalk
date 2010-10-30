@@ -118,6 +118,7 @@ public class FetchFailedMarker extends Persistent {
 	
 	public void deleteWithoutCommit() {
 		super.deleteWithoutCommit(2); // TODO: Figure out a suitable depth.
+		// FIXME XXX: Delete the mReason, I've that I delete enum objects in other places...
 	}
 
 	public Reason getReason() {
