@@ -130,8 +130,7 @@ public final class WoTMessageManager extends MessageManager {
 		
 			try {
 				getMessageList(ghostList.getID());
-				Logger.error(this, "Download failed of a MessageList which we already have: " + ghostList.getURI());
-				return;
+				throw new RuntimeException("Download failed of a MessageList which we already have: " + ghostList.getURI());
 			}
 			catch(NoSuchMessageListException e1) {
 				try {
