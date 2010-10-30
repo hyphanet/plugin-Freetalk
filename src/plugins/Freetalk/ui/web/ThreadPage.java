@@ -3,9 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.MalformedURLException;
 import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.List;
@@ -18,6 +18,7 @@ import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Identity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Message.TextElement;
+import plugins.Freetalk.Message.TextElementType;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
@@ -388,20 +389,25 @@ public final class ThreadPage extends WebPageImpl {
 		row = table.addChild("tr", "class", "body");
         HTMLNode text = row.addChild("td", "align", "left", "");
         TextElement element = message.parseMessageText();
-        elementsToHTML(text, element.children);
+        elementsToHTML(text, element.mChildren);
         addReplyButton(text, message.getID());
     }
     
     private void elementsToHTML(HTMLNode parent, List<TextElement> elements) {
         for (final TextElement t : elements) {
-            if (t.type.equals("text")) {
-                parent.addChild("#", t.content);
+            switch(t.mType) {
+            case PlainText: {
+            	parent.addChild("#", t.mContent);
+            	break;
             }
-            else if (t.type.equals("bold")) {
-                HTMLNode child = parent.addChild("b", "");
-                elementsToHTML(child, t.children);
+            
+            case Bold: {
+            	HTMLNode child = parent.addChild("b", "");
+               	elementsToHTML(child, t.mChildren);
+               	break;
             }
-            else if (t.type.equals("key")) {
+            	
+            case Key: {
                 String uriKey = t.getContentText().replaceAll("\n","");
                 try {
                     FreenetURI uri = new FreenetURI(uriKey);
@@ -410,34 +416,42 @@ public final class ThreadPage extends WebPageImpl {
                 } catch (MalformedURLException e) {
                     parent.addChild("#", uriKey);
                 }
+                break;
             }
-            else if (t.type.equals("url")) {
+            
+            case URI: {
                 String url = t.getContentText().replaceAll("\n","");
                 if (url.substring(0,4) != "http") {
                     url = "http://" + url;
                 }
                 HTMLNode linkNode = new HTMLNode("a", "href", "/?_CHECKED_HTTP_="+url, url);
                 parent.addChild(linkNode);
+                break;
             }
-            else if (t.type.equals("italic")) {
+            
+            case Italic: {
                 HTMLNode child = parent.addChild("i", "");
-                elementsToHTML(child, t.children);
+                elementsToHTML(child, t.mChildren);
+                break;
             }
-            else if (t.type.equals("code")) {
+            
+            case Code: {
                 HTMLNode child = parent.addChild("div", "class", "code");
-                elementsToHTML(child, t.children);
+                elementsToHTML(child, t.mChildren);
+                break;
             }
-            else if (t.type.equals("quote")) {
+            
+            case Quote: {
                 HTMLNode child = parent.addChild("div", "class", "quote");
                 HTMLNode authorNode = child.addChild("div", "class", "author");
-                if (t.content != null)
+                if (t.mContent != null)
                 {
                     try {
                         // mNickname + "@" + mID + "." + Freetalk.WOT_CONTEXT.toLowerCase();	
                         Pattern pattern = Pattern.compile(".*?@(.*)."+ Freetalk.WOT_CONTEXT.toLowerCase());
-                        Matcher matcher = pattern.matcher(t.content);
+                        Matcher matcher = pattern.matcher(t.mContent);
                         if (!matcher.matches()) {
-                            child.addChild("b", t.content + " (Invalid Freetalk address)");
+                            child.addChild("b", t.mContent + " (Invalid Freetalk address)");
                         } else {
                             WoTIdentity author = (WoTIdentity)mFreetalk.getIdentityManager().getIdentity(matcher.group(1));
                             authorNode.addChild("a", new String[] { "class", "href", "title" },
@@ -446,21 +460,20 @@ public final class ThreadPage extends WebPageImpl {
                                     .addChild("span", "class", "name", author.getShortestUniqueName());
                         }
                     } catch (NoSuchIdentityException e) {
-                        authorNode.addChild("b", t.content + " (Unknow identity)");
+                        authorNode.addChild("b", t.mContent + " (Unknow identity)");
                     }
                     authorNode.addChild("#", " wrote:");
                 }
-                elementsToHTML(child, t.children);
+                elementsToHTML(child, t.mChildren);
+                break;
             }
-            else if (t.type.equals("key")) {
-                HTMLNode child = parent.addChild("i", t.content);
+            
+            default: {
+            	// TODO: Color it red
+                HTMLNode child = parent.addChild("u", "{!"+t.mType+"-"+t.mContent+"}");
+                elementsToHTML(child, t.mChildren);
+                break;
             }
-            else if (t.type.equals("error")) {
-                HTMLNode child = parent.addChild("u", "{"+t.type+"-"+t.content+"}"); // FIXME: rood maken?
-                elementsToHTML(child, t.children);
-            } else {
-                HTMLNode child = parent.addChild("u", "{!"+t.type+"-"+t.content+"}");
-                elementsToHTML(child, t.children);
             }
         }
     }

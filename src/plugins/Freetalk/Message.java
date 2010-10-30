@@ -3,11 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import java.lang.Math;
-
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -22,7 +20,6 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
-import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 import freenet.support.URLEncoder;
@@ -145,25 +142,62 @@ public abstract class Message extends Persistent {
 		}
 	}
 	
-	public class TextElement {
-		public String type;
-		public String content;
-		public List<TextElement> children;
-		public int consumedLength;
+	public static enum TextElementType {
+		Error,
+		PlainText,
+		Quote,
+		Bold,
+		Italic,
+		Code,
+		Key,
+		URI;
 		
-		public TextElement() {
-			type = "error";
-			content = "";
-			children = new ArrayList<TextElement>();
-			consumedLength = 0;
+		public static TextElementType fromString(String tag) {
+			if (tag.equals(""))
+				return PlainText;
+			else if (tag.equalsIgnoreCase("quote"))
+				return Quote;
+			else if (tag.equalsIgnoreCase("b"))
+				return Bold;
+			else if (tag.equalsIgnoreCase("i"))
+				return Italic;
+			else if (tag.equalsIgnoreCase("code"))
+				return Code;
+			else if (tag.equalsIgnoreCase("key"))
+				return Key;
+			else if (tag.equalsIgnoreCase("uri") || tag.equalsIgnoreCase("url"))
+				return URI;
+
+			return Error;
 		}
+	}
+	
+	public final class TextElement {
+		public final TextElementType mType;
+		public String mContent;
+		public final List<TextElement> mChildren;
+		public int mConsumedLength;
+		
+		public TextElement(TextElementType myType) {
+			mType = myType;
+			mContent = "";
+			mChildren = new ArrayList<TextElement>();
+			mConsumedLength = 0;
+		}
+		
+		public TextElement(String tag) {
+			this(TextElementType.fromString(tag));
+		}
+		
 		public String getContentText() {
 			// own content + that of our children
-			String result = content;
-			for (final TextElement t : children) {
-				content += t.getContentText();
-			}
-			return content;
+			final StringBuilder result = new StringBuilder(mText.length()); // TODO: Optimization: Use a better (smaller!) approximation
+			result.append(mContent);
+			
+			for(final TextElement t : mChildren)
+				result.append(t.getContentText());
+			
+			return result.toString();
 		}
 	}
 	
@@ -596,37 +630,18 @@ public abstract class Message extends Persistent {
 		return parseText(mText, "", "");
 	}
 	
-	public final TextElement parseText(String currentText, String tag, String arg) {
-		TextElement result = new TextElement();
-		if (tag.equals("")) {
-			result.type = "";
-		}
-		if (tag.equals("b")) {
-			result.type = "bold";
-		}
-		if (tag.equals("i")) {
-			result.type = "italic";
-		}
-		if (tag.equals("code")) {
-			result.type = "code";
-		}
-		if (tag.equals("key")) {
-			result.type = "key";
-		}
-		if (tag.equals("url")) {
-			result.type = "url";
-		}
-		if (tag.equals("quote"))
-		{
-			result.content = arg;
-			result.type = "quote";
-		}
+	private final TextElement parseText(String currentText, String tag, String arg) {
+		TextElement result = new TextElement(tag);
+		
+		if(result.mType == TextElementType.Quote)
+			result.mContent = arg;
+		
 		// for tags without closing tag (if we ever want to support those)
 		// just return result here
 		
 		if (currentText.substring(0,1).equals("\n")) {
 			// skip a starting \n (which is what the user expects to happen)
-			result.consumedLength++;
+			result.mConsumedLength++;
 		}
 
 		// [foo] or [/foo] or [foo="bar"] or [foo=bar] or (invalid!) [/foo="bar"]
@@ -641,33 +656,32 @@ public abstract class Message extends Persistent {
 		Pattern oldQuotePattern = Pattern.compile("^(\\S+@\\S+?.freetalk) wrote:\n", Pattern.MULTILINE|Pattern.DOTALL);
 		Matcher oldQuoteMatcher = oldQuotePattern.matcher(currentText);
 
-		while (result.consumedLength < currentText.length()) {
+		while (result.mConsumedLength < currentText.length()) {
 			// we look for a tag and for a key
 			int tagPos = currentText.length();
-			if (tagMatcher.find(result.consumedLength))
+			if (tagMatcher.find(result.mConsumedLength))
 				tagPos = tagMatcher.start();
 			int keyPos = currentText.length();
-			if (keyMatcher.find(result.consumedLength))
+			if (keyMatcher.find(result.mConsumedLength))
 				keyPos = keyMatcher.start();
 			int oldQuotePos = currentText.length();
-			if (oldQuoteMatcher.find(result.consumedLength))
+			if (oldQuoteMatcher.find(result.mConsumedLength))
 				oldQuotePos = oldQuoteMatcher.start();
 			int textEndPos = Math.min(Math.min(tagPos, keyPos),oldQuotePos);
 			
-			if (textEndPos > result.consumedLength)
+			if (textEndPos > result.mConsumedLength)
 			{
-				TextElement newElement = new TextElement();
-				newElement.type = "text";
-				newElement.content = currentText.substring(result.consumedLength, textEndPos);
-				newElement.consumedLength = textEndPos-result.consumedLength;
-				result.children.add(newElement);
-				result.consumedLength += newElement.consumedLength;
+				TextElement newElement = new TextElement(TextElementType.PlainText);
+				newElement.mContent = currentText.substring(result.mConsumedLength, textEndPos);
+				newElement.mConsumedLength = textEndPos-result.mConsumedLength;
+				result.mChildren.add(newElement);
+				result.mConsumedLength += newElement.mConsumedLength;
 			}
 			if (textEndPos == currentText.length()) {
 				break;
 			}
 			if (textEndPos == tagPos) {
-				result.consumedLength += tagMatcher.group().length();
+				result.mConsumedLength += tagMatcher.group().length();
 				String t = tagMatcher.group(1);
 				String a = tagMatcher.group(2);
 				if (t.equals("/"+tag))
@@ -675,27 +689,25 @@ public abstract class Message extends Persistent {
 				if (t.substring(0,1).equals("/")) {
 					// closing tag
 					// ERROR
-					TextElement newElement = new TextElement();
-					newElement.type = "error";
-					newElement.content = tagMatcher.group();
-					newElement.consumedLength = newElement.content.length();
-					result.children.add(newElement);
+					TextElement newElement = new TextElement(TextElementType.Error);
+					newElement.mContent = tagMatcher.group();
+					newElement.mConsumedLength = newElement.mContent.length();
+					result.mChildren.add(newElement);
 				} else {
 					// it's an opening tag
 					TextElement subElement = parseText(currentText.substring(tagMatcher.end()), t, a);
-					result.children.add(subElement);
-					result.consumedLength += subElement.consumedLength;
+					result.mChildren.add(subElement);
+					result.mConsumedLength += subElement.mConsumedLength;
 				}
 			} else if (textEndPos == keyPos) {
-				TextElement newElement = new TextElement();
-				newElement.type = "key";
-				newElement.content = keyMatcher.group();
-				newElement.consumedLength = newElement.content.length();
-				result.children.add(newElement);
-				result.consumedLength += newElement.consumedLength;
+				TextElement newElement = new TextElement(TextElementType.Key);
+				newElement.mContent = keyMatcher.group();
+				newElement.mConsumedLength = newElement.mContent.length();
+				result.mChildren.add(newElement);
+				result.mConsumedLength += newElement.mConsumedLength;
 			} else if (textEndPos == oldQuotePos) {
 				String author = oldQuoteMatcher.group(1);
-				result.consumedLength += oldQuoteMatcher.group().length();
+				result.mConsumedLength += oldQuoteMatcher.group().length();
 				// now it gets nasty
 				// we need to read all lines that have an > at the start
 				// and stop when we reach one that doesn't
@@ -703,18 +715,18 @@ public abstract class Message extends Persistent {
 				Pattern endOfOldQuotePattern = Pattern.compile("^[^>]", Pattern.MULTILINE|Pattern.DOTALL);
 				Matcher endOfOldQuoteMatcher = endOfOldQuotePattern.matcher(currentText);
 				int endOfOldQuotePos = currentText.length();
-				if (endOfOldQuoteMatcher.find(result.consumedLength))
+				if (endOfOldQuoteMatcher.find(result.mConsumedLength))
 					endOfOldQuotePos = endOfOldQuoteMatcher.start();
 				// cut it out
-				String quoted = currentText.substring(result.consumedLength, endOfOldQuotePos);
-				result.consumedLength += quoted.length();
+				String quoted = currentText.substring(result.mConsumedLength, endOfOldQuotePos);
+				result.mConsumedLength += quoted.length();
 				// we strip off all the >'s
 				Pattern quotePartPattern = Pattern.compile("^>\\s*", Pattern.MULTILINE|Pattern.DOTALL);
 				Matcher quotePartMatcher = quotePartPattern.matcher(quoted);
 				String unquoted = quotePartMatcher.replaceAll("");
 				// now process it like it was an ordinary [quote=<author>] tag
 				TextElement subElement = parseText(unquoted, "quote", author);
-				result.children.add(subElement);
+				result.mChildren.add(subElement);
 			}
 		}
 		return result;
