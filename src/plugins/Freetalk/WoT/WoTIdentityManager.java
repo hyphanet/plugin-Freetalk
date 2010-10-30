@@ -950,7 +950,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			do {
 				firstDuplicate = i;
 				
-				while((firstDuplicate-1) > 0 && nicknames[firstDuplicate-1].equalsIgnoreCase(nicknames[i])) {
+				while((firstDuplicate-1) >= 0 && nicknames[firstDuplicate-1].equalsIgnoreCase(nicknames[i])) {
 					--firstDuplicate;
 				}
 			
