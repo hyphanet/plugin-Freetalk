@@ -470,10 +470,8 @@ public final class ThreadPage extends WebPageImpl {
 				break;
 			}
 
-			default: {
-				// TODO: Color it red
-				HTMLNode child = parent.addChild("u", "{!"+t.mType+"-"+t.mContent+"}");
-				elementsToHTML(child, t.mChildren);
+			case Error: {
+				HTMLNode child = parent.addChild("span", "class", "error", t.mContent);
 				break;
 			}
 			}

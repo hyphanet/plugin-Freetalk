@@ -175,3 +175,7 @@
 	margin-bottom: 0.5em;
 	padding: 0.5em;
 }
+
+.freetalk .message .body .error {
+	color: #f00;
+}

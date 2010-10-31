@@ -697,7 +697,12 @@ public abstract class Message extends Persistent {
 					result.mChildren.add(newElement);
 				} else {
 					// it's an opening tag
-					TextElement subElement = parseText(currentText.substring(tagMatcher.end()), t, a);
+					String textToParse = currentText.substring(tagMatcher.end());
+					TextElement subElement = parseText(textToParse, t, a);
+					if (subElement.mType == TextElementType.Error) {
+						// we show the entire piece of text that was parsed as an error
+						subElement.mContent = currentText.substring(tagMatcher.start(), tagMatcher.end()+subElement.mConsumedLength);
+					}
 					result.mChildren.add(subElement);
 					result.mConsumedLength += subElement.mConsumedLength;
 				}
