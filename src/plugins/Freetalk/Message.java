@@ -655,7 +655,7 @@ public abstract class Message extends Persistent {
 		Pattern keyPattern = Pattern.compile(keyRegex, Pattern.MULTILINE|Pattern.DOTALL);
 		Matcher keyMatcher = keyPattern.matcher(currentText);
 		// <name>@<key>.freetalk wrote:\n
-		Pattern oldQuotePattern = Pattern.compile("^(\\S+@\\S+?.freetalk) wrote:\n", Pattern.MULTILINE|Pattern.DOTALL);
+		Pattern oldQuotePattern = Pattern.compile("^(?:On .*?)?(\\S+@\\S+?.freetalk) wrote:\n+", Pattern.MULTILINE|Pattern.DOTALL);
 		Matcher oldQuoteMatcher = oldQuotePattern.matcher(currentText);
 
 		while (result.mConsumedLength < currentText.length()) {
@@ -723,7 +723,7 @@ public abstract class Message extends Persistent {
 				String quoted = currentText.substring(result.mConsumedLength, endOfOldQuotePos);
 				result.mConsumedLength += quoted.length();
 				// we strip off all the >'s
-				Pattern quotePartPattern = Pattern.compile("^>\\s*", Pattern.MULTILINE|Pattern.DOTALL);
+				Pattern quotePartPattern = Pattern.compile("^>[ \t]*", Pattern.MULTILINE|Pattern.DOTALL);
 				Matcher quotePartMatcher = quotePartPattern.matcher(quoted);
 				String unquoted = quotePartMatcher.replaceAll("");
 				// now process it like it was an ordinary [quote=<author>] tag
