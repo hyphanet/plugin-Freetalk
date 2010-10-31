@@ -172,7 +172,7 @@ public abstract class Message extends Persistent {
 		}
 	}
 
-	public final class TextElement {
+	public final static class TextElement {
 		public final TextElementType mType;
 		public String mContent;
 		public final List<TextElement> mChildren;
@@ -191,7 +191,7 @@ public abstract class Message extends Persistent {
 
 		public String getContentText() {
 			// own content + that of our children
-			final StringBuilder result = new StringBuilder(mText.length()); // TODO: Optimization: Use a better (smaller!) approximation
+			final StringBuilder result = new StringBuilder(mConsumedLength);
 			result.append(mContent);
 
 			for(final TextElement t : mChildren)
@@ -630,7 +630,7 @@ public abstract class Message extends Persistent {
 		return parseText(mText, "", "", 20);
 	}
 
-	private final TextElement parseText(String currentText, String tag, String arg, int maxRecursion) {
+	public static final TextElement parseText(String currentText, String tag, String arg, int maxRecursion) {
 		if (maxRecursion < 0) {
 			return new TextElement(TextElementType.Error);
 		}

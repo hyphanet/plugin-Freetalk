@@ -22,6 +22,10 @@ import freenet.clients.http.PageMaker;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 
+import plugins.Freetalk.Message;
+import plugins.Freetalk.Message.TextElement;
+import plugins.Freetalk.WoT.WoTIdentityManager;
+
 /**
  * Creates a preview pane suitable for inclusion on {@link NewThreadPage}s and
  * {@link NewReplyPage}s.
@@ -43,13 +47,14 @@ public class PreviewPane {
 	 *            The text of the message
 	 * @return An HTMLNode containing the preview
 	 */
-	public static HTMLNode createPreviewPane(PageMaker pageMaker, BaseL10n l10n, String messageSubject, String messageText) {
+	public static HTMLNode createPreviewPane(PageMaker pageMaker, BaseL10n l10n, String messageSubject, String messageText, WoTIdentityManager identityManager) {
 		HTMLNode previewNode = new HTMLNode("div", "class", "message");
 		InfoboxNode infobox = pageMaker.getInfobox(l10n.getString("PreviewPane.Header.Preview", "subject", messageSubject));
 		previewNode.addChild(infobox.outer);
 		HTMLNode messageBodyNode = infobox.content.addChild("div", "class", "body");
-		HTMLNode formattedMessage = ThreadPage.convertMessageBody(messageText);
-		messageBodyNode.addChild(formattedMessage);
+		// FIXME: usage of static functions, need to add a separate class for bbcode parsing/converting?
+		TextElement element = Message.parseText(messageText, "", "" ,20);
+		ThreadPage.elementsToHTML(messageBodyNode, element.mChildren, identityManager);
 		return previewNode;
 	}
 

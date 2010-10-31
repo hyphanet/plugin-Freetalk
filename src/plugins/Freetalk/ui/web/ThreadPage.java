@@ -389,11 +389,11 @@ public final class ThreadPage extends WebPageImpl {
 		row = table.addChild("tr", "class", "body");
 		HTMLNode text = row.addChild("td", "align", "left", "");
 		TextElement element = message.parseMessageText();
-		elementsToHTML(text, element.mChildren);
+		elementsToHTML(text, element.mChildren, mFreetalk.getIdentityManager());
 		addReplyButton(text, message.getID());
 	}
 
-	private void elementsToHTML(HTMLNode parent, List<TextElement> elements) {
+	public static void elementsToHTML(HTMLNode parent, List<TextElement> elements, WoTIdentityManager identityManager) {
 		for (final TextElement t : elements) {
 			switch(t.mType) {
 			case PlainText: {
@@ -403,7 +403,7 @@ public final class ThreadPage extends WebPageImpl {
 
 			case Bold: {
 				HTMLNode child = parent.addChild("b", "");
-			   	elementsToHTML(child, t.mChildren);
+			   	elementsToHTML(child, t.mChildren, identityManager);
 			   	break;
 			}
 
@@ -433,13 +433,13 @@ public final class ThreadPage extends WebPageImpl {
 
 			case Italic: {
 				HTMLNode child = parent.addChild("i", "");
-				elementsToHTML(child, t.mChildren);
+				elementsToHTML(child, t.mChildren, identityManager);
 				break;
 			}
 
 			case Code: {
 				HTMLNode child = parent.addChild("div", "class", "code");
-				elementsToHTML(child, t.mChildren);
+				elementsToHTML(child, t.mChildren, identityManager);
 				break;
 			}
 
@@ -455,7 +455,7 @@ public final class ThreadPage extends WebPageImpl {
 						if (!matcher.matches()) {
 							child.addChild("b", t.mContent + " (Invalid Freetalk address)");
 						} else {
-							WoTIdentity author = (WoTIdentity)mFreetalk.getIdentityManager().getIdentity(matcher.group(1));
+							WoTIdentity author = (WoTIdentity)identityManager.getIdentity(matcher.group(1));
 							authorNode.addChild("a", new String[] { "class", "href", "title" },
 									new String[] { "identity-link", "/WoT/ShowIdentity?id=" + author.getID(), "Web of Trust Page" })
 									.addChild("abbr", new String[] { "title" }, new String[] { author.getID() })
@@ -466,7 +466,7 @@ public final class ThreadPage extends WebPageImpl {
 					}
 					authorNode.addChild("#", " wrote:");
 				}
-				elementsToHTML(child, t.mChildren);
+				elementsToHTML(child, t.mChildren, identityManager);
 				break;
 			}
 
@@ -599,99 +599,6 @@ public final class ThreadPage extends WebPageImpl {
 		} catch (URISyntaxException e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-	/**
-	 * This method converts the message body into a HTML node. Line breaks
-	 * “CRLF” and “LF” are recognized and converted into {@code div} tags.
-	 * Freenet URIs are recognized and converted into links, even when they have
-	 * line breaks embedded in them.
-	 *
-	 * @param messageBody
-	 *			The message body to convert
-	 * @return The HTML node displaying the message
-	 */
-	public static HTMLNode convertMessageBody(String messageBody) {
-		return convertMessageBody(messageBody, null);
-	}
-
-	/**
-	 * This method converts the message body into a HTML node. Freenet URIs are
-	 * recognized and converted into links, even when they have line breaks
-	 * embedded in them.
-	 *
-	 * @param messageBody
-	 *			The message body to convert
-	 * @param linkClass
-	 *			The CSS class(es) for the links
-	 * @return The HTML node displaying the message
-	 */
-	public static HTMLNode convertMessageBody(String messageBody, String linkClass) {
-		HTMLNode messageNode = new HTMLNode("#");
-		String currentLine = messageBody;
-		int chkLink = currentLine.indexOf("CHK@");
-		int sskLink = currentLine.indexOf("SSK@");
-		int uskLink = currentLine.indexOf("USK@");
-		int kskLink = currentLine.indexOf("KSK@");
-		while ((chkLink != -1) || (sskLink != -1) || (uskLink != -1) || (kskLink != -1)) {
-			int nextLink = Integer.MAX_VALUE;
-			if ((chkLink != -1) && (chkLink < nextLink)) {
-				nextLink = chkLink;
-			}
-			if ((sskLink != -1) && (sskLink < nextLink)) {
-				nextLink = sskLink;
-			}
-			if ((uskLink != -1) && (uskLink < nextLink)) {
-				nextLink = uskLink;
-			}
-			if ((kskLink != -1) && (kskLink < nextLink)) {
-				nextLink = kskLink;
-			}
-			messageNode.addChild("#", currentLine.substring(0, nextLink));
-			int firstSlash = currentLine.indexOf('/', nextLink);
-			if (((nextLink != kskLink) && (firstSlash == -1)) || ((firstSlash - nextLink) >= 105) || ((nextLink != kskLink) && ((firstSlash - nextLink) < 99))) {
-				messageNode.addChild("#", currentLine.substring(nextLink, nextLink + 4));
-				currentLine = currentLine.substring(nextLink + 4);
-			} else {
-				if (nextLink == kskLink) {
-					firstSlash = nextLink;
-				}
-				String uriKey = currentLine.substring(nextLink, firstSlash).replaceAll("[\r\n\t ]+", "");
-				Matcher matcher = Pattern.compile("[\\p{javaWhitespace}]").matcher(currentLine);
-				int nextSpace = matcher.find(firstSlash) ? matcher.start() : -1;
-				if ((nextLink == kskLink) && (nextSpace == (nextLink + 4))) {
-					messageNode.addChild("#", currentLine.substring(nextLink, nextLink + 4));
-					currentLine = currentLine.substring(nextLink + 4);
-				} else {
-					int nextCrLf = currentLine.indexOf("\r\n", firstSlash);
-					int nextLf = currentLine.indexOf("\n", firstSlash);
-					if (nextSpace == -1) {
-						nextSpace = currentLine.length();
-					}
-					if ((nextCrLf != -1) && (nextCrLf < nextSpace)) {
-						nextSpace = nextCrLf;
-					}
-					if ((nextLf != -1) && (nextLf < nextSpace)) {
-						nextSpace = nextLf;
-					}
-					uriKey += currentLine.substring(firstSlash, nextSpace);
-					currentLine = currentLine.substring(nextSpace);
-					try {
-						FreenetURI uri = new FreenetURI(uriKey);
-						HTMLNode linkNode = (linkClass != null) ? new HTMLNode("a", new String[] { "href", "class" }, new String[] { "/" + uriKey, linkClass }, uriKey) : new HTMLNode("a", "href", "/" + uri.toString(), uriKey);
-						messageNode.addChild(linkNode);
-					} catch (MalformedURLException e) {
-						messageNode.addChild("#", uriKey);
-					}
-				}
-			}
-			chkLink = currentLine.indexOf("CHK@");
-			sskLink = currentLine.indexOf("SSK@");
-			uskLink = currentLine.indexOf("USK@");
-			kskLink = currentLine.indexOf("KSK@");
-		}
-		messageNode.addChild("#", currentLine);
-		return messageNode;
 	}
 
 	/**

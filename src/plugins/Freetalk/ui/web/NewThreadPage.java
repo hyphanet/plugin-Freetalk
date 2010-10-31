@@ -42,7 +42,7 @@ public final class NewThreadPage extends WebPageImpl {
 					throw new Exception(l10n().getString("Common.Message.Text.TooLong", "limit", Integer.toString(Message.MAX_MESSAGE_TEXT_LENGTH)));
 				
 				if (mRequest.isPartSet("CreatePreview")) {
-					mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), threadSubject, threadText));
+					mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), threadSubject, threadText, mFreetalk.getIdentityManager()));
 					makeNewThreadPage(threadSubject, threadText);
 				} else {
 				mFreetalk.getMessageManager().postMessage(null, null, boards, mBoard, mOwnIdentity, threadSubject, null, threadText, null);

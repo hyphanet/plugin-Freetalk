@@ -73,7 +73,7 @@ public class NewReplyPage extends WebPageImpl {
 				selectedMessageRating = getMessageRating(mRequest);
 				
 				if (mRequest.isPartSet("CreatePreview")) {
-					mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), replySubject, replyText));
+					mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), replySubject, replyText, mFreetalk.getIdentityManager()));
 					makeNewReplyPage(replySubject, replyText, selectedMessageRating);
 				}
 				else {
