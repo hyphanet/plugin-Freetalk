@@ -197,6 +197,18 @@ public class NewReplyPage extends WebPageImpl {
 
 		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateReply", l10n().getString("NewReplyPage.ReplyBox.SubmitButton")});
 		newReplyForm.addChild(PreviewPane.createPreviewButton(l10n(), "CreatePreview"));
+
+		// FIXME: locali[sz]e this
+		HTMLNode bbcodeBox = newReplyForm.addChild(getContentBox("BBcode"));
+		bbcodeBox.addChild("%", "Freetalk supports <a href=\"/?_CHECKED_HTTP_=http://en.wikipedia.org/wiki/BBCode\">BBCode</a>. The following tags are supported:");
+		HTMLNode list = bbcodeBox.addChild("ul");
+		list.addChild("li", "[b]bolded text[/b]");
+		list.addChild("li", "[i]italicized text[/i]");
+		list.addChild("li", "[url]http://example.org[/url]");
+		list.addChild("li", "[key]USK@.../example/0[/key]");
+		list.addChild("li", "[quote]quoted text[/quote]");
+		list.addChild("li", "[quote=example@...]quoted text with author[/quote]");
+		list.addChild("li", "[code]monospaced text[/code]");
 	}
 
 	private void addRateMessageBox(HTMLNode parent, Byte selectedMessageRating) {
