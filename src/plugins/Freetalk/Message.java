@@ -150,7 +150,7 @@ public abstract class Message extends Persistent {
 		Italic,
 		Code,
 		Key,
-		URI;
+		URL;
 
 		public static TextElementType fromString(String tag) {
 			if (tag.equals(""))
@@ -165,8 +165,8 @@ public abstract class Message extends Persistent {
 				return Code;
 			else if (tag.equalsIgnoreCase("key"))
 				return Key;
-			else if (tag.equalsIgnoreCase("uri") || tag.equalsIgnoreCase("url"))
-				return URI;
+			else if (tag.equalsIgnoreCase("url"))
+				return URL;
 
 			return Error;
 		}

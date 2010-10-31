@@ -421,7 +421,7 @@ public final class ThreadPage extends WebPageImpl {
 				break;
 			}
 
-			case URI: {
+			case URL: {
 				String url = t.getContentText().replaceAll("\n","");
 				if (url.substring(0,4) != "http") {
 					url = "http://" + url;
