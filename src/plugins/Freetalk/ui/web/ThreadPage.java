@@ -411,7 +411,9 @@ public final class ThreadPage extends WebPageImpl {
                 String uriKey = t.getContentText().replaceAll("\n","");
                 try {
                     FreenetURI uri = new FreenetURI(uriKey);
-                    HTMLNode linkNode = new HTMLNode("a", "href", "/" + uri.toString(), uriKey);
+                    HTMLNode linkNode = new HTMLNode("a", "href", "/" + uri.toString());
+                    HTMLNode linkText = new HTMLNode("abbr", "title", uri.toString(), uri.toShortString());
+                    linkNode.addChild(linkText);
                     parent.addChild(linkNode);
                 } catch (MalformedURLException e) {
                     parent.addChild("#", uriKey);
