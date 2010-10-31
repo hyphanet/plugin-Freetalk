@@ -639,9 +639,11 @@ public abstract class Message extends Persistent {
 		// for tags without closing tag (if we ever want to support those)
 		// just return result here
 		
-		if (currentText.substring(0,1).equals("\n")) {
-			// skip a starting \n (which is what the user expects to happen)
-			result.mConsumedLength++;
+		if (currentText.length() > 0) {
+			if (currentText.substring(0,1).equals("\n")) {
+				// skip a starting \n (which is what the user expects to happen)
+				result.mConsumedLength++;
+			}
 		}
 
 		// [foo] or [/foo] or [foo="bar"] or [foo=bar] or (invalid!) [/foo="bar"]
