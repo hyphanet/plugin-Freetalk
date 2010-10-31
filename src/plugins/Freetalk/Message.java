@@ -627,10 +627,13 @@ public abstract class Message extends Persistent {
 	}
 
 	public final TextElement parseMessageText() {
-		return parseText(mText, "", "");
+		return parseText(mText, "", "", 20);
 	}
 
-	private final TextElement parseText(String currentText, String tag, String arg) {
+	private final TextElement parseText(String currentText, String tag, String arg, int maxRecursion) {
+		if (maxRecursion < 0) {
+			return new TextElement(TextElementType.Error);
+		}
 		TextElement result = new TextElement(tag);
 
 		if(result.mType == TextElementType.Quote)
@@ -698,7 +701,7 @@ public abstract class Message extends Persistent {
 				} else {
 					// it's an opening tag
 					String textToParse = currentText.substring(tagMatcher.end());
-					TextElement subElement = parseText(textToParse, t, a);
+					TextElement subElement = parseText(textToParse, t, a, maxRecursion-1);
 					if (subElement.mType == TextElementType.Error) {
 						// we show the entire piece of text that was parsed as an error
 						subElement.mContent = currentText.substring(tagMatcher.start(), tagMatcher.end()+subElement.mConsumedLength);
@@ -732,7 +735,7 @@ public abstract class Message extends Persistent {
 				Matcher quotePartMatcher = quotePartPattern.matcher(quoted);
 				String unquoted = quotePartMatcher.replaceAll("");
 				// now process it like it was an ordinary [quote=<author>] tag
-				TextElement subElement = parseText(unquoted, "quote", author);
+				TextElement subElement = parseText(unquoted, "quote", author, maxRecursion-1);
 				result.mChildren.add(subElement);
 			}
 		}
