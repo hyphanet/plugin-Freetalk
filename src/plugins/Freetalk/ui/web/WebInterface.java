@@ -571,6 +571,7 @@ public final class WebInterface {
 			finally {
 				Closer.close(puzzleInputStream);
 				Closer.close(puzzleOutputStream);
+				// Closer.close(puzzleDataBucket); // We do not have to do that, writeReply() does it for us
 			}
 		}
 		
