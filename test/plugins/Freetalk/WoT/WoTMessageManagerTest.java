@@ -591,9 +591,9 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		
 		try {
 			mMessageManager.onMessageListFetchFailed(author, WoTMessageList.assembleURI(author.getRequestURI(), 1), FetchFailedMarker.Reason.DataNotFound);
-			fail("Calling onMessageListFetchFailed twice for the same list should cause an exception");
-		} catch(RuntimeException e) {
-			// It should throw an exception
+			fail("Calling onMessageListFetchFailed twice for the same list should cause an assert(false);");
+		} catch(AssertionError e) {
+			// OK
 		}
 		
 		q = db.query();

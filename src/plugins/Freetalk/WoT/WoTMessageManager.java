@@ -142,8 +142,10 @@ public final class WoTMessageManager extends MessageManager {
 				
 				// TODO: Optimization: Remove the above debug code once the following exception doesn't happen anymore
 				
-				throw new RuntimeException("Download failed of a MessageList which we already have (IdentityStatistics: oldestIndex==" +
-						oldestIndex + "; newestIndex==" + newestIndex + "):" + ghostList.getURI());
+				Logger.error(this, "Download failed of a MessageList which we already have (oldest available index: " +
+						oldestIndex + "; newest available index: " + newestIndex + "):" + ghostList.getURI());
+				assert(false);
+				return;
 			}
 			catch(NoSuchMessageListException e1) {
 				try {
@@ -314,14 +316,18 @@ public final class WoTMessageManager extends MessageManager {
 	 * not a problem.
 	 */
 	public synchronized long getUnavailableOldMessageListIndex(Identity identity) throws NoSuchMessageListException {
+		long unavailableIndex; 
+		
 		try {
-			long unavailableIndex = getIdentityStatistics(identity).getIndexOfOldestAvailableMessageList() - 1;
-			if(unavailableIndex < 0)
-				throw new NoSuchMessageListException("");
-			return unavailableIndex;
+			unavailableIndex = getIdentityStatistics(identity).getIndexOfOldestAvailableMessageList() - 1;
 		} catch(NoSuchObjectException e) {
-			return 0;
+			unavailableIndex = 0;
 		}
+		
+		if(unavailableIndex < 0)
+			throw new NoSuchMessageListException("");
+		
+		return unavailableIndex;
 	}
 
 	/**
