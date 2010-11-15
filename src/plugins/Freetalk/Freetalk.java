@@ -70,6 +70,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	
 	public static final String PLUGIN_URI = "/Freetalk";
 	public static final String PLUGIN_TITLE = "Freetalk-testing"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
+	public static final String WEB_OF_TRUST_NAME = "WoT"; // FIXME: Change to plugins.WebOfTrust.WebOfTrust.WOT_NAME before 0.1 final release.
 	public static final String WOT_NAME = "plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "Freetalk"; // FIXME: Use PLUGIN_TITLE as soon as we change it to "Freetalk"
 	public static final String DATABASE_FILENAME = "freetalk-testing-17.db4o";

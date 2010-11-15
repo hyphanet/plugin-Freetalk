@@ -674,21 +674,16 @@ public final class WebInterface {
 				throw new RedirectException(logIn);
 			
 			return mFreetalk.getIdentityManager().getOwnIdentity(session.getUserID());
-		} catch(NoSuchIdentityException e) { // Should not happen.
-			throw new RuntimeException(e);
+		} catch(NoSuchIdentityException e) {
+			Logger.warning(this, "Session is invalid, the own identity was deleted already.", e);
+			mSessionManager.deleteSession(context);
+			throw new RedirectException(logIn);
 		}
 	}
 	
 
 	public WebInterface(Freetalk myFreetalk) {
-		final URI sessionCookieURI;
-		
 		try {
-			// We must use "/" as cookie path because otherwise the cookie won't be sent by the browser when the user navigates in any other area of fproxy
-			// than the "Freetalk" menu - then the Freetalk menu would always only show "Log in" even though the user IS logged in.
-			// TODO: Refactor the SessionManager to support different session cookie names and use the cookie names for deciding between client applications,
-			// not the cookie path.
-			sessionCookieURI = new URI("/");
 			logIn = new URI(Freetalk.PLUGIN_URI+"/LogIn");
 		} catch (URISyntaxException e) {
 			throw new Error(e);
@@ -699,7 +694,7 @@ public final class WebInterface {
 
 		ToadletContainer container = mFreetalk.getPluginRespirator().getToadletContainer();
 		
-		mSessionManager = mFreetalk.getPluginRespirator().getSessionManager(sessionCookieURI);
+		mSessionManager = mFreetalk.getPluginRespirator().getSessionManager(Freetalk.WEB_OF_TRUST_NAME);
 		
 		mPageMaker.addNavigationCategory(Freetalk.PLUGIN_URI+"/", "WebInterface.DiscussionMenuName", "WebInterface.DiscussionMenuName.Tooltip", mFreetalk, 1);
 		
