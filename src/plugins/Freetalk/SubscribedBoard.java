@@ -1227,25 +1227,36 @@ public final class SubscribedBoard extends Board {
 		}
     	
     	protected void onMessageRemoved(Message removedMessage) {
-    		if(removedMessage.getDate().before(mLastReplyDate))
-    			return;
-    		
-    		synchronized(mBoard) {
     	    		// TODO: This assumes that getAllThreadReplies() obtains the sorted order using an index. This is not the case right now. If we do not
     	    		// optimize getAllThreadReplies() we should just iterate over the unsorted replies list and do maximum search.
     			
     				// TODO: Put this in a function "computeLastReplyDate"....
     				
     				final ObjectSet<BoardReplyLink> replies = mBoard.getAllThreadReplies(mThreadID, true);
+    				
+    				if(!removedMessage.getDate().before(mLastReplyDate)) {
     				final int repliesCount = replies.size();
     				if(repliesCount>0)
     					mLastReplyDate = replies.get(repliesCount-1).getMessageDate();
     				else
     					mLastReplyDate = mDate;
-    		}
+    				}
+    				
+    				// If the last unread message in the thread was removed, the thread IS read now...
+    				if(wasRead() && !wasThreadRead()) {
+    					boolean wasThreadRead = true;
+    					
+	    				for(BoardReplyLink reply : replies) {
+	    					if(!reply.wasRead()) {
+	    						wasThreadRead = false;
+	    						break;
+	    					}
+	    				}
+	    				
+	    				if(wasThreadRead)
+	    					markThreadAsRead();
+    				}
 
-    		// TODO: I decided not to change the "thread was read flag:" If the thread was unread before, then it is probably still unread now.
-    		// If it was read before, removing a message won't change that.
     		
 			// TODO: If the thread message was not downloaded, set the title guess to the most-seen title of all replies...
     	}
