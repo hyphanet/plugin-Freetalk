@@ -1227,35 +1227,35 @@ public final class SubscribedBoard extends Board {
 		}
     	
     	protected void onMessageRemoved(Message removedMessage) {
-    	    		// TODO: This assumes that getAllThreadReplies() obtains the sorted order using an index. This is not the case right now. If we do not
-    	    		// optimize getAllThreadReplies() we should just iterate over the unsorted replies list and do maximum search.
-    			
-    				// TODO: Put this in a function "computeLastReplyDate"....
-    				
-    				final ObjectSet<BoardReplyLink> replies = mBoard.getAllThreadReplies(mThreadID, true);
-    				
-    				if(!removedMessage.getDate().before(mLastReplyDate)) {
-    				final int repliesCount = replies.size();
-    				if(repliesCount>0)
-    					mLastReplyDate = replies.get(repliesCount-1).getMessageDate();
-    				else
-    					mLastReplyDate = mDate;
+    		// TODO: This assumes that getAllThreadReplies() obtains the sorted order using an index. This is not the case right now. If we do not
+    		// optimize getAllThreadReplies() we should just iterate over the unsorted replies list and do maximum search.
+
+    		// TODO: Put this in a function "computeLastReplyDate"....
+
+    		final ObjectSet<BoardReplyLink> replies = mBoard.getAllThreadReplies(mThreadID, true);
+
+    		if(!removedMessage.getDate().before(mLastReplyDate)) {
+    			final int repliesCount = replies.size();
+    			if(repliesCount>0)
+    				mLastReplyDate = replies.get(repliesCount-1).getMessageDate();
+    			else
+    				mLastReplyDate = mDate;
+    		}
+
+    		// If the last unread message in the thread was removed, the thread IS read now...
+    		if(wasRead() && !wasThreadRead()) {
+    			boolean wasThreadRead = true;
+
+    			for(BoardReplyLink reply : replies) {
+    				if(!reply.wasRead()) {
+    					wasThreadRead = false;
+    					break;
     				}
-    				
-    				// If the last unread message in the thread was removed, the thread IS read now...
-    				if(wasRead() && !wasThreadRead()) {
-    					boolean wasThreadRead = true;
-    					
-	    				for(BoardReplyLink reply : replies) {
-	    					if(!reply.wasRead()) {
-	    						wasThreadRead = false;
-	    						break;
-	    					}
-	    				}
-	    				
-	    				if(wasThreadRead)
-	    					markThreadAsRead();
-    				}
+    			}
+
+    			if(wasThreadRead)
+    				markThreadAsRead();
+    		}
 
     		
 			// TODO: If the thread message was not downloaded, set the title guess to the most-seen title of all replies...
