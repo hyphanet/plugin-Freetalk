@@ -34,6 +34,33 @@ public final class IdentityStatistics extends Persistent {
 		mIdentity = myIdentity;
 	}
 	
+	@Override
+	public void databaseIntegrityTest() throws Exception {
+		checkedActivate(2);
+		
+		if(mIdentity == null)
+			throw new NullPointerException("mIdentity==null");
+		
+		if((mLowestFetchedMessageListIndex == -1) ^ (mHighestFetchedMessageListIndex == -1))
+			throw new IllegalStateException("mLowestFetchedMessageListIndex==" + mLowestFetchedMessageListIndex 
+					+ "; mHighestFetchedMessageListIndex==" + mHighestFetchedMessageListIndex);
+		
+		if(mLowestFetchedMessageListIndex >= 0) {
+			final MessageManager messageManager = mFreetalk.getMessageManager();
+			
+			for(long i = mLowestFetchedMessageListIndex; i <= mHighestFetchedMessageListIndex; ++i) {
+				try {
+					messageManager.getMessageList(MessageListID.construct(mIdentity, i).toString());
+				} catch(NoSuchMessageListException e) {
+					throw new IllegalStateException("Missing index " + i + "; mLowestFetchedMessageListIndex==" + mLowestFetchedMessageListIndex 
+							+ "; mHighestFetchedMessageListIndex==" + mHighestFetchedMessageListIndex);
+				}
+			}
+		}
+		
+		// TODO: If lowest==highest==-1, check whether index 0 is available.. if it is, they should be 0 at least...
+	}
+	
 	public final Identity getIdentity() {
 		if(mIdentity instanceof Persistent) ((Persistent)mIdentity).initializeTransient(mFreetalk);
 		return mIdentity;
@@ -268,4 +295,5 @@ public final class IdentityStatistics extends Persistent {
 			checkedRollbackAndThrow(e);
 		}
 	}
+
 }
