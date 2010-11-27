@@ -5,6 +5,8 @@ package plugins.Freetalk;
 
 import java.util.Date;
 
+import freenet.support.CurrentTimeUTC;
+
 /**
  * When a message (list) fetch fails we need to mark the message (list) as fetched to prevent the failed message (list) from getting into the
  * fetch queue over and over again. An attacker could insert many message list which have unparseable XML to fill up everyone's fetch queue
@@ -47,6 +49,33 @@ public class FetchFailedMarker extends Persistent {
 		mDateOfNextRetry = myDateOfNextRetry;
 		mRetryAllowedNow = !mDateOfNextRetry.after(mDate);
 	}
+
+	@Override
+	public void databaseIntegrityTest() throws Exception {
+		checkedActivate(2);
+		
+		if(mReason == null)
+			throw new NullPointerException("mReason==null");
+		
+		if(mDate == null)
+			throw new NullPointerException("mDate==null");
+		
+		if(mDate.after(CurrentTimeUTC.get()))
+			throw new IllegalStateException("mDate is in the future: " + mDate);
+		
+		if(mNumberOfRetries < 0)
+			throw new IllegalStateException("mNumberOfRetries==" + mNumberOfRetries);
+		
+		if(mDateOfNextRetry == null)
+			throw new NullPointerException("mDateOfNextRetry==null");
+		
+		if(mDateOfNextRetry.before(mDate))
+			throw new IllegalStateException("mDateOfNextRetry is before mDate: mDateOfNextRetry==" + mDateOfNextRetry + "; mDate==" + mDate);
+		
+		if(mRetryAllowedNow && mDateOfNextRetry.after(CurrentTimeUTC.get()))
+			throw new IllegalStateException("mRetryAllowedNow==true but date of next retry is in the future: " + mDateOfNextRetry);
+	}
+
 	
 	/**
 	 * NOT synchronized! Lock the MessageManager when working on FetchFailedMarker objects.
@@ -125,4 +154,5 @@ public class FetchFailedMarker extends Persistent {
 		checkedActivate(2); // TODO: Check whether this is enough for an enum, or even too much.
 		return mReason;
 	}
+
 }
