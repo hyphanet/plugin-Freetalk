@@ -11,7 +11,6 @@ import plugins.Freetalk.WoT.WoTMessage;
 import plugins.Freetalk.WoT.WoTMessageFetcher;
 import plugins.Freetalk.WoT.WoTMessageInserter;
 import plugins.Freetalk.WoT.WoTMessageList;
-import plugins.Freetalk.WoT.WoTOldMessageListFetcher;
 import plugins.Freetalk.WoT.WoTMessageListInserter;
 import plugins.Freetalk.WoT.WoTMessageListXML;
 import plugins.Freetalk.WoT.WoTMessageManager;
@@ -19,6 +18,7 @@ import plugins.Freetalk.WoT.WoTMessageRating;
 import plugins.Freetalk.WoT.WoTMessageURI;
 import plugins.Freetalk.WoT.WoTMessageXML;
 import plugins.Freetalk.WoT.WoTNewMessageListFetcher;
+import plugins.Freetalk.WoT.WoTOldMessageListFetcher;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.WoT.WoTOwnMessage;
 import plugins.Freetalk.WoT.WoTOwnMessageList;
@@ -33,6 +33,7 @@ import plugins.Freetalk.ui.web.WebInterface;
 import com.db4o.Db4o;
 import com.db4o.config.Configuration;
 import com.db4o.ext.ExtObjectContainer;
+import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
 import freenet.clients.http.PageMaker.THEME;
@@ -159,6 +160,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		
 		Logger.debug(this, "Creating task manager...");
 		mTaskManager = new PersistentTaskManager(db, this);
+		
+		databaseIntegrityTest(); // Some tests need the Identity-/Message-/TaskManager so we call this after creating them.
 		
 		Logger.debug(this, "Creating message XML...");
 		mMessageXML = new WoTMessageXML();
@@ -332,6 +335,27 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		
 		throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
 				+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
+	}
+	
+	private void databaseIntegrityTest() {
+		Logger.debug(this, "Testing database integrity...");
+		synchronized(mIdentityManager) {
+		synchronized(mMessageManager) {
+		synchronized(mTaskManager) {
+			final Query q = db.query();
+			q.constrain(Persistent.class);
+	
+			for(final Persistent p : new Persistent.InitializingObjectSet<Persistent>(this, q)) {
+				try {
+					p.databaseIntegrityTest();
+				} catch(Exception e) {
+					Logger.error(this, "Integrity test failed for " + p, e);
+				}
+			}
+		}
+		}
+		}
+		Logger.debug(this, "Database integrity test finished.");
 	}
 
 	private void closeDatabase() {

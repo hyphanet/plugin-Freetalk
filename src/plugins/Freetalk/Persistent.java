@@ -68,52 +68,22 @@ public abstract class Persistent {
 	 */
 	public @interface IndexedClass { }
 	
-	public void testDatabaseIntegrity() {
-		testDatabaseIntegrity(mFreetalk, mDB);
+	public void databaseModificationHook() {
+		databaseModificationHook(mFreetalk, mDB);
 	}
-	
+
 	/**
 	 * This function can be used for debugging, it is executed before and after store(), delete() and commit().
 	 */
-	public static void testDatabaseIntegrity(Freetalk mFreetalk, ExtObjectContainer db) {
-		// The URI==null problem seems fixed.
-		
-//		final Query q = db.query();
-//		q.constrain(MessageList.MessageReference.class);
-//		ObjectSet<MessageList.MessageReference> refs = q.execute();
-//
-//		for(MessageList.MessageReference ref : refs) {
-//			ref.mFreetalk = mFreetalk;
-//			ref.mDB = db;
-//			
-//			if(ref.getURI() == null)
-//				assert(false);
-//		}
+	public static void databaseModificationHook(Freetalk mFreetalk, ExtObjectContainer db) {
 
-		// TODO: Investigate the consequences of the breakage in db4o which the following code reveals
-		// (It is a TODO only because I have added checks to all constrain(null) code which check whether the query really works.)
-		
-//		final Query q = db.query();
-//		q.constrain(MessageList.MessageReference.class);
-//		q.descend("mURI").constrain(null).identity();
-//		ObjectSet<MessageList.MessageReference> refs = new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
-//
-//		MessageList.MessageReference ref = refs.hasNext() ? refs.next() : null;
-//
-//		if(ref != null) {
-//			System.out.println("URI is null for " + ref);
-//
-//			// The following happens with db4o 7.4, 7.12 and 8.0... Setting the "mURI" field to be indexed fixes it with 8.0, not with the others though:
-//			if(ref.getURI() != null) {
-//				System.out.println("DB4O ERROR: Db4o said that URI is null even though it is: "+ ref.getURI());
-//				throw new RuntimeException("Query returned object which it should not have returned!");
-//			}
-//
-//			return false;
-//		}
-//
-//		return true;
 	}
+
+	/**
+	 * This function has to be implemented by all child classes. It is executed by startup on all persistent objects to test their integrity.
+	 */
+  	public abstract void databaseIntegrityTest() throws Exception;
+
 	/**
 	 * Must be called once after obtaining this object from the database before using any getter or setter member functions
 	 * and before calling storeWithoutCommit / deleteWithoutCommit.
@@ -160,9 +130,9 @@ public abstract class Persistent {
 	 * @param object
 	 */
 	protected final void checkedStore(final Object object) {
-		testDatabaseIntegrity();
+		databaseModificationHook();
 		mDB.store(object);
-		testDatabaseIntegrity();
+		databaseModificationHook();
 	}
 	
 	/**
@@ -183,12 +153,12 @@ public abstract class Persistent {
 	 * This is to be used as an integrity check in deleteWithoutCommit() implementations. 
 	 */
 	protected final void checkedDelete(final Object object) {
-		testDatabaseIntegrity();
+		databaseModificationHook();
 		if(mDB.isStored(object))
 			mDB.delete(object);
 		else
 			Logger.error(this, "Trying to delete a inexistent object: " + object);
-		testDatabaseIntegrity();
+		databaseModificationHook();
 	}
 	
 	/**
@@ -233,12 +203,12 @@ public abstract class Persistent {
 	 */
 	public static final void checkedRollback(final ExtObjectContainer db, final Object loggingObject, final Throwable error) {
 		// As of db4o 7.4 it seems necessary to call gc(); to cause rollback() to work.
-		testDatabaseIntegrity(null, db);
+		databaseModificationHook(null, db);
 		System.gc();
 		db.rollback();
 		System.gc(); 
 		Logger.error(loggingObject, "ROLLED BACK!", error);
-		testDatabaseIntegrity(null, db);
+		databaseModificationHook(null, db);
 	}
 
 	/**
@@ -337,10 +307,10 @@ public abstract class Persistent {
 	 * } 
 	 */
 	public static final void checkedCommit(final ExtObjectContainer db, final Object loggingObject) {
-		testDatabaseIntegrity(null, db);
+		databaseModificationHook(null, db);
 		db.commit();
 		Logger.debug(loggingObject, "COMMITED.");
-		testDatabaseIntegrity(null, db);
+		databaseModificationHook(null, db);
 	}
 	
 	/**
