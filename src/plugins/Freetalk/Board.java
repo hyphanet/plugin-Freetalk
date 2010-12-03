@@ -352,7 +352,7 @@ public class Board extends Persistent implements Comparable<Board> {
 
     }
     
-	private BoardMessageLink getMessageLink(Message message) throws NoSuchMessageException {
+	protected BoardMessageLink getMessageLink(Message message) throws NoSuchMessageException {
     	Query q = mDB.query();
     	q.constrain(BoardMessageLink.class);
     	q.descend("mMessage").constrain(message).identity();

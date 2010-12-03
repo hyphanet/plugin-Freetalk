@@ -256,12 +256,17 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
       
         // Registration of indices (also performance)
         
+        // Class Persistent canot apply its annotations to itself, we need to configure the index for it manually.
+        // We need an index on Persistent because we query all Persistent-objects for startup database validation.
+        cfg.objectClass(Persistent.class).indexed(true);
+        
         final Class<? extends Persistent>[] persistentClasses = new Class[] {
         	Board.class,
         	Board.BoardMessageLink.class,
         	Config.class,
         	FetchFailedMarker.class,
         	Message.class,
+        	Message.Attachment.class,
         	MessageList.class,
         	MessageList.MessageReference.class,
         	MessageList.MessageFetchFailedMarker.class,

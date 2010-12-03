@@ -17,7 +17,6 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
-import freenet.support.Base64;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 
@@ -119,24 +118,110 @@ public abstract class Message extends Persistent {
 	 */
 	protected final Attachment[] mAttachments;
 	
-	public static class Attachment {
+	public static class Attachment extends Persistent {
+		private final Message mMessage;
+		
 		private final FreenetURI mURI;
+		
+		@IndexedField
+		private final String mFilename; 
+		
 		private final long mSize; /* Size in bytes */
 		
 		// TODO: Store mime type and maybe some hashes.
+		// TODO: Store filename for search indexing
+		// TODO: Require size > 0 and obtain the size before posting a message
 		
-		public Attachment(FreenetURI myURI, long mySize) {
+		public Attachment(Message myMessage, FreenetURI myURI, long mySize) {
+			if(myMessage == null)
+				throw new IllegalArgumentException("Message is null");
+			
+			if(myURI == null)
+				throw new IllegalArgumentException("URI is null");
+			
+			if(mySize < 0)
+				throw new IllegalArgumentException("Size is negative");
+			
+			mMessage = myMessage;
 			mURI = myURI;
+			mFilename = mURI.getPreferredFilename();
 			mSize = mySize;
 		}
 		
+		public void databaseIntegrityTest() throws Exception {
+			checkedActivate(3);
+			
+			if(mMessage == null)
+				throw new NullPointerException("mMessage==null");
+			
+		    if(mURI == null)
+		    	throw new NullPointerException("mURI==null");
+		    		
+		    if(mSize < 0)
+		    	throw new IllegalStateException("mSize is negative: " + mSize);
+		    
+		    if(mFilename == null)
+		    	throw new NullPointerException("mFilename==null");
+		    
+		    if(!mFilename.equals(mURI.getPreferredFilename()))
+		    	throw new IllegalStateException("mFilename does not match expected filename: mFilename==" + mFilename 
+		    			+ "; expected==" + mURI.getPreferredFilename());
+
+		    if(Arrays.binarySearch(mMessage.getAttachments(), this) < 0)
+		    	throw new IllegalStateException("mMessage does not have this attachment: " + mMessage);
+		}
+		
+		public Message getMessage() {
+			checkedActivate(2);
+			mMessage.initializeTransient(mFreetalk);
+			return mMessage;
+		}
+		
+		
 		public FreenetURI getURI() {
+			checkedActivate(3);
 			return mURI;
 		}
 		
+		public String getFilename() {
+			// checkedActivate(1); not needed, String is a db4o primitive
+			return mFilename;
+		}
+		
 		public long getSize() {
+			// checkedActivate(1); not needed, long is a db4o primitive
 			return mSize;
 		}
+		
+		@Override
+		protected void storeWithoutCommit() {
+			try {
+				checkedActivate(3); // TODO: Figure out a suitable depth.
+				
+				// You have to take care to keep the list of stored objects synchronized with those being deleted in removeFrom() !
+				
+				checkedStore(mURI);
+				checkedStore();
+			}
+			catch(RuntimeException e) {
+				checkedRollbackAndThrow(e);
+			}
+		}
+		
+		@Override
+		protected void deleteWithoutCommit() {
+			try {
+				checkedActivate(3); // TODO: Figure out a suitable depth.
+				
+				checkedDelete();
+				
+				mURI.removeFrom(mDB);
+			}
+			catch(RuntimeException e) {
+				checkedRollbackAndThrow(e);
+			}
+		}
+
 	}
 	
 	/**
@@ -323,7 +408,7 @@ public abstract class Message extends Persistent {
 			throw new InvalidParameterException("A message cannot have itself as thread.");
 		
 		mBoards = newBoards.toArray(new Board[newBoards.size()]);
-		Arrays.sort(mBoards);		
+		Arrays.sort(mBoards); // We use binary search in some places		
 		mReplyToBoard = newReplyToBoard;
 		mTitle = makeTitleValid(newTitle);
 		
@@ -347,8 +432,136 @@ public abstract class Message extends Persistent {
 				throw new InvalidParameterException("Too many attachments in message: " + newAttachments.size());
 			
 			mAttachments = newAttachments.toArray(new Attachment[newAttachments.size()]);
+			Arrays.sort(mAttachments); // We use binary search in some places
 		} else {
 			mAttachments = null;
+		}
+	}
+	
+	@Override
+	public void databaseIntegrityTest() throws Exception {
+		checkedActivate(3);
+
+	    if(mURI == null)
+	    	throw new NullPointerException("mURI==null");
+	    
+	    if(mFreenetURI == null)
+	    	throw new NullPointerException("mFreenetURI==null");
+	    
+	    if(mID == null)
+	    	throw new NullPointerException("mID==null");
+	    
+	    if(mAuthor == null)
+	    	throw new NullPointerException("mAuthor==null");
+	    
+	    {
+		    final MessageURI messageURI = getURI(); // Call intializeTransient
+		    
+		    if(!messageURI.getFreenetURI().equals(mFreenetURI))
+		    	throw new IllegalStateException("mURI and mFreenetURI mismatch: mURI==" + mURI + "; mFreenetURI==" + mFreenetURI);
+		    
+		    messageURI.throwIfAuthorDoesNotMatch(mAuthor);
+	    }
+	    
+	    MessageID.construct(mID).throwIfAuthorDoesNotMatch(mAuthor);
+	    
+	    if(!(this instanceof OwnMessage)) {
+	    	if(mMessageList == null)
+	    		throw new IllegalStateException("mMessageList==null");
+	    	
+	    	final MessageList messageList = getMessageList(); // Call initializeTransient
+	    	if(messageList.getAuthor() != mAuthor)
+	    		throw new IllegalStateException("mMessageList author does not match mAuthor: " + mMessageList);
+	
+	    	try {
+	    		getMessageList().getReference(mFreenetURI);
+	    	} catch(NoSuchMessageException e) {
+	    		throw new IllegalStateException("mMessageList does not contain this message: " + mMessageList);
+	    	}
+	    }
+	    
+	    if(mParentURI == null ^ mThreadURI == null)
+	    	throw new IllegalStateException("mParentURI==" + mParentURI + " but mThreadURI==" + mThreadURI);
+
+	    if(mParentURI != null) { // Thread URI != null aswell
+	    	final String parentID = getParentURI().getMessageID();
+	    	
+	    	if(parentID.equals(mID))
+	    		throw new IllegalStateException("mParentURI points to the message itself");
+	    	
+	    	if(!parentID.equals(mParentID))
+	    		throw new IllegalStateException("mParentURI==" + mParentURI + " but mParentID=="+parentID);
+
+	    	final String threadID = getThreadURI().getMessageID();
+	    	
+	    	if(threadID.equals(mID))
+	    		throw new IllegalStateException("mThreadURI points to the message itself");
+	    	
+	    	if(!threadID.equals(mThreadID))
+	    		throw new IllegalStateException("mThreadURI==" + mThreadURI + " but mThreadID=="+threadID);
+	    }
+
+	    {
+		    if(mBoards == null)
+		    	throw new NullPointerException("mBoards==null");
+		    
+		    if(mBoards.length < 1)
+		    	throw new IllegalStateException("mBoards is empty");
+		    
+		    if(mBoards.length > MAX_BOARDS_PER_MESSAGE)
+		    	throw new IllegalStateException("mBoards contains too many boards: " + mBoards.length);
+		    
+		    if(mReplyToBoard == null)
+		    	throw new NullPointerException("mReplToBoard==null");
+		    
+		    boolean replyToBoardWasFound = false;
+		    
+		    for(Board board : mBoards) {
+		    	if(board == null)
+		    		throw new NullPointerException("mBoards contains null entry");
+		    	
+		    	if(board == mReplyToBoard)
+		    		replyToBoardWasFound = true;
+		    	
+		    	if(board instanceof SubscribedBoard)
+		    		throw new IllegalStateException("mBoard contains a SubscribedBoard: " + board);
+		    }
+		    
+		    if(!replyToBoardWasFound)
+		    	throw new IllegalStateException("mBoards does not contain mReplyToBoard");
+	    }
+
+	    if(!isTitleValid(mTitle)) // Checks for null aswell
+	    	throw new IllegalStateException("Title is not valid: " + mTitle);
+	    
+	    if(!isTextValid(mText)) // Checks for null aswell
+	    	throw new IllegalStateException("Text is not valid");
+	    
+	    if(mDate == null)
+	    	throw new NullPointerException("mDate==null");
+	    
+	    if(mDate.after(getFetchDate()))
+	    	throw new IllegalStateException("mDate==" + mDate + " after mFetchDate==" + getFetchDate());
+	    
+	    if(mAttachments != null && mAttachments.length > MAX_ATTACHMENTS_PER_MESSAGE)
+	    	throw new IllegalStateException("mAttachments contains too many attachments: " + mAttachments.length);
+
+	    // Attachments inherit class Persistent and therefore have their own integrity test
+	    
+	    if(mThread != null && !mThreadID.equals(mThread.getID()))
+	    	throw new IllegalStateException("mThread does not match thread ID: " + mThread);
+		
+		if(mParent != null && !mParentID.endsWith(mParent.getID()))
+			throw new IllegalStateException("mParent does not match parent ID: " + mParent);
+		
+		if(mWasLinkedIn) {
+			for(Board board : mBoards) {
+				try {
+					board.getMessageLink(this);
+				} catch(NoSuchMessageException e) {
+					throw new IllegalStateException("mWasLinkedIn==true but not found in board " + board);
+				}
+			}
 		}
 	}
 	
@@ -879,7 +1092,14 @@ public abstract class Message extends Persistent {
 			}
 			// db.store(mBoards); /* Not stored because it is a primitive for db4o */
 			// db.store(mDate); /* Not stored because it is a primitive for db4o */
+			
+			for(Attachment a : mAttachments) {
+				a.initializeTransient(mFreetalk);
+				a.storeWithoutCommit();
+			}
+			
 			// db.store(mAttachments); /* Not stored because it is a primitive for db4o */
+			
 			checkedStore();
 		}
 		catch(RuntimeException e) {
@@ -908,6 +1128,13 @@ public abstract class Message extends Persistent {
 			if(mURI != null) {
 				mURI.initializeTransient(mFreetalk);
 				mURI.deleteWithoutCommit();
+			}
+			
+			if(mAttachments != null) {
+				for(Attachment a : mAttachments) {
+					a.initializeTransient(mFreetalk);
+					a.deleteWithoutCommit();
+				}
 			}
 		}
 		catch(RuntimeException e) {
