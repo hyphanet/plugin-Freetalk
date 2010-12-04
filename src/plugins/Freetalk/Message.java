@@ -442,37 +442,57 @@ public abstract class Message extends Persistent {
 	public void databaseIntegrityTest() throws Exception {
 		checkedActivate(3);
 
-	    if(mURI == null)
-	    	throw new NullPointerException("mURI==null");
-	    
-	    if(mFreenetURI == null)
-	    	throw new NullPointerException("mFreenetURI==null");
-	    
 	    if(mID == null)
 	    	throw new NullPointerException("mID==null");
 	    
 	    if(mAuthor == null)
 	    	throw new NullPointerException("mAuthor==null");
 	    
-	    {
-		    final MessageURI messageURI = getURI(); // Call intializeTransient
-		    
-		    if(!messageURI.getFreenetURI().equals(mFreenetURI))
-		    	throw new IllegalStateException("mURI and mFreenetURI mismatch: mURI==" + mURI + "; mFreenetURI==" + mFreenetURI);
-		    
-		    messageURI.throwIfAuthorDoesNotMatch(mAuthor);
-	    }
-	    
 	    MessageID.construct(mID).throwIfAuthorDoesNotMatch(mAuthor);
 	    
 	    if(!(this instanceof OwnMessage)) {
+		    if(mURI == null)
+		    	throw new NullPointerException("mURI==null");
+		    
+		    if(mFreenetURI == null)
+		    	throw new NullPointerException("mFreenetURI==null");
+		    
 	    	if(mMessageList == null)
 	    		throw new IllegalStateException("mMessageList==null");
-	    	
+	    }
+	    
+	    if(mURI != null) {
+		    final MessageURI messageURI = getURI(); // Call intializeTransient
+		    
+		    // The following check would be wrong (explanation below):
+		    
+		    // if(!messageURI.getFreenetURI().equals(mFreenetURI))
+		    //	throw new IllegalStateException("mURI and mFreenetURI mismatch: mURI==" + mURI + "; mFreenetURI==" + mFreenetURI);
+		    
+		    // It would be wrong because message URI contains the URI of the message list, not the URI of the message itself.
+		    
+		    messageURI.throwIfAuthorDoesNotMatch(mAuthor);
+		    
+		    if(!messageURI.getMessageID().equals(mID))
+		    	throw new IllegalStateException("mID == " + mID + " not matched for mURI == " + mURI);
+	    }
+	    
+	    if(mMessageList != null) {
+	    	// If we are an OwnMessage and mMessageList is non-null then the URIs should also be non-null
+		    if(mURI == null)
+		    	throw new NullPointerException("mURI == null");
+		    
+		    if(mFreenetURI == null)
+		    	throw new NullPointerException("mFreenetURI == null");
+		    
 	    	final MessageList messageList = getMessageList(); // Call initializeTransient
+	    	
+		    if(!messageList.getURI().equals(getURI()))
+		    	throw new IllegalStateException("mURI == " + mURI + " but mMessageList.getURI() == " + messageList.getURI()); 
+	    	
 	    	if(messageList.getAuthor() != mAuthor)
 	    		throw new IllegalStateException("mMessageList author does not match mAuthor: " + mMessageList);
-	
+
 	    	try {
 	    		getMessageList().getReference(mFreenetURI);
 	    	} catch(NoSuchMessageException e) {
