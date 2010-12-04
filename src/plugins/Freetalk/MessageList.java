@@ -52,7 +52,36 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	@IndexedField
 	protected long mIndex; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
 	
-	
+	protected final ArrayList<MessageReference> mMessages;
+
+
+	@Override
+	public void databaseIntegrityTest() throws Exception {
+		checkedActivate(3);
+		
+		if(mID == null)
+			throw new NullPointerException("mID==null");
+		
+		final MessageListID id = MessageListID.construct(mID); // Also checks whether the index is valid
+		
+		if(mAuthor == null)
+			throw new NullPointerException("mAuthor==null");
+		
+		id.throwIfAuthorDoesNotMatch(mAuthor);
+		
+		if(id.getIndex() != mIndex)
+			throw new IllegalStateException("mIndex does not match mID: " + mIndex);
+		
+		if(mMessages==null)
+			throw new NullPointerException("mMessages==null");
+		
+		if(mMessages.size() > MAX_MESSAGES_PER_MESSAGELIST)
+			throw new IllegalStateException("mMessages is too large: " + mMessages.size());
+		
+		// TODO: Validate content of mMessages as we do in the constructor...
+	}
+
+
 	/**
 	 * A class for representing and especially verifying message IDs.
 	 * We do not use it as a type for storing it because that would make the database queries significantly slower.
@@ -174,6 +203,43 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			mDate = myDate;
 		}
 		
+		@Override
+		public void databaseIntegrityTest() throws Exception {		
+			checkedActivate(3);
+			
+			if(mMessageID == null)
+				throw new NullPointerException("mMessageID==null");
+			
+			if(mMessageList == null)
+				throw new NullPointerException("mMessageList==null");
+			
+			MessageID.construct(mMessageID).throwIfAuthorDoesNotMatch(mMessageList.getAuthor());
+			
+			if(mURI == null)
+				throw new NullPointerException("mURI==null");
+			
+			if(mMessageList.getReference(mURI) != this)
+				throw new IllegalStateException("Parent message list does not contain this MessageReference.");
+			
+			if(mBoard == null)
+				throw new NullPointerException("mBoard==null");
+			
+			if(mDate == null)
+				throw new NullPointerException("mDate==null");
+			
+			// Do not check the date, it might be bogus because it is obtained from the content of the message list
+			
+			try {
+				mFreetalk.getMessageManager().get(mMessageID);
+				if(!mWasDownloaded)
+					throw new IllegalStateException("mWasDownloaded==false but message exists.");
+			} catch(NoSuchMessageException e) {
+				if(mWasDownloaded)
+					throw new IllegalStateException("mWasDownloaded==true but message does not exist.");
+			}
+		}
+		
+		
 		protected void storeWithoutCommit() {
 			try {
 				checkedActivate(3); // TODO: Figure out a suitable depth.
@@ -268,7 +334,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		protected void setMessageList(MessageList myMessageList) {
 			mMessageList = myMessageList;
 		}
-		
+
 	}
 	
 	// @IndexedField // I can't think of any query which would need to get all MessageListFetchFailedMarker objects.
@@ -282,6 +348,18 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			super(myReason, myDate, myDateOfNextRetry);
 			
 			mMessageListID = myMessageList.getID();
+		}
+		
+		@Override
+		public void databaseIntegrityTest() throws Exception {
+			super.databaseIntegrityTest();
+			
+			// checkedActivate(1);
+			
+			if(mMessageListID == null)
+				throw new NullPointerException("mMessageListID==null");
+			
+			MessageListID.construct(mMessageListID);
 		}
 
 		public String getMessageListID() {
@@ -304,6 +382,16 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			mMessageReference = myMessageReference;
 		}
 		
+		@Override
+		public void databaseIntegrityTest() throws Exception {
+			super.databaseIntegrityTest();
+			
+			checkedActivate(2);
+			
+			if(mMessageReference == null)
+				throw new NullPointerException("mMessageReference==null");
+		}
+		
 		public void storeWithoutCommit() {
 			checkedActivate(2);
 			throwIfNotStored(mMessageReference);
@@ -317,9 +405,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		}
 	}
 
-	
-	protected final ArrayList<MessageReference> mMessages;
-	
+
 	/**
 	 * 
 	 * @param identityManager
