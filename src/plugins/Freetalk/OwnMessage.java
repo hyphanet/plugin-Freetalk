@@ -26,6 +26,9 @@ public abstract class OwnMessage extends Message {
 		
 		checkedActivate(3);
 		
+		if(!(mAuthor instanceof OwnIdentity))
+			throw new IllegalStateException("mAuthor is no OwnIdentity: " + mAuthor);
+		
 		if(mMessageList == null) {
 			if(mFreenetURI != null)
 				throw new IllegalStateException("mMessageList == null but mFreenetURI == " + mFreenetURI);
