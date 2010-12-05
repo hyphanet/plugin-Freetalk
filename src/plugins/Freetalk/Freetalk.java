@@ -275,6 +275,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         	MessageURI.class,
         	OwnMessage.class,
         	OwnMessageList.class,
+        	OwnMessageList.OwnMessageReference.class,
         	SubscribedBoard.class,
         	SubscribedBoard.UnwantedMessageLink.class,
         	SubscribedBoard.MessageReference.class,
