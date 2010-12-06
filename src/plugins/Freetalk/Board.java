@@ -385,7 +385,7 @@ public class Board extends Persistent implements Comparable<Board> {
         return new Persistent.InitializingObjectSet<BoardMessageLink>(mFreetalk, q.execute());
     }
     
-    protected BoardMessageLink getMessageByIndex(int index) throws NoSuchMessageException {
+    private BoardMessageLink getMessageByIndex(int index) throws NoSuchMessageException {
         final Query q = mDB.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
