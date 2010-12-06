@@ -15,6 +15,8 @@ import com.db4o.query.Query;
 
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
+import freenet.support.codeshortification.IfNotEquals;
+import freenet.support.codeshortification.IfNull;
 
 /**
  * A SubscribedBoard is a {@link Board} which only stores messages which the subscriber (a {@link OwnIdentity}) wants to read,
@@ -25,7 +27,7 @@ public final class SubscribedBoard extends Board {
 
 	private final OwnIdentity mSubscriber;
 	
-	private Board mParentBoard;
+	private final Board mParentBoard;
 	
 	/**
 	 * The description which the subscriber has specified for this Board. Null if he has not specified any.
@@ -49,6 +51,35 @@ public final class SubscribedBoard extends Board {
 		mParentBoard = myParentBoard;
 		mSubscriber = mySubscriber;
 	}
+	
+    
+    public void databaseIntegrityTest() throws Exception {
+    	super.databaseIntegrityTest();
+    	
+    	checkedActivate(2);
+    	
+    	IfNull.thenThrow(mSubscriber, "mSubscriber");
+    	IfNull.thenThrow(mParentBoard, "mParentBoard");
+
+    	IfNotEquals.thenThrow(getName(), mParentBoard.getName(), "mName");
+        	
+    	if(mHighestSynchronizedParentMessageIndex < 0)
+    		throw new IllegalStateException("mHighestSynchronizedParentMessageIndex == " + mHighestSynchronizedParentMessageIndex);
+    
+    	for(BoardMessageLink parentLink : mParentBoard.getMessagesAfterIndex(0)) {
+    		if(parentLink.getMessageIndex() > mHighestSynchronizedParentMessageIndex)
+    			continue;
+    		
+			if(getMessageReferences(parentLink.getMessage().getID()).size() == 0) {
+				try {
+					getUnwantedMessageLink(parentLink.getMessage());
+				} catch(NoSuchMessageException e2) {
+					throw new IllegalStateException("mHighestSynchronizedParentMessageIndex == " + mHighestSynchronizedParentMessageIndex 
+							+ " but missing message with index " + parentLink.getMessageIndex());
+				}
+			}
+    	}
+    }
     
     protected void storeWithoutCommit() {
     	throwIfNotStored(mSubscriber);
@@ -526,6 +557,14 @@ public final class SubscribedBoard extends Board {
     	}
     }
     
+    public synchronized ObjectSet<MessageReference> getMessageReferences(final String messageID) {
+        final Query q = mDB.query();
+        q.constrain(MessageReference.class);
+        q.descend("mBoard").constrain(this).identity();
+        q.descend("mMessageID").constrain(messageID);
+        return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
+    }
+    
 	public synchronized ObjectSet<BoardReplyLink> getReplyLinks(final String messageID) {
         final Query q = mDB.query();
         q.constrain(BoardReplyLink.class);
@@ -915,6 +954,31 @@ public final class SubscribedBoard extends Board {
     		mNextRetryDate = computeNextCheckDate();
     	}
     	
+    	@Override
+    	public void databaseIntegrityTest() throws Exception {
+    		checkedActivate(2);
+    		
+    		IfNull.thenThrow(mBoard, "mBoard");
+    		IfNull.thenThrow(mMessage, "mMessage");
+    		IfNull.thenThrow(mAuthor, "mAuthor");
+        	IfNull.thenThrow(mLastRetryDate, "mLastRetryDate");
+        	IfNull.thenThrow(mNextRetryDate, "mNextRetryDate");
+        	
+        	final Date minNextRetry = new Date(mLastRetryDate.getTime() + UnwantedMessageLink.MINIMAL_RETRY_DELAY);
+        	final Date maxNextRetry = new Date(mLastRetryDate.getTime() + UnwantedMessageLink.MAXIMAL_RETRY_DELAY);
+        	
+        	if(mNextRetryDate.before(minNextRetry))
+        		throw new IllegalStateException("Invalid next retry date, too early: " + mNextRetryDate);
+        	else if(mNextRetryDate.after(maxNextRetry))
+        		throw new IllegalStateException("Invalid next retry date, too far in the future: " + mNextRetryDate);
+        	
+        	if(mNumberOfRetries < 1)
+        		throw new IllegalStateException("mNumberOfRetries == " + mNumberOfRetries);
+        	
+        	if(getBoard().getMessageReferences(getMessage().getID()).size() > 0)
+        			throw new IllegalStateException("Both UnwantedMessageLink and MessageReference exist for " + mMessage);
+    	}
+    	
     	protected SubscribedBoard getBoard() {
     		checkedActivate(2);
     		mBoard.initializeTransient(mFreetalk);
@@ -1029,6 +1093,47 @@ public final class SubscribedBoard extends Board {
     		mMessage = myMessage;
     	}
 		
+		public void databaseIntegrityTest() throws Exception {
+			checkedActivate(3);
+			
+			IfNull.thenThrow(mBoard, "mBoard");
+			IfNull.thenThrow(mAuthorID, "mAuthorID");
+			IfNull.thenThrow(mThreadID, "mThreadID");
+	    	IfNull.thenThrow(mMessageID, "mMessageID");
+	    	IfNull.thenThrow(mTitle, "mTitle");
+	    	IfNull.thenThrow(mDate, "mDate");
+	    	
+	    	if(mMessage != null) {
+	    		final Message message = getMessage(); // Calls initializeTransient
+	    		
+	    		if(!getBoard().contains(message))
+	    			throw new IllegalStateException("mBoard == " + mBoard + " does not contain mMessage == " + mMessage);
+	    		
+	    		IfNotEquals.thenThrow(mAuthorID, message.getAuthor().getID(), "mAuthorID");
+	    		IfNotEquals.thenThrow(mMessageID, message.getID(), "mMessageID");
+	    		
+	    		try {
+	    			IfNotEquals.thenThrow(mThreadID, message.getThreadID(), "mThreadID");
+	    		} catch(NoSuchMessageException e) {
+	    			IfNotEquals.thenThrow(mThreadID, message.getID(), "mThreadID");
+	    		}
+	    		
+	    		IfNotEquals.thenThrow(mTitle, message.getTitle(), "mTitle");
+	    		IfNotEquals.thenThrow(mDate, message.getDate(), "mDate");
+	    	} else {
+	    		if(!Message.isTitleValid(mTitle))
+	    			throw new IllegalStateException("Title guess is invalid: " + mTitle);
+	    	}
+	    	
+	    	if(mIndex < 1)
+	    		throw new IllegalStateException("mIndex == " + mIndex);
+		}
+		
+		protected final SubscribedBoard getBoard() {
+			mBoard.initializeTransient(mFreetalk);
+			return mBoard;
+		}
+		
         public final String getAuthorID() {
         	return mAuthorID;
         }
@@ -1115,7 +1220,7 @@ public final class SubscribedBoard extends Board {
          */
         protected final void storeWithoutCommit(ExtObjectContainer db) {
         	try {
-        		checkedActivate(3); // TODO: Figure out a suitable depth.
+        		checkedActivate(2);
         		throwIfNotStored(mBoard);
         		if(mMessage != null) throwIfNotStored(mMessage);
 
@@ -1142,7 +1247,7 @@ public final class SubscribedBoard extends Board {
         }
         
     	protected final void deleteWithoutCommit(ExtObjectContainer db) {
-    		deleteWithoutCommit(3); // TODO: Figure out a suitable depth.
+    		deleteWithoutCommit(2);
 		}
     }
     
@@ -1175,6 +1280,16 @@ public final class SubscribedBoard extends Board {
     		super(myBoard, myThreadID, myMessageID, myTitleGuess, myDateGuess, myIndex);
     	}
 
+    	@Override
+    	public void databaseIntegrityTest() throws Exception {
+    		super.databaseIntegrityTest();
+    		
+    		checkedActivate(3);
+    		
+    		if(getMessage().isThread())
+    			throw new IllegalStateException("mMessage is thread: " + mMessage);
+    	}
+    	
     }
 
     // @Indexed // I can't think of any query which would need to get all BoardThreadLink objects.
@@ -1206,6 +1321,34 @@ public final class SubscribedBoard extends Board {
     		// TODO: We might validate the thread id here. Should be safe not to do so because it is taken from class Message which validates it.
     		
     		mLastReplyDate = myLastReplyDate;
+    	}
+    	
+    	@Override
+    	public void databaseIntegrityTest() throws Exception {
+    		super.databaseIntegrityTest();
+    		
+    		checkedActivate(3);
+    		
+    		IfNotEquals.thenThrow(mMessageID, mThreadID, "mMessageID");
+    		
+     		boolean hasActuallyFetchedReplies = false;
+    		boolean threadWasRead = wasRead();
+    		
+    		for(final BoardReplyLink reply : getBoard().getAllThreadReplies(getThreadID(), true)) {
+    			IfNotEquals.thenThrow(reply.getThreadID(), mThreadID, "reply.getThreadID()");
+    			
+				if(!reply.wasRead())
+					threadWasRead = false;
+				
+    			if(mMessage != null)
+    				hasActuallyFetchedReplies = true;
+    		}
+    		
+    		if(wasThreadRead() != threadWasRead)
+    			throw new IllegalStateException("wasThreadRead()==" + wasThreadRead() + " is wrong");
+    		
+    		if(mMessage == null && !hasActuallyFetchedReplies)
+    			throw new IllegalStateException("BoardThreadLink has no message and no replies");
     	}
     	
     	protected void onMessageAdded(Message newMessage) {
@@ -1351,79 +1494,4 @@ public final class SubscribedBoard extends Board {
 		}
     }
 
-    protected synchronized void verifyDatabaseIntegrity() {
-    	if(mSubscriber == null)
-    		Logger.error(this, "SubscribedBoard has mSubscriber==null: " + this);
-    	
-    	if(mParentBoard == null)
-    		Logger.error(this, "SubscribedBoard has mParentBoard==null: " + this);
-    	
-    	for(final BoardThreadLink thread : getThreads()) {
-    		boolean hasActuallyFetchedReplies = false;
-    		boolean threadWasRead = thread.wasRead();
-    		
-    		for(final BoardReplyLink reply : getAllThreadReplies(thread.getThreadID(), true)) {
-				if(!reply.mThreadID.equals(thread.mThreadID))
-					Logger.error(this, "BoardReplyLink has wrong thread ID: " + reply);
-    			
-    			try {
-    				final Message replyMessage = reply.getMessage();
-    				
-    				hasActuallyFetchedReplies = true;
-    				
-    				if(!reply.mMessageID.equals(replyMessage.getID()))
-    					Logger.error(this, "BoardReplyLink has message with wrong ID: " + reply);
-    				
-    				if(!reply.mAuthorID.equals(replyMessage.getAuthor().getID()))
-    					Logger.error(this, "BoardReplyLink has message of wrong author: " + reply);
-    				
-    				if(!reply.mThreadID.equals(replyMessage.getThreadIDSafe()))
-    					Logger.error(this, "BoardReplyLink has message of wrong thread: " + reply);
-    				
-    				if(!reply.mTitle.equals(replyMessage.getTitle()))
-    					Logger.error(this, "BoardReplyLink has wrong title: " + reply);
-    				
-    				if(!reply.wasRead())
-    					threadWasRead = false;
-    				
-    				// TODO: Verify the date.
-    			} catch(MessageNotFetchedException e) {}
-    		}
-    		
-    		if(thread.wasThreadRead() != threadWasRead)
-    			Logger.error(this, "BoardThreadLink has wrong was-whole-thread-read status: " + thread);
-    		
-    		try {
-    			final Message threadMessage = thread.getMessage();
-    			
-    			if(!thread.mThreadID.equals(threadMessage.getID()))
-    				Logger.error(this, "BoardThreadLink has message of wrong ID: " + thread);
-    			
-    			if(!thread.mMessageID.equals(thread.mThreadID))
-    				Logger.error(this, "BoardThreadLink has mismatch in thread and message ID: " + thread);
-    			
-    			if(!thread.mAuthorID.equals(threadMessage.getAuthor().getID()))
-    				Logger.error(this, "BoardThreadLink has message of wrong author: " + thread);
-    		} catch(NoSuchMessageException e) { 
-    			if(!hasActuallyFetchedReplies)
-    				Logger.error(this, "BoardThreadLink has no message and no replies: " + thread);
-    		}
-    	}
-    	
-    	for(final UnwantedMessageLink u : getAllUnwantedMessages()) {
-        	if(u.mMessage == null)
-        		Logger.error(this, "UnwantedMessageLink has mMessage==null: " + u);
-        	
-        	if(u.mAuthor == null)
-        		Logger.error(this, "UnwantedMessageLink has mAuthor==null: " + u);
-        	
-        	final Date minNextRetry = new Date(u.mLastRetryDate.getTime() + UnwantedMessageLink.MINIMAL_RETRY_DELAY);
-        	final Date maxNextRetry = new Date(u.mLastRetryDate.getTime() + UnwantedMessageLink.MAXIMAL_RETRY_DELAY);
-        	
-        	if(u.mNextRetryDate.before(minNextRetry))
-        		Logger.error(this, "UnwantedMessageLink has invalid next retry date, too early: " + u);
-        	else  if(u.mNextRetryDate.after(maxNextRetry))
-        		Logger.error(this, "UnwantedMessageLink has invalid next retry date, too far in the future: " + u);
-    	}
-    }
 }
