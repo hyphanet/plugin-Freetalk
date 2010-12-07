@@ -1289,8 +1289,10 @@ public final class SubscribedBoard extends Board {
     		
     		checkedActivate(3);
     		
-    		if(getMessage().isThread())
-    			throw new IllegalStateException("mMessage is thread: " + mMessage);
+    		try {
+	    		if(getMessage().isThread())
+	    			throw new IllegalStateException("mMessage is thread: " + mMessage);
+    		} catch(NoSuchMessageException e) {}
     	}
     	
     }
@@ -1333,6 +1335,8 @@ public final class SubscribedBoard extends Board {
     		checkedActivate(3);
     		
     		IfNotEquals.thenThrow(mMessageID, mThreadID, "mMessageID");
+    		
+    		// We do not check for getMessage().isThread() because non-thread messages can become threads if someone replies to them as thread.
     		
      		boolean hasActuallyFetchedReplies = false;
     		boolean threadWasRead = wasRead();
