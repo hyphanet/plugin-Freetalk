@@ -13,6 +13,7 @@ import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
+import freenet.support.codeshortification.IfNotEquals;
 import freenet.support.codeshortification.IfNull;
 
 
@@ -47,6 +48,7 @@ public class WoTIdentity extends Persistent implements Identity {
 	private long mLastReceivedFromWoT;
 
 
+	// TODO: Remove ID parameter and compute the ID from the URI
 	public WoTIdentity(String myID, FreenetURI myRequestURI, String myNickname) {
 		if(myID == null) throw new IllegalArgumentException("ID == null");
 		if(myID.length() == 0) throw new IllegalArgumentException("ID.length() == 0");
@@ -63,6 +65,8 @@ public class WoTIdentity extends Persistent implements Identity {
 		mRequestURI = myRequestURI;
 		mNickname = myNickname;
 		mLastReceivedFromWoT = CurrentTimeUTC.getInMillis();
+		
+		IfNotEquals.thenThrow(IdentityID.construct(mID), IdentityID.constructFromURI(mRequestURI), "myID");
 	}
 	
 	@Override
@@ -72,6 +76,8 @@ public class WoTIdentity extends Persistent implements Identity {
 		IfNull.thenThrow(mID, "mID");
 		IfNull.thenThrow(mRequestURI, "mRequestURI");
 		IfNull.thenThrow(mNickname, "mNickname");
+		
+		IfNotEquals.thenThrow(IdentityID.construct(mID), IdentityID.constructFromURI(mRequestURI), "mID");
 		
 		try {
 			validateNickname(mNickname);
@@ -97,6 +103,7 @@ public class WoTIdentity extends Persistent implements Identity {
 	 * @param uri The requestURI of the Identity
 	 * @return A string to uniquely identify an Identity
 	 */
+	// TODO: Replace with IdentityID.constructFromURI
 	public static String getIDFromURI (FreenetURI uri) {
 		/* WARNING: This is a copy of the code of plugins.WoT.Identity. Freetalk is not allowed to have its own custom IDs, you cannot change
 		 * this code here. */
