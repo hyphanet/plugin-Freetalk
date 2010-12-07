@@ -1106,6 +1106,9 @@ public final class SubscribedBoard extends Board {
 	    	if(mMessage != null) {
 	    		final Message message = getMessage(); // Calls initializeTransient
 	    		
+	    		if(message instanceof OwnMessage)
+	    			throw new IllegalStateException("mMessage == " + message);
+	    		
 	    		if(!getBoard().contains(message))
 	    			throw new IllegalStateException("mBoard == " + mBoard + " does not contain mMessage == " + mMessage);
 	    		
