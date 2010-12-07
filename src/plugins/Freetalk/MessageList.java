@@ -213,7 +213,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			if(mMessageList == null)
 				throw new NullPointerException("mMessageList==null");
 			
-			MessageID.construct(mMessageID).throwIfAuthorDoesNotMatch(mMessageList.getAuthor());
+			MessageID.construct(mMessageID).throwIfAuthorDoesNotMatch(getMessageList().getAuthor());
 			
 			if(mURI == null)
 				throw new NullPointerException("mURI==null");
