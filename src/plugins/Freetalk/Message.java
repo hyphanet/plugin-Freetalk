@@ -530,6 +530,12 @@ public abstract class Message extends Persistent {
 	    	
 	    	if(!threadID.equals(mThreadID))
 	    		throw new IllegalStateException("mThreadURI==" + mThreadURI + " but mThreadID=="+threadID);
+	    } else { // Parent URI is null => Thread URI is null => No parent message / thread should be set.
+	    	if(mParent != null)
+	    		throw new IllegalStateException("mParent == " + mParent);
+	    	
+	    	if(mThread != null)
+	    		throw new IllegalStateException("mThread == " + mThread);
 	    }
 
 	    {
