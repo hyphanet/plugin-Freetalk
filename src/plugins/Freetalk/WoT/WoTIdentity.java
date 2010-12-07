@@ -13,6 +13,7 @@ import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
+import freenet.support.codeshortification.IfNull;
 
 
 /**
@@ -63,6 +64,25 @@ public class WoTIdentity extends Persistent implements Identity {
 		mNickname = myNickname;
 		mLastReceivedFromWoT = CurrentTimeUTC.getInMillis();
 	}
+	
+	@Override
+	public void databaseIntegrityTest() throws Exception {
+		checkedActivate(3);
+		
+		IfNull.thenThrow(mID, "mID");
+		IfNull.thenThrow(mRequestURI, "mRequestURI");
+		IfNull.thenThrow(mNickname, "mNickname");
+		
+		try {
+			validateNickname(mNickname);
+		} catch (InvalidParameterException e) {
+			throw new IllegalStateException(e);
+		}
+		
+		if(mLastReceivedFromWoT < 0)
+			throw new IllegalStateException("mLastReceivedFromWoT == " + mLastReceivedFromWoT);
+	}
+	
 
 	public String getID() {
 		// activate(1);	// 1 is the default activation depth, no need to execute activate(1).
