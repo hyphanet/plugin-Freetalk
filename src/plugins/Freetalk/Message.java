@@ -164,8 +164,13 @@ public abstract class Message extends Persistent {
 		    	throw new IllegalStateException("mFilename does not match expected filename: mFilename==" + mFilename 
 		    			+ "; expected==" + mURI.getPreferredFilename());
 
-		    if(Arrays.binarySearch(mMessage.getAttachments(), this) < 0)
-		    	throw new IllegalStateException("mMessage does not have this attachment: " + mMessage);
+		    // TODO: FFS, is there really no array search library function which is not binary search??
+		    for(Attachment a : mMessage.getAttachments()) {
+		    	if(a == this)
+		    		return;
+		    }
+		    
+			throw new IllegalStateException("mMessage does not have this attachment: " + mMessage);
 		}
 		
 		protected void setMessage(Message message) {
@@ -433,7 +438,6 @@ public abstract class Message extends Persistent {
 				throw new InvalidParameterException("Too many attachments in message: " + newAttachments.size());
 			
 			mAttachments = newAttachments.toArray(new Attachment[newAttachments.size()]);
-			Arrays.sort(mAttachments); // We use binary search in some places
 			
 			for(Attachment a : mAttachments)
 				a.setMessage(this);
@@ -806,7 +810,8 @@ public abstract class Message extends Persistent {
 	 */
 	public final Attachment[] getAttachments() {
 		checkedActivate(3);
-		
+		for(Attachment a : mAttachments)
+			a.initializeTransient(mFreetalk);
 		return mAttachments;
 	}
 	
