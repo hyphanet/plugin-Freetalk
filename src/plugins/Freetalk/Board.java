@@ -284,30 +284,34 @@ public class Board extends Persistent implements Comparable<Board> {
 			if(mIndex < 1)
 				throw new IllegalStateException("mIndex is illegal: " + mIndex);
 			
+			final Board board = getBoard(); 
+			
 			// The primary reason for calling it is to ensure that the index is only taken once:
 			// It should throw a DuplicateMessageException if there are multiple...
-			if(mBoard.getMessageByIndex(mIndex) != this)
+			if(board.getMessageByIndex(mIndex) != this)
 				throw new IllegalStateException("getMessageByIndex is broken");
 	    	
 			if(mMessage == null)
 				throw new NullPointerException("mMessage==null");
 			
-			if(!mBoard.contains(mMessage))
+			final Message message = getMessage();
+			
+			if(!board.contains(message))
 				throw new IllegalStateException("mMessage does not belong in this Board: mBoard==" + mBoard 
 						+ "; mMessage.getBoards()==" + mMessage.getBoards()
 						+ "; mMessage==" + mMessage);
 			
 			// The primary reason for calling it is to ensure that the message is only linked once:
 			// It should throw a DuplicateMessageException if there are multiple...
-			if(mBoard.getMessageLink(mMessage) != this)
+			if(board.getMessageLink(message) != this)
 				throw new IllegalStateException("getMessageLink is broken");
 			
 			if(mAuthor == null)
 				throw new NullPointerException("mAuthor==null");
 			
-			if(mMessage.getAuthor() != mAuthor)
+			if(message.getAuthor() != mAuthor)
 				throw new IllegalStateException("mAuthor is wrong: mAuthor==" + mAuthor 
-						+ "; mMessage.getAuthor()==" + mMessage.getAuthor()
+						+ "; mMessage.getAuthor()==" + message.getAuthor()
 						+ "; mMessage==" + mMessage);
 			
 		}
