@@ -19,6 +19,7 @@ import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
+import freenet.support.codeshortification.IfNotEquals;
 
 /**
  * A Freetalk message. This class is supposed to be used by the UI directly for reading messages. The UI can obtain message objects by querying
@@ -495,14 +496,16 @@ public abstract class Message extends Persistent {
 		    
 	    	final MessageList messageList = getMessageList(); // Call initializeTransient
 	    	
-		    if(!messageList.getURI().equals(getURI()))
-		    	throw new IllegalStateException("mURI == " + mURI + " but mMessageList.getURI() == " + messageList.getURI()); 
+		    if(!messageList.getURI().equals(getURI().getFreenetURI()))
+		    	throw new IllegalStateException("getURI().getFreenetURI() == " + getURI().getFreenetURI() 
+		    			+ " but mMessageList.getURI() == " + messageList.getURI()); 
 	    	
 	    	if(messageList.getAuthor() != mAuthor)
 	    		throw new IllegalStateException("mMessageList author does not match mAuthor: " + mMessageList);
 
 	    	try {
-	    		getMessageList().getReference(mFreenetURI);
+	    		final MessageList.MessageReference ref = getMessageList().getReference(mFreenetURI);
+	    		IfNotEquals.thenThrow(mID, ref.getMessageID(), "mID");
 	    	} catch(NoSuchMessageException e) {
 	    		throw new IllegalStateException("mMessageList does not contain this message: " + mMessageList);
 	    	}
