@@ -588,6 +588,7 @@ public abstract class Message extends Persistent {
 		if(mWasLinkedIn) {
 			for(Board board : mBoards) {
 				try {
+					board.initializeTransient(mFreetalk);
 					board.getMessageLink(this);
 				} catch(NoSuchMessageException e) {
 					throw new IllegalStateException("mWasLinkedIn==true but not found in board " + board);
