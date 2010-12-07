@@ -317,6 +317,7 @@ public class Board extends Persistent implements Comparable<Board> {
 		}
 
     	public Board getBoard() {
+    		mBoard.initializeTransient(mFreetalk);
     		return mBoard;
     	}
     	
