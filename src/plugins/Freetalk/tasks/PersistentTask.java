@@ -10,6 +10,7 @@ import plugins.Freetalk.Persistent;
 import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.codeshortification.IfNull;
 
 /**
  * A PersistentTask is a user notification which is stored in the database as long as it is valid.
@@ -52,6 +53,13 @@ public abstract class PersistentTask extends Persistent {
 		mNextProcessingTime = CurrentTimeUTC.getInMillis();
 		mNextDisplayTime = Long.MAX_VALUE;
 		mDeleteTime = Long.MAX_VALUE;
+	}
+	
+	public void databaseIntegrityTest() throws Exception {
+		checkedActivate(2);
+		
+		IfNull.thenThrow(mID, "mID");
+		IfNull.thenThrow(mOwner, "mOwner");
 	}
 
 	/**
