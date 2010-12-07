@@ -1117,9 +1117,11 @@ public abstract class Message extends Persistent {
 			// db.store(mBoards); /* Not stored because it is a primitive for db4o */
 			// db.store(mDate); /* Not stored because it is a primitive for db4o */
 			
-			for(Attachment a : mAttachments) {
-				a.initializeTransient(mFreetalk);
-				a.storeWithoutCommit();
+			if(mAttachments != null) {
+				for(Attachment a : mAttachments) {
+					a.initializeTransient(mFreetalk);
+					a.storeWithoutCommit();
+				}
 			}
 			
 			// db.store(mAttachments); /* Not stored because it is a primitive for db4o */
