@@ -3,12 +3,15 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import java.util.Arrays;
+
 import plugins.Freetalk.Identity;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Persistent.IndexedClass;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import plugins.Freetalk.exceptions.NotTrustedException;
 import freenet.keys.FreenetURI;
+import freenet.support.codeshortification.IfNull;
 
 /**
  * 
@@ -38,6 +41,18 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 			throw new IllegalArgumentException();
 		mInsertURI = myInsertURI;
 	}
+	
+	public void databaseIntegrityTest() throws Exception {
+		super.databaseIntegrityTest();
+		
+		checkedActivate(3);
+		
+		IfNull.thenThrow(mInsertURI, "mInsertURI");
+		
+		if(!Arrays.equals(getRequestURI().getCryptoKey(), mInsertURI.getCryptoKey()))
+			throw new IllegalStateException("Request and insert URI do not fit together!");
+	}
+
 
 	public FreenetURI getInsertURI() {
 		checkedActivate(3); // String[] is no nested object to db4o so 3 is sufficient.
