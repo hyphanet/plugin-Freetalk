@@ -548,10 +548,9 @@ public abstract class Message extends Persistent {
 		    if(mBoards.length > MAX_BOARDS_PER_MESSAGE)
 		    	throw new IllegalStateException("mBoards contains too many boards: " + mBoards.length);
 		    
-		    if(mReplyToBoard == null)
-		    	throw new NullPointerException("mReplToBoard==null");
+		    // mReplyToBoard may be null if replies are desired to all boards
 		    
-		    boolean replyToBoardWasFound = false;
+		    boolean replyToBoardWasFound = mReplyToBoard == null ? true : false;
 		    
 		    for(Board board : mBoards) {
 		    	if(board == null)
