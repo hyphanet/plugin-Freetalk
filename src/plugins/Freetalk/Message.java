@@ -819,8 +819,10 @@ public abstract class Message extends Persistent {
 	 */
 	public final Attachment[] getAttachments() {
 		checkedActivate(3);
-		for(Attachment a : mAttachments)
-			a.initializeTransient(mFreetalk);
+		if(mAttachments != null) {
+			for(Attachment a : mAttachments)
+				a.initializeTransient(mFreetalk);
+		}
 		return mAttachments;
 	}
 	
