@@ -73,18 +73,18 @@ public final class WoTMessage extends Message {
 		if(!(super.getAuthor() instanceof WoTIdentity))
 			throw new IllegalStateException("super.getAuthor() == " + super.getAuthor());
 		
-		if(!(super.getThreadURI() instanceof WoTMessageURI))
-			throw new IllegalStateException("super.getThreadURI() == " + super.getThreadURI());
-		
-		if(!(super.getParentURI() instanceof WoTMessageURI))
-			throw new IllegalStateException("super.getParentURI() == " + super.getParentURI());
-		
 		try {
+			if(!(super.getThreadURI() instanceof WoTMessageURI))
+				throw new IllegalStateException("super.getThreadURI() == " + super.getThreadURI());
+			
 			if(!(super.getThread() instanceof WoTMessage))
 				throw new IllegalStateException("super.getThread() == " + super.getThread());
 		} catch(NoSuchMessageException e) {}
 		
 		try {
+			if(!(super.getParentURI() instanceof WoTMessageURI))
+				throw new IllegalStateException("super.getParentURI() == " + super.getParentURI());
+			
 			if(!(super.getParent() instanceof WoTMessage))
 				throw new IllegalStateException("super.getParent() == " + super.getParent());
 		} catch(NoSuchMessageException e) {}
