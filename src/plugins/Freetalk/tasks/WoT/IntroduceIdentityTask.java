@@ -1,5 +1,7 @@
 package plugins.Freetalk.tasks.WoT;
 
+import java.util.Date;
+
 import plugins.Freetalk.Config;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.WoT.WoTIdentityManager;
@@ -10,6 +12,7 @@ import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
+import freenet.support.codeshortification.IfNotEquals;
 
 
 /**
@@ -44,6 +47,17 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 		super(myOwner);
 		
 		mPuzzlesToSolve = 0;
+	}
+	
+	public void databaseIntegrityTest() throws Exception {
+		super.databaseIntegrityTest();
+		
+		IfNotEquals.thenThrow(mDeleteTime, Long.MAX_VALUE, "mDeleteTime");
+		
+		final long maxDelay = CurrentTimeUTC.getInMillis() + PROCESSING_INTERVAL;
+		
+		if(mNextDisplayTime > maxDelay && mNextProcessingTime > maxDelay)
+			throw new IllegalStateException("mNextProcessingTime == " + new Date(mNextProcessingTime));
 	}
 
 	public synchronized WebPage display(WebInterface myWebInterface) {
