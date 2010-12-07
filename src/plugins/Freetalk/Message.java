@@ -119,7 +119,7 @@ public abstract class Message extends Persistent {
 	protected final Attachment[] mAttachments;
 	
 	public static class Attachment extends Persistent {
-		private final Message mMessage;
+		private Message mMessage;
 		
 		private final FreenetURI mURI;
 		
@@ -132,17 +132,14 @@ public abstract class Message extends Persistent {
 		// TODO: Store filename for search indexing
 		// TODO: Require size > 0 and obtain the size before posting a message
 		
-		public Attachment(Message myMessage, FreenetURI myURI, long mySize) {
-			if(myMessage == null)
-				throw new IllegalArgumentException("Message is null");
-			
+		public Attachment(FreenetURI myURI, long mySize) {
 			if(myURI == null)
 				throw new IllegalArgumentException("URI is null");
 			
 			if(mySize < 0)
 				throw new IllegalArgumentException("Size is negative");
 			
-			mMessage = myMessage;
+			mMessage = null; // Is not available when the UI constructs attachments
 			mURI = myURI;
 			mFilename = mURI.getPreferredFilename();
 			mSize = mySize;
@@ -169,6 +166,10 @@ public abstract class Message extends Persistent {
 
 		    if(Arrays.binarySearch(mMessage.getAttachments(), this) < 0)
 		    	throw new IllegalStateException("mMessage does not have this attachment: " + mMessage);
+		}
+		
+		protected void setMessage(Message message) {
+			mMessage = message;
 		}
 		
 		public Message getMessage() {
@@ -433,6 +434,9 @@ public abstract class Message extends Persistent {
 			
 			mAttachments = newAttachments.toArray(new Attachment[newAttachments.size()]);
 			Arrays.sort(mAttachments); // We use binary search in some places
+			
+			for(Attachment a : mAttachments)
+				a.setMessage(this);
 		} else {
 			mAttachments = null;
 		}
