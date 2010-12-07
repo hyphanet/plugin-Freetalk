@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
 import plugins.Freetalk.MessageRating;
@@ -40,6 +43,17 @@ public final class WoTMessageRating extends MessageRating {
 		
 		mValue = myValue;
 	}
+	
+	public void databaseIntegrityTest() throws Exception {
+		super.databaseIntegrityTest();
+		
+		if(!(getRater() instanceof WoTIdentity))
+			throw new IllegalStateException("getRater() == " + getRater());
+		
+		if(mValue < - 100 || mValue > 100)
+			throw new IllegalStateException("mValue ==  "+ mValue);
+	}
+
 	
 	public byte getValue() {
 		return mValue;
