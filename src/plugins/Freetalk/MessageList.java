@@ -14,10 +14,12 @@ import java.util.StringTokenizer;
 import plugins.Freetalk.Identity.IdentityID;
 import plugins.Freetalk.Message.MessageID;
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.query.Query;
+import com.sleepycat.je.dbi.GetMode;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
@@ -233,9 +235,14 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 				mFreetalk.getMessageManager().get(mMessageID);
 				if(!mWasDownloaded)
 					throw new IllegalStateException("mWasDownloaded==false but message exists.");
-			} catch(NoSuchMessageException e) {
-				if(mWasDownloaded)
-					throw new IllegalStateException("mWasDownloaded==true but message does not exist.");
+			} catch(NoSuchMessageException e1) {
+				if(mWasDownloaded) {
+					try {
+						mFreetalk.getMessageManager().getMessageFetchFailedMarker(this);
+					} catch(NoSuchFetchFailedMarkerException e2) {
+						throw new IllegalStateException("mWasDownloaded==true but message does not exist and there is no FetchFailedMarker.");
+					}
+				}
 			}
 		}
 		
@@ -551,6 +558,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			{ // First we have to delete the objects of type MessageListFetchFailedReference because this MessageList needs to exist in the db so we can query them
 				// TODO: This requires that we have locked the MessageManager, which is currently the case for every call to deleteWithoutCommit()
 				// However, we should move the code elsewhere to ensure the locking...
+				// TODO: This query should be a function in MessageManager
 				Query query = mDB.query();
 				query.constrain(MessageListFetchFailedMarker.class);
 				query.descend("mMessageListID").constrain(getID());
@@ -570,19 +578,18 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			for(MessageReference ref : messages) {
 				// TODO: This requires that we have locked the MessageManager, which is currently the case for every call to deleteWithoutCommit()
 				// However, we should move the code elsewhere to ensure the locking...
-				Query query = mDB.query();
-				query.constrain(MessageFetchFailedMarker.class);
-				query.descend("mMessageReference").constrain(ref).identity();
+				final MessageManager messageManager = mFreetalk.getMessageManager();
 				
 				// Before deleting the MessageReference itself, we must delete any MessageFetchFailedReference objects which point to it. 
-				for(MessageFetchFailedMarker failedRef : new Persistent.InitializingObjectSet<MessageFetchFailedMarker>(mFreetalk, query)) {
-					failedRef.deleteWithoutCommit();
+				try {
+					messageManager.getMessageFetchFailedMarker(ref).deleteWithoutCommit();
+				} catch (NoSuchFetchFailedMarkerException e1) {
 				}
 				
 				// TODO: Its sort of awful to have this code here, maybe find a better place for it :|
 				// It's required to prevent zombie message lists.
 				try {
-					mFreetalk.getMessageManager().get(ref.getMessageID()).clearMessageList();
+					messageManager.get(ref.getMessageID()).clearMessageList();
 				} catch(NoSuchMessageException e) {
 					
 				}
