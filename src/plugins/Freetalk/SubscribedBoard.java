@@ -50,6 +50,7 @@ public final class SubscribedBoard extends Board {
 		
 		mParentBoard = myParentBoard;
 		mSubscriber = mySubscriber;
+		setHasSubscriptions(true); // For super.databaseIntegrityTest()
 	}
 	
     
