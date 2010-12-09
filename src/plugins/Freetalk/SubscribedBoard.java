@@ -67,7 +67,7 @@ public final class SubscribedBoard extends Board {
     	if(mHighestSynchronizedParentMessageIndex < 0)
     		throw new IllegalStateException("mHighestSynchronizedParentMessageIndex == " + mHighestSynchronizedParentMessageIndex);
     
-    	for(BoardMessageLink parentLink : mParentBoard.getMessagesAfterIndex(0)) {
+    	for(BoardMessageLink parentLink : getParentBoard().getMessagesAfterIndex(0)) {
     		if(parentLink.getMessageIndex() > mHighestSynchronizedParentMessageIndex)
     			continue;
     		
@@ -1116,11 +1116,20 @@ public final class SubscribedBoard extends Board {
 	    		IfNotEquals.thenThrow(mAuthorID, message.getAuthor().getID(), "mAuthorID");
 	    		IfNotEquals.thenThrow(mMessageID, message.getID(), "mMessageID");
 	    		
-	    		try {
-	    			IfNotEquals.thenThrow(mThreadID, message.getThreadID(), "mThreadID");
-	    		} catch(NoSuchMessageException e) {
-	    			IfNotEquals.thenThrow(mThreadID, message.getID(), "mThreadID");
-	    		}
+		    	try {
+		    		try {
+		    			IfNotEquals.thenThrow(mThreadID, message.getThreadID(), "mThreadID");
+		    		} catch(IllegalStateException e) {
+		    			// Replies can fork threads off existing messages, the thread ID of that message won't match then.
+		    			if(!(this instanceof BoardThreadLink))
+		    				throw e;
+		    			else
+		    				IfNotEquals.thenThrow(mThreadID, message.getID());
+		    				
+		    		}
+		    	} catch(NoSuchMessageException e) {
+		    		IfNotEquals.thenThrow(mThreadID, message.getID(), "mThreadID");
+		    	}
 	    		
 	    		IfNotEquals.thenThrow(mTitle, message.getTitle(), "mTitle");
 	    		IfNotEquals.thenThrow(mDate, message.getDate(), "mDate");
@@ -1348,7 +1357,7 @@ public final class SubscribedBoard extends Board {
 				if(!reply.wasRead())
 					threadWasRead = false;
 				
-    			if(mMessage != null)
+    			if(reply.mMessage != null)
     				hasActuallyFetchedReplies = true;
     		}
     		
