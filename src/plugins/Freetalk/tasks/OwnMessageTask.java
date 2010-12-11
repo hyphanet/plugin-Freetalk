@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.tasks;
 
+import freenet.support.codeshortification.IfNull;
 import plugins.Freetalk.OwnIdentity;
 
 /**
@@ -17,6 +18,8 @@ public abstract class OwnMessageTask extends PersistentTask {
 	
 	public void databaseIntegrityTest() throws Exception {
 		super.databaseIntegrityTest();
+		
+		IfNull.thenThrow(mOwner, "mOwner");
 	}
 
 }

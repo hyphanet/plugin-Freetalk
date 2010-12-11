@@ -45,9 +45,6 @@ public abstract class PersistentTask extends Persistent {
 	
 	
 	protected PersistentTask(OwnIdentity myOwner) {
-		if(myOwner == null)
-			throw new NullPointerException();
-		
 		mID = UUID.randomUUID().toString();
 		mOwner = myOwner;
 		mNextProcessingTime = CurrentTimeUTC.getInMillis();
@@ -59,7 +56,8 @@ public abstract class PersistentTask extends Persistent {
 		checkedActivate(2);
 		
 		IfNull.thenThrow(mID, "mID");
-		IfNull.thenThrow(mOwner, "mOwner");
+		
+		// Owner may be null.
 	}
 
 	/**
@@ -85,7 +83,7 @@ public abstract class PersistentTask extends Persistent {
 			checkedActivate(3); // TODO: Figure out a suitable depth.
 			
 			// We cannot throw because PersistentTasks are usually created within the transaction which is used to create the owner.
-			//DBUtil.throwIfNotStored(mDB, mOwner);
+			// if(mOwner != null) DBUtil.throwIfNotStored(mDB, mOwner);
 
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 			
