@@ -132,6 +132,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		db = openDatabase(databaseFilename);
 		mIdentityManager = new WoTIdentityManager(this);
 		mMessageManager = new WoTMessageManager(this);
+		mTaskManager = new PersistentTaskManager(this, db);
 	}
 
 	public void runPlugin(PluginRespirator myPR) {
@@ -159,7 +160,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		mMessageManager = new WoTMessageManager(db, mIdentityManager, this, mPluginRespirator);
 		
 		Logger.debug(this, "Creating task manager...");
-		mTaskManager = new PersistentTaskManager(db, this);
+		mTaskManager = new PersistentTaskManager(this, db);
 		
 		databaseIntegrityTest(); // Some tests need the Identity-/Message-/TaskManager so we call this after creating them.
 		
