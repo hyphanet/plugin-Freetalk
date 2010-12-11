@@ -556,7 +556,6 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 				}
 				
 				// We also try to mark the message as downloaded if it was fetched already to ensure that its not being fetched over and over again.
-				// TODO: Change the message list downloading code to check whethe messages were downloaded already when importing the lists...
 
 				for(MessageReference ref : getAllReferencesToMessage(message.getID())) {
 					try {
@@ -726,6 +725,15 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 							// We don't call onMessageListDeleted on the IdentityStatistics since we will call onMessageListFetched for the 
 							// list with the same ID in this transaction anyway. 
 						}
+					}
+					
+					// Mark existing messages as fetched... Can happen if a message is list in multiple lists.
+					for(MessageReference ref : list) {
+						try {
+							get(ref.getMessageID());
+							ref.setMessageWasDownloadedFlag();
+							ref.storeWithoutCommit();
+						} catch(NoSuchMessageException e) {}
 					}
 					
 					list.storeWithoutCommit();
