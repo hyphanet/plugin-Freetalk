@@ -30,6 +30,11 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 	/* Attributes, stored in the database. */
 
 	private final FreenetURI mInsertURI;
+	
+	/**
+	 * If true then the identity is auto-subscribed to new boards when they are discovered
+	 */
+	private boolean mAutoSubscribeToNewBoards = true;
 
     /** If true then auto-subscribe to boards that were subscribed in the NNTP client */
     private boolean mNntpAutoSubscribeBoards;
@@ -85,6 +90,16 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 		mFreetalk.getIdentityManager().setTrust(this, identity, trust, comment);
 	}
 	
+	@Override
+	public boolean wantsAutoSubscribeToNewBoards() {
+		return mAutoSubscribeToNewBoards;
+	}
+
+	@Override
+	public void setAutoSubscribeToNewboards(boolean autoSubscribeToNewBoards) {
+		mAutoSubscribeToNewBoards = autoSubscribeToNewBoards;
+	}
+	
     /**
      * Checks whether this Identity auto-subscribes to boards subscribed in NNTP client.
      * 
@@ -130,4 +145,5 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 			checkedRollbackAndThrow(e);
 		}
 	}
+
 }
