@@ -12,6 +12,7 @@ import java.util.Random;
 import java.util.Set;
 
 import plugins.Freetalk.IdentityManager.IdentityDeletedCallback;
+import plugins.Freetalk.IdentityManager.NewOwnIdentityCallback;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageList.MessageFetchFailedMarker;
 import plugins.Freetalk.MessageList.MessageListFetchFailedMarker;
@@ -30,6 +31,9 @@ import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import plugins.Freetalk.exceptions.NoSuchMessageRatingException;
 import plugins.Freetalk.exceptions.NoSuchObjectException;
+import plugins.Freetalk.tasks.NewBoardTask;
+import plugins.Freetalk.tasks.PersistentTaskManager;
+import plugins.Freetalk.tasks.SubscribeToAllBoardsTask;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -50,7 +54,7 @@ import freenet.support.io.NativeThread;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public abstract class MessageManager implements PrioRunnable, IdentityDeletedCallback {
+public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCallback, IdentityDeletedCallback {
 
 	protected final IdentityManager mIdentityManager;
 	
@@ -109,6 +113,7 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		mTicker = new TrivialTicker(mFreetalk.getPluginRespirator().getNode().executor);
 		mRandom = mPluginRespirator.getNode().fastWeakRandom;
 		
+		mIdentityManager.registerNewOwnIdentityCallback(this);
 		mIdentityManager.registerIdentityDeletedCallback(this, true);
 	}
 	
@@ -419,6 +424,20 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		}
 		
 		return deletedBoards;
+	}
+	
+	/**
+	 * Called by the IdentityManager after a new Identity has been stored to the database and before committing the transaction.
+	 * The IdentityManager and PersistentTaskManager are locked when this function is called.
+	 * 
+	 * Creates a SubscribeToAllBoardsTask for the identity if auto-subscription to boards is enabled.
+	 */
+	public void onNewOwnIdentityAdded(OwnIdentity identity) {
+		if(identity.wantsAutoSubscribeToNewBoards()) {
+			// We cannot subscribe to the boards here because we lack the lock to the MessageManager
+			mFreetalk.getTaskManager().storeTaskWithoutCommit(new SubscribeToAllBoardsTask(identity));
+			mFreetalk.getTaskManager().processTasksSoon();
+		}
 	}
 	
 	/**
@@ -1183,6 +1202,8 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 			board = getBoardByName(name);
 		}
 		catch(NoSuchBoardException e) {
+			PersistentTaskManager tm = mFreetalk.getTaskManager();
+			synchronized(tm) {
 			synchronized(db.lock()) {
 			try {
 				board = new Board(name);
@@ -1190,16 +1211,22 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 				board.storeWithoutCommit();
 				Logger.debug(this, "Created board " + name);
 				board.checkedCommit(this);
+				
+				tm.storeTaskWithoutCommit(new NewBoardTask(board));
 			}
 			catch(RuntimeException ex) {
 				Persistent.checkedRollbackAndThrow(db, this, ex);
 				throw ex; // Satisfy the compiler
 			}
 			}
+			}
+			
+			
 		}
 		
 		return board;
 	}
+	
 
 	/**
 	 * Get an iterator of all boards. The list is sorted ascending by name.
