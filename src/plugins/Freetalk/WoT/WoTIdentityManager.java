@@ -1040,7 +1040,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		private final LRUCache<TrustKey, Byte> mTrustCache = new LRUCache<TrustKey, Byte>(256, EXPIRATION_DELAY);
 		private final LRUCache<TrustKey, Integer> mScoreCache = new LRUCache<TrustKey, Integer>(256, EXPIRATION_DELAY);
 		
-		// FIXME: Create getter methods in WoTIdentityManager which actually use this caching function...
+		// TODO: Create getter methods in WoTIdentityManager which actually use this caching function...
 		public synchronized byte getTrust(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotTrustedException, Exception {
 			{
 				final Byte cachedValue = mTrustCache.get(new TrustKey(truster, trustee));
@@ -1051,7 +1051,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			return WoTIdentityManager.this.getTrust(truster, trustee);	// This will update the cache
 		}
 
-		// FIXME: Create getter methods in WoTIdentityManager which actually use this caching function...
+		// TODO: Create getter methods in WoTIdentityManager which actually use this caching function...
 		public synchronized int getScore(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotInTrustTreeException, Exception {
 			{
 				final Integer cachedValue = mScoreCache.get(new TrustKey(truster, trustee));
