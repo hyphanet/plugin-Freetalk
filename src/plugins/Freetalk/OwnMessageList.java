@@ -10,9 +10,9 @@ import freenet.support.Logger;
 // @IndexedField // I can't think of any query which would need to get all OwnMessageList objects.
 public abstract class OwnMessageList extends MessageList {
 
-	private boolean iAmBeingInserted = false; // FIXME: Rename to mIsBeingInserted
+	private boolean mIsBeingInserted = false;
 
-	private boolean iWasInserted = false; // FIXME: Rename to mWasInserted
+	private boolean mWasInserted = false;
 
 	/**
 	 * In opposite to it's parent class, for each <code>OwnMessage</code> only one <code>OwnMessageReference</code> is stored, no matter to how
@@ -40,8 +40,8 @@ public abstract class OwnMessageList extends MessageList {
 		if(!(mAuthor instanceof OwnIdentity))
 			throw new IllegalStateException("mAuthor is no OwnIdentity: " + mAuthor);
 			
-		if(iAmBeingInserted && iWasInserted)
-			throw new IllegalStateException("iAmBeingInserted == true and iWasInserted == true");
+		if(mIsBeingInserted && mWasInserted)
+			throw new IllegalStateException("mIsBeingInserted == true and mWasInserted == true");
 		
 		for(MessageReference ref : mMessages) {
 			if(!(ref instanceof OwnMessageReference))
@@ -76,7 +76,7 @@ public abstract class OwnMessageList extends MessageList {
 	 */
 	public synchronized void addMessage(OwnMessage newMessage) {
 		synchronized(newMessage) {
-			if(iAmBeingInserted || iWasInserted)
+			if(mIsBeingInserted || mWasInserted)
 				throw new IllegalStateException("Trying to add a message to a message list which is already being inserted.");
 			
 			if(newMessage.getAuthor() != mAuthor)
@@ -109,7 +109,7 @@ public abstract class OwnMessageList extends MessageList {
 	 * Stores this OwnMessageList in the database without committing the transaction.
 	 */
 	public synchronized void beginOfInsert() {
-		iAmBeingInserted = true;
+		mIsBeingInserted = true;
 		storeWithoutCommit();
 	}
 
@@ -117,30 +117,30 @@ public abstract class OwnMessageList extends MessageList {
 	 * Stores this OwnMessageList in the database without committing the transaction.
 	 */
 	public synchronized void cancelInsert() {
-		if(iWasInserted)
+		if(mWasInserted)
 			throw new RuntimeException("The OwnMessageList was already inserted.");
 		
-		iAmBeingInserted = false;
+		mIsBeingInserted = false;
 		storeWithoutCommit();
 	}
 	
 	public synchronized boolean wasInserted() {
-		return iWasInserted;
+		return mWasInserted;
 	}
 
 	/**
 	 * Stores this OwnMessageList in the database without committing the transaction.
 	 */
 	public synchronized void markAsInserted() {
-		if(iAmBeingInserted == false)
+		if(mIsBeingInserted == false)
 			throw new RuntimeException("Trying to mark a MessageList as 'inserted' which was not marked as 'being inserted': This MUST NOT happen:" +
 					" Messages can still be added to a list if it is not marked as being inserted. If it is being inserted already without being marked," +
 					" the messages will not be contained in the actually inserted message list."); 
 		
-		if(iWasInserted)
+		if(mWasInserted)
 			Logger.error(this, "markAsInserted called for an already inserted message list: " + this);
 			
-		iWasInserted = true;
+		mWasInserted = true;
 		storeWithoutCommit();
 	}
 

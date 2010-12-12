@@ -221,8 +221,8 @@ public final class WoTMessageManager extends MessageManager {
 		Query query = db.query();
 		query.constrain(WoTOwnMessageList.class);
 		query.descend("mAuthor").constrain(message.getAuthor()).identity();
-		query.descend("iWasInserted").constrain(false);
-		query.descend("iAmBeingInserted").constrain(false);
+		query.descend("mWasInserted").constrain(false);
+		query.descend("mIsBeingInserted").constrain(false);
 		
 		for(WoTOwnMessageList list : new Persistent.InitializingObjectSet<WoTOwnMessageList>(mFreetalk, query)) {
 			try {
@@ -266,15 +266,15 @@ public final class WoTMessageManager extends MessageManager {
 	public synchronized ObjectSet<WoTOwnMessageList> getNotInsertedOwnMessageLists() {
 		Query query = db.query();
 		query.constrain(WoTOwnMessageList.class);
-		query.descend("iWasInserted").constrain(false);
+		query.descend("mWasInserted").constrain(false);
 		return new Persistent.InitializingObjectSet<WoTOwnMessageList>(mFreetalk, query);
 	}
 	
 	public synchronized ObjectSet<WoTOwnMessageList> getBeingInsertedOwnMessageLists() {
 		Query query = db.query();
 		query.constrain(WoTOwnMessageList.class);
-		query.descend("iWasInserted").constrain(false);
-		query.descend("iAmBeingInserted").constrain(true);
+		query.descend("mWasInserted").constrain(false);
+		query.descend("mIsBeingInserted").constrain(true);
 		return new Persistent.InitializingObjectSet<WoTOwnMessageList>(mFreetalk, query);
 	}
 
