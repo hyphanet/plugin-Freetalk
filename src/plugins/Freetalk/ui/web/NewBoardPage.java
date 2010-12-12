@@ -44,7 +44,7 @@ public final class NewBoardPage extends WebPageImpl {
 	                    "NewBoardPage.CreateBoardSuccess.Text",
 	                    new String[] { "link", "boardname" },
 	                    new HTMLNode[] {
-	                    	HTMLNode.link(Freetalk.PLUGIN_URI+"/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + subscribedBoard.getName()),
+	                    	HTMLNode.link(BoardPage.getURI(subscribedBoard)),
 	                    	HTMLNode.text(subscribedBoard.getName()) }
 	                    );
 
