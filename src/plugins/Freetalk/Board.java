@@ -105,11 +105,8 @@ public class Board extends Persistent implements Comparable<Board> {
 	    if(!isNameValid(mName))
 	    	throw new IllegalStateException("mName is invalid: " + mName);
 	    
-	    
-	    if(!(this instanceof SubscribedBoard)) { // FIXME: This is a workaround for old databses. Remove in 0.1-final-development
-		    if(mHasSubscriptions != (mFreetalk.getMessageManager().subscribedBoardIterator(mName).size() != 0))
-		    	throw new IllegalStateException("mHasSubscriptions is wrong: " + mHasSubscriptions);
-	    }
+	    if(mHasSubscriptions != (mFreetalk.getMessageManager().subscribedBoardIterator(mName).size() != 0))
+	    	throw new IllegalStateException("mHasSubscriptions is wrong: " + mHasSubscriptions);
 	    
 	    if(mNextFreeMessageIndex < 1)
 	    	throw new IllegalStateException("mNextFreeMessageIndex is illegal: " + mNextFreeMessageIndex);
