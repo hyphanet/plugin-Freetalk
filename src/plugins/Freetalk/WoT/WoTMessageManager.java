@@ -144,7 +144,6 @@ public final class WoTMessageManager extends MessageManager {
 				
 				Logger.error(this, "Download failed of a MessageList which we already have (oldest available index: " +
 						oldestIndex + "; newest available index: " + newestIndex + "):" + ghostList.getURI());
-				assert(false);
 				return;
 			}
 			catch(NoSuchMessageListException e1) {

@@ -589,12 +589,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		
 		// Simulate failure with existing marker and existing ghost message list, i.e. the message list fetcher tried to fetch even though it shouldn't.
 		
-		try {
-			mMessageManager.onMessageListFetchFailed(author, WoTMessageList.assembleURI(author.getRequestURI(), 1), FetchFailedMarker.Reason.DataNotFound);
-			fail("Calling onMessageListFetchFailed twice for the same list should cause an assert(false);");
-		} catch(AssertionError e) {
-			// OK
-		}
+		mMessageManager.onMessageListFetchFailed(author, WoTMessageList.assembleURI(author.getRequestURI(), 1), FetchFailedMarker.Reason.DataNotFound);
 		
 		q = db.query();
 		q.constrain(FetchFailedMarker.class);
