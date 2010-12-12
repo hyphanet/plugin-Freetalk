@@ -51,6 +51,7 @@ CreateIdentityWizard.Step4.Failure=Sorry, there was a problem creating your iden
 Common.EstimationPrefix=~
 Common.WebOfTrust.Score=Effective Trust
 Common.WebOfTrust.ScoreNull=None
+Common.WebOfTrust.Score.Infinite=-
 Common.WebOfTrust.Trust.None=None
 Common.WebOfTrust.TrustedByCount.Description=The number of identities which trust this identity. This is the number of received trust values greater than or equal to 0.  
 Common.WebOfTrust.DistrustedByCount.Description=The number of identities which do not trust this identity. This is the number of received trust values less than 0.

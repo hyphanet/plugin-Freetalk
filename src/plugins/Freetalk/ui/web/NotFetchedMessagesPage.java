@@ -109,7 +109,7 @@ public class NotFetchedMessagesPage extends WebPageImpl {
 						else
 							authorScore = Integer.toString(score);
 					} catch(NotInTrustTreeException e) {
-						authorScore = "none"; // FIXME: l10n
+						authorScore = l10n().getString("Common.WebOfTrust.ScoreNull");
 					} catch(Exception e) {
 						Logger.error(this, "getScoreFor() failed", e);
 					}

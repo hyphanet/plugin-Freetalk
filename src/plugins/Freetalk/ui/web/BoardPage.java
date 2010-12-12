@@ -132,12 +132,12 @@ public final class BoardPage extends WebPageImpl {
 						// TODO: Get rid of the cast somehow, we should maybe call this WoTBoardPage :|
 						final int score = ((WoTOwnIdentity)mOwnIdentity).getScoreFor((WoTIdentity)author);
 						if (score == Integer.MAX_VALUE)
-							authorScore = "-"; // TODO: l10n
+							authorScore = l10n().getString("Common.WebOfTrust.Score.Infinite");
 						else
 							authorScore = Integer.toString(score);
 					} catch(NoSuchIdentityException e) { 
 					} catch(NotInTrustTreeException e) {
-						authorScore = "none"; // FIXME: l10n
+						authorScore = l10n().getString("Common.WebOfTrust.ScoreNull");
 					} catch(Exception e) {
 						Logger.error(this, "getScoreFor() failed", e);
 					}
