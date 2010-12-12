@@ -147,7 +147,8 @@ public class FetchFailedMarker extends Persistent {
 	
 	public void deleteWithoutCommit() {
 		super.deleteWithoutCommit(2); // TODO: Figure out a suitable depth.
-		// FIXME XXX: Delete the mReason, I've that I delete enum objects in other places...
+		// All members are db4o native types which we don't have to delete - 
+		// even mReason: Toad said that we do not have to delete enums on our own, db4o does the job.
 	}
 
 	public Reason getReason() {
