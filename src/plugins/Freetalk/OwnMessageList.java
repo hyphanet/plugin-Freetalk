@@ -10,9 +10,9 @@ import freenet.support.Logger;
 // @IndexedField // I can't think of any query which would need to get all OwnMessageList objects.
 public abstract class OwnMessageList extends MessageList {
 
-	private boolean iAmBeingInserted = false;
+	private boolean iAmBeingInserted = false; // FIXME: Rename to mIsBeingInserted
 
-	private boolean iWasInserted = false;
+	private boolean iWasInserted = false; // FIXME: Rename to mWasInserted
 
 	/**
 	 * In opposite to it's parent class, for each <code>OwnMessage</code> only one <code>OwnMessageReference</code> is stored, no matter to how
@@ -20,12 +20,35 @@ public abstract class OwnMessageList extends MessageList {
 	 *  
 	 * @see MessageList.MessageReference
 	 */
-	public final class OwnMessageReference extends MessageReference {
+	public static final class OwnMessageReference extends MessageReference {
 		
 		public OwnMessageReference(OwnMessage myMessage) {
 			super(MessageID.construct(myMessage), myMessage.getFreenetURI(), null, myMessage.getDate());
 		}
+		
+		public void databaseIntegrityTest() throws Exception {
+			super.databaseIntegrityTest(); 
+		}
 
+	}
+	
+	public void databaseIntegrityTest() throws Exception {
+		super.databaseIntegrityTest();
+		
+		checkedActivate(3);
+		
+		if(!(mAuthor instanceof OwnIdentity))
+			throw new IllegalStateException("mAuthor is no OwnIdentity: " + mAuthor);
+			
+		if(iAmBeingInserted && iWasInserted)
+			throw new IllegalStateException("iAmBeingInserted == true and iWasInserted == true");
+		
+		for(MessageReference ref : mMessages) {
+			if(!(ref instanceof OwnMessageReference))
+				throw new IllegalStateException("Found non-own MessageReference: " + ref);
+		}
+		
+		// TODO: Validate mMessages content. Size is validated by parent
 	}
 
 	public OwnMessageList(OwnIdentity newAuthor, long newIndex) {

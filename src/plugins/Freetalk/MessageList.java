@@ -14,10 +14,12 @@ import java.util.StringTokenizer;
 import plugins.Freetalk.Identity.IdentityID;
 import plugins.Freetalk.Message.MessageID;
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.query.Query;
+import com.sleepycat.je.dbi.GetMode;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
@@ -52,7 +54,36 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	@IndexedField
 	protected long mIndex; /* Not final because OwnMessageList.incrementInsertIndex() might need to change it */
 	
-	
+	protected final ArrayList<MessageReference> mMessages;
+
+
+	@Override
+	public void databaseIntegrityTest() throws Exception {
+		checkedActivate(3);
+		
+		if(mID == null)
+			throw new NullPointerException("mID==null");
+		
+		final MessageListID id = MessageListID.construct(mID); // Also checks whether the index is valid
+		
+		if(mAuthor == null)
+			throw new NullPointerException("mAuthor==null");
+		
+		id.throwIfAuthorDoesNotMatch(mAuthor);
+		
+		if(id.getIndex() != mIndex)
+			throw new IllegalStateException("mIndex does not match mID: " + mIndex);
+		
+		if(mMessages==null)
+			throw new NullPointerException("mMessages==null");
+		
+		if(mMessages.size() > MAX_MESSAGES_PER_MESSAGELIST)
+			throw new IllegalStateException("mMessages is too large: " + mMessages.size());
+		
+		// TODO: Validate content of mMessages as we do in the constructor...
+	}
+
+
 	/**
 	 * A class for representing and especially verifying message IDs.
 	 * We do not use it as a type for storing it because that would make the database queries significantly slower.
@@ -174,6 +205,48 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			mDate = myDate;
 		}
 		
+		@Override
+		public void databaseIntegrityTest() throws Exception {		
+			checkedActivate(3);
+			
+			if(mMessageID == null)
+				throw new NullPointerException("mMessageID==null");
+			
+			if(mMessageList == null)
+				throw new NullPointerException("mMessageList==null");
+			
+			MessageID.construct(mMessageID).throwIfAuthorDoesNotMatch(getMessageList().getAuthor());
+			
+			if(mURI == null)
+				throw new NullPointerException("mURI==null");
+			
+			if(mMessageList.getReference(mURI) != this)
+				throw new IllegalStateException("Parent message list does not contain this MessageReference.");
+			
+			if(mBoard == null)
+				throw new NullPointerException("mBoard==null");
+			
+			if(mDate == null)
+				throw new NullPointerException("mDate==null");
+			
+			// Do not check the date, it might be bogus because it is obtained from the content of the message list
+			
+			try {
+				mFreetalk.getMessageManager().get(mMessageID);
+				if(!mWasDownloaded)
+					throw new IllegalStateException("mWasDownloaded==false but message exists.");
+			} catch(NoSuchMessageException e1) {
+				if(mWasDownloaded) {
+					try {
+						mFreetalk.getMessageManager().getMessageFetchFailedMarker(this);
+					} catch(NoSuchFetchFailedMarkerException e2) {
+						throw new IllegalStateException("mWasDownloaded==true but message does not exist and there is no FetchFailedMarker.");
+					}
+				}
+			}
+		}
+		
+		
 		protected void storeWithoutCommit() {
 			try {
 				checkedActivate(3); // TODO: Figure out a suitable depth.
@@ -268,7 +341,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		protected void setMessageList(MessageList myMessageList) {
 			mMessageList = myMessageList;
 		}
-		
+
 	}
 	
 	// @IndexedField // I can't think of any query which would need to get all MessageListFetchFailedMarker objects.
@@ -282,6 +355,18 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			super(myReason, myDate, myDateOfNextRetry);
 			
 			mMessageListID = myMessageList.getID();
+		}
+		
+		@Override
+		public void databaseIntegrityTest() throws Exception {
+			super.databaseIntegrityTest();
+			
+			// checkedActivate(1);
+			
+			if(mMessageListID == null)
+				throw new NullPointerException("mMessageListID==null");
+			
+			MessageListID.construct(mMessageListID);
 		}
 
 		public String getMessageListID() {
@@ -304,6 +389,16 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			mMessageReference = myMessageReference;
 		}
 		
+		@Override
+		public void databaseIntegrityTest() throws Exception {
+			super.databaseIntegrityTest();
+			
+			checkedActivate(2);
+			
+			if(mMessageReference == null)
+				throw new NullPointerException("mMessageReference==null");
+		}
+		
 		public void storeWithoutCommit() {
 			checkedActivate(2);
 			throwIfNotStored(mMessageReference);
@@ -317,9 +412,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		}
 	}
 
-	
-	protected final ArrayList<MessageReference> mMessages;
-	
+
 	/**
 	 * 
 	 * @param identityManager
@@ -465,6 +558,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			{ // First we have to delete the objects of type MessageListFetchFailedReference because this MessageList needs to exist in the db so we can query them
 				// TODO: This requires that we have locked the MessageManager, which is currently the case for every call to deleteWithoutCommit()
 				// However, we should move the code elsewhere to ensure the locking...
+				// TODO: This query should be a function in MessageManager
 				Query query = mDB.query();
 				query.constrain(MessageListFetchFailedMarker.class);
 				query.descend("mMessageListID").constrain(getID());
@@ -484,19 +578,18 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			for(MessageReference ref : messages) {
 				// TODO: This requires that we have locked the MessageManager, which is currently the case for every call to deleteWithoutCommit()
 				// However, we should move the code elsewhere to ensure the locking...
-				Query query = mDB.query();
-				query.constrain(MessageFetchFailedMarker.class);
-				query.descend("mMessageReference").constrain(ref).identity();
+				final MessageManager messageManager = mFreetalk.getMessageManager();
 				
 				// Before deleting the MessageReference itself, we must delete any MessageFetchFailedReference objects which point to it. 
-				for(MessageFetchFailedMarker failedRef : new Persistent.InitializingObjectSet<MessageFetchFailedMarker>(mFreetalk, query)) {
-					failedRef.deleteWithoutCommit();
+				try {
+					messageManager.getMessageFetchFailedMarker(ref).deleteWithoutCommit();
+				} catch (NoSuchFetchFailedMarkerException e1) {
 				}
 				
 				// TODO: Its sort of awful to have this code here, maybe find a better place for it :|
 				// It's required to prevent zombie message lists.
 				try {
-					mFreetalk.getMessageManager().get(ref.getMessageID()).clearMessageList();
+					messageManager.get(ref.getMessageID()).clearMessageList();
 				} catch(NoSuchMessageException e) {
 					
 				}

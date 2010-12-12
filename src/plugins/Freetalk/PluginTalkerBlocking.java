@@ -38,7 +38,7 @@ public class PluginTalkerBlocking implements FredPluginTalker {
 	};
 
 	public PluginTalkerBlocking(PluginRespirator myPR) throws PluginNotFoundException {
-		mTalker = myPR.getPluginTalker(this, Freetalk.WOT_NAME, Freetalk.PLUGIN_TITLE);
+		mTalker = myPR.getPluginTalker(this, Freetalk.WOT_PLUGIN_NAME, Freetalk.PLUGIN_TITLE);
 	}
 
 	/**

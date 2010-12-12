@@ -11,7 +11,6 @@ import plugins.Freetalk.WoT.WoTMessage;
 import plugins.Freetalk.WoT.WoTMessageFetcher;
 import plugins.Freetalk.WoT.WoTMessageInserter;
 import plugins.Freetalk.WoT.WoTMessageList;
-import plugins.Freetalk.WoT.WoTOldMessageListFetcher;
 import plugins.Freetalk.WoT.WoTMessageListInserter;
 import plugins.Freetalk.WoT.WoTMessageListXML;
 import plugins.Freetalk.WoT.WoTMessageManager;
@@ -19,6 +18,7 @@ import plugins.Freetalk.WoT.WoTMessageRating;
 import plugins.Freetalk.WoT.WoTMessageURI;
 import plugins.Freetalk.WoT.WoTMessageXML;
 import plugins.Freetalk.WoT.WoTNewMessageListFetcher;
+import plugins.Freetalk.WoT.WoTOldMessageListFetcher;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.WoT.WoTOwnMessage;
 import plugins.Freetalk.WoT.WoTOwnMessageList;
@@ -33,6 +33,7 @@ import plugins.Freetalk.ui.web.WebInterface;
 import com.db4o.Db4o;
 import com.db4o.config.Configuration;
 import com.db4o.ext.ExtObjectContainer;
+import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
 import freenet.clients.http.PageMaker.THEME;
@@ -70,7 +71,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	
 	public static final String PLUGIN_URI = "/Freetalk";
 	public static final String PLUGIN_TITLE = "Freetalk-testing"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
-	public static final String WOT_NAME = "plugins.WoT.WoT";
+	public static final String WEB_OF_TRUST_NAME = "WoT"; // FIXME: Change to plugins.WebOfTrust.WebOfTrust.WOT_NAME before 0.1 final release.
+	public static final String WOT_PLUGIN_NAME = "plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "Freetalk"; // FIXME: Use PLUGIN_TITLE as soon as we change it to "Freetalk"
 	public static final String DATABASE_FILENAME = "freetalk-testing-17.db4o";
 	public static final int DATABASE_FORMAT_VERSION = -83;
@@ -130,6 +132,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		db = openDatabase(databaseFilename);
 		mIdentityManager = new WoTIdentityManager(this);
 		mMessageManager = new WoTMessageManager(this);
+		mTaskManager = new PersistentTaskManager(this, db);
 	}
 
 	public void runPlugin(PluginRespirator myPR) {
@@ -157,7 +160,9 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		mMessageManager = new WoTMessageManager(db, mIdentityManager, this, mPluginRespirator);
 		
 		Logger.debug(this, "Creating task manager...");
-		mTaskManager = new PersistentTaskManager(db, this);
+		mTaskManager = new PersistentTaskManager(this, db);
+		
+		databaseIntegrityTest(); // Some tests need the Identity-/Message-/TaskManager so we call this after creating them.
 		
 		Logger.debug(this, "Creating message XML...");
 		mMessageXML = new WoTMessageXML();
@@ -254,12 +259,17 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 
         // Registration of indices (also performance)
         
+        // Class Persistent canot apply its annotations to itself, we need to configure the index for it manually.
+        // We need an index on Persistent because we query all Persistent-objects for startup database validation.
+        cfg.objectClass(Persistent.class).indexed(true);
+        
         final Class<? extends Persistent>[] persistentClasses = new Class[] {
         	Board.class,
         	Board.BoardMessageLink.class,
         	Config.class,
         	FetchFailedMarker.class,
         	Message.class,
+        	Message.Attachment.class,
         	MessageList.class,
         	MessageList.MessageReference.class,
         	MessageList.MessageFetchFailedMarker.class,
@@ -268,6 +278,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         	MessageURI.class,
         	OwnMessage.class,
         	OwnMessageList.class,
+        	OwnMessageList.OwnMessageReference.class,
         	SubscribedBoard.class,
         	SubscribedBoard.UnwantedMessageLink.class,
         	SubscribedBoard.MessageReference.class,
@@ -333,6 +344,27 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		
 		throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
 				+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
+	}
+	
+	private void databaseIntegrityTest() {
+		Logger.debug(this, "Testing database integrity...");
+		synchronized(mIdentityManager) {
+		synchronized(mMessageManager) {
+		synchronized(mTaskManager) {
+			final Query q = db.query();
+			q.constrain(Persistent.class);
+	
+			for(final Persistent p : new Persistent.InitializingObjectSet<Persistent>(this, q)) {
+				try {
+					p.databaseIntegrityTest();
+				} catch(Exception e) {
+					Logger.error(this, "Integrity test failed for " + p, e);
+				}
+			}
+		}
+		}
+		}
+		Logger.debug(this, "Database integrity test finished.");
 	}
 
 	private void closeDatabase() {

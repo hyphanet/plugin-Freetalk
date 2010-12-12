@@ -136,11 +136,8 @@ public final class ThreadPage extends WebPageImpl {
             l10n().addL10nSubstitution(
                     p, 
                     "ThreadPage.ThreadDeleted.Text2",
-                    new String[] { "link", "boardname", "/link" }, 
-                    new String[] {
-                            "<a href=\""+BoardPage.getURI(mBoard)+"\">",
-                            mBoard.getName(),
-                            "</a>" });
+                    new String[] { "link", "boardname" }, 
+                    new HTMLNode[] { HTMLNode.link(BoardPage.getURI(mBoard)), HTMLNode.text(mBoard.getName()) });
         }
     }
     
@@ -218,16 +215,12 @@ public final class ThreadPage extends WebPageImpl {
     			realThreadBoard = threadWhichIsNoThread.getBoards()[0];
     		}
     	}
-    	
-    	String uri = getURI(realThreadBoard.getName(), realThreadID);
-    	
+
         l10n().addL10nSubstitution(
                 div, 
                 "ThreadPage.ThreadIsNoThreadWarning.Text",
-                new String[] { "link", "/link" }, 
-                new String[] {
-                        "<a href=\""+uri+"\">",
-                        "</a>" });
+                new String[] { "link" }, 
+                new HTMLNode[] { HTMLNode.link(getURI(realThreadBoard.getName(), realThreadID)) });
     }
     
     private void addThreadBelongsToDifferentBoardWarning(Message thread) {
@@ -242,15 +235,11 @@ public final class ThreadPage extends WebPageImpl {
     		realThreadBoard = thread.getBoards()[0];
     	}
     	
-    	String uri = getURI(realThreadBoard.getName(), thread.isThread() ? thread.getID() : thread.getThreadIDSafe());
-    	
         l10n().addL10nSubstitution(
                 div, 
                 "ThreadPage.ThreadBelongsToDifferentBoardWarning.Text",
-                new String[] { "link", "/link" }, 
-                new String[] {
-                        "<a href=\""+uri+"\">",
-                        "</a>" });
+                new String[] { "link" }, 
+                new HTMLNode[] { HTMLNode.link(getURI(realThreadBoard.getName(), thread.isThread() ? thread.getID() : thread.getThreadIDSafe())) });
     }
     
     private void addAuthorNode(HTMLNode parent, WoTIdentity author) {

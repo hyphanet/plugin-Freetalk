@@ -53,6 +53,23 @@ public final class Config extends Persistent {
 		setDefaultValues(false);
 	}
 	
+	@Override
+	public void databaseIntegrityTest() throws Exception {
+		checkedActivate(3);
+		
+		if(mStringParams == null)
+			throw new NullPointerException("mStringParams==null");
+		
+		if(mIntParams == null)
+			throw new NullPointerException("mIntParams==null");
+		
+		if(getInt(DATABASE_FORMAT_VERSION) != Freetalk.DATABASE_FORMAT_VERSION)
+			throw new IllegalStateException("FATAL: startupDatabaseIntegrityTest called with wrong database format version! is: " 
+					+ getInt(DATABASE_FORMAT_VERSION) + "; should be: " + Freetalk.DATABASE_FORMAT_VERSION);
+		
+		// TODO: Validate the other settings...
+	}
+	
 	/**
 	 * Loads an existing Config object from the database and adds any missing default values to it, creates and stores a new one if none exists.
 	 * @return The config object.
@@ -233,4 +250,5 @@ public final class Config extends Persistent {
 			set(NNTP_SERVER_ENABLED, false);
 		}
 	}
+
 }

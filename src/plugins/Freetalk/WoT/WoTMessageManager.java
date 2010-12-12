@@ -8,24 +8,23 @@ import java.util.List;
 import java.util.Set;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.Identity;
-import plugins.Freetalk.IdentityStatistics;
-import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.FetchFailedMarker;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.Identity;
 import plugins.Freetalk.IdentityManager;
+import plugins.Freetalk.IdentityStatistics;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageList;
+import plugins.Freetalk.MessageList.MessageListID;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.MessageRating;
 import plugins.Freetalk.MessageURI;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Persistent;
-import plugins.Freetalk.Message.Attachment;
-import plugins.Freetalk.MessageList.MessageListID;
 import plugins.Freetalk.Persistent.InitializingObjectSet;
 import plugins.Freetalk.exceptions.DuplicateElementException;
 import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
-import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import plugins.Freetalk.exceptions.NoSuchMessageRatingException;
@@ -130,7 +129,21 @@ public final class WoTMessageManager extends MessageManager {
 		
 			try {
 				getMessageList(ghostList.getID());
-				Logger.error(this, "Download failed of a MessageList which we already have: " + ghostList.getURI());
+				
+				long oldestIndex = -1; 
+				long newestIndex = -1;
+				
+				try {
+					oldestIndex = getUnavailableOldMessageListIndex(author);
+					newestIndex = getUnavailableNewMessageListIndex(author);
+				} catch(Exception e) {
+					Logger.error(this, "Getting indices failed", e);
+				}
+				
+				// TODO: Optimization: Remove the above debug code once the following exception doesn't happen anymore
+				
+				Logger.error(this, "Download failed of a MessageList which we already have (oldest available index: " +
+						oldestIndex + "; newest available index: " + newestIndex + "):" + ghostList.getURI());
 				return;
 			}
 			catch(NoSuchMessageListException e1) {
@@ -302,14 +315,18 @@ public final class WoTMessageManager extends MessageManager {
 	 * not a problem.
 	 */
 	public synchronized long getUnavailableOldMessageListIndex(Identity identity) throws NoSuchMessageListException {
+		long unavailableIndex; 
+		
 		try {
-			long unavailableIndex = getIdentityStatistics(identity).getIndexOfOldestAvailableMessageList() - 1;
-			if(unavailableIndex < 0)
-				throw new NoSuchMessageListException("");
-			return unavailableIndex;
+			unavailableIndex = getIdentityStatistics(identity).getIndexOfOldestAvailableMessageList() - 1;
 		} catch(NoSuchObjectException e) {
-			return 0;
+			unavailableIndex = 0;
 		}
+		
+		if(unavailableIndex < 0)
+			throw new NoSuchMessageListException("");
+		
+		return unavailableIndex;
 	}
 
 	/**

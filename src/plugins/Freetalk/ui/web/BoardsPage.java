@@ -94,8 +94,9 @@ public final class BoardsPage extends WebPageImpl {
 			}
 		}
 
-		final String[] l10nLinkSubstitutionInput = new String[] { "link", "/link" };
-		final String[] l10nLinkSubstitutionOutput = new String[] { "<a href=\""+Freetalk.PLUGIN_URI+"/SelectBoards?identity="+mOwnIdentity.getID()+"\">", "</a>" };
+		final String[] l10nLinkSubstitutionInput = new String[] { "link" };
+		// TODO: Create SelectBoardsPage.getURI with the code below... own identity can be removed, its stored in the session cookie
+		final HTMLNode[] l10nLinkSubstitutionOutput = new HTMLNode[] { HTMLNode.link(Freetalk.PLUGIN_URI+"/SelectBoards?identity="+mOwnIdentity.getID()) };
 		HTMLNode aChild = boardsBox.addChild("p");
 		if(boardCount == 0) {
             l10n().addL10nSubstitution(aChild, "BoardsPage.NoBoardSubscribed", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);

@@ -164,6 +164,7 @@ public final class WoTMessageInserter extends MessageInserter {
 		}
 		finally {
 			removeInsert(state);
+			Closer.close(((ClientPutter)state).getData());
 		}
 	}
 	
@@ -172,9 +173,9 @@ public final class WoTMessageInserter extends MessageInserter {
 		try {
 			Logger.error(this, "Message insert failed", e);
 		}
-		
 		finally {
 			removeInsert(state);
+			Closer.close(((ClientPutter)state).getData());
 		}
 	}
 	

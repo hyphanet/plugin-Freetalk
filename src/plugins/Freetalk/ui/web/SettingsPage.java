@@ -18,6 +18,7 @@ import freenet.support.api.HTTPRequest;
  * Global and per identity Freetalk settings.
  * 
  * @author bback
+ * @author xor (xor@freenetproject.org)
  */
 public class SettingsPage extends WebPageImpl {
 
@@ -34,12 +35,12 @@ public class SettingsPage extends WebPageImpl {
         
         if (mRequest.isPartSet("submit") && mRequest.getMethod().equals("POST")) {
             
-            boolean enableNntpServer = mRequest.getPartAsString("EnableNntpServer", 4).equals("true");
-            String nntpServerBindTo = mRequest.getPartAsString("nntpServerBindTo", 1024);
+            boolean enableNntpServer = mRequest.getPartAsStringFailsafe("EnableNntpServer", 4).equals("true");
+            String nntpServerBindTo = mRequest.getPartAsStringFailsafe("nntpServerBindTo", 1024);
 			if ("127.0.0.1".equals(nntpServerBindTo)) {
 				nntpServerBindTo = null;
 			}
-			String nntpServerAllowedHosts = mRequest.getPartAsString("nntpServerAllowedHosts", 1024);
+			String nntpServerAllowedHosts = mRequest.getPartAsStringFailsafe("nntpServerAllowedHosts", 1024);
 			if ("127.0.0.1".equals(nntpServerAllowedHosts)) {
 				nntpServerAllowedHosts = null;
 			}
@@ -50,7 +51,9 @@ public class SettingsPage extends WebPageImpl {
                 mFreetalk.getConfig().storeAndCommit();
             }
             
-            boolean autoSubscribeBoards = mRequest.getPartAsString("AutoSubscribeBoards", 4).equals("true");
+            boolean autoSubscribeToNewBoards = mRequest.getPartAsStringFailsafe("AutoSubscribeToNewBoards", 4).equals("true");
+            
+            boolean autoSubscribeToNNTPBoards = mRequest.getPartAsStringFailsafe("AutoSubscribeToNNTPBoards", 4).equals("true");
             
             WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
             
@@ -60,7 +63,8 @@ public class SettingsPage extends WebPageImpl {
 	            	WoTOwnIdentity identity = identityManager.getOwnIdentity(mOwnIdentity.getID());
 	            	
 	            	synchronized (identity) {
-	            		identity.setNntpAutoSubscribeBoards(autoSubscribeBoards);
+	            		identity.setAutoSubscribeToNewboards(autoSubscribeToNewBoards);
+	            		identity.setNntpAutoSubscribeBoards(autoSubscribeToNNTPBoards);
 	            		identity.storeAndCommit();
 	            	}
             	} catch(Exception e) {
@@ -89,6 +93,17 @@ public class SettingsPage extends WebPageImpl {
         HTMLNode list = formNode.addChild("ul", "class", "config");
         HTMLNode item = list.addChild("li");
         
+        /* *** Auto-subscribe to new boards ********************************************* */
+
+        item.addChild("span", new String[]{ "class", "title", "style" },
+                new String[]{ "configshortdesc", booleanDefaultString(false), "cursor: help;" })
+                .addChild("#", l10n().getString("SettingsPage.UserSettings.AutoSubscribeToNewBoards.Short"));
+        
+        item.addChild("span", "class", "config");
+        item.addChild(addBooleanComboBox(mOwnIdentity.wantsAutoSubscribeToNewBoards(), "AutoSubscribeToNewBoards", false));
+        
+        item.addChild("span", "class", "configlongdesc").addChild("#", l10n().getString("SettingsPage.UserSettings.AutoSubscribeToNewBoards.Long"));
+        
         /* *** NNTP - auto-subscribe to boards ********************************************* */
 
         item.addChild("span", new String[]{ "class", "title", "style" },
@@ -96,7 +111,7 @@ public class SettingsPage extends WebPageImpl {
                 .addChild("#", l10n().getString("SettingsPage.UserSettings.NNTPAutoSubscribeBoards.Short"));
         
         item.addChild("span", "class", "config");
-        item.addChild(addBooleanComboBox(mOwnIdentity.nntpAutoSubscribeBoards(), "AutoSubscribeBoards", false));
+        item.addChild(addBooleanComboBox(mOwnIdentity.nntpAutoSubscribeBoards(), "AutoSubscribeToNNTPBoards", false));
         
         item.addChild("span", "class", "configlongdesc").addChild("#", l10n().getString("SettingsPage.UserSettings.NNTPAutoSubscribeBoards.Long"));
     }

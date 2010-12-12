@@ -20,6 +20,24 @@ public abstract class OwnMessage extends Message {
 		super(newURI, newFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText,
 				newAttachments);
 	}
+	
+	public void databaseIntegrityTest() throws Exception {
+		super.databaseIntegrityTest();
+		
+		checkedActivate(3);
+		
+		if(!(mAuthor instanceof OwnIdentity))
+			throw new IllegalStateException("mAuthor is no OwnIdentity: " + mAuthor);
+		
+		if(mMessageList == null) {
+			if(mFreenetURI != null)
+				throw new IllegalStateException("mMessageList == null but mFreenetURI == " + mFreenetURI);
+			
+			if(mURI != null)
+				throw new IllegalStateException("mMessageList == null but mURI == " + mURI);
+		} // else is handled by super.databaseIntegrityTest();
+	}
+	
 
 	// TODO: I doubt that this is needed, was probably a quickshot. Remove it if not and make the parent function final.
 	/* Override for synchronization */	

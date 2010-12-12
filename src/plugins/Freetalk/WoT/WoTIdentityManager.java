@@ -146,7 +146,10 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		return result;
 	}
 	
+	// TODO: Add parameter for autoSubscribeToNewBoards & wire it in to the web interface wizard
 	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles) throws Exception  {
+		Logger.normal(this, "Creating new own identity via FCP, nickname: " + newNickname);
+		
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "CreateIdentity");
 		params.putOverwrite("Nickname", newNickname);
@@ -160,23 +163,34 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				new FreenetURI(result.params.get("InsertURI")),
 				newNickname);
 		
+		identity.initializeTransient(mFreetalk);
+		
+		Logger.normal(this, "Created WoTOwnidentity via FCP, now storing... " + identity);
+		
+		synchronized(mFreetalk.getTaskManager()) { // Required by onNewOwnidentityAdded
 		synchronized(db.lock()) {
 			try {
 				identity.initializeTransient(mFreetalk);
 				identity.storeWithoutCommit();
 				onNewOwnIdentityAdded(identity);
 				identity.checkedCommit(this);
+				Logger.normal(this, "Stored new WoTOwnIdentity " + identity);
+				
 			}
 			catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(db, this, e);
 			}
 		}
+		}
 		
 		return identity;
 	}
 	
+	// TODO: Add parameter for autoSubscribeToNewBoards & wire it in to the web interface wizard
 	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles,
 			FreenetURI newRequestURI, FreenetURI newInsertURI) throws Exception {
+		Logger.normal(this, "Creating new own identity via FCP, nickname: " + newNickname);
+		
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "CreateIdentity");
 		params.putOverwrite("Nickname", newNickname);
@@ -195,16 +209,22 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				new FreenetURI(result.params.get("InsertURI")),
 				newNickname);
 		
+		identity.initializeTransient(mFreetalk);
+		
+		Logger.normal(this, "Created WoTOwnidentity via FCP, now storing... " + identity);
+		
+		synchronized(mFreetalk.getTaskManager()) {
 		synchronized(db.lock()) {
 			try {
-				identity.initializeTransient(mFreetalk);
 				identity.storeWithoutCommit();
 				onNewOwnIdentityAdded(identity);
 				identity.checkedCommit(this);
+				Logger.normal(this, "Stored new WoTOwnIdentity " + identity);
 			}
 			catch(RuntimeException e) {
 				Persistent.checkedRollback(db, this, e);
 			}
+		}
 		}
 		
 		return identity;
@@ -629,6 +649,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	
 
 	private void onNewIdentityAdded(Identity identity) {
+		Logger.normal(this, "onNewIdentityAdded " + identity);
+		
 		mShortestUniqueNicknameCacheNeedsUpdate = true;
 		
 		doNewIdentityCallbacks(identity);
@@ -646,6 +668,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	 * @throws Exception If adding the Freetalk context to the identity in WoT failed.
 	 */
 	private void onNewOwnIdentityAdded(OwnIdentity identity) {
+		Logger.normal(this, "onNewOwnIdentityAdded " + identity);
+		
 		WoTOwnIdentity newIdentity = (WoTOwnIdentity)identity;
 		
 		try {
@@ -662,6 +686,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	}
 	
 	private void beforeIdentityDeletion(Identity identity) {
+		Logger.normal(this, "beforeIdentityDeletion " + identity);
+		
 		doIdentityDeletedCallbacks(identity);
 		
 		if(!(identity instanceof OwnIdentity)) // Don't call it twice
@@ -669,11 +695,14 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	}
 	
 	private void beforeOwnIdentityDeletion(OwnIdentity identity) {
+		Logger.normal(this, "beforeOwnIdentityDeletion " + identity);
+		
 		doOwnIdentityDeletedCallbacks(identity);
 		onShouldFetchStateChanged(identity, true, false);
 	}
 	
 	private void onShouldFetchStateChanged(Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
+		Logger.normal(this, "onShouldFetchStateChanged " + author);
 		doShouldFetchStateChangedCallbacks(author, oldShouldFetch, newShouldFetch);
 	}
 	
@@ -737,7 +766,6 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				WoTIdentity id = null; 
 				
 				if(result.size() == 0) {
-					Logger.normal(this, "Importing new identity from WoT: " + requestURI);
 					try {
 						importIdentity(bOwnIdentities, identityID, requestURI, insertURI, nickname);
 						++newCount;
@@ -950,7 +978,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			do {
 				firstDuplicate = i;
 				
-				while((firstDuplicate-1) > 0 && nicknames[firstDuplicate-1].equalsIgnoreCase(nicknames[i])) {
+				while((firstDuplicate-1) >= 0 && nicknames[firstDuplicate-1].equalsIgnoreCase(nicknames[i])) {
 					--firstDuplicate;
 				}
 			

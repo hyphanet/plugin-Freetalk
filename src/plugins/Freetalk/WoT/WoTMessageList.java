@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
 import java.util.List;
@@ -9,6 +12,10 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import freenet.keys.FreenetURI;
 
+/**
+ * 
+ * @author xor (xor@freenetproject.org)
+ */
 //@IndexedField // I can't think of any query which would need to get all WoTMessageList objects.
 public final class WoTMessageList extends MessageList {
 
@@ -22,9 +29,16 @@ public final class WoTMessageList extends MessageList {
 		super(myAuthor, myURI);
 	}
 	
+	public void databaseIntegrityTest() throws Exception {
+		super.databaseIntegrityTest();
+		
+		if(!(getAuthor() instanceof WoTIdentity))
+			throw new IllegalStateException("mAuthor == " + getAuthor());
+	}
 	
 	public WoTIdentity getAuthor() {
-		WoTIdentity author = (WoTIdentity)mAuthor;
+		checkedActivate(2);
+		final WoTIdentity author = (WoTIdentity)mAuthor;
 		author.initializeTransient(mFreetalk);
 		return author;
 	}

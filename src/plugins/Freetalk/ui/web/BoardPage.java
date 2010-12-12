@@ -31,11 +31,13 @@ public final class BoardPage extends WebPageImpl {
 
 	private final SubscribedBoard mBoard;
     private final boolean mMarkAllThreadsAsRead;
+    private final boolean mMarkAllThreadsAsUnread;
 	
 	public BoardPage(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) throws NoSuchBoardException {
 		super(myWebInterface, viewer, request, _baseL10n);
 		mBoard = mFreetalk.getMessageManager().getSubscription(viewer, request.getParam("name"));
 		mMarkAllThreadsAsRead = mRequest.isPartSet("MarkAllThreadsAsRead");
+		mMarkAllThreadsAsUnread = mRequest.isPartSet("MarkAllThreadsAsUnread");
 	}
 
 	public final void make() {
@@ -57,6 +59,13 @@ public final class BoardPage extends WebPageImpl {
         	markAllAsReadButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "name", mBoard.getName()});
         	markAllAsReadButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "MarkAllThreadsAsRead", "true"});
         	markAllAsReadButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("BoardPage.MarkAllThreadsAsReadButton") });
+
+        // Button to mark all threads read
+        HTMLNode markAllAsUnreadButton = buttonRow.addChild("span", "class", "mark-all-unread-button");
+        HTMLNode markAllAsUnreadButtonForm = addFormChild(markAllAsUnreadButton, getURI(mBoard.getName()), "BoardPage");
+        	markAllAsUnreadButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "name", mBoard.getName()});
+        	markAllAsUnreadButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "MarkAllThreadsAsUnread", "true"});
+        	markAllAsUnreadButtonForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("BoardPage.MarkAllThreadsAsUnreadButton") });
         	
         // Button to view not fetched messages
         HTMLNode showNotFetchedButton = buttonRow.addChild("span", "class", "show-not-fetched-button");
@@ -138,6 +147,8 @@ public final class BoardPage extends WebPageImpl {
                 // mark thread read if requested ...
                 if (mMarkAllThreadsAsRead) {
                     threadReference.markThreadAndRepliesAsReadAndCommit();
+                } else if(mMarkAllThreadsAsUnread) {
+                	threadReference.markThreadAndRepliesAsUnreadAndCommit();
                 }
 
                 final boolean threadWasRead = threadReference.wasThreadRead();

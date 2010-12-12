@@ -59,6 +59,10 @@
 	float: right;
 }
 
+.freetalk * .threads .button-row .mark-all-unread-button {
+	float: right;
+}
+
 .freetalk * .threads .button-row .show-not-fetched-button {
 	float: right;
 }

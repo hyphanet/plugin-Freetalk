@@ -7,11 +7,13 @@ import java.net.MalformedURLException;
 import java.util.StringTokenizer;
 import java.util.UUID;
 
+import plugins.Freetalk.Identity;
 import plugins.Freetalk.Identity.IdentityID;
 import plugins.Freetalk.Message.MessageID;
-import plugins.Freetalk.Identity;
 import plugins.Freetalk.MessageURI;
 import freenet.keys.FreenetURI;
+import freenet.support.codeshortification.IfNotEquals;
+import freenet.support.codeshortification.IfNull;
 
 
 /**
@@ -81,6 +83,19 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 		}
 		
 		mMessageID = MessageID.construct(uuid, mFreenetURI).toString();
+	}
+	
+	@Override
+	public void databaseIntegrityTest() throws Exception {
+		checkedActivate(3);
+		
+		IfNull.thenThrow(mFreenetURI, "mFreenetURI");
+		IfNull.thenThrow(mMessageID, "mMessageID");
+		
+		if(!mFreenetURI.isSSK())
+			throw new IllegalStateException("mFreenetURI == " + mFreenetURI);
+		
+		IfNotEquals.thenThrow(MessageID.construct(mMessageID).getAuthorID(), IdentityID.constructFromURI(mFreenetURI), "author ID from mMessageID");
 	}
 
 	@Override

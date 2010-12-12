@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
 import plugins.Freetalk.OwnIdentity;
@@ -10,6 +13,13 @@ public final class WoTOwnMessageList extends OwnMessageList {
 	public WoTOwnMessageList(OwnIdentity newAuthor, long newIndex) {
 		super(newAuthor, newIndex);
 		// TODO Auto-generated constructor stub
+	}
+	
+	public void databaseIntegrityTest() throws Exception {
+		super.databaseIntegrityTest();
+		
+		if(!(getAuthor() instanceof WoTIdentity))
+			throw new IllegalStateException("mAuthor == " + getAuthor());
 	}
 
 	@Override

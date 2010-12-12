@@ -101,10 +101,8 @@ public class NewReplyPage extends WebPageImpl {
                 l10n().addL10nSubstitution(
                         aChild, 
                         "NewReplyPage.ReplyCreated.BackToParentThread",
-                        new String[] { "link", "/link" }, 
-                        new String[] {
-                                "<a href=\"" + ThreadPage.getURI(mBoard, mParentThread) + "\">",
-                                "</a>" });
+                        new String[] { "link" }, 
+                        new HTMLNode[] { HTMLNode.link(ThreadPage.getURI(mBoard, mParentThread)) });
 				
 				successBox.addChild("br");
 				
@@ -112,11 +110,8 @@ public class NewReplyPage extends WebPageImpl {
                 l10n().addL10nSubstitution(
                         aChild, 
                         "NewReplyPage.ReplyCreated.BackToBoard",
-                        new String[] { "link", "boardname", "/link" }, 
-                        new String[] {
-                                "<a href=\"" + BoardPage.getURI(mBoard) + "\">",
-                                mBoard.getName(),
-                                "</a>" });
+                        new String[] { "link", "boardname"}, 
+                        new HTMLNode[] { HTMLNode.link(BoardPage.getURI(mBoard)), HTMLNode.text(mBoard.getName()) });
 
 				rateMessage(selectedMessageRating); // Handles the case where no rating is desired
 				}
