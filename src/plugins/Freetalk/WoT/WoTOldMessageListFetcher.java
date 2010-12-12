@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
 import java.io.IOException;
@@ -43,7 +46,7 @@ import freenet.support.io.NativeThread;
  * - In the onSuccess() method, for each fetched <code>MessageList</code>, a fetch is started for another old message list It tries to fetch the
  * 		most recent older ones first.
  * 
- * @author xor
+ * @author xor (xor@freenetproject.org)
  */
 public final class WoTOldMessageListFetcher extends TransferThread implements MessageListFetcher {
 
