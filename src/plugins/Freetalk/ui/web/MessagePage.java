@@ -80,14 +80,8 @@ public class MessagePage extends WebPageImpl {
         	alertBox.addChild("p", l10n().getString("MessagePage.MessageDeleted.Text0"));
         	HTMLNode p = alertBox.addChild("p");
         	
-            l10n().addL10nSubstitution(
-                    p, 
-                    "MessagePage.MessageDeleted.Text1",
-                    new String[] { "link", "boardname", "/link" }, 
-                    new String[] {
-                            "<a href=\"" + BoardPage.getURI(mBoardName)+"\">",
-                            mBoardName,
-                            "</a>" });
+        	l10n().addL10nSubstitution(p, "MessagePage.MessageDeleted.Text1", new String[] { "link", "boardname" },
+       			 new HTMLNode[] { HTMLNode.link(BoardPage.getURI(mBoardName)), HTMLNode.text(mBoardName) });
         }
 	}
 	

@@ -42,11 +42,12 @@ public final class NewBoardPage extends WebPageImpl {
 	            l10n().addL10nSubstitution(
 	                    successBox.addChild("div"), 
 	                    "NewBoardPage.CreateBoardSuccess.Text",
-	                    new String[] { "link", "boardname", "/link" }, 
-	                    new String[] {
-	                            "<a href=\""+Freetalk.PLUGIN_URI+"/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + subscribedBoard.getName()+"\">",
-	                            subscribedBoard.getName(),
-	                            "</a>" });
+	                    new String[] { "link", "boardname" },
+	                    new HTMLNode[] {
+	                    	HTMLNode.link(Freetalk.PLUGIN_URI+"/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + subscribedBoard.getName()),
+	                    	HTMLNode.text(subscribedBoard.getName()) }
+	                    );
+
 
 				makeNewBoardPage("en", "");
 			} catch (Exception e) {

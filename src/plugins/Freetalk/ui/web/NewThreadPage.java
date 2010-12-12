@@ -53,12 +53,8 @@ public final class NewThreadPage extends WebPageImpl {
                 l10n().addL10nSubstitution(
                         aChild, 
                         "NewThreadPage.ThreadCreated.BackToBoard",
-                        new String[] { "link", "boardname", "/link" }, 
-                        new String[] {
-                                // TODO: Use BoardPage.getURI(mBoard) here?
-                                "<a href=\"" + Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + mBoard.getName() + "\">",
-                                mBoard.getName(),
-                                "</a>" });
+                        new String[] { "link", "boardname" }, 
+                        new HTMLNode[] { HTMLNode.link(BoardPage.getURI(mBoard)), HTMLNode.text(mBoard.getName()) });
 				}
 			} catch (Exception e) {
 				HTMLNode alertBox = addAlertBox(l10n().getString("NewThreadPage.ThreadFailed.Header"));
