@@ -20,12 +20,12 @@ public final class IdentityStatistics extends Persistent {
 	private final Identity mIdentity;
 
 	/**
-	 * The index of the latest message list which is available for this identity
+	 * The index of the latest message list which is available for this identity.
 	 */
 	private long mHighestFetchedMessageListIndex = -1;
 	
 	/**
-	 * The lowest index of which the message list is fetched and all message lists after that index are fetched aswell.
+	 * The lowest index of which the message list is fetched and all message lists after that index are fetched as well.
 	 */
 	private long mLowestFetchedMessageListIndex = -1;
 	
@@ -68,13 +68,14 @@ public final class IdentityStatistics extends Persistent {
 	
 
 	/**
-	 * Get the highest message list index number which we have seen from this identity.
-	 * It is guaranteed that no slot between the highest and lowest reported index is empty - in other words: IdentityStatistics will keep
-	 * its numbers of highest and lowest fetched index in a way so that all message lists in between are fetched.
-	 * If there is a slot missing, the statistics object tries to chose the highest/lowest numbers biased towards the higher available
+	 * Get the the message list index number such that all message lists with index x are fetched for:<br>
+	 * <code>getIndexOfOldestAvailableMessageList() <= x <= getIndexOfLatestAvailableMessageList()</code><br><br>
+	 * 
+	 * In other words: It is guaranteed that no slot between the latest and oldest reported index is empty.
+	 * If there is a slot missing, the statistics object tries to chose the latest/lowest numbers biased towards the higher available
 	 * fragment instead of the lower one.
 	 * 
-	 * It is NOT guaranteed that all message lists above the returned number are not fetched, some might exist in the database already!
+	 * It is NOT guaranteed that all message lists below the returned number are not fetched, some might exist in the database already!
 	 * - The numbers returned by this function are supposed to be used for message list fetching, its not bad if we fetch the same message list
 	 * twice.
 	 */
@@ -94,10 +95,11 @@ public final class IdentityStatistics extends Persistent {
 	}
 	
 	/**
-	 * Get the lowest message list index number which we have seen from this identity.
-	 * It is guaranteed that no slot between the highest and lowest reported index is empty - in other words: IdentityStatistics will keep
-	 * its numbers of highest and lowest fetched index in a way so that all message lists in between are fetched.
-	 * If there is a slot missing, the statistics object tries to chose the highest/lowest numbers biased towards the higher available
+	 * Get the the message list index number such that all message lists with index x are fetched for:<br>
+	 * <code>getIndexOfOldestAvailableMessageList() <= x <= getIndexOfLatestAvailableMessageList()</code><br><br>
+	 * 
+	 * In other words: It is guaranteed that no slot between the latest and oldest reported index is empty.
+	 * If there is a slot missing, the statistics object tries to chose the latest/lowest numbers biased towards the higher available
 	 * fragment instead of the lower one.
 	 * 
 	 * It is NOT guaranteed that all message lists below the returned number are not fetched, some might exist in the database already!
