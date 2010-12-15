@@ -11,6 +11,9 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
 
+import javax.activation.MimeType;
+import javax.activation.MimeTypeParseException;
+
 import plugins.Freetalk.Identity.IdentityID;
 import plugins.Freetalk.Persistent.IndexedField;
 import plugins.Freetalk.exceptions.InvalidParameterException;
@@ -124,25 +127,42 @@ public abstract class Message extends Persistent {
 		
 		private final FreenetURI mURI;
 		
+		/**
+		 * We store the filename - which is stored in the URI as well - for fast database searches. 
+		 */
 		@IndexedField
 		private final String mFilename; 
 		
-		private final long mSize; /* Size in bytes */
+		/**
+		 * We store the MIME-Type as String for fast database searches.
+		 */
+		@IndexedField
+		private final String mMIMEType;
 		
-		// TODO: Store mime type and maybe some hashes.
-		// TODO: Store filename for search indexing
-		// TODO: Require size > 0 and obtain the size before posting a message
+		@IndexedField
+		private final long mSize; /* Size in bytes, -1 if unknown */
 		
-		public Attachment(FreenetURI myURI, long mySize) {
+		// TODO: Maybe store some hashes.
+		
+		public Attachment(FreenetURI myURI, MimeType myMIMEType, long mySize) {
 			if(myURI == null)
 				throw new IllegalArgumentException("URI is null");
 			
-			if(mySize < 0)
-				throw new IllegalArgumentException("Size is negative");
+			if(mySize < -1)
+				throw new IllegalArgumentException("Illegal size");
+			
+			if(myMIMEType == null) {
+				try {
+					myMIMEType = new MimeType("application/octet-stream");
+				} catch (MimeTypeParseException e) {
+					throw new RuntimeException(e);
+				}
+			}
 			
 			mMessage = null; // Is not available when the UI constructs attachments
 			mURI = myURI;
 			mFilename = mURI.getPreferredFilename();
+			mMIMEType = myMIMEType.toString();
 			mSize = mySize;
 		}
 		
@@ -164,6 +184,12 @@ public abstract class Message extends Persistent {
 		    if(!mFilename.equals(mURI.getPreferredFilename()))
 		    	throw new IllegalStateException("mFilename does not match expected filename: mFilename==" + mFilename 
 		    			+ "; expected==" + mURI.getPreferredFilename());
+		    
+		    try {
+		    	new MimeType(mMIMEType);
+		    } catch(MimeTypeParseException e) {
+		    	throw new IllegalStateException("mMIMEType is invalid: " + mMIMEType);
+		    }
 
 		    // TODO: FFS, is there really no array search library function which is not binary search??
 		    for(Attachment a : mMessage.getAttachments()) {
@@ -193,6 +219,15 @@ public abstract class Message extends Persistent {
 		public String getFilename() {
 			// checkedActivate(1); not needed, String is a db4o primitive
 			return mFilename;
+		}
+		
+		public MimeType getMIMEType() {
+			// checkedActivate(1); not needed, String is a db4o primitive
+			try {
+				return new MimeType(mMIMEType);
+			} catch(MimeTypeParseException e) {
+				throw new RuntimeException(e);
+			}
 		}
 		
 		public long getSize() {

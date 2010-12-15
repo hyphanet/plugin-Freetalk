@@ -11,14 +11,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.activation.MimeType;
+
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Identity;
 import plugins.Freetalk.IdentityManager;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.SubscribedBoard;
-import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
 import plugins.Freetalk.SubscribedBoard.MessageReference;
@@ -878,16 +880,19 @@ public final class FCPInterface implements FredPluginFCP {
                 final List<Attachment> attachments = new ArrayList<Attachment>(attachmentCount);
                 for (int x=1; x <= attachmentCount; x++) {
                     final String uriString = getMandatoryParameter(params, "FileAttachmentURI."+x);
-                    final String sizeString = getMandatoryParameter(params, "FileAttachmentSize."+x);
+                    final String mimeTypeString = params.get("FileAttachmentMIMEType."+x);
+                    final String sizeString = params.get("FileAttachmentSize."+x);
                     long fileSize;
                     FreenetURI freenetUri;
+                    MimeType mimeType;
                     try {
                         freenetUri = new FreenetURI(uriString);
-                        fileSize = Long.parseLong(sizeString);
+                        mimeType = mimeTypeString != null ? new MimeType(mimeTypeString) : null;
+                        fileSize = sizeString != null ? Long.parseLong(sizeString) : -1;
                     } catch(final Exception e) {
                         throw new InvalidParameterException("Invalid FileAttachment specified ("+x+")");
                     }
-                    attachments.add(new Attachment(freenetUri, fileSize));
+                    attachments.add(new Attachment(freenetUri, mimeType, fileSize));
                 }
 
                 // evaluate messageTitle
