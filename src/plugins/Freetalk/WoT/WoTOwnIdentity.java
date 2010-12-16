@@ -90,12 +90,10 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 		mFreetalk.getIdentityManager().setTrust(this, identity, trust, comment);
 	}
 	
-	@Override
 	public boolean wantsAutoSubscribeToNewBoards() {
 		return mAutoSubscribeToNewBoards;
 	}
 
-	@Override
 	public void setAutoSubscribeToNewboards(boolean autoSubscribeToNewBoards) {
 		mAutoSubscribeToNewBoards = autoSubscribeToNewBoards;
 	}
