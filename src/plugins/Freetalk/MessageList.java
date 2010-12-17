@@ -13,6 +13,7 @@ import java.util.StringTokenizer;
 
 import plugins.Freetalk.Identity.IdentityID;
 import plugins.Freetalk.Message.MessageID;
+import plugins.Freetalk.OwnMessageList.OwnMessageReference;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
@@ -223,7 +224,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			if(mMessageList.getReference(mURI) != this)
 				throw new IllegalStateException("Parent message list does not contain this MessageReference.");
 			
-			if(mBoard == null)
+			if(!(this instanceof OwnMessageList.OwnMessageReference) && mBoard == null)
 				throw new NullPointerException("mBoard==null");
 			
 			if(mDate == null)
