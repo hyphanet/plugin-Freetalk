@@ -75,7 +75,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String WOT_PLUGIN_NAME = "plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "Freetalk"; // FIXME: Use PLUGIN_TITLE as soon as we change it to "Freetalk"
 	public static final String DATABASE_FILENAME = "freetalk-testing-17.db4o";
-	public static final int DATABASE_FORMAT_VERSION = -83;
+	public static final int DATABASE_FORMAT_VERSION = -82;
 
 	/* References from the node */
 	
@@ -149,8 +149,6 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > Freetalk.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 		
-		upgradeDatabase();
-		
 		// Create & start the core classes
 		
 		Logger.debug(this, "Creating identity manager...");
@@ -162,6 +160,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		Logger.debug(this, "Creating task manager...");
 		mTaskManager = new PersistentTaskManager(this, db);
 		
+		upgradeDatabase();
 		databaseIntegrityTest(); // Some tests need the Identity-/Message-/TaskManager so we call this after creating them.
 		
 		Logger.debug(this, "Creating message XML...");
@@ -336,6 +335,33 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 
 	private void upgradeDatabase() {
 		int oldVersion = mConfig.getInt(Config.DATABASE_FORMAT_VERSION);
+		
+		// ATTENTION: Make sure that no upgrades are done here which are needed by the constructors of
+		// IdentityManager/MessageManager/PersistentTaskManager - they are created before this function is called.
+		
+		if(oldVersion == -83) {
+			Logger.normal(this, "Upgrading database version -82");
+			
+			synchronized(mMessageManager) {
+				Query q = db.query();
+				q.constrain(OwnMessage.class);
+				
+				for(OwnMessage m : new Persistent.InitializingObjectSet<OwnMessage>(this, q)) {
+					try {
+						OwnMessageList l = (OwnMessageList)m.getMessageList();
+						if(l != null) {
+							m.setMessageList(l);
+							m.storeAndCommit();
+						}
+					} catch(RuntimeException e) {
+						Persistent.checkedRollback(db, this, e);
+					}
+				}
+			}
+			
+			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++oldVersion);
+		}
+		
 		
 		if(oldVersion == Freetalk.DATABASE_FORMAT_VERSION)
 			return;

@@ -488,8 +488,7 @@ public abstract class Message extends Persistent {
 	    
 	    if(mMessageList != null) {
 	    	// If we are an OwnMessage and mMessageList is non-null then the URIs should also be non-null
-	    	// FIXME: Remove "!(this instanceof OwnMessage) in the final development branch, it only happens in old master-branch databases
-		    if(!(this instanceof OwnMessage) && mURI == null)
+		    if(mURI == null)
 		    	throw new NullPointerException("mURI == null");
 		    
 		    if(mFreenetURI == null)
