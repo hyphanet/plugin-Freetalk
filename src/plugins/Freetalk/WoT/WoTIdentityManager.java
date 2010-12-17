@@ -1031,9 +1031,15 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				mTrusteeID = trustee.getID();
 			}
 			
+			@Override
 			public boolean equals(final Object o) {
 				final TrustKey other = (TrustKey)o;
 				return mTrusterID.equals(other.mTrusterID) && mTrusteeID.equals(other.mTrusteeID);
+			}
+			
+			@Override
+			public int hashCode() {
+				return mTrusterID.hashCode() ^ mTrusteeID.hashCode();
 			}
 		}
 		
