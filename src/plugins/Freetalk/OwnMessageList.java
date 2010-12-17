@@ -40,8 +40,9 @@ public abstract class OwnMessageList extends MessageList {
 		if(!(mAuthor instanceof OwnIdentity))
 			throw new IllegalStateException("mAuthor is no OwnIdentity: " + mAuthor);
 			
-		if(iAmBeingInserted && iWasInserted)
-			throw new IllegalStateException("iAmBeingInserted == true and iWasInserted == true");
+		// FIXME: Re-enable this test in the 0.1-final-development branch. It won't work here due to old, bugged databases
+		// if(iAmBeingInserted && iWasInserted)
+		//	throw new IllegalStateException("iAmBeingInserted == true and iWasInserted == true");
 		
 		for(MessageReference ref : mMessages) {
 			if(!(ref instanceof OwnMessageReference))
@@ -141,6 +142,7 @@ public abstract class OwnMessageList extends MessageList {
 			Logger.error(this, "markAsInserted called for an already inserted message list: " + this);
 			
 		iWasInserted = true;
+		iAmBeingInserted = false;
 		storeWithoutCommit();
 	}
 
