@@ -45,6 +45,8 @@ public abstract class OwnMessage extends Message {
 	public synchronized MessageURI getURI() {
 		return mURI;
 	}
+	
+	public abstract MessageURI calculateURI();
 
 	/**
 	 * Generate the insert URI for a message.
@@ -78,6 +80,7 @@ public abstract class OwnMessage extends Message {
 	 */
 	public synchronized void setMessageList(OwnMessageList newMessageList) {
 		mMessageList = newMessageList;
+		mURI = calculateURI();
 		storeWithoutCommit();
 	}
 

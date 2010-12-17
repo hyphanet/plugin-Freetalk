@@ -9,6 +9,7 @@ import java.util.Set;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.MessageList;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.exceptions.InvalidParameterException;
@@ -65,7 +66,15 @@ public final class WoTOwnMessage extends OwnMessage {
 		if(!(super.getMessageList() instanceof WoTOwnMessageList))
 			throw new IllegalStateException("super.getMessageList() == " + super.getMessageList());
 	}
-
+	
+	public WoTMessageURI calculateURI() {
+		return calculateURI(getMessageList(), MessageID.construct(this));
+	}
+	
+	public static WoTMessageURI calculateURI(MessageList myMessageList, MessageID myID) {
+		return new WoTMessageURI(myMessageList.getURI(), myID);
+	}
+	
 	/**
 	 * Generate the insert URI for a message.
 	 */
