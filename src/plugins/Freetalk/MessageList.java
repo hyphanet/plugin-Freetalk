@@ -232,6 +232,8 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			
 			// Do not check the date, it might be bogus because it is obtained from the content of the message list
 			
+			
+			if(!(this instanceof OwnMessageList.OwnMessageReference)) { // OwnMessageReferences do not get marked as fetched
 			try {
 				mFreetalk.getMessageManager().get(mMessageID);
 				if(!mWasDownloaded)
@@ -244,6 +246,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 						throw new IllegalStateException("mWasDownloaded==true but message does not exist and there is no FetchFailedMarker.");
 					}
 				}
+			}
 			}
 		}
 		
