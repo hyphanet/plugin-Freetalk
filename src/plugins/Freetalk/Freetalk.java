@@ -22,6 +22,9 @@ import plugins.Freetalk.WoT.WoTOldMessageListFetcher;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.WoT.WoTOwnMessage;
 import plugins.Freetalk.WoT.WoTOwnMessageList;
+import plugins.Freetalk.exceptions.NoSuchBoardException;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
+import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import plugins.Freetalk.tasks.OwnMessageTask;
 import plugins.Freetalk.tasks.PersistentTask;
 import plugins.Freetalk.tasks.PersistentTaskManager;
@@ -75,7 +78,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String WOT_PLUGIN_NAME = "plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "Freetalk"; // FIXME: Use PLUGIN_TITLE as soon as we change it to "Freetalk"
 	public static final String DATABASE_FILENAME = "freetalk-testing-17.db4o";
-	public static final int DATABASE_FORMAT_VERSION = -82;
+	public static final int DATABASE_FORMAT_VERSION = -81;
 
 	/* References from the node */
 	
@@ -339,27 +342,98 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		// ATTENTION: Make sure that no upgrades are done here which are needed by the constructors of
 		// IdentityManager/MessageManager/PersistentTaskManager - they are created before this function is called.
 		
-		if(oldVersion == -83) {
-			Logger.normal(this, "Upgrading database version -82");
+		// The code for -82 can also upgrade -83
+		if(oldVersion == -83)
+			++oldVersion;
+		
+		if(oldVersion == -82) {
+			Logger.normal(this, "Upgrading database version " + oldVersion);
 			
 			synchronized(mMessageManager) {
 				Query q = db.query();
 				q.constrain(OwnMessage.class);
 				
+				Logger.normal(this, "Fixing OwnMessage.mURI and mBoards...");
 				for(OwnMessage m : new Persistent.InitializingObjectSet<OwnMessage>(this, q)) {
+					synchronized(db.lock()) {
 					try {
-						OwnMessageList l = (OwnMessageList)m.getMessageList();
-						if(l != null) {
-							m.setMessageList(l);
-							m.storeAndCommit();
+						boolean store = false;
+						try {
+							// Correct the empty mURI field
+							m.setMessageList((OwnMessageList)m.getMessageList());
+							store = true;
+						} catch (NoSuchMessageListException e) { }
+						
+						
+						// Old versions of Freetalk accidentally stored SubscribedBoards instead of Boards.
+						try {
+							if(m.getReplyToBoard() instanceof SubscribedBoard) {
+								m.mReplyToBoard = mMessageManager.getBoardByName(m.mReplyToBoard.getName());
+								store = true;
+							}
+						} catch(NoSuchBoardException e) {}
+						
+						m.getBoards(); // For initializeTransient
+						for(int i=0; i < m.mBoards.length; ++i) {
+							if(m.mBoards[i] instanceof SubscribedBoard) {
+								m.mBoards[i] = mMessageManager.getBoardByName(m.mBoards[i].getName());
+								store = true;
+							}
 						}
-					} catch(RuntimeException e) {
+						
+						if(store)
+							m.storeAndCommit();
+					} catch(Exception e) {
 						Persistent.checkedRollback(db, this, e);
+					}
+					}
+				}
+				
+				
+				Logger.normal(this, "Deleting OwnMessageTasks with mOwner==null...");
+				synchronized(mTaskManager) {
+					q = db.query();
+					q.constrain(OwnMessageTask.class);
+					
+					for(OwnMessageTask task : new Persistent.InitializingObjectSet<OwnMessageTask>(this, q)) {
+						try {
+							task.getOwner();
+						} catch(NoSuchIdentityException e1) {
+							// Old versions of PersistentTaskManager lacked deletion of tasks on OwnIdentity deletion
+							synchronized(db.lock()) {
+								try {
+									task.deleteWithoutCommit();
+									Persistent.checkedCommit(db, this);
+								} catch(RuntimeException e2) {
+									Persistent.checkedRollback(db, this, e2);
+								}
+							}
+						}
+					}
+				}
+				
+				Logger.normal(this, "Correcting FetchFailedMarker with negative mNextRetryDate...");
+				q = db.query();
+				q.constrain(FetchFailedMarker.class);
+				
+				for(FetchFailedMarker marker : new Persistent.InitializingObjectSet<FetchFailedMarker>(this, q)) {
+					if(marker.getDateOfNextRetry().before(marker.getDate())) {
+						synchronized(db.lock()) {
+							try {
+								assert(marker.getDateOfNextRetry().before(marker.getDate())); // The query is correct
+								marker.setDateOfNextRetry(marker.getDate());
+								marker.storeWithoutCommit();
+								Persistent.checkedCommit(db, this);
+							} catch(RuntimeException e) {
+								Persistent.checkedRollback(db, this, e);
+							}
+						}
 					}
 				}
 			}
 			
 			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++oldVersion);
+			Logger.normal(this, "Upgraded database to version " + oldVersion);
 		}
 		
 		
