@@ -186,6 +186,15 @@ public final class SubscribedBoard extends Board {
      * If there is one already, its retry count is incremented (which effectively increases the delay until the next retry will be done).
      */
     private final void storeOrUpdateUnwantedMessageLink(Message newMessage) {
+		if(getMessageReferences(newMessage.getID()).size() > 0) {
+			Logger.error(this, "storeOrUpdateUnwantedMessageLink called for existing message, deleting the message first", new RuntimeException());
+			try {
+				deleteMessage(newMessage);
+			} catch(Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+		
 		Logger.normal(this, "Ignoring message from " + newMessage.getAuthor().getNickname() + " because " +
 				getSubscriber().getNickname() + " does not want his messages.");
 		
