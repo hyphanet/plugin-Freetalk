@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Persistent;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;
 import freenet.support.CurrentTimeUTC;
@@ -59,6 +60,17 @@ public abstract class PersistentTask extends Persistent {
 		
 		// Owner may be null.
 	}
+	
+	public OwnIdentity getOwner() throws NoSuchIdentityException {
+		checkedActivate(2);
+		if(mOwner == null)
+			throw new NoSuchIdentityException();
+		
+		if(mOwner instanceof Persistent)
+			((Persistent)mOwner).initializeTransient(mFreetalk);
+		
+		return mOwner;
+	}
 
 	/**
 	 * ATTENTION: The process method must synchronize on this PersistentTask and then on the database lock when storing
@@ -101,7 +113,7 @@ public abstract class PersistentTask extends Persistent {
 		}
 	}
 	
-	protected void deleteWithoutCommit() {
+	public void deleteWithoutCommit() { // FIXME: Change visibility to protected in 0.1-final-development branch
 		deleteWithoutCommit(3);
 	}
 

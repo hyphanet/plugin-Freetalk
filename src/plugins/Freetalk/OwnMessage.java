@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
@@ -46,7 +47,7 @@ public abstract class OwnMessage extends Message {
 		return mURI;
 	}
 	
-	public abstract MessageURI calculateURI();
+	public abstract MessageURI calculateURI() throws NoSuchMessageListException;
 
 	/**
 	 * Generate the insert URI for a message.
@@ -80,8 +81,21 @@ public abstract class OwnMessage extends Message {
 	 */
 	public synchronized void setMessageList(OwnMessageList newMessageList) {
 		mMessageList = newMessageList;
-		mURI = calculateURI();
+		try {
+			mURI = calculateURI();
+		} catch (NoSuchMessageListException e) {
+			throw new RuntimeException(e);
+		}
 		storeWithoutCommit();
+	}
+	
+	public synchronized MessageList getMessageList() throws NoSuchMessageListException {
+		checkedActivate(2);
+		if(mMessageList == null)
+			throw new NoSuchMessageListException("");
+		
+		mMessageList.initializeTransient(mFreetalk);
+		return mMessageList;
 	}
 
 	/**

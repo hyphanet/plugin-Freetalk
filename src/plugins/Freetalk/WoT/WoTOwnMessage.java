@@ -14,6 +14,7 @@ import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.OwnMessage;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import freenet.keys.FreenetURI;
 
 /**
@@ -41,7 +42,7 @@ public final class WoTOwnMessage extends OwnMessage {
 	public void databaseIntegrityTest() throws Exception {
 		super.databaseIntegrityTest();
 		
-		if(!(super.getURI() instanceof WoTMessageURI))
+		if(super.getURI() != null && !(super.getURI() instanceof WoTMessageURI))
 			throw new IllegalStateException("super.getURI() == " + super.getURI());
 		
 		if(!(super.getAuthor() instanceof WoTOwnIdentity))
@@ -63,11 +64,13 @@ public final class WoTOwnMessage extends OwnMessage {
 				throw new IllegalStateException("super.getParent() == " + super.getParent());
 		} catch(NoSuchMessageException e) {}
 		
-		if(!(super.getMessageList() instanceof WoTOwnMessageList))
-			throw new IllegalStateException("super.getMessageList() == " + super.getMessageList());
+		try {
+			if(!(super.getMessageList() instanceof WoTOwnMessageList))
+				throw new IllegalStateException("super.getMessageList() == " + super.getMessageList());
+		} catch(NoSuchMessageListException e) {}
 	}
 	
-	public WoTMessageURI calculateURI() {
+	public WoTMessageURI calculateURI() throws NoSuchMessageListException {
 		return calculateURI(getMessageList(), MessageID.construct(this));
 	}
 	

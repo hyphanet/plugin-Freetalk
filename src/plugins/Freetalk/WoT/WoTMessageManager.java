@@ -4,6 +4,7 @@
 package plugins.Freetalk.WoT;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -23,6 +24,7 @@ import plugins.Freetalk.MessageURI;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Persistent;
 import plugins.Freetalk.Persistent.InitializingObjectSet;
+import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.exceptions.DuplicateElementException;
 import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -88,9 +90,28 @@ public final class WoTMessageManager extends MessageManager {
 		
 		if(myParentThreadURI != null && !(myParentThreadURI instanceof WoTMessageURI))
 			throw new IllegalArgumentException("Parent thread URI is no WoTMessageURI: " + myParentThreadURI);
+		
+		if(myParentMessage != null && !(myParentMessage instanceof WoTMessage))
+			throw new IllegalArgumentException("Parent message is no WoTMessage");
+		
+		if(!(myAuthor instanceof WoTOwnIdentity))
+			throw new IllegalArgumentException("Author is no WoTOwnIdentity");
+		
+		// Replace SubscribedBoards with normal Boards
+		if(myReplyToBoard != null)
+			myBoards.add(myReplyToBoard);
+		
+		final HashSet<Board> boards = new HashSet<Board>(myBoards.size() * 2);
+		for(Board board : myBoards) {
+			if(board instanceof SubscribedBoard) {
+				boards.add(getBoardByName(board.getName()));
+				Logger.warning(this, "Got a SubscribedBoard, correcting to Board", new RuntimeException());
+			} else
+				boards.add(board);
+		}
 
 		Date date = myDate!=null ? myDate : CurrentTimeUTC.get();
-		m = WoTOwnMessage.construct((WoTMessageURI)myParentThreadURI, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
+		m = WoTOwnMessage.construct((WoTMessageURI)myParentThreadURI, myParentMessage, boards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
 		m.initializeTransient(mFreetalk);
 		synchronized(this) {
 			m.storeAndCommit();
