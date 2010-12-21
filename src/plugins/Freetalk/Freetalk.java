@@ -4,6 +4,8 @@
 package plugins.Freetalk;
 
 import java.lang.reflect.Field;
+import java.util.Date;
+import java.util.Random;
 
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
@@ -24,6 +26,7 @@ import plugins.Freetalk.WoT.WoTOwnMessage;
 import plugins.Freetalk.WoT.WoTOwnMessageList;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import plugins.Freetalk.tasks.OwnMessageTask;
 import plugins.Freetalk.tasks.PersistentTask;
@@ -52,6 +55,7 @@ import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -78,7 +82,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String WOT_PLUGIN_NAME = "plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "Freetalk"; // FIXME: Use PLUGIN_TITLE as soon as we change it to "Freetalk"
 	public static final String DATABASE_FILENAME = "freetalk-testing-17.db4o";
-	public static final int DATABASE_FORMAT_VERSION = -81;
+	public static final int DATABASE_FORMAT_VERSION = -80;
 
 	/* References from the node */
 	
@@ -342,11 +346,10 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		// ATTENTION: Make sure that no upgrades are done here which are needed by the constructors of
 		// IdentityManager/MessageManager/PersistentTaskManager - they are created before this function is called.
 		
-		// The code for -82 can also upgrade -83
-		if(oldVersion == -83)
-			++oldVersion;
+		if(oldVersion == -83 || oldVersion == -82)
+			oldVersion = -81;
 		
-		if(oldVersion == -82) {
+		if(oldVersion == -81) {
 			Logger.normal(this, "Upgrading database version " + oldVersion);
 			
 			synchronized(mMessageManager) {
@@ -354,38 +357,38 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 				q.constrain(OwnMessage.class);
 				
 				Logger.normal(this, "Fixing OwnMessage.mURI and mBoards...");
-				for(OwnMessage m : new Persistent.InitializingObjectSet<OwnMessage>(this, q)) {
-					synchronized(db.lock()) {
+				synchronized(db.lock()) {
 					try {
-						boolean store = false;
-						try {
-							// Correct the empty mURI field
-							m.setMessageList((OwnMessageList)m.getMessageList());
-							store = true;
-						} catch (NoSuchMessageListException e) { }
-						
-						
-						// Old versions of Freetalk accidentally stored SubscribedBoards instead of Boards.
-						try {
-							if(m.getReplyToBoard() instanceof SubscribedBoard) {
-								m.mReplyToBoard = mMessageManager.getBoardByName(m.mReplyToBoard.getName());
-								store = true;
+						for(OwnMessage m : new Persistent.InitializingObjectSet<OwnMessage>(this, q)) {
+							try {
+								// Correct the empty mURI field
+								m.setMessageList((OwnMessageList)m.getMessageList());
+							} catch (NoSuchMessageListException e) { }
+
+
+							// Old versions of Freetalk accidentally stored SubscribedBoards instead of Boards.
+							try {
+								if(m.getReplyToBoard() instanceof SubscribedBoard) {
+									m.mReplyToBoard = mMessageManager.getBoardByName(m.mReplyToBoard.getName());
+								}
+							} catch(NoSuchBoardException e) {}
+
+							m.getBoards(); // For initializeTransient
+							for(int i=0; i < m.mBoards.length; ++i) {
+								if(m.mBoards[i] instanceof SubscribedBoard) {
+									try {
+										m.mBoards[i] = mMessageManager.getBoardByName(m.mBoards[i].getName());
+									} catch (NoSuchBoardException e) {
+										throw new RuntimeException(e);
+									}
+								}
 							}
-						} catch(NoSuchBoardException e) {}
-						
-						m.getBoards(); // For initializeTransient
-						for(int i=0; i < m.mBoards.length; ++i) {
-							if(m.mBoards[i] instanceof SubscribedBoard) {
-								m.mBoards[i] = mMessageManager.getBoardByName(m.mBoards[i].getName());
-								store = true;
-							}
+
+							m.storeWithoutCommit();
 						}
-						
-						if(store)
-							m.storeAndCommit();
-					} catch(Exception e) {
-						Persistent.checkedRollback(db, this, e);
-					}
+						Persistent.checkedCommit(db, this);
+					} catch(RuntimeException e) {
+						Persistent.checkedRollbackAndThrow(db, this, e);
 					}
 				}
 				
@@ -395,19 +398,19 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 					q = db.query();
 					q.constrain(OwnMessageTask.class);
 					
-					for(OwnMessageTask task : new Persistent.InitializingObjectSet<OwnMessageTask>(this, q)) {
+					synchronized(db.lock()) {
 						try {
-							task.getOwner();
-						} catch(NoSuchIdentityException e1) {
-							// Old versions of PersistentTaskManager lacked deletion of tasks on OwnIdentity deletion
-							synchronized(db.lock()) {
+							for(OwnMessageTask task : new Persistent.InitializingObjectSet<OwnMessageTask>(this, q)) {
 								try {
+									task.getOwner();
+								} catch(NoSuchIdentityException e1) {
+									// Old versions of PersistentTaskManager lacked deletion of tasks on OwnIdentity deletion
 									task.deleteWithoutCommit();
-									Persistent.checkedCommit(db, this);
-								} catch(RuntimeException e2) {
-									Persistent.checkedRollback(db, this, e2);
 								}
 							}
+							Persistent.checkedCommit(db, this);
+						} catch(RuntimeException e2) {
+							Persistent.checkedRollbackAndThrow(db, this, e2);
 						}
 					}
 				}
@@ -415,27 +418,79 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 				Logger.normal(this, "Correcting FetchFailedMarker with negative mNextRetryDate...");
 				q = db.query();
 				q.constrain(FetchFailedMarker.class);
-				
-				for(FetchFailedMarker marker : new Persistent.InitializingObjectSet<FetchFailedMarker>(this, q)) {
-					if(marker.getDateOfNextRetry().before(marker.getDate())) {
-						synchronized(db.lock()) {
-							try {
+
+				synchronized(db.lock()) {
+					try {
+						for(FetchFailedMarker marker : new Persistent.InitializingObjectSet<FetchFailedMarker>(this, q)) {
+							if(marker.getDateOfNextRetry().before(marker.getDate())) {
 								assert(marker.getDateOfNextRetry().before(marker.getDate())); // The query is correct
 								marker.setDateOfNextRetry(marker.getDate());
 								marker.storeWithoutCommit();
-								Persistent.checkedCommit(db, this);
-							} catch(RuntimeException e) {
-								Persistent.checkedRollback(db, this, e);
 							}
 						}
+						Persistent.checkedCommit(db, this);
+					} catch(RuntimeException e) {
+						Persistent.checkedRollbackAndThrow(db, this, e);
+					}
+				}
+			}
+			
+			Random random = getPluginRespirator().getNode().random;
+			
+			synchronized(mMessageManager) {
+				Query q = db.query();
+				q.constrain(SubscribedBoard.MessageReference.class);
+				
+				Logger.normal(this, "Setting wanted-check information on existing message references...");
+				synchronized(db.lock()) {
+					try {
+						for(SubscribedBoard.MessageReference ref : new Persistent.InitializingObjectSet<SubscribedBoard.MessageReference>(this, q)) {
+							try {
+								ref.getMessage();
+								ref.mLastWantedCheckDate = ref.getCreationDate();
+								ref.mNextWantedCheckDate = new Date(CurrentTimeUTC.getInMillis() 
+										+ Math.abs(random.nextLong() % (20 * SubscribedBoard.MessageReference.MINIMAL_RETRY_DELAY)));
+							} catch(NoSuchMessageException e) {
+								ref.mLastWantedCheckDate = null;
+								ref.mNextWantedCheckDate = null;
+								ref.mNumberOfWantedChecks = 0;
+							}
+							ref.storeWithoutCommit();
+						}
+						Persistent.checkedCommit(db, this);
+					} catch(RuntimeException e) {
+						Persistent.checkedRollbackAndThrow(db, this, e);
+					}
+				}
+				
+				Logger.normal(this, "Correcting UnwantedMessageLinks...");
+				q = db.query();
+				q.constrain(SubscribedBoard.UnwantedMessageLink.class);
+				synchronized(db.lock()) {
+					try {
+						for(SubscribedBoard.UnwantedMessageLink link : new Persistent.InitializingObjectSet<SubscribedBoard.UnwantedMessageLink>(this, q)) {
+							if(link.getBoard().getMessageReferences(link.getMessage().getID()).size() > 0) {
+								link.deleteWithoutCommit();
+								// This database-upgrade code also triggers recheck of the wanted state of all messages, therefore
+								// we do not need to delete the message here...
+							} else {
+								link.mLastRetryDate = link.getCreationDate();
+								link.mNextRetryDate = new Date(CurrentTimeUTC.getInMillis() 
+										+ Math.abs(random.nextLong() % (20 * SubscribedBoard.UnwantedMessageLink.MINIMAL_RETRY_DELAY)));
+								link.storeWithoutCommit();
+							}
+						}
+						Persistent.checkedCommit(db, this);
+					} catch(RuntimeException e) {
+						Persistent.checkedRollbackAndThrow(db, this, e);
 					}
 				}
 			}
 			
 			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++oldVersion);
+			mConfig.storeAndCommit();
 			Logger.normal(this, "Upgraded database to version " + oldVersion);
 		}
-		
 		
 		if(oldVersion == Freetalk.DATABASE_FORMAT_VERSION)
 			return;
