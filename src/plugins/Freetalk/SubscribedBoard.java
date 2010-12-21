@@ -1280,7 +1280,7 @@ public final class SubscribedBoard extends Board {
 	        	IfNull.thenThrow(mNextWantedCheckDate, "mNextWantedCheckDate");
 	        	
 	        	final Date minNextRetry = new Date(mLastWantedCheckDate.getTime() + MINIMAL_RETRY_DELAY);
-	        	final Date maxNextRetry = new Date(mNextWantedCheckDate.getTime() + MAXIMAL_RETRY_DELAY);
+	        	final Date maxNextRetry = new Date(mLastWantedCheckDate.getTime() + MAXIMAL_RETRY_DELAY);
 	        	
 	        	if(mNextWantedCheckDate.before(minNextRetry))
 	        		throw new IllegalStateException("Invalid next wanted-check date, too early: " + mNextWantedCheckDate);
