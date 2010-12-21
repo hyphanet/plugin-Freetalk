@@ -141,10 +141,10 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		Logger.debug(this, "Main loop running...");
 		
 		try {
-			// Must be called periodically because it is not called on demand.
+			// Must be called periodically because they are not called on demand.
 			clearExpiredFetchFailedMarkers();
-
 			recheckUnwantedMessages();
+			recheckWantedMessages();
 		}  finally {
 			long sleepTime = THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
 			Logger.debug(this, "Sleeping for " + sleepTime/(60*1000) + " minutes.");
@@ -1018,13 +1018,30 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	protected synchronized void recheckUnwantedMessages() {
 		Logger.normal(this, "Rechecking unwanted messages...");
 		
-		Date now = CurrentTimeUTC.get();
+		final Date now = CurrentTimeUTC.get();
 		
 		for(SubscribedBoard board : subscribedBoardIterator()) {
 			board.retryAllUnwantedMessages(now);
 		}
 		
 		Logger.normal(this, "Finished rechecking unwanted message");
+	}
+	
+	/**
+	 * Only for being used by the MessageManager itself and by unit tests.
+	 * 
+	 * Checks whether there are any messages in subscribed boards which the subscriber did want to read and now does not want to read anymore.
+	 */
+	protected synchronized void recheckWantedMessages() {
+		Logger.normal(this, "Rechecking wanted messages...");
+		
+		final Date now = CurrentTimeUTC.get();
+		
+		for(SubscribedBoard board : subscribedBoardIterator()) {
+			board.validateAllWantedMessages(now);
+		}
+		
+		Logger.normal(this, "Finished rechecking wanted message");
 	}
 	
 	/**
