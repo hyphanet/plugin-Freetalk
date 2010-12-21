@@ -447,7 +447,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 						for(SubscribedBoard.MessageReference ref : new Persistent.InitializingObjectSet<SubscribedBoard.MessageReference>(this, q)) {
 							try {
 								ref.getMessage();
-								ref.mLastWantedCheckDate = ref.getCreationDate();
+								ref.mLastWantedCheckDate = CurrentTimeUTC.get();
 								ref.mNextWantedCheckDate = new Date(CurrentTimeUTC.getInMillis() 
 										+ Math.abs(random.nextLong() % (20 * SubscribedBoard.MessageReference.MINIMAL_RETRY_DELAY)));
 							} catch(NoSuchMessageException e) {
@@ -474,7 +474,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 								// This database-upgrade code also triggers recheck of the wanted state of all messages, therefore
 								// we do not need to delete the message here...
 							} else {
-								link.mLastRetryDate = link.getCreationDate();
+								link.mLastRetryDate = CurrentTimeUTC.get();
 								link.mNextRetryDate = new Date(CurrentTimeUTC.getInMillis() 
 										+ Math.abs(random.nextLong() % (20 * SubscribedBoard.UnwantedMessageLink.MINIMAL_RETRY_DELAY)));
 								link.storeWithoutCommit();
