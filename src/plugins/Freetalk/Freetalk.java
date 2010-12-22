@@ -82,7 +82,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String WOT_PLUGIN_NAME = "plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "Freetalk"; // FIXME: Use PLUGIN_TITLE as soon as we change it to "Freetalk"
 	public static final String DATABASE_FILENAME = "freetalk-testing-17.db4o";
-	public static final int DATABASE_FORMAT_VERSION = -80;
+	public static final int DATABASE_FORMAT_VERSION = -79;
 
 	/* References from the node */
 	
@@ -346,10 +346,10 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		// ATTENTION: Make sure that no upgrades are done here which are needed by the constructors of
 		// IdentityManager/MessageManager/PersistentTaskManager - they are created before this function is called.
 		
-		if(oldVersion == -83 || oldVersion == -82)
-			oldVersion = -81;
+		if(oldVersion == -83 || oldVersion == -82 || oldVersion == -81)
+			oldVersion = -80;
 		
-		if(oldVersion == -81) {
+		if(oldVersion == -80) {
 			Logger.normal(this, "Upgrading database version " + oldVersion);
 			
 			synchronized(mMessageManager) {
@@ -449,6 +449,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 								ref.getMessage();
 								ref.mLastWantedCheckDate = CurrentTimeUTC.get();
 								ref.mNextWantedCheckDate = new Date(CurrentTimeUTC.getInMillis() 
+										+ SubscribedBoard.MessageReference.MINIMAL_RETRY_DELAY
 										+ Math.abs(random.nextLong() % (20 * SubscribedBoard.MessageReference.MINIMAL_RETRY_DELAY)));
 							} catch(NoSuchMessageException e) {
 								ref.mLastWantedCheckDate = null;
@@ -476,6 +477,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 							} else {
 								link.mLastRetryDate = CurrentTimeUTC.get();
 								link.mNextRetryDate = new Date(CurrentTimeUTC.getInMillis() 
+										+  SubscribedBoard.UnwantedMessageLink.MINIMAL_RETRY_DELAY
 										+ Math.abs(random.nextLong() % (20 * SubscribedBoard.UnwantedMessageLink.MINIMAL_RETRY_DELAY)));
 								link.storeWithoutCommit();
 							}
