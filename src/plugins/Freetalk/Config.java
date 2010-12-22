@@ -57,7 +57,7 @@ public final class Config extends Persistent {
 	
 	@Override
 	public void databaseIntegrityTest() throws Exception {
-		checkedActivate(3);
+		checkedActivate(4);
 		
 		if(mStringParams == null)
 			throw new NullPointerException("mStringParams==null");
@@ -93,6 +93,7 @@ public final class Config extends Persistent {
 				Logger.debug(myFreetalk, "Loaded config.");
 				config = result.next();
 				config.initializeTransient(myFreetalk);
+				config.checkedActivate(4);
 				config.setDefaultValues(false);
 			}
 			
@@ -107,7 +108,7 @@ public final class Config extends Persistent {
 	public synchronized void storeAndCommit() {
 		synchronized(mDB.lock()) {
 			try {
-				checkedActivate(3);
+				checkedActivate(4);
 				mDB.store(mStringParams, 3);
 				mDB.store(mIntParams, 3);
 				checkedStore();
