@@ -53,7 +53,7 @@ public final class WoTMessage extends Message {
 		if(newMessageList == null)
 			throw new NullPointerException("MessageList is null");
 		
-		return new WoTMessage(calculateURI(newMessageList, newID), myFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
+		return new WoTMessage(WoTOwnMessage.calculateURI(newMessageList, newID), myFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
 
 	protected WoTMessage(WoTMessageURI newURI, FreenetURI newFreenetURI, MessageID newID, MessageList newMessageList, WoTMessageURI newThreadURI,
@@ -91,10 +91,6 @@ public final class WoTMessage extends Message {
 		
 		if(!(super.getMessageList() instanceof WoTMessageList))
 			throw new IllegalStateException("super.getMessageList() == " + super.getMessageList());
-	}
-
-	public static WoTMessageURI calculateURI(MessageList myMessageList, MessageID myID) {
-		return new WoTMessageURI(myMessageList.getURI(), myID);
 	}
 	
 	@Override

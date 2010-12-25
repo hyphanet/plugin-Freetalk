@@ -1,6 +1,7 @@
 package plugins.Freetalk;
 
 import java.util.Date;
+import java.util.Random;
 
 import plugins.Freetalk.Message.MessageID;
 import plugins.Freetalk.Persistent.IndexedClass;
@@ -182,10 +183,18 @@ public final class SubscribedBoard extends Board {
     }
     
     /**
-     * Stores an {@link UnwantedMessageLink} for the given message.
+     * Deletes the given message and then stores an {@link UnwantedMessageLink} for it.
      * If there is one already, its retry count is incremented (which effectively increases the delay until the next retry will be done).
      */
-    private final void storeOrUpdateUnwantedMessageLink(Message newMessage) {
+    private final void deleteMessageAndStoreOrUpdateUnwantedMessageLink(Message newMessage) {
+		if(getMessageReferences(newMessage.getID()).size() > 0) {
+			try {
+				deleteMessage(newMessage, false);
+			} catch(Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+		
 		Logger.normal(this, "Ignoring message from " + newMessage.getAuthor().getNickname() + " because " +
 				getSubscriber().getNickname() + " does not want his messages.");
 		
@@ -310,7 +319,7 @@ public final class SubscribedBoard extends Board {
     		// Maybe delete an obsolete UnwantedMessageLink if it exists
     		maybeDeleteUnwantedMessageLink(newMessage);
     	} else {
-    		storeOrUpdateUnwantedMessageLink(newMessage);
+    		deleteMessageAndStoreOrUpdateUnwantedMessageLink(newMessage);
     		return;
     	}
     	
@@ -367,6 +376,11 @@ public final class SubscribedBoard extends Board {
     }
 
     
+    @Override
+    protected void deleteMessage(Message message) throws NoSuchMessageException {
+    	deleteMessage(message, true);
+    }
+    
     /**
      * Called by the {@link MessageManager} before a {@link Message} object is deleted from the database.
      * This usually happens when an {@link Identity} is being deleted.
@@ -375,21 +389,25 @@ public final class SubscribedBoard extends Board {
      * 
      * TODO: Write a sophisticated unit test
      * 
+     * 
      * @param message The message which is about to be deleted. It must still be stored within the database so that queries on it work.
+     * @param deleteUnwantedLink True if an eventually existing UnwantedMessageLink for the message should also be delete, false if it should be kept.
      * @throws NoSuchMessageException If the message does not exist in this Board.
      */
-    protected synchronized void deleteMessage(Message message) throws NoSuchMessageException {
+    protected synchronized void deleteMessage(Message message, boolean deleteUnwantedLink) throws NoSuchMessageException {
     	boolean unwantedLinkDeleted = false;
     	
     	final String messageID = message.getID();
     	
     	// Maybe delete UnwantedMessageLink
     	
+    	if(deleteUnwantedLink) {
     	try {
     		UnwantedMessageLink link = getUnwantedMessageLink(message);
     		link.deleteWithoutCommit();
     		unwantedLinkDeleted = true;
     	} catch(NoSuchMessageException e) { }
+    	}
 
     	
     	// Maybe delete BoardThreadLink
@@ -731,7 +749,7 @@ public final class SubscribedBoard extends Board {
     	return new Persistent.InitializingObjectSet<UnwantedMessageLink>(mFreetalk, query);
     }
     
-    private synchronized ObjectSet<UnwantedMessageLink> getAllExpiredUnwantedMessages(Date now) {
+    private synchronized ObjectSet<UnwantedMessageLink> getAllExpiredUnwantedMessages(final Date now) {
     	final Query query = mDB.query();
     	query.constrain(UnwantedMessageLink.class);
     	query.descend("mBoard").constrain(this).identity();
@@ -739,26 +757,84 @@ public final class SubscribedBoard extends Board {
     	return new Persistent.InitializingObjectSet<UnwantedMessageLink>(mFreetalk, query);
     }
     
-    protected synchronized void retryAllUnwantedMessages(Date now) {
-    	for(UnwantedMessageLink link : getAllExpiredUnwantedMessages(now)) {
-    		if(link.retry() == false)
-    			link.storeWithoutCommit();
-    		else {
+    private synchronized ObjectSet<MessageReference> getAllExpiredWantedMessages(final Date now) {
+    	final Query query = mDB.query();
+    	query.constrain(MessageReference.class);
+    	query.descend("mBoard").constrain(this).identity();
+    	query.descend("mNextWantedCheckDate").constrain(now).greater().not();
+    	query.descend("mNextWantedCheckDate").constrain(null).identity().not();
+    	return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, query);    	
+    }
+    
+    protected synchronized void retryAllUnwantedMessages(final Date now) {
+    	Logger.normal(this, "Checking the wanted-state of unwanted messages ...");
+    	
+    	int count = 0;
+    	
+    	for(final UnwantedMessageLink link : getAllExpiredUnwantedMessages(now)) {
+    		++count;
+    		synchronized(mDB.lock()) {
     			try {
-    				final Message message = link.getMessage();
-    				Logger.debug(this, "Message state changed from unwanted to wanted, adding: " + message);
-    				addMessage(message);
+		    		if(link.retry() == false)
+		    			link.storeWithoutCommit();
+		    		else {
+		    			final Message message = link.getMessage();
+		    			Logger.normal(this, "Message state changed from unwanted to wanted, adding: " + message);
+		    			addMessage(message);
+		    		}
+		    		Persistent.checkedCommit(mDB, this);
     			} catch(Exception e) {
-    				Logger.error(this, "Adding message failed", e);
+    				Persistent.checkedRollback(mDB, this, e);
     			}
     		}
     	}
     	
+    	Logger.normal(this, "Finished checking the wanted-state of " + count + " unwanted messages.");
+    	
     	if(Logger.shouldLog(Logger.LogLevel.DEBUG, this)) {
     		final int remaining = getAllUnwantedMessages().size();
-    		if(remaining > 0)
-    			Logger.debug(this, "Remaining unwanted count: " + remaining);
+    		Logger.debug(this, "Remaining unwanted count: " + remaining);
     	}
+    }
+    
+    protected synchronized void validateAllWantedMessages(Date now) {
+    	Logger.normal(this, "Checking the wanted-state of wanted messages ...");
+    	
+    	int count = 0;
+    	
+    	for(final MessageReference ref : getAllExpiredWantedMessages(now)) {
+    		if(ref.mNextWantedCheckDate == null) {
+    			Logger.warning(this, "Db4o bug: constrain(null).identity().not() did not work.");
+    			continue;
+    		}
+    		
+    		Message message;
+    		
+    		try {
+    			message = ref.getMessage();
+    		} catch(NoSuchMessageException e) {
+    			Logger.error(this, "Wanted-check scheduled even though MessageReference has no message: " + ref);
+    			continue;
+    		}
+    		
+    		++count;
+    		synchronized(mDB.lock()) {
+    			try {
+    				if(ref.validateIfStillWanted(now)) {
+    					ref.storeWithoutCommit();
+    				} else {
+    					Logger.normal(this, "Message state changed from wanted to unwanted, deleting: " + message);
+    					deleteMessageAndStoreOrUpdateUnwantedMessageLink(message);
+    				}
+    				Persistent.checkedCommit(mDB, this);
+    			} catch (Exception e) {
+    				Persistent.checkedRollback(mDB, this, e);
+    			}
+    		}
+
+    	}
+    	
+    	Logger.normal(this, "Finished checking the wanted-state of " + count +" wanted messages");
     }
     
     @SuppressWarnings("unchecked")
@@ -923,9 +999,11 @@ public final class SubscribedBoard extends Board {
     	
     	// TODO: Instead of periodic retrying, implement event subscription in the WoT plugin... 
     	
-    	public static final long MINIMAL_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (5 * 60 * 1000) : (5 * 60 * 1000);
+    	public static final long MINIMAL_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (5 * 60 * 1000) : (10 * 60 * 1000);
     	
     	public static final long MAXIMAL_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 60 * 6000) : (24 * 60 * 60 * 1000);
+    	
+    	public static final int MAXIMAL_RETRY_DELAY_AT_RETRY_COUNT = (int)(Math.log(MAXIMAL_RETRY_DELAY / MINIMAL_RETRY_DELAY) / Math.log(2));
     	
     	@IndexedField
     	protected final SubscribedBoard mBoard;
@@ -950,9 +1028,14 @@ public final class SubscribedBoard extends Board {
     		mBoard = myBoard;
     		mMessage = myMessage;
     		mAuthor = mMessage.getAuthor();
+    		
+    		mNumberOfRetries = 0;
     		mLastRetryDate = CurrentTimeUTC.get();
-    		mNumberOfRetries = 1;
-    		mNextRetryDate = computeNextCheckDate();
+    		
+    		// When someone distrusts a spammer, a large amount of messages will be removed at once probably
+    		// Therefore, we randomize their next-retry date to ensure that they are not retried all at once
+    		Random random = mBoard.mFreetalk.getPluginRespirator() != null ? mBoard.mFreetalk.getPluginRespirator().getNode().random : new Random();
+			mNextRetryDate = new Date(mLastRetryDate.getTime() + MINIMAL_RETRY_DELAY + Math.abs(random.nextLong() % (3*MINIMAL_RETRY_DELAY)));
     	}
     	
     	@Override
@@ -973,7 +1056,7 @@ public final class SubscribedBoard extends Board {
         	else if(mNextRetryDate.after(maxNextRetry))
         		throw new IllegalStateException("Invalid next retry date, too far in the future: " + mNextRetryDate);
         	
-        	if(mNumberOfRetries < 1)
+        	if(mNumberOfRetries < 0)
         		throw new IllegalStateException("mNumberOfRetries == " + mNumberOfRetries);
         	
         	if(getBoard().getMessageReferences(getMessage().getID()).size() > 0)
@@ -1003,21 +1086,27 @@ public final class SubscribedBoard extends Board {
 
 		public boolean retry() {
 			try {
-				boolean result = getBoard().getSubscriber().wantsMessagesFrom(getAuthor());
-				countRetry(); // wantsMessagesFrom typically fails if we are not connected to the web of trust plugin so we only count the retry if it did not throw
+				final boolean result = getBoard().isMessageWanted(getMessage());
+				countRetry();
 				return result;
 			} catch(Exception e) {
-				Logger.error(this, "Retry failed");
+				// isMessageWanted typically fails if we are not connected to the web of trust plugin so we only count the retry if it did not throw
+				Logger.error(this, "retry() failed", e);
 				return false;
 			}
 		}
 
 		public void countRetry() {
     		++mNumberOfRetries;
+    		mLastRetryDate = CurrentTimeUTC.get();
     		mNextRetryDate = computeNextCheckDate();
 		}
 
 		private Date computeNextCheckDate() {
+			if(mNumberOfRetries >=  MAXIMAL_RETRY_DELAY_AT_RETRY_COUNT)
+				return new Date(mLastRetryDate.getTime() + MAXIMAL_RETRY_DELAY);
+			
+			// The Math.min() is a double check
 			return new Date(mLastRetryDate.getTime() + Math.min(MINIMAL_RETRY_DELAY * (1<<mNumberOfRetries), MAXIMAL_RETRY_DELAY));
     	}
     	
@@ -1061,6 +1150,23 @@ public final class SubscribedBoard extends Board {
 
     	private boolean mWasRead = false;
 
+    	
+    	// TODO: Instead of periodic retrying, implement event subscription in the WoT plugin...
+    	
+    	public static final long MINIMAL_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (5 * 60 * 1000) : (5 * 60 * 1000);
+    	
+    	public static final long MAXIMAL_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 60 * 6000) : (24 * 60 * 60 * 1000);
+    	
+    	public static final int MAXIMAL_RETRY_DELAY_AT_RETRY_COUNT = (int)(Math.log(MAXIMAL_RETRY_DELAY / MINIMAL_RETRY_DELAY) / Math.log(2));
+    	
+    	
+    	protected int mNumberOfWantedChecks;
+    	
+    	protected Date mLastWantedCheckDate;
+    	
+    	@IndexedField
+    	protected Date mNextWantedCheckDate;
+    	
 
     	private MessageReference(SubscribedBoard myBoard, String myThreadID, String myMessageID, String myMessageTitleGuess,
     			Date myMessageDateGuess, int myMessageIndex) {
@@ -1083,7 +1189,36 @@ public final class SubscribedBoard extends Board {
 				assert(mIndex > mBoard.getLastMessageIndex());
 			} catch (NoSuchMessageException e) {
 			}
+			
+			mNumberOfWantedChecks = 0;
+			mLastWantedCheckDate = null;
+			mNextWantedCheckDate = null;
     	}
+
+		public boolean validateIfStillWanted(Date now) {
+			try {
+				boolean result = getBoard().isMessageWanted(getMessage());
+				countWantedCheck(now);
+				return result;
+			} catch(Exception e) {
+				// isMessageWanted typically fails if we are not connected to the web of trust plugin so we only count the retry if it did not throw
+				Logger.error(this, "validateIfStillWanted() failed", e);
+				return true; // Do not delete existing messages just because we lost the connection to WoT
+			}
+		}
+		
+		private void countWantedCheck(Date now) {
+			++mNumberOfWantedChecks;
+			mLastWantedCheckDate = now;
+			
+			if(mNumberOfWantedChecks >= MAXIMAL_RETRY_DELAY_AT_RETRY_COUNT)
+				mNextWantedCheckDate = new Date(mLastWantedCheckDate.getTime() + MAXIMAL_RETRY_DELAY);
+			else {
+				// The Math.min() is a double check
+				mNextWantedCheckDate = new Date(mLastWantedCheckDate.getTime() + Math.min(MINIMAL_RETRY_DELAY * (1<<mNumberOfWantedChecks), MAXIMAL_RETRY_DELAY));
+			}
+		}
+		
 
 		private MessageReference(SubscribedBoard myBoard, String myThreadID, Message myMessage, int myMessageIndex) {
 			this(myBoard, myThreadID, myMessage.getID(), myMessage.getTitle(), myMessage.getDate(), myMessageIndex);
@@ -1091,7 +1226,14 @@ public final class SubscribedBoard extends Board {
 			// Done implicitely by .getID() above...
 			// if(myMessage == null) throw new NullPointerException();
 			
-    		mMessage = myMessage;
+    		mMessage = myMessage; // We cannot use setMessage because initializeTransient was not called yet.
+    		
+    		mLastWantedCheckDate = CurrentTimeUTC.get();
+    		
+			// When a user creates a fresh Freetalk database, a huge bunch of messages will arrive in a relatively small time span
+			// Therefore, we randomize the first wanted-check date to ensure that they will not be checked all at once
+			Random random = mBoard.mFreetalk.getPluginRespirator() != null ? mBoard.mFreetalk.getPluginRespirator().getNode().random : new Random();
+			mNextWantedCheckDate = new Date(mLastWantedCheckDate.getTime() + MINIMAL_RETRY_DELAY + Math.abs(random.nextLong() % (3*MINIMAL_RETRY_DELAY)));
     	}
 		
 		public void databaseIntegrityTest() throws Exception {
@@ -1133,9 +1275,31 @@ public final class SubscribedBoard extends Board {
 	    		
 	    		IfNotEquals.thenThrow(mTitle, message.getTitle(), "mTitle");
 	    		IfNotEquals.thenThrow(mDate, message.getDate(), "mDate");
+	    		
+	        	IfNull.thenThrow(mLastWantedCheckDate, "mLastWantedCheckDate");
+	        	IfNull.thenThrow(mNextWantedCheckDate, "mNextWantedCheckDate");
+	        	
+	        	final Date minNextRetry = new Date(mLastWantedCheckDate.getTime() + MINIMAL_RETRY_DELAY);
+	        	final Date maxNextRetry = new Date(mLastWantedCheckDate.getTime() + MAXIMAL_RETRY_DELAY);
+	        	
+	        	if(mNextWantedCheckDate.before(minNextRetry))
+	        		throw new IllegalStateException("Invalid next wanted-check date, too early: " + mNextWantedCheckDate);
+	        	else if(mNextWantedCheckDate.after(maxNextRetry))
+	        		throw new IllegalStateException("Invalid next wanted-check date, too far in the future: " + mNextWantedCheckDate);
+	        	
+	        	if(mNumberOfWantedChecks < 0)
+	        		throw new IllegalStateException("mNumberOfWantedChecks == " + mNumberOfWantedChecks);
 	    	} else {
 	    		if(!Message.isTitleValid(mTitle))
 	    			throw new IllegalStateException("Title guess is invalid: " + mTitle);
+	    		
+	    		IfNotEquals.thenThrow(mNumberOfWantedChecks, 0, "mNumberOfWantedChecks");
+	    		
+	    		if(mLastWantedCheckDate != null)
+	    			throw new IllegalStateException("mLastWantedCheckDate==" + mLastWantedCheckDate);
+	    		
+	    		if(mNextWantedCheckDate != null)
+	    			throw new IllegalStateException("mNextWantedCheckDate==" + mNextWantedCheckDate);
 	    	}
 	    	
 	    	if(mIndex < 1)
@@ -1181,10 +1345,21 @@ public final class SubscribedBoard extends Board {
 			mDate = mMessage.getDate();
 			
 			markAsUnread();
+			
+			mLastWantedCheckDate = CurrentTimeUTC.get();
+			
+			// When a user creates a fresh Freetalk database, a huge bunch of messages will arrive in a relatively small time span
+			// Therefore, we randomize the first wanted-check date to ensure that they will not be checked all at once
+			Random random = mFreetalk.getPluginRespirator() != null ? mFreetalk.getPluginRespirator().getNode().random : new Random();
+			mNextWantedCheckDate = new Date(mLastWantedCheckDate.getTime() + MINIMAL_RETRY_DELAY + Math.abs(random.nextLong() % (3*MINIMAL_RETRY_DELAY)));
 		}
 		
 		protected void removeMessage() {
 			mMessage = null;
+			
+			mLastWantedCheckDate = null;
+			mNextWantedCheckDate = null;
+			mNumberOfWantedChecks = 0;
 		}
 		
 		public final String getMessageTitle() {

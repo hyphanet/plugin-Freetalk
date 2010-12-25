@@ -54,7 +54,7 @@ public class NewReplyPage extends WebPageImpl {
 		
 		if((mRequest.isPartSet("CreateReply") || mRequest.isPartSet("CreatePreview")) && mRequest.getMethod().equals("POST")) {
 			HashSet<Board> boards = new HashSet<Board>();
-			boards.add(mBoard);
+			boards.add(mBoard.getParentBoard());
 			
 			String replySubject = "";
 			String replyText = "";
@@ -92,7 +92,7 @@ public class NewReplyPage extends WebPageImpl {
 				// - the replies would go to the original thread instead of to the forked one where they actually should go to.
 				
 				mFreetalk.getMessageManager().postMessage(parentThreadURI,
-						mParentMessage, boards, mBoard, mOwnIdentity, replySubject, null, replyText, null);
+						mParentMessage, boards, mBoard.getParentBoard(), mOwnIdentity, replySubject, null, replyText, null);
 
 				HTMLNode successBox = addContentBox(l10n().getString("NewReplyPage.ReplyCreated.Header"));
 				successBox.addChild("p", l10n().getString("NewReplyPage.ReplyCreated.Text")); 

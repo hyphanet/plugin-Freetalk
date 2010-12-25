@@ -59,6 +59,10 @@ public final class WoTMessageManager extends MessageManager {
 			public void removeFrom(ObjectContainer container) {
 				throw new UnsupportedOperationException();
 			}
+
+			public boolean realTimeFlag() {
+				return false; // We want throughput.
+			}
 			
 		};;
 	}
@@ -84,6 +88,12 @@ public final class WoTMessageManager extends MessageManager {
 		
 		if(myParentThreadURI != null && !(myParentThreadURI instanceof WoTMessageURI))
 			throw new IllegalArgumentException("Parent thread URI is no WoTMessageURI: " + myParentThreadURI);
+		
+		if(myParentMessage != null && !(myParentMessage instanceof WoTMessage))
+			throw new IllegalArgumentException("Parent message is no WoTMessage");
+		
+		if(!(myAuthor instanceof WoTOwnIdentity))
+			throw new IllegalArgumentException("Author is no WoTOwnIdentity");
 
 		Date date = myDate!=null ? myDate : CurrentTimeUTC.get();
 		m = WoTOwnMessage.construct((WoTMessageURI)myParentThreadURI, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);

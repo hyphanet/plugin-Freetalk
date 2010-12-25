@@ -80,6 +80,8 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	 * This is the maximal delay.
 	 */
 	public static final long MAXIMAL_MESSAGE_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (30 * 60 * 1000) : (7 * 24 * 60 *60 * 1000); // TODO: Make configurable
+	
+	public static final int MAXIMAL_MESSAGE_FETCH_RETRY_DELAY_AT_RETRY_COUNT = (int)(Math.log(MAXIMAL_MESSAGE_FETCH_RETRY_DELAY / MINIMAL_MESSAGE_FETCH_RETRY_DELAY) / Math.log(2));
 		
 	/**
 	 * When a {@link MessageList} fetch fails (DNF for example) the {@link MessageList} is marked as fetch failed and the fetch will be retried after a
@@ -94,6 +96,8 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	 * Notice that this only applies to "old" message lists - that is message lists with an edition number lower than the latest successfully fetched edition.
 	 */
 	public static final long MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (30 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);  // TODO: Make configurable.
+	
+	public static final int MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY_AT_RETRY_COUNT = (int)(Math.log(MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY / MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY) / Math.log(2));
 	
 	private final TrivialTicker mTicker;
 	private final Random mRandom;
@@ -137,10 +141,10 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		Logger.debug(this, "Main loop running...");
 		
 		try {
-			// Must be called periodically because it is not called on demand.
+			// Must be called periodically because they are not called on demand.
 			clearExpiredFetchFailedMarkers();
-
 			recheckUnwantedMessages();
+			recheckWantedMessages();
 		}  finally {
 			long sleepTime = THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
 			Logger.debug(this, "Sleeping for " + sleepTime/(60*1000) + " minutes.");
@@ -826,6 +830,11 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	protected Date calculateDateOfNextMessageFetchRetry(FetchFailedMarker.Reason reason, Date now, int numberOfRetries) {
 		switch(reason) {
 			case DataNotFound:
+				// We need this check to prevent overflow causing negative Dates :)
+				if(numberOfRetries >= MAXIMAL_MESSAGE_FETCH_RETRY_DELAY_AT_RETRY_COUNT)
+					return new Date(now.getTime() + MAXIMAL_MESSAGE_FETCH_RETRY_DELAY);
+				
+				// Math.min() is just a double check
 				return new Date(now.getTime() + Math.min(MINIMAL_MESSAGE_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGE_FETCH_RETRY_DELAY));
 			case ParsingFailed:
 				return new Date(Long.MAX_VALUE);
@@ -837,6 +846,11 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	protected Date calculateDateOfNextMessageListFetchRetry(FetchFailedMarker.Reason reason, Date now, int numberOfRetries) {
 		switch(reason) {
 			case DataNotFound:
+				// We need this check to prevent overflow causing negative Dates :)
+				if(numberOfRetries >= MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY_AT_RETRY_COUNT)
+					return new Date(now.getTime() + MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY);
+				
+				// Math.min() is just a double check
 				return new Date(now.getTime()  + Math.min(MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY));
 			case ParsingFailed:
 				return new Date(Long.MAX_VALUE);
@@ -1004,13 +1018,30 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	protected synchronized void recheckUnwantedMessages() {
 		Logger.normal(this, "Rechecking unwanted messages...");
 		
-		Date now = CurrentTimeUTC.get();
+		final Date now = CurrentTimeUTC.get();
 		
 		for(SubscribedBoard board : subscribedBoardIterator()) {
 			board.retryAllUnwantedMessages(now);
 		}
 		
 		Logger.normal(this, "Finished rechecking unwanted message");
+	}
+	
+	/**
+	 * Only for being used by the MessageManager itself and by unit tests.
+	 * 
+	 * Checks whether there are any messages in subscribed boards which the subscriber did want to read and now does not want to read anymore.
+	 */
+	protected synchronized void recheckWantedMessages() {
+		Logger.normal(this, "Rechecking wanted messages...");
+		
+		final Date now = CurrentTimeUTC.get();
+		
+		for(SubscribedBoard board : subscribedBoardIterator()) {
+			board.validateAllWantedMessages(now);
+		}
+		
+		Logger.normal(this, "Finished rechecking wanted message");
 	}
 	
 	/**

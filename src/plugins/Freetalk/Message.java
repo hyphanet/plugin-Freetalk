@@ -19,6 +19,7 @@ import plugins.Freetalk.Persistent.IndexedField;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
@@ -104,7 +105,7 @@ public abstract class Message extends Persistent {
 	 */
 	protected final Board[] mBoards; 
 	
-	protected final Board mReplyToBoard;
+	protected Board mReplyToBoard; // FIXME: Add "final" in the 0.1-final-development branch
 	
 	protected final Identity mAuthor;
 
@@ -417,6 +418,11 @@ public abstract class Message extends Persistent {
 			newBoards.add(newReplyToBoard);
 		}
 		
+		for(Board board : newBoards) {
+			if(board instanceof SubscribedBoard)
+				throw new InvalidParameterException("The boards list contains a SubscribedBoard: " + board);
+		}
+		
 		mURI = newURI != null ? newURI.clone() : null;
 		mFreenetURI = newFreenetURI != null ? newFreenetURI.clone() : null;
 		mMessageList = newMessageList;
@@ -662,7 +668,10 @@ public abstract class Message extends Persistent {
 		return mID; // Is final.
 	}
 	
-	public final synchronized MessageList getMessageList() {
+	/**
+	 * @throws NoSuchMessageListException Only an OwnMessage will throw this. Normal messages always have a list.
+	 */
+	public synchronized MessageList getMessageList() throws NoSuchMessageListException {
 		checkedActivate(2);
 		assert(mMessageList != null);
 		

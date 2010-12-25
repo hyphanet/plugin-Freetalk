@@ -141,6 +141,7 @@ public abstract class OwnMessageList extends MessageList {
 			Logger.error(this, "markAsInserted called for an already inserted message list: " + this);
 			
 		mWasInserted = true;
+		mIsBeingInserted = false;
 		storeWithoutCommit();
 	}
 
