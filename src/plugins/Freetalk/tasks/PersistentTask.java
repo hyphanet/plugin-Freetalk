@@ -113,7 +113,7 @@ public abstract class PersistentTask extends Persistent {
 		}
 	}
 	
-	public void deleteWithoutCommit() { // FIXME: Change visibility to protected in 0.1-final-development branch
+	protected void deleteWithoutCommit() {
 		deleteWithoutCommit(3);
 	}
 
