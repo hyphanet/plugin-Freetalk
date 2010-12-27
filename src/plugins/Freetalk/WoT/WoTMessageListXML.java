@@ -31,17 +31,21 @@ import plugins.Freetalk.Message;
 import plugins.Freetalk.Message.MessageID;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.OwnMessage;
+import plugins.Freetalk.Version;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
 
+/**
+ * Generators & parsers of {@link WoTMessageList} XML.
+ */
 public final class WoTMessageListXML {
 	
 	public static final int MAX_XML_SIZE = 128 * 1024;
 	
 	private static final int XML_FORMAT_VERSION = 1;
 	
-	private final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	
+	private final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	
 	private final DocumentBuilder mDocumentBuilder;
 	
@@ -69,47 +73,69 @@ public final class WoTMessageListXML {
 		}
 	}
 
-	public void encode(WoTMessageManager messageManager, WoTOwnMessageList list, OutputStream os) throws TransformerException, ParserConfigurationException, NoSuchMessageException  {
+	public void encode(final WoTMessageManager messageManager, final WoTOwnMessageList list, final OutputStream os) throws TransformerException, ParserConfigurationException, NoSuchMessageException  {
 		synchronized(list) {
-			Document xmlDoc;
+			final Document xmlDoc;
 			synchronized(mDocumentBuilder) {
 				xmlDoc = mDOM.createDocument(null, Freetalk.PLUGIN_TITLE, null);
 			}
 			
-			Element rootElement = xmlDoc.getDocumentElement();
-
-			Element messageListTag = xmlDoc.createElement("MessageList");
-			messageListTag.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION)); /* Version of the XML format */
+			final Element rootElement = xmlDoc.getDocumentElement();
+			final Element messageListElement = xmlDoc.createElement("MessageList");
+			
+			// Versions
+			
+			// We include the Freetalk version to have an easy way of handling bogus XML which might be created by bugged versions.
+			rootElement.setAttribute("Version", Long.toString(Version.getRealVersion()));
+			messageListElement.setAttribute("Version", Integer.toString(XML_FORMAT_VERSION));
+		
+			// Messages
 			
 			/* Important: A OwnMessageList contains a single reference for each message. A MessageList however contains a message reference
 			 * for each board a message is posted to. If this function is changed to be able to encode non-own MessageLists then you need
 			 * to ensure that each message is only listed once, the for(each MessageReference) will return duplicates if a message is posted
 			 * to multiple boards.*/
-			for(MessageList.MessageReference ref : list) {
-				OwnMessage message = messageManager.getOwnMessage(ref.getMessageID());
+			for(final MessageList.MessageReference ref : list) {
+				final OwnMessage message = messageManager.getOwnMessage(ref.getMessageID());
+				
+				// Duplicate checks to prevent severe breakage, also done in message list constructor.
+				if(message.getAuthor() != list.getAuthor())
+					throw new RuntimeException("Message author does not match message list author");
+				
 				if(message.wasInserted() == false)
 					throw new RuntimeException("Trying to convert a MessageList to XML which contains a not inserted message.");
 				
-				Element messageTag = xmlDoc.createElement("Message");
-				messageTag.setAttribute("ID", message.getID());
-				messageTag.setAttribute("URI", message.getFreenetURI().toString());
+				final Element messageElement = xmlDoc.createElement("Message");
+				
+				// ID
+				
+				messageElement.setAttribute("ID", message.getID());
+				
+				// URI
+
+				messageElement.setAttribute("FreenetURI", message.getFreenetURI().toString());
+				
+				// Date
+				
 				synchronized(mDateFormat) {
-					messageTag.setAttribute("Date", mDateFormat.format(message.getDate()));
+					messageElement.setAttribute("Date", mDateFormat.format(message.getDate()));
 				}
 				
-				for(Board board : message.getBoards()) {
-					Element boardTag = xmlDoc.createElement("Board");
+				// Boards
+				
+				for(final Board board : message.getBoards()) {
+					final Element boardTag = xmlDoc.createElement("Board");
 					boardTag.setAttribute("Name", board.getName());
-					messageTag.appendChild(boardTag);
+					messageElement.appendChild(boardTag);
 				}
 	
-				messageListTag.appendChild(messageTag);
+				messageListElement.appendChild(messageElement);
 			}
 			
-			rootElement.appendChild(messageListTag);
+			rootElement.appendChild(messageListElement);
 
-			DOMSource domSource = new DOMSource(xmlDoc);
-			StreamResult resultStream = new StreamResult(os);
+			final DOMSource domSource = new DOMSource(xmlDoc);
+			final StreamResult resultStream = new StreamResult(os);
 			synchronized(mSerializer) {
 				mSerializer.transform(domSource, resultStream);
 			}
@@ -120,50 +146,64 @@ public final class WoTMessageListXML {
 		if(inputStream.available() > MAX_XML_SIZE)
 			throw new IllegalArgumentException("XML contains too many bytes: " + inputStream.available());
 		
-		Document xml;
+		final Document xml;
 		synchronized(mDocumentBuilder) {
 			xml = mDocumentBuilder.parse(inputStream);
 		}
 		
-		final Element listElement = (Element)xml.getElementsByTagName("MessageList").item(0);
+		final Element listElement = (Element)xml.getDocumentElement().getElementsByTagName("MessageList").item(0);
+		
+		// Version check
 		
 		if(Integer.parseInt(listElement.getAttribute("Version")) > XML_FORMAT_VERSION)
 			throw new Exception("Version " + listElement.getAttribute("Version") + " > " + XML_FORMAT_VERSION);
-				
+	
+		// Messages
+		
 		final NodeList messageElements = listElement.getElementsByTagName("Message");
 		
-		// The MessageList constructor does all validity checks for lists, but we duplicate the easy size checks here to prevent memory DoS
+		// Prevent memory DoS as early as possible - the MessageList constructor also does it but we don't even want to construct the list here.
 		if(messageElements.getLength() > MessageList.MAX_MESSAGES_PER_MESSAGELIST)
 			throw new IllegalArgumentException("Too many messages in MessageList: " + messageElements.getLength());
 		
-		/* The message count is multiplied by 2 because if a message is posted to multiple boards, a MessageReference has to be created for each */
-		ArrayList<MessageList.MessageReference> messages = new ArrayList<MessageList.MessageReference>(messageElements.getLength() * 2);
+		// The message count is multiplied by 2 because if a message is posted to multiple boards, a MessageReference has to be created for each
+		final ArrayList<MessageList.MessageReference> messages = new ArrayList<MessageList.MessageReference>(messageElements.getLength() * 2);
 		
 		for(int messageIndex = 0; messageIndex < messageElements.getLength(); ++messageIndex) {
 			final Element messageElement = (Element)messageElements.item(messageIndex);
 			
-			final MessageID messageID = MessageID.construct(messageElement.getAttribute("ID"));
-			messageID.throwIfAuthorDoesNotMatch(author); // Double check, the MessageList constructor will also check this.
-			final FreenetURI messageURI = new FreenetURI(messageElement.getAttribute("URI")); // TODO: FreenetURI won't throw if too long
-			final Date messageDate;
+			// ID
 			
+			final MessageID messageID = MessageID.construct(messageElement.getAttribute("ID"));
+			messageID.throwIfAuthorDoesNotMatch(author); // Duplicate check to prevent severe breakage, also done in message list constructor.
+			
+			// URI
+			
+			final FreenetURI messageURI = new FreenetURI(messageElement.getAttribute("FreenetURI")); // TODO: FreenetURI won't throw if too long
+			
+			// Date
+			
+			final Date messageDate;
 			synchronized(mDateFormat) {
 				messageDate = mDateFormat.parse(messageElement.getAttribute("Date"));
 			}
 		
-			final NodeList boardElements = messageElement.getElementsByTagName("Board");
+			// Boards
 			
+			final NodeList boardElements = messageElement.getElementsByTagName("Board");
+		
+			// Prevent memory DoS as early as possible - the MessageList constructor also does it but we don't even want to construct the list here.
 			if(boardElements.getLength() > Message.MAX_BOARDS_PER_MESSAGE)
 				throw new IllegalArgumentException("Too many boards for message " + messageID + ": " + boardElements.getLength());
 			
-			ArrayList<Board> messageBoards = new ArrayList<Board>(boardElements.getLength() + 1);
+			final ArrayList<Board> messageBoards = new ArrayList<Board>(boardElements.getLength() + 1);
 			
 			for(int boardIndex = 0; boardIndex < boardElements.getLength(); ++boardIndex) {
-				Element boardElement = (Element)boardElements.item(boardIndex);
+				final Element boardElement = (Element)boardElements.item(boardIndex);
 				messageBoards.add(messageManager.getOrCreateBoard(boardElement.getAttribute("Name")));
 			}
 			
-			for(Board board : messageBoards)
+			for(final Board board : messageBoards)
 				messages.add(new MessageList.MessageReference(messageID, messageURI, board, messageDate));
 		}
 		

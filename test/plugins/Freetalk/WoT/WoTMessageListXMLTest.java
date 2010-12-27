@@ -10,8 +10,10 @@ import javax.xml.transform.TransformerException;
 
 import plugins.Freetalk.Board;
 import plugins.Freetalk.DatabaseBasedTest;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.Persistent;
+import plugins.Freetalk.Version;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import freenet.keys.FreenetURI;
@@ -94,22 +96,22 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 		
 		mHardcodedEncodedMessageList = new String(
 				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" + 
-				"<Freetalk-testing>" + 
+				"<" + Freetalk.PLUGIN_TITLE + " Version=\"" + Version.getRealVersion() + "\">" + 
 				"<MessageList Version=\"1\">" + 
-				"<Message Date=\"2009-06-01\" ID=\"" + messages[0].getID() + "\" URI=\"CHK@7qMS7LklYIhbZ88i0~u97lxrLKS2uxNwZWQOjPdXnJw,IlA~FSjWW2mPWlzWx7FgpZbBErYdLkqie1uSrcN~LbM,AAIA--8\">" + 
+				"<Message Date=\"2009-06-01\" FreenetURI=\"CHK@7qMS7LklYIhbZ88i0~u97lxrLKS2uxNwZWQOjPdXnJw,IlA~FSjWW2mPWlzWx7FgpZbBErYdLkqie1uSrcN~LbM,AAIA--8\" ID=\"" + messages[0].getID() + "\">" + 
 				"<Board Name=\"en.board1\"/>" + 
 				"<Board Name=\"en.board2\"/>" + 
 				"</Message>" + 
-				"<Message Date=\"2008-05-02\" ID=\"" + messages[1].getID() + "\" URI=\"CHK@0YUT4BEorqJCETQrLSgHBcw5RL7KQNm6Fbpo3ThzTy4,6RzUH23~TwPQ0IDQcgPoxEYX7yBTgTNydD~uJ0I9DTQ,AAIA--8\">" + 
+				"<Message Date=\"2008-05-02\" FreenetURI=\"CHK@0YUT4BEorqJCETQrLSgHBcw5RL7KQNm6Fbpo3ThzTy4,6RzUH23~TwPQ0IDQcgPoxEYX7yBTgTNydD~uJ0I9DTQ,AAIA--8\" ID=\"" + messages[1].getID() + "\">" + 
 				"<Board Name=\"en.board3\"/>" + 
 				"<Board Name=\"en.board4\"/>" + 
 				"</Message>" + 
-				"<Message Date=\"2007-04-03\" ID=\"" + messages[2].getID() + "\" URI=\"CHK@H4nfdTqgQUQ0CkdPzvrs2F~IIkjOCnfEn~S042jUxuw,wkCrKtmvmYQzuo3f4v2JlB87wJkK0dspmGJ~ivztYP8,AAIA--8\">" + 
+				"<Message Date=\"2007-04-03\" FreenetURI=\"CHK@H4nfdTqgQUQ0CkdPzvrs2F~IIkjOCnfEn~S042jUxuw,wkCrKtmvmYQzuo3f4v2JlB87wJkK0dspmGJ~ivztYP8,AAIA--8\" ID=\"" + messages[2].getID() + "\">" + 
 				"<Board Name=\"en.board5\"/>" + 
 				"<Board Name=\"en.board6\"/>" + 
 				"</Message>" + 
 				"</MessageList>" + 
-				"</Freetalk-testing>"
+				"</" + Freetalk.PLUGIN_TITLE + ">"
 				);
 	}
 

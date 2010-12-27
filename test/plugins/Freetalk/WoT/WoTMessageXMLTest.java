@@ -10,9 +10,13 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.activation.MimeType;
+
 import plugins.Freetalk.Board;
 import plugins.Freetalk.DatabaseBasedTest;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
+import plugins.Freetalk.Version;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.Message.MessageID;
 import plugins.Freetalk.MessageList;
@@ -73,9 +77,10 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		mMessageListID = messageList.getID();
 		
 		List<Attachment> attachments = new ArrayList<Attachment>();
-		attachments.add(new Attachment(new FreenetURI("KSK@attachment1"), 10001));
-		attachments.add(new Attachment(new FreenetURI("KSK@attachment2"), 10002));
+		attachments.add(new Attachment(new FreenetURI("KSK@attachment1"), new MimeType("text/plain"), 10001));
+		attachments.add(new Attachment(new FreenetURI("KSK@attachment2"), new MimeType("audio/ogg"), 10002));
 		
+		@SuppressWarnings("deprecation")
 		WoTMessage message = WoTMessage.construct(messageList, mMessageFreenetURI, myMessageID,
 				new WoTMessageURI(messageList.getURI(), myThreadID), // Thread
 				new WoTMessageURI(messageList.getURI(), myParentID), // Parent
@@ -86,46 +91,52 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		
 		message.initializeTransient(mFreetalk);
 		message.storeAndCommit();
-		
 
+		/**
+	       [junit] <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+	       [junit] <Freetalk-testing Version="1">
+	       [junit] <Message Date="2009-05-03 16:15:14" ID="2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk" Version="1">
+	       [junit] <Boards>
+	       [junit] <Board Name="en.board1"/>
+	       [junit] <Board Name="en.board2"/>
+	       [junit] <ReplyToBoard Name="en.board1"/>
+	       [junit] </Boards>
+	       [junit] <InReplyTo>
+	       [junit] <Thread URI="SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#afe6519b-7fb2-4533-b172-1f966e79d127"/>
+	       [junit] <Message URI="SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#d5b0dcc4-91cb-4870-8ab9-8588e895fa5d"/>
+	       [junit] </InReplyTo>
+	       [junit] <Subject><![CDATA[Message title]]></Subject>
+	       [junit] <Body><![CDATA[Message body
+	       [junit] New line]]></Body>
+	       [junit] <Attachments>
+	       [junit] <File MIMEType="text/plain" Size="10001" URI="KSK@attachment1"/>
+	       [junit] <File MIMEType="audio/ogg" Size="10002" URI="KSK@attachment2"/>
+	       [junit] </Attachments>
+	       [junit] </Message>
+	       [junit] </Freetalk-testing> */
+	       
 		mHardcodedEncodedMessage = new String(
 			"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
-			"<Freetalk-testing>" +
-			"<Message version=\"1\">" +
-			"<MessageID><![CDATA[2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>" + 
-			"<Subject><![CDATA[Message title]]></Subject>" +
-			"<Date>2009-05-03</Date>" +
-			"<Time>16:15:14</Time>" +
+			"<" + Freetalk.PLUGIN_TITLE + " Version=\"" + Version.getRealVersion() + "\">" + 
+			"<Message Date=\"2009-05-03 16:15:14\" ID=\"2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk\" Version=\"1\">" + 
 			"<Boards>" +
-			"<Board><![CDATA[en.board1]]></Board>" +
-			"<Board><![CDATA[en.board2]]></Board>" +
+			"<Board Name=\"en.board1\"/>" +
+			"<Board Name=\"en.board2\"/>" +
+			"<ReplyToBoard Name=\"en.board1\"/>" +
 			"</Boards>" +
-			"<ReplyBoard><![CDATA[en.board1]]></ReplyBoard>" +
 			"<InReplyTo>" +
-			"<Message>" +
-			"<Order>0</Order>" +
-			"<MessageID><![CDATA[d5b0dcc4-91cb-4870-8ab9-8588e895fa5d@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>" +
-			"<MessageURI><![CDATA[SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#d5b0dcc4-91cb-4870-8ab9-8588e895fa5d]]></MessageURI>" +
-			"</Message>" +
-			"<Thread>" +
-			"<MessageID><![CDATA[afe6519b-7fb2-4533-b172-1f966e79d127@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk]]></MessageID>" +
-			"<MessageURI><![CDATA[SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#afe6519b-7fb2-4533-b172-1f966e79d127]]></MessageURI>" +
-			"</Thread>" +
+			"<Thread URI=\"SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/" + Freetalk.PLUGIN_TITLE + "%7cMessageList-123#afe6519b-7fb2-4533-b172-1f966e79d127\"/>" +
+			"<Message URI=\"SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/" + Freetalk.PLUGIN_TITLE + "%7cMessageList-123#d5b0dcc4-91cb-4870-8ab9-8588e895fa5d\"/>" +
 			"</InReplyTo>" +
+			"<Subject><![CDATA[Message title]]></Subject>" +
 			"<Body><![CDATA[Message body\n" +
 			"New line]]></Body>" +
 			"<Attachments>" +
-			"<File>" +
-			"<Key><![CDATA[KSK@attachment1]]></Key>" +
-			"<Size><![CDATA[10001]]></Size>" +
-			"</File>" +
-			"<File>" +
-			"<Key><![CDATA[KSK@attachment2]]></Key>" +
-			"<Size><![CDATA[10002]]></Size>" +
-			"</File>" +
+			"<File MIMEType=\"text/plain\" Size=\"10001\" URI=\"KSK@attachment1\"/>" +
+			"<File MIMEType=\"audio/ogg\" Size=\"10002\" URI=\"KSK@attachment2\"/>" +
 			"</Attachments>" +
 			"</Message>" +
-			"</Freetalk-testing>" 
+			"</" + Freetalk.PLUGIN_TITLE + ">"
 			);
 	}
 
