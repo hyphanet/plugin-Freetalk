@@ -250,6 +250,7 @@ public final class WoTMessageManager extends MessageManager {
 		}
 		
 		WoTOwnIdentity author = (WoTOwnIdentity)message.getAuthor();
+		// FIXME: Why does the resulting list have an index of 1 if no message lists existed at all? We should start at 0!
 		WoTOwnMessageList list = new WoTOwnMessageList(author, getFreeOwnMessageListIndex(author));
 		list.initializeTransient(mFreetalk);
 		list.addMessage(message);
