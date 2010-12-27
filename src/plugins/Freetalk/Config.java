@@ -19,14 +19,14 @@ import freenet.support.Logger;
  * in the database. Integer configuration values are stored separately because they might be needed very often per second and we should
  * save the time of converting String to Integer.
  * 
- * @author xor (xor@freenetproject.org), Julien Cornuwel (batosai@freenetproject.org)
+ * @author xor (xor@freenetproject.org)
+ * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 @IndexedClass
 public final class Config extends Persistent {
 
 	/* Names of the config parameters */
 	
-	public static final String DATABASE_FORMAT_VERSION = "DatabaseFormatVersion";
 	
 	public static final String MINIMUM_TRUSTER_COUNT = "Introduction.MinimumTrusterCount";
 	
@@ -39,8 +39,20 @@ public final class Config extends Persistent {
 	public static final String NNTP_SERVER_ALLOWED_HOSTS = "NNTP.AllowedHosts";
 
 
+	/**
+	 * The database format version of this Freetalk-database.
+	 * Stored in a primitive integer field to ensure that db4o does not lose it - I've observed the hashtables to be null suddenly sometimes :(
+	 */
+	private int mDatabaseFormatVersion;
+	
+	/**
+	 * The {@link Hashtable} that contains all {@link String} configuration parameters
+	 */
 	private final Hashtable<String, String> mStringParams;
 	
+	/**
+	 * The {@link Hashtable} that contains all {@link Integer} configuration parameters
+	 */
 	private final Hashtable<String, Integer> mIntParams;
 
 	/**
@@ -48,6 +60,7 @@ public final class Config extends Persistent {
 	 */
 	protected Config(Freetalk myFreetalk) {
 		initializeTransient(myFreetalk);
+		mDatabaseFormatVersion = Freetalk.DATABASE_FORMAT_VERSION;
 		mStringParams = new Hashtable<String, String>();
 		mIntParams = new Hashtable<String, Integer>();
 		setDefaultValues(false);
@@ -57,15 +70,15 @@ public final class Config extends Persistent {
 	public void databaseIntegrityTest() throws Exception {
 		checkedActivate(4);
 		
+		if(mDatabaseFormatVersion != Freetalk.DATABASE_FORMAT_VERSION)
+			throw new IllegalStateException("FATAL: startupDatabaseIntegrityTest called with wrong database format version! is: " 
+					+ mDatabaseFormatVersion + "; should be: " + Freetalk.DATABASE_FORMAT_VERSION);
+		
 		if(mStringParams == null)
 			throw new NullPointerException("mStringParams==null");
 		
 		if(mIntParams == null)
 			throw new NullPointerException("mIntParams==null");
-		
-		if(getInt(DATABASE_FORMAT_VERSION) != Freetalk.DATABASE_FORMAT_VERSION)
-			throw new IllegalStateException("FATAL: startupDatabaseIntegrityTest called with wrong database format version! is: " 
-					+ getInt(DATABASE_FORMAT_VERSION) + "; should be: " + Freetalk.DATABASE_FORMAT_VERSION);
 		
 		// TODO: Validate the other settings...
 	}
@@ -116,6 +129,17 @@ public final class Config extends Persistent {
 				checkedRollbackAndThrow(e);
 			}
 		}
+	}
+	
+	public int getDatabaseFormatVersion() {
+		return mDatabaseFormatVersion;
+	}
+	
+	protected void setDatabaseFormatVersion(int newVersion) {
+		if(newVersion <= mDatabaseFormatVersion)
+			throw new RuntimeException("mDatabaseFormatVersion==" + mDatabaseFormatVersion + "; newVersion==" + newVersion);
+		
+		mDatabaseFormatVersion = newVersion;
 	}
 
 	/**
@@ -237,12 +261,7 @@ public final class Config extends Persistent {
 	 * 
 	 * @param overwrite If true, overwrite already set values with the default value.
 	 */
-	public synchronized void setDefaultValues(boolean overwrite) {
-		/* Do not overwrite, it shall only be overwritten when the database has been converted to a new format */
-		if(!containsInt(DATABASE_FORMAT_VERSION)) {
-			set(DATABASE_FORMAT_VERSION, Freetalk.DATABASE_FORMAT_VERSION);
-		}
-		
+	public synchronized void setDefaultValues(boolean overwrite) {		
 		if(!containsInt(MINIMUM_TRUSTER_COUNT)) {
 			set(MINIMUM_TRUSTER_COUNT, 5);
 		}
