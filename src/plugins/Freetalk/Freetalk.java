@@ -4,8 +4,6 @@
 package plugins.Freetalk;
 
 import java.lang.reflect.Field;
-import java.util.Date;
-import java.util.Random;
 
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
@@ -24,10 +22,6 @@ import plugins.Freetalk.WoT.WoTOldMessageListFetcher;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.WoT.WoTOwnMessage;
 import plugins.Freetalk.WoT.WoTOwnMessageList;
-import plugins.Freetalk.exceptions.NoSuchBoardException;
-import plugins.Freetalk.exceptions.NoSuchIdentityException;
-import plugins.Freetalk.exceptions.NoSuchMessageException;
-import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import plugins.Freetalk.tasks.OwnMessageTask;
 import plugins.Freetalk.tasks.PersistentTask;
 import plugins.Freetalk.tasks.PersistentTaskManager;
@@ -55,7 +49,6 @@ import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
-import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -77,12 +70,12 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static volatile boolean FAST_DEBUG_MODE = false; // FIXME: Set to false before release!
 	
 	public static final String PLUGIN_URI = "/Freetalk";
-	public static final String PLUGIN_TITLE = "Freetalk-testing"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
-	public static final String WEB_OF_TRUST_NAME = "WoT"; // FIXME: Change to plugins.WebOfTrust.WebOfTrust.WOT_NAME before 0.1 final release.
-	public static final String WOT_PLUGIN_NAME = "plugins.WoT.WoT";
-	public static final String WOT_CONTEXT = "Freetalk"; // FIXME: Use PLUGIN_TITLE as soon as we change it to "Freetalk"
-	public static final String DATABASE_FILENAME = "freetalk-testing-17.db4o";
-	public static final int DATABASE_FORMAT_VERSION = -79;
+	public static final String PLUGIN_TITLE = "FreetalkRC1"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
+	public static final String WEB_OF_TRUST_NAME = "WebOfTrustRC1"; // FIXME: Change to plugins.WebOfTrust.WebOfTrust.WOT_NAME before 0.1 final release.
+	public static final String WOT_PLUGIN_NAME = "plugins.WebOfTrust.WebOfTrust";
+	public static final String WOT_CONTEXT = PLUGIN_TITLE;
+	public static final String DATABASE_FILENAME = PLUGIN_TITLE + ".db4o";
+	public static final int DATABASE_FORMAT_VERSION = -50; // FIXME: Change to 1 before releasing
 
 	/* References from the node */
 	
@@ -157,7 +150,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		// - I have experienced config objects whose hashtable member variables suddenly were null, even with proper
 		// activation. To repair such databases, we can just re-create the hashtables and initialize with the default config
 		// settings, but we really need to at least know the database format version.
-		if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > Freetalk.DATABASE_FORMAT_VERSION)
+		if(mConfig.getDatabaseFormatVersion() > Freetalk.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 		
 		// Create & start the core classes
@@ -347,93 +340,18 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	}
 
 	private void upgradeDatabase() {
-		int oldVersion = mConfig.getInt(Config.DATABASE_FORMAT_VERSION);
+		int oldVersion = mConfig.getDatabaseFormatVersion();
 		
 		// ATTENTION: Make sure that no upgrades are done here which are needed by the constructors of
 		// IdentityManager/MessageManager/PersistentTaskManager - they are created before this function is called.
 		
-		if(oldVersion == -83 || oldVersion == -82 || oldVersion == -81)
-			oldVersion = -80;
-		
-		if(oldVersion == -80) {
+		/*
+		if(oldVersion == 1) {
 			Logger.normal(this, "Upgrading database version " + oldVersion);
 			
 			synchronized(mMessageManager) {
-				Query q = db.query();
-				q.constrain(OwnMessage.class);
-				
-				Logger.normal(this, "Fixing OwnMessage.mURI and mBoards...");
 				synchronized(db.lock()) {
 					try {
-						for(OwnMessage m : new Persistent.InitializingObjectSet<OwnMessage>(this, q)) {
-							try {
-								// Correct the empty mURI field
-								m.setMessageList((OwnMessageList)m.getMessageList());
-							} catch (NoSuchMessageListException e) { }
-
-
-							// Old versions of Freetalk accidentally stored SubscribedBoards instead of Boards.
-							try {
-								if(m.getReplyToBoard() instanceof SubscribedBoard) {
-									m.mReplyToBoard = mMessageManager.getBoardByName(m.mReplyToBoard.getName());
-								}
-							} catch(NoSuchBoardException e) {}
-
-							m.getBoards(); // For initializeTransient
-							for(int i=0; i < m.mBoards.length; ++i) {
-								if(m.mBoards[i] instanceof SubscribedBoard) {
-									try {
-										m.mBoards[i] = mMessageManager.getBoardByName(m.mBoards[i].getName());
-									} catch (NoSuchBoardException e) {
-										throw new RuntimeException(e);
-									}
-								}
-							}
-
-							m.storeWithoutCommit();
-						}
-						Persistent.checkedCommit(db, this);
-					} catch(RuntimeException e) {
-						Persistent.checkedRollbackAndThrow(db, this, e);
-					}
-				}
-				
-				
-				Logger.normal(this, "Deleting OwnMessageTasks with mOwner==null...");
-				synchronized(mTaskManager) {
-					q = db.query();
-					q.constrain(OwnMessageTask.class);
-					
-					synchronized(db.lock()) {
-						try {
-							for(OwnMessageTask task : new Persistent.InitializingObjectSet<OwnMessageTask>(this, q)) {
-								try {
-									task.getOwner();
-								} catch(NoSuchIdentityException e1) {
-									// Old versions of PersistentTaskManager lacked deletion of tasks on OwnIdentity deletion
-									task.deleteWithoutCommit();
-								}
-							}
-							Persistent.checkedCommit(db, this);
-						} catch(RuntimeException e2) {
-							Persistent.checkedRollbackAndThrow(db, this, e2);
-						}
-					}
-				}
-				
-				Logger.normal(this, "Correcting FetchFailedMarker with negative mNextRetryDate...");
-				q = db.query();
-				q.constrain(FetchFailedMarker.class);
-
-				synchronized(db.lock()) {
-					try {
-						for(FetchFailedMarker marker : new Persistent.InitializingObjectSet<FetchFailedMarker>(this, q)) {
-							if(marker.getDateOfNextRetry().before(marker.getDate())) {
-								assert(marker.getDateOfNextRetry().before(marker.getDate())); // The query is correct
-								marker.setDateOfNextRetry(marker.getDate());
-								marker.storeWithoutCommit();
-							}
-						}
 						Persistent.checkedCommit(db, this);
 					} catch(RuntimeException e) {
 						Persistent.checkedRollbackAndThrow(db, this, e);
@@ -441,64 +359,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 				}
 			}
 			
-			Random random = getPluginRespirator().getNode().random;
-			
-			synchronized(mMessageManager) {
-				Query q = db.query();
-				q.constrain(SubscribedBoard.MessageReference.class);
-				
-				Logger.normal(this, "Setting wanted-check information on existing message references...");
-				synchronized(db.lock()) {
-					try {
-						for(SubscribedBoard.MessageReference ref : new Persistent.InitializingObjectSet<SubscribedBoard.MessageReference>(this, q)) {
-							try {
-								ref.getMessage();
-								ref.mLastWantedCheckDate = CurrentTimeUTC.get();
-								ref.mNextWantedCheckDate = new Date(CurrentTimeUTC.getInMillis() 
-										+ SubscribedBoard.MessageReference.MINIMAL_RETRY_DELAY
-										+ Math.abs(random.nextLong() % (20 * SubscribedBoard.MessageReference.MINIMAL_RETRY_DELAY)));
-							} catch(NoSuchMessageException e) {
-								ref.mLastWantedCheckDate = null;
-								ref.mNextWantedCheckDate = null;
-								ref.mNumberOfWantedChecks = 0;
-							}
-							ref.storeWithoutCommit();
-						}
-						Persistent.checkedCommit(db, this);
-					} catch(RuntimeException e) {
-						Persistent.checkedRollbackAndThrow(db, this, e);
-					}
-				}
-				
-				Logger.normal(this, "Correcting UnwantedMessageLinks...");
-				q = db.query();
-				q.constrain(SubscribedBoard.UnwantedMessageLink.class);
-				synchronized(db.lock()) {
-					try {
-						for(SubscribedBoard.UnwantedMessageLink link : new Persistent.InitializingObjectSet<SubscribedBoard.UnwantedMessageLink>(this, q)) {
-							if(link.getBoard().getMessageReferences(link.getMessage().getID()).size() > 0) {
-								link.deleteWithoutCommit();
-								// This database-upgrade code also triggers recheck of the wanted state of all messages, therefore
-								// we do not need to delete the message here...
-							} else {
-								link.mLastRetryDate = CurrentTimeUTC.get();
-								link.mNextRetryDate = new Date(CurrentTimeUTC.getInMillis() 
-										+  SubscribedBoard.UnwantedMessageLink.MINIMAL_RETRY_DELAY
-										+ Math.abs(random.nextLong() % (20 * SubscribedBoard.UnwantedMessageLink.MINIMAL_RETRY_DELAY)));
-								link.storeWithoutCommit();
-							}
-						}
-						Persistent.checkedCommit(db, this);
-					} catch(RuntimeException e) {
-						Persistent.checkedRollbackAndThrow(db, this, e);
-					}
-				}
-			}
-			
-			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++oldVersion);
+			mConfig.setDatabaseFormatVersion(++oldVersion);
 			mConfig.storeAndCommit();
 			Logger.normal(this, "Upgraded database to version " + oldVersion);
 		}
+		*/
 		
 		if(oldVersion == Freetalk.DATABASE_FORMAT_VERSION)
 			return;
@@ -508,7 +373,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	}
 	
 	private void databaseIntegrityTest() {
-		Logger.debug(this, "Testing database integrity...");
+		Logger.normal(this, "Testing database integrity...");
 		synchronized(mIdentityManager) {
 		synchronized(mMessageManager) {
 		synchronized(mTaskManager) {
@@ -525,7 +390,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		}
 		}
 		}
-		Logger.debug(this, "Database integrity test finished.");
+		Logger.normal(this, "Database integrity test finished.");
 	}
 
 	private void closeDatabase() {
