@@ -105,7 +105,7 @@ public abstract class Message extends Persistent {
 	 */
 	protected final Board[] mBoards; 
 	
-	protected Board mReplyToBoard; // FIXME: Add "final" in the 0.1-final-development branch
+	protected final Board mReplyToBoard;
 	
 	protected final Identity mAuthor;
 
