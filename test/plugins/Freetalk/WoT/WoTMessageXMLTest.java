@@ -44,10 +44,10 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		mMessageManager = mFreetalk.getMessageManager();
 		mXML = new WoTMessageXML();
 		
-		Board myBoard = mMessageManager.getOrCreateBoard("en.board1");
+		Board myBoard = mMessageManager.getOrCreateBoard("eng.board1");
 		HashSet<Board> myBoards = new HashSet<Board>();
 		myBoards.add(myBoard);
-		myBoards.add(mMessageManager.getOrCreateBoard("en.board2"));
+		myBoards.add(mMessageManager.getOrCreateBoard("eng.board2"));
 		
 		FreenetURI authorRequestSSK = new FreenetURI("SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/");
 		FreenetURI authorInsertSSK = new FreenetURI("SSK@Ykhv0x0K8jtrgOlqWVS4S2Jvmnm64zv5voNjMfz1nYI,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQECAAE/");
@@ -97,9 +97,9 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 	       [junit] <Freetalk-testing Version="1">
 	       [junit] <Message Date="2009-05-03 16:15:14" ID="2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk" Version="1">
 	       [junit] <Boards>
-	       [junit] <Board Name="en.board1"/>
-	       [junit] <Board Name="en.board2"/>
-	       [junit] <ReplyToBoard Name="en.board1"/>
+	       [junit] <Board Name="eng.board1"/>
+	       [junit] <Board Name="eng.board2"/>
+	       [junit] <ReplyToBoard Name="eng.board1"/>
 	       [junit] </Boards>
 	       [junit] <InReplyTo>
 	       [junit] <Thread URI="SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#afe6519b-7fb2-4533-b172-1f966e79d127"/>
@@ -120,9 +120,9 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 			"<" + Freetalk.PLUGIN_TITLE + " Version=\"" + Version.getRealVersion() + "\">" + 
 			"<Message Date=\"2009-05-03 16:15:14\" ID=\"2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk\" Version=\"1\">" + 
 			"<Boards>" +
-			"<Board Name=\"en.board1\"/>" +
-			"<Board Name=\"en.board2\"/>" +
-			"<ReplyToBoard Name=\"en.board1\"/>" +
+			"<Board Name=\"eng.board1\"/>" +
+			"<Board Name=\"eng.board2\"/>" +
+			"<ReplyToBoard Name=\"eng.board1\"/>" +
 			"</Boards>" +
 			"<InReplyTo>" +
 			"<Thread URI=\"SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/" + Freetalk.PLUGIN_TITLE + "%7cMessageList-123#afe6519b-7fb2-4533-b172-1f966e79d127\"/>" +

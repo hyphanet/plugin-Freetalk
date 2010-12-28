@@ -114,8 +114,8 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 	}
 	
 	private void constructBoards() throws Exception {
-		mMessageManager.getOrCreateBoard("en.test");
-		mSubscribedBoard = mMessageManager.subscribeToBoard(mOwnIdentities[0], "en.test");
+		mMessageManager.getOrCreateBoard("eng.test");
+		mSubscribedBoard = mMessageManager.subscribeToBoard(mOwnIdentities[0], "eng.test");
 		
 		mSubscribedBoards = new HashSet<SubscribedBoard>();
 		mSubscribedBoards.add(mSubscribedBoard);

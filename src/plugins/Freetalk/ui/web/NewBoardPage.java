@@ -3,12 +3,17 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
 import plugins.Freetalk.Board;
-import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.SubscribedBoard;
 import freenet.clients.http.RedirectException;
 import freenet.l10n.BaseL10n;
+import freenet.l10n.ISO639_3.LanguageCode;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -49,7 +54,7 @@ public final class NewBoardPage extends WebPageImpl {
 	                    );
 
 
-				makeNewBoardPage("en", "");
+				makeNewBoardPage(boardLanguage, "");
 			} catch (Exception e) {
 				HTMLNode alertBox = addAlertBox(l10n().getString("NewBoardPage.CreateBoardError"));
 				alertBox.addChild("div", e.getMessage());
@@ -58,8 +63,22 @@ public final class NewBoardPage extends WebPageImpl {
 			}
 		}
 		else {
-			makeNewBoardPage("en", "");
+			makeNewBoardPage("mul", ""); // Encourage the usage of multilingual boards by making it the default
 		}
+	}
+	
+	private HTMLNode getLanguageComboBox(String defaultLanguage) {
+		final Map<String, LanguageCode> languages = Board.getAllowedLanguages();
+		final SortedMap<String, String> languagesSortedByName = new TreeMap<String, String>();
+		
+		// TODO: Add l10n for all reference names
+		
+		for(LanguageCode language : languages.values()) {
+			if(languagesSortedByName.put(language.referenceName + " (" + language.id + ")", language.id) != null)
+				throw new RuntimeException("Duplicate language: " + language);
+		}
+		
+		return getComboBox("BoardLanguage", languagesSortedByName, defaultLanguage);
 	}
 	
 	private void makeNewBoardPage(String boardLanguage, String boardName) {
@@ -72,10 +91,7 @@ public final class NewBoardPage extends WebPageImpl {
 		
 		HTMLNode languageBox = newBoardForm.addChild(getContentBox(l10n().getString("NewBoardPage.NewBoardBox.LanguageBox.Header")));
 		languageBox.addChild("p", l10n().getString("NewBoardPage.NewBoardBox.LanguageBox.Text")+":");
-		/* TODO: Locale.getISOLanguages() only returns the abbreviations. Figure out how to get the full names, add some function to Board.java for getting them and use them here. */
-		/* For that you will also need to modify getComboBox() to take display names and values instead of only values and using them as display names */
-		/* ANSWER: I doubt that there are default strings. We have to provide translated language names by ourself! */
-		languageBox.addChild(getComboBox("BoardLanguage", Board.getAllowedLanguageCodes(), boardLanguage));
+		languageBox.addChild(getLanguageComboBox(boardLanguage));
 		
 		HTMLNode nameBox = newBoardForm.addChild(getContentBox(l10n().getString("NewBoardPage.NewBoardBox.BoardNameBox.Header")));
 		nameBox.addChild("p", l10n().getString("NewBoardPage.NewBoardBox.BoardNameBox.Text"));

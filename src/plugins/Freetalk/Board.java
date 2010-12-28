@@ -3,10 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Locale;
+import java.util.Hashtable;
+import java.util.Map;
 import java.util.UUID;
 
 import plugins.Freetalk.Persistent.IndexedClass;
@@ -17,6 +17,7 @@ import plugins.Freetalk.exceptions.NoSuchMessageException;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
+import freenet.l10n.ISO639_3;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 
@@ -32,9 +33,7 @@ public class Board extends Persistent implements Comparable<Board> {
 
     /* Constants */
 
-    private static transient final HashSet<String> ALLOWED_LANGUAGES = getAllowedLanguages();
-    
-    private static transient final String[] ALLOWED_LANGUAGES_ARRAY = (String[])getAllowedLanguages().toArray(new String[1]);
+    private static transient final Map<String, ISO639_3.LanguageCode> ALLOWED_LANGUAGES = Collections.unmodifiableMap(loadAllowedLanguages());
 
     // Characters not allowed in board names:
     //  ! , ? * [ \ ] (space)  not allowed by NNTP
@@ -58,14 +57,21 @@ public class Board extends Persistent implements Comparable<Board> {
     
     private int mNextFreeMessageIndex = 1;
 
-    private static HashSet<String> getAllowedLanguages() {
-    	HashSet<String> languages = new HashSet<String>(Arrays.asList(Locale.getISOLanguages()));
-    	languages.add("multilingual");
+    private static Map<String, ISO639_3.LanguageCode> loadAllowedLanguages() {
+    	final ISO639_3 iso639_3 = new ISO639_3();
+    	
+    	// Get all real (non-symbolic) and living languages
+    	final Hashtable<String, ISO639_3.LanguageCode> languages = iso639_3.getLanguagesByScopeAndType(ISO639_3.LanguageCode.Scope.Individual, ISO639_3.LanguageCode.Type.Living);
+    	
+    	// Add the special code for multiple languages
+    	final ISO639_3.LanguageCode multilingual = iso639_3.getMultilingualCode();
+    	languages.put(multilingual.id, multilingual);
+    	
         return languages;
     }
     
-    public static String[] getAllowedLanguageCodes() {
-    	return ALLOWED_LANGUAGES_ARRAY;
+    public static Map<String, ISO639_3.LanguageCode> getAllowedLanguages() {
+    	return ALLOWED_LANGUAGES;
     }
 
     /**
@@ -174,7 +180,7 @@ public class Board extends Persistent implements Comparable<Board> {
 
         // first part of name must be a recognized language code
 
-        return (ALLOWED_LANGUAGES.contains(parts[0]));
+        return (ALLOWED_LANGUAGES.containsKey(parts[0]));
     }
     
     /**

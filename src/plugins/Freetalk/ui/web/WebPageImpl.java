@@ -5,6 +5,8 @@ package plugins.Freetalk.ui.web;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.SortedMap;
+import java.util.Map.Entry;
 
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
@@ -156,14 +158,24 @@ public abstract class WebPageImpl implements WebPage {
 		return mFreetalk.getPluginRespirator().addFormChild(parentNode, target, name);
 	}
 	
-	protected HTMLNode getComboBox(String name, String[] options, String defaultOption) {
+	/**
+	 * @param name The name of the input-element of the combo box.
+	 * @param entries The entries of the combo box. The key of an entry in the map is the text which is displayed in the combo box to the user,
+	 * 					the value of on entry is the value which is passed over http if the user submits the form with that entry selected.
+	 * @param defaultValue The value (= the value of the map entry) of the entry which should be selected by default
+	 */
+	protected HTMLNode getComboBox(String name, SortedMap<String, String> entries, String defaultValue) {
 		HTMLNode result = new HTMLNode("select", "name", name);
 		
-		for(String value : options) {
-			if(value.equals(defaultOption))
-				result.addChild("option", new String[] { "value", "selected" }, new String[] { value, "selected" }, value);
-			else
-				result.addChild("option", "value", value, value);
+		for(Entry<String, String> entry : entries.entrySet()) {
+			if(entry.getValue().equals(defaultValue)) {
+				result.addChild("option", 
+						new String[] { "value", "selected" }, 
+						new String[] { entry.getValue(), "selected" },
+						entry.getKey());
+			} else {
+				result.addChild("option", "value", entry.getValue(), entry.getKey());
+			}
 		}
 		
 		return result;

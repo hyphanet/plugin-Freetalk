@@ -46,16 +46,16 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 		mXML = new WoTMessageListXML();
 		
 		HashSet<Board> myBoards1 = new HashSet<Board>();
-			myBoards1.add(mMessageManager.getOrCreateBoard("en.board1"));
-			myBoards1.add(mMessageManager.getOrCreateBoard("en.board2"));
+			myBoards1.add(mMessageManager.getOrCreateBoard("eng.board1"));
+			myBoards1.add(mMessageManager.getOrCreateBoard("eng.board2"));
 			
 		HashSet<Board> myBoards2 = new HashSet<Board>();
-			myBoards2.add(mMessageManager.getOrCreateBoard("en.board3"));
-			myBoards2.add(mMessageManager.getOrCreateBoard("en.board4"));
+			myBoards2.add(mMessageManager.getOrCreateBoard("eng.board3"));
+			myBoards2.add(mMessageManager.getOrCreateBoard("eng.board4"));
 		
 		HashSet<Board> myBoards3 = new HashSet<Board>();
-			myBoards3.add(mMessageManager.getOrCreateBoard("en.board5"));
-			myBoards3.add(mMessageManager.getOrCreateBoard("en.board6"));
+			myBoards3.add(mMessageManager.getOrCreateBoard("eng.board5"));
+			myBoards3.add(mMessageManager.getOrCreateBoard("eng.board6"));
 		
 		FreenetURI authorRequestSSK = new FreenetURI("SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/");
 		FreenetURI authorInsertSSK = new FreenetURI("SSK@Ykhv0x0K8jtrgOlqWVS4S2Jvmnm64zv5voNjMfz1nYI,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQECAAE/");
@@ -99,16 +99,16 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 				"<" + Freetalk.PLUGIN_TITLE + " Version=\"" + Version.getRealVersion() + "\">" + 
 				"<MessageList Version=\"1\">" + 
 				"<Message Date=\"2009-06-01\" FreenetURI=\"CHK@7qMS7LklYIhbZ88i0~u97lxrLKS2uxNwZWQOjPdXnJw,IlA~FSjWW2mPWlzWx7FgpZbBErYdLkqie1uSrcN~LbM,AAIA--8\" ID=\"" + messages[0].getID() + "\">" + 
-				"<Board Name=\"en.board1\"/>" + 
-				"<Board Name=\"en.board2\"/>" + 
+				"<Board Name=\"eng.board1\"/>" + 
+				"<Board Name=\"eng.board2\"/>" + 
 				"</Message>" + 
 				"<Message Date=\"2008-05-02\" FreenetURI=\"CHK@0YUT4BEorqJCETQrLSgHBcw5RL7KQNm6Fbpo3ThzTy4,6RzUH23~TwPQ0IDQcgPoxEYX7yBTgTNydD~uJ0I9DTQ,AAIA--8\" ID=\"" + messages[1].getID() + "\">" + 
-				"<Board Name=\"en.board3\"/>" + 
-				"<Board Name=\"en.board4\"/>" + 
+				"<Board Name=\"eng.board3\"/>" + 
+				"<Board Name=\"eng.board4\"/>" + 
 				"</Message>" + 
 				"<Message Date=\"2007-04-03\" FreenetURI=\"CHK@H4nfdTqgQUQ0CkdPzvrs2F~IIkjOCnfEn~S042jUxuw,wkCrKtmvmYQzuo3f4v2JlB87wJkK0dspmGJ~ivztYP8,AAIA--8\" ID=\"" + messages[2].getID() + "\">" + 
-				"<Board Name=\"en.board5\"/>" + 
-				"<Board Name=\"en.board6\"/>" + 
+				"<Board Name=\"eng.board5\"/>" + 
+				"<Board Name=\"eng.board6\"/>" + 
 				"</Message>" + 
 				"</MessageList>" + 
 				"</" + Freetalk.PLUGIN_TITLE + ">"
