@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import java.io.File;
 import java.lang.reflect.Field;
 
 import plugins.Freetalk.WoT.WoTIdentity;
@@ -129,7 +130,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	 * Constructor for unit tests.
 	 */
 	public Freetalk(String databaseFilename) {
-		db = openDatabase(databaseFilename);
+		db = openDatabase(new File(databaseFilename));
 		mIdentityManager = new WoTIdentityManager(this);
 		mMessageManager = new WoTMessageManager(this);
 		mTaskManager = new PersistentTaskManager(this, db);
@@ -142,7 +143,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		mPluginRespirator = myPR;
 
 		Logger.debug(this, "Opening database...");
-		db = openDatabase(DATABASE_FILENAME);
+		db = openDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME));
 		Logger.debug(this, "Database opened.");
 		
 		mConfig = Config.loadOrCreate(this, db);
@@ -239,11 +240,20 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		}
 	}
 	
+	private File getUserDataDirectory() {
+        final File freetalkDirectory = new File(mPluginRespirator.getNode().getUserDir(), PLUGIN_TITLE);
+        
+        if(!freetalkDirectory.exists() && !freetalkDirectory.mkdir())
+        	throw new RuntimeException("Unable to create directory " + freetalkDirectory);
+        
+        return freetalkDirectory;
+	}
+	
 	/**
 	 * ATTENTION: This function is duplicated in the Web Of Trust plugin, please backport any changes.
 	 */
 	@SuppressWarnings("unchecked")
-	private ExtObjectContainer openDatabase(String filename) {
+	private ExtObjectContainer openDatabase(File file) {
 		Logger.debug(this, "Using db4o " + Db4o.version());
 		
 		Configuration cfg = Db4o.newConfiguration();
@@ -335,8 +345,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         // TODO: We should check whether db4o inherits the indexed attribute to child classes, for example for this one:
         // Unforunately, db4o does not provide any way to query the indexed() property of fields, you can only set it
         // We might figure out whether inheritance works by writing a benchmark.
-		
-		return Db4o.openFile(cfg, filename).ext();
+        
+		return Db4o.openFile(cfg, file.getAbsolutePath()).ext();
 	}
 
 	private void upgradeDatabase() {
