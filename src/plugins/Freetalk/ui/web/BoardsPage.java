@@ -5,8 +5,8 @@ package plugins.Freetalk.ui.web;
 
 import java.text.DateFormat;
 
-import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.SubscribedBoard.MessageReference;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -43,6 +43,7 @@ public final class BoardsPage extends WebPageImpl {
 
 		HTMLNode boardsTable = boardsBox.addChild("table", "border", "0");
 		HTMLNode row = boardsTable.addChild("tr");
+		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.Language"));
 		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.Name"));
 		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.Description"));
 		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.Messages"));
@@ -58,10 +59,14 @@ public final class BoardsPage extends WebPageImpl {
 				++boardCount;
 				
 				row = boardsTable.addChild("tr");
+				
+				/* Language */
+				row.addChild("td", new String[] { "align" }, new String[] { "left" }, board.getLanguage().referenceName);
 
+				/* Name */
+				
 				HTMLNode nameCell = row.addChild("th", new String[] { "align" }, new String[] { "left" });
-				nameCell.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + board.getName(),
-						board.getName()));
+				nameCell.addChild(new HTMLNode("a", "href", BoardPage.getURI(board), board.getName()));
 
 				/* Description */
 				row.addChild("td", new String[] { "align" }, new String[] { "center" },  board.getDescription());

@@ -3,9 +3,9 @@ package plugins.Freetalk.ui.web;
 import java.text.DateFormat;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
@@ -95,6 +95,7 @@ public class SelectBoardsPage extends WebPageImpl {
 		
 		HTMLNode boardsTable = boardsBox.addChild("table", "border", "0");
 		HTMLNode row = boardsTable.addChild("tr");
+		row.addChild("th", l10n().getString("SelectBoardsPage.BoardTableHeader.Language"));
 		row.addChild("th", l10n().getString("SelectBoardsPage.BoardTableHeader.Name"));
 		row.addChild("th", l10n().getString("SelectBoardsPage.BoardTableHeader.Description"));
 		row.addChild("th", l10n().getString("SelectBoardsPage.BoardTableHeader.FirstSeen"));
@@ -111,6 +112,10 @@ public class SelectBoardsPage extends WebPageImpl {
 			for(final Board board : messageManager.boardIteratorSortedByName()) {
 				row = boardsTable.addChild("tr", "id", board.getName());
 
+				// Language
+				
+				row.addChild("td", new String[] { "align" }, new String[] { "left" }, board.getLanguage().referenceName);
+				
 				// Name
 				
 				HTMLNode nameCell = row.addChild("th", new String[] { "align" }, new String[] { "left" });
@@ -138,8 +143,7 @@ public class SelectBoardsPage extends WebPageImpl {
 					
 					// We are subscribed to that board so we can display some more information.
 					
-					nameCell.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + board.getName(),
-							board.getName()));
+					nameCell.addChild(new HTMLNode("a", "href", BoardPage.getURI(board), board.getName()));
 					
 					try {
 						latestMessageCell.addChild("#", dateFormat.format(subscribedBoard.getLatestMessage().getMessageDate()));
