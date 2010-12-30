@@ -57,7 +57,7 @@ public class Board extends Persistent implements Comparable<Board> {
     
     private int mNextFreeMessageIndex = 1;
 
-    private static Map<String, ISO639_3.LanguageCode> loadAllowedLanguages() {
+    private static final Map<String, ISO639_3.LanguageCode> loadAllowedLanguages() {
     	final ISO639_3 iso639_3 = new ISO639_3();
     	
     	// Get all real (non-symbolic) and living languages
@@ -70,7 +70,7 @@ public class Board extends Persistent implements Comparable<Board> {
         return languages;
     }
     
-    public static Map<String, ISO639_3.LanguageCode> getAllowedLanguages() {
+    public static final Map<String, ISO639_3.LanguageCode> getAllowedLanguages() {
     	return ALLOWED_LANGUAGES;
     }
 
@@ -140,7 +140,7 @@ public class Board extends Persistent implements Comparable<Board> {
      * (special formatting characters may be needed, e.g. for some
      * Arabic or Hebrew group names to be displayed properly.)
      */
-    public static boolean isNameValid(String name) {
+    public static final boolean isNameValid(String name) {
         // paranoia checks
 
         if (name == null || name.length() == 0) {
@@ -193,15 +193,29 @@ public class Board extends Persistent implements Comparable<Board> {
      * If we used only the board name as identification, the client apps would not download the new messages because they already have stored messages with index
      * 0, 1, 2 and so on. 
      */
-    public String getID() {
+    public final String getID() {
     	return mID;
+    }
+    
+    /**
+     * @return Returns the language code of the board. It is the token before the first '.' in the name of the board.
+     */
+    public final ISO639_3.LanguageCode getLanguage() {
+    	return ALLOWED_LANGUAGES.get(mName.substring(0, mName.indexOf('.')));
     }
 
     /**
      * @return The name of this board. Only one board with a given name can exist at once. The name is case-insensitive.
      */
-    public String getName() {
+    public final String getName() {
         return mName;
+    }
+    
+    /**
+     * @see getName()
+     */
+    public final String getNameWithoutLanguagePrefix() {
+        return mName.substring(mName.indexOf('.')+1);
     }
     
     public String getDescription(OwnIdentity viewer) {
@@ -209,14 +223,14 @@ public class Board extends Persistent implements Comparable<Board> {
 		return "";
     }
 
-    public Date getFirstSeenDate() {
+    public final Date getFirstSeenDate() {
         return mCreationDate;
     }
     
     /**
      * @return Returns true if at least one {@link SubscribedBoard} for this board exists, i.e. if we should download messages for this board.
      */
-    public boolean hasSubscriptions() {
+    public final boolean hasSubscriptions() {
     	return mHasSubscriptions;
     }
     
@@ -227,7 +241,7 @@ public class Board extends Persistent implements Comparable<Board> {
      * or positive to zero because the "has subscriptions" flag is a cached boolean and therefore is NOT auto-updated by the database when you delete the last
      * {@link SubscribedBoard} object or create the first one. 
      */
-	protected void setHasSubscriptions(boolean hasSubscriptions) {
+	protected final void setHasSubscriptions(boolean hasSubscriptions) {
 		mHasSubscriptions = hasSubscriptions;
 	}
 
@@ -242,7 +256,7 @@ public class Board extends Persistent implements Comparable<Board> {
      * Returns true if the given {@link Message} has this board's name listed in it's target board names.
      * Does not check whether the {@link Board} object referenced by the message is equal to this {@link Board} object!
      */
-    public boolean contains(Message message) {
+    public final boolean contains(Message message) {
     	for(Board board : message.getBoards()) {
     		if(mName.equals(board.getName()))
     			return true;
@@ -362,7 +376,7 @@ public class Board extends Persistent implements Comparable<Board> {
 
     }
     
-	protected BoardMessageLink getMessageLink(Message message) throws NoSuchMessageException {
+	protected final BoardMessageLink getMessageLink(Message message) throws NoSuchMessageException {
     	Query q = mDB.query();
     	q.constrain(BoardMessageLink.class);
     	q.descend("mMessage").constrain(message).identity();
@@ -381,13 +395,13 @@ public class Board extends Persistent implements Comparable<Board> {
      * @return Returns the next free message index and increments the internal free message index counter - therefore, the message index will be taken even if
      * 	you do not store any message with it. This ensures that deleting the head message cannot cause it's index to be associated with a new, different message.
      */
-	protected synchronized int takeFreeMessageIndexWithoutCommit() {
+	protected final synchronized int takeFreeMessageIndexWithoutCommit() {
 		int result = mNextFreeMessageIndex++;
 		storeWithoutCommit();
 		return result;
     }
     
-    protected ObjectSet<BoardMessageLink> getMessagesAfterIndex(int index) {
+    protected final ObjectSet<BoardMessageLink> getMessagesAfterIndex(int index) {
         Query q = mDB.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
@@ -395,7 +409,7 @@ public class Board extends Persistent implements Comparable<Board> {
         return new Persistent.InitializingObjectSet<BoardMessageLink>(mFreetalk, q.execute());
     }
     
-    private BoardMessageLink getMessageByIndex(int index) throws NoSuchMessageException {
+    private final BoardMessageLink getMessageByIndex(int index) throws NoSuchMessageException {
         final Query q = mDB.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
@@ -409,7 +423,7 @@ public class Board extends Persistent implements Comparable<Board> {
     	}
     }
     
-    public synchronized int getMessageCount() {
+    public final synchronized int getMessageCount() {
     	final Query query = mDB.query();
     	query.constrain(BoardMessageLink.class);
     	query.descend("mBoard").constrain(this).identity();
