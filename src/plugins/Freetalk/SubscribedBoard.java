@@ -361,19 +361,15 @@ public final class SubscribedBoard extends Board {
     		// The new message is no thread. We must:
 			
     		// 1. Find it's parent thread, create a ghost reference for it if it does not exist.
-    		BoardThreadLink parentThreadRef = findOrCreateParentThread(newMessage);
+    		final BoardThreadLink parentThreadRef = findOrCreateParentThread(newMessage);
     		
-    		// 2. Tell the parent thread that a new message was added. This updates the last reply date and the "was read"-flag of the thread.
-    		parentThreadRef.onMessageAdded(newMessage);
-    		parentThreadRef.storeWithoutCommit();
-    		
-    		// 3. If the parent message did not exist, create a ghost reply link for it.
+    		// 2. If the parent message did not exist, create a ghost reply link for it.
     		// - The ghost link allows the UI to display a "Message is not downloaded yet" warning for the parent message
     		if(!parentID.equals(threadID)) {
     			findOrCreateParentMessage(newMessage);
     		}
     		
-    		// 4. Store a BoardReplyLink for the new message
+    		// 3. Store a BoardReplyLink for the new message
     		try {
     			getReplyLink(threadID, newMessageID);
     			// The reply link exists already, either because it was a ghost link or addMessage was called already for this message
@@ -384,6 +380,11 @@ public final class SubscribedBoard extends Board {
     			messageRef.initializeTransient(mFreetalk);
     			messageRef.storeWithoutCommit();
     		}
+    		
+    		// 4. Tell the parent thread that a new message was added. This updates the last reply date and the "was read"-flag of the thread.
+    		parentThreadRef.onMessageAdded(newMessage);
+    		parentThreadRef.storeWithoutCommit();
+    		
     	}
 
     	storeWithoutCommit();
@@ -1354,6 +1355,17 @@ public final class SubscribedBoard extends Board {
 			if(myMessage == null)
 				throw new NullPointerException();
 			
+			if(!mMessageID.equals(myMessage.getID()))
+				throw new IllegalArgumentException("mMessageID==" + mMessageID + " but new message ID == " + myMessage.getID());
+			
+			if(mMessage != null) {
+				if(mMessage != myMessage)
+					throw new RuntimeException("setMessage() called but message is already set to different one: mMessage==" + mMessage + "; new message: " + myMessage);
+				
+				Logger.warning(this, "setMessage() called but message is already set.", new RuntimeException());
+				return;
+			}
+			
 			mMessage = myMessage;
 			mTitle = mMessage.getTitle();
 			mDate = mMessage.getDate();
@@ -1557,8 +1569,29 @@ public final class SubscribedBoard extends Board {
     			throw new IllegalStateException("BoardThreadLink has no message and no replies");
     	}
     	
+    	private void recomputeThreadReadState() {
+			boolean wasThreadRead = wasRead();
+
+			if(wasThreadRead) {
+				for(BoardReplyLink reply : mBoard.getAllThreadReplies(mThreadID, false)) {
+					if(!reply.wasRead()) {
+						wasThreadRead = false;
+						break;
+					}
+				}
+			}
+
+			if(wasThreadRead)
+				markThreadAsRead();
+			else
+				markThreadAsUnread();
+    	}
+    	
     	protected void onMessageAdded(Message newMessage) {
-    		markThreadAsUnread();
+    		// TODO: Optimization: Normally, it would be okay to just mark the thread as unread. However, in some cases onMessageAdded is called
+    		// for certain messages twice, maybe due to double Board.addMessage(), therefore we recompute until I have the time to fix this.
+    		// markThreadAsUnread();
+    		recomputeThreadReadState();
     		
     		final Date newDate = newMessage.getDate();
     		
