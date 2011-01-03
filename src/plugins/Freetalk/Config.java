@@ -95,6 +95,7 @@ public final class Config extends Persistent {
 				config.initializeTransient(myFreetalk);
 				config.checkedActivate(4);
 				config.setDefaultValues(false);
+				config.storeAndCommit();
 			}
 			
 			return config;
