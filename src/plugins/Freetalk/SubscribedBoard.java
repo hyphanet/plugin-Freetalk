@@ -72,7 +72,21 @@ public final class SubscribedBoard extends Board {
     		if(parentLink.getMessageIndex() > mHighestSynchronizedParentMessageIndex)
     			continue;
     		
-			if(getMessageReferences(parentLink.getMessage().getID()).size() == 0) {
+    		boolean found = false;
+    		
+			for(MessageReference ref : getMessageReferences(parentLink.getMessage().getID())) {
+				try {
+					// We must not only check whether there is a MessageReference for the message ID but also whether the message is actually
+					// set on the ref... it might be a ghost reference only.
+					if(ref.getMessage() == parentLink.getMessage()) { 
+						found = true;
+						// TODO: Validate whether the typ of the message reference fits the type of the message (thread, reply, etc.)
+						break;
+					}
+				} catch(NoSuchMessageException e) {}
+			}
+			
+			if(!found) {
 				try {
 					getUnwantedMessageLink(parentLink.getMessage());
 				} catch(NoSuchMessageException e2) {
