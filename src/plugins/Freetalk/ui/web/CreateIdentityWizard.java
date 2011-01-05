@@ -22,6 +22,8 @@ public class CreateIdentityWizard extends WebPageImpl {
 
 	/* Step 3: Set preferences */
 	private Boolean mIdentityPublishesTrustList = null;
+	
+	private Boolean mAutoSubscribe = null;
 
 	/*
 	 * TODO: Evaluate whether we need to ask the user whether he wants to
@@ -53,20 +55,20 @@ public class CreateIdentityWizard extends WebPageImpl {
 		
 		/* ======== Stage 1: Parse the passed form data ====================================================================================== */
 		
-		int requestedStep = mRequest.isPartSet("Step") ? Integer.parseInt(mRequest.getPartAsString("Step", 1)) : 1;
+		int requestedStep = mRequest.isPartSet("Step") ? Integer.parseInt(mRequest.getPartAsStringFailsafe("Step", 1)) : 1;
 		
 		/* Parse the "Generate random SSK?" boolean specified in step 1 */
 		if(mRequest.isPartSet("GenerateRandomSSK"))
-			mGenerateRandomSSK = mRequest.getPartAsString("GenerateRandomSSK", 5).equals("true");
+			mGenerateRandomSSK = mRequest.getPartAsStringFailsafe("GenerateRandomSSK", 5).equals("true");
 
 		/* Parse the URI specified in step 1 */
 		if(mRequest.isPartSet("RequestURI") && mRequest.isPartSet("InsertURI")) {
 			mIdentityURI = new FreenetURI[2];
 
-			try { mIdentityURI[0] = new FreenetURI(mRequest.getPartAsString("InsertURI", 256)); }
+			try { mIdentityURI[0] = new FreenetURI(mRequest.getPartAsStringFailsafe("InsertURI", 256)); }
 			catch(Exception e) { insertURIproblem = e; }
 
-			try { mIdentityURI[1] = new FreenetURI(mRequest.getPartAsString("RequestURI", 256)); }
+			try { mIdentityURI[1] = new FreenetURI(mRequest.getPartAsStringFailsafe("RequestURI", 256)); }
 			catch(Exception e) { requestURIproblem = e; }
 
 			if(insertURIproblem != null || requestURIproblem != null)
@@ -82,7 +84,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 		/* Parse the nickname specified in step 2 */
 		if(mRequest.isPartSet("Nickname")) {
 			try {
-				mIdentityNickname = mRequest.getPartAsString("Nickname", 256);
+				mIdentityNickname = mRequest.getPartAsStringFailsafe("Nickname", 256);
 				WoTIdentity.validateNickname(mIdentityNickname);
 			}
 			catch(Exception e) {
@@ -94,9 +96,14 @@ public class CreateIdentityWizard extends WebPageImpl {
 		/* Parse the preferences specified in step 3 */
 		if(requestedStep > 3) { /* We cannot just use isPartSet("PublishTrustList") because it won't be set if the checkbox is unchecked */
 			if(mRequest.isPartSet("PublishTrustList"))
-				mIdentityPublishesTrustList = mRequest.getPartAsString("PublishTrustList", 5).equals("true");
+				mIdentityPublishesTrustList = mRequest.getPartAsStringFailsafe("PublishTrustList", 5).equals("true");
 			else
 				mIdentityPublishesTrustList = false;
+			
+			if(mRequest.isPartSet("AutoSubscribe"))
+				mAutoSubscribe = mRequest.getPartAsStringFailsafe("AutoSubscribe", 5).equals("true");
+			else
+				mAutoSubscribe = false;
 		}
 		
 		/* ======== Stage 2: Check for missing data and correct requestedStep  =============================================================== */
@@ -105,7 +112,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 			requestedStep = 1;
 		} else if(requestedStep > 2 && mIdentityNickname == null) {
 			requestedStep = 2;
-		} else if(requestedStep > 3 && mIdentityPublishesTrustList == null) {
+		} else if(requestedStep > 3 && (mIdentityPublishesTrustList == null || mAutoSubscribe == null)) {
 			requestedStep = 3;
 		}
 		
@@ -211,10 +218,32 @@ public class CreateIdentityWizard extends WebPageImpl {
 	        l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text3", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 			
 			p = tlBox.addChild("p");
-			// Do not get checked state from the form data because if a checkbox is not checked then its form data is not set
-			p.addChild("input",	new String[] { "type", "name", "value", "checked" },
-								new String[] { "checkbox", "PublishTrustList", "true", "checked"});
+			if(mIdentityPublishesTrustList == null || mIdentityPublishesTrustList == true) {
+				p.addChild("input",	new String[] { "type", "name", "value", "checked" },
+									new String[] { "checkbox", "PublishTrustList", "true", "checked"});
+			} else {
+				p.addChild("input",	new String[] { "type", "name", "value" },
+									new String[] { "checkbox", "PublishTrustList", "true" });
+			}
 			p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.TrustList.PublishTrustListCheckbox"));
+			
+			
+			HTMLNode autoSubscribeBox = getContentBox(l10n().getString("CreateIdentityWizard.Step3.AutoSubscribe.Header"));
+			choosePrefsBox.addChild(autoSubscribeBox);
+	
+			p = autoSubscribeBox.addChild("p");
+	        l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.AutoSubscribe.Text", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+
+			
+			p = autoSubscribeBox.addChild("p");
+			if(mAutoSubscribe != null && mAutoSubscribe) {
+				p.addChild("input",	new String[] { "type", "name", "value", "checked" },
+									new String[] { "checkbox", "AutoSubscribe", "true", "checked"});
+			} else {
+				p.addChild("input",	new String[] { "type", "name", "value" },
+									new String[] { "checkbox", "AutoSubscribe", "true" });				
+			}
+			p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.AutoSubscribe.AutoSubscribeCheckbox"));
 		}
 		
 		/* Step 4: Create the identity */
@@ -223,7 +252,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 			
 			try {
 				WoTOwnIdentity id = (WoTOwnIdentity)mFreetalk.getIdentityManager().createOwnIdentity(mIdentityNickname,
-						mIdentityPublishesTrustList, true, mIdentityURI[1], mIdentityURI[0]);
+						mIdentityPublishesTrustList, mIdentityPublishesTrustList, mAutoSubscribe, mIdentityURI[1], mIdentityURI[0]);
 						
 				HTMLNode summaryBox = getContentBox(l10n().getString("CreateIdentityWizard.Step4.Header"));
 				wizardBox.addChild(summaryBox);

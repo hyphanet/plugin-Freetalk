@@ -146,8 +146,9 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		return result;
 	}
 	
-	// TODO: Add parameter for autoSubscribeToNewBoards & wire it in to the web interface wizard
-	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles) throws Exception  {
+	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles, boolean autoSubscribeToNewBoards)
+		throws Exception  {
+		
 		Logger.normal(this, "Creating new own identity via FCP, nickname: " + newNickname);
 		
 		SimpleFieldSet params = new SimpleFieldSet(true);
@@ -161,7 +162,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		WoTOwnIdentity identity = new WoTOwnIdentity(result.params.get("ID"),
 				new FreenetURI(result.params.get("RequestURI")),
 				new FreenetURI(result.params.get("InsertURI")),
-				newNickname);
+				newNickname, autoSubscribeToNewBoards);
 		
 		identity.initializeTransient(mFreetalk);
 		
@@ -186,8 +187,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		return identity;
 	}
 	
-	// TODO: Add parameter for autoSubscribeToNewBoards & wire it in to the web interface wizard
-	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles,
+	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles, boolean autoSubscribeToNewBoards,
 			FreenetURI newRequestURI, FreenetURI newInsertURI) throws Exception {
 		Logger.normal(this, "Creating new own identity via FCP, nickname: " + newNickname);
 		
@@ -207,7 +207,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		WoTOwnIdentity identity = new WoTOwnIdentity(result.params.get("ID"),
 				new FreenetURI(result.params.get("RequestURI")),
 				new FreenetURI(result.params.get("InsertURI")),
-				newNickname);
+				newNickname, autoSubscribeToNewBoards);
 		
 		identity.initializeTransient(mFreetalk);
 		
@@ -672,6 +672,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		
 		WoTOwnIdentity newIdentity = (WoTOwnIdentity)identity;
 		
+		// FIXME: Do this upon login.
 		try {
 			addFreetalkContext(newIdentity);
 		} catch (Exception e) {
