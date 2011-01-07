@@ -106,6 +106,7 @@ public final class Config extends Persistent { // FIXME: Rename to Configuration
 				config.initializeTransient(myFreetalk);
 				config.checkedActivate(4);
 				config.setDefaultValues(false);
+				config.storeAndCommit();
 			}
 			
 			return config;

@@ -51,9 +51,9 @@ public abstract class IdentityManager {
 		db = mFreetalk.getDatabase();
 	}
 	
-	public abstract OwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles) throws Exception;
+	public abstract OwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles, boolean autoSubscribeToNewBoards) throws Exception;
 	
-	public abstract OwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles,
+	public abstract OwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles, boolean autoSubscribeToNewBoards,
 			FreenetURI requestURI, FreenetURI insertURI) throws Exception;
 
 	public abstract Iterable<? extends Identity> getAllIdentities();

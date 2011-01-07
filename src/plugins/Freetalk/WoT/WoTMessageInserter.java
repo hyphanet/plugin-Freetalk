@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Random;
 
@@ -30,7 +31,6 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
-import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -59,22 +59,25 @@ public final class WoTMessageInserter extends MessageInserter {
 	
 	private final Random mRandom;
 	
-	private final RequestClient mRequestClient;
-	
 	/**
 	 * For each <code>BaseClientPutter</code> (= an object associated with an insert) this hashtable stores the ID of the message which is being
 	 * inserted by the <code>BaseClientPutter</code>.
 	 */
-	private final Hashtable<BaseClientPutter, String> mMessageIDs = new Hashtable<BaseClientPutter, String>(2*ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT);
+	private final Hashtable<BaseClientPutter, String> mPutterMessageIDs = new Hashtable<BaseClientPutter, String>(2*ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT);
+
+	/**
+	 * Contains the IDs of the message lists which are currently being inserted, used for preventing double inserts.
+	 */
+	private final HashSet<String> mMessageIDs = new HashSet<String>(2*ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT);
 	
 	private final WoTMessageXML mXML;
+	
 	
 	public WoTMessageInserter(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager,
 			WoTMessageManager myMessageManager, WoTMessageXML myMessageXML) {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
 		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
-		mRequestClient = mMessageManager.mRequestClient;
 		mXML = myMessageXML;
 	}
 
@@ -104,9 +107,7 @@ public final class WoTMessageInserter extends MessageInserter {
 	}
 
 	@Override
-	protected synchronized void iterate() {
-		abortAllTransfers();
-		
+	protected synchronized void iterate() {		
 		synchronized(mMessageManager) {
 			for(WoTOwnMessage message : mMessageManager.getNotInsertedOwnMessages()) {
 				try {
@@ -114,7 +115,8 @@ public final class WoTMessageInserter extends MessageInserter {
 					if(!message.testFreenetURIisNull()) // Logs an error for us
 						continue;
 					
-					insertMessage(message);
+					if(!mMessageIDs.contains(message.getID()))
+						insertMessage(message);
 				}
 				catch(Exception e) {
 					Logger.error(this, "Insert of message failed", e);
@@ -142,7 +144,8 @@ public final class WoTMessageInserter extends MessageInserter {
 
 			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 			addInsert(pu);
-			mMessageIDs.put(pu, m.getID());
+			mPutterMessageIDs.put(pu, m.getID());
+			mMessageIDs.add(m.getID());
 			tempB = null;
 
 			Logger.debug(this, "Started insert of message from " + m.getAuthor().getNickname());
@@ -157,7 +160,7 @@ public final class WoTMessageInserter extends MessageInserter {
 	@Override
 	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		try {
-			mMessageManager.onOwnMessageInserted(mMessageIDs.get(state), state.getURI());
+			mMessageManager.onOwnMessageInserted(mPutterMessageIDs.get(state), state.getURI());
 		}
 		catch(Exception e) {
 			Logger.error(this, "Message insert finished but onSuccess() failed", e);
@@ -171,7 +174,10 @@ public final class WoTMessageInserter extends MessageInserter {
 	@Override
 	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		try {
-			Logger.error(this, "Message insert failed", e);
+			if(e.getMode() == InsertException.CANCELLED)
+				Logger.normal(this, "Message insert cancelled for " + state.getURI());
+			else
+				Logger.error(this, "Message insert failed", e);
 		}
 		finally {
 			removeInsert(state);
@@ -185,6 +191,7 @@ public final class WoTMessageInserter extends MessageInserter {
 	 */
 	protected synchronized void abortAllTransfers() {
 		super.abortAllTransfers();
+		mPutterMessageIDs.clear();
 		mMessageIDs.clear();
 	}
 	
@@ -194,7 +201,7 @@ public final class WoTMessageInserter extends MessageInserter {
 	@Override
 	protected void removeInsert(BaseClientPutter p) {
 		super.removeInsert(p);
-		mMessageIDs.remove(p);
+		mMessageIDs.remove(mPutterMessageIDs.remove(p));
 	}
 
 	

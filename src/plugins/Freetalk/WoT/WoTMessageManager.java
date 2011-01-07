@@ -270,14 +270,13 @@ public final class WoTMessageManager extends MessageManager {
 	}
 
 	/**
-	 * Returns <code>OwnMessageList</code> objects which are marked as not inserted. It will also return those which are marked as currently
-	 * being inserted, they are not filtered out because in the current implementation the WoTMessageListInserter will cancel all inserts
-	 * before using this function.
+	 * Returns <code>OwnMessageList</code> objects which are marked as not inserted and not being inserted.
 	 */
 	public synchronized ObjectSet<WoTOwnMessageList> getNotInsertedOwnMessageLists() {
 		Query query = db.query();
 		query.constrain(WoTOwnMessageList.class);
 		query.descend("mWasInserted").constrain(false);
+		query.descend("mIsBeingInserted").constrain(false);
 		return new Persistent.InitializingObjectSet<WoTOwnMessageList>(mFreetalk, query);
 	}
 	
