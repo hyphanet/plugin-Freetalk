@@ -32,7 +32,6 @@ import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
 import plugins.Freetalk.ui.web.WebInterface;
 
 import com.db4o.Db4o;
-import com.db4o.config.Configuration;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
@@ -91,7 +90,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	
 	private ExtObjectContainer db;
 	
-	private Config mConfig;
+	private Configuration mConfig;
 	
 	private WoTIdentityManager mIdentityManager;
 	
@@ -146,7 +145,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		db = openDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME));
 		Logger.debug(this, "Database opened.");
 		
-		mConfig = Config.loadOrCreate(this, db);
+		mConfig = Configuration.loadOrCreate(this, db);
 		// FIXME: We must store the format version in a member variable to make loss of this information less likely
 		// - I have experienced config objects whose hashtable member variables suddenly were null, even with proper
 		// activation. To repair such databases, we can just re-create the hashtables and initialize with the default config
@@ -214,13 +213,13 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		Logger.debug(this, "Creating FCP interface...");
 		mFCPInterface = new FCPInterface(this);
 
-		if (mConfig.getBoolean(Config.NNTP_SERVER_ENABLED)) {
+		if (mConfig.getBoolean(Configuration.NNTP_SERVER_ENABLED)) {
     		Logger.debug(this, "Creating NNTP server...");
-    		String bindTo = mConfig.getString(Config.NNTP_SERVER_BINDTO);
+    		String bindTo = mConfig.getString(Configuration.NNTP_SERVER_BINDTO);
 			if (bindTo == null) {
 				bindTo = "127.0.0.1";
 			}
-			String allowedHosts = mConfig.getString(Config.NNTP_SERVER_ALLOWED_HOSTS);
+			String allowedHosts = mConfig.getString(Configuration.NNTP_SERVER_ALLOWED_HOSTS);
 			if (allowedHosts == null) {
 				allowedHosts = "127.0.0.1";
 			}
@@ -256,7 +255,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	private ExtObjectContainer openDatabase(File file) {
 		Logger.debug(this, "Using db4o " + Db4o.version());
 		
-		Configuration cfg = Db4o.newConfiguration();
+		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
 		
 		// Required config options:
 		
@@ -279,7 +278,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         final Class<? extends Persistent>[] persistentClasses = new Class[] {
         	Board.class,
         	Board.BoardMessageLink.class,
-        	Config.class,
+        	Configuration.class,
         	FetchFailedMarker.class,
         	Message.class,
         	Message.Attachment.class,
@@ -539,7 +538,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		return mPluginRespirator;
 	}
 	
-	public Config getConfig() {
+	public Configuration getConfig() {
 		return mConfig;
 	}
 	

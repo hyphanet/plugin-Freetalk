@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.ui.web;
 
-import plugins.Freetalk.Config;
+import plugins.Freetalk.Configuration;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.WoT.WoTIdentityManager;
@@ -45,9 +45,9 @@ public class SettingsPage extends WebPageImpl {
 				nntpServerAllowedHosts = null;
 			}
             synchronized (mFreetalk.getConfig()) {
-                mFreetalk.getConfig().set(Config.NNTP_SERVER_ENABLED, enableNntpServer);
-                mFreetalk.getConfig().set(Config.NNTP_SERVER_BINDTO, nntpServerBindTo);
-                mFreetalk.getConfig().set(Config.NNTP_SERVER_ALLOWED_HOSTS, nntpServerAllowedHosts);
+                mFreetalk.getConfig().set(Configuration.NNTP_SERVER_ENABLED, enableNntpServer);
+                mFreetalk.getConfig().set(Configuration.NNTP_SERVER_BINDTO, nntpServerBindTo);
+                mFreetalk.getConfig().set(Configuration.NNTP_SERVER_ALLOWED_HOSTS, nntpServerAllowedHosts);
                 mFreetalk.getConfig().storeAndCommit();
             }
             
@@ -130,13 +130,13 @@ public class SettingsPage extends WebPageImpl {
                 .addChild("#", l10n().getString("SettingsPage.GlobalSettings.NNTPEnableServer.Short"));
         
         item.addChild("span", "class", "config");
-        item.addChild(addBooleanComboBox(mFreetalk.getConfig().getBoolean(Config.NNTP_SERVER_ENABLED), "EnableNntpServer", false));
+        item.addChild(addBooleanComboBox(mFreetalk.getConfig().getBoolean(Configuration.NNTP_SERVER_ENABLED), "EnableNntpServer", false));
         
         item.addChild("span", "class", "configlongdesc").addChild("#", l10n().getString("SettingsPage.GlobalSettings.NNTPEnableServer.Long"));
 
 		item = list.addChild("li");
 		item.addChild("span", new String[] { "class", "title", "style" }, new String[] { "configshortdesc", defaultString("127.0.0.1"), "cursor: help;" }).addChild("#", l10n().getString("SettingsPage.GlobalSettings.NNTPBindTo.Short"));
-		String currentValue = mFreetalk.getConfig().getString(Config.NNTP_SERVER_BINDTO);
+		String currentValue = mFreetalk.getConfig().getString(Configuration.NNTP_SERVER_BINDTO);
 		if (currentValue == null) {
 			currentValue = "127.0.0.1";
 		}
@@ -145,7 +145,7 @@ public class SettingsPage extends WebPageImpl {
 
 		item = list.addChild("li");
 		item.addChild("span", new String[] { "class", "title", "style" }, new String[] { "configshortdesc", defaultString("127.0.0.1"), "cursor: help;" }, l10n().getString("SettingsPage.GlobalSettings.NNTPAllowedHosts.Short"));
-		String allowedHosts = mFreetalk.getConfig().getString(Config.NNTP_SERVER_ALLOWED_HOSTS);
+		String allowedHosts = mFreetalk.getConfig().getString(Configuration.NNTP_SERVER_ALLOWED_HOSTS);
 		if (allowedHosts == null) {
 			allowedHosts = "127.0.0.1";
 		}

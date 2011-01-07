@@ -23,7 +23,7 @@ import freenet.support.Logger;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 @IndexedClass
-public final class Config extends Persistent { // FIXME: Rename to Configuration
+public final class Configuration extends Persistent { // FIXME: Rename to Configuration
 
 	/* Names of the config parameters */
 	
@@ -58,7 +58,7 @@ public final class Config extends Persistent { // FIXME: Rename to Configuration
 	/**
 	 * Creates a new Config object and stores the default values in it.
 	 */
-	protected Config(Freetalk myFreetalk) {
+	protected Configuration(Freetalk myFreetalk) {
 		initializeTransient(myFreetalk);
 		mDatabaseFormatVersion = Freetalk.DATABASE_FORMAT_VERSION;
 		mStringParams = new Hashtable<String, String>();
@@ -87,14 +87,14 @@ public final class Config extends Persistent { // FIXME: Rename to Configuration
 	 * Loads an existing Config object from the database and adds any missing default values to it, creates and stores a new one if none exists.
 	 * @return The config object.
 	 */
-	public static Config loadOrCreate(Freetalk myFreetalk, ExtObjectContainer db) {
+	public static Configuration loadOrCreate(Freetalk myFreetalk, ExtObjectContainer db) {
 		synchronized(db.lock()) {
-			Config config;
-			ObjectSet<Config> result = db.queryByExample(Config.class);
+			Configuration config;
+			ObjectSet<Configuration> result = db.queryByExample(Configuration.class);
 			
 			if(result.size() == 0) {
 				Logger.debug(myFreetalk, "Creating new Config...");
-				config = new Config(myFreetalk);
+				config = new Configuration(myFreetalk);
 				config.storeAndCommit();
 			}
 			else {

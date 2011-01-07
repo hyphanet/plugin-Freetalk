@@ -5,7 +5,7 @@ package plugins.Freetalk.tasks.WoT;
 
 import java.util.Date;
 
-import plugins.Freetalk.Config;
+import plugins.Freetalk.Configuration;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
@@ -84,7 +84,7 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 			if(messageManager.getOwnMessagesBy(mOwner).size() > 0   // TODO: Optimization: Create & use get(Own)MessageCount() ...
 				|| messageManager.getMessagesBy(mOwner).size() > 0) { // Also check for messages which are not stored as own messages anymore.  
 				
-				int minimumTrusterCount = mFreetalk.getConfig().getInt(Config.MINIMUM_TRUSTER_COUNT); 
+				int minimumTrusterCount = mFreetalk.getConfig().getInt(Configuration.MINIMUM_TRUSTER_COUNT); 
 				
 				// ... and if he has not received enough trust values.
 				if(identityManager.getReceivedTrustsCount(mOwner) < minimumTrusterCount) {

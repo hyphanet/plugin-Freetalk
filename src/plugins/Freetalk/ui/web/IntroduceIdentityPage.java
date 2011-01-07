@@ -2,7 +2,7 @@ package plugins.Freetalk.ui.web;
 
 import java.util.List;
 
-import plugins.Freetalk.Config;
+import plugins.Freetalk.Configuration;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
@@ -106,7 +106,7 @@ public final class IntroduceIdentityPage extends TaskPage {
 		    String trnsl = l10n().getString(
 		            "IntroduceIdentityPage.IntroduceIdentity.ReceivedLowTrust",
 		            "trustcount",
-		            Integer.toString( mFreetalk.getConfig().getInt(Config.MINIMUM_TRUSTER_COUNT )));
+		            Integer.toString( mFreetalk.getConfig().getInt(Configuration.MINIMUM_TRUSTER_COUNT )));
 			p = contentBox.addChild("p", trnsl);
 		} else {
 			p = contentBox.addChild("p", l10n().getString("IntroduceIdentityPage.IntroduceIdentity.ReceivedNoTrust"));
