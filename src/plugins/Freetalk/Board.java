@@ -120,7 +120,7 @@ public class Board extends Persistent implements Comparable<Board> {
 	    if(mNextFreeMessageIndex < 1)
 	    	throw new IllegalStateException("mNextFreeMessageIndex is illegal: " + mNextFreeMessageIndex);
 	    
-	    if(getMessagesAfterIndex(mNextFreeMessageIndex-1).size() != 0)
+	    if(getDownloadedMessagesAfterIndex(mNextFreeMessageIndex-1).size() != 0)
 	    	throw new IllegalStateException("mNextFreetMessageIndex is wrong: " + mNextFreeMessageIndex);
 	}
 
@@ -286,8 +286,13 @@ public class Board extends Persistent implements Comparable<Board> {
     	return false;
     }
     
-    // @IndexedClass // I can't think of any query which would need to get all BoardMessageLink objects.
-    public static final class BoardMessageLink extends Persistent {
+    /**
+     * A DownloadedMessageLink links an actually downloaded message to a board - in opposite to {@link MessageList.MessageReference} which mark messages which might be downloaded or not.  
+     * These DownloadedMessageLink objects are used for querying the database for messages which belong to a certain board.
+     * - Since a message can be posted to multiple boards, we need these helper objects for being able to do fast queries on the message lists of boards.
+     */
+    // @IndexedClass // I can't think of any query which would need to get all DownloadedMessageLink objects.
+    public static final class DownloadedMessageLink extends Persistent {
     	
     	@IndexedField
     	private final Board mBoard;
@@ -300,7 +305,7 @@ public class Board extends Persistent implements Comparable<Board> {
     	
     	private final Identity mAuthor;
     	
-    	private BoardMessageLink(Board myBoard, Message myMessage, int myIndex) {
+    	private DownloadedMessageLink(Board myBoard, Message myMessage, int myIndex) {
     		if(myBoard == null) throw new NullPointerException();
     		if(myMessage == null) throw new NullPointerException();
     		if(myIndex <= 0) throw new IllegalArgumentException();
@@ -328,7 +333,7 @@ public class Board extends Persistent implements Comparable<Board> {
 			
 			// The primary reason for calling it is to ensure that the index is only taken once:
 			// It should throw a DuplicateMessageException if there are multiple...
-			if(board.getMessageByIndex(mIndex) != this)
+			if(board.getDownloadedMessageByIndex(mIndex) != this)
 				throw new IllegalStateException("getMessageByIndex is broken");
 	    	
 			if(mMessage == null)
@@ -343,7 +348,7 @@ public class Board extends Persistent implements Comparable<Board> {
 			
 			// The primary reason for calling it is to ensure that the message is only linked once:
 			// It should throw a DuplicateMessageException if there are multiple...
-			if(board.getMessageLink(message) != this)
+			if(board.getDownloadedMessageLink(message) != this)
 				throw new IllegalStateException("getMessageLink is broken");
 			
 			if(mAuthor == null)
@@ -397,12 +402,12 @@ public class Board extends Persistent implements Comparable<Board> {
 
     }
     
-	protected final BoardMessageLink getMessageLink(Message message) throws NoSuchMessageException {
+	protected final DownloadedMessageLink getDownloadedMessageLink(Message message) throws NoSuchMessageException {
     	Query q = mDB.query();
-    	q.constrain(BoardMessageLink.class);
+    	q.constrain(DownloadedMessageLink.class);
     	q.descend("mMessage").constrain(message).identity();
     	q.descend("mBoard").constrain(this).identity();
-    	ObjectSet<BoardMessageLink> messageLinks = new Persistent.InitializingObjectSet<Board.BoardMessageLink>(mFreetalk, q);
+    	ObjectSet<DownloadedMessageLink> messageLinks = new Persistent.InitializingObjectSet<Board.DownloadedMessageLink>(mFreetalk, q);
     	
     	switch(messageLinks.size()) {
     		case 0: throw new NoSuchMessageException(message.getID());
@@ -422,20 +427,20 @@ public class Board extends Persistent implements Comparable<Board> {
 		return result;
     }
     
-    protected final ObjectSet<BoardMessageLink> getMessagesAfterIndex(int index) {
+    protected final ObjectSet<DownloadedMessageLink> getDownloadedMessagesAfterIndex(int index) {
         Query q = mDB.query();
-        q.constrain(BoardMessageLink.class);
+        q.constrain(DownloadedMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mIndex").constrain(index).greater();
-        return new Persistent.InitializingObjectSet<BoardMessageLink>(mFreetalk, q.execute());
+        return new Persistent.InitializingObjectSet<DownloadedMessageLink>(mFreetalk, q.execute());
     }
     
-    private final BoardMessageLink getMessageByIndex(int index) throws NoSuchMessageException {
+    private final DownloadedMessageLink getDownloadedMessageByIndex(int index) throws NoSuchMessageException {
         final Query q = mDB.query();
-        q.constrain(BoardMessageLink.class);
+        q.constrain(DownloadedMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mIndex").constrain(index);
-    	final ObjectSet<BoardMessageLink> messageLinks = new Persistent.InitializingObjectSet<Board.BoardMessageLink>(mFreetalk, q);
+    	final ObjectSet<DownloadedMessageLink> messageLinks = new Persistent.InitializingObjectSet<Board.DownloadedMessageLink>(mFreetalk, q);
     	
     	switch(messageLinks.size()) {
     		case 0: throw new NoSuchMessageException("index: " + index);
@@ -444,9 +449,9 @@ public class Board extends Persistent implements Comparable<Board> {
     	}
     }
     
-    public final synchronized int getMessageCount() {
+    public final synchronized int getDownloadedMessageCount() {
     	final Query query = mDB.query();
-    	query.constrain(BoardMessageLink.class);
+    	query.constrain(DownloadedMessageLink.class);
     	query.descend("mBoard").constrain(this).identity();
     	return query.execute().size();
     }
@@ -482,18 +487,18 @@ public class Board extends Persistent implements Comparable<Board> {
     	throwIfNotAllowedInThisBoard(newMessage);
     	
     	try {
-    		getMessageLink(newMessage);
+    		getDownloadedMessageLink(newMessage);
     		Logger.error(this, "addMessage() called for already existing message: " + newMessage);
     	}
     	catch(NoSuchMessageException e) {
-    		final BoardMessageLink link = new BoardMessageLink(this, newMessage, takeFreeMessageIndexWithoutCommit());
+    		final DownloadedMessageLink link = new DownloadedMessageLink(this, newMessage, takeFreeMessageIndexWithoutCommit());
     		link.initializeTransient(mFreetalk);
     		link.storeWithoutCommit();
     	}
     }
     
     protected synchronized void deleteMessage(Message message) throws NoSuchMessageException {
-    	getMessageLink(message).deleteWithoutCommit();
+    	getDownloadedMessageLink(message).deleteWithoutCommit();
     }
 
 }

@@ -68,7 +68,7 @@ public final class SubscribedBoard extends Board {
     	if(mHighestSynchronizedParentMessageIndex < 0)
     		throw new IllegalStateException("mHighestSynchronizedParentMessageIndex == " + mHighestSynchronizedParentMessageIndex);
     
-    	for(BoardMessageLink parentLink : getParentBoard().getMessagesAfterIndex(0)) {
+    	for(DownloadedMessageLink parentLink : getParentBoard().getDownloadedMessagesAfterIndex(0)) {
     		if(parentLink.getMessageIndex() > mHighestSynchronizedParentMessageIndex)
     			continue;
     		
@@ -180,7 +180,7 @@ public final class SubscribedBoard extends Board {
      * @throws Exception If one of the addMessage calls fails. 
      */
     protected synchronized final void synchronizeWithoutCommit() throws Exception {
-    	for(Board.BoardMessageLink messageLink : getParentBoard().getMessagesAfterIndex(mHighestSynchronizedParentMessageIndex)) {
+    	for(Board.DownloadedMessageLink messageLink : getParentBoard().getDownloadedMessagesAfterIndex(mHighestSynchronizedParentMessageIndex)) {
     		addMessage(messageLink.getMessage());
     		mHighestSynchronizedParentMessageIndex = messageLink.getMessageIndex();
     	}

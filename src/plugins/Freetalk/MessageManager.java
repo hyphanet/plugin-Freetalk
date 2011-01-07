@@ -382,8 +382,8 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 				continue;
 			}
 			
-			if(board.getMessageCount() != 0) {
-				Logger.normal(this, "Not deleting board because getMessageCount()!=0: " + board);
+			if(board.getDownloadedMessageCount() != 0) {
+				Logger.normal(this, "Not deleting board because getDownloadedMessageCount()!=0: " + board);
 				continue;
 			}
 			
