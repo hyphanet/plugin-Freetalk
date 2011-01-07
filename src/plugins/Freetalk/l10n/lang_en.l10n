@@ -226,8 +226,8 @@ Welcome.OverviewBox.Header=Overview
 Welcome.OverviewBox.KnownIdentities=Known Identities
 Welcome.OverviewBox.DownloadedMessages=Downloaded messages
 Welcome.OverviewBox.MessagesWaiting=Messages waiting to be sent
-WoTIsMissingPage.WotOutdated.Header=Your Web of Trust plugin is outdated
-WoTIsMissingPage.WotOutdated.Text=This Freetalk version is incompatible with the WoT plugin version which you have installed.  Please upgrade the WoT plugin at ${link}your Freenet node's plugin page${/link}.
-WoTIsMissingPage.WotMissing.Header=Web of Trust plugin is missing
-WoTIsMissingPage.WotMissing.Text=Freetalk needs the 'WoT' plugin to be loaded in your Freenet node. Please go to ${link}your Freenet node's plugin page${/link} and load the WoT plugin.
+WoTIsMissingPage.WotOutdated.Header=Your Web Of Trust plugin is outdated
+WoTIsMissingPage.WotOutdated.Text=This Freetalk version is incompatible with the Web Of Trust plugin version which you have installed.  Please upgrade the Web Of Trust plugin at ${link}your Freenet node's plugin page${/link}.
+WoTIsMissingPage.WotMissing.Header=Web Of Trust plugin is missing
+WoTIsMissingPage.WotMissing.Text=Freetalk needs the 'Web Of Trust' plugin to be loaded in your Freenet node. Please go to ${link}your Freenet node's plugin page${/link} and load the Web Of Trust plugin.
 End
