@@ -106,7 +106,8 @@ public final class WebInterface {
 
 		@Override
 		public boolean isEnabled(ToadletContext ctx) {
-			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
+			// Do not call super.isEnabled(): The HomeWebInterfaceToadlet should be visible even when WoT is not loaded.
+			return mSessionManager.sessionExists(ctx);
 		}
 
 	}
@@ -209,7 +210,8 @@ public final class WebInterface {
 		
 		@Override
 		public boolean isEnabled(ToadletContext ctx) {
-			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
+			// Do not call super.isEnabled(): The LogOutWebInterfaceToadlet should be enabled when the WoT-plugin is not present.
+			return mSessionManager.sessionExists(ctx);
 		}
 	}
 	
@@ -248,7 +250,8 @@ public final class WebInterface {
 		
 		@Override
 		public boolean isEnabled(ToadletContext ctx) {
-			return super.isEnabled(ctx) && !mSessionManager.sessionExists(ctx);
+			// Do not call super.isEnabled(): The LogInWebInterfaceToadlet should be enabled when the WoT-plugin is not present.
+			return !mSessionManager.sessionExists(ctx);
 		}
 	}
 
