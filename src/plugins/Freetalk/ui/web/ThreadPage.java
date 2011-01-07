@@ -20,7 +20,7 @@ import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
-import plugins.Freetalk.SubscribedBoard.MessageReference;
+import plugins.Freetalk.SubscribedBoard.BoardMessageLink;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTMessageRating;
@@ -77,9 +77,9 @@ public final class ThreadPage extends WebPageImpl {
 			// no non-locking getIdentity() which could be used in addThreadNotDownloadedWarning/addReplyNotDownloadedWarning
 			synchronized(mFreetalk.getIdentityManager()) {
         	
-        	// Normally, we would have to lock the MessageManager because we call storeAndCommit() on MessageReference objects:
+        	// Normally, we would have to lock the MessageManager because we call storeAndCommit() on BoardMessageLink objects:
         	// The board might be deleted between getSubscription() and the synchronized(mBoard) - the storeAndCommit() would result in orphan objects.
-        	// BUT MessageReference.storeAndCommit() does a db.isStored() check and throws if the MessageReference is not stored anymore.
+        	// BUT BoardMessageLink.storeAndCommit() does a db.isStored() check and throws if the BoardMessageLink is not stored anymore.
         	
         	synchronized(mBoard) {
             	mThread = mBoard.getThreadLink(mThreadID);
@@ -326,7 +326,7 @@ public final class ThreadPage extends WebPageImpl {
      * @param message The message which shall be shown. Must not be null.
      * @param ref A reference to the message which is to be displayed. Can be null, then the "message was read?" information will be unavailable. 
      */
-    private void addMessageBox(Message message, MessageReference ref) {
+    private void addMessageBox(Message message, BoardMessageLink ref) {
     	
     	final WoTIdentity author = (WoTIdentity)message.getAuthor();
 

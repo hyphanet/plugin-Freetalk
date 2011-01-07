@@ -23,7 +23,7 @@ import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
-import plugins.Freetalk.SubscribedBoard.MessageReference;
+import plugins.Freetalk.SubscribedBoard.BoardMessageLink;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.InvalidParameterException;
@@ -331,7 +331,7 @@ public final class FCPInterface implements FredPluginFCP {
 
         synchronized(board) {
 
-            final List<MessageReference> messageRefList;
+            final List<BoardMessageLink> messageRefList;
             if (minimumMessageIndex > 0) {
                 messageRefList = board.getMessagesByMinimumIndex(minimumMessageIndex, sortByMessageIndexAscending, sortByMessageDateAscending);
             } else if (minimumMessageDate > 0) {
@@ -341,7 +341,7 @@ public final class FCPInterface implements FredPluginFCP {
             }
 
             // send all messages
-            for(final MessageReference reference : messageRefList) {
+            for(final BoardMessageLink reference : messageRefList) {
             	try {
                     sendSingleMessage(replysender, reference.getMessage(), reference.getIndex(), includeMessageText);
                 }
@@ -395,7 +395,7 @@ public final class FCPInterface implements FredPluginFCP {
             messageRefList = board.getAllThreadReplies(thread.getID(), sortByMessageDateAscending);
 
             // send all messages of thread
-            for(final MessageReference reference : messageRefList) {
+            for(final BoardMessageLink reference : messageRefList) {
             	try {
                 final Message msg = reference.getMessage();
                 sendSingleMessage(replysender, msg, reference.getIndex(), includeMessageText);
@@ -458,7 +458,7 @@ public final class FCPInterface implements FredPluginFCP {
         //throws exception when not found
         final SubscribedBoard board = mFreetalk.getMessageManager().getSubscription(mFreetalk.getIdentityManager().getOwnIdentity(ownIdentityID), boardName);
         
-        final MessageReference reference = board.getMessageByIndex(messageIndex); // throws exception when not found
+        final BoardMessageLink reference = board.getMessageByIndex(messageIndex); // throws exception when not found
         
         final Message message = reference.getMessage();  // throws MessageNotFetchedException
 

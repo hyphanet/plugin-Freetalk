@@ -24,7 +24,7 @@ import plugins.Freetalk.Persistent;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.MessageList.MessageListFetchFailedMarker;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
-import plugins.Freetalk.SubscribedBoard.MessageReference;
+import plugins.Freetalk.SubscribedBoard.BoardMessageLink;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.MessageNotFetchedException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
@@ -197,7 +197,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 				expectedRepliesList = new LinkedList<String>();
 			final Iterator<String> expectedReplies = expectedRepliesList.iterator(); 
 			
-			for(final MessageReference replyRef : mSubscribedBoard.getAllThreadReplies(threadRef.getThreadID(), true)) {
+			for(final BoardMessageLink replyRef : mSubscribedBoard.getAllThreadReplies(threadRef.getThreadID(), true)) {
 				assertTrue(expectedReplies.hasNext());
 				
 				try {

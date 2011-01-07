@@ -8,7 +8,7 @@ import java.text.DateFormat;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.SubscribedBoard;
-import plugins.Freetalk.SubscribedBoard.MessageReference;
+import plugins.Freetalk.SubscribedBoard.BoardMessageLink;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.clients.http.RedirectException;
 import freenet.l10n.BaseL10n;
@@ -77,7 +77,7 @@ public final class BoardsPage extends WebPageImpl {
 				/* Count unread messages + find latest message date */
 				final int unreadMessageCount = board.getUnreadMessageCount();
 				
-				MessageReference latestMessage;
+				BoardMessageLink latestMessage;
 				String latestMessageDateString;
 				
 				try {

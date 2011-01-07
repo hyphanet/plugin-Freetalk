@@ -74,9 +74,9 @@ public final class SubscribedBoard extends Board {
     		
     		boolean found = false;
     		
-			for(MessageReference ref : getMessageReferences(parentLink.getMessage().getID())) {
+			for(BoardMessageLink ref : getMessageLinks(parentLink.getMessage().getID())) {
 				try {
-					// We must not only check whether there is a MessageReference for the message ID but also whether the message is actually
+					// We must not only check whether there is a BoardMessageLink for the message ID but also whether the message is actually
 					// set on the ref... it might be a ghost reference only.
 					if(ref.getMessage() == parentLink.getMessage()) { 
 						found = true;
@@ -113,7 +113,7 @@ public final class SubscribedBoard extends Board {
 				link.deleteWithoutCommit();
 			}
 			
-			for(MessageReference ref : getAllMessages(false)) {
+			for(BoardMessageLink ref : getAllMessages(false)) {
 				ref.deleteWithoutCommit();
 			}
 
@@ -143,30 +143,30 @@ public final class SubscribedBoard extends Board {
     }
     
     /**
-     * Gets the reference to the latest message. Does not return ghost thread references - therefore, the returned MessageReference will always
+     * Gets the reference to the latest message. Does not return ghost thread references - therefore, the returned BoardMessageLink will always
      * point to a valid Message object.
      * 
-     * TODO: Make this function return class Message and not class MessageReference because it won't return MessageReference objects whose Message
+     * TODO: Make this function return class Message and not class BoardMessageLink because it won't return BoardMessageLink objects whose Message
      * is not downloaded yet anyway.
      * 
      * @throws NoSuchMessageException If the board is empty.
      */
-	public synchronized MessageReference getLatestMessage() throws NoSuchMessageException {
+	public synchronized BoardMessageLink getLatestMessage() throws NoSuchMessageException {
     	// TODO: We can probably cache the latest message date in this SubscribedBoard object.
     	
         final Query q = mDB.query();
-        q.constrain(MessageReference.class);
+        q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this);
         q.descend("mDate").orderDescending();
       
         // Do not use a constrain() because the case where the latest message has no message object should not happen very often.
-        for(MessageReference ref : new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q)) {
+        for(BoardMessageLink ref : new Persistent.InitializingObjectSet<BoardMessageLink>(mFreetalk, q)) {
         	try {
         		ref.getMessage(); // Check whether the message was downloaded
         		return ref;
         	}
         	catch(MessageNotFetchedException e)  {
-        		// Continue to next MessageReference
+        		// Continue to next BoardMessageLink
         	}
         }
         
@@ -201,7 +201,7 @@ public final class SubscribedBoard extends Board {
      * If there is one already, its retry count is incremented (which effectively increases the delay until the next retry will be done).
      */
     private final void deleteMessageAndStoreOrUpdateUnwantedMessageLink(Message newMessage) {
-		if(getMessageReferences(newMessage.getID()).size() > 0) {
+		if(getMessageLinks(newMessage.getID()).size() > 0) {
 			try {
 				deleteMessage(newMessage, false);
 			} catch(Exception e) {
@@ -591,12 +591,12 @@ public final class SubscribedBoard extends Board {
     	}
     }
     
-    public synchronized ObjectSet<MessageReference> getMessageReferences(final String messageID) {
+    public synchronized ObjectSet<BoardMessageLink> getMessageLinks(final String messageID) {
         final Query q = mDB.query();
-        q.constrain(MessageReference.class);
+        q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mMessageID").constrain(messageID);
-        return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
+        return new Persistent.InitializingObjectSet<BoardMessageLink>(mFreetalk, q);
     }
     
 	public synchronized ObjectSet<BoardReplyLink> getReplyLinks(final String messageID) {
@@ -747,14 +747,14 @@ public final class SubscribedBoard extends Board {
     	return new Persistent.InitializingObjectSet<BoardThreadLink>(mFreetalk, q);
     }
 
-    public synchronized ObjectSet<MessageReference> getAllMessages(final boolean sortByMessageIndexAscending) {
+    public synchronized ObjectSet<BoardMessageLink> getAllMessages(final boolean sortByMessageIndexAscending) {
     	final Query q = mDB.query();
-        q.constrain(MessageReference.class);
+        q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         if (sortByMessageIndexAscending) {
             q.descend("mIndex").orderAscending(); /* Needed for NNTP */
         }
-        return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
+        return new Persistent.InitializingObjectSet<BoardMessageLink>(mFreetalk, q);
     }
     
     private synchronized ObjectSet<UnwantedMessageLink> getAllUnwantedMessages() {
@@ -772,13 +772,13 @@ public final class SubscribedBoard extends Board {
     	return new Persistent.InitializingObjectSet<UnwantedMessageLink>(mFreetalk, query);
     }
     
-    private synchronized ObjectSet<MessageReference> getAllExpiredWantedMessages(final Date now) {
+    private synchronized ObjectSet<BoardMessageLink> getAllExpiredWantedMessages(final Date now) {
     	final Query query = mDB.query();
-    	query.constrain(MessageReference.class);
+    	query.constrain(BoardMessageLink.class);
     	query.descend("mBoard").constrain(this).identity();
     	query.descend("mNextWantedCheckDate").constrain(now).greater().not();
     	query.descend("mNextWantedCheckDate").constrain(null).identity().not();
-    	return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, query);    	
+    	return new Persistent.InitializingObjectSet<BoardMessageLink>(mFreetalk, query);    	
     }
     
     protected synchronized void retryAllUnwantedMessages(final Date now) {
@@ -817,7 +817,7 @@ public final class SubscribedBoard extends Board {
     	
     	int count = 0;
     	
-    	for(final MessageReference ref : getAllExpiredWantedMessages(now)) {
+    	for(final BoardMessageLink ref : getAllExpiredWantedMessages(now)) {
     		if(ref.mNextWantedCheckDate == null) {
     			Logger.warning(this, "Db4o bug: constrain(null).identity().not() did not work.");
     			continue;
@@ -828,7 +828,7 @@ public final class SubscribedBoard extends Board {
     		try {
     			message = ref.getMessage();
     		} catch(NoSuchMessageException e) {
-    			Logger.error(this, "Wanted-check scheduled even though MessageReference has no message: " + ref);
+    			Logger.error(this, "Wanted-check scheduled even though BoardMessageLink has no message: " + ref);
     			continue;
     		}
     		
@@ -855,10 +855,10 @@ public final class SubscribedBoard extends Board {
     @SuppressWarnings("unchecked")
 	public synchronized int getFirstMessageIndex() throws NoSuchMessageException {
     	final Query q = mDB.query();
-        q.constrain(MessageReference.class);
+        q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mIndex").orderAscending();
-        ObjectSet<MessageReference> result = q.execute();
+        ObjectSet<BoardMessageLink> result = q.execute();
         
         if(result.size() == 0)
         	throw new NoSuchMessageException();
@@ -869,10 +869,10 @@ public final class SubscribedBoard extends Board {
     @SuppressWarnings("unchecked")
 	public synchronized int getLastMessageIndex() throws NoSuchMessageException {
     	final Query q = mDB.query();
-        q.constrain(MessageReference.class);
+        q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mIndex").orderDescending();
-        ObjectSet<MessageReference> result = q.execute();
+        ObjectSet<BoardMessageLink> result = q.execute();
         
         if(result.size() == 0)
         	throw new NoSuchMessageException();
@@ -882,7 +882,7 @@ public final class SubscribedBoard extends Board {
     
 	public synchronized int getUnreadMessageCount() {
         final Query q = mDB.query();
-        q.constrain(MessageReference.class);
+        q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mWasRead").constrain(false);
         
@@ -900,16 +900,16 @@ public final class SubscribedBoard extends Board {
      * @throws NoSuchMessageException If there is no such message index.
      */
     @SuppressWarnings("unchecked")
-    public synchronized MessageReference getMessageByIndex(int index) throws NoSuchMessageException {
+    public synchronized BoardMessageLink getMessageByIndex(int index) throws NoSuchMessageException {
     	final Query q = mDB.query();
-        q.constrain(MessageReference.class);
+        q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mIndex").constrain(index);
-        final ObjectSet<MessageReference> result = q.execute();
+        final ObjectSet<BoardMessageLink> result = q.execute();
         
         switch(result.size()) {
 	        case 1:
-	        	final MessageReference ref = result.next();
+	        	final BoardMessageLink ref = result.next();
 	        	ref.initializeTransient(mFreetalk);
 	        	return ref;
 	        case 0:
@@ -919,13 +919,13 @@ public final class SubscribedBoard extends Board {
         }
     }
 
-    public synchronized ObjectSet<MessageReference> getMessagesByMinimumIndex(
+    public synchronized ObjectSet<BoardMessageLink> getMessagesByMinimumIndex(
             int minimumIndex,
             final boolean sortByMessageIndexAscending,
             final boolean sortByMessageDateAscending)
     {
         final Query q = mDB.query();
-        q.constrain(MessageReference.class);
+        q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         if (minimumIndex > 0) {
             q.descend("mIndex").constrain(minimumIndex).smaller().not();
@@ -936,16 +936,16 @@ public final class SubscribedBoard extends Board {
         if (sortByMessageDateAscending) {
             q.descend("mDate").orderAscending();
         }
-        return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
+        return new Persistent.InitializingObjectSet<BoardMessageLink>(mFreetalk, q);
     }
 
-    public synchronized ObjectSet<MessageReference> getMessagesByMinimumDate(
+    public synchronized ObjectSet<BoardMessageLink> getMessagesByMinimumDate(
     		Date minimumDate,
             final boolean sortByMessageIndexAscending,
             final boolean sortByMessageDateAscending)
     {
         final Query q = mDB.query();
-        q.constrain(MessageReference.class);
+        q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mDate").constrain(minimumDate).smaller().not();
 
@@ -955,7 +955,7 @@ public final class SubscribedBoard extends Board {
         if (sortByMessageDateAscending) {
             q.descend("mDate").orderAscending();
         }
-        return new Persistent.InitializingObjectSet<MessageReference>(mFreetalk, q);
+        return new Persistent.InitializingObjectSet<BoardMessageLink>(mFreetalk, q);
     }
 
     /**
@@ -963,7 +963,7 @@ public final class SubscribedBoard extends Board {
      */
     public synchronized int messageCount() {
     	final Query q = mDB.query();
-        q.constrain(MessageReference.class);
+        q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         return q.execute().size();
     }
@@ -1074,8 +1074,8 @@ public final class SubscribedBoard extends Board {
         	if(mNumberOfRetries < 0)
         		throw new IllegalStateException("mNumberOfRetries == " + mNumberOfRetries);
         	
-        	if(getBoard().getMessageReferences(getMessage().getID()).size() > 0)
-        			throw new IllegalStateException("Both UnwantedMessageLink and MessageReference exist for " + mMessage);
+        	if(getBoard().getMessageLinks(getMessage().getID()).size() > 0)
+        			throw new IllegalStateException("Both UnwantedMessageLink and BoardMessageLink exist for " + mMessage);
     	}
     	
     	protected SubscribedBoard getBoard() {
@@ -1139,8 +1139,8 @@ public final class SubscribedBoard extends Board {
     	}
     }
 
-    // @IndexedClass // I can't think of any query which would need to get all MessageReference objects.
-    public static abstract class MessageReference extends Persistent {
+    // @IndexedClass // I can't think of any query which would need to get all BoardMessageLink objects.
+    public static abstract class BoardMessageLink extends Persistent {
     	
     	@IndexedField
     	protected final SubscribedBoard mBoard;
@@ -1183,7 +1183,7 @@ public final class SubscribedBoard extends Board {
     	protected Date mNextWantedCheckDate;
     	
 
-    	private MessageReference(SubscribedBoard myBoard, String myThreadID, String myMessageID, String myMessageTitleGuess,
+    	private BoardMessageLink(SubscribedBoard myBoard, String myThreadID, String myMessageID, String myMessageTitleGuess,
     			Date myMessageDateGuess, int myMessageIndex) {
         	if(myBoard == null) throw new NullPointerException();
         	if(myThreadID == null) throw new NullPointerException();
@@ -1235,7 +1235,7 @@ public final class SubscribedBoard extends Board {
 		}
 		
 
-		private MessageReference(SubscribedBoard myBoard, String myThreadID, Message myMessage, int myMessageIndex) {
+		private BoardMessageLink(SubscribedBoard myBoard, String myThreadID, Message myMessage, int myMessageIndex) {
 			this(myBoard, myThreadID, myMessage.getID(), myMessage.getTitle(), myMessage.getDate(), myMessageIndex);
 
 			// Done implicitely by .getID() above...
@@ -1469,7 +1469,7 @@ public final class SubscribedBoard extends Board {
      * Helper class to associate messages with boards in the database
      */
     // @Indexed // I can't think of any query which would need to get all BoardReplyLink objects.
-    public static class BoardReplyLink extends MessageReference { /* TODO: This is only public for configuring db4o. Find a better way */
+    public static class BoardReplyLink extends BoardMessageLink { /* TODO: This is only public for configuring db4o. Find a better way */
     	
 		/**
     	 * For constructing reply-links for messages which have been downloaded already.
@@ -1509,7 +1509,7 @@ public final class SubscribedBoard extends Board {
     }
 
     // @Indexed // I can't think of any query which would need to get all BoardThreadLink objects.
-    public final static class BoardThreadLink  extends MessageReference {
+    public final static class BoardThreadLink  extends BoardMessageLink {
         
     	private Date mLastReplyDate;
     	
@@ -1706,7 +1706,7 @@ public final class SubscribedBoard extends Board {
 					// Mark its replies as unread
 					for(BoardReplyLink reference : mBoard.getAllThreadReplies(mThreadID, false)) {
 						if(reference.wasRead() != newReadState) {
-							// TODO: Encapsulate in MessageReference
+							// TODO: Encapsulate in BoardMessageLink
 							if(newReadState)
 								reference.markAsRead();
 							else 

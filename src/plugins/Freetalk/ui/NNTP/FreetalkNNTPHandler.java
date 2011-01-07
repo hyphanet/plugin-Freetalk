@@ -373,7 +373,7 @@ public final class FreetalkNNTPHandler implements Runnable {
                 end = mCurrentGroup.lastMessage();
 
             // TODO: Optimization: Write a getAllMessages() which allows the specification of a range!
-            for(final SubscribedBoard.MessageReference ref : mCurrentGroup.getBoard().getAllMessages(true)) {
+            for(final SubscribedBoard.BoardMessageLink ref : mCurrentGroup.getBoard().getAllMessages(true)) {
                 final int index = ref.getIndex();
                 if (index > end)
                     break;
