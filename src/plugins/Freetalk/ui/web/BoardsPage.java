@@ -45,7 +45,7 @@ public final class BoardsPage extends WebPageImpl {
 		HTMLNode row = boardsTable.addChild("tr");
 		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.Language"));
 		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.Name"));
-		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.Description"));
+		// row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.Description"));
 		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.Messages"));
         row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.UnreadMessages"));
 		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.LatestMessage"));
@@ -68,8 +68,8 @@ public final class BoardsPage extends WebPageImpl {
 				HTMLNode nameCell = row.addChild("th", new String[] { "align" }, new String[] { "left" });
 				nameCell.addChild(new HTMLNode("a", "href", BoardPage.getURI(board), board.getName()));
 
-				/* Description */
-				row.addChild("td", new String[] { "align" }, new String[] { "center" },  board.getDescription());
+				/* Description - disabled because it makes more sense on the SelectBoardsPage. TODO: Allow enabling in configuration. */
+				// row.addChild("td", new String[] { "align" }, new String[] { "center" },  board.getDescription());
 
 				/* Message count */
 				row.addChild("td", new String[] { "align" }, new String[] { "center" }, Integer.toString(board.messageCount()));

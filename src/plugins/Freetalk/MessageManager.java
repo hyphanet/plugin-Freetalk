@@ -187,6 +187,8 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	public void start() {
 		Logger.debug(this, "Starting...");
 		
+		createDefaultBoards();
+		
 		long startupDelay = STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY); 
 		Logger.debug(this, "Main loop will run in " + startupDelay/(60*1000) + " minutes.");
 		mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), startupDelay, false, true);
@@ -1218,13 +1220,17 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 				throw new DuplicateBoardException(name);
 		}
 	}
-	
+
 	/**
 	 * Gets the board with the given name. If it does not exist, it is created and stored, the transaction is commited.
 	 * @param The name of the desired board
 	 * @throws InvalidParameterException If the name is invalid.
 	 */
-	public synchronized Board getOrCreateBoard(String name) throws InvalidParameterException {
+	public Board getOrCreateBoard(String name) throws InvalidParameterException {
+		return getOrCreateBoard(name, null);
+	}
+
+	private synchronized Board getOrCreateBoard(String name, String description) throws InvalidParameterException {
 		name = name.toLowerCase();
 		
 		Board board;
@@ -1237,7 +1243,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 			synchronized(tm) {
 			synchronized(db.lock()) {
 			try {
-				board = new Board(name);
+				board = new Board(name, description);
 				board.initializeTransient(mFreetalk);
 				board.storeWithoutCommit();
 				Logger.debug(this, "Created board " + name);
@@ -1251,8 +1257,6 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 			}
 			}
 			}
-			
-			
 		}
 		
 		return board;
@@ -1603,5 +1607,134 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 			return stats;
 		}
 	}
+	
+	/**
+	 * A list of boards which is automatically created in new Freetalk databases.
+	 * The goal of this list is:
+	 * - to be useful from the perspective of a user: Names an categories shall be chosen in a way that they make sense to a user, even if a better naming for developers exists
+	 * - to prevent the board list from becoming a mess: It has been shown on Frost/FMS that it is really difficult to get users to migrate from existing boards to new boards
+	 * 		which serve the same purpose but have a different name. We try to provide proper categories for the most purposes which have been observed on Frost/FMS.
+	 * - to encourage categorization: This is part of the above, but I want to stress it again nevertheless: FMS/Frost has also shown that users tend to not use any categories
+	 * 		( = the parts between the '.') when creating boards. Categories are good for filtering, usability, blah blah. We should encourage their usage.
+	 * 
+	 * I have tried to take all boards which can be seen on Frost and FMS into consideration for designing this clean list
+	 */
+	public static final String[][] DEFAULT_BOARDS = {
+		new String[] { "deu.diskussion", "Offene Diskussion über alle Themen, für die es kein spezielles Forum gibt" },
+		
+		new String[] { "deu.downloads", "Downloads aller Art, für die es kein spezielles Forum gibt. Bitte respektieren Sie die Gesetze!" },
+		new String[] { "deu.downloads.anfragen", "Anfragen für Downloads aller Art, für die es kein spezielles Forum gibt. Bitte respektieren Sie die Gesetze!" },
+		
+		new String[] { "deu.freenet", "Allgemeine Diskussion rund um Freenet" },
+		new String[] { "deu.freenet.hilfe", "Allgemeine Fragen zu Freenet" },
+		new String[] { "deu.freenet.hilfe.freetalk", "Fragen zu Freetalk - das ist dieses Forumsystem"},
+		new String[] { "deu.freenet.hilfe.jsite", "Fragen zu JSite - das Werkzeug zum Hochladen von Freesites" },
+		new String[] { "deu.freenet.hilfe.sone", "Fragen zu Sone - dem sozialen Netzwerk für Freenet" },
+		new String[] { "deu.freenet.hilfe.weboftrust", "Fragen zu Web Of Trust - dem Kern der meisten Freenet-Community-Plugins" },
+		new String[] { "deu.freenet.seiten", "Allgemeine Diskussion über Freesites - die Websites in Freenet" },
+		new String[] { "deu.freenet.seiten.bekanntgabe", "Hier kann man seine Freesite der Öffentlichkeit und insbesondere Index-Verwaltern bekannt machen." },
+		
+		new String[] { "deu.nachrichten.international", "Internationale Nachrichten"},
+		new String[] { "deu.gesellschaft.politik.international", "Diskussion über internationale Politik"},
+		
+		new String[] { "eng.boards", "Discussion about the board list and announcement of new boards" },
+		
+		new String[] { "eng.computers", "General discussion about computer-related topics"},
+		new String[] { "eng.computers.help.hardware", "Questions about computer hardware"},
+		new String[] { "eng.computers.help.software", "Questions about computer software"},
+		new String[] { "eng.computers.programming", "General discussion about software programming"},
+		
+		new String[] { "eng.discussion", "General discussion about all topics for which there is no special board" },
+		
+		new String[] { "eng.freenet", "General discussion about Freenet" },
+		new String[] { "eng.freenet.development", "General discussion and questions about Freenet development"},
+		new String[] { "eng.freenet.development.fms", "Discussion and questions about FMS development"},
+		new String[] { "eng.freenet.development.freemail", "Discussion and questions about Freemail development"},
+		new String[] { "eng.freenet.development.freetalk", "Discussion and questions about Freetalk development"},
+		new String[] { "eng.freenet.development.frost", "Discussion and questions about Frost development"},
+		new String[] { "eng.freenet.development.jsite", "Discussion and questions about JSite development"},
+		new String[] { "eng.freenet.development.sone", "Discussion and questions about Sone development"},
+		new String[] { "eng.freenet.development.thaw", "Discussion and questions about Thaw development"},
+		new String[] { "eng.freenet.development.translation", "Discussion and questions about Freenet translation development"},
+		new String[] { "eng.freenet.development.weboftrust", "Discussion and questions about Web Of Trust development"},
+		new String[] { "eng.freenet.help", "Any questions, problems or feature requests about Freenet can be posted here."},
+		new String[] { "eng.freenet.help.fms", "Questions about FMS - the standalone (non-plugin) forum system for Freenet"},
+		new String[] { "eng.freenet.help.freemail", "Questions about Freemail - the E-Mail implementation for Freenet"},
+		new String[] { "eng.freenet.help.freetalk", "Questions about Freetalk - which is this forum system"},
+		new String[] { "eng.freenet.help.jsite", "Questions about JSite - the tool for uploading Freesites"},
+		new String[] { "eng.freenet.help.sone", "Questions about Sone - the social messagging tool for Freenet"},
+		new String[] { "eng.freenet.help.thaw", "Questions about Thaw - the file-transfer management tool for Freenet"},
+		new String[] { "eng.freenet.help.translation", "Questions about translating Freenet or the existing translations"},
+		new String[] { "eng.freenet.help.weboftrust", "Questions about Web Of Trust - the core of most community plugins for Freenet"},
+		new String[] { "eng.freenet.sites", "General discussion about Freesites - the websites of Freenet. You can announce Freesites to the public and especially index-maintainers here."},
+		
+		new String[] { "eng.internet", "Discussion about the 'normal' Internet" },
+		new String[] { "eng.internet.sites", "A board about interesting links of all kinds on the normal internet" },
+		
+		new String[] { "eng.news.international", "International news"},
+		
+		new String[] { "eng.market", "Trading of various goods happens here. Please obey the law."},
+		
+		new String[] { "eng.media.tv", "Discussion about television" },
+		
+		new String[] { "eng.science", "Discussion about science"},
+		new String[] { "eng.science.mathematics", "Discussion about mathematics"},
+		new String[] { "eng.society.censorship", "Discussion and revelations of censorship"},
+		new String[] { "eng.society.politics.international", "Discussion of international politics"},
+		new String[] { "eng.society.privacy", "Discussion about privacy"},
+		new String[] { "eng.society.religion", "Discussion about religion"},
+		
+		new String[] { "eng.trustvalues", "Discussion about the trust values which the Web Of Trust community has assigned to identities"},
+		
+		new String[] { "fra.freenet", ""},
+		new String[] { "fra.freenet.aide", ""},
+		
+		new String[] { "mul.downloads", "All kinds of downloads for which there is no special board. Please obey the law!"},
+		new String[] { "mul.downloads.books", "Downloads of written books. Please obey the law!"},
+		new String[] { "mul.downloads.books.audio", "Downloads of audible books. Please obey the law!"},
+		new String[] { "mul.downloads.books.comics", "Downloads of comic books. Please obey the law!"},
+		new String[] { "mul.downloads.games", "Downloads of games. Please obey the law!"},
+		new String[] { "mul.downloads.movies", "Downloads of movies. Please obey the law!"},
+		new String[] { "mul.downloads.music", "Downloads of music. Please obey the law!"},
+		new String[] { "mul.downloads.music.videos", "Downloads of music with video. Please obey the law!"},
+		new String[] { "mul.downloads.pictures", "Downloads of pictures. Please obey the law!"},
+		new String[] { "mul.downloads.videos", "Video-downloads which do not fit in any category. Please obey the law!"},
+		new String[] { "mul.downloads.videos.series", "Downloads of series of videos. Please obey the law!"},
+		new String[] { "mul.downloads.requests", "You can ask for download links here. To ensure a large audience, all categories of downloads are allowed here. Please obey the law!"},
+		new String[] { "mul.downloads.requests.reinserts", "If a download does not succeed anymore, you can request someone to upload it again here. Please obey the law!"},
+
+		new String[] { "mul.random", "All content is allowed in this 'playground' board. Please try to not give negative ratings for its messages whenever possible by your law and ethics." },
+
+		new String[] { "mul.test", "Board for sending test messages to. Readers shall try to ensure that each message gets a reply." },
+	};
+	
+    public synchronized void createDefaultBoards() {
+    	Logger.normal(this, "Creating the default boards...");
+    
+    	for(String[] boardInfo : DEFAULT_BOARDS) {
+    		try {
+    			try {
+    				final Board existingBoard = getBoardByName(boardInfo[0]);
+    				synchronized(db.lock()) {
+    					try {
+    						if(existingBoard.setDescription(boardInfo[1])) {
+    							Logger.debug(this, "Updated description for " + existingBoard);
+    							existingBoard.storeWithoutCommit();
+    							Persistent.checkedCommit(db, this);
+    						}
+    					} catch(RuntimeException e) {
+    						Persistent.checkedRollback(db, this, e);
+    					}
+    				}
+    			} catch(NoSuchBoardException e) {
+    				getOrCreateBoard(boardInfo[0], boardInfo[1]);
+    			}
+    		} catch(Exception e) {
+    			Logger.error(this, "Creating a board failed", e);
+    		}
+    	}
+    	
+    	Logger.normal(this, "Finished creating the default boards.");
+    }
 
 }

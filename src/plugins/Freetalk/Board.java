@@ -52,6 +52,8 @@ public class Board extends Persistent implements Comparable<Board> {
     @IndexedField
     private final String mName;
     
+    private String mDescription;
+    
     /** True if at least one {@link SubscribedBoard} for this Board exists, i.e. if we should download messages of this board. */
     private boolean mHasSubscriptions;
     
@@ -81,7 +83,7 @@ public class Board extends Persistent implements Comparable<Board> {
      * @param newName The name of the board. For restrictions, see <code>isNameValid()</code>
      * @throws InvalidParameterException If none or an invalid name is given.
      */
-    public Board(String newName) throws InvalidParameterException {
+    public Board(String newName, String description) throws InvalidParameterException {
         if(newName==null || newName.length() == 0)
             throw new IllegalArgumentException("Empty board name.");
         if(!isNameValid(newName))
@@ -89,6 +91,7 @@ public class Board extends Persistent implements Comparable<Board> {
 
         mID = UUID.randomUUID().toString();
         mName = newName.toLowerCase();
+        mDescription = description != null ? description : "";
         mHasSubscriptions = false;
     }
 
@@ -218,9 +221,27 @@ public class Board extends Persistent implements Comparable<Board> {
         return mName.substring(mName.indexOf('.')+1);
     }
     
+    /**
+     * In the current implementation, returns the hardcoded description if there is one.
+     * No user specified descriptions are supported yet, we just hardcode descriptions of the default boards. 
+     * 
+     * TODO: The future implementation should do that:
+     * Returns the description of this board from the view of the given {@link OwnIdentity}.
+     * This shall be voted by the community and the description with the most votes shall be returned.
+     * "From the view of the given OwnIdentity" means that votes are only counted when the own identity trusts the voter.
+     */
     public String getDescription(OwnIdentity viewer) {
-		// TODO: Implement: Use the description which most of the known identities have chosen.
-		return "";
+		return mDescription;
+    }
+    
+    protected boolean setDescription(String newDescription) {
+		boolean result = false;
+		if(mDescription == null || !mDescription.equals(newDescription))
+			result = true;
+		
+		mDescription = newDescription;
+		
+		return result;
     }
 
     public final Date getFirstSeenDate() {
