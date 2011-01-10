@@ -470,7 +470,16 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 				synchronized(db.lock()) {
 					try {
 						for(SubscribedBoard.UnwantedMessageLink link : new Persistent.InitializingObjectSet<SubscribedBoard.UnwantedMessageLink>(this, q)) {
-							if(link.getBoard().getMessageReferences(link.getMessage().getID()).size() > 0) {
+							boolean found = false;
+							for(SubscribedBoard.MessageReference ref : link.getBoard().getMessageReferences(link.getMessage().getID())) {
+								try {
+									ref.getMessage();
+									found = true;
+									break;
+								} catch(NoSuchMessageException e) {}
+							}
+							
+							if(found) {
 								link.deleteWithoutCommit();
 								// This database-upgrade code also triggers recheck of the wanted state of all messages, therefore
 								// we do not need to delete the message here...
