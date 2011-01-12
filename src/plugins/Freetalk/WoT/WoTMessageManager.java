@@ -250,7 +250,6 @@ public final class WoTMessageManager extends MessageManager {
 		}
 		
 		WoTOwnIdentity author = (WoTOwnIdentity)message.getAuthor();
-		// FIXME: Why does the resulting list have an index of 1 if no message lists existed at all? We should start at 0!
 		WoTOwnMessageList list = new WoTOwnMessageList(author, getFreeOwnMessageListIndex(author));
 		list.initializeTransient(mFreetalk);
 		list.addMessage(message);
@@ -343,18 +342,41 @@ public final class WoTMessageManager extends MessageManager {
 	 * Get the next free index for an OwnMessageList. You have to synchronize on this MessageManager while creating an OwnMessageList, this
 	 * function does not provide synchronization.
 	 */
-	@SuppressWarnings("unchecked")
-	public long getFreeOwnMessageListIndex(WoTOwnIdentity messageAuthor)  {
+	public long getFreeOwnMessageListIndex(final WoTOwnIdentity messageAuthor)  {
 		// We do not use IdentityStatistics since it does not guarantee to return the highest existing list, it just guarantees that
 		// the index after the one which it has returned does not exist. We must of course not re-use own message list indices.
-		Query q = db.query();
+		final Query q = db.query();
 		// We query for MessageList and not OwnMessageList because the user might have deleted his own messages or lost his database
 		q.constrain(MessageList.class);
 		q.descend("mAuthor").constrain(messageAuthor).identity();
 		q.descend("mIndex").orderDescending(); // TODO: This is inefficient!
-		ObjectSet<MessageList> result = q.execute();
+		final ObjectSet<MessageList> result = new Persistent.InitializingObjectSet<MessageList>(mFreetalk, q);
 		
-		return result.size() > 0 ? result.next().getIndex()+1 : 0;
+		// We must look for the latest message list which was not marked as fetch failed and return its index + 1
+		// Further, if a list is marked as fetch failed but the reason is NOT data not found, we must return its index + 1; explanation:
+		// There are 2 things which could go wrong here:
+		// 1) We accidentally return the index of a list which was already inserted
+		// 2) We accidentally consider an empty slot as filled already and return its index + 1
+		// Case 1 is much worse: We do not ever want to insert a message list into an old slot which has fallen out of the network already
+		// because that would result in nobody seeing the list.
+		// Therefore, we bias towards case 2 which Freetalk should be able to handle well:
+		// It is normal for content to fall out of the network, therefore the USK queue must be able to deal well with empty slots.
+		
+		for(final MessageList list : result) {
+			FetchFailedMarker marker;
+			
+			try {
+				marker = getMessageListFetchFailedMarker(list.getID());
+			} catch(NoSuchFetchFailedMarkerException e) {
+				marker = null;
+			}
+			
+			if(marker == null || marker.getReason() != FetchFailedMarker.Reason.DataNotFound)
+				return list.getIndex() + 1;
+		}
+		
+		// There are no message lists or all are marked as DNF => Slot 0 must be free, return it.
+		return 0;
 	}
 	
 	public WoTMessageRating rateMessage(final WoTOwnIdentity rater, final WoTMessage message, final byte value) {
