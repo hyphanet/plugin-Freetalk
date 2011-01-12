@@ -1214,6 +1214,8 @@ public final class SubscribedBoard extends Board {
 			try {
 				boolean result = getBoard().isMessageWanted(getMessage());
 				countWantedCheck(now);
+				// If the result is false we should not schedule a next wanted check - however we rely on the caller to unschedule it while
+				// deleting the message - this is less error prune.
 				return result;
 			} catch(Exception e) {
 				// isMessageWanted typically fails if we are not connected to the web of trust plugin so we only count the retry if it did not throw
@@ -1645,7 +1647,8 @@ public final class SubscribedBoard extends Board {
     	
     	
     	public void removeThreadMessage() {
-    		mMessage = null;
+    		super.removeMessage();
+    		
     		// TODO: I cannot remember why I made the code delete the date. It should be kept instead of using guesses...
     		// If re-enabling the deletion, the following code should also be modified to delete the title and guess it instead...
     		
