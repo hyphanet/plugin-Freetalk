@@ -672,7 +672,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		
 		WoTOwnIdentity newIdentity = (WoTOwnIdentity)identity;
 		
-		// FIXME: Do this upon login.
+		// TODO: Do after an own message is posted. I have not decided at which place to do this :|
 		try {
 			addFreetalkContext(newIdentity);
 		} catch (Exception e) {
