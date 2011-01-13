@@ -13,14 +13,12 @@ import java.util.StringTokenizer;
 
 import plugins.Freetalk.Identity.IdentityID;
 import plugins.Freetalk.Message.MessageID;
-import plugins.Freetalk.OwnMessageList.OwnMessageReference;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 
 import com.db4o.query.Query;
-import com.sleepycat.je.dbi.GetMode;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
