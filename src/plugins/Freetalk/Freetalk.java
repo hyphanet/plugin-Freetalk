@@ -146,10 +146,6 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		Logger.debug(this, "Database opened.");
 		
 		mConfig = Configuration.loadOrCreate(this, db);
-		// FIXME: We must store the format version in a member variable to make loss of this information less likely
-		// - I have experienced config objects whose hashtable member variables suddenly were null, even with proper
-		// activation. To repair such databases, we can just re-create the hashtables and initialize with the default config
-		// settings, but we really need to at least know the database format version.
 		if(mConfig.getDatabaseFormatVersion() > Freetalk.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 		
