@@ -23,7 +23,7 @@ import freenet.support.Logger;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  */
 @IndexedClass
-public final class Configuration extends Persistent { // FIXME: Rename to Configuration
+public final class Configuration extends Persistent {
 
 	/* Names of the config parameters */
 	
