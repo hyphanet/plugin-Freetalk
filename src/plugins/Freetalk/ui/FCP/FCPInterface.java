@@ -631,6 +631,7 @@ public final class FCPInterface implements FredPluginFCP {
      *   Nickname=name
      *   PublishTrustList=true|false            (optional, default is true)
      *   PublishIntroductionPuzzles=true|false  (optional, default is true)
+     *   AutoSubscribe=true|false				(optional, default is false)
      *   RequestURI=...                         (optional)
      *   InsertURI=...                          (optional)
      * Format of reply:
@@ -649,21 +650,9 @@ public final class FCPInterface implements FredPluginFCP {
             final String nickName = getMandatoryParameter(params, "Nickname");
             WoTIdentity.validateNickname(nickName); // throws Exception if invalid
 
-            boolean publishTrustList = true;
-            {
-                final String publishTrustListString = params.get("PublishTrustList");
-                if (publishTrustListString != null) {
-                    publishTrustList = Boolean.parseBoolean(publishTrustListString);
-                }
-            }
-
-            boolean publishIntroductionPuzzles = true;
-            {
-                final String publishIntroductionPuzzlesString = params.get("PublishIntroductionPuzzles");
-                if (publishIntroductionPuzzlesString != null) {
-                    publishIntroductionPuzzles = Boolean.parseBoolean(publishIntroductionPuzzlesString);
-                }
-            }
+            boolean publishTrustList = params.getBoolean("PublishTrustList", true);
+            boolean publishIntroductionPuzzles = params.getBoolean("PublishIntroductionPuzzles", true);
+            boolean autoSubscribe = params.getBoolean("AutoSubscribe", false);
 
             final String requestUriString = params.get("RequestURI");
             final String insertUriString = params.get("InsertURI");
@@ -672,6 +661,7 @@ public final class FCPInterface implements FredPluginFCP {
             {
                 throw new InvalidParameterException("RequestURI and InsertURI must be set together");
             }
+            
 
             final WoTOwnIdentity id;
             if (requestUriString != null) {
@@ -682,13 +672,15 @@ public final class FCPInterface implements FredPluginFCP {
                         nickName,
                         publishTrustList,
                         publishIntroductionPuzzles,
+                        autoSubscribe,
                         requestUri,
                         insertUri);
             } else {
                 id = (WoTOwnIdentity)mFreetalk.getIdentityManager().createOwnIdentity(
                         nickName,
                         publishTrustList,
-                        publishIntroductionPuzzles);
+                        publishIntroductionPuzzles,
+                        autoSubscribe);
             }
 
             // id can't be null when we come here

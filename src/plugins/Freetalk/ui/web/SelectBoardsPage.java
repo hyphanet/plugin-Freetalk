@@ -37,7 +37,7 @@ public class SelectBoardsPage extends WebPageImpl {
 		boolean unsubscribe = mRequest.isPartSet("Unsubscribe");
 		
 		if((subscribe ^ unsubscribe) && mRequest.getMethod().equals("POST")) {
-			String boardName = mRequest.getPartAsString("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH);
+			String boardName = mRequest.getPartAsStringFailsafe("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH);
 		
 			try {
 				MessageManager messageManager = mFreetalk.getMessageManager();
@@ -49,11 +49,8 @@ public class SelectBoardsPage extends WebPageImpl {
 	                l10n().addL10nSubstitution(
 	                        successBox.addChild("div"), 
 	                        "SelectBoardsPage.SubscriptionSucceededBox.Text",
-	                        new String[] { "link", "boardname", "/link" }, 
-	                        new String[] {
-	                                "<a href=\""+Freetalk.PLUGIN_URI+"/showBoard?identity=" + mOwnIdentity.getID() + "&name=" + board.getName()+"\">",
-	                                board.getName(),
-	                                "</a>" });
+	                        new String[] { "link", "boardname" }, 
+	                        new HTMLNode[] { HTMLNode.link(BoardPage.getURI(board)), HTMLNode.text(board.getName()) });
 				}
 				else if(unsubscribe) {
 					messageManager.unsubscribeFromBoard(mOwnIdentity, boardName);
@@ -63,7 +60,7 @@ public class SelectBoardsPage extends WebPageImpl {
                         successBox.addChild("div"), 
                         "SelectBoardsPage.UnsubscriptionSucceededBox.Text",
                         new String[] { "boardname" }, 
-                        new String[] { boardName });
+                        new HTMLNode[] { HTMLNode.text(boardName) });
 				}	
 			} catch(Exception e) {
 				HTMLNode alertBox = addAlertBox(subscribe ? l10n().getString("SelectBoardsPage.SubscribeFailed") : l10n().getString("SelectBoardsPage.UnsubscribeFailed"));

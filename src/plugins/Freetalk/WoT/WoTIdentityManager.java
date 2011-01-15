@@ -6,6 +6,7 @@ package plugins.Freetalk.WoT;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Random;
@@ -146,7 +147,11 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		return result;
 	}
 	
-	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles) throws Exception  {
+	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles, boolean autoSubscribeToNewBoards)
+		throws Exception  {
+		
+		Logger.normal(this, "Creating new own identity via FCP, nickname: " + newNickname);
+		
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "CreateIdentity");
 		params.putOverwrite("Nickname", newNickname);
@@ -158,25 +163,35 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		WoTOwnIdentity identity = new WoTOwnIdentity(result.params.get("ID"),
 				new FreenetURI(result.params.get("RequestURI")),
 				new FreenetURI(result.params.get("InsertURI")),
-				newNickname);
+				newNickname, autoSubscribeToNewBoards);
 		
+		identity.initializeTransient(mFreetalk);
+		
+		Logger.normal(this, "Created WoTOwnidentity via FCP, now storing... " + identity);
+		
+		synchronized(mFreetalk.getTaskManager()) { // Required by onNewOwnidentityAdded
 		synchronized(db.lock()) {
 			try {
 				identity.initializeTransient(mFreetalk);
 				identity.storeWithoutCommit();
 				onNewOwnIdentityAdded(identity);
 				identity.checkedCommit(this);
+				Logger.normal(this, "Stored new WoTOwnIdentity " + identity);
+				
 			}
 			catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(db, this, e);
 			}
 		}
+		}
 		
 		return identity;
 	}
 	
-	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles,
+	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles, boolean autoSubscribeToNewBoards,
 			FreenetURI newRequestURI, FreenetURI newInsertURI) throws Exception {
+		Logger.normal(this, "Creating new own identity via FCP, nickname: " + newNickname);
+		
 		SimpleFieldSet params = new SimpleFieldSet(true);
 		params.putOverwrite("Message", "CreateIdentity");
 		params.putOverwrite("Nickname", newNickname);
@@ -193,18 +208,24 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		WoTOwnIdentity identity = new WoTOwnIdentity(result.params.get("ID"),
 				new FreenetURI(result.params.get("RequestURI")),
 				new FreenetURI(result.params.get("InsertURI")),
-				newNickname);
+				newNickname, autoSubscribeToNewBoards);
 		
+		identity.initializeTransient(mFreetalk);
+		
+		Logger.normal(this, "Created WoTOwnidentity via FCP, now storing... " + identity);
+		
+		synchronized(mFreetalk.getTaskManager()) {
 		synchronized(db.lock()) {
 			try {
-				identity.initializeTransient(mFreetalk);
 				identity.storeWithoutCommit();
 				onNewOwnIdentityAdded(identity);
 				identity.checkedCommit(this);
+				Logger.normal(this, "Stored new WoTOwnIdentity " + identity);
 			}
 			catch(RuntimeException e) {
 				Persistent.checkedRollback(db, this, e);
 			}
+		}
 		}
 		
 		return identity;
@@ -629,6 +650,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	
 
 	private void onNewIdentityAdded(Identity identity) {
+		Logger.normal(this, "onNewIdentityAdded " + identity);
+		
 		mShortestUniqueNicknameCacheNeedsUpdate = true;
 		
 		doNewIdentityCallbacks(identity);
@@ -646,8 +669,11 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	 * @throws Exception If adding the Freetalk context to the identity in WoT failed.
 	 */
 	private void onNewOwnIdentityAdded(OwnIdentity identity) {
+		Logger.normal(this, "onNewOwnIdentityAdded " + identity);
+		
 		WoTOwnIdentity newIdentity = (WoTOwnIdentity)identity;
 		
+		// FIXME: Do this upon login.
 		try {
 			addFreetalkContext(newIdentity);
 		} catch (Exception e) {
@@ -662,6 +688,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	}
 	
 	private void beforeIdentityDeletion(Identity identity) {
+		Logger.normal(this, "beforeIdentityDeletion " + identity);
+		
 		doIdentityDeletedCallbacks(identity);
 		
 		if(!(identity instanceof OwnIdentity)) // Don't call it twice
@@ -669,11 +697,14 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	}
 	
 	private void beforeOwnIdentityDeletion(OwnIdentity identity) {
+		Logger.normal(this, "beforeOwnIdentityDeletion " + identity);
+		
 		doOwnIdentityDeletedCallbacks(identity);
 		onShouldFetchStateChanged(identity, true, false);
 	}
 	
 	private void onShouldFetchStateChanged(Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
+		Logger.normal(this, "onShouldFetchStateChanged " + author);
 		doShouldFetchStateChangedCallbacks(author, oldShouldFetch, newShouldFetch);
 	}
 	
@@ -737,7 +768,6 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				WoTIdentity id = null; 
 				
 				if(result.size() == 0) {
-					Logger.normal(this, "Importing new identity from WoT: " + requestURI);
 					try {
 						importIdentity(bOwnIdentities, identityID, requestURI, insertURI, nickname);
 						++newCount;
@@ -901,6 +931,9 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	
 	public void start() {
 		Logger.debug(this, "Starting...");
+		
+		deleteDuplicateIdentities();
+		
 		mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), 0, false, true);
 		
 		// TODO: Queue this as a job aswell.
@@ -911,6 +944,50 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		}
 		
 		Logger.debug(this, "Started.");
+	}
+	
+	/**
+	 * Checks for duplicate identity objects and deletes duplicates if they exist.
+	 * I have absolutely NO idea why Bombe does happen to have a duplicate identity, I see no code path which could cause this.
+	 * TODO: Get rid of this function if nobody reports a duplicate for some time - the function was added at 2011-01-10
+	 */
+	private synchronized void deleteDuplicateIdentities() {
+		WoTMessageManager messageManager = mFreetalk.getMessageManager();
+		PersistentTaskManager taskManager = mFreetalk.getTaskManager();
+		
+		synchronized(messageManager) {
+		synchronized(taskManager) {
+		synchronized(db.lock()) {
+			try {
+				HashSet<String> deleted = new HashSet<String>();
+
+				Logger.normal(this, "Searching for duplicate identities ...");
+
+				for(WoTIdentity identity : getAllIdentities()) {
+					Query q = db.query();
+					q.constrain(WoTIdentity.class);
+					q.descend("mID").constrain(identity.getID());
+					q.constrain(identity).identity().not();
+					ObjectSet<WoTIdentity> duplicates = new Persistent.InitializingObjectSet<WoTIdentity>(mFreetalk, q);
+					
+					for(WoTIdentity duplicate : duplicates) {
+						if(deleted.contains(duplicate.getID()) == false) {
+							Logger.error(duplicate, "Deleting duplicate identity " + duplicate.getRequestURI());
+							deleteIdentity(duplicate, messageManager, taskManager);
+						}
+					}
+					deleted.add(identity.getID());
+				}
+				Persistent.checkedCommit(db, this);
+
+				Logger.normal(this, "Finished searching for duplicate identities.");
+			}
+			catch(RuntimeException e) {
+				Persistent.checkedRollback(db, this, e);
+			}
+		}
+		}
+		}
 	}
 	
 	public void terminate() {
@@ -1003,9 +1080,15 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				mTrusteeID = trustee.getID();
 			}
 			
+			@Override
 			public boolean equals(final Object o) {
 				final TrustKey other = (TrustKey)o;
 				return mTrusterID.equals(other.mTrusterID) && mTrusteeID.equals(other.mTrusteeID);
+			}
+			
+			@Override
+			public int hashCode() {
+				return mTrusterID.hashCode() ^ mTrusteeID.hashCode();
 			}
 		}
 		

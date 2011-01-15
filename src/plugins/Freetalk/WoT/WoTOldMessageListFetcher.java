@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
 import java.io.IOException;
@@ -43,7 +46,7 @@ import freenet.support.io.NativeThread;
  * - In the onSuccess() method, for each fetched <code>MessageList</code>, a fetch is started for another old message list It tries to fetch the
  * 		most recent older ones first.
  * 
- * @author xor
+ * @author xor (xor@freenetproject.org)
  */
 public final class WoTOldMessageListFetcher extends TransferThread implements MessageListFetcher {
 
@@ -192,7 +195,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
 		fetchContext.maxNonSplitfileRetries = 2;
 		fetchContext.maxOutputLength = WoTMessageListXML.MAX_XML_SIZE; // TODO: fetch() also takes a maxSize parameter, why?
-		ClientGetter g = mClient.fetch(uri, WoTMessageListXML.MAX_XML_SIZE, mRequestClient, this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS);
+		ClientGetter g = mClient.fetch(uri, WoTMessageListXML.MAX_XML_SIZE, mRequestClient, this, fetchContext, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 		addFetch(g);
 		Logger.normal(this, "Trying to fetch MessageList from " + uri);
 		

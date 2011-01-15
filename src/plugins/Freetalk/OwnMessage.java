@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
@@ -20,6 +21,24 @@ public abstract class OwnMessage extends Message {
 		super(newURI, newFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText,
 				newAttachments);
 	}
+	
+	public void databaseIntegrityTest() throws Exception {
+		super.databaseIntegrityTest();
+		
+		checkedActivate(3);
+		
+		if(!(mAuthor instanceof OwnIdentity))
+			throw new IllegalStateException("mAuthor is no OwnIdentity: " + mAuthor);
+		
+		if(mMessageList == null) {
+			if(mFreenetURI != null)
+				throw new IllegalStateException("mMessageList == null but mFreenetURI == " + mFreenetURI);
+			
+			if(mURI != null)
+				throw new IllegalStateException("mMessageList == null but mURI == " + mURI);
+		} // else is handled by super.databaseIntegrityTest();
+	}
+	
 
 	// TODO: I doubt that this is needed, was probably a quickshot. Remove it if not and make the parent function final.
 	/* Override for synchronization */	
@@ -27,6 +46,8 @@ public abstract class OwnMessage extends Message {
 	public synchronized MessageURI getURI() {
 		return mURI;
 	}
+	
+	public abstract MessageURI calculateURI() throws NoSuchMessageListException;
 
 	/**
 	 * Generate the insert URI for a message.
@@ -60,7 +81,21 @@ public abstract class OwnMessage extends Message {
 	 */
 	public synchronized void setMessageList(OwnMessageList newMessageList) {
 		mMessageList = newMessageList;
+		try {
+			mURI = calculateURI();
+		} catch (NoSuchMessageListException e) {
+			throw new RuntimeException(e);
+		}
 		storeWithoutCommit();
+	}
+	
+	public synchronized MessageList getMessageList() throws NoSuchMessageListException {
+		checkedActivate(2);
+		if(mMessageList == null)
+			throw new NoSuchMessageListException("");
+		
+		mMessageList.initializeTransient(mFreetalk);
+		return mMessageList;
 	}
 
 	/**

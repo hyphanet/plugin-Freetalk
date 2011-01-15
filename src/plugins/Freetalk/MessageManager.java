@@ -12,6 +12,7 @@ import java.util.Random;
 import java.util.Set;
 
 import plugins.Freetalk.IdentityManager.IdentityDeletedCallback;
+import plugins.Freetalk.IdentityManager.NewOwnIdentityCallback;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageList.MessageFetchFailedMarker;
 import plugins.Freetalk.MessageList.MessageListFetchFailedMarker;
@@ -30,6 +31,9 @@ import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import plugins.Freetalk.exceptions.NoSuchMessageRatingException;
 import plugins.Freetalk.exceptions.NoSuchObjectException;
+import plugins.Freetalk.tasks.NewBoardTask;
+import plugins.Freetalk.tasks.PersistentTaskManager;
+import plugins.Freetalk.tasks.SubscribeToAllBoardsTask;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -50,7 +54,7 @@ import freenet.support.io.NativeThread;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public abstract class MessageManager implements PrioRunnable, IdentityDeletedCallback {
+public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCallback, IdentityDeletedCallback {
 
 	protected final IdentityManager mIdentityManager;
 	
@@ -76,6 +80,8 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 	 * This is the maximal delay.
 	 */
 	public static final long MAXIMAL_MESSAGE_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (30 * 60 * 1000) : (7 * 24 * 60 *60 * 1000); // TODO: Make configurable
+	
+	public static final int MAXIMAL_MESSAGE_FETCH_RETRY_DELAY_AT_RETRY_COUNT = (int)(Math.log(MAXIMAL_MESSAGE_FETCH_RETRY_DELAY / MINIMAL_MESSAGE_FETCH_RETRY_DELAY) / Math.log(2));
 		
 	/**
 	 * When a {@link MessageList} fetch fails (DNF for example) the {@link MessageList} is marked as fetch failed and the fetch will be retried after a
@@ -90,6 +96,8 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 	 * Notice that this only applies to "old" message lists - that is message lists with an edition number lower than the latest successfully fetched edition.
 	 */
 	public static final long MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY = Freetalk.FAST_DEBUG_MODE ? (30 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);  // TODO: Make configurable.
+	
+	public static final int MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY_AT_RETRY_COUNT = (int)(Math.log(MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY / MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY) / Math.log(2));
 	
 	private final TrivialTicker mTicker;
 	private final Random mRandom;
@@ -109,8 +117,7 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		mTicker = new TrivialTicker(mFreetalk.getPluginRespirator().getNode().executor);
 		mRandom = mPluginRespirator.getNode().fastWeakRandom;
 		
-		verifyDatabaseIntegrity();
-
+		mIdentityManager.registerNewOwnIdentityCallback(this);
 		mIdentityManager.registerIdentityDeletedCallback(this, true);
 	}
 	
@@ -134,10 +141,10 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		Logger.debug(this, "Main loop running...");
 		
 		try {
-			// Must be called periodically because it is not called on demand.
+			// Must be called periodically because they are not called on demand.
 			clearExpiredFetchFailedMarkers();
-
 			recheckUnwantedMessages();
+			recheckWantedMessages();
 		}  finally {
 			long sleepTime = THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
 			Logger.debug(this, "Sleeping for " + sleepTime/(60*1000) + " minutes.");
@@ -424,6 +431,20 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 	}
 	
 	/**
+	 * Called by the IdentityManager after a new Identity has been stored to the database and before committing the transaction.
+	 * The IdentityManager and PersistentTaskManager are locked when this function is called.
+	 * 
+	 * Creates a SubscribeToAllBoardsTask for the identity if auto-subscription to boards is enabled.
+	 */
+	public void onNewOwnIdentityAdded(OwnIdentity identity) {
+		if(identity.wantsAutoSubscribeToNewBoards()) {
+			// We cannot subscribe to the boards here because we lack the lock to the MessageManager
+			mFreetalk.getTaskManager().storeTaskWithoutCommit(new SubscribeToAllBoardsTask(identity));
+			mFreetalk.getTaskManager().processTasksSoon();
+		}
+	}
+	
+	/**
 	 * Called by the {@link IdentityManager} before an identity is deleted from the database.
 	 * 
 	 * Deletes any messages and message lists referencing to it and commits the transaction.
@@ -558,7 +579,6 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 				}
 				
 				// We also try to mark the message as downloaded if it was fetched already to ensure that its not being fetched over and over again.
-				// TODO: Change the message list downloading code to check whethe messages were downloaded already when importing the lists...
 
 				for(MessageReference ref : getAllReferencesToMessage(message.getID())) {
 					try {
@@ -730,6 +750,15 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 						}
 					}
 					
+					// Mark existing messages as fetched... Can happen if a message is list in multiple lists.
+					for(MessageReference ref : list) {
+						try {
+							get(ref.getMessageID());
+							ref.setMessageWasDownloadedFlag();
+							ref.storeWithoutCommit();
+						} catch(NoSuchMessageException e) {}
+					}
+					
 					list.storeWithoutCommit();
 					
 					final IdentityStatistics stats = getOrCreateIdentityStatistics(list.getAuthor());
@@ -801,6 +830,11 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 	protected Date calculateDateOfNextMessageFetchRetry(FetchFailedMarker.Reason reason, Date now, int numberOfRetries) {
 		switch(reason) {
 			case DataNotFound:
+				// We need this check to prevent overflow causing negative Dates :)
+				if(numberOfRetries >= MAXIMAL_MESSAGE_FETCH_RETRY_DELAY_AT_RETRY_COUNT)
+					return new Date(now.getTime() + MAXIMAL_MESSAGE_FETCH_RETRY_DELAY);
+				
+				// Math.min() is just a double check
 				return new Date(now.getTime() + Math.min(MINIMAL_MESSAGE_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGE_FETCH_RETRY_DELAY));
 			case ParsingFailed:
 				return new Date(Long.MAX_VALUE);
@@ -812,6 +846,11 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 	protected Date calculateDateOfNextMessageListFetchRetry(FetchFailedMarker.Reason reason, Date now, int numberOfRetries) {
 		switch(reason) {
 			case DataNotFound:
+				// We need this check to prevent overflow causing negative Dates :)
+				if(numberOfRetries >= MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY_AT_RETRY_COUNT)
+					return new Date(now.getTime() + MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY);
+				
+				// Math.min() is just a double check
 				return new Date(now.getTime()  + Math.min(MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY));
 			case ParsingFailed:
 				return new Date(Long.MAX_VALUE);
@@ -979,13 +1018,30 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 	protected synchronized void recheckUnwantedMessages() {
 		Logger.normal(this, "Rechecking unwanted messages...");
 		
-		Date now = CurrentTimeUTC.get();
+		final Date now = CurrentTimeUTC.get();
 		
 		for(SubscribedBoard board : subscribedBoardIterator()) {
 			board.retryAllUnwantedMessages(now);
 		}
 		
 		Logger.normal(this, "Finished rechecking unwanted message");
+	}
+	
+	/**
+	 * Only for being used by the MessageManager itself and by unit tests.
+	 * 
+	 * Checks whether there are any messages in subscribed boards which the subscriber did want to read and now does not want to read anymore.
+	 */
+	protected synchronized void recheckWantedMessages() {
+		Logger.normal(this, "Rechecking wanted messages...");
+		
+		final Date now = CurrentTimeUTC.get();
+		
+		for(SubscribedBoard board : subscribedBoardIterator()) {
+			board.validateAllWantedMessages(now);
+		}
+		
+		Logger.normal(this, "Finished rechecking wanted message");
 	}
 	
 	/**
@@ -1177,6 +1233,8 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 			board = getBoardByName(name);
 		}
 		catch(NoSuchBoardException e) {
+			PersistentTaskManager tm = mFreetalk.getTaskManager();
+			synchronized(tm) {
 			synchronized(db.lock()) {
 			try {
 				board = new Board(name);
@@ -1184,16 +1242,22 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 				board.storeWithoutCommit();
 				Logger.debug(this, "Created board " + name);
 				board.checkedCommit(this);
+				
+				tm.storeTaskWithoutCommit(new NewBoardTask(board));
 			}
 			catch(RuntimeException ex) {
 				Persistent.checkedRollbackAndThrow(db, this, ex);
 				throw ex; // Satisfy the compiler
 			}
 			}
+			}
+			
+			
 		}
 		
 		return board;
 	}
+	
 
 	/**
 	 * Get an iterator of all boards. The list is sorted ascending by name.
@@ -1250,7 +1314,7 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 		return new Persistent.InitializingObjectSet<SubscribedBoard>(mFreetalk, query);
 	}
 	
-	private ObjectSet<SubscribedBoard> subscribedBoardIterator(String boardName) {
+	protected ObjectSet<SubscribedBoard> subscribedBoardIterator(String boardName) {
 		boardName = boardName.toLowerCase();
 		
     	final Query q = db.query();
@@ -1539,207 +1603,5 @@ public abstract class MessageManager implements PrioRunnable, IdentityDeletedCal
 			return stats;
 		}
 	}
-	
-	private synchronized void verifyDatabaseIntegrity() {
-		try {
-		Logger.normal(this, "Verifying database integrity...");
-		
-		{
-			Logger.normal(this, "Checking for MessageLists with mAuthor==null...");
-			
-			final Query q = db.query();
-			q.constrain(MessageList.class);
-			q.descend("mAuthor").constrain(null).identity();
-			
-			for(final MessageList list : new Persistent.InitializingObjectSet<MessageList>(mFreetalk, q)) {
-				if(list.getAuthor() != null) {
-					// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
-					Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + list);
-					continue;
-				}
-				
-				Logger.error(this, "MessageList has mAuthor==null: " + list);
-			}
-		}
-		
-		{
-			Logger.normal(this, "Checking for MessageList.MessageReferences with mBoard==null...");
-			
-			final Query q = db.query();
-			q.constrain(MessageList.MessageReference.class);
-			q.constrain(OwnMessageList.OwnMessageReference.class).not(); // OwnMessageReference are allowed to have mBoard==null
-			q.descend("mBoard").constrain(null).identity();
-			
-			for(final MessageList.MessageReference ref : new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, q)) {
-				if(ref.getBoard() != null) {
-					// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
-					Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + ref);
-					continue;
-				}
-				
-				Logger.error(this, "MessageList.MessageReference has mBoard==null: " + ref);
-			}
-		}
-		
-		{
-			Logger.normal(this, "Checking for MessageList.MessageReferences with mMessageList==null...");
-			
-			final Query q = db.query();
-			q.constrain(MessageList.MessageReference.class);
-			q.descend("mMessageList").constrain(null).identity();
-			
-			for(final MessageList.MessageReference ref : new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, q)) {
-				try {
-					if(ref.getMessageList() != null) {
-						// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
-						Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + ref);
-						continue;
-					}
-				} catch(NullPointerException e) {
-					Logger.error(this, "MessageList.MessageReference has mMessageList==null: " + ref);
-				}
-			}
-		}
-		
-		{
-			Logger.normal(this, "Checking for MessageList.MessageFetchFailedMarker with mMessageReference==null...");
-			
-			final Query q = db.query();
-			q.constrain(MessageList.MessageFetchFailedMarker.class);
-			q.descend("mMessageReference").constrain(null).identity();
-			
-			for(final MessageList.MessageFetchFailedMarker m : 
-					new Persistent.InitializingObjectSet<MessageList.MessageFetchFailedMarker>(mFreetalk, q)) {
-				try {
-					if(m.getMessageReference() != null) {
-						// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
-						Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + m);
-						continue;
-					}
-				} catch(NullPointerException e) {
-					Logger.error(this, "MessageList.MessageFetchFailedMarker has mMessageReference==null: " + m);
-				}
-			}
-			
-		}
-		
-		{
-			Logger.normal(this, "Checking board and author references of all messages...");
-			
-			final Query q = db.query();
-			q.constrain(Message.class);
-			
-			for(final Message message : new Persistent.InitializingObjectSet<Message>(mFreetalk, q)) {
-				if(message.getAuthor() == null)
-					Logger.error(this, "Message has mAuthor==null: " + message);
-				
-				for(Board board : message.mBoards) { // The getter would cause an NPE
-					if(board == null)
-						Logger.error(this, "Message contains null board: " + message);
-				}
-				
-				if(message.mMessageList == null) {
-					if(message instanceof OwnMessage) {
-						if(message.mFreenetURI != null)
-							Logger.error(this, "OwnMessage is marked as inserted but not added to a message list: " + message);
-					} else {
-						Logger.error(this, "Message has mMessageList==null: " + message);
-					}
-				}
-			}
-		}
-		
-		{
-			Logger.normal(this, "Checking for MessageRatings with missing rater, message author or message...");
-			
-			final Query q = db.query();
-			q.constrain(MessageRating.class);
-			
-			for(final MessageRating rating : new Persistent.InitializingObjectSet<MessageRating>(mFreetalk, q)) {				
-				if(rating.getRater() == null) 
-					Logger.error(this, "MessageRating has mRater==null: " + rating);
-				
-				if(rating.getMessageAuthor() == null)
-					Logger.error(this, "MessageRating has mMessageAuthor==null: " + rating);
-				
-				try {
-					if(rating.getMessage() == null) // Double check in case someone changes the getter to not throw an NPE
-						Logger.error(this, "MessageRating has mMessage==null: " + rating);
-				} catch(NullPointerException e) {
-					Logger.error(this, "MessageRating has mMessage==null: " + rating);
-				}
 
-			}
-		}
-		
-		{
-			Logger.normal(this, "Checking for IdentityStatistics with mIdentity==null");
-			final Query q = db.query();
-			q.constrain(IdentityStatistics.class);
-			q.descend("mIdentity").constrain(null).identity();
-			
-			for(final IdentityStatistics stats : new Persistent.InitializingObjectSet<IdentityStatistics>(mFreetalk, q)) {
-				if(stats.getIdentity() != null) {
-					// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
-					Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + stats);
-					continue;
-				}
-				
-				Logger.error(this, "IdentityStatistics has mIdentity==null: " + stats);
-			}
-		}
-		
-		{
-			Logger.normal(this, "Checking SubscribedBoard integrity...");
-			
-			{
-				Logger.normal(this, "Checking for SubscribedBoard.MessageReference with mBoard==null...");
-				
-				final Query q = db.query();
-				q.constrain(SubscribedBoard.MessageReference.class);
-				q.descend("mBoard").constrain(null).identity();
-				
-				for(final SubscribedBoard.MessageReference ref : 
-						new Persistent.InitializingObjectSet<SubscribedBoard.MessageReference>(mFreetalk, q)) {
-					
-					if(ref.mBoard != null) {
-						// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
-						Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + ref);
-						continue;
-					}
-						
-					Logger.error(this, "SubscribedBoard.MessageReference has mBoard==null: " + ref);
-				}
-			}
-			
-			{
-				Logger.normal(this, "Checking for SubscribedBoard.UnwantedMessageLink with mBoard==null ...");
-				final Query q = db.query();
-				q.constrain(SubscribedBoard.UnwantedMessageLink.class);
-				q.descend("mBoard").constrain(null).identity();
-				
-				for(final SubscribedBoard.UnwantedMessageLink ref : 
-					new Persistent.InitializingObjectSet<SubscribedBoard.UnwantedMessageLink>(mFreetalk, q)) {
-				
-				if(ref.mBoard != null) {
-					// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
-					Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + ref);
-					continue;
-				}
-					
-				Logger.error(this, "SubscribedBoard.UnwantedMessageLink has mBoard==null: " + ref);
-			}
-			}
-			
-			for(final SubscribedBoard board : subscribedBoardIterator()) {
-				board.verifyDatabaseIntegrity();
-			}
-		}
-		
-		Logger.normal(this, "Finished verifying the database integrity.");
-		}
-		catch(Exception e) {
-			Logger.error(this, "Verifying the database integrity failed", e);
-		}
-	}
 }

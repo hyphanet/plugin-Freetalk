@@ -6,12 +6,22 @@ package plugins.Freetalk;
 import freenet.keys.FreenetURI;
 
 /**
- * @author saces, xor
- *
+ * @author xor (xor@freenetproject.org)
+ * @author saces
  */
 public interface OwnIdentity extends Identity {
 	
 	public FreenetURI getInsertURI();
+	
+	/**
+	 * Checks whether this identity should be auto-subscribed to new boards as they are discovered.
+	 */
+	public boolean wantsAutoSubscribeToNewBoards();
+	
+	/**
+	 * Sets whether this identity should be auto-subscribed to new boards when they are discovered.
+	 */
+	public void setAutoSubscribeToNewboards(boolean autoSubscribeToNewBoards);
 	
     /**
      * Checks whether this Identity auto-subscribes to boards subscribed in NNTP client.

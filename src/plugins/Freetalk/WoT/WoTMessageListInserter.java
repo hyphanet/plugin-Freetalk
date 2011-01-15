@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
 import java.io.IOException;
@@ -10,9 +13,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import plugins.Freetalk.Freetalk;
-import plugins.Freetalk.MessageList;
-import plugins.Freetalk.MessageListInserter;
 import plugins.Freetalk.MessageList.MessageListID;
+import plugins.Freetalk.MessageListInserter;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
 
@@ -35,6 +37,9 @@ import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 
+/**
+ * @author xor (xor@freenetproject.org)
+ */
 public final class WoTMessageListInserter extends MessageListInserter {
 	
 	private static final int STARTUP_DELAY = Freetalk.FAST_DEBUG_MODE ? (10 * 1000) : (10 * 60 * 1000);
@@ -46,6 +51,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	private final Random mRandom;
 	
 	private final WoTMessageListXML mXML;
+	
 
 	public WoTMessageListInserter(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager,
 			WoTMessageManager myMessageManager, WoTMessageListXML myMessageListXML) {
@@ -97,13 +103,13 @@ public final class WoTMessageListInserter extends MessageListInserter {
 
 	@Override
 	protected synchronized void iterate() {
-		abortAllTransfers();
-		
 		synchronized(mMessageManager) {
 			for(WoTOwnMessageList list : mMessageManager.getNotInsertedOwnMessageLists()) {
 				try {
 					/* TODO: Ensure that after creation of a message list we wait for at least a few minutes so that if the author writes 
 					 * more messages they will be put in the same list */
+					
+					// No dupe check is needed: The MessageManager query only returns lists which have the IsBeingInserted flag set to false.
 					insertMessageList(list);
 				}
 				catch(Exception e) {
@@ -158,6 +164,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 		}
 		finally {
 			removeInsert(state);
+			Closer.close(((ClientPutter)state).getData());
 		}
 	}
 
@@ -188,6 +195,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 		}
 		finally {
 			removeInsert(state);
+			Closer.close(((ClientPutter)state).getData());
 		}
 	}
 	

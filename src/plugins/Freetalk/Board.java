@@ -86,6 +86,38 @@ public class Board extends Persistent implements Comparable<Board> {
         mHasSubscriptions = false;
     }
 
+	@Override
+	public void databaseIntegrityTest() throws Exception {
+		checkedActivate(3);
+		
+	    if(mID == null)
+	    	throw new NullPointerException("mID==null");
+	    
+	    try {
+	    	UUID.fromString(mID);
+	    } catch(Exception e) {
+	    	throw new IllegalStateException("mID is invalid UUID: " + mID);
+	    }
+	    
+	    if(mName == null)
+	    	throw new NullPointerException();
+	    
+	    if(!isNameValid(mName))
+	    	throw new IllegalStateException("mName is invalid: " + mName);
+	    
+	    
+	    if(!(this instanceof SubscribedBoard)) { // FIXME: This is a workaround for old databses. Remove in 0.1-final-development
+		    if(mHasSubscriptions != (mFreetalk.getMessageManager().subscribedBoardIterator(mName).size() != 0))
+		    	throw new IllegalStateException("mHasSubscriptions is wrong: " + mHasSubscriptions);
+	    }
+	    
+	    if(mNextFreeMessageIndex < 1)
+	    	throw new IllegalStateException("mNextFreeMessageIndex is illegal: " + mNextFreeMessageIndex);
+	    
+	    if(getMessagesAfterIndex(mNextFreeMessageIndex-1).size() != 0)
+	    	throw new IllegalStateException("mNextFreetMessageIndex is wrong: " + mNextFreeMessageIndex);
+	}
+
     /**
      * Store this object in the database. You have to initializeTransient() before.
      * 
@@ -242,8 +274,52 @@ public class Board extends Persistent implements Comparable<Board> {
     		
     		assert(mIndex == (mBoard.mNextFreeMessageIndex-1));
     	}
-    	
+
+
+		@Override
+		public void databaseIntegrityTest() throws Exception {
+			checkedActivate(3);
+			
+			if(mBoard == null)
+				throw new NullPointerException("mBoard==null");
+	    	
+			if(mIndex < 1)
+				throw new IllegalStateException("mIndex is illegal: " + mIndex);
+			
+			final Board board = getBoard(); 
+			
+			// The primary reason for calling it is to ensure that the index is only taken once:
+			// It should throw a DuplicateMessageException if there are multiple...
+			if(board.getMessageByIndex(mIndex) != this)
+				throw new IllegalStateException("getMessageByIndex is broken");
+	    	
+			if(mMessage == null)
+				throw new NullPointerException("mMessage==null");
+			
+			final Message message = getMessage();
+			
+			if(!board.contains(message))
+				throw new IllegalStateException("mMessage does not belong in this Board: mBoard==" + mBoard 
+						+ "; mMessage.getBoards()==" + mMessage.getBoards()
+						+ "; mMessage==" + mMessage);
+			
+			// The primary reason for calling it is to ensure that the message is only linked once:
+			// It should throw a DuplicateMessageException if there are multiple...
+			if(board.getMessageLink(message) != this)
+				throw new IllegalStateException("getMessageLink is broken");
+			
+			if(mAuthor == null)
+				throw new NullPointerException("mAuthor==null");
+			
+			if(message.getAuthor() != mAuthor)
+				throw new IllegalStateException("mAuthor is wrong: mAuthor==" + mAuthor 
+						+ "; mMessage.getAuthor()==" + message.getAuthor()
+						+ "; mMessage==" + mMessage);
+			
+		}
+
     	public Board getBoard() {
+    		mBoard.initializeTransient(mFreetalk);
     		return mBoard;
     	}
     	
@@ -280,23 +356,19 @@ public class Board extends Persistent implements Comparable<Board> {
     	protected void deleteWithoutCommit() {
     		deleteWithoutCommit(3); // TODO: Figure out a suitable depth.
 		}
-    	
+
     }
     
-    @SuppressWarnings("unchecked")
-	private BoardMessageLink getMessageLink(Message message) throws NoSuchMessageException {
+	protected BoardMessageLink getMessageLink(Message message) throws NoSuchMessageException {
     	Query q = mDB.query();
     	q.constrain(BoardMessageLink.class);
     	q.descend("mMessage").constrain(message).identity();
     	q.descend("mBoard").constrain(this).identity();
-    	ObjectSet<BoardMessageLink> messageLinks = q.execute();
+    	ObjectSet<BoardMessageLink> messageLinks = new Persistent.InitializingObjectSet<Board.BoardMessageLink>(mFreetalk, q);
     	
     	switch(messageLinks.size()) {
     		case 0: throw new NoSuchMessageException(message.getID());
-    		case 1:
-    			final BoardMessageLink link = messageLinks.next();
-    			link.initializeTransient(mFreetalk);
-    			return link;
+    		case 1: return messageLinks.next();
     		default: throw new DuplicateMessageException(message.getID());
     	}
     }
@@ -312,12 +384,26 @@ public class Board extends Persistent implements Comparable<Board> {
 		return result;
     }
     
-    protected Iterable<BoardMessageLink> getMessagesAfterIndex(int index) {
+    protected ObjectSet<BoardMessageLink> getMessagesAfterIndex(int index) {
         Query q = mDB.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mIndex").constrain(index).greater();
         return new Persistent.InitializingObjectSet<BoardMessageLink>(mFreetalk, q.execute());
+    }
+    
+    private BoardMessageLink getMessageByIndex(int index) throws NoSuchMessageException {
+        final Query q = mDB.query();
+        q.constrain(BoardMessageLink.class);
+        q.descend("mBoard").constrain(this).identity();
+        q.descend("mIndex").constrain(index);
+    	final ObjectSet<BoardMessageLink> messageLinks = new Persistent.InitializingObjectSet<Board.BoardMessageLink>(mFreetalk, q);
+    	
+    	switch(messageLinks.size()) {
+    		case 0: throw new NoSuchMessageException("index: " + index);
+    		case 1: return messageLinks.next();
+    		default: throw new DuplicateMessageException("index: " + index);
+    	}
     }
     
     public synchronized int getMessageCount() {

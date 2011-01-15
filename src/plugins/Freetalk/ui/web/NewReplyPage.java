@@ -54,7 +54,7 @@ public class NewReplyPage extends WebPageImpl {
 
 		if((mRequest.isPartSet("CreateReply") || mRequest.isPartSet("CreatePreview")) && mRequest.getMethod().equals("POST")) {
 			HashSet<Board> boards = new HashSet<Board>();
-			boards.add(mBoard);
+			boards.add(mBoard.getParentBoard());
 
 			String replySubject = "";
 			String replyText = "";
@@ -92,31 +92,26 @@ public class NewReplyPage extends WebPageImpl {
 				// - the replies would go to the original thread instead of to the forked one where they actually should go to.
 
 				mFreetalk.getMessageManager().postMessage(parentThreadURI,
-						mParentMessage, boards, mBoard, mOwnIdentity, replySubject, null, replyText, null);
+						mParentMessage, boards, mBoard.getParentBoard(), mOwnIdentity, replySubject, null, replyText, null);
 
 				HTMLNode successBox = addContentBox(l10n().getString("NewReplyPage.ReplyCreated.Header"));
 				successBox.addChild("p", l10n().getString("NewReplyPage.ReplyCreated.Text"));
 
 				HTMLNode aChild = successBox.addChild("#");
-				l10n().addL10nSubstitution(
-						aChild,
-						"NewReplyPage.ReplyCreated.BackToParentThread",
-						new String[] { "link", "/link" },
-						new String[] {
-								"<a href=\"" + ThreadPage.getURI(mBoard, mParentThread) + "\">",
-								"</a>" });
+                l10n().addL10nSubstitution(
+                        aChild, 
+                        "NewReplyPage.ReplyCreated.BackToParentThread",
+                        new String[] { "link" }, 
+                        new HTMLNode[] { HTMLNode.link(ThreadPage.getURI(mBoard, mParentThread)) });
 
 				successBox.addChild("br");
 
 				aChild = successBox.addChild("#");
-				l10n().addL10nSubstitution(
-						aChild,
-						"NewReplyPage.ReplyCreated.BackToBoard",
-						new String[] { "link", "boardname", "/link" },
-						new String[] {
-								"<a href=\"" + BoardPage.getURI(mBoard) + "\">",
-								mBoard.getName(),
-								"</a>" });
+                l10n().addL10nSubstitution(
+                        aChild, 
+                        "NewReplyPage.ReplyCreated.BackToBoard",
+                        new String[] { "link", "boardname"}, 
+                        new HTMLNode[] { HTMLNode.link(BoardPage.getURI(mBoard)), HTMLNode.text(mBoard.getName()) });
 
 				rateMessage(selectedMessageRating); // Handles the case where no rating is desired
 				}

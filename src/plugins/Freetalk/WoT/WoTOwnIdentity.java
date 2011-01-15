@@ -3,12 +3,15 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import java.util.Arrays;
+
 import plugins.Freetalk.Identity;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Persistent.IndexedClass;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import plugins.Freetalk.exceptions.NotTrustedException;
 import freenet.keys.FreenetURI;
+import freenet.support.codeshortification.IfNull;
 
 /**
  * 
@@ -27,17 +30,39 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 	/* Attributes, stored in the database. */
 
 	private final FreenetURI mInsertURI;
+	
+	/**
+	 * If true then the identity is auto-subscribed to new boards when they are discovered
+	 */
+	private boolean mAutoSubscribeToNewBoards;
 
     /** If true then auto-subscribe to boards that were subscribed in the NNTP client */
-    private boolean mNntpAutoSubscribeBoards;
+    private boolean mNntpAutoSubscribeBoards = false;
 
 
-	public WoTOwnIdentity(String myID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
+	public WoTOwnIdentity(String myID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname, boolean autoSubscribeToNewBoards) {
 		super(myID, myRequestURI, myNickname);
 		if(myInsertURI == null)
 			throw new IllegalArgumentException();
 		mInsertURI = myInsertURI;
+		mAutoSubscribeToNewBoards = autoSubscribeToNewBoards;
 	}
+	
+	public WoTOwnIdentity(String myID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
+		this(myID, myRequestURI, myInsertURI, myNickname, false);
+	}
+	
+	public void databaseIntegrityTest() throws Exception {
+		super.databaseIntegrityTest();
+		
+		checkedActivate(3);
+		
+		IfNull.thenThrow(mInsertURI, "mInsertURI");
+		
+		if(!Arrays.equals(getRequestURI().getCryptoKey(), mInsertURI.getCryptoKey()))
+			throw new IllegalStateException("Request and insert URI do not fit together!");
+	}
+
 
 	public FreenetURI getInsertURI() {
 		checkedActivate(3); // String[] is no nested object to db4o so 3 is sufficient.
@@ -68,6 +93,14 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 
 	public void setTrust(WoTIdentity identity, byte trust, String comment) throws Exception {
 		mFreetalk.getIdentityManager().setTrust(this, identity, trust, comment);
+	}
+	
+	public boolean wantsAutoSubscribeToNewBoards() {
+		return mAutoSubscribeToNewBoards;
+	}
+
+	public void setAutoSubscribeToNewboards(boolean autoSubscribeToNewBoards) {
+		mAutoSubscribeToNewBoards = autoSubscribeToNewBoards;
 	}
 	
     /**
@@ -115,4 +148,5 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 			checkedRollbackAndThrow(e);
 		}
 	}
+
 }

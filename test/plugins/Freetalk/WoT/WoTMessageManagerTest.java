@@ -44,8 +44,11 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 	
 	private WoTOwnIdentity[] mOwnIdentities;
 	
+	private Set<SubscribedBoard> mSubscribedBoards;
+	private SubscribedBoard mSubscribedBoard;
+	
 	private Set<Board> mBoards;
-	private SubscribedBoard mBoard;
+	private Board mBoard;
 
 	private int mMessageListIndex = 0;
 	
@@ -112,10 +115,15 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 	
 	private void constructBoards() throws Exception {
 		mMessageManager.getOrCreateBoard("en.test");
-		mBoard = mMessageManager.subscribeToBoard(mOwnIdentities[0], "en.test");
+		mSubscribedBoard = mMessageManager.subscribeToBoard(mOwnIdentities[0], "en.test");
 		
+		mSubscribedBoards = new HashSet<SubscribedBoard>();
+		mSubscribedBoards.add(mSubscribedBoard);
+		
+		mBoard = mMessageManager.getBoardByName(mSubscribedBoard.getName());
 		mBoards = new HashSet<Board>();
-		mBoards.add(mBoard);
+		for(SubscribedBoard board : mSubscribedBoards)
+			mBoards.add(mMessageManager.getBoardByName(board.getName()));
 	}
 
 
@@ -163,7 +171,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		
 		final Iterator<String> expectedThreads = mThreads.iterator();
 	
-		for(final BoardThreadLink threadRef : mBoard.getThreads()) {
+		for(final BoardThreadLink threadRef : mSubscribedBoard.getThreads()) {
 			// Verify that the thread exists
 			assertTrue(expectedThreads.hasNext());
 			
@@ -189,7 +197,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 				expectedRepliesList = new LinkedList<String>();
 			final Iterator<String> expectedReplies = expectedRepliesList.iterator(); 
 			
-			for(final MessageReference replyRef : mBoard.getAllThreadReplies(threadRef.getThreadID(), true)) {
+			for(final MessageReference replyRef : mSubscribedBoard.getAllThreadReplies(threadRef.getThreadID(), true)) {
 				assertTrue(expectedReplies.hasNext());
 				
 				try {

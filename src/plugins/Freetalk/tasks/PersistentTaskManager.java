@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.tasks;
 
 import java.util.Random;
@@ -34,14 +37,16 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 	private final Random mRandom;
 	
 	
-	public PersistentTaskManager(ExtObjectContainer myDB, Freetalk myFreetalk) {
+	public PersistentTaskManager(Freetalk myFreetalk, ExtObjectContainer myDB) {
 		assert(myDB != null);
 		
-		mDB = myDB;
 		mFreetalk = myFreetalk;
+		mDB = myDB;
 		
-		mTicker = new TrivialTicker(mFreetalk.getPluginRespirator().getNode().executor);
-		mRandom = mFreetalk.getPluginRespirator().getNode().fastWeakRandom;
+		mTicker = mFreetalk.getPluginRespirator() != null ? new TrivialTicker(mFreetalk.getPluginRespirator().getNode().executor) : null;
+		mRandom = mFreetalk.getPluginRespirator() != null ? mFreetalk.getPluginRespirator().getNode().fastWeakRandom : null;
+		
+		mFreetalk.getIdentityManager().registerOwnIdentityDeletedCallback(this);
 	}
 	
 	public int getPriority() {
@@ -58,9 +63,11 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 			// TODO: Its nonsense to sleep for random times and check whether a task has expired, we should rather sleep until the next task will
 			// expire... Implement that!
 		} finally {
-			final long sleepTime =  THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
-			Logger.debug(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
-			mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), sleepTime, false, true);
+			if(mTicker != null) {
+				final long sleepTime =  THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
+				Logger.debug(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
+				mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), sleepTime, false, true);
+			}
 		}
 		
 		Logger.debug(this, "Main loop finished.");
@@ -78,18 +85,22 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 		Logger.debug(this, "Terminated.");
 	}
 	
-	@SuppressWarnings("unchecked")
+	public void processTasksSoon() {
+		if(mTicker != null) {
+			mTicker.rescheduleTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), 0);
+			Logger.normal(this, "Scheduled task execution to be run ASAP.");
+		}
+	}
+	
 	protected synchronized void deleteExpiredTasks(long currentTime) {
-		Query q = mDB.query();
-		
+		Logger.normal(this, "Deleting expired tasks...");
+		final Query q = mDB.query();
 		q.constrain(PersistentTask.class);
-		q.descend("mDeleteTime").constrain(currentTime).smaller();
-		ObjectSet<PersistentTask> expiredTasks = q.execute();
+		q.descend("mDeleteTime").constrain(currentTime).smaller();;
 		
-		for(PersistentTask task : expiredTasks) {
+		for(PersistentTask task : new Persistent.InitializingObjectSet<PersistentTask>(mFreetalk, q)) {
 			synchronized(mDB.lock()) {
 				try {
-					task.initializeTransient(mFreetalk);
 					task.deleteWithoutCommit();
 					Persistent.checkedCommit(mDB, this);
 				}
@@ -98,34 +109,31 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 				}
 			}
 		}
+		Logger.normal(this, "Deleting expired tasks finished.");
 	}
 	
 	/**
 	 * @param query A query which must return an resulting ObjectSet of PersistentTask.
 	 * @param time The current UTC time. If the given query is time-dependent, the same time must be used there!
 	 */
-	@SuppressWarnings("unchecked")
 	protected void proccessTasks(Query query, long time) {
-		
 		deleteExpiredTasks(time);
 		
 		synchronized(mFreetalk.getIdentityManager()) {
 		synchronized(mFreetalk.getMessageManager()) {
 		synchronized(this) {
-		ObjectSet<PersistentTask> pendingTasks = query.execute();
-		
-		for(PersistentTask task : pendingTasks) {
+		Logger.normal(this, "Processing pending tasks...");
+		for(PersistentTask task : new Persistent.InitializingObjectSet<PersistentTask>(mFreetalk, query)) {
 			try {
-				Logger.debug(this, "Processing task " + task);
-				task.initializeTransient(mFreetalk);
+				Logger.normal(this, "Processing task " + task);
 				task.process();
-				Logger.debug(this, "Processing finished.");
+				Logger.normal(this, "Processing finished.");
 			}
 			catch(RuntimeException e) {
 				Logger.error(this, "Error while processing a task", e);
 			}
 		}
-		
+		Logger.normal(this, "Processing pending tasks finished.");
 		}
 		}
 		}
@@ -192,18 +200,15 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 	 * 
 	 * Deletes all it's tasks and commits the transaction.
 	 */
-	@SuppressWarnings("unchecked")
 	public synchronized void beforeOwnIdentityDeletion(OwnIdentity identity) {
-		Query q = mDB.query();
-		
+		final Query q = mDB.query();
 		q.constrain(PersistentTask.class);
 		q.descend("mOwner").constrain(identity).identity();
-		ObjectSet<PersistentTask> tasks = q.execute();
+		final ObjectSet<PersistentTask> tasks = new Persistent.InitializingObjectSet<PersistentTask>(mFreetalk, q);
 		
 		synchronized(mDB.lock()) {
 			try {
 				for(PersistentTask task : tasks) {
-					task.initializeTransient(mFreetalk);
 					task.deleteWithoutCommit();
 				}
 				
@@ -229,6 +234,7 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 	public void storeTaskWithoutCommit(PersistentTask task) {
 		task.initializeTransient(mFreetalk);
 		task.storeWithoutCommit();
+		Logger.normal(this, "Stored task " + task);
 	}
 
 }

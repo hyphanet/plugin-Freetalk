@@ -55,6 +55,23 @@ public final class Config extends Persistent {
 		setDefaultValues(false);
 	}
 	
+	@Override
+	public void databaseIntegrityTest() throws Exception {
+		checkedActivate(4);
+		
+		if(mStringParams == null)
+			throw new NullPointerException("mStringParams==null");
+		
+		if(mIntParams == null)
+			throw new NullPointerException("mIntParams==null");
+		
+		if(getInt(DATABASE_FORMAT_VERSION) != Freetalk.DATABASE_FORMAT_VERSION)
+			throw new IllegalStateException("FATAL: startupDatabaseIntegrityTest called with wrong database format version! is: " 
+					+ getInt(DATABASE_FORMAT_VERSION) + "; should be: " + Freetalk.DATABASE_FORMAT_VERSION);
+		
+		// TODO: Validate the other settings...
+	}
+	
 	/**
 	 * Loads an existing Config object from the database and adds any missing default values to it, creates and stores a new one if none exists.
 	 * @return The config object.
@@ -76,7 +93,9 @@ public final class Config extends Persistent {
 				Logger.debug(myFreetalk, "Loaded config.");
 				config = result.next();
 				config.initializeTransient(myFreetalk);
+				config.checkedActivate(4);
 				config.setDefaultValues(false);
+				config.storeAndCommit();
 			}
 			
 			return config;
@@ -90,7 +109,7 @@ public final class Config extends Persistent {
 	public synchronized void storeAndCommit() {
 		synchronized(mDB.lock()) {
 			try {
-				checkedActivate(3);
+				checkedActivate(4);
 				mDB.store(mStringParams, 3);
 				mDB.store(mIntParams, 3);
 				checkedStore();
@@ -235,4 +254,5 @@ public final class Config extends Persistent {
 			set(NNTP_SERVER_ENABLED, false);
 		}
 	}
+
 }

@@ -20,6 +20,7 @@ public abstract class MessageListInserter extends TransferThread {
 		clearBeingInsertedFlags();
 	}
 	
+	// TODO: Move function to MessageManager
 	/**
 	 * Each <code>OwnMessageList</code> has a flag which stores whether it is currently being inserted. The purpose of this function
 	 * is to clear those flags at startup.

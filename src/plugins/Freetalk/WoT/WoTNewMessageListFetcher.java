@@ -36,6 +36,7 @@ import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
+import freenet.support.codeshortification.IfNull;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 
@@ -102,6 +103,11 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 			mIdentityID = myIdentityID;
 		}
 		
+		@Override
+		public void databaseIntegrityTest() throws Exception {
+			IfNull.thenThrow(mIdentityID, "mIdentityID");
+		}
+		
 		protected String getIdentityID() {
 			return mIdentityID;
 		}
@@ -159,13 +165,11 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		private static final long serialVersionUID = 1L;
 	}
 	
-	@SuppressWarnings("unchecked")
-	private FetcherCommand getCommand(Class commandType, WoTIdentity identity) throws NoSuchCommandException {
+	private FetcherCommand getCommand(Class<? extends FetcherCommand> commandType, WoTIdentity identity) throws NoSuchCommandException {
 		return getCommand(commandType, identity.getID());
 	}
 	
-	@SuppressWarnings("unchecked")
-	private FetcherCommand getCommand(Class commandType, String identityID) throws NoSuchCommandException {
+	private FetcherCommand getCommand(Class<? extends FetcherCommand> commandType, String identityID) throws NoSuchCommandException {
 		final Query q = mDB.query();
 		q.constrain(commandType);
 		q.descend("mIdentityID").constrain(identityID);
@@ -178,8 +182,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
-	private ObjectSet<FetcherCommand> getCommands(Class commandType) {
+	private ObjectSet<FetcherCommand> getCommands(Class<? extends FetcherCommand> commandType) {
 		final Query q = mDB.query();
 		q.constrain(commandType);
 		return new Persistent.InitializingObjectSet<FetcherCommand>(mFreetalk, q);

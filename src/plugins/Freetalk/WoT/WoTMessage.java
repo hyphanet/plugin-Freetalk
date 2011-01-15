@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
 import java.util.Date;
@@ -9,6 +12,7 @@ import plugins.Freetalk.Identity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.exceptions.InvalidParameterException;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
 
 /**
@@ -49,7 +53,7 @@ public final class WoTMessage extends Message {
 		if(newMessageList == null)
 			throw new NullPointerException("MessageList is null");
 		
-		return new WoTMessage(calculateURI(newMessageList, newID), myFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
+		return new WoTMessage(WoTOwnMessage.calculateURI(newMessageList, newID), myFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
 
 	protected WoTMessage(WoTMessageURI newURI, FreenetURI newFreenetURI, MessageID newID, MessageList newMessageList, WoTMessageURI newThreadURI,
@@ -58,9 +62,35 @@ public final class WoTMessage extends Message {
 		super(newURI, newFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText,
 				newAttachments);
 	}
-
-	public static WoTMessageURI calculateURI(MessageList myMessageList, MessageID myID) {
-		return new WoTMessageURI(myMessageList.getURI(), myID);
+	
+	@Override
+	public void databaseIntegrityTest() throws Exception {
+		super.databaseIntegrityTest();
+		
+		if(!(super.getURI() instanceof WoTMessageURI))
+			throw new IllegalStateException("super.getURI() == " + super.getURI());
+		
+		if(!(super.getAuthor() instanceof WoTIdentity))
+			throw new IllegalStateException("super.getAuthor() == " + super.getAuthor());
+		
+		try {
+			if(!(super.getThreadURI() instanceof WoTMessageURI))
+				throw new IllegalStateException("super.getThreadURI() == " + super.getThreadURI());
+			
+			if(!(super.getThread() instanceof WoTMessage))
+				throw new IllegalStateException("super.getThread() == " + super.getThread());
+		} catch(NoSuchMessageException e) {}
+		
+		try {
+			if(!(super.getParentURI() instanceof WoTMessageURI))
+				throw new IllegalStateException("super.getParentURI() == " + super.getParentURI());
+			
+			if(!(super.getParent() instanceof WoTMessage))
+				throw new IllegalStateException("super.getParent() == " + super.getParent());
+		} catch(NoSuchMessageException e) {}
+		
+		if(!(super.getMessageList() instanceof WoTMessageList))
+			throw new IllegalStateException("super.getMessageList() == " + super.getMessageList());
 	}
 	
 	@Override

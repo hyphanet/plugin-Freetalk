@@ -5,7 +5,6 @@ package plugins.Freetalk;
 
 import java.util.Date;
 
-import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 
 /**
@@ -67,6 +66,24 @@ public abstract class MessageRating extends Persistent {
 		mRater = myRater;
 		mMessage = myMessage;
 		mMessageAuthor = mMessage.getAuthor();
+	}
+	
+	public void databaseIntegrityTest() throws Exception {
+		checkedActivate(2);
+		
+		if(mRater == null)
+			throw new NullPointerException("mRater == null");
+		
+		if(mMessage == null)
+			throw new NullPointerException("mMessage == null");
+		
+		if(mMessageAuthor == null)
+			throw new NullPointerException("mMessageAuthor == null");
+		
+		mMessage.initializeTransient(mFreetalk);
+		
+		if(mMessage.getAuthor() != mMessageAuthor)
+			throw new IllegalStateException("mMessageAuthor == " + mMessageAuthor + " but mMessage.getAuthor() == " + mMessage.getAuthor());
 	}
 	
 	/**

@@ -7,9 +7,11 @@ import java.util.UUID;
 
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Persistent;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.codeshortification.IfNull;
 
 /**
  * A PersistentTask is a user notification which is stored in the database as long as it is valid.
@@ -44,14 +46,30 @@ public abstract class PersistentTask extends Persistent {
 	
 	
 	protected PersistentTask(OwnIdentity myOwner) {
-		if(myOwner == null)
-			throw new NullPointerException();
-		
 		mID = UUID.randomUUID().toString();
 		mOwner = myOwner;
 		mNextProcessingTime = CurrentTimeUTC.getInMillis();
 		mNextDisplayTime = Long.MAX_VALUE;
 		mDeleteTime = Long.MAX_VALUE;
+	}
+	
+	public void databaseIntegrityTest() throws Exception {
+		checkedActivate(2);
+		
+		IfNull.thenThrow(mID, "mID");
+		
+		// Owner may be null.
+	}
+	
+	public OwnIdentity getOwner() throws NoSuchIdentityException {
+		checkedActivate(2);
+		if(mOwner == null)
+			throw new NoSuchIdentityException();
+		
+		if(mOwner instanceof Persistent)
+			((Persistent)mOwner).initializeTransient(mFreetalk);
+		
+		return mOwner;
 	}
 
 	/**
@@ -77,7 +95,7 @@ public abstract class PersistentTask extends Persistent {
 			checkedActivate(3); // TODO: Figure out a suitable depth.
 			
 			// We cannot throw because PersistentTasks are usually created within the transaction which is used to create the owner.
-			//DBUtil.throwIfNotStored(mDB, mOwner);
+			// if(mOwner != null) DBUtil.throwIfNotStored(mDB, mOwner);
 
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 			
@@ -95,7 +113,7 @@ public abstract class PersistentTask extends Persistent {
 		}
 	}
 	
-	protected void deleteWithoutCommit() {
+	public void deleteWithoutCommit() { // FIXME: Change visibility to protected in 0.1-final-development branch
 		deleteWithoutCommit(3);
 	}
 

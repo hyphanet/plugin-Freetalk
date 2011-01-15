@@ -4,6 +4,8 @@
 package plugins.Freetalk;
 
 import java.lang.reflect.Field;
+import java.util.Date;
+import java.util.Random;
 
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
@@ -11,7 +13,6 @@ import plugins.Freetalk.WoT.WoTMessage;
 import plugins.Freetalk.WoT.WoTMessageFetcher;
 import plugins.Freetalk.WoT.WoTMessageInserter;
 import plugins.Freetalk.WoT.WoTMessageList;
-import plugins.Freetalk.WoT.WoTOldMessageListFetcher;
 import plugins.Freetalk.WoT.WoTMessageListInserter;
 import plugins.Freetalk.WoT.WoTMessageListXML;
 import plugins.Freetalk.WoT.WoTMessageManager;
@@ -19,9 +20,14 @@ import plugins.Freetalk.WoT.WoTMessageRating;
 import plugins.Freetalk.WoT.WoTMessageURI;
 import plugins.Freetalk.WoT.WoTMessageXML;
 import plugins.Freetalk.WoT.WoTNewMessageListFetcher;
+import plugins.Freetalk.WoT.WoTOldMessageListFetcher;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.WoT.WoTOwnMessage;
 import plugins.Freetalk.WoT.WoTOwnMessageList;
+import plugins.Freetalk.exceptions.NoSuchBoardException;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
+import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import plugins.Freetalk.tasks.OwnMessageTask;
 import plugins.Freetalk.tasks.PersistentTask;
 import plugins.Freetalk.tasks.PersistentTaskManager;
@@ -33,6 +39,7 @@ import plugins.Freetalk.ui.web.WebInterface;
 import com.db4o.Db4o;
 import com.db4o.config.Configuration;
 import com.db4o.ext.ExtObjectContainer;
+import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
 import freenet.clients.http.PageMaker.THEME;
@@ -48,6 +55,7 @@ import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -70,10 +78,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	
 	public static final String PLUGIN_URI = "/Freetalk";
 	public static final String PLUGIN_TITLE = "Freetalk-testing"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
-	public static final String WOT_NAME = "plugins.WoT.WoT";
+	public static final String WEB_OF_TRUST_NAME = "WoT"; // FIXME: Change to plugins.WebOfTrust.WebOfTrust.WOT_NAME before 0.1 final release.
+	public static final String WOT_PLUGIN_NAME = "plugins.WoT.WoT";
 	public static final String WOT_CONTEXT = "Freetalk"; // FIXME: Use PLUGIN_TITLE as soon as we change it to "Freetalk"
 	public static final String DATABASE_FILENAME = "freetalk-testing-17.db4o";
-	public static final int DATABASE_FORMAT_VERSION = -83;
+	public static final int DATABASE_FORMAT_VERSION = -79;
 
 	/* References from the node */
 	
@@ -130,6 +139,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		db = openDatabase(databaseFilename);
 		mIdentityManager = new WoTIdentityManager(this);
 		mMessageManager = new WoTMessageManager(this);
+		mTaskManager = new PersistentTaskManager(this, db);
 	}
 
 	public void runPlugin(PluginRespirator myPR) {
@@ -146,8 +156,6 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		if(mConfig.getInt(Config.DATABASE_FORMAT_VERSION) > Freetalk.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("The WoT plugin's database format is newer than the WoT plugin which is being used.");
 		
-		upgradeDatabase();
-		
 		// Create & start the core classes
 		
 		Logger.debug(this, "Creating identity manager...");
@@ -157,7 +165,10 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		mMessageManager = new WoTMessageManager(db, mIdentityManager, this, mPluginRespirator);
 		
 		Logger.debug(this, "Creating task manager...");
-		mTaskManager = new PersistentTaskManager(db, this);
+		mTaskManager = new PersistentTaskManager(this, db);
+		
+		upgradeDatabase();
+		databaseIntegrityTest(); // Some tests need the Identity-/Message-/TaskManager so we call this after creating them.
 		
 		Logger.debug(this, "Creating message XML...");
 		mMessageXML = new WoTMessageXML();
@@ -252,12 +263,17 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
       
         // Registration of indices (also performance)
         
+        // Class Persistent canot apply its annotations to itself, we need to configure the index for it manually.
+        // We need an index on Persistent because we query all Persistent-objects for startup database validation.
+        cfg.objectClass(Persistent.class).indexed(true);
+        
         final Class<? extends Persistent>[] persistentClasses = new Class[] {
         	Board.class,
         	Board.BoardMessageLink.class,
         	Config.class,
         	FetchFailedMarker.class,
         	Message.class,
+        	Message.Attachment.class,
         	MessageList.class,
         	MessageList.MessageReference.class,
         	MessageList.MessageFetchFailedMarker.class,
@@ -266,6 +282,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         	MessageURI.class,
         	OwnMessage.class,
         	OwnMessageList.class,
+        	OwnMessageList.OwnMessageReference.class,
         	SubscribedBoard.class,
         	SubscribedBoard.UnwantedMessageLink.class,
         	SubscribedBoard.MessageReference.class,
@@ -326,11 +343,192 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	private void upgradeDatabase() {
 		int oldVersion = mConfig.getInt(Config.DATABASE_FORMAT_VERSION);
 		
+		// ATTENTION: Make sure that no upgrades are done here which are needed by the constructors of
+		// IdentityManager/MessageManager/PersistentTaskManager - they are created before this function is called.
+		
+		if(oldVersion == -83 || oldVersion == -82 || oldVersion == -81)
+			oldVersion = -80;
+		
+		if(oldVersion == -80) {
+			Logger.normal(this, "Upgrading database version " + oldVersion);
+			
+			synchronized(mMessageManager) {
+				Query q = db.query();
+				q.constrain(OwnMessage.class);
+				
+				Logger.normal(this, "Fixing OwnMessage.mURI and mBoards...");
+				synchronized(db.lock()) {
+					try {
+						for(OwnMessage m : new Persistent.InitializingObjectSet<OwnMessage>(this, q)) {
+							try {
+								// Correct the empty mURI field
+								m.setMessageList((OwnMessageList)m.getMessageList());
+							} catch (NoSuchMessageListException e) { }
+
+
+							// Old versions of Freetalk accidentally stored SubscribedBoards instead of Boards.
+							try {
+								if(m.getReplyToBoard() instanceof SubscribedBoard) {
+									m.mReplyToBoard = mMessageManager.getBoardByName(m.mReplyToBoard.getName());
+								}
+							} catch(NoSuchBoardException e) {}
+
+							m.getBoards(); // For initializeTransient
+							for(int i=0; i < m.mBoards.length; ++i) {
+								if(m.mBoards[i] instanceof SubscribedBoard) {
+									try {
+										m.mBoards[i] = mMessageManager.getBoardByName(m.mBoards[i].getName());
+									} catch (NoSuchBoardException e) {
+										throw new RuntimeException(e);
+									}
+								}
+							}
+
+							m.storeWithoutCommit();
+						}
+						Persistent.checkedCommit(db, this);
+					} catch(RuntimeException e) {
+						Persistent.checkedRollbackAndThrow(db, this, e);
+					}
+				}
+				
+				
+				Logger.normal(this, "Deleting OwnMessageTasks with mOwner==null...");
+				synchronized(mTaskManager) {
+					q = db.query();
+					q.constrain(OwnMessageTask.class);
+					
+					synchronized(db.lock()) {
+						try {
+							for(OwnMessageTask task : new Persistent.InitializingObjectSet<OwnMessageTask>(this, q)) {
+								try {
+									task.getOwner();
+								} catch(NoSuchIdentityException e1) {
+									// Old versions of PersistentTaskManager lacked deletion of tasks on OwnIdentity deletion
+									task.deleteWithoutCommit();
+								}
+							}
+							Persistent.checkedCommit(db, this);
+						} catch(RuntimeException e2) {
+							Persistent.checkedRollbackAndThrow(db, this, e2);
+						}
+					}
+				}
+				
+				Logger.normal(this, "Correcting FetchFailedMarker with negative mNextRetryDate...");
+				q = db.query();
+				q.constrain(FetchFailedMarker.class);
+
+				synchronized(db.lock()) {
+					try {
+						for(FetchFailedMarker marker : new Persistent.InitializingObjectSet<FetchFailedMarker>(this, q)) {
+							if(marker.getDateOfNextRetry().before(marker.getDate())) {
+								assert(marker.getDateOfNextRetry().before(marker.getDate())); // The query is correct
+								marker.setDateOfNextRetry(marker.getDate());
+								marker.storeWithoutCommit();
+							}
+						}
+						Persistent.checkedCommit(db, this);
+					} catch(RuntimeException e) {
+						Persistent.checkedRollbackAndThrow(db, this, e);
+					}
+				}
+			}
+			
+			Random random = getPluginRespirator().getNode().random;
+			
+			synchronized(mMessageManager) {
+				Query q = db.query();
+				q.constrain(SubscribedBoard.MessageReference.class);
+				
+				Logger.normal(this, "Setting wanted-check information on existing message references...");
+				synchronized(db.lock()) {
+					try {
+						for(SubscribedBoard.MessageReference ref : new Persistent.InitializingObjectSet<SubscribedBoard.MessageReference>(this, q)) {
+							try {
+								ref.getMessage();
+								ref.mLastWantedCheckDate = CurrentTimeUTC.get();
+								ref.mNextWantedCheckDate = new Date(CurrentTimeUTC.getInMillis() 
+										+ SubscribedBoard.MessageReference.MINIMAL_RETRY_DELAY
+										+ Math.abs(random.nextLong() % (20 * SubscribedBoard.MessageReference.MINIMAL_RETRY_DELAY)));
+							} catch(NoSuchMessageException e) {
+								ref.mLastWantedCheckDate = null;
+								ref.mNextWantedCheckDate = null;
+								ref.mNumberOfWantedChecks = 0;
+							}
+							ref.storeWithoutCommit();
+						}
+						Persistent.checkedCommit(db, this);
+					} catch(RuntimeException e) {
+						Persistent.checkedRollbackAndThrow(db, this, e);
+					}
+				}
+				
+				Logger.normal(this, "Correcting UnwantedMessageLinks...");
+				q = db.query();
+				q.constrain(SubscribedBoard.UnwantedMessageLink.class);
+				synchronized(db.lock()) {
+					try {
+						for(SubscribedBoard.UnwantedMessageLink link : new Persistent.InitializingObjectSet<SubscribedBoard.UnwantedMessageLink>(this, q)) {
+							boolean found = false;
+							for(SubscribedBoard.MessageReference ref : link.getBoard().getMessageReferences(link.getMessage().getID())) {
+								try {
+									ref.getMessage();
+									found = true;
+									break;
+								} catch(NoSuchMessageException e) {}
+							}
+							
+							if(found) {
+								link.deleteWithoutCommit();
+								// This database-upgrade code also triggers recheck of the wanted state of all messages, therefore
+								// we do not need to delete the message here...
+							} else {
+								link.mLastRetryDate = CurrentTimeUTC.get();
+								link.mNextRetryDate = new Date(CurrentTimeUTC.getInMillis() 
+										+  SubscribedBoard.UnwantedMessageLink.MINIMAL_RETRY_DELAY
+										+ Math.abs(random.nextLong() % (20 * SubscribedBoard.UnwantedMessageLink.MINIMAL_RETRY_DELAY)));
+								link.storeWithoutCommit();
+							}
+						}
+						Persistent.checkedCommit(db, this);
+					} catch(RuntimeException e) {
+						Persistent.checkedRollbackAndThrow(db, this, e);
+					}
+				}
+			}
+			
+			mConfig.set(Config.DATABASE_FORMAT_VERSION, ++oldVersion);
+			mConfig.storeAndCommit();
+			Logger.normal(this, "Upgraded database to version " + oldVersion);
+		}
+		
 		if(oldVersion == Freetalk.DATABASE_FORMAT_VERSION)
 			return;
 		
 		throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
 				+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");
+	}
+	
+	private void databaseIntegrityTest() {
+		Logger.debug(this, "Testing database integrity...");
+		synchronized(mIdentityManager) {
+		synchronized(mMessageManager) {
+		synchronized(mTaskManager) {
+			final Query q = db.query();
+			q.constrain(Persistent.class);
+	
+			for(final Persistent p : new Persistent.InitializingObjectSet<Persistent>(this, q)) {
+				try {
+					p.databaseIntegrityTest();
+				} catch(Exception e) {
+					Logger.error(this, "Integrity test failed for " + p, e);
+				}
+			}
+		}
+		}
+		}
+		Logger.debug(this, "Database integrity test finished.");
 	}
 
 	private void closeDatabase() {
