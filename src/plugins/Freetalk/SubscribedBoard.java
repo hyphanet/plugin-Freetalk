@@ -438,6 +438,7 @@ public final class SubscribedBoard extends Board {
 	    		// We do not delete the ThreadLink if it has replies already: We want the replies to stay visible and therefore the ThreadLink has to be kept,
 	    		// so we mark it as a ghost thread.
 	    		threadLink.removeThreadMessage();
+	    		threadLink.storeWithoutCommit();
 	    	}
 	    	
 	    	if(unwantedLinkDeleted) {
@@ -479,7 +480,6 @@ public final class SubscribedBoard extends Board {
 				if(!replyLinkThreadID.equals(threadID)) {
 					Logger.error(this, "Invalid BoardReplyLink found in database: Message was not null even though it is the wrong thread: " 
 							+ replyLink);
-					continue; // Keep the ghost links intact
 				}
 					
 			} catch(NoSuchMessageException e) {
@@ -513,7 +513,7 @@ public final class SubscribedBoard extends Board {
 							try {
 								// Only a non-ghost reply can cause a ghost reply to exist.
 								// Therefore we do getMessage() to ensure that the reply is not a ghost.
-								if(!otherReply.equals(replyLink) && otherReply.getMessage().getParentID().equals(parentLink.getMessageID())) {
+								if(otherReply != replyLink && otherReply.getMessage().getParentID().equals(parentLink.getMessageID())) {
 									deleteParentLink = false;
 									break;
 								}
@@ -535,7 +535,7 @@ public final class SubscribedBoard extends Board {
 						// Only a non-ghost reply can cause a ghost reply to exist.
 						// Therefore we do getMessage() to ensure that the reply is not a ghost.
 						if(otherReply.getMessage().getParentID().equals(messageID)) {
-							// (Messages cannot be their own parents so we don't have to check for otherReply.equals(replyLink))
+							// (Messages cannot be their own parents so we don't have to check for otherReply != replyLink)
 							deleteReplyLink = false;
 							break;
 						}
@@ -544,8 +544,10 @@ public final class SubscribedBoard extends Board {
 				
 				if(deleteReplyLink)
 					replyLink.deleteWithoutCommit();
-				else
+				else {
 					replyLink.removeMessage();
+					replyLink.storeWithoutCommit();
+				}
 			}
 			
 			// Now we must update the parent thread or delete it if has become a ghost 
@@ -566,8 +568,10 @@ public final class SubscribedBoard extends Board {
 					}
 				}
 				
-				if(threadLink != null)
+				if(threadLink != null) {
 					threadLink.onMessageRemoved(message);
+					threadLink.storeWithoutCommit();
+				}
 			}
     	}
     }
@@ -1076,6 +1080,12 @@ public final class SubscribedBoard extends Board {
         	
         	if(getBoard().getMessageReferences(getMessage().getID()).size() > 0)
         			throw new IllegalStateException("Both UnwantedMessageLink and MessageReference exist for " + mMessage);
+        	
+        	try {
+        		getBoard().getParentBoard().getMessageLink(mMessage);
+        	} catch(NoSuchMessageException e) {
+        		throw new IllegalStateException("Parent board does not have my message: " + mMessage);
+        	}
     	}
     	
     	protected SubscribedBoard getBoard() {
@@ -1271,6 +1281,12 @@ public final class SubscribedBoard extends Board {
 	    		
 	    		if(!getBoard().contains(message))
 	    			throw new IllegalStateException("mBoard == " + mBoard + " does not contain mMessage == " + mMessage);
+	    		
+	           	try {
+	        		getBoard().getParentBoard().getMessageLink(mMessage);
+	        	} catch(NoSuchMessageException e) {
+	        		throw new IllegalStateException("Parent board does not have my message: " + mMessage);
+	        	}
 	    		
 	    		IfNotEquals.thenThrow(mAuthorID, message.getAuthor().getID(), "mAuthorID");
 	    		IfNotEquals.thenThrow(mMessageID, message.getID(), "mMessageID");
@@ -1506,6 +1522,21 @@ public final class SubscribedBoard extends Board {
 	    		if(getMessage().isThread())
 	    			throw new IllegalStateException("mMessage is thread: " + mMessage);
     		} catch(NoSuchMessageException e) {}
+    		
+    		if(mMessage == null) {
+    			boolean isValidGhost = false;
+    			
+    			for(BoardReplyLink reply : mBoard.getReplyLinks(mMessageID)) {
+    				try {
+    					reply.getMessage();
+    					isValidGhost = true;
+    					break;
+    				} catch(NoSuchMessageException e) {}
+    			}
+    			
+    			if(!isValidGhost)
+    				throw new IllegalStateException("BoardReplyLink has no message and no replies with a message");
+    		}
     	}
     	
     }
