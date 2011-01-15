@@ -1,6 +1,7 @@
 package plugins.Freetalk;
 
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -17,8 +18,7 @@ public class Quoting {
 		Bold,
 		Italic,
 		Code,
-		Key,
-		URL;
+		Link;
 	
 		public static TextElementType fromString(String tag) {
 			if (tag.equals(""))
@@ -31,10 +31,8 @@ public class Quoting {
 				return Italic;
 			else if (tag.equalsIgnoreCase("code"))
 				return Code;
-			else if (tag.equalsIgnoreCase("key"))
-				return Key;
-			else if (tag.equalsIgnoreCase("url"))
-				return URL;
+			else if (tag.equalsIgnoreCase("link") || tag.equalsIgnoreCase("url") || tag.equalsIgnoreCase("uri"))
+				return Link;
 	
 			return Error;
 		}
@@ -42,12 +40,19 @@ public class Quoting {
 
 	public final static class TextElement {
 		public final TextElementType mType;
+		
+		// FIXME: For [tag key1=value1 key2=value2], fill with the key/value pairs
+		// This will require quite some modification of the parser but allow [quote author=name message=messageID] and various
+		// other beautiful bbcodes
+		public final Hashtable<String, String> mAttributes;
+		
 		public String mContent;
 		public final List<TextElement> mChildren;
 		public int mConsumedLength;
 	
 		public TextElement(TextElementType myType) {
 			mType = myType;
+			mAttributes = new Hashtable<String, String>();
 			mContent = "";
 			mChildren = new ArrayList<TextElement>();
 			mConsumedLength = 0;
@@ -70,9 +75,11 @@ public class Quoting {
 	}
 
 	public static String getFullQuote(Message message) {
-		return "[quote=\""+message.getAuthor().getFreetalkAddress() + "\"]\n" + message.getText() + "\n[/quote]\n";
+		return "[quote author=\""+message.getAuthor().getFreetalkAddress() + "\" message=\"" + message.getID() + "\"]\n" + message.getText() + "\n[/quote]\n";
 	}
 
+	// FIXME: Make this actually support the [quote Author=blah Message=bleh] stuff .. Right now it only understands [quote=author-freetalk-address]
+	// FIXME: Make the UI support it as well
 	public static final Quoting.TextElement parseText(String currentText, String tag, String arg, int maxRecursion) {
 		if (maxRecursion < 0) {
 			return new Quoting.TextElement(TextElementType.Error);
@@ -153,7 +160,7 @@ public class Quoting {
 					result.mConsumedLength += subElement.mConsumedLength;
 				}
 			} else if (textEndPos == keyPos) {
-				Quoting.TextElement newElement = new Quoting.TextElement(TextElementType.Key);
+				Quoting.TextElement newElement = new Quoting.TextElement(TextElementType.Link);
 				newElement.mContent = keyMatcher.group();
 				newElement.mConsumedLength = newElement.mContent.length();
 				result.mChildren.add(newElement);
