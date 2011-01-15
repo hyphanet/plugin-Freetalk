@@ -22,8 +22,8 @@ import freenet.clients.http.PageMaker;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
 
-import plugins.Freetalk.Message;
-import plugins.Freetalk.Message.TextElement;
+import plugins.Freetalk.Quoting;
+import plugins.Freetalk.Quoting.TextElement;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 
 /**
@@ -53,7 +53,7 @@ public class PreviewPane {
 		previewNode.addChild(infobox.outer);
 		HTMLNode messageBodyNode = infobox.content.addChild("div", "class", "body");
 		// FIXME: usage of static functions, need to add a separate class for bbcode parsing/converting?
-		TextElement element = Message.parseText(messageText, "", "" ,20);
+		Quoting.TextElement element = Quoting.parseText(messageText, "", "" ,20);
 		ThreadPage.elementsToHTML(messageBodyNode, element.mChildren, identityManager);
 		return previewNode;
 	}

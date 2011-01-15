@@ -17,9 +17,9 @@ import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Identity;
 import plugins.Freetalk.Message;
-import plugins.Freetalk.Message.TextElement;
-import plugins.Freetalk.Message.TextElementType;
 import plugins.Freetalk.OwnIdentity;
+import plugins.Freetalk.Quoting;
+import plugins.Freetalk.Quoting.TextElement;
 import plugins.Freetalk.SubscribedBoard;
 import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
@@ -377,13 +377,13 @@ public final class ThreadPage extends WebPageImpl {
 		// Body of the message
 		row = table.addChild("tr", "class", "body");
 		HTMLNode text = row.addChild("td", "align", "left", "");
-		TextElement element = message.parseMessageText();
+		Quoting.TextElement element = Quoting.parseMessageText(message);
 		elementsToHTML(text, element.mChildren, mFreetalk.getIdentityManager());
 		addReplyButton(text, message.getID());
 	}
 
-	public static void elementsToHTML(HTMLNode parent, List<TextElement> elements, WoTIdentityManager identityManager) {
-		for (final TextElement t : elements) {
+	public static void elementsToHTML(HTMLNode parent, List<Quoting.TextElement> elements, WoTIdentityManager identityManager) {
+		for (final Quoting.TextElement t : elements) {
 			switch(t.mType) {
 			case PlainText: {
 				parent.addChild("#", t.mContent);
