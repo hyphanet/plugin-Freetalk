@@ -1526,11 +1526,14 @@ public final class SubscribedBoard extends Board {
     		if(mMessage == null) {
     			boolean isValidGhost = false;
     			
-    			for(BoardReplyLink reply : mBoard.getReplyLinks(mMessageID)) {
+    			for(BoardReplyLink reply : getBoard().getAllThreadReplies(mThreadID, false)) {
     				try {
-    					reply.getMessage();
-    					isValidGhost = true;
-    					break;
+						// A message is a valid ghost if a reply to it exists which has a Message object stored 
+						// which makes getMessage NOT throw...
+    					if(reply.getMessage().getParentID().equals(mMessageID)) {
+	    					isValidGhost = true;
+	    					break;
+    					}
     				} catch(NoSuchMessageException e) {}
     			}
     			
