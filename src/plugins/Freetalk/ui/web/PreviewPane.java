@@ -17,6 +17,8 @@
 
 package plugins.Freetalk.ui.web;
 
+import plugins.Freetalk.Quoting;
+import plugins.Freetalk.WoT.WoTIdentityManager;
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.PageMaker;
 import freenet.l10n.BaseL10n;
@@ -43,13 +45,13 @@ public class PreviewPane {
 	 *            The text of the message
 	 * @return An HTMLNode containing the preview
 	 */
-	public static HTMLNode createPreviewPane(PageMaker pageMaker, BaseL10n l10n, String messageSubject, String messageText) {
+	public static HTMLNode createPreviewPane(PageMaker pageMaker, BaseL10n l10n, String messageSubject, String messageText, WoTIdentityManager identityManager) {
 		HTMLNode previewNode = new HTMLNode("div", "class", "message");
 		InfoboxNode infobox = pageMaker.getInfobox(l10n.getString("PreviewPane.Header.Preview", "subject", messageSubject));
 		previewNode.addChild(infobox.outer);
 		HTMLNode messageBodyNode = infobox.content.addChild("div", "class", "body");
-		HTMLNode formattedMessage = ThreadPage.convertMessageBody(messageText);
-		messageBodyNode.addChild(formattedMessage);
+		Quoting.TextElement element = Quoting.parseText(messageText);
+		ThreadPage.elementsToHTML(messageBodyNode, element.mChildren, identityManager);
 		return previewNode;
 	}
 

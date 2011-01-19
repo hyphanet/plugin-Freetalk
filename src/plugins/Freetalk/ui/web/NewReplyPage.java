@@ -30,82 +30,82 @@ import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
 public class NewReplyPage extends WebPageImpl {
-	
+
 	public static final byte INCREASE_TRUST_VALUE = 10;
-	
+
 	public static final byte DECREASE_TRUST_VALUE = -10;
-	
+
 
 	private final SubscribedBoard mBoard;
 	private final BoardThreadLink mParentThread;
 	private final Message mParentMessage;
 
-	public NewReplyPage(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) 
+	public NewReplyPage(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n)
 	throws NoSuchBoardException, NoSuchMessageException {
 		super(myWebInterface, viewer, request, _baseL10n);
 		mBoard = mFreetalk.getMessageManager().getSubscription(mOwnIdentity, request.getPartAsStringFailsafe("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
-		
+
 		mParentThread = mBoard.getThreadLink(request.getPartAsStringFailsafe("ParentThreadID", 128));
 		mParentMessage = mFreetalk.getMessageManager().get(request.getPartAsStringFailsafe("ParentMessageID", 128)); /* TODO: adapt to maximal ID length when it has been decided */
 	}
 
 	public void make() {
 		makeBreadcrumbs();
-		
+
 		if((mRequest.isPartSet("CreateReply") || mRequest.isPartSet("CreatePreview")) && mRequest.getMethod().equals("POST")) {
 			HashSet<Board> boards = new HashSet<Board>();
 			boards.add(mBoard.getParentBoard());
-			
+
 			String replySubject = "";
 			String replyText = "";
 			byte selectedMessageRating = 0;
-			
+
 			try {
 				 replySubject = mRequest.getPartAsStringFailsafe("ReplySubject", Message.MAX_MESSAGE_TITLE_TEXT_LENGTH * 2);
 				 replyText = mRequest.getPartAsStringFailsafe("ReplyText", Message.MAX_MESSAGE_TEXT_LENGTH * 2);
-				
+
 				if(replySubject.length() > Message.MAX_MESSAGE_TITLE_TEXT_LENGTH)
 					throw new Exception(l10n().getString("Common.Message.Subject.TooLong", "limit", Integer.toString(Message.MAX_MESSAGE_TITLE_TEXT_LENGTH)));
-				
+
 				if(replyText.length() > Message.MAX_MESSAGE_TEXT_LENGTH)
 					throw new Exception(l10n().getString("Common.Message.Text.TooLong", "limit", Integer.toString(Message.MAX_MESSAGE_TEXT_LENGTH)));
-				
+
 				selectedMessageRating = getMessageRating(mRequest);
-				
+
 				if (mRequest.isPartSet("CreatePreview")) {
-					mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), replySubject, replyText));
+					mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), replySubject, replyText, mFreetalk.getIdentityManager()));
 					makeNewReplyPage(replySubject, replyText, selectedMessageRating);
 				}
 				else {
 				MessageURI parentThreadURI;
-					
+
 				try {
 					parentThreadURI = mParentThread.getMessage().getURI();
 				}
 				catch(MessageNotFetchedException e) {
 					parentThreadURI = mParentMessage.getThreadURI();
 				}
-					
+
 				// We do not always use the thread URI of the parent message because it might be the thread itself, then getThreadURI() will fail - threads have none.
 				// Further, we cannot do "parentThreadURI = mParentMessage.isThread() ? mParentMessage.getURI() : mParentMessage.getThreadURI()" because
 				// the parent thread might be a forked thread, i.e. isThread() will return false and getThreadURI() will return the URI of the original thread
 				// - the replies would go to the original thread instead of to the forked one where they actually should go to.
-				
+
 				mFreetalk.getMessageManager().postMessage(parentThreadURI,
 						mParentMessage, boards, mBoard.getParentBoard(), mOwnIdentity, replySubject, null, replyText, null);
 
 				HTMLNode successBox = addContentBox(l10n().getString("NewReplyPage.ReplyCreated.Header"));
-				successBox.addChild("p", l10n().getString("NewReplyPage.ReplyCreated.Text")); 
-				
+				successBox.addChild("p", l10n().getString("NewReplyPage.ReplyCreated.Text"));
+
 				HTMLNode aChild = successBox.addChild("#");
                 l10n().addL10nSubstitution(
                         aChild, 
                         "NewReplyPage.ReplyCreated.BackToParentThread",
                         new String[] { "link" }, 
                         new HTMLNode[] { HTMLNode.link(ThreadPage.getURI(mBoard, mParentThread)) });
-				
+
 				successBox.addChild("br");
-				
+
 				aChild = successBox.addChild("#");
                 l10n().addL10nSubstitution(
                         aChild, 
@@ -118,7 +118,7 @@ public class NewReplyPage extends WebPageImpl {
 			} catch (Exception e) {
 				HTMLNode alertBox = addAlertBox(l10n().getString("NewReplyPage.ReplyFailed.Header"));
 				alertBox.addChild("div", e.getMessage());
-				
+
 				makeNewReplyPage(replySubject, replyText, selectedMessageRating);
 			}
 			return;
@@ -126,28 +126,28 @@ public class NewReplyPage extends WebPageImpl {
 			String subject = mParentMessage.getTitle();
 			if(!subject.startsWith("Re:"))
 				subject = "Re: " + subject;
-			
+
 			String text = Quoting.getFullQuote(mParentMessage);
-	
+
 			makeNewReplyPage(subject, text, null);
 		}
 	}
-	
+
 	private static byte getMessageRating(HTTPRequest request) {
 		if(!request.isPartSet("RateMessage"))
 			return 0;
-		
+
 		return (byte)request.getIntPart("RateMessage", 0);
 	}
-	
+
 	private void rateMessage(byte value) {
 		if(value == 0) // No change
 			return;
-		
+
 		try {
 			WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 			WoTMessageManager messageManager = (WoTMessageManager)mFreetalk.getMessageManager();
-			
+
 			synchronized(identityManager) {
 			synchronized (messageManager) {
 				WoTMessage message = (WoTMessage)messageManager.get(mParentMessage.getID()); // It might have be deleted meanwhile, we must re-query
@@ -164,57 +164,76 @@ public class NewReplyPage extends WebPageImpl {
 	}
 
 	private void makeNewReplyPage(String replySubject, String replyText, Byte selectedMessageRating) {
-	    
-	    final String trnsl = l10n().getString(
-	            "NewReplyPage.ReplyBox.Header",
-	            new String[] { "boardname" }, 
-	            new String[] { mBoard.getName() });
+
+		final String trnsl = l10n().getString(
+				"NewReplyPage.ReplyBox.Header",
+				new String[] { "boardname" },
+				new String[] { mBoard.getName() });
 		HTMLNode replyBox = addContentBox(trnsl);
-	    
+
 		HTMLNode newReplyForm = addFormChild(replyBox, Freetalk.PLUGIN_URI + "/NewReply", "NewReply");
 		newReplyForm.addChild("input", new String[] { "type", "name", "value"}, new String[] {"hidden", "BoardName", mBoard.getName()});
 		newReplyForm.addChild("input", new String[] { "type", "name", "value"}, new String[] {"hidden", "ParentThreadID", mParentThread.getThreadID()});
 		newReplyForm.addChild("input", new String[] { "type", "name", "value"}, new String[] {"hidden", "ParentMessageID", mParentMessage.getID()});
-		
+
 		HTMLNode authorBox = newReplyForm.addChild(getContentBox(l10n().getString("NewReplyPage.ReplyBox.Author")));
 		authorBox.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
 		authorBox.addChild("b", mOwnIdentity.getFreetalkAddress());
-		
+
 		HTMLNode subjectBox = newReplyForm.addChild(getContentBox(l10n().getString("NewReplyPage.ReplyBox.Subject")));
 		subjectBox.addChild("input", new String[] {"type", "name", "size", "maxlength", "value"},
-									new String[] {"text", "ReplySubject", "100", Integer.toString(Message.MAX_MESSAGE_TITLE_TEXT_LENGTH), replySubject});		
-		
+									new String[] {"text", "ReplySubject", "100", Integer.toString(Message.MAX_MESSAGE_TITLE_TEXT_LENGTH), replySubject});
+
 		HTMLNode textBox = newReplyForm.addChild(getContentBox(l10n().getString("NewReplyPage.ReplyBox.Text")));
-		textBox.addChild("textarea", new String[] { "name", "cols", "rows", "style" }, // TODO: Use a CSS stylesheet file
-				new String[] { "ReplyText", "80", "30", "font-size: medium;" }, replyText);
-		
+		textBox.addChild("textarea", new String[] { "name", "cols", "rows", "style", "wrap" }, // TODO: Use a CSS stylesheet file
+				new String[] { "ReplyText", "80", "30", "font-size: medium;", "soft" }, replyText);
+
 		addRateMessageBox(newReplyForm, selectedMessageRating);
-		
+
 		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateReply", l10n().getString("NewReplyPage.ReplyBox.SubmitButton")});
 		newReplyForm.addChild(PreviewPane.createPreviewButton(l10n(), "CreatePreview"));
+
+		HTMLNode bbcodeBox = getContentBox("BBCode");
+		addBBCodeList(bbcodeBox);
+		newReplyForm.addChild(bbcodeBox);
 	}
 	
+	public static void addBBCodeList(HTMLNode box) {
+		// TODO: l10n
+		// TODO: Do not embed HTML below!
+		box.addChild("%", "Freetalk supports <a href=\"/?_CHECKED_HTTP_=http://en.wikipedia.org/wiki/BBCode\">BBCode</a>. The following tags are supported:");
+		HTMLNode list = box.addChild("ul");
+		list.addChild("li", "[b] bolded text [/b]");
+		list.addChild("li", "[i] italicized text [/i]");
+		list.addChild("li", "[link] http://example.org [/link]");
+		list.addChild("li", "[link] KSK@freenet-link [/link]");
+		list.addChild("li", "[quote] quoted text [/quote]");
+		list.addChild("li", "[quote author=name] quoted text with author [/quote]");
+		list.addChild("li", "[quote author=name message=message-id] quoted text with author and message ID [/quote]");
+		list.addChild("li", "[code] monospaced text [/code]");
+	}
+
 	private void addRateMessageBox(HTMLNode parent, Byte selectedMessageRating) {
 		Identity identity = mParentMessage.getAuthor();
-		
+
 		if(identity == mOwnIdentity)
 			return;
-		
+
 		HTMLNode rateMessageBox = getContentBox(l10n().getString(
-	            "NewReplyPage.RateMessageBox.Header",
-	            new String[] { "identityname" }, 
-	            new String[] { identity.getShortestUniqueName() }));
-		
+				"NewReplyPage.RateMessageBox.Header",
+				new String[] { "identityname" },
+				new String[] { identity.getShortestUniqueName() }));
+
 		parent.addChild(rateMessageBox);
-		
+
 		try {
 			mFreetalk.getMessageManager().getMessageRating(mOwnIdentity, mParentMessage);
 			rateMessageBox.addChild("#", l10n().getString("NewReplyPage.RateMessageBox.AlreadyRated"));
 			return;
 		} catch(NoSuchMessageRatingException e) { }
-		
+
 		Byte currentTrust = null;
-		
+
 		try {
 			currentTrust = mFreetalk.getIdentityManager().getTrust((WoTOwnIdentity)mOwnIdentity, (WoTIdentity)identity);
 		} catch(NotTrustedException e) {
@@ -224,16 +243,16 @@ public class NewReplyPage extends WebPageImpl {
 			rateMessageBox.addChild("p", l10n().getString("NewReplyPage.RateMessageBox.GetTrustError")); // TODO: Show the exception & stack trace
 			return;
 		}
-		
+
 		rateMessageBox.addChild("p", l10n().getString("NewReplyPage.RateMessageBox.CurrentTrust", "value",
 				(currentTrust!= null ? currentTrust.toString() : l10n().getString("Common.WebOfTrust.Trust.None"))));
-		
+
 		HTMLNode increaseTrustDiv = rateMessageBox.addChild("div");
 		HTMLNode keepTrustDiv = rateMessageBox.addChild("div");
 		HTMLNode decreaseTrustDiv = rateMessageBox.addChild("div");
-		
+
 		HTMLNode selectedRadio;
-		
+
 		if(selectedMessageRating == null)
 			selectedRadio = increaseTrustDiv;
 		else {
@@ -244,48 +263,48 @@ public class NewReplyPage extends WebPageImpl {
 			else
 				selectedRadio = decreaseTrustDiv;
 		}
-		
+
 		// TODO: Move those computations to class WoTMessageRating... there it is also explained why we dont just check for currentTrust<100 ...
-		final boolean increasePossible = currentTrust == null || (currentTrust+INCREASE_TRUST_VALUE)<=100;  // TODO: Use a constant 
+		final boolean increasePossible = currentTrust == null || (currentTrust+INCREASE_TRUST_VALUE)<=100;  // TODO: Use a constant
 		final boolean decreasePossible = currentTrust == null || (currentTrust+DECREASE_TRUST_VALUE) >= -100;
-		final boolean increaseWillUnIgnore = currentTrust != null && currentTrust<0 && (currentTrust+INCREASE_TRUST_VALUE) >= 0; 
-		final boolean decreaseWillIgnore = currentTrust == null || (currentTrust >=0 && (currentTrust+DECREASE_TRUST_VALUE) < 0); 
-		
+		final boolean increaseWillUnIgnore = currentTrust != null && currentTrust<0 && (currentTrust+INCREASE_TRUST_VALUE) >= 0;
+		final boolean decreaseWillIgnore = currentTrust == null || (currentTrust >=0 && (currentTrust+DECREASE_TRUST_VALUE) < 0);
+
 		if(increasePossible) {
 			HTMLNode increaseTrustRadio = increaseTrustDiv.addChild("input",
 				new String[] { "type", "name", "value"},
 				new String[] { "radio", "RateMessage" , Integer.toString(INCREASE_TRUST_VALUE)});
-			
+
 			if(selectedRadio == increaseTrustDiv)
 				increaseTrustRadio.addAttribute("checked", "checked");
-			
+
 			if(!increaseWillUnIgnore)
 				increaseTrustDiv.addChild("#", l10n().getString("NewReplyPage.RateMessageBox.IncreaseTrust", "value", Byte.toString(INCREASE_TRUST_VALUE)));
 			else
 				increaseTrustDiv.addChild("#", l10n().getString("NewReplyPage.RateMessageBox.IncreaseTrustToPositive", "value", Byte.toString(INCREASE_TRUST_VALUE)));
 		}
-		
+
 		HTMLNode keepTrustRadio = keepTrustDiv.addChild("input",
 			new String[] { "type", "name", "value" },
 			new String[] { "radio", "RateMessage" , "0"});
-		
-		if(selectedRadio == keepTrustDiv || 
+
+		if(selectedRadio == keepTrustDiv ||
 				(selectedRadio == increaseTrustDiv && !increasePossible) ||
 				(selectedRadio == decreaseTrustDiv && !decreasePossible))  {
 			keepTrustRadio.addAttribute("checked", "checked");
 		}
-		
+
 		keepTrustDiv.addChild("#", l10n().getString("NewReplyPage.RateMessageBox.KeepTrust"));
-			
+
 
 		if(decreasePossible) {
 			HTMLNode decreaseTrustRadio = decreaseTrustDiv.addChild("input",
 					new String[] { "type", "name", "value" },
 					new String[] { "radio", "RateMessage" , Integer.toString(DECREASE_TRUST_VALUE)});
-			
+
 			if(selectedRadio == decreaseTrustDiv)
 				decreaseTrustRadio.addAttribute("checked", "checked");
-			
+
 			if(!decreaseWillIgnore)
 				decreaseTrustDiv.addChild("#", l10n().getString("NewReplyPage.RateMessageBox.DecreaseTrust", "value", Byte.toString(DECREASE_TRUST_VALUE)));
 			else
