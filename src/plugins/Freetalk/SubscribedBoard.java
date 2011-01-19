@@ -442,7 +442,7 @@ public final class SubscribedBoard extends Board {
 	    	}
 	    	
 	    	if(unwantedLinkDeleted) {
-	    		Logger.error(this, "Message was linked in even though it was marked as unwanted: " + message);
+	    		Logger.error(this, "Message was linked in even though it was marked as unwanted: " + message, new RuntimeException());
 	    	}
     	}
     	catch(NoSuchMessageException e) { // getThreadReference failed
@@ -490,7 +490,7 @@ public final class SubscribedBoard extends Board {
 			// Now we are in the right thread (thread ID matches) and the current replyLink has the message object we are looking for
 
 			if(unwantedLinkDeleted) {
-				Logger.error(this, "Message was linked in even though it was marked as unwanted: " + message);
+				Logger.error(this, "Message was linked in even though it was marked as unwanted: " + message, new RuntimeException());
 			}
 			
 			// Remember:
