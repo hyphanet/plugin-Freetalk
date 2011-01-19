@@ -6,6 +6,7 @@ package plugins.Freetalk.WoT;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Random;
@@ -930,6 +931,9 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	
 	public void start() {
 		Logger.debug(this, "Starting...");
+		
+		deleteDuplicateIdentities();
+		
 		mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), 0, false, true);
 		
 		// TODO: Queue this as a job aswell.
@@ -940,6 +944,50 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		}
 		
 		Logger.debug(this, "Started.");
+	}
+	
+	/**
+	 * Checks for duplicate identity objects and deletes duplicates if they exist.
+	 * I have absolutely NO idea why Bombe does happen to have a duplicate identity, I see no code path which could cause this.
+	 * TODO: Get rid of this function if nobody reports a duplicate for some time - the function was added at 2011-01-10
+	 */
+	private synchronized void deleteDuplicateIdentities() {
+		WoTMessageManager messageManager = mFreetalk.getMessageManager();
+		PersistentTaskManager taskManager = mFreetalk.getTaskManager();
+		
+		synchronized(messageManager) {
+		synchronized(taskManager) {
+		synchronized(db.lock()) {
+			try {
+				HashSet<String> deleted = new HashSet<String>();
+
+				Logger.normal(this, "Searching for duplicate identities ...");
+
+				for(WoTIdentity identity : getAllIdentities()) {
+					Query q = db.query();
+					q.constrain(WoTIdentity.class);
+					q.descend("mID").constrain(identity.getID());
+					q.constrain(identity).identity().not();
+					ObjectSet<WoTIdentity> duplicates = new Persistent.InitializingObjectSet<WoTIdentity>(mFreetalk, q);
+					
+					for(WoTIdentity duplicate : duplicates) {
+						if(deleted.contains(duplicate.getID()) == false) {
+							Logger.error(duplicate, "Deleting duplicate identity " + duplicate.getRequestURI());
+							deleteIdentity(duplicate, messageManager, taskManager);
+						}
+					}
+					deleted.add(identity.getID());
+				}
+				Persistent.checkedCommit(db, this);
+
+				Logger.normal(this, "Finished searching for duplicate identities.");
+			}
+			catch(RuntimeException e) {
+				Persistent.checkedRollback(db, this, e);
+			}
+		}
+		}
+		}
 	}
 	
 	public void terminate() {

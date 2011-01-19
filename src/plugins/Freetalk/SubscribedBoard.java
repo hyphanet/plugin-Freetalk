@@ -438,6 +438,7 @@ public final class SubscribedBoard extends Board {
 	    		// We do not delete the ThreadLink if it has replies already: We want the replies to stay visible and therefore the ThreadLink has to be kept,
 	    		// so we mark it as a ghost thread.
 	    		threadLink.removeThreadMessage();
+	    		threadLink.storeWithoutCommit();
 	    	}
 	    	
 	    	if(unwantedLinkDeleted) {
@@ -479,7 +480,6 @@ public final class SubscribedBoard extends Board {
 				if(!replyLinkThreadID.equals(threadID)) {
 					Logger.error(this, "Invalid BoardReplyLink found in database: Message was not null even though it is the wrong thread: " 
 							+ replyLink);
-					continue; // Keep the ghost links intact
 				}
 					
 			} catch(NoSuchMessageException e) {
@@ -513,7 +513,7 @@ public final class SubscribedBoard extends Board {
 							try {
 								// Only a non-ghost reply can cause a ghost reply to exist.
 								// Therefore we do getMessage() to ensure that the reply is not a ghost.
-								if(!otherReply.equals(replyLink) && otherReply.getMessage().getParentID().equals(parentLink.getMessageID())) {
+								if(otherReply != replyLink && otherReply.getMessage().getParentID().equals(parentLink.getMessageID())) {
 									deleteParentLink = false;
 									break;
 								}
@@ -535,7 +535,7 @@ public final class SubscribedBoard extends Board {
 						// Only a non-ghost reply can cause a ghost reply to exist.
 						// Therefore we do getMessage() to ensure that the reply is not a ghost.
 						if(otherReply.getMessage().getParentID().equals(messageID)) {
-							// (Messages cannot be their own parents so we don't have to check for otherReply.equals(replyLink))
+							// (Messages cannot be their own parents so we don't have to check for otherReply != replyLink)
 							deleteReplyLink = false;
 							break;
 						}
@@ -544,8 +544,10 @@ public final class SubscribedBoard extends Board {
 				
 				if(deleteReplyLink)
 					replyLink.deleteWithoutCommit();
-				else
+				else {
 					replyLink.removeMessage();
+					replyLink.storeWithoutCommit();
+				}
 			}
 			
 			// Now we must update the parent thread or delete it if has become a ghost 
@@ -566,8 +568,10 @@ public final class SubscribedBoard extends Board {
 					}
 				}
 				
-				if(threadLink != null)
+				if(threadLink != null) {
 					threadLink.onMessageRemoved(message);
+					threadLink.storeWithoutCommit();
+				}
 			}
     	}
     }
@@ -1076,6 +1080,12 @@ public final class SubscribedBoard extends Board {
         	
         	if(getBoard().getMessageLinks(getMessage().getID()).size() > 0)
         			throw new IllegalStateException("Both UnwantedMessageLink and BoardMessageLink exist for " + mMessage);
+        	
+        	try {
+        		getBoard().getParentBoard().getDownloadedMessageLink(mMessage);
+        	} catch(NoSuchMessageException e) {
+        		throw new IllegalStateException("Parent board does not have my message: " + mMessage);
+        	}
     	}
     	
     	protected SubscribedBoard getBoard() {
@@ -1214,6 +1224,8 @@ public final class SubscribedBoard extends Board {
 			try {
 				boolean result = getBoard().isMessageWanted(getMessage());
 				countWantedCheck(now);
+				// If the result is false we should not schedule a next wanted check - however we rely on the caller to unschedule it while
+				// deleting the message - this is less error prune.
 				return result;
 			} catch(Exception e) {
 				// isMessageWanted typically fails if we are not connected to the web of trust plugin so we only count the retry if it did not throw
@@ -1269,6 +1281,12 @@ public final class SubscribedBoard extends Board {
 	    		
 	    		if(!getBoard().contains(message))
 	    			throw new IllegalStateException("mBoard == " + mBoard + " does not contain mMessage == " + mMessage);
+	    		
+	           	try {
+	        		getBoard().getParentBoard().getDownloadedMessageLink(mMessage);
+	        	} catch(NoSuchMessageException e) {
+	        		throw new IllegalStateException("Parent board does not have my message: " + mMessage);
+	        	}
 	    		
 	    		IfNotEquals.thenThrow(mAuthorID, message.getAuthor().getID(), "mAuthorID");
 	    		IfNotEquals.thenThrow(mMessageID, message.getID(), "mMessageID");
@@ -1504,6 +1522,24 @@ public final class SubscribedBoard extends Board {
 	    		if(getMessage().isThread())
 	    			throw new IllegalStateException("mMessage is thread: " + mMessage);
     		} catch(NoSuchMessageException e) {}
+    		
+    		if(mMessage == null) {
+    			boolean isValidGhost = false;
+    			
+    			for(BoardReplyLink reply : getBoard().getAllThreadReplies(mThreadID, false)) {
+    				try {
+						// A message is a valid ghost if a reply to it exists which has a Message object stored 
+						// which makes getMessage NOT throw...
+    					if(reply.getMessage().getParentID().equals(mMessageID)) {
+	    					isValidGhost = true;
+	    					break;
+    					}
+    				} catch(NoSuchMessageException e) {}
+    			}
+    			
+    			if(!isValidGhost)
+    				throw new IllegalStateException("BoardReplyLink has no message and no replies with a message");
+    		}
     	}
     	
     }
@@ -1645,7 +1681,8 @@ public final class SubscribedBoard extends Board {
     	
     	
     	public void removeThreadMessage() {
-    		mMessage = null;
+    		super.removeMessage();
+    		
     		// TODO: I cannot remember why I made the code delete the date. It should be kept instead of using guesses...
     		// If re-enabling the deletion, the following code should also be modified to delete the title and guess it instead...
     		

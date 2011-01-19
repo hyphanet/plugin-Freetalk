@@ -357,6 +357,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			synchronized(mMessageManager) {
 				synchronized(db.lock()) {
 					try {
+
 						Persistent.checkedCommit(db, this);
 					} catch(RuntimeException e) {
 						Persistent.checkedRollbackAndThrow(db, this, e);
