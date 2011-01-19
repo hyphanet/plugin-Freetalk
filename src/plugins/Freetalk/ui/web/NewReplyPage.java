@@ -193,17 +193,24 @@ public class NewReplyPage extends WebPageImpl {
 		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateReply", l10n().getString("NewReplyPage.ReplyBox.SubmitButton")});
 		newReplyForm.addChild(PreviewPane.createPreviewButton(l10n(), "CreatePreview"));
 
-		// FIXME: locali[sz]e this
-		HTMLNode bbcodeBox = newReplyForm.addChild(getContentBox("BBcode"));
-		bbcodeBox.addChild("%", "Freetalk supports <a href=\"/?_CHECKED_HTTP_=http://en.wikipedia.org/wiki/BBCode\">BBCode</a>. The following tags are supported:");
-		HTMLNode list = bbcodeBox.addChild("ul");
-		list.addChild("li", "[b]bolded text[/b]");
-		list.addChild("li", "[i]italicized text[/i]");
-		list.addChild("li", "[url]http://example.org[/url]");
-		list.addChild("li", "[key]USK@.../example/0[/key]");
-		list.addChild("li", "[quote]quoted text[/quote]");
-		list.addChild("li", "[quote=example@...]quoted text with author[/quote]");
-		list.addChild("li", "[code]monospaced text[/code]");
+		HTMLNode bbcodeBox = getContentBox("BBCode");
+		addBBCodeList(bbcodeBox);
+		newReplyForm.addChild(bbcodeBox);
+	}
+	
+	public static void addBBCodeList(HTMLNode box) {
+		// TODO: l10n
+		// TODO: Do not embed HTML below!
+		box.addChild("%", "Freetalk supports <a href=\"/?_CHECKED_HTTP_=http://en.wikipedia.org/wiki/BBCode\">BBCode</a>. The following tags are supported:");
+		HTMLNode list = box.addChild("ul");
+		list.addChild("li", "[b] bolded text [/b]");
+		list.addChild("li", "[i] italicized text [/i]");
+		list.addChild("li", "[link] http://example.org [/link]");
+		list.addChild("li", "[link] KSK@freenet-link [/link]");
+		list.addChild("li", "[quote] quoted text [/quote]");
+		list.addChild("li", "[quote author=name] quoted text with author [/quote]");
+		list.addChild("li", "[quote author=name message=message-id] quoted text with author and message ID [/quote]");
+		list.addChild("li", "[code] monospaced text [/code]");
 	}
 
 	private void addRateMessageBox(HTMLNode parent, Byte selectedMessageRating) {

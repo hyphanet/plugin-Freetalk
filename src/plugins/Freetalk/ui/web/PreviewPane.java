@@ -17,14 +17,12 @@
 
 package plugins.Freetalk.ui.web;
 
+import plugins.Freetalk.Quoting;
+import plugins.Freetalk.WoT.WoTIdentityManager;
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.PageMaker;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
-
-import plugins.Freetalk.Quoting;
-import plugins.Freetalk.Quoting.TextElement;
-import plugins.Freetalk.WoT.WoTIdentityManager;
 
 /**
  * Creates a preview pane suitable for inclusion on {@link NewThreadPage}s and
@@ -52,8 +50,7 @@ public class PreviewPane {
 		InfoboxNode infobox = pageMaker.getInfobox(l10n.getString("PreviewPane.Header.Preview", "subject", messageSubject));
 		previewNode.addChild(infobox.outer);
 		HTMLNode messageBodyNode = infobox.content.addChild("div", "class", "body");
-		// FIXME: usage of static functions, need to add a separate class for bbcode parsing/converting?
-		Quoting.TextElement element = Quoting.parseText(messageText, "", "" ,20);
+		Quoting.TextElement element = Quoting.parseText(messageText);
 		ThreadPage.elementsToHTML(messageBodyNode, element.mChildren, identityManager);
 		return previewNode;
 	}

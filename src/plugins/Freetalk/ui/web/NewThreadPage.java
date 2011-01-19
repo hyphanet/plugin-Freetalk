@@ -92,5 +92,9 @@ public final class NewThreadPage extends WebPageImpl {
 		
 		newThreadForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateThread", l10n().getString("NewThreadPage.ThreadBox.SubmitButton")});
 		newThreadForm.addChild(PreviewPane.createPreviewButton(l10n(), "CreatePreview"));
+		
+		HTMLNode bbcodeBox = getContentBox("BBCode");
+		NewReplyPage.addBBCodeList(bbcodeBox);
+		newThreadForm.addChild(bbcodeBox);
 	}
 }

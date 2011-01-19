@@ -377,7 +377,7 @@ public final class ThreadPage extends WebPageImpl {
 		// Body of the message
 		row = table.addChild("tr", "class", "body");
 		HTMLNode text = row.addChild("td", "align", "left", "");
-		Quoting.TextElement element = Quoting.parseMessageText(message);
+		Quoting.TextElement element = Quoting.parseText(message);
 		elementsToHTML(text, element.mChildren, mFreetalk.getIdentityManager());
 		addReplyButton(text, message.getID());
 	}
@@ -396,27 +396,23 @@ public final class ThreadPage extends WebPageImpl {
 			   	break;
 			}
 
-			case Key: {
-				String uriKey = t.getContentText().replaceAll("\n","");
+			case Link: {
+				String uriText = t.getContentText().replaceAll("\n","").trim();
 				try {
-					FreenetURI uri = new FreenetURI(uriKey);
+					FreenetURI uri = new FreenetURI(uriText);
 					HTMLNode linkNode = new HTMLNode("a", "href", "/" + uri.toString());
 					HTMLNode linkText = new HTMLNode("abbr", "title", uri.toString(), uri.toShortString());
 					linkNode.addChild(linkText);
 					parent.addChild(linkNode);
 				} catch (MalformedURLException e) {
-					parent.addChild("#", uriKey);
+					if (uriText.startsWith("http")) {
+						HTMLNode linkNode = new HTMLNode("a", "href", "/?_CHECKED_HTTP_="+uriText, uriText);
+						parent.addChild(linkNode);
+					}
+					else
+						parent.addChild("#", uriText);
 				}
-				break;
-			}
-
-			case URL: {
-				String url = t.getContentText().replaceAll("\n","");
-				if (url.substring(0,4) != "http") {
-					url = "http://" + url;
-				}
-				HTMLNode linkNode = new HTMLNode("a", "href", "/?_CHECKED_HTTP_="+url, url);
-				parent.addChild(linkNode);
+				
 				break;
 			}
 
@@ -435,32 +431,44 @@ public final class ThreadPage extends WebPageImpl {
 			case Quote: {
 				HTMLNode child = parent.addChild("div", "class", "quote");
 				HTMLNode authorNode = child.addChild("div", "class", "author");
-				if (t.mContent != null)
-				{
-					try {
-						// mNickname + "@" + mID + "." + Freetalk.WOT_CONTEXT.toLowerCase();
-						Pattern pattern = Pattern.compile(".*?@(.*)."+ Freetalk.WOT_CONTEXT.toLowerCase());
-						Matcher matcher = pattern.matcher(t.mContent);
-						if (!matcher.matches()) {
-							child.addChild("b", t.mContent + " (Invalid Freetalk address)");
-						} else {
-							WoTIdentity author = (WoTIdentity)identityManager.getIdentity(matcher.group(1));
+
+				final String specifiedAuthor = t.mAttributes.get("author");
+				// TODO: Put a link to the message
+				// final String messageID = t.mAttributes.get("message"); 
+
+				if(specifiedAuthor == null) {
+					authorNode.addChild("b", "Quote");
+				} else {
+					authorNode.addChild("b", "Unvalidated quote of "); // TODO: l10n
+					
+					// TODO: Move to proper class
+					// mNickname + "@" + mID + "." + Freetalk.WOT_CONTEXT.toLowerCase();
+					final Pattern pattern = Pattern.compile(".*?@(.*)."+ Freetalk.WOT_CONTEXT.toLowerCase());
+					final Matcher matcher = pattern.matcher(t.mContent);
+					
+					if (!matcher.matches()) {
+						authorNode.addChild("b", specifiedAuthor);
+					} else {
+						try {
+							final WoTIdentity author = (WoTIdentity)identityManager.getIdentity(matcher.group(1));
 							authorNode.addChild("a", new String[] { "class", "href", "title" },
 									new String[] { "identity-link", "/WoT/ShowIdentity?id=" + author.getID(), "Web of Trust Page" })
 									.addChild("abbr", new String[] { "title" }, new String[] { author.getID() })
 									.addChild("span", "class", "name", author.getShortestUniqueName());
+						} catch (NoSuchIdentityException e) {
+							authorNode.addChild("b", specifiedAuthor + " (Unknown identity)"); // TODO: l10n
 						}
-					} catch (NoSuchIdentityException e) {
-						authorNode.addChild("b", t.mContent + " (Unknow identity)");
 					}
-					authorNode.addChild("#", " wrote:");
 				}
+
+				authorNode.addChild("#", ":");
+
 				elementsToHTML(child, t.mChildren, identityManager);
 				break;
 			}
 
 			case Error: {
-				HTMLNode child = parent.addChild("span", "class", "error", t.mContent);
+				parent.addChild("span", "class", "error", t.mContent);
 				break;
 			}
 			}

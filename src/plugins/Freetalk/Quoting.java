@@ -36,30 +36,33 @@ public class Quoting {
 	
 			return Error;
 		}
+		
+		private static final String regexpForAllTypes = "(quote|b|i|code|link|url|uri)";
 	}
 
 	public final static class TextElement {
 		public final TextElementType mType;
-		
-		// FIXME: For [tag key1=value1 key2=value2], fill with the key/value pairs
-		// This will require quite some modification of the parser but allow [quote author=name message=messageID] and various
-		// other beautiful bbcodes
 		public final Hashtable<String, String> mAttributes;
-		
 		public String mContent;
+		
 		public final List<TextElement> mChildren;
-		public int mConsumedLength;
+		
+		private int mConsumedLength;
 	
-		public TextElement(TextElementType myType) {
+		public TextElement(TextElementType myType, Hashtable<String, String> attributes) {
 			mType = myType;
-			mAttributes = new Hashtable<String, String>();
+			mAttributes = attributes;
 			mContent = "";
 			mChildren = new ArrayList<TextElement>();
 			mConsumedLength = 0;
 		}
+		
+		public TextElement(TextElementType myType) {
+			this(myType, new Hashtable<String,String>(1));
+		}
 	
-		public TextElement(String tag) {
-			this(TextElementType.fromString(tag));
+		public TextElement(String tag, Hashtable<String,String> attributes) {
+			this(TextElementType.fromString(tag), attributes);
 		}
 	
 		public String getContentText() {
@@ -77,17 +80,48 @@ public class Quoting {
 	public static String getFullQuote(Message message) {
 		return "[quote author=\""+message.getAuthor().getFreetalkAddress() + "\" message=\"" + message.getID() + "\"]\n" + message.getText() + "\n[/quote]\n";
 	}
-
-	// FIXME: Make this actually support the [quote Author=blah Message=bleh] stuff .. Right now it only understands [quote=author-freetalk-address]
-	// FIXME: Make the UI support it as well
-	public static final Quoting.TextElement parseText(String currentText, String tag, String arg, int maxRecursion) {
-		if (maxRecursion < 0) {
-			return new Quoting.TextElement(TextElementType.Error);
-		}
-		Quoting.TextElement result = new Quoting.TextElement(tag);
 	
-		if(result.mType == TextElementType.Quote)
-			result.mContent = arg;
+	/**
+	 * Used for finding a single starting/ending bbcode tag in the style of:
+	 * - [name]
+	 * - [name key=value]
+	 * - [name key1=value1 key2=value2 ...]
+	 * - [/name]
+	 */
+	private static final Pattern tagPattern = Pattern.compile(
+			"\\[" +
+				"((/?)" + TextElementType.regexpForAllTypes + ")" +	// tag name, eventually prefixed with / if it is a closing tag
+				"(" +				// group which contains all "key=value" attribute pairs... capturing groups only capture the last occurrence so we need this
+					"(" +			// in addition to this
+						"( (\\w+)=(\\S+))" +	// non-quoted attributes
+						"|( (\\w+)=\"([^\"]*)\")" +	// quoted attributes 
+					")*" +
+				")" +
+			"\\]",
+			Pattern.MULTILINE|Pattern.DOTALL|Pattern.CASE_INSENSITIVE);
+	
+	/**
+	 * After we have matched a tag using {@link tagPattern}, we parse its key=value pairs using the capturing groups of this {@link Pattern}
+	 */
+	private static final Pattern attributePattern = Pattern.compile(
+			"(" +
+				" (\\w+)=((\\S+)|(\"([^\"]*)\"))" +	// quoted or unquoted attributes 
+			")"
+			, Pattern.MULTILINE|Pattern.DOTALL|Pattern.CASE_INSENSITIVE);
+
+
+	/**
+	 * Used for finding a single {@link FreenetURI}
+	 * TODO: Allow lin ebreaks, spaces, etc.
+	 */
+	private static final Pattern keyPattern = Pattern.compile("(CH|SS|US|KS)K@[%,~" + URLEncoder.getSafeURLCharacters() + "]+", Pattern.MULTILINE|Pattern.DOTALL);
+	
+
+	private static final TextElement parseText(String currentText, String tag, Hashtable<String,String> args, int maxRecursion) {
+		if (maxRecursion < 0) {
+			return new TextElement(TextElementType.Error);
+		}
+		final TextElement result = new TextElement(tag, args);
 	
 		// for tags without closing tag (if we ever want to support those)
 		// just return result here
@@ -98,35 +132,20 @@ public class Quoting {
 				result.mConsumedLength++;
 			}
 		}
-	
-		// [foo] or [/foo] or [foo="bar"] or [foo=bar] or (invalid!) [/foo="bar"]
-		Pattern tagPattern = Pattern.compile("\\[(.+?)(?:=\"?(.+?)\"?)?\\]", Pattern.MULTILINE|Pattern.DOTALL);
-		Matcher tagMatcher = tagPattern.matcher(currentText);
-		// we detect a freenet key as a key type, an @ and then any characters that are valid to be in the key
-		// TODO: we might want to allow linebreaks in the first (cryptographic key) part
-		String keyRegex = "(CH|SS|US|KS)K@[%,~" + URLEncoder.getSafeURLCharacters() + "]+";
-		Pattern keyPattern = Pattern.compile(keyRegex, Pattern.MULTILINE|Pattern.DOTALL);
-		Matcher keyMatcher = keyPattern.matcher(currentText);
-		// <name>@<key>.freetalk wrote:\n
-		Pattern oldQuotePattern = Pattern.compile("^(?:On .*?)?(\\S+@\\S+?.freetalk) wrote:\n+", Pattern.MULTILINE|Pattern.DOTALL);
-		Matcher oldQuoteMatcher = oldQuotePattern.matcher(currentText);
+
+		// The source code of .matcher() shows that it is synchronized so we can mess around withoud synchronization
+		final Matcher tagMatcher = tagPattern.matcher(currentText);
+		final Matcher keyMatcher = keyPattern.matcher(currentText);
 	
 		while (result.mConsumedLength < currentText.length()) {
 			// we look for a tag and for a key
-			int tagPos = currentText.length();
-			if (tagMatcher.find(result.mConsumedLength))
-				tagPos = tagMatcher.start();
-			int keyPos = currentText.length();
-			if (keyMatcher.find(result.mConsumedLength))
-				keyPos = keyMatcher.start();
-			int oldQuotePos = currentText.length();
-			if (oldQuoteMatcher.find(result.mConsumedLength))
-				oldQuotePos = oldQuoteMatcher.start();
-			int textEndPos = Math.min(Math.min(tagPos, keyPos),oldQuotePos);
+			final int tagPos = tagMatcher.find(result.mConsumedLength) ? tagMatcher.start() : currentText.length();
+			final int keyPos = keyMatcher.find(result.mConsumedLength) ? keyMatcher.start() : currentText.length();
+			final int textEndPos = Math.min(tagPos, keyPos);
 	
 			if (textEndPos > result.mConsumedLength)
 			{
-				Quoting.TextElement newElement = new Quoting.TextElement(TextElementType.PlainText);
+				final TextElement newElement = new TextElement(TextElementType.PlainText);
 				newElement.mContent = currentText.substring(result.mConsumedLength, textEndPos);
 				newElement.mConsumedLength = textEndPos-result.mConsumedLength;
 				result.mChildren.add(newElement);
@@ -137,21 +156,38 @@ public class Quoting {
 			}
 			if (textEndPos == tagPos) {
 				result.mConsumedLength += tagMatcher.group().length();
-				String t = tagMatcher.group(1);
-				String a = tagMatcher.group(2);
-				if (t.equals("/"+tag))
+				final String nextTag = tagMatcher.group(1);
+				
+				// We found a closing tag for result, return it.
+				if (nextTag.equals("/"+tag))
 					return result;
-				if (t.substring(0,1).equals("/")) {
-					// closing tag
-					// ERROR
-					Quoting.TextElement newElement = new Quoting.TextElement(TextElementType.Error);
+
+				// closing tag which does not match the opening tag type => ERROR.
+				if (nextTag.substring(0,1).equals("/")) {
+
+					TextElement newElement = new TextElement(TextElementType.Error);
 					newElement.mContent = tagMatcher.group();
 					newElement.mConsumedLength = newElement.mContent.length();
 					result.mChildren.add(newElement);
-				} else {
-					// it's an opening tag
+				} else { // it's an opening tag
+					final Hashtable<String, String> attributes = new Hashtable<String,String>();
+					
+					// check whether it has attributes
+					if(tagMatcher.groupCount() > 1) {
+						final String attributesString = tagMatcher.group(4);
+						final Matcher attributeMatcher = attributePattern.matcher(attributesString);
+						
+						while(attributeMatcher.find()) {
+							final String key = attributeMatcher.group(2).trim().toLowerCase();
+							String value = attributeMatcher.group(3).trim();
+							if(value.length() >= 2 && value.startsWith("\"") && value.endsWith("\""))
+								value = value.substring(1, value.length()-1);
+							attributes.put(key, value);
+						}
+					}
+
 					String textToParse = currentText.substring(tagMatcher.end());
-					Quoting.TextElement subElement = parseText(textToParse, t, a, maxRecursion-1);
+					TextElement subElement = parseText(textToParse, nextTag, attributes, maxRecursion-1);
 					if (subElement.mType == TextElementType.Error) {
 						// we show the entire piece of text that was parsed as an error
 						subElement.mContent = currentText.substring(tagMatcher.start(), tagMatcher.end()+subElement.mConsumedLength);
@@ -160,39 +196,22 @@ public class Quoting {
 					result.mConsumedLength += subElement.mConsumedLength;
 				}
 			} else if (textEndPos == keyPos) {
-				Quoting.TextElement newElement = new Quoting.TextElement(TextElementType.Link);
+				TextElement newElement = new TextElement(TextElementType.Link);
 				newElement.mContent = keyMatcher.group();
 				newElement.mConsumedLength = newElement.mContent.length();
 				result.mChildren.add(newElement);
 				result.mConsumedLength += newElement.mConsumedLength;
-			} else if (textEndPos == oldQuotePos) {
-				String author = oldQuoteMatcher.group(1);
-				result.mConsumedLength += oldQuoteMatcher.group().length();
-				// now it gets nasty
-				// we need to read all lines that have an > at the start
-				// and stop when we reach one that doesn't
-				// find the first line that doesn't have an >
-				Pattern endOfOldQuotePattern = Pattern.compile("^[^>]", Pattern.MULTILINE|Pattern.DOTALL);
-				Matcher endOfOldQuoteMatcher = endOfOldQuotePattern.matcher(currentText);
-				int endOfOldQuotePos = currentText.length();
-				if (endOfOldQuoteMatcher.find(result.mConsumedLength))
-					endOfOldQuotePos = endOfOldQuoteMatcher.start();
-				// cut it out
-				String quoted = currentText.substring(result.mConsumedLength, endOfOldQuotePos);
-				result.mConsumedLength += quoted.length();
-				// we strip off all the >'s
-				Pattern quotePartPattern = Pattern.compile("^>[ \t]*", Pattern.MULTILINE|Pattern.DOTALL);
-				Matcher quotePartMatcher = quotePartPattern.matcher(quoted);
-				String unquoted = quotePartMatcher.replaceAll("");
-				// now process it like it was an ordinary [quote=<author>] tag
-				Quoting.TextElement subElement = parseText(unquoted, "quote", author, maxRecursion-1);
-				result.mChildren.add(subElement);
 			}
+			
 		}
 		return result;
 	}
 
-	public static final Quoting.TextElement parseMessageText(Message message) {
-		return parseText(message.getText(), "", "", 20);
+	public static final TextElement parseText(String text) {
+		return parseText(text, "", new Hashtable<String,String>(1), 20);
+	}
+	
+	public static final TextElement parseText(Message message) {
+		return parseText(message.getText());
 	}
 }
