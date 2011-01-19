@@ -172,7 +172,7 @@ public class Board extends Persistent implements Comparable<Board> {
         // check for invalid formatting characters (each dot-separated
         // part of the input string must be valid on its own)
 
-        String[] parts = name.split("\\.");
+        String[] parts = name.split("\\.", -1); // The 1-argument version will not return empty parts!
         if (parts.length < 2)
             return false;
 
