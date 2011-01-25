@@ -95,7 +95,7 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 	
 		
 		mHardcodedEncodedMessageList = new String(
-				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" + 
+				"<?xml version=\"1.1\" encoding=\"UTF-8\" standalone=\"no\"?>" + 
 				"<" + Freetalk.PLUGIN_TITLE + " Version=\"" + Version.getRealVersion() + "\">" + 
 				"<MessageList Version=\"1\">" + 
 				"<Message Date=\"2009-06-01\" FreenetURI=\"CHK@7qMS7LklYIhbZ88i0~u97lxrLKS2uxNwZWQOjPdXnJw,IlA~FSjWW2mPWlzWx7FgpZbBErYdLkqie1uSrcN~LbM,AAIA--8\" ID=\"" + messages[0].getID() + "\">" + 

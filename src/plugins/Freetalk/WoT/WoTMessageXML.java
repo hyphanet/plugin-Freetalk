@@ -86,6 +86,9 @@ public final class WoTMessageXML {
 				xmlDoc = mDOM.createDocument(null, Freetalk.PLUGIN_TITLE, null);
 			}	
 			
+			// 1.0 does not support all Unicode characters which the String class supports. To prevent us from having to filter all Strings, we use 1.1
+			xmlDoc.setXmlVersion("1.1");
+			
 			final Element rootElement = xmlDoc.getDocumentElement();
 			final Element messageElement = xmlDoc.createElement("Message");
 			

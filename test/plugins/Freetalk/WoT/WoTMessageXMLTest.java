@@ -91,32 +91,9 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		
 		message.initializeTransient(mFreetalk);
 		message.storeAndCommit();
-
-		/**
-	       [junit] <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-	       [junit] <Freetalk-testing Version="1">
-	       [junit] <Message Date="2009-05-03 16:15:14" ID="2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk" Version="1">
-	       [junit] <Boards>
-	       [junit] <Board Name="eng.board1"/>
-	       [junit] <Board Name="eng.board2"/>
-	       [junit] <ReplyToBoard Name="eng.board1"/>
-	       [junit] </Boards>
-	       [junit] <InReplyTo>
-	       [junit] <Thread URI="SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#afe6519b-7fb2-4533-b172-1f966e79d127"/>
-	       [junit] <Message URI="SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/Freetalk-testing%7cMessageList-123#d5b0dcc4-91cb-4870-8ab9-8588e895fa5d"/>
-	       [junit] </InReplyTo>
-	       [junit] <Subject><![CDATA[Message title]]></Subject>
-	       [junit] <Body><![CDATA[Message body
-	       [junit] New line]]></Body>
-	       [junit] <Attachments>
-	       [junit] <File MIMEType="text/plain" Size="10001" URI="KSK@attachment1"/>
-	       [junit] <File MIMEType="audio/ogg" Size="10002" URI="KSK@attachment2"/>
-	       [junit] </Attachments>
-	       [junit] </Message>
-	       [junit] </Freetalk-testing> */
 	       
 		mHardcodedEncodedMessage = new String(
-			"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+			"<?xml version=\"1.1\" encoding=\"UTF-8\" standalone=\"no\"?>" +
 			"<" + Freetalk.PLUGIN_TITLE + " Version=\"" + Version.getRealVersion() + "\">" + 
 			"<Message Date=\"2009-05-03 16:15:14\" ID=\"2a3a8e7e-9e53-4978-a8fd-17b2d92d949c@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk\" Version=\"1\">" + 
 			"<Boards>" +
