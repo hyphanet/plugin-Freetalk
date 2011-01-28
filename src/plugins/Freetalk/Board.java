@@ -458,4 +458,8 @@ public class Board extends Persistent implements Comparable<Board> {
     	getMessageLink(message).deleteWithoutCommit();
     }
 
+    @Override
+    public String toString() {
+    	return mName;
+    }
 }
