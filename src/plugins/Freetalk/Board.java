@@ -460,6 +460,6 @@ public class Board extends Persistent implements Comparable<Board> {
 
     @Override
     public String toString() {
-    	return mName;
+    	return super.toString() + " with mName: " + mName;
     }
 }
