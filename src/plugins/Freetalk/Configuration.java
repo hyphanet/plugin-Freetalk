@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 import plugins.Freetalk.Persistent.IndexedClass;
 
@@ -11,6 +11,7 @@ import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 
 import freenet.support.Logger;
+import freenet.support.codeshortification.IfNull;
 
 /* ATTENTION: This code is a duplicate of plugins.WoT.Config. Any changes there should also be done here! */
 
@@ -41,19 +42,19 @@ public final class Configuration extends Persistent {
 
 	/**
 	 * The database format version of this Freetalk-database.
-	 * Stored in a primitive integer field to ensure that db4o does not lose it - I've observed the hashtables to be null suddenly sometimes :(
+	 * Stored in a primitive integer field to ensure that db4o does not lose it - I've observed the HashMaps to be null suddenly sometimes :(
 	 */
 	private int mDatabaseFormatVersion;
 	
 	/**
-	 * The {@link Hashtable} that contains all {@link String} configuration parameters
+	 * The {@link HashMap} that contains all {@link String} configuration parameters
 	 */
-	private final Hashtable<String, String> mStringParams;
+	private final HashMap<String, String> mStringParams;
 	
 	/**
-	 * The {@link Hashtable} that contains all {@link Integer} configuration parameters
+	 * The {@link HashMap} that contains all {@link Integer} configuration parameters
 	 */
-	private final Hashtable<String, Integer> mIntParams;
+	private final HashMap<String, Integer> mIntParams;
 
 	/**
 	 * Creates a new Config object and stores the default values in it.
@@ -61,8 +62,8 @@ public final class Configuration extends Persistent {
 	protected Configuration(Freetalk myFreetalk) {
 		initializeTransient(myFreetalk);
 		mDatabaseFormatVersion = Freetalk.DATABASE_FORMAT_VERSION;
-		mStringParams = new Hashtable<String, String>();
-		mIntParams = new Hashtable<String, Integer>();
+		mStringParams = new HashMap<String, String>();
+		mIntParams = new HashMap<String, Integer>();
 		setDefaultValues(false);
 	}
 	
@@ -150,6 +151,8 @@ public final class Configuration extends Persistent {
 	 * @param value Value of the config parameter.
 	 */
 	public synchronized void set(String key, String value) {
+		IfNull.thenThrow(key, "Key");
+		IfNull.thenThrow(value, "Value");
 		mStringParams.put(key, value);
 	}
 	
@@ -160,6 +163,7 @@ public final class Configuration extends Persistent {
 	 * @param value Value of the config parameter.
 	 */
 	public synchronized void set(String key, boolean value) {
+		IfNull.thenThrow(key, "Key");
 	    mStringParams.put(key, Boolean.toString(value));
 	}
 	
@@ -170,6 +174,7 @@ public final class Configuration extends Persistent {
 	 * @param value Value of the config parameter.
 	 */
 	public synchronized void set(String key, int value) {
+		IfNull.thenThrow(key, "Key");
 		mIntParams.put(key, value);
 	}
 

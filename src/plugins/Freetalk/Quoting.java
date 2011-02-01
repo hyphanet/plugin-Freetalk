@@ -1,11 +1,12 @@
 package plugins.Freetalk;
 
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import freenet.keys.FreenetURI;
 import freenet.support.URLEncoder;
 
 
@@ -42,14 +43,14 @@ public class Quoting {
 
 	public final static class TextElement {
 		public final TextElementType mType;
-		public final Hashtable<String, String> mAttributes;
+		public final HashMap<String, String> mAttributes;
 		public String mContent;
 		
 		public final List<TextElement> mChildren;
 		
 		private int mConsumedLength;
 	
-		public TextElement(TextElementType myType, Hashtable<String, String> attributes) {
+		public TextElement(TextElementType myType, HashMap<String, String> attributes) {
 			mType = myType;
 			mAttributes = attributes;
 			mContent = "";
@@ -58,10 +59,10 @@ public class Quoting {
 		}
 		
 		public TextElement(TextElementType myType) {
-			this(myType, new Hashtable<String,String>(1));
+			this(myType, new HashMap<String,String>(1));
 		}
 	
-		public TextElement(String tag, Hashtable<String,String> attributes) {
+		public TextElement(String tag, HashMap<String,String> attributes) {
 			this(TextElementType.fromString(tag), attributes);
 		}
 	
@@ -117,7 +118,7 @@ public class Quoting {
 	private static final Pattern keyPattern = Pattern.compile("(CH|SS|US|KS)K@[%,~" + URLEncoder.getSafeURLCharacters() + "]+", Pattern.MULTILINE|Pattern.DOTALL);
 	
 
-	private static final TextElement parseText(String currentText, String tag, Hashtable<String,String> args, int maxRecursion) {
+	private static final TextElement parseText(String currentText, String tag, HashMap<String,String> args, int maxRecursion) {
 		if (maxRecursion < 0) {
 			return new TextElement(TextElementType.Error);
 		}
@@ -170,7 +171,7 @@ public class Quoting {
 					newElement.mConsumedLength = newElement.mContent.length();
 					result.mChildren.add(newElement);
 				} else { // it's an opening tag
-					final Hashtable<String, String> attributes = new Hashtable<String,String>();
+					final HashMap<String, String> attributes = new HashMap<String,String>();
 					
 					// check whether it has attributes
 					if(tagMatcher.groupCount() > 1) {
@@ -208,7 +209,7 @@ public class Quoting {
 	}
 
 	public static final TextElement parseText(String text) {
-		return parseText(text, "", new Hashtable<String,String>(1), 20);
+		return parseText(text, "", new HashMap<String,String>(1), 20);
 	}
 	
 	public static final TextElement parseText(Message message) {

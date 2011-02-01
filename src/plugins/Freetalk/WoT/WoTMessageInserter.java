@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Random;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -60,10 +60,10 @@ public final class WoTMessageInserter extends MessageInserter {
 	private final Random mRandom;
 	
 	/**
-	 * For each <code>BaseClientPutter</code> (= an object associated with an insert) this hashtable stores the ID of the message which is being
+	 * For each <code>BaseClientPutter</code> (= an object associated with an insert) this HashMap stores the ID of the message which is being
 	 * inserted by the <code>BaseClientPutter</code>.
 	 */
-	private final Hashtable<BaseClientPutter, String> mPutterMessageIDs = new Hashtable<BaseClientPutter, String>(2*ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT);
+	private final HashMap<BaseClientPutter, String> mPutterMessageIDs = new HashMap<BaseClientPutter, String>(2*ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT);
 
 	/**
 	 * Contains the IDs of the message lists which are currently being inserted, used for preventing double inserts.

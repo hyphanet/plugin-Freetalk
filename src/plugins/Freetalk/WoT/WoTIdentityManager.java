@@ -6,8 +6,8 @@ package plugins.Freetalk.WoT;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Random;
 
@@ -84,7 +84,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	/**
 	 * Caches the shortest unique nickname for each identity. Key = Identity it, Value = Shortest nickname.
 	 */
-	private volatile Hashtable<String, String> mShortestUniqueNicknameCache = new Hashtable<String, String>();
+	private volatile HashMap<String, String> mShortestUniqueNicknameCache = new HashMap<String, String>();
 	
 	private boolean mShortestUniqueNicknameCacheNeedsUpdate = true;
 	
@@ -1041,7 +1041,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			} while(firstDuplicate != i);
 		}
 		
-		final Hashtable<String,String> newCache = new Hashtable<String, String>(identities.length * 2);
+		final HashMap<String,String> newCache = new HashMap<String, String>(identities.length * 2);
 		
 		for(int i = 0; i < identities.length; ++i)
 			newCache.put(identities[i].getID(), nicknames[i]);

@@ -6,7 +6,7 @@ package plugins.Freetalk.WoT;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 import plugins.Freetalk.FetchFailedMarker;
 import plugins.Freetalk.Freetalk;
@@ -65,8 +65,8 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	/* TODO: We use those HashSets for checking whether we have already have a request for the given identity if someone calls fetch().
 	 * This sucks: We always request ALL identities to allow ULPRs so we must assume that those HashSets will not fit into memory
 	 * if the WoT becomes large. We should instead ask the node whether we already have a request for the given SSK URI. 
-	 * Therefore, we should change the node to provide interfaces which serve the purposes of this Hashtable. */
-	private final Hashtable<String, USKRetriever> mRequests = new Hashtable<String, USKRetriever>(1024); /* TODO: profile & tweak */
+	 * Therefore, we should change the node to provide interfaces which serve the purposes of this HashMap. */
+	private final HashMap<String, USKRetriever> mRequests = new HashMap<String, USKRetriever>(1024); /* TODO: profile & tweak */
 	
 	private final TrivialTicker mTicker;
 	

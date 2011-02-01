@@ -5,8 +5,8 @@ package plugins.Freetalk;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -457,7 +457,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			}
 		}
 		
-		Hashtable<String, MessageInfo> messages = new Hashtable<String, MessageInfo>(newMessages.size() * 2);
+		HashMap<String, MessageInfo> messages = new HashMap<String, MessageInfo>(newMessages.size() * 2);
 		
 		for(MessageReference ref : mMessages) {
 			ref.setMessageList(this);

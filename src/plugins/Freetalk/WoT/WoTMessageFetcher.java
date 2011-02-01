@@ -5,8 +5,8 @@ package plugins.Freetalk.WoT;
 
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Random;
 
 import plugins.Freetalk.FetchFailedMarker;
@@ -65,10 +65,10 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	private final RequestClient requestClient;
 	
 	/**
-	 * For each <code>ClientGetter</code> (= an object associated with a fetch) this hashtable stores the ID of the MessageList to which the
+	 * For each <code>ClientGetter</code> (= an object associated with a fetch) this HashMap stores the ID of the MessageList to which the
 	 * message which is being fetched belongs.
 	 */
-	private final Hashtable<ClientGetter, String> mMessageLists = new Hashtable<ClientGetter, String>(MAX_PARALLEL_MESSAGE_FETCH_COUNT * 2);
+	private final HashMap<ClientGetter, String> mMessageLists = new HashMap<ClientGetter, String>(MAX_PARALLEL_MESSAGE_FETCH_COUNT * 2);
 	
 	
 	/**

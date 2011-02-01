@@ -5,7 +5,7 @@ package plugins.Freetalk;
 
 import java.util.Collections;
 import java.util.Date;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -63,7 +63,9 @@ public class Board extends Persistent implements Comparable<Board> {
     	final ISO639_3 iso639_3 = new ISO639_3();
     	
     	// Get all real (non-symbolic) and living languages
-    	final Hashtable<String, ISO639_3.LanguageCode> languages = iso639_3.getLanguagesByScopeAndType(ISO639_3.LanguageCode.Scope.Individual, ISO639_3.LanguageCode.Type.Living);
+    	final HashMap<String, ISO639_3.LanguageCode> languages = new HashMap<String, ISO639_3.LanguageCode>(
+    				iso639_3.getLanguagesByScopeAndType(ISO639_3.LanguageCode.Scope.Individual, ISO639_3.LanguageCode.Type.Living)
+    			); // Convert from Hashtable to HashMap, we do not need synchronization.
     	
     	// Add the special code for multiple languages
     	final ISO639_3.LanguageCode multilingual = iso639_3.getMultilingualCode();
