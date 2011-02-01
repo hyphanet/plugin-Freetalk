@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TimeZone;
 
 import javax.activation.MimeType;
 import javax.xml.XMLConstants;
@@ -31,10 +32,10 @@ import org.w3c.dom.NodeList;
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
-import plugins.Freetalk.Version;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.Message.MessageID;
 import plugins.Freetalk.MessageManager;
+import plugins.Freetalk.Version;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.keys.FreenetURI;
@@ -51,7 +52,7 @@ public final class WoTMessageXML {
 	private static final int XML_FORMAT_VERSION = 1;
 	
 	
-	private final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");	
+	private final SimpleDateFormat mDateFormat;	
 	
 	private final DocumentBuilder mDocumentBuilder;
 	
@@ -72,6 +73,9 @@ public final class WoTMessageXML {
 			mSerializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 			mSerializer.setOutputProperty(OutputKeys.INDENT, "no");
 			mSerializer.setOutputProperty(OutputKeys.STANDALONE, "no");
+			
+			mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			mDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 		}
 		catch(Exception e) {
 			throw new RuntimeException(e);

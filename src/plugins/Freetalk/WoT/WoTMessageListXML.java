@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.TimeZone;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -45,7 +46,7 @@ public final class WoTMessageListXML {
 	private static final int XML_FORMAT_VERSION = 1;
 	
 	
-	private final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	private final SimpleDateFormat mDateFormat;
 	
 	private final DocumentBuilder mDocumentBuilder;
 	
@@ -67,6 +68,9 @@ public final class WoTMessageListXML {
 			mSerializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 			mSerializer.setOutputProperty(OutputKeys.INDENT, "no");
 			mSerializer.setOutputProperty(OutputKeys.STANDALONE, "no");
+			
+			mDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+			mDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 		}
 		catch(Exception e) {
 			throw new RuntimeException(e);
