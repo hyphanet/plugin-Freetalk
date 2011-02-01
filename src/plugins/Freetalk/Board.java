@@ -503,4 +503,8 @@ public class Board extends Persistent implements Comparable<Board> {
     	getDownloadedMessageLink(message).deleteWithoutCommit();
     }
 
+    @Override
+    public String toString() {
+    	return super.toString() + " with mName: " + mName;
+    }
 }

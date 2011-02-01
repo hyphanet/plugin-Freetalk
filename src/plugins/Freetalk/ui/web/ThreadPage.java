@@ -13,6 +13,8 @@ import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.xml.crypto.URIReferenceException;
+
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Identity;
@@ -405,9 +407,17 @@ public final class ThreadPage extends WebPageImpl {
 					linkNode.addChild(linkText);
 					parent.addChild(linkNode);
 				} catch (MalformedURLException e) {
-					if (uriText.startsWith("http")) {
-						HTMLNode linkNode = new HTMLNode("a", "href", "/?_CHECKED_HTTP_="+uriText, uriText);
-						parent.addChild(linkNode);
+					if (uriText.toLowerCase().startsWith("http")) {
+						try {
+							final URI uri = new URI(uriText);
+							if(!uri.getScheme().equalsIgnoreCase("http"))
+								throw new URISyntaxException(uriText, "Does not have http protocol");
+							
+							HTMLNode linkNode = new HTMLNode("a", "href", "/?_CHECKED_HTTP_="+ uri.toString(), uriText);
+							parent.addChild(linkNode);
+						} catch(URISyntaxException syntaxError) {
+							parent.addChild("span", "class", "error", uriText);
+						}
 					}
 					else
 						parent.addChild("#", uriText);

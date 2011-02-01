@@ -1239,8 +1239,24 @@ public abstract class Message extends Persistent {
 	}
 
 	public String toString() {
-		if(mDB != null)
-			return getURI().toString();
+		if(mDB != null) {
+			MessageURI threadURI;
+			MessageURI parentURI;
+			
+			try {
+				threadURI = getThreadURI();
+			} catch(NoSuchMessageException e) {
+				threadURI = null;
+			}
+			
+			try {
+				parentURI = getParentURI();
+			} catch(NoSuchMessageException e) {
+				parentURI = null;
+			}
+			
+			return super.toString() + " with uri: " + getURI() + "; threadURI: " + threadURI + "; parentURI: " + parentURI + "; title: (" + getTitle() + ")";
+		}
 
 		// We do not throw a NPE because toString() is usually used in logging, we want the logging to be robust
 
