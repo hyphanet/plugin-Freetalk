@@ -38,7 +38,6 @@ import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.Version;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
-import plugins.WebOfTrust.MAX_IDENTITY_XML_BYTE_SIZE;
 import freenet.keys.FreenetURI;
 
 /**
