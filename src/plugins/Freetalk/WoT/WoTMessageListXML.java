@@ -149,7 +149,11 @@ public final class WoTMessageListXML {
 		}
 	}
 	
+	/**
+	 * @param inputStream An InputStream which must not return more than {@link MAX_XML_SIZE} bytes.
+	 */
 	public WoTMessageList decode(WoTMessageManager messageManager, WoTIdentity author, FreenetURI uri, InputStream inputStream) throws Exception {
+		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
 		if(inputStream.available() > MAX_XML_SIZE)
 			throw new IllegalArgumentException("XML contains too many bytes: " + inputStream.available());
 		

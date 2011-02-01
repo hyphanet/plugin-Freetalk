@@ -38,6 +38,7 @@ import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.Version;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.WebOfTrust.MAX_IDENTITY_XML_BYTE_SIZE;
 import freenet.keys.FreenetURI;
 
 /**
@@ -189,7 +190,11 @@ public final class WoTMessageXML {
 		}
 	}
 	
+	/**
+	 * @param inputStream An InputStream which must not return more than {@link MAX_XML_SIZE} bytes.
+	 */
 	public Message decode(MessageManager messageManager, InputStream inputStream, WoTMessageList messageList, FreenetURI uri) throws Exception {
+		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
 		if(inputStream.available() > MAX_XML_SIZE)
 			throw new IllegalArgumentException("XML contains too many bytes: " + inputStream.available());
 		
