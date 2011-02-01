@@ -80,7 +80,7 @@ public final class SubscribedBoard extends Board {
 					// set on the ref... it might be a ghost reference only.
 					if(ref.getMessage() == parentLink.getMessage()) { 
 						found = true;
-						// TODO: Validate whether the typ of the message reference fits the type of the message (thread, reply, etc.)
+						// TODO: Validate whether the type of the message reference fits the type of the message (thread, reply, etc.)
 						break;
 					}
 				} catch(NoSuchMessageException e) {}
@@ -201,6 +201,9 @@ public final class SubscribedBoard extends Board {
      * If there is one already, its retry count is incremented (which effectively increases the delay until the next retry will be done).
      */
     private final void deleteMessageAndStoreOrUpdateUnwantedMessageLink(Message newMessage) {
+		Logger.normal(this, "deleteMessageAndStoreOrUpdateUnwantedMessageLink: Ignoring message from " + newMessage.getAuthor().getNickname() + " because " +
+				getSubscriber().getNickname() + " does not want his messages: " + newMessage);
+		
 		if(getMessageReferences(newMessage.getID()).size() > 0) {
 			try {
 				deleteMessage(newMessage, false);
@@ -209,18 +212,19 @@ public final class SubscribedBoard extends Board {
 			}
 		}
 		
-		Logger.normal(this, "Ignoring message from " + newMessage.getAuthor().getNickname() + " because " +
-				getSubscriber().getNickname() + " does not want his messages.");
-		
 		try {
 			UnwantedMessageLink link = getUnwantedMessageLink(newMessage);
+			Logger.minor(this, "Updating UnwantedMessageLink for " + newMessage);
 			link.countRetry();
 			link.storeWithoutCommit();
 		} catch(NoSuchMessageException e) {
+			Logger.minor(this, "Storing UnwantedMessageLink for " + newMessage);
 			UnwantedMessageLink link = new UnwantedMessageLink(this, newMessage);
 			link.initializeTransient(mFreetalk);
 			link.storeWithoutCommit();
 		}
+		
+		Logger.normal(this, "deleteMessageAndStoreOrUpdateUnwantedMessageLink finished.");
     }
     
     /**
@@ -228,10 +232,17 @@ public final class SubscribedBoard extends Board {
      * Deletes it if yes, if not, does nothing.
      */
     private final void maybeDeleteUnwantedMessageLink(Message newMessage) {
+    	Logger.minor(this, "maybeDeleteUnwantedMessageLink " + newMessage);
+    	
 		try {
 			UnwantedMessageLink link = getUnwantedMessageLink(newMessage);
+			Logger.minor(this, "Link found, deleting: " + link);
 			link.deleteWithoutCommit();
-		} catch(NoSuchMessageException e) {}
+		} catch(NoSuchMessageException e) {
+			Logger.minor(this, "No link found.");
+		}
+		
+		Logger.minor(this, "maybeDeleteUnwantedMessageLink finished.");
     }
     
     /**
@@ -323,7 +334,7 @@ public final class SubscribedBoard extends Board {
      * @throws Exception If wantsMessagesFrom(author of newMessage) fails. 
      */
     protected synchronized final void addMessage(Message newMessage) throws Exception {
-    	Logger.debug(this, "addMessage " + newMessage);
+    	Logger.normal(this, "addMessage " + newMessage + " for " + getSubscriber());
     	
     	// Sanity checks
     	throwIfNotAllowedInThisBoard(newMessage);
@@ -410,6 +421,8 @@ public final class SubscribedBoard extends Board {
      * @throws NoSuchMessageException If the message does not exist in this Board.
      */
     protected synchronized void deleteMessage(Message message, boolean deleteUnwantedLink) throws NoSuchMessageException {
+    	Logger.normal(this, "deleteMessage " + message + "( deleteUnwantedLink==" + deleteUnwantedLink + ") for " + getSubscriber());
+    	
     	boolean unwantedLinkDeleted = false;
     	
     	final String messageID = message.getID();
@@ -430,6 +443,14 @@ public final class SubscribedBoard extends Board {
     	try {
     		// Check whether the message was listed as a thread.
     		BoardThreadLink threadLink = getThreadLink(messageID);
+    		
+    		try {
+    			threadLink.getMessage();
+    	    	
+    			if(unwantedLinkDeleted) {
+    	    		Logger.error(this, "Message was linked in even though it was marked as unwanted: " + message, new RuntimeException());
+    	    	}
+    		} catch(NoSuchMessageException e) { }
 
     		// If it was listed as a thread and had no replies, we can delete it's ThreadLink.
 	    	if(threadReplyCount(messageID) == 0) {
@@ -439,10 +460,6 @@ public final class SubscribedBoard extends Board {
 	    		// so we mark it as a ghost thread.
 	    		threadLink.removeThreadMessage();
 	    		threadLink.storeWithoutCommit();
-	    	}
-	    	
-	    	if(unwantedLinkDeleted) {
-	    		Logger.error(this, "Message was linked in even though it was marked as unwanted: " + message, new RuntimeException());
 	    	}
     	}
     	catch(NoSuchMessageException e) { // getThreadReference failed
@@ -664,9 +681,9 @@ public final class SubscribedBoard extends Board {
      * both appear as a reply to the original thread where it belonged AND as a thread on it's own to which the given message belong.
      * 
      * The transient fields of the returned message will be initialized already.
-     * @throws NoSuchMessageException
+     * @throws Exception If isMessageWanted() fails on the parent Message.
      */
-    private synchronized BoardThreadLink findOrCreateParentThread(final Message newMessage) {
+    private synchronized BoardThreadLink findOrCreateParentThread(final Message newMessage) throws Exception {
     	String parentThreadID = newMessage.getThreadIDSafe();
 
     	try {
@@ -690,9 +707,21 @@ public final class SubscribedBoard extends Board {
     			// thread in its original board if it was from a different board), but it will also appear as a new thread which is the parent thread of
     			// the message which was passed to this function.
 
-    			BoardThreadLink parentThreadRef = new BoardThreadLink(this, parentThread, takeFreeMessageIndexWithoutCommit());
-    			parentThreadRef.initializeTransient(mFreetalk);
-    			parentThreadRef.storeWithoutCommit();
+    			BoardThreadLink parentThreadRef;
+    			
+    	    	// Check whether the subscriber wants the message
+    	    	if(isMessageWanted(parentThread)) {
+    	    		// Maybe delete an obsolete UnwantedMessageLink if it exists
+    	    		maybeDeleteUnwantedMessageLink(parentThread);
+       			 	parentThreadRef = new BoardThreadLink(this, parentThread, takeFreeMessageIndexWithoutCommit());
+    	    	} else {
+    	    		deleteMessageAndStoreOrUpdateUnwantedMessageLink(parentThread);
+    	    		// The thread is unwanted so we store a ghost reference for it.
+    	    		parentThreadRef = new BoardThreadLink(this, parentThread.getID(), parentThread.getTitle(), parentThread.getDate(), takeFreeMessageIndexWithoutCommit());
+    	    	}
+    	    	
+     			parentThreadRef.initializeTransient(mFreetalk);
+     			parentThreadRef.storeWithoutCommit();    			
     			return parentThreadRef;
     		}
     		catch(NoSuchMessageException ex) { 
@@ -1078,8 +1107,13 @@ public final class SubscribedBoard extends Board {
         	if(mNumberOfRetries < 0)
         		throw new IllegalStateException("mNumberOfRetries == " + mNumberOfRetries);
         	
-        	if(getBoard().getMessageReferences(getMessage().getID()).size() > 0)
-        			throw new IllegalStateException("Both UnwantedMessageLink and MessageReference exist for " + mMessage);
+        	for(MessageReference ref : getBoard().getMessageReferences(getMessage().getID())) {
+        		try {
+        			ref.getMessage();
+        			throw new IllegalStateException("Both UnwantedMessageLink and non-ghost MessageReference exist for " + mMessage);
+        		} catch(NoSuchMessageException e) { } 
+        		
+        	}
         	
         	try {
         		getBoard().getParentBoard().getMessageLink(mMessage);
@@ -1144,8 +1178,8 @@ public final class SubscribedBoard extends Board {
     	}
     	
     	public String toString() {
-    		return "author: " + mAuthor.getNickname() + "; messageID: " + mMessage.getID() + "; numberOfRetries: " + mNumberOfRetries + 
-    			"; lastRetry: " + mLastRetryDate + "; nextRetry: " + mNextRetryDate;
+    		return super.toString() + " with mBoard: (" + getBoard() + "); mMessage: (" + getMessage() + "); mAuthor: (" + getAuthor() +  "); mNumberOfRetries: " + mNumberOfRetries + 
+    			"; mLastRetry: " + mLastRetryDate + "; mNextRetry: " + mNextRetryDate;
     	}
     }
 
@@ -1450,7 +1484,7 @@ public final class SubscribedBoard extends Board {
         /**
          * Does not provide synchronization, you have to lock the MessageManager, this Board and then the database before calling this function.
          */
-        protected final void storeWithoutCommit(ExtObjectContainer db) {
+        protected final void storeWithoutCommit() {
         	try {
         		checkedActivate(2);
         		throwIfNotStored(mBoard);
@@ -1481,6 +1515,19 @@ public final class SubscribedBoard extends Board {
     	protected final void deleteWithoutCommit(ExtObjectContainer db) {
     		deleteWithoutCommit(2);
 		}
+    	
+    	@Override
+    	public String toString() {
+    		Message message;
+    		try {
+    			message = getMessage();
+    		} catch(MessageNotFetchedException e) {
+    			message = null;
+    		}
+    		
+    		return super.toString() + " with mBoard: (" + getBoard() + "); mAuthorID: " + mAuthorID + "; mThreadID: " + mThreadID + "; mMessageID: " + mMessageID + 
+    			"; subscriber: (" + getBoard().getSubscriber() + "); mMessage: (" + message + "); mTitle: " + mTitle; 
+    	}
     }
     
     /**
@@ -1768,6 +1815,11 @@ public final class SubscribedBoard extends Board {
 		public void markThreadAndRepliesAsReadAndCommit() {
 			changeThreadAndRepliesReadStateAndCommit(true);
 		}
+    }
+    
+    @Override
+    public String toString() {
+    	return super.toString() + "; mSubscriber: (" + getSubscriber() + "); mParentBoard: (" + getParentBoard() + ")"; 
     }
 
 }
