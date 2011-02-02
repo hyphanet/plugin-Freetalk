@@ -124,7 +124,7 @@ public class SelectBoardsPage extends WebPageImpl {
 				//		board.getName()));
 
 				// Description
-				row.addChild("td", new String[] { "align" }, new String[] { "center" },  board.getDescription(mOwnIdentity));
+				row.addChild("td", new String[] { "align" }, new String[] { "left" },  board.getDescription(mOwnIdentity));
 
 				// First seen
 				row.addChild("td", new String[] { "align" }, new String[] { "center" }, dateFormat.format(board.getFirstSeenDate()));
