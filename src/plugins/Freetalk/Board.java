@@ -39,9 +39,9 @@ public class Board extends Persistent implements Comparable<Board> {
     //  ! , ? * [ \ ] (space)  not allowed by NNTP
     //  / : < > | "            not allowed in filenames on certain platforms
     //                         (a problem for some newsreaders)
-    private static final String DISALLOWED_NAME_CHARACTERS = "!,?*[\\] /:<>|\"";
+    private static transient final String DISALLOWED_NAME_CHARACTERS = "!,?*[\\] /:<>|\"";
 
-    public static final int MAX_BOARDNAME_TEXT_LENGTH = 256;
+    public static transient final int MAX_BOARDNAME_TEXT_LENGTH = 256;
 
 
     /* Attributes, stored in the database */

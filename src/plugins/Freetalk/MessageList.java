@@ -41,7 +41,7 @@ import freenet.support.Logger;
 // @IndexedClass // I can't think of any query which would need to get all MessageList objects.
 public abstract class MessageList extends Persistent implements Iterable<MessageList.MessageReference> {
 	
-	public static final int MAX_MESSAGES_PER_MESSAGELIST = 256;
+	public static transient final int MAX_MESSAGES_PER_MESSAGELIST = 256;
 	
 	
 	@IndexedField

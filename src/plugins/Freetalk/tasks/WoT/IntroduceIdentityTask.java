@@ -29,12 +29,12 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 	 * How often do we check whether this identity needs to solve introduction puzzles?
 	 * ATTENTION: This interval is hardcoded in l10n IntroduceIdentityPage.TaskWasPostponed.Text
 	 */
-	public static final long PROCESSING_INTERVAL = 1 * 24 * 60 * 60 * 1000;
+	public static transient final long PROCESSING_INTERVAL = 1 * 24 * 60 * 60 * 1000;
 	
 	/**
 	 * If an error happens, we try again soon.
 	 */
-	public static final long PROCESSING_INTERVAL_SHORT = 10 * 60 * 1000;
+	public static transient final long PROCESSING_INTERVAL_SHORT = 10 * 60 * 1000;
 	
 	protected int mPuzzlesToSolve;
 	

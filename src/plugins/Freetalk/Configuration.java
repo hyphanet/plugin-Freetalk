@@ -29,15 +29,15 @@ public final class Configuration extends Persistent {
 	/* Names of the config parameters */
 	
 	
-	public static final String MINIMUM_TRUSTER_COUNT = "Introduction.MinimumTrusterCount";
+	public static transient final String MINIMUM_TRUSTER_COUNT = "Introduction.MinimumTrusterCount";
 	
-	public static final String NNTP_SERVER_ENABLED = "NNTP.ServerEnabled";
+	public static transient final String NNTP_SERVER_ENABLED = "NNTP.ServerEnabled";
 
 	/** Parameter name for the {@code bindTo} parameter. */
-	public static final String NNTP_SERVER_BINDTO = "NNTP.BindTo";
+	public static transient final String NNTP_SERVER_BINDTO = "NNTP.BindTo";
 
 	/** Parameter name for the {@code allowedHosts} parameter. */
-	public static final String NNTP_SERVER_ALLOWED_HOSTS = "NNTP.AllowedHosts";
+	public static transient final String NNTP_SERVER_ALLOWED_HOSTS = "NNTP.AllowedHosts";
 
 
 	/**

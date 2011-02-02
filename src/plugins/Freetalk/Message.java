@@ -46,15 +46,15 @@ public abstract class Message extends Persistent {
 
 	// TODO: Get rid of the String.length() limit and only use the byte[].length limit.
 
-	public final static int MAX_MESSAGE_TITLE_TEXT_LENGTH = 256;	 // String.length()
-	public final static int MAX_MESSAGE_TITLE_BYTE_LENGTH = 256;
+	public final static transient int MAX_MESSAGE_TITLE_TEXT_LENGTH = 256;	 // String.length()
+	public final static transient int MAX_MESSAGE_TITLE_BYTE_LENGTH = 256;
 
-	public final static int MAX_MESSAGE_TEXT_LENGTH = 64*1024;
-	public final static int MAX_MESSAGE_TEXT_BYTE_LENGTH  = 64*1024; // byte[].length
+	public final static transient int MAX_MESSAGE_TEXT_LENGTH = 64*1024;
+	public final static transient int MAX_MESSAGE_TEXT_BYTE_LENGTH  = 64*1024; // byte[].length
 
-	public final static int MAX_BOARDS_PER_MESSAGE = 16;
+	public final static transient int MAX_BOARDS_PER_MESSAGE = 16;
 
-	public final static int MAX_ATTACHMENTS_PER_MESSAGE = 256;
+	public final static transient int MAX_ATTACHMENTS_PER_MESSAGE = 256;
 
 	/* Attributes, stored in the database */
 
