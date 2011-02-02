@@ -8,6 +8,8 @@ import plugins.Freetalk.exceptions.InvalidParameterException;
 
 /**
  * DUPLICATE CODE TAKEN FROM THE WoT PLUGIN
+ * 
+ * TODO: This is not the latest version of the WoT code. Update it. It is not persistent so this can be postponed.
  */
 public final class WoTTrust {
 
