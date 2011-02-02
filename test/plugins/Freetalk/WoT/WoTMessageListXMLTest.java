@@ -3,7 +3,9 @@ package plugins.Freetalk.WoT;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
+import java.util.TimeZone;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -65,10 +67,15 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 		myAuthor.storeAndCommit();
 		
 
+		final GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+		calendar.set(2009, 06-1, 01); final Date date1 = calendar.getTime();
+		calendar.set(2008, 05-1, 02); final Date date2 = calendar.getTime();
+		calendar.set(2007, 04-1, 03); final Date date3 = calendar.getTime();
+		
 		WoTOwnMessage[] messages = new WoTOwnMessage[] {
-			mMessageManager.postMessage(null, null, myBoards1, null, myAuthor, "title1", new Date(2009-1900, 06-1, 01), "text1", null),
-			mMessageManager.postMessage(null, null, myBoards2, null, myAuthor, "title2", new Date(2008-1900, 05-1, 02), "text2", null),
-			mMessageManager.postMessage(null, null, myBoards3, null, myAuthor, "title3", new Date(2007-1900, 04-1, 03),"text3", null),
+			mMessageManager.postMessage(null, null, myBoards1, null, myAuthor, "title1", date1, "text1", null),
+			mMessageManager.postMessage(null, null, myBoards2, null, myAuthor, "title2", date2, "text2", null),
+			mMessageManager.postMessage(null, null, myBoards3, null, myAuthor, "title3", date3,"text3", null),
 		};
 	
 		FreenetURI[] messageURIs = new FreenetURI[] {

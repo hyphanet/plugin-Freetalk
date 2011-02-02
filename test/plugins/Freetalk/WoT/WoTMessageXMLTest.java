@@ -7,8 +7,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
+import java.util.TimeZone;
 
 import javax.activation.MimeType;
 
@@ -80,12 +82,14 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		attachments.add(new Attachment(new FreenetURI("KSK@attachment1"), new MimeType("text/plain"), 10001));
 		attachments.add(new Attachment(new FreenetURI("KSK@attachment2"), new MimeType("audio/ogg"), 10002));
 		
-		@SuppressWarnings("deprecation")
+		final GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+		calendar.set(2009, 05-1, 03, 16, 15, 14); final Date date = calendar.getTime();
+		
 		WoTMessage message = WoTMessage.construct(messageList, mMessageFreenetURI, myMessageID,
 				new WoTMessageURI(messageList.getURI(), myThreadID), // Thread
 				new WoTMessageURI(messageList.getURI(), myParentID), // Parent
 				myBoards, myBoard, myAuthor,
-				"Message title", new Date(109, 4, 3, 16, 15, 14), "Message body\nNew line", attachments);
+				"Message title", date, "Message body\nNew line", attachments);
 		
 		mMessageID = message.getID();
 		
