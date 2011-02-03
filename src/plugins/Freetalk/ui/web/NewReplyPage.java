@@ -31,9 +31,9 @@ import freenet.support.api.HTTPRequest;
 
 public class NewReplyPage extends WebPageImpl {
 
-	public static final byte INCREASE_TRUST_VALUE = 10;
+	public static final byte INCREASE_TRUST_VALUE = 1;
 
-	public static final byte DECREASE_TRUST_VALUE = -10;
+	public static final byte DECREASE_TRUST_VALUE = -1;
 
 
 	private final SubscribedBoard mBoard;
