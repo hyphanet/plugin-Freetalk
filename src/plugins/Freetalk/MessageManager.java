@@ -1688,8 +1688,8 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		
 		new String[] { "eng.trustvalues", "Discussion about the trust values which the Web Of Trust community has assigned to identities"},
 		
-		new String[] { "fra.freenet", ""},
-		new String[] { "fra.freenet.aide", ""},
+		new String[] { "fra.freenet", "Discussions générales à propos de Freenet"},
+		new String[] { "fra.freenet.aide", "Vos questions, problèmes ou requêtes à propos de Freenet."},
 		
 		new String[] { "mul.downloads", "All kinds of downloads for which there is no special board. Please obey the law!"},
 		new String[] { "mul.downloads.books", "Downloads of written books. Please obey the law!"},
