@@ -148,12 +148,14 @@ public final class Configuration extends Persistent {
 	 * Sets a String configuration parameter. You have to call storeAndCommit to write it to disk.
 	 * 
 	 * @param key Name of the config parameter.
-	 * @param value Value of the config parameter.
+	 * @param value Value of the config parameter. Null to remove the setting.
 	 */
 	public synchronized void set(String key, String value) {
 		IfNull.thenThrow(key, "Key");
-		IfNull.thenThrow(value, "Value");
-		mStringParams.put(key, value);
+		if(value != null)
+			mStringParams.put(key, value);
+		else
+			mStringParams.remove(key);
 	}
 	
 	/**
