@@ -251,7 +251,7 @@ public final class ThreadPage extends WebPageImpl {
 		HTMLNode authorNode = parent.addChild("td", new String[] { "align", "valign", "rowspan", "width", "class" }, new String[] { "left", "top", "2", "15%", "author" }, "");
 
 		authorNode.addChild("a", new String[] { "class", "href", "title" },
-				new String[] { "identity-link", "/WoT/ShowIdentity?id=" + author.getID(), "Web of Trust Page" })
+				new String[] { "identity-link", Freetalk.WOT_PLUGIN_URI + "/ShowIdentity?id=" + author.getID(), "Web of Trust Page" })
 				.addChild("abbr", new String[] { "title" }, new String[] { author.getID() })
 				.addChild("span", "class", "name", author.getShortestUniqueName());
 		
@@ -320,7 +320,7 @@ public final class ThreadPage extends WebPageImpl {
         }
         
         authorNode.addChild("br");
-        authorNode.addChild("div", "class", "identicon").addChild("img", new String[] { "src", "width", "height" }, new String[] { "/WoT/GetIdenticon?identity=" + author.getID(), "128", "128"});
+        authorNode.addChild("div", "class", "identicon").addChild("img", new String[] { "src", "width", "height" }, new String[] { Freetalk.WOT_PLUGIN_URI + "/GetIdenticon?identity=" + author.getID(), "128", "128"});
     }
 
     /**
@@ -462,7 +462,7 @@ public final class ThreadPage extends WebPageImpl {
 						try {
 							final WoTIdentity author = (WoTIdentity)identityManager.getIdentity(matcher.group(1));
 							authorNode.addChild("a", new String[] { "class", "href", "title" },
-									new String[] { "identity-link", "/WoT/ShowIdentity?id=" + author.getID(), "Web of Trust Page" })
+									new String[] { "identity-link", Freetalk.WOT_PLUGIN_URI + "/ShowIdentity?id=" + author.getID(), "Web of Trust Page" })
 									.addChild("abbr", new String[] { "title" }, new String[] { author.getID() })
 									.addChild("span", "class", "name", author.getShortestUniqueName());
 						} catch (NoSuchIdentityException e) {
