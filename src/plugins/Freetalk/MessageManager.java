@@ -834,14 +834,14 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	protected Date calculateDateOfNextMessageFetchRetry(FetchFailedMarker.Reason reason, Date now, int numberOfRetries) {
 		switch(reason) {
 			case DataNotFound:
+			// TODO: Optimization: Once we are sure that parsing failures do not happen randomly, set retry to a very high delay or limit to 3 retries or so....
+			case ParsingFailed:
 				// We need this check to prevent overflow causing negative Dates :)
 				if(numberOfRetries >= MAXIMAL_MESSAGE_FETCH_RETRY_DELAY_AT_RETRY_COUNT)
 					return new Date(now.getTime() + MAXIMAL_MESSAGE_FETCH_RETRY_DELAY);
 				
 				// Math.min() is just a double check
 				return new Date(now.getTime() + Math.min(MINIMAL_MESSAGE_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGE_FETCH_RETRY_DELAY));
-			case ParsingFailed:
-				return new Date(Long.MAX_VALUE);
 			default:
 				return new Date(now.getTime()  + MINIMAL_MESSAGE_FETCH_RETRY_DELAY);
 		}
@@ -850,14 +850,14 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	protected Date calculateDateOfNextMessageListFetchRetry(FetchFailedMarker.Reason reason, Date now, int numberOfRetries) {
 		switch(reason) {
 			case DataNotFound:
+			// TODO: Optimization: Once we are sure that parsing failures do not happen randomly, set retry to a very high delay or limit to 3 retries or so....
+			case ParsingFailed:
 				// We need this check to prevent overflow causing negative Dates :)
 				if(numberOfRetries >= MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY_AT_RETRY_COUNT)
 					return new Date(now.getTime() + MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY);
 				
 				// Math.min() is just a double check
 				return new Date(now.getTime()  + Math.min(MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY * (1<<numberOfRetries), MAXIMAL_MESSAGELIST_FETCH_RETRY_DELAY));
-			case ParsingFailed:
-				return new Date(Long.MAX_VALUE);
 			default:
 				return new Date(now.getTime()  + MINIMAL_MESSAGELIST_FETCH_RETRY_DELAY);
 		}		
