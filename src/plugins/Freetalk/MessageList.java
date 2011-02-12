@@ -343,6 +343,11 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		protected void setMessageList(MessageList myMessageList) {
 			mMessageList = myMessageList;
 		}
+		
+		@Override
+		public String toString() {
+			return "[" + super.toString() + ": mMessageID: " + getMessageID() + "; mMessageURI: " + getURI() + "]";
+		}
 
 	}
 	
@@ -374,6 +379,11 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		public String getMessageListID() {
 			// checkedActivate(1);
 			return mMessageListID;
+		}
+		
+		@Override
+		public String toString() {
+			return "[" + super.toString() + ": mMessageListID: " + getMessageListID() + "]";
 		}
 		
 	}
@@ -411,6 +421,11 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			checkedActivate(2);
 			mMessageReference.initializeTransient(mFreetalk);
 			return mMessageReference;
+		}
+		
+		@Override
+		public String toString() {
+			return "[" + super.toString() + ": [" + getMessageReference() +"] ]";
 		}
 	}
 
