@@ -756,7 +756,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 						// list with the same ID in this transaction anyway. 
 					}
 					
-					// Mark existing messages as fetched... Can happen if a message is list in multiple lists.
+					// Mark existing messages as fetched... Can happen if a message is listed in multiple lists.
 					for(MessageReference ref : list) {
 						try {
 							get(ref.getMessageID());
