@@ -157,11 +157,11 @@ public final class WoTMessageXML {
 			// Subject/Body - they are the "core" components of a message, therefore they violate the convention and are Elements, not attributes.
 			
 			final Element subjectTag = xmlDoc.createElement("Subject");
-			subjectTag.appendChild(xmlDoc.createCDATASection(m.getTitle()));
+			subjectTag.appendChild(xmlDoc.createTextNode(m.getTitle()));
 			messageElement.appendChild(subjectTag);
 
 			final Element bodyTag = xmlDoc.createElement("Body");
-			bodyTag.appendChild(xmlDoc.createCDATASection(m.getText()));
+			bodyTag.appendChild(xmlDoc.createTextNode(m.getText()));
 			messageElement.appendChild(bodyTag);
 			
 			// Attachments

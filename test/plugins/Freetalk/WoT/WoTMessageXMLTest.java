@@ -89,7 +89,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 				new WoTMessageURI(messageList.getURI(), myThreadID), // Thread
 				new WoTMessageURI(messageList.getURI(), myParentID), // Parent
 				myBoards, myBoard, myAuthor,
-				"Message title", date, "Message body\nNew line", attachments);
+				"Message title <no-xml-tag>", date, "Message body <no-xml-tag>\nNew line[quote] quoted text [/quote]", attachments);
 		
 		mMessageID = message.getID();
 		
@@ -109,9 +109,9 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 			"<Thread URI=\"SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/" + Freetalk.PLUGIN_TITLE + "%7cMessageList-123#afe6519b-7fb2-4533-b172-1f966e79d127\"/>" +
 			"<Message URI=\"SSK@nU16TNCS7~isPTa9gw6nF8c3lQpJGFHA2KwTToMJuNk,FjCiOUGSl6ipOE9glNai9WCp1vPM8k181Gjw62HhYSo,AQACAAE/" + Freetalk.PLUGIN_TITLE + "%7cMessageList-123#d5b0dcc4-91cb-4870-8ab9-8588e895fa5d\"/>" +
 			"</InReplyTo>" +
-			"<Subject><![CDATA[Message title]]></Subject>" +
-			"<Body><![CDATA[Message body\n" +
-			"New line]]></Body>" +
+			"<Subject>Message title &lt;no-xml-tag&gt;</Subject>" +
+			"<Body>Message body &lt;no-xml-tag&gt;\n" +
+			"New line[quote] quoted text [/quote]</Body>" +
 			"<Attachments>" +
 			"<File MIMEType=\"text/plain\" Size=\"10001\" URI=\"KSK@attachment1\"/>" +
 			"<File MIMEType=\"audio/ogg\" Size=\"10002\" URI=\"KSK@attachment2\"/>" +
@@ -142,12 +142,4 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		assertEquals(mHardcodedEncodedMessage, decodedAndEncodedMessage.toString().replace("\r\n", "\n"));
 	}
 	
-	/**
-	 * FIXME XXX: Currently this throws a SAXParseException and I don't know why.
-	 */
-	public void testParsingFailureBug() throws Exception {
-		String sampleMessage = new String("<?xml version=\"1.1\" encoding=\"UTF-8\" standalone=\"no\"?><FreetalkRC1 Version=\"1\"><Message Date=\"2011-02-06 10:40:58\" ID=\"74305372-7ca2-43cb-bcde-fdcc441562a9@g~4XXw0hjp9TLocYZzunYWX6Don2AQhG-zplmzoCmY0\" Version=\"1\"><Boards><Board Name=\"mul.test\"/><ReplyToBoard Name=\"mul.test\"/></Boards><Subject><![CDATA[BBcode test]]></Subject><Body><![CDATA[First, one quote :\n\n[quote] quoted text [/quote]]]></Body></Message></FreetalkRC1>");
-
-		mXML.decode(mMessageManager, new ByteArrayInputStream(sampleMessage.getBytes("UTF-8")), (WoTMessageList)mMessageManager.getMessageList(mMessageListID), mMessageFreenetURI);
-	}
 }
