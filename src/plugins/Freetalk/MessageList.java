@@ -346,7 +346,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		
 		@Override
 		public String toString() {
-			return "[" + super.toString() + ": mMessageID: " + getMessageID() + "; mMessageURI: " + getURI() + "]";
+			return "[" + super.toString() + ": mMessageID: " + getMessageID() + "; mMessageURI: " + (mDB != null ? getURI() : "(cannot get because mDB==null)") + "]";
 		}
 
 	}
@@ -425,7 +425,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		
 		@Override
 		public String toString() {
-			return "[" + super.toString() + ": [" + getMessageReference() +"] ]";
+			return "[" + super.toString() + ": [" + (mDB != null ? getMessageReference() : "(cannot get because mDB==null)") +"] ]";
 		}
 	}
 
@@ -593,6 +593,8 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			checkedDelete(mMessages);
 			
 			for(MessageReference ref : messages) {
+				ref.initializeTransient(mFreetalk);
+				
 				// TODO: This requires that we have locked the MessageManager, which is currently the case for every call to deleteWithoutCommit()
 				// However, we should move the code elsewhere to ensure the locking...
 				final MessageManager messageManager = mFreetalk.getMessageManager();
@@ -611,7 +613,6 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 					
 				}
 				
-				ref.initializeTransient(mFreetalk);
 				ref.deleteWithoutCommit();
 			}
 			
