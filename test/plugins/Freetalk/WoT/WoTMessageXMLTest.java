@@ -141,4 +141,13 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		
 		assertEquals(mHardcodedEncodedMessage, decodedAndEncodedMessage.toString().replace("\r\n", "\n"));
 	}
+	
+	/**
+	 * FIXME XXX: Currently this throws a SAXParseException and I don't know why.
+	 */
+	public void testParsingFailureBug() throws Exception {
+		String sampleMessage = new String("<?xml version=\"1.1\" encoding=\"UTF-8\" standalone=\"no\"?><FreetalkRC1 Version=\"1\"><Message Date=\"2011-02-06 10:40:58\" ID=\"74305372-7ca2-43cb-bcde-fdcc441562a9@g~4XXw0hjp9TLocYZzunYWX6Don2AQhG-zplmzoCmY0\" Version=\"1\"><Boards><Board Name=\"mul.test\"/><ReplyToBoard Name=\"mul.test\"/></Boards><Subject><![CDATA[BBcode test]]></Subject><Body><![CDATA[First, one quote :\n\n[quote] quoted text [/quote]]]></Body></Message></FreetalkRC1>");
+
+		mXML.decode(mMessageManager, new ByteArrayInputStream(sampleMessage.getBytes("UTF-8")), (WoTMessageList)mMessageManager.getMessageList(mMessageListID), mMessageFreenetURI);
+	}
 }
