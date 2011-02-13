@@ -21,6 +21,7 @@ import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.MessageRating;
 import plugins.Freetalk.MessageURI;
 import plugins.Freetalk.OwnIdentity;
+import plugins.Freetalk.OwnMessageList;
 import plugins.Freetalk.Persistent;
 import plugins.Freetalk.Persistent.InitializingObjectSet;
 import plugins.Freetalk.exceptions.DuplicateElementException;
@@ -251,6 +252,13 @@ public final class WoTMessageManager extends MessageManager {
 		
 		WoTOwnIdentity author = (WoTOwnIdentity)message.getAuthor();
 		WoTOwnMessageList list = new WoTOwnMessageList(author, getFreeOwnMessageListIndex(author));
+		
+		// TODO: Optimization: This is debug code which was added on 2011-02-13 for preventing DuplicateMessageListException, it can be removed after some months if they do not happen.
+		try {
+			final MessageList existingList = mFreetalk.getMessageManager().getOwnMessageList(list.getID());
+			throw new RuntimeException("getFreeOwnMessageListIndex reported non-free index, taken by: " + existingList);
+		} catch(NoSuchMessageListException e) {}
+		
 		list.initializeTransient(mFreetalk);
 		list.addMessage(message);
 		list.storeWithoutCommit();
@@ -365,9 +373,19 @@ public final class WoTMessageManager extends MessageManager {
 		for(final MessageList list : result) {
 			FetchFailedMarker marker;
 			
-			try {
-				marker = getMessageListFetchFailedMarker(list.getID());
-			} catch(NoSuchFetchFailedMarkerException e) {
+			if(!(list instanceof OwnMessageList)) {
+				// If the list is no OwnMessageList, it might be a ghost list only for a data-not-found slot... we shall ignore
+				// those lists in the computation, so we check whether there is a FetchFailedMarker
+				try {
+					marker = getMessageListFetchFailedMarker(list.getID());
+				} catch(NoSuchFetchFailedMarkerException e) {
+					marker = null;
+				}
+			} else {
+				// The list is an OwnMessageList, we MUST NOT check for a FetchFailedMarker: We ignore DataNotFound non-own MessageLists when
+				// returning a free slot index, so both an OwnMessageList and a MessageList with DNF FetchFailedMarker might exist at once
+				// for the same index. If we DID take its FetchFailedMarker into consideration, the index would be returned by this function
+				// even though an OwnMessageList exists for that index already.
 				marker = null;
 			}
 			

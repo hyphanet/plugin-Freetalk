@@ -521,6 +521,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	public synchronized void onMessageListInsertStarted(OwnMessageList list) {
 		synchronized(db.lock()) {
 			try {
+				list.throwIfNotStored();
 				list.beginOfInsert();
 				Persistent.checkedCommit(db, this);
 			}

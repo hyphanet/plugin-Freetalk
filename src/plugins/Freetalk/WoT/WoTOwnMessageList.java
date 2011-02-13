@@ -3,8 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import plugins.Freetalk.MessageList;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.OwnMessageList;
+import plugins.Freetalk.exceptions.NoSuchMessageListException;
 import freenet.keys.FreenetURI;
 
 //@IndexedField // I can't think of any query which would need to get all WoTOwnMessageList objects.
@@ -34,6 +36,13 @@ public final class WoTOwnMessageList extends OwnMessageList {
 		long freeIndex = mFreetalk.getMessageManager().getFreeOwnMessageListIndex(getAuthor());
 		mIndex = Math.max(mIndex+1, freeIndex);
 		mID = MessageListID.construct(mAuthor, mIndex).toString();
+		
+		// TODO: Optimization: This is debug code which was added on 2011-02-13 for preventing DuplicateMessageListException, it can be removed after some months if they do not happen.
+		try {
+			final MessageList existingList = mFreetalk.getMessageManager().getOwnMessageList(mID);
+			throw new RuntimeException("getFreeOwnMessageListIndex reported non-free index, taken by: " + existingList);
+		} catch(NoSuchMessageListException e) {}
+		
 		storeWithoutCommit();
 	}
 	
