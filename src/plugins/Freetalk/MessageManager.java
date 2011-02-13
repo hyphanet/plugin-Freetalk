@@ -885,14 +885,11 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		final Query q = db.query();
 		q.constrain(MessageFetchFailedMarker.class);
 		q.descend("mMessageReference").constrain(ref).identity();
-		@SuppressWarnings("unchecked")
-		final ObjectSet<MessageFetchFailedMarker> markers = q.execute();
+		final ObjectSet<MessageFetchFailedMarker> markers = new Persistent.InitializingObjectSet<MessageList.MessageFetchFailedMarker>(mFreetalk, q);
 		
 		switch(markers.size()) {
 			case 1:
-				final MessageFetchFailedMarker result = markers.next();
-				result.initializeTransient(mFreetalk);
-				return result;
+				return markers.next();
 			case 0:
 				throw new NoSuchFetchFailedMarkerException(ref.toString());
 			default:
