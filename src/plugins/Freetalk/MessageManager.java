@@ -756,6 +756,13 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 						// list with the same ID in this transaction anyway. 
 					}
 					
+					// TODO: Optimization: This is debug code which was added on 2011-02-13 for tracking down 0004739, it can be removed after some months if this does not happen.
+					// and/or if the bug tracker entry is marked as fixed
+					try {
+						getMessageList(list.getID());
+						throw new RuntimeException("Duplicate list would have been created, ghostList.deleteWithoutCommit() did not work!");
+					} catch(NoSuchMessageListException e) {}
+					
 					// Mark existing messages as fetched... Can happen if a message is listed in multiple lists.
 					for(MessageReference ref : list) {
 						try {
