@@ -741,17 +741,17 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		synchronized(db.lock()) {
 				try {
 					if(marker != null) {
+						// TODO: This is usually an error, but it is no error if the fetched list is the only list which there was a ghost list for (i.e. edition 0)
+						// Re-think about the conditions when this is an error and log an error then, not only a warning.
+						Logger.warning(this, "MessageList was fetched even though a FetchFailedMarker existed for it! Deleting the marker: " + marker);
 						marker.deleteWithoutCommit();
-						Logger.normal(this, "Deleted a FetchFailedMarker for the MessageList.");
+					}
 						
-						if(ghostList != null) {
-							// TODO: This is usually an error, but it is no error if the fetched list is the only list which there was a ghost list for (i.e. edition 0)
-							// Re-think about the conditions when this is an error and log an error then, not only a warning.
-							Logger.warning(this, "MessageList was fetched even though a ghost list existed for it! Deleting the ghost list: " + ghostList);
-							ghostList.deleteWithoutCommit();
-							// We don't call onMessageListDeleted on the IdentityStatistics since we will call onMessageListFetched for the 
-							// list with the same ID in this transaction anyway. 
-						}
+					if(ghostList != null) { // We do not nest it with the above if() for readability / robustness.
+						Logger.warning(this, "MessageList was fetched even though a ghost list existed for it! Deleting the ghost list: " + ghostList);
+						ghostList.deleteWithoutCommit();
+						// We don't call onMessageListDeleted on the IdentityStatistics since we will call onMessageListFetched for the 
+						// list with the same ID in this transaction anyway. 
 					}
 					
 					// Mark existing messages as fetched... Can happen if a message is list in multiple lists.
