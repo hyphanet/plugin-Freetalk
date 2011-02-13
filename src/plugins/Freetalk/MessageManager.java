@@ -763,6 +763,8 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 						throw new RuntimeException("Duplicate list would have been created, ghostList.deleteWithoutCommit() did not work!");
 					} catch(NoSuchMessageListException e) {}
 					
+					list.storeWithoutCommit();
+					
 					// Mark existing messages as fetched... Can happen if a message is listed in multiple lists.
 					for(MessageReference ref : list) {
 						try {
@@ -771,8 +773,6 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 							ref.storeWithoutCommit();
 						} catch(NoSuchMessageException e) {}
 					}
-					
-					list.storeWithoutCommit();
 					
 					final IdentityStatistics stats = getOrCreateIdentityStatistics(list.getAuthor());
 					stats.onMessageListFetched(list);
