@@ -90,7 +90,7 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 				if(identityManager.getReceivedTrustsCount(mOwner) < minimumTrusterCount) {
 					mPuzzlesToSolve = minimumTrusterCount * 2;  
 					mNextDisplayTime = now;
-					mNextProcessingTime = Long.MAX_VALUE; // Task is in display mode now, no need to proccess it anymore
+					mNextProcessingTime = now + PROCESSING_INTERVAL; // schedule this task again for processing because introductions are not the only way to get onto trust lists
 					storeAndCommit();
 					return;
 				}
