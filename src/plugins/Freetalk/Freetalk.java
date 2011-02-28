@@ -70,13 +70,13 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static volatile boolean FAST_DEBUG_MODE = false; // FIXME: Set to false before release!
 	
 	public static final String PLUGIN_URI = "/Freetalk";
-	public static final String PLUGIN_TITLE = "FreetalkRC1"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
-	public static final String WEB_OF_TRUST_NAME = "WebOfTrustRC1"; // FIXME: Change to plugins.WebOfTrust.WebOfTrust.WOT_NAME before 0.1 final release.
+	public static final String PLUGIN_TITLE = "FreetalkRC2"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
+	public static final String WEB_OF_TRUST_NAME = "WebOfTrustRC2"; // FIXME: Change to plugins.WebOfTrust.WebOfTrust.WOT_NAME before 0.1 final release.
 	public static final String WOT_PLUGIN_NAME = "plugins.WebOfTrust.WebOfTrust";
 	public static final String WOT_PLUGIN_URI = "/WebOfTrust";
 	public static final String WOT_CONTEXT = PLUGIN_TITLE;
 	public static final String DATABASE_FILENAME = PLUGIN_TITLE + ".db4o";
-	public static final int DATABASE_FORMAT_VERSION = -50; // FIXME: Change to 1 before releasing
+	public static final int DATABASE_FORMAT_VERSION = -45; // FIXME: Change to 1 before releasing
 
 	/* References from the node */
 	
@@ -351,14 +351,16 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		// ATTENTION: Make sure that no upgrades are done here which are needed by the constructors of
 		// IdentityManager/MessageManager/PersistentTaskManager - they are created before this function is called.
 		
+		// Skeleton for upgrade code
 		/*
-		if(oldVersion == 1) {
+		if(oldVersion == blah) {
 			Logger.normal(this, "Upgrading database version " + oldVersion);
 			
 			synchronized(mMessageManager) {
+				Logger.normal(this, "Doing stuff");
+			
 				synchronized(db.lock()) {
 					try {
-
 						Persistent.checkedCommit(db, this);
 					} catch(RuntimeException e) {
 						Persistent.checkedRollbackAndThrow(db, this, e);
