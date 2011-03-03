@@ -189,6 +189,8 @@ public abstract class IdentityManager {
 	 * Extracts the OwnIdentity ID from the input Freetalk address 
 	 * @param freetalkAddress freetalk address
 	 * @return OwnIdentity ID or null on error
+	 * 
+	 * TODO: Move this function to a better place... it contains references to WoT-related stuff..
 	 */
 	public static String extractIdFromFreetalkAddress(final String freetalkAddress) {
 	    /*
@@ -196,7 +198,7 @@ public abstract class IdentityManager {
 	     *   nickname@_ID_.freetalk
 	     * We want the _ID_
 	     */
-	    final String trailing = ".freetalk";
+	    final String trailing = "." + Freetalk.WOT_CONTEXT.toLowerCase();
 	    try {
 	        // sanity checks
 	        if (!freetalkAddress.toLowerCase().endsWith(trailing)) {
