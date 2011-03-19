@@ -25,6 +25,7 @@ import plugins.Freetalk.OwnMessageList;
 import plugins.Freetalk.Persistent;
 import plugins.Freetalk.Persistent.InitializingObjectSet;
 import plugins.Freetalk.exceptions.DuplicateElementException;
+import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
@@ -453,7 +454,7 @@ public final class WoTMessageManager extends MessageManager {
 		return new Persistent.InitializingObjectSet<WoTMessageRating>(mFreetalk, query);
 	}
 
-	public void deleteMessageRating(final MessageRating rating) {
+	private void deleteMessageRating(final MessageRating rating, boolean undoTrustChange) {
 		if(!(rating instanceof WoTMessageRating))
 			throw new IllegalArgumentException("No WoT rating: " + rating);
 		
@@ -461,8 +462,18 @@ public final class WoTMessageManager extends MessageManager {
 		
 		synchronized(this) {
 			realRating.initializeTransient(mFreetalk);
-			realRating.deleteAndCommit();
+			realRating.deleteAndCommit(undoTrustChange);
 		}
+	}
+
+	@Override
+	public void deleteMessageRatingWithoutRevertingEffect(MessageRating rating) {
+		deleteMessageRating(rating, false);
+	}
+
+	@Override
+	public void deleteMessageRatingAndRevertEffect(MessageRating rating) {
+		deleteMessageRating(rating, true);
 	}
 	
 }

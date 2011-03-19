@@ -283,8 +283,8 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 
 	private synchronized void deleteMessage(Message message) {
 		for(MessageRating rating : getAllMessageRatings(message)) {
-			// This call does a full transaction.
-			deleteMessageRating(rating);
+			// We must not undo the effect because we do not want message deletion due to distrust of the author result in the distrust to be undone.
+			deleteMessageRatingWithoutRevertingEffect(rating); // This call does a full transaction.
 		}
 		
 		for(Board board : message.getBoards()) {
@@ -461,7 +461,8 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		if(identity instanceof OwnIdentity) {
 			final OwnIdentity ownId = (OwnIdentity)identity;
 			for(final MessageRating messageRating : getAllMessageRatingsBy(ownId)) {
-				deleteMessageRating(messageRating); // This does a full transaction and commits it.
+				// We must not undo the effect because we do not want message deletion due to distrust of the author result in the distrust to be undone.
+				deleteMessageRatingWithoutRevertingEffect(messageRating); // This does a full transaction and commits it.
 			}
 						
 			for(SubscribedBoard board : subscribedBoardIteratorSortedByName((OwnIdentity)identity)) { // TODO: Optimization: Use a non-sorting function.
@@ -1589,7 +1590,19 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	
 	public abstract ObjectSet<? extends MessageRating> getAllMessageRatingsBy(OwnIdentity rater);
 
-	public abstract void deleteMessageRating(final MessageRating rating);
+	/**
+	 * Deletes the given rating. Does not undo the effect of the rating (trust value changes, etc).
+	 * For being used in automatic rating deletion - this usually happens when an identity is deleted due to distrust - we do not want the distrust
+	 * which caused the identity deletion to be undone.
+	 */
+	public abstract void deleteMessageRatingWithoutRevertingEffect(final MessageRating rating);
+
+	/**
+	 * Deletes the given rating and reverts its effect (trust value change, etc.)
+	 * For being used in the UI - it can fail to revert the effect and throw an exception (due to being disconnected to the web of trust plugin,
+	 * due to the trust value of the affected identity having been changed by the user, etc.).
+	 */
+	public abstract void deleteMessageRatingAndRevertEffect(final MessageRating rating);
 
 	protected final synchronized IdentityStatistics getIdentityStatistics(final Identity identity) throws NoSuchObjectException {
 		final Query query = db.query();
