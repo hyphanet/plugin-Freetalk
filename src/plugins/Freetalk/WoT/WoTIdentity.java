@@ -39,7 +39,7 @@ public class WoTIdentity extends Persistent implements Identity {
 	private final FreenetURI mRequestURI;
 	
 	/** The nickname of this Identity */
-	private final String mNickname;
+	public String mNickname; // FIXME: Change to private and final in 0.1 final
 	
 	/**
 	 * Used for garbage collecting old identities which are not returned by the WoT plugin anymore.
@@ -185,7 +185,8 @@ public class WoTIdentity extends Persistent implements Identity {
 		|| !StringValidityChecker.containsNoInvalidCharacters(newNickname)
 		|| !StringValidityChecker.containsNoLinebreaks(newNickname)
 		|| !StringValidityChecker.containsNoControlCharacters(newNickname)
-		|| !StringValidityChecker.containsNoInvalidFormatting(newNickname))
+		|| !StringValidityChecker.containsNoInvalidFormatting(newNickname)
+		|| newNickname.contains("@")) // Must not be allowed since we use it to generate "identity@public-key-hash" unique nicknames
 			throw new InvalidParameterException("Nickname contains invalid characters"); /* TODO: Tell the user which ones are invalid!!! */
 		
 		if(newNickname.length() == 0) throw new InvalidParameterException("Blank nickname.");
@@ -206,7 +207,7 @@ public class WoTIdentity extends Persistent implements Identity {
 		}
 	}
 
-	protected void storeWithoutCommit() {
+	public void storeWithoutCommit() { // FIXME: Change to protected in 0.1 final
 		try {		
 			// 3 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(3);
