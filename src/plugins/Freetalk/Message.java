@@ -976,7 +976,7 @@ public abstract class Message extends Persistent {
 		if(title == null)
 			return false;
 
-		if(title.length() == 0)
+		if(title.trim().length() == 0)
 			return false;
 
 		if(title.length() > MAX_MESSAGE_TITLE_TEXT_LENGTH)
