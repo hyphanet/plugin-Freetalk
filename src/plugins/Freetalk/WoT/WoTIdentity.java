@@ -39,7 +39,7 @@ public class WoTIdentity extends Persistent implements Identity {
 	private final FreenetURI mRequestURI;
 	
 	/** The nickname of this Identity */
-	public String mNickname; // FIXME: Change to private and final in 0.1 final
+	private final String mNickname;
 	
 	/**
 	 * Used for garbage collecting old identities which are not returned by the WoT plugin anymore.
@@ -207,7 +207,7 @@ public class WoTIdentity extends Persistent implements Identity {
 		}
 	}
 
-	public void storeWithoutCommit() { // FIXME: Change to protected in 0.1 final
+	protected void storeWithoutCommit() {
 		try {		
 			// 3 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(3);

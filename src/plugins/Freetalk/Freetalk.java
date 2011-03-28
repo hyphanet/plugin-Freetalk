@@ -67,16 +67,16 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	 * If set to true, all thread periods will be set to very low values, resulting in very fast message downloading.
 	 * It is volatile to prevent compiler warnings about unreachable code.
 	 */
-	public static volatile boolean FAST_DEBUG_MODE = false; // FIXME: Set to false before release!
+	public static volatile boolean FAST_DEBUG_MODE = false;
 	
 	public static final String PLUGIN_URI = "/Freetalk";
-	public static final String PLUGIN_TITLE = "FreetalkRC2"; /* FIXME REDFLAG: Has to be changed to Freetalk before release! Otherwise messages will disappear */
-	public static final String WEB_OF_TRUST_NAME = "WebOfTrustRC2"; // FIXME: Change to plugins.WebOfTrust.WebOfTrust.WOT_NAME before 0.1 final release.
+	public static final String PLUGIN_TITLE = "Freetalk";
+	public static final String WEB_OF_TRUST_NAME = "WebOfTrust";
 	public static final String WOT_PLUGIN_NAME = "plugins.WebOfTrust.WebOfTrust";
 	public static final String WOT_PLUGIN_URI = "/WebOfTrust";
 	public static final String WOT_CONTEXT = PLUGIN_TITLE;
 	public static final String DATABASE_FILENAME = PLUGIN_TITLE + ".db4o";
-	public static final int DATABASE_FORMAT_VERSION = -44; // FIXME: Change to 1 before releasing
+	public static final int DATABASE_FORMAT_VERSION = -1;
 
 	/* References from the node */
 	
@@ -373,35 +373,6 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			Logger.normal(this, "Upgraded database to version " + oldVersion);
 		}
 		*/
-		
-		// FIXME: Remove in 0.1 final
-		if(oldVersion == -45) {
-			Logger.normal(this, "Upgrading database version " + oldVersion);
-			
-			synchronized(mIdentityManager) {
-				Logger.normal(this, "Correcting nicknames...");
-			
-				synchronized(db.lock()) {
-					try {
-						for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
-							if(identity.getNickname() != null && identity.getNickname().contains("@")) {
-								final String newName = identity.mNickname.replace("@", "_");
-								Logger.debug(this, "Renaming " + identity.mNickname + " to " + newName);
-								identity.mNickname = newName;
-								identity.storeWithoutCommit();
-							}
-						}
-						Persistent.checkedCommit(db, this);
-					} catch(RuntimeException e) {
-						Persistent.checkedRollbackAndThrow(db, this, e);
-					}
-				}
-			}
-			
-			mConfig.setDatabaseFormatVersion(++oldVersion);
-			mConfig.storeAndCommit();
-			Logger.normal(this, "Upgraded database to version " + oldVersion);
-		}
 		
 		if(oldVersion == Freetalk.DATABASE_FORMAT_VERSION)
 			return;
