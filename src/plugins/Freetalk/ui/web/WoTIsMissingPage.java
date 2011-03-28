@@ -25,8 +25,7 @@ public class WoTIsMissingPage extends WebPageImpl {
         if(mNeedsNewWoT) {
             HTMLNode box = addAlertBox(l10n().getString("WoTIsMissingPage.WotOutdated.Header"));
             HTMLNode aChild = box.addChild("#");
-            l10n().addL10nSubstitution(aChild, "WoTIsMissingPage.WotOutdated.Text", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);
-            // FIXME: add "by going to the plugins page and pressing 'Reload'" after we have WoT in the official plugins list 
+            l10n().addL10nSubstitution(aChild, "WoTIsMissingPage.WotOutdated.Text", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput); 
         } else {
             HTMLNode box = addAlertBox(l10n().getString("WoTIsMissingPage.WotMissing.Header"));
             HTMLNode aChild = box.addChild("#");
