@@ -93,11 +93,16 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 					mNextProcessingTime = now + PROCESSING_INTERVAL; // schedule this task again for processing because introductions are not the only way to get onto trust lists
 					storeAndCommit();
 					return;
+				} else { 
+					mPuzzlesToSolve = 0;
+					mNextDisplayTime = Long.MAX_VALUE;
+					mNextProcessingTime = now + PROCESSING_INTERVAL;
 				}
 				
-			}
+			} else
+				mNextProcessingTime = now + PROCESSING_INTERVAL;
 			
-			mNextProcessingTime = now + PROCESSING_INTERVAL;
+			
 			storeAndCommit();
 			return;
 			
