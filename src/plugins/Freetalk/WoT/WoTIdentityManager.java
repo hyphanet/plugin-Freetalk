@@ -752,7 +752,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			String insertURI = bOwnIdentities ? params.get("InsertURI"+idx) : null;
 			String nickname = params.get("Nickname"+idx);
 			
-			if(nickname.length() == 0) {
+			if(nickname == null || nickname.length() == 0) {
 				// If an identity publishes an invalid nickname in one of its first WoT inserts then WoT will return an empty
 				// nickname for that identity until a new XML was published with a valid nickname. We ignore the identity until
 				// then to prevent confusing error logs.
