@@ -403,6 +403,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	}
 
 	private void closeDatabase() {
+		if(db == null) {
+			Logger.warning(this, "Terminated already.");
+			return;
+		}
+		
 		synchronized(db.lock()) {
 			try {
 				System.gc();
