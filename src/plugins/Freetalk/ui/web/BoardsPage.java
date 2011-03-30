@@ -58,6 +58,8 @@ public final class BoardsPage extends WebPageImpl {
 			for(final SubscribedBoard board : mFreetalk.getMessageManager().subscribedBoardIteratorSortedByName(mOwnIdentity)) { 
 				++boardCount;
 				
+				final int unreadMessageCount = board.getUnreadMessageCount();
+				
 				row = boardsTable.addChild("tr");
 				
 				/* Language */
@@ -65,7 +67,7 @@ public final class BoardsPage extends WebPageImpl {
 
 				/* Name */
 				
-				HTMLNode nameCell = row.addChild("th", new String[] { "align" }, new String[] { "left" });
+				HTMLNode nameCell = row.addChild(unreadMessageCount>0 ? "th" : "td", new String[] { "align" }, new String[] { "left" });
 				nameCell.addChild(new HTMLNode("a", "href", BoardPage.getURI(board), board.getName()));
 
 				/* Description - disabled because it makes more sense on the SelectBoardsPage. TODO: Allow enabling in configuration. */
@@ -74,9 +76,8 @@ public final class BoardsPage extends WebPageImpl {
 				/* Message count */
 				row.addChild("td", new String[] { "align" }, new String[] { "center" }, Integer.toString(board.messageCount()));
 				
-				/* Count unread messages + find latest message date */
-				final int unreadMessageCount = board.getUnreadMessageCount();
-				
+
+				// Find latest message date
 				BoardMessageLink latestMessage;
 				String latestMessageDateString;
 				
@@ -90,8 +91,12 @@ public final class BoardsPage extends WebPageImpl {
 				
 				// TODO: This should always be a td, use a CSS class instead with font-weight:bold
 				
-			    /* Unread messages count, bold when there are unread messages */
-	            row.addChild((unreadMessageCount == 0) ? "td" : "th", new String[] { "align" }, new String[] { "center" }, Integer.toString(unreadMessageCount));
+			    /* Unread messages count, bold when there are unread messages & linked to first unread message then */
+	            if(unreadMessageCount > 0)
+	            	row.addChild("th", new String[] { "align" }, new String[] { "center" })
+	            		.addChild("a", "href", BoardPage.getFirstUnreadURI(board.getName()), Integer.toString(unreadMessageCount));
+				else
+					row.addChild("td", new String[] { "align" }, new String[] { "center" }, Integer.toString(unreadMessageCount));
 
 			    /* Latest message date, bold when the latest message is unread */
 				row.addChild((latestMessage == null || latestMessage.wasRead()) ? "td" : "th", new String[] { "align" }, new String[] { "center" },

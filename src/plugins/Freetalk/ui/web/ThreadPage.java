@@ -13,19 +13,16 @@ import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.xml.crypto.URIReferenceException;
-
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Identity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Quoting;
-import plugins.Freetalk.Quoting.TextElement;
 import plugins.Freetalk.SubscribedBoard;
+import plugins.Freetalk.SubscribedBoard.BoardMessageLink;
 import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
-import plugins.Freetalk.SubscribedBoard.BoardMessageLink;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTMessageRating;
@@ -53,6 +50,8 @@ public final class ThreadPage extends WebPageImpl {
 	private final String mThreadID;
 	private BoardThreadLink mThread;
 	private final boolean mMarktThreadAsUnread;
+	
+	private boolean mFirstUnread = true;
 
 	private static final DateFormat mLocalDateFormat = DateFormat.getDateTimeInstance();
 
@@ -339,6 +338,11 @@ public final class ThreadPage extends WebPageImpl {
 				new String[] { "0", "100%", "message", ref.getMessageID()});
 
 		HTMLNode row = table.addChild("tr", "class", "message");
+		
+		if(mFirstUnread && !ref.wasRead()) {
+			row.addAttribute("id", "FirstUnreadMessage");
+			mFirstUnread = false;
+		}
 
 		addAuthorNode(row, author);
 
@@ -590,6 +594,10 @@ public final class ThreadPage extends WebPageImpl {
 		if(mThread != null)
 			ThreadPage.addBreadcrumb(trail, mBoard, mThread);
 		mContentNode.addChild(trail.getHTMLNode());
+	}
+	
+	public static String getFirstUnreadURI(final SubscribedBoard board, final BoardThreadLink thread) {
+		return getURI(board, thread) + "#FirstUnreadMessage";
 	}
 
 	public static String getURI(final SubscribedBoard board, final BoardThreadLink thread) {

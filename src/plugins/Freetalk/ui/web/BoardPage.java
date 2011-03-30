@@ -107,6 +107,7 @@ public final class BoardPage extends WebPageImpl {
 		// if we do not lock the identity manager before the board.
 		synchronized(identityManager) {
 		synchronized(mBoard) {
+		    boolean firstUnread = true;
 		    
 			for(BoardThreadLink threadReference : mBoard.getThreads()) {
 				// TODO: The author in the threadReference is guessed from the ID if the thread was not downloaded...
@@ -155,6 +156,11 @@ public final class BoardPage extends WebPageImpl {
                 final String threadTitle = threadReference.getMessageTitle();
                 
 				row = table.addChild("tr", "class", "thread-row");
+				
+				if(firstUnread && !threadReference.wasThreadRead()) {
+					row.addAttribute("id", "FirstUnreadThread");
+					firstUnread = false;
+				}
 
 				/* Title */
 				HTMLNode titleCell = row.addChild("td", "class", threadWasRead ? "title-read" : "title-unread");
@@ -182,7 +188,10 @@ public final class BoardPage extends WebPageImpl {
 					unreadCount += mBoard.threadUnreadReplyCount(threadReference.getThreadID());
 				}
 				
-				row.addChild("td", "class", threadWasRead ? "unread-count-0" : "unread-count", Integer.toString(unreadCount));
+				if(unreadCount == 0)
+					row.addChild("td", "class", "unread-count-0", Integer.toString(unreadCount));
+				else
+					row.addChild("td", "class", "unread-count").addChild("a", "href", ThreadPage.getFirstUnreadURI(mBoard, threadReference), Integer.toString(unreadCount));
 			}
 		}
 		}
@@ -210,5 +219,9 @@ public final class BoardPage extends WebPageImpl {
 	
 	public static String getURI(String boardName) {
 		return Freetalk.PLUGIN_URI + "/showBoard?name=" + boardName;
+	}
+	
+	public static String getFirstUnreadURI(String boardName) {
+		return Freetalk.PLUGIN_URI + "/showBoard?name=" + boardName + "#FirstUnreadThread";
 	}
 }
