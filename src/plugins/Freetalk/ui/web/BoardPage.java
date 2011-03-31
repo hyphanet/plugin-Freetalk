@@ -161,9 +161,25 @@ public final class BoardPage extends WebPageImpl {
 					row.addAttribute("id", "FirstUnreadThread");
 					firstUnread = false;
 				}
+				
+				/* Unread count */
+				int unreadCount = 0;
+				if(!threadWasRead) {
+					if(!threadReference.wasRead()) {
+						unreadCount++;
+					}
+					
+					unreadCount += mBoard.threadUnreadReplyCount(threadReference.getThreadID());
+				}
 
 				/* Title */
 				HTMLNode titleCell = row.addChild("td", "class", threadWasRead ? "title-read" : "title-unread");
+				
+				if(unreadCount > 0) {
+					titleCell.addChild(new HTMLNode("a", new String[]{"href", "title"}, new String[]{ThreadPage.getFirstUnreadURI(mBoard, threadReference), l10n().getString("BoardPage.ThreadTableHeader.GoToFirstUnreadMessage")}, "↪"));
+					titleCell.addChild("#", " ");
+				}
+
 				titleCell.addChild(new HTMLNode("a", "href", ThreadPage.getURI(mBoard, threadReference), threadTitle));
 
 				/* Author */
@@ -177,21 +193,12 @@ public final class BoardPage extends WebPageImpl {
 
 				/* Reply count */
 				row.addChild("td", "class", "reply-count",  Integer.toString(mBoard.threadReplyCount(threadReference.getThreadID())));
-				
-				/* Unread count */
-				int unreadCount = 0;
-				if(!threadWasRead) {
-					if(!threadReference.wasRead()) {
-						unreadCount++;
-					}
-					
-					unreadCount += mBoard.threadUnreadReplyCount(threadReference.getThreadID());
-				}
-				
-				if(unreadCount == 0)
+
+				if(unreadCount == 0) {
 					row.addChild("td", "class", "unread-count-0", Integer.toString(unreadCount));
-				else
+				} else {
 					row.addChild("td", "class", "unread-count").addChild("a", "href", ThreadPage.getFirstUnreadURI(mBoard, threadReference), Integer.toString(unreadCount));
+				}
 			}
 		}
 		}
