@@ -67,6 +67,11 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 		return new IntroduceIdentityPage(myWebInterface, (WoTOwnIdentity)mOwner, mID, mPuzzlesToSolve, myWebInterface.l10n());
 	}
 
+	/**
+	 * Will be executed
+	 * - upon timeout of the mNextProcessingTime
+	 * - when an own message is posted of the owning identity.
+	 */
 	public synchronized void process() {
 		WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 		
@@ -97,6 +102,7 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 					mPuzzlesToSolve = 0;
 					mNextDisplayTime = Long.MAX_VALUE;
 					mNextProcessingTime = now + PROCESSING_INTERVAL;
+					mWasHidden = true; // In case an own message is posted the next processing time is ignored so we must hide it.
 				}
 				
 			} else
@@ -129,6 +135,7 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 		if(mPuzzlesToSolve == 0) {
 			mNextProcessingTime = CurrentTimeUTC.getInMillis() + PROCESSING_INTERVAL;
 			mNextDisplayTime = Long.MAX_VALUE;
+			mWasHidden = true; // In case an own message is posted the next processing time is ignored so we must hide it.
 		}
 		
 		storeAndCommit();
