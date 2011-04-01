@@ -371,10 +371,10 @@ public final class ThreadPage extends WebPageImpl {
 				}
 
 				if(intTrust == null || (intTrust+10) <= 100) { // TODO: Use constants
-					addRateButton(modButtons, message, 10);
+					addRateButton(modButtons, message, 10, (intTrust!=null ? intTrust : 0) + 10);
 				}
 				if(intTrust == null || (intTrust-10) >= -100) { // TODO: Use constants
-					addRateButton(modButtons, message, -10);
+					addRateButton(modButtons, message, -10, (intTrust!=null ? intTrust : 0) - 10);
 				}
 			}
 		}
@@ -546,7 +546,7 @@ public final class ThreadPage extends WebPageImpl {
 		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("ThreadPage.ReplyButton") });
 	}
 
-	private void addRateButton(HTMLNode parent, Message message, int change) {
+	private void addRateButton(HTMLNode parent, Message message, int change, int newTrust) {
 		parent = parent.addChild("div", "class", "button-row-button");
 		HTMLNode newReplyForm = addFormChild(parent, Freetalk.PLUGIN_URI + "/ChangeTrust", "ChangeTrustPage");
 		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
@@ -554,8 +554,19 @@ public final class ThreadPage extends WebPageImpl {
 		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "ThreadID", mThread.getThreadID()});
 		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "MessageID", message.getID()});
 		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "TrustChange", String.valueOf(change)});
-		newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit",
-				l10n().getString("ThreadPage.Rating.Rate.Text", "points", (change>=0 ? "+" : "") + change)});
+		
+		if(change >= 0) {
+			newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit",
+					l10n().getString("ThreadPage.Rating.Rate.Good.Text", "points", "+" + change)});
+		} else { // distrust button
+			if(newTrust >= 0) {
+				newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit",
+						l10n().getString("ThreadPage.Rating.Rate.Bad.Text", "points", Integer.toString(change))});
+			} else {
+				newReplyForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit",
+						l10n().getString("ThreadPage.Rating.Rate.Ignore.Text", "points", Integer.toString(change))});
+			}
+		}
 	}
 
 	private void addRemoveRatingButton(HTMLNode parent, Message message, WoTMessageRating rating) {
