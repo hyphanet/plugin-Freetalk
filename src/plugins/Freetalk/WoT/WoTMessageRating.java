@@ -67,6 +67,9 @@ public final class WoTMessageRating extends MessageRating {
 	}
 
 	
+	/**
+	 * @throws IllegalArgumentException If the addition of the value would cause the trust value limit to be exceeded.
+	 */
 	private void addValueToWoTTrust(final byte value) throws NoSuchIdentityException {
 		final WoTIdentityManager identityManager = mFreetalk.getIdentityManager();
 		final WoTOwnIdentity rater = (WoTOwnIdentity)getRater();
@@ -89,7 +92,7 @@ public final class WoTMessageRating extends MessageRating {
 		int signum = Integer.signum(trustValue);
 		
 		if(trustValue*signum > 100)
-			throw new RuntimeException("The rating cannot be assigned because the limit of +/- 100 for trust values would be exceeded.");		
+			throw new IllegalArgumentException("The rating cannot be assigned because the limit of +/- 100 for trust values would be exceeded.");		
 		
 		try {
 			identityManager.setTrust(rater, messageAuthor, trustValue, "Freetalk web interface");
@@ -135,14 +138,19 @@ public final class WoTMessageRating extends MessageRating {
 		}
 	}
 	
-	protected void deleteAndCommit() {
+	/**
+	 * @param undoTrustChange Whether to undo the application of the trust value of this rating to WoT. Must not be set to true during automatic operation
+	 * 		because it can fail if the user has manually adjusted the trust value.
+	 */
+	protected void deleteAndCommit(boolean undoTrustChange) {
 		synchronized(mDB.lock()) {
 			Logger.debug(this, "Deleting rating " + this);
+			if(undoTrustChange) {
 			try {
 				substractValueFromWoTTrust();
 			} catch(NoSuchIdentityException e) {
-				// We must not throw an exception when the identity was deleted already for identity garbage collection to work properly
-				Logger.debug(this, "Not substracting rating from trust value: Identity was deleted already.");
+				throw new RuntimeException(e);
+			}
 			}
 		
 			try {

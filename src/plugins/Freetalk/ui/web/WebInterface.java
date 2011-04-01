@@ -287,7 +287,7 @@ public final class WebInterface {
 						synchronized(own) {
 							WoTMessage message = (WoTMessage)messageManager.get(messageID);
 							if(removeRating)
-								messageManager.deleteMessageRating(messageManager.getMessageRating(own, message));
+								messageManager.deleteMessageRatingAndRevertEffect(messageManager.getMessageRating(own, message));
 							else
 								messageManager.rateMessage(own, message, Byte.parseByte(request.getPartAsStringFailsafe("TrustChange", 5)));
 						}

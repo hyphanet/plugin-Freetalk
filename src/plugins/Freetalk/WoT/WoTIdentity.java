@@ -185,7 +185,8 @@ public class WoTIdentity extends Persistent implements Identity {
 		|| !StringValidityChecker.containsNoInvalidCharacters(newNickname)
 		|| !StringValidityChecker.containsNoLinebreaks(newNickname)
 		|| !StringValidityChecker.containsNoControlCharacters(newNickname)
-		|| !StringValidityChecker.containsNoInvalidFormatting(newNickname))
+		|| !StringValidityChecker.containsNoInvalidFormatting(newNickname)
+		|| newNickname.contains("@")) // Must not be allowed since we use it to generate "identity@public-key-hash" unique nicknames
 			throw new InvalidParameterException("Nickname contains invalid characters"); /* TODO: Tell the user which ones are invalid!!! */
 		
 		if(newNickname.length() == 0) throw new InvalidParameterException("Blank nickname.");

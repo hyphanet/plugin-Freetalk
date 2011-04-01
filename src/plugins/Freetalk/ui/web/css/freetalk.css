@@ -114,6 +114,11 @@
 
 /* Thread page */
 
+.freetalk .message {
+	table-layout: fixed;
+	width: 100%;
+}
+
 .freetalk .message .author .name {
 	font-weight: bold;
 	font-style: italic;
