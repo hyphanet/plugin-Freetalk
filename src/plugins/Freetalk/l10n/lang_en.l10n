@@ -6,6 +6,7 @@ BoardPage.ThreadTableHeader.Trust=Trust
 BoardPage.ThreadTableHeader.Date=Last reply
 BoardPage.ThreadTableHeader.Replies=Replies
 BoardPage.ThreadTableHeader.Unread=Unread
+BoardPage.ThreadTableHeader.GoToFirstUnreadMessage=Go to first unread message
 BoardPage.MarkAllThreadsAsReadButton=Mark all threads as read
 BoardPage.MarkAllThreadsAsUnreadButton=Mark all threads as unread
 BoardPage.ShowNotFetchedMessagesButton=Show not fetched messages
