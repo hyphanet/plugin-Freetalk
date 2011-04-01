@@ -62,6 +62,7 @@ public abstract class WebPageImpl implements WebPage {
 	 *            a reference to Freetalk, used to get references to database,
 	 *            client, whatever is needed.
 	 */
+    @Deprecated
 	public WebPageImpl(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n) {
 		
 		try {
@@ -81,6 +82,32 @@ public abstract class WebPageImpl implements WebPage {
 		mRequest = request;
 
 		baseL10n = _baseL10n;
+	}
+    
+	/**
+	 * @param myWebInterface The WebInterface to which this page belongs.
+	 * @param viewer The OwnIdentity which is viewing this page.
+	 * @param request The request from the user.
+	 */
+	public WebPageImpl(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request) {
+		
+		try {
+			logIn = new URI(Freetalk.PLUGIN_URI+"/LogIn");
+		} catch (URISyntaxException e) {
+			throw new Error(e);
+		}
+		
+		mWebInterface = myWebInterface;
+		
+		mFreetalk = mWebInterface.getFreetalk();
+		
+		mPM = mWebInterface.getPageMaker();
+		
+		mOwnIdentity = viewer;
+
+		mRequest = request;
+
+		baseL10n = myWebInterface.l10n();
 	}
 
 	/**
