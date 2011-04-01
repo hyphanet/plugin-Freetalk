@@ -14,6 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import plugins.Freetalk.Board;
+import plugins.Freetalk.Configuration;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Identity;
 import plugins.Freetalk.Message;
@@ -384,11 +385,11 @@ public final class ThreadPage extends WebPageImpl {
 		row = table.addChild("tr", "class", "body");
 		HTMLNode text = row.addChild("td", "align", "left", "");
 		Quoting.TextElement element = Quoting.parseText(message);
-		elementsToHTML(text, element.mChildren, mFreetalk.getIdentityManager());
+		elementsToHTML(text, element.mChildren, mOwnIdentity, mFreetalk.getIdentityManager());
 		addReplyButton(text, message.getID());
 	}
 
-	public static void elementsToHTML(HTMLNode parent, List<Quoting.TextElement> elements, WoTIdentityManager identityManager) {
+	public static void elementsToHTML(HTMLNode parent, List<Quoting.TextElement> elements, OwnIdentity viewer, WoTIdentityManager identityManager) {
 		for (final Quoting.TextElement t : elements) {
 			switch(t.mType) {
 			case PlainText: {
@@ -398,9 +399,23 @@ public final class ThreadPage extends WebPageImpl {
 
 			case Bold: {
 				HTMLNode child = parent.addChild("b", "");
-			   	elementsToHTML(child, t.mChildren, identityManager);
+			   	elementsToHTML(child, t.mChildren, viewer, identityManager);
 			   	break;
 			}
+			
+			case Image:
+				if(viewer.wantsImageDisplay()) {
+					String uriText = t.getContentText().replaceAll("\n","").trim();
+					try {
+						FreenetURI uri = new FreenetURI(uriText);
+						parent.addChild(new HTMLNode("img", new String[] { "src", "alt" }, new String[] { "/" + uri.toString(), uri.toString() }));
+					} catch (MalformedURLException e) {
+						parent.addChild("span", "class", "error", uriText);
+					}
+					
+					break;
+				}
+				// Fall through and display as link.
 
 			case Link: {
 				String uriText = t.getContentText().replaceAll("\n","").trim();
@@ -432,13 +447,13 @@ public final class ThreadPage extends WebPageImpl {
 
 			case Italic: {
 				HTMLNode child = parent.addChild("i", "");
-				elementsToHTML(child, t.mChildren, identityManager);
+				elementsToHTML(child, t.mChildren, viewer, identityManager);
 				break;
 			}
 
 			case Code: {
 				HTMLNode child = parent.addChild("div", "class", "code");
-				elementsToHTML(child, t.mChildren, identityManager);
+				elementsToHTML(child, t.mChildren, viewer, identityManager);
 				break;
 			}
 
@@ -477,7 +492,7 @@ public final class ThreadPage extends WebPageImpl {
 
 				authorNode.addChild("#", ":");
 
-				elementsToHTML(child, t.mChildren, identityManager);
+				elementsToHTML(child, t.mChildren, viewer, identityManager);
 				break;
 			}
 

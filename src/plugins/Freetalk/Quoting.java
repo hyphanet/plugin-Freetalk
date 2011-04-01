@@ -19,7 +19,8 @@ public class Quoting {
 		Bold,
 		Italic,
 		Code,
-		Link;
+		Link,
+		Image;
 	
 		public static TextElementType fromString(String tag) {
 			if (tag.equals(""))
@@ -34,11 +35,13 @@ public class Quoting {
 				return Code;
 			else if (tag.equalsIgnoreCase("link") || tag.equalsIgnoreCase("url") || tag.equalsIgnoreCase("uri"))
 				return Link;
+			else if (tag.equalsIgnoreCase("img") || tag.equalsIgnoreCase("image"))
+				return Image;
 	
 			return Error;
 		}
 		
-		private static final String regexpForAllTypes = "(quote|b|i|code|link|url|uri)";
+		private static final String regexpForAllTypes = "(quote|b|i|code|link|url|uri|img|image)";
 	}
 
 	public final static class TextElement {

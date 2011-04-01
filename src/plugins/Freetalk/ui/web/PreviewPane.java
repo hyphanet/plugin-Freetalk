@@ -17,12 +17,12 @@
 
 package plugins.Freetalk.ui.web;
 
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Quoting;
-import plugins.Freetalk.WoT.WoTIdentityManager;
-import freenet.clients.http.InfoboxNode;
-import freenet.clients.http.PageMaker;
+import freenet.clients.http.RedirectException;
 import freenet.l10n.BaseL10n;
 import freenet.support.HTMLNode;
+import freenet.support.api.HTTPRequest;
 
 /**
  * Creates a preview pane suitable for inclusion on {@link NewThreadPage}s and
@@ -30,28 +30,35 @@ import freenet.support.HTMLNode;
  *
  * @author <a href="mailto:bombe@pterodactylus.net">David ‘Bombe’ Roden</a>
  */
-public class PreviewPane {
-
-	/**
-	 * Creates an infobox that contains a preview of the given message text.
-	 *
-	 * @param pageMaker
-	 *            A page maker
-	 * @param l10n
-	 *            The l10n handler
-	 * @param messageSubject
-	 *            The subject of the message
-	 * @param messageText
-	 *            The text of the message
-	 * @return An HTMLNode containing the preview
-	 */
-	public static HTMLNode createPreviewPane(PageMaker pageMaker, BaseL10n l10n, String messageSubject, String messageText, WoTIdentityManager identityManager) {
+public class PreviewPane extends WebPageImpl {
+	
+	private final String mSubject;
+	private final String mText;
+	
+	public PreviewPane(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, String messageSubject, String messageText) {
+		super(myWebInterface, viewer, request);
+		mSubject = messageSubject;
+		mText = messageText;
+	}
+	
+	@Override
+	public void make() throws RedirectException {
+		throw new UnsupportedOperationException("Use get()");
+	}
+	
+	public HTMLNode get() {
+		HTMLNode authorBox = getContentBox(l10n().getString("NewThreadPage.ThreadBox.Author"));
+		authorBox.addChild("b", mOwnIdentity.getFreetalkAddress());
+				
+		HTMLNode messageBox = getContentBox(l10n().getString("PreviewPane.Header.Preview", "subject", mSubject));
+		HTMLNode messageBodyNode = messageBox.addChild("div", "class", "body");
+		Quoting.TextElement element = Quoting.parseText(mText);
+		ThreadPage.elementsToHTML(messageBodyNode, element.mChildren, mOwnIdentity, mFreetalk.getIdentityManager());
+		
 		HTMLNode previewNode = new HTMLNode("div", "class", "message");
-		InfoboxNode infobox = pageMaker.getInfobox(l10n.getString("PreviewPane.Header.Preview", "subject", messageSubject));
-		previewNode.addChild(infobox.outer);
-		HTMLNode messageBodyNode = infobox.content.addChild("div", "class", "body");
-		Quoting.TextElement element = Quoting.parseText(messageText);
-		ThreadPage.elementsToHTML(messageBodyNode, element.mChildren, identityManager);
+		previewNode.addChild(authorBox);
+		previewNode.addChild(messageBox);
+
 		return previewNode;
 	}
 

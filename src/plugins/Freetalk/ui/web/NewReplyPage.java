@@ -73,7 +73,7 @@ public class NewReplyPage extends WebPageImpl {
 				selectedMessageRating = getMessageRating(mRequest);
 
 				if (mRequest.isPartSet("CreatePreview")) {
-					mContentNode.addChild(PreviewPane.createPreviewPane(mPM, l10n(), replySubject, replyText, mFreetalk.getIdentityManager()));
+					mContentNode.addChild(new PreviewPane(mWebInterface, mOwnIdentity, mRequest, replySubject, replyText).get());
 					makeNewReplyPage(replySubject, replyText, selectedMessageRating);
 				}
 				else {
@@ -206,7 +206,8 @@ public class NewReplyPage extends WebPageImpl {
 		list.addChild("li", "[b] bolded text [/b]");
 		list.addChild("li", "[i] italicized text [/i]");
 		list.addChild("li", "[link] http://example.org [/link]");
-		list.addChild("li", "[link] KSK@freenet-link [/link]");
+		list.addChild("li", "[link] CHK@freenet-link [/link]");
+		list.addChild("li", "[img] CHK@freenet-image-link [/img]");
 		list.addChild("li", "[quote] quoted text [/quote]");
 		list.addChild("li", "[quote author=name] quoted text with author [/quote]");
 		list.addChild("li", "[quote author=name message=message-id] quoted text with author and message ID [/quote]");
