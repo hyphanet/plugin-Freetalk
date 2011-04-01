@@ -55,6 +55,8 @@ public class SettingsPage extends WebPageImpl {
             
             boolean autoSubscribeToNNTPBoards = mRequest.getPartAsStringFailsafe("AutoSubscribeToNNTPBoards", 4).equals("true");
             
+            boolean allowImageDisplay = mRequest.getPartAsStringFailsafe("DisplayImages", 4).equals("true");
+            
             WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
             
             synchronized(identityManager) {
@@ -65,6 +67,7 @@ public class SettingsPage extends WebPageImpl {
 	            	synchronized (identity) {
 	            		identity.setAutoSubscribeToNewboards(autoSubscribeToNewBoards);
 	            		identity.setNntpAutoSubscribeBoards(autoSubscribeToNNTPBoards);
+	            		identity.setWantsImageDisplay(allowImageDisplay);
 	            		identity.storeAndCommit();
 	            	}
             	} catch(Exception e) {
@@ -105,7 +108,9 @@ public class SettingsPage extends WebPageImpl {
         item.addChild("span", "class", "configlongdesc").addChild("#", l10n().getString("SettingsPage.UserSettings.AutoSubscribeToNewBoards.Long"));
         
         /* *** NNTP - auto-subscribe to boards ********************************************* */
-
+        
+        item = list.addChild("li");
+        
         item.addChild("span", new String[]{ "class", "title", "style" },
                 new String[]{ "configshortdesc", booleanDefaultString(false), "cursor: help;" })
                 .addChild("#", l10n().getString("SettingsPage.UserSettings.NNTPAutoSubscribeBoards.Short"));
@@ -114,6 +119,19 @@ public class SettingsPage extends WebPageImpl {
         item.addChild(addBooleanComboBox(mOwnIdentity.nntpAutoSubscribeBoards(), "AutoSubscribeToNNTPBoards", false));
         
         item.addChild("span", "class", "configlongdesc").addChild("#", l10n().getString("SettingsPage.UserSettings.NNTPAutoSubscribeBoards.Long"));
+        
+        /* *** Image display ********************************************* */
+        
+        item = list.addChild("li");
+        
+        item.addChild("span", new String[]{ "class", "title", "style" },
+                new String[]{ "configshortdesc", booleanDefaultString(false), "cursor: help;" })
+                .addChild("#", l10n().getString("SettingsPage.UserSettings.AllowImageDisplay.Short"));
+        
+        item.addChild("span", "class", "config");
+        item.addChild(addBooleanComboBox(mOwnIdentity.wantsImageDisplay(), "DisplayImages", false));
+        
+        item.addChild("span", "class", "configlongdesc").addChild("#", l10n().getString("SettingsPage.UserSettings.AllowImageDisplay.Long"));
     }
 
     private final void makeGlobalSettingsBox(HTMLNode formNode) {

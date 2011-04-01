@@ -38,6 +38,8 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 
     /** If true then auto-subscribe to boards that were subscribed in the NNTP client */
     private boolean mNntpAutoSubscribeBoards = false;
+    
+    private boolean mDisplayImages = false;
 
 
 	public WoTOwnIdentity(String myID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname, boolean autoSubscribeToNewBoards) {
@@ -101,6 +103,16 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 
 	public void setAutoSubscribeToNewboards(boolean autoSubscribeToNewBoards) {
 		mAutoSubscribeToNewBoards = autoSubscribeToNewBoards;
+	}
+	
+	@Override
+	public boolean wantsImageDisplay() {
+		return mDisplayImages;
+	}
+
+	@Override
+	public void setWantsImageDisplay(boolean wantsImageDisplay) {
+		mDisplayImages = wantsImageDisplay;
 	}
 	
     /**

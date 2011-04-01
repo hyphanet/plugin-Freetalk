@@ -34,6 +34,17 @@ public interface OwnIdentity extends Identity {
      * Sets if this Identity auto-subscribes to boards subscribed in NNTP client. 
      */
     public void setNntpAutoSubscribeBoards(boolean nntpAutoSubscribeBoards);
+    
+	/**
+	 * Checks whether this identity wants to allow the displaying of image which other users uploaded
+	 */
+	public boolean wantsImageDisplay();
+	
+	/**
+	 * Sets whether this identity wants to allow the displaying of image which other users uploaded
+	 */
+	public void setWantsImageDisplay(boolean wantsImageDisplay);
+	
 
 	
 	/**
