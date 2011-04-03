@@ -216,6 +216,8 @@ public class CreateIdentityWizard extends WebPageImpl {
 	        l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text2", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 	        p = tlBox.addChild("p");
 	        l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text3", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+	        p = tlBox.addChild("p");
+	        l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.TrustList.Text4", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
 			
 			p = tlBox.addChild("p");
 			if(mIdentityPublishesTrustList == null || mIdentityPublishesTrustList == true) {
