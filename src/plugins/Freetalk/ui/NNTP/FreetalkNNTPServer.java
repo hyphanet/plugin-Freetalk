@@ -116,20 +116,19 @@ public final class FreetalkNNTPServer implements Runnable {
 		} catch (IOException e) {
 			Logger.error(this, "Unable to start NNTP server", e);
 		} finally {
-			terminateHandlers();
+			terminateHandlers(); // Does not throw.
 			
 			if(mInterface != null) {
 				try {
 					mInterface.close();
 				} catch(IOException e) {}
 			}
-		}
-		
-		Logger.debug(this, "Main loop exiting...");
-		
-		synchronized(this) {
-			mThread = null;
-			notifyAll();
+			
+			Logger.debug(this, "Main loop exiting...");
+			synchronized(this) {
+				mThread = null;
+				notifyAll();
+			}
 		}
 	}
 	
@@ -155,7 +154,11 @@ public final class FreetalkNNTPServer implements Runnable {
 		}
 	}
 	
+	/**
+	 * Does not throw RuntimeExceptions to make it safe to call during shutdown.
+	 */
 	private void terminateHandlers() {
+		try {
 		Logger.debug(this, "Closing client handlers...");
 		synchronized(clientHandlers) {
 			// Close client sockets
@@ -164,6 +167,9 @@ public final class FreetalkNNTPServer implements Runnable {
 			}
 			
 			clientHandlers.clear();
+		}
+		} catch(RuntimeException e) {
+			Logger.error(this, "Closing client handlers failed", e);
 		}
 	}
 }
