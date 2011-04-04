@@ -20,6 +20,7 @@ import com.db4o.query.Query;
 import freenet.l10n.ISO639_3;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
+import freenet.support.codeshortification.IfNull;
 
 /**
  * Represents a forum / newsgroups / discussion board in Freetalk. Boards are created by the <code>MessageManager</code> on demand, you do
@@ -70,6 +71,21 @@ public class Board extends Persistent implements Comparable<Board> {
     	// Add the special code for multiple languages
     	final ISO639_3.LanguageCode multilingual = iso639_3.getMultilingualCode();
     	languages.put(multilingual.id, multilingual);
+    	
+    	// Latin is still being taught in schools. Type == Ancient, therefore not in result of getLanguagesByScopeAndType
+    	final ISO639_3.LanguageCode lat = iso639_3.getLanguages().get("lat");
+    	IfNull.thenThrow(lat);
+    	languages.put("lat", lat);
+    	
+    	// Esperanto, added by request. Scope == "Constructed", therefore not in result of getLanguagesByScopeAndType
+    	final ISO639_3.LanguageCode epo = iso639_3.getLanguages().get("epo");
+    	IfNull.thenThrow(epo);
+    	languages.put("epo", epo);
+    	
+    	// Klingon, easter-egg for nerds. Scope == "Constructed", therefore not in result of getLanguagesByScopeAndType
+    	final ISO639_3.LanguageCode tlh = iso639_3.getLanguages().get("tlh");
+    	IfNull.thenThrow(tlh);
+    	languages.put("tlh", tlh);
     	
         return languages;
     }
