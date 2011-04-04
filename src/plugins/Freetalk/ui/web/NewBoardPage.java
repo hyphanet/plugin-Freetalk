@@ -86,6 +86,8 @@ public final class NewBoardPage extends WebPageImpl {
 		
 		newBoardBox.addChild("p", l10n().getString("NewBoardPage.NewBoardBox.Text"));
 		
+		l10n().addL10nSubstitution(newBoardBox.addChild("p"), "NewBoardPage.NewBoardBox.Text2", new String[] { "bold" }, new HTMLNode[] { new HTMLNode("b")});
+		
 		HTMLNode newBoardForm = addFormChild(newBoardBox, Freetalk.PLUGIN_URI + "/NewBoard", "NewBoard");
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
 		

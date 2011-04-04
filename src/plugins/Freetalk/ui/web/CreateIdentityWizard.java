@@ -24,6 +24,8 @@ public class CreateIdentityWizard extends WebPageImpl {
 	private Boolean mIdentityPublishesTrustList = null;
 	
 	private Boolean mAutoSubscribe = null;
+	
+	private Boolean mDisplayImages = null;
 
 	/*
 	 * TODO: Evaluate whether we need to ask the user whether he wants to
@@ -104,6 +106,11 @@ public class CreateIdentityWizard extends WebPageImpl {
 				mAutoSubscribe = mRequest.getPartAsStringFailsafe("AutoSubscribe", 5).equals("true");
 			else
 				mAutoSubscribe = false;
+			
+			if(mRequest.isPartSet("DisplayImages"))
+				mDisplayImages = mRequest.getPartAsStringFailsafe("DisplayImages", 5).equals("true");
+			else
+				mDisplayImages = false;
 		}
 		
 		/* ======== Stage 2: Check for missing data and correct requestedStep  =============================================================== */
@@ -112,7 +119,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 			requestedStep = 1;
 		} else if(requestedStep > 2 && mIdentityNickname == null) {
 			requestedStep = 2;
-		} else if(requestedStep > 3 && (mIdentityPublishesTrustList == null || mAutoSubscribe == null)) {
+		} else if(requestedStep > 3 && (mIdentityPublishesTrustList == null || mAutoSubscribe == null || mDisplayImages == null)) {
 			requestedStep = 3;
 		}
 		
@@ -246,6 +253,24 @@ public class CreateIdentityWizard extends WebPageImpl {
 									new String[] { "checkbox", "AutoSubscribe", "true" });				
 			}
 			p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.AutoSubscribe.AutoSubscribeCheckbox"));
+			
+			
+			HTMLNode displayImagesBox = getContentBox(l10n().getString("CreateIdentityWizard.Step3.DisplayImages.Header"));
+			choosePrefsBox.addChild(displayImagesBox);
+	
+			p = displayImagesBox.addChild("p");
+	        l10n().addL10nSubstitution(p, "CreateIdentityWizard.Step3.DisplayImages.Text", l10nBoldSubstitutionInput, l10nBoldSubstitutionOutput);
+
+			
+			p = displayImagesBox.addChild("p");
+			if(mDisplayImages != null && mDisplayImages) {
+				p.addChild("input",	new String[] { "type", "name", "value", "checked" },
+									new String[] { "checkbox", "DisplayImages", "true", "checked"});
+			} else {
+				p.addChild("input",	new String[] { "type", "name", "value" },
+									new String[] { "checkbox", "DisplayImages", "true" });				
+			}
+			p.addChild("#", l10n().getString("CreateIdentityWizard.Step3.DisplayImages.Checkbox"));
 		}
 		
 		/* Step 4: Create the identity */
@@ -254,7 +279,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 			
 			try {
 				WoTOwnIdentity id = (WoTOwnIdentity)mFreetalk.getIdentityManager().createOwnIdentity(mIdentityNickname,
-						mIdentityPublishesTrustList, mIdentityPublishesTrustList, mAutoSubscribe, mIdentityURI[1], mIdentityURI[0]);
+						mIdentityPublishesTrustList, mIdentityPublishesTrustList, mAutoSubscribe, mDisplayImages, mIdentityURI[1], mIdentityURI[0]);
 						
 				HTMLNode summaryBox = getContentBox(l10n().getString("CreateIdentityWizard.Step4.Header"));
 				wizardBox.addChild(summaryBox);

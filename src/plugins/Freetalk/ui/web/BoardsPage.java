@@ -37,9 +37,9 @@ public final class BoardsPage extends WebPageImpl {
 	private void makeBoardsList() {
 		HTMLNode boardsBox = addContentBox(l10n().getString("BoardsPage.BoardList.Header"));
 
-		HTMLNode newBoardForm = addFormChild(boardsBox, Freetalk.PLUGIN_URI + "/NewBoard", "NewBoardPage");
-		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
-		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("BoardsPage.NewBoardButton")});
+		// TODO: Use GET, not POST
+		HTMLNode selectBoardsForm = addFormChild(boardsBox, SelectBoardsPage.getURI(), "SelectBoardsPage");
+		selectBoardsForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("BoardsPage.SelectBoardsButton")});
 
 		HTMLNode boardsTable = boardsBox.addChild("table", "border", "0");
 		HTMLNode row = boardsTable.addChild("tr");
@@ -104,14 +104,13 @@ public final class BoardsPage extends WebPageImpl {
 			}
 		}
 
+		if(boardCount == 0) {
 		final String[] l10nLinkSubstitutionInput = new String[] { "link" };
 		// TODO: Create SelectBoardsPage.getURI with the code below... own identity can be removed, its stored in the session cookie
-		final HTMLNode[] l10nLinkSubstitutionOutput = new HTMLNode[] { HTMLNode.link(Freetalk.PLUGIN_URI+"/SelectBoards?identity="+mOwnIdentity.getID()) };
+		final HTMLNode[] l10nLinkSubstitutionOutput = new HTMLNode[] { HTMLNode.link(SelectBoardsPage.getURI()) };
 		HTMLNode aChild = boardsBox.addChild("p");
-		if(boardCount == 0) {
+		
             l10n().addL10nSubstitution(aChild, "BoardsPage.NoBoardSubscribed", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);
-		} else {
-            l10n().addL10nSubstitution(aChild, "BoardsPage.BoardSubscriptions", l10nLinkSubstitutionInput, l10nLinkSubstitutionOutput);
 		}
 	}
 

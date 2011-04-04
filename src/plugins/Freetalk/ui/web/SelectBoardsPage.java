@@ -185,4 +185,8 @@ public class SelectBoardsPage extends WebPageImpl {
 	public static void addBreadcrumb(BreadcrumbTrail trail) {
 		trail.addBreadcrumbInfo(trail.getL10n().getString("Breadcrumb.SelectBoards"), Freetalk.PLUGIN_URI + "/SelectBoards");
 	}
+	
+	public static String getURI() {
+		return Freetalk.PLUGIN_URI + "/SelectBoards";
+	}
 }
