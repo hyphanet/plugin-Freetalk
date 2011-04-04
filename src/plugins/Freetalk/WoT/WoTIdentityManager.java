@@ -147,7 +147,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		return result;
 	}
 	
-	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles, boolean autoSubscribeToNewBoards)
+	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles, 
+			boolean autoSubscribeToNewBoards, boolean displayImages)
 		throws Exception  {
 		
 		Logger.normal(this, "Creating new own identity via FCP, nickname: " + newNickname);
@@ -163,7 +164,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		WoTOwnIdentity identity = new WoTOwnIdentity(result.params.get("ID"),
 				new FreenetURI(result.params.get("RequestURI")),
 				new FreenetURI(result.params.get("InsertURI")),
-				newNickname, autoSubscribeToNewBoards);
+				newNickname, autoSubscribeToNewBoards, displayImages);
 		
 		identity.initializeTransient(mFreetalk);
 		
@@ -189,7 +190,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	}
 	
 	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles, boolean autoSubscribeToNewBoards,
-			FreenetURI newRequestURI, FreenetURI newInsertURI) throws Exception {
+			boolean displayImages, FreenetURI newRequestURI, FreenetURI newInsertURI) throws Exception {
 		Logger.normal(this, "Creating new own identity via FCP, nickname: " + newNickname);
 		
 		SimpleFieldSet params = new SimpleFieldSet(true);
@@ -208,7 +209,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		WoTOwnIdentity identity = new WoTOwnIdentity(result.params.get("ID"),
 				new FreenetURI(result.params.get("RequestURI")),
 				new FreenetURI(result.params.get("InsertURI")),
-				newNickname, autoSubscribeToNewBoards);
+				newNickname, autoSubscribeToNewBoards, displayImages);
 		
 		identity.initializeTransient(mFreetalk);
 		

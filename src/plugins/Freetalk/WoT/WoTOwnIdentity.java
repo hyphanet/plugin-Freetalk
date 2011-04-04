@@ -39,19 +39,20 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
     /** If true then auto-subscribe to boards that were subscribed in the NNTP client */
     private boolean mNntpAutoSubscribeBoards = false;
     
-    private boolean mDisplayImages = false;
+    private boolean mDisplayImages;
 
 
-	public WoTOwnIdentity(String myID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname, boolean autoSubscribeToNewBoards) {
+	public WoTOwnIdentity(String myID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname, boolean autoSubscribeToNewBoards, boolean displayImages) {
 		super(myID, myRequestURI, myNickname);
 		if(myInsertURI == null)
 			throw new IllegalArgumentException();
 		mInsertURI = myInsertURI;
 		mAutoSubscribeToNewBoards = autoSubscribeToNewBoards;
+		mDisplayImages = displayImages;
 	}
 	
 	public WoTOwnIdentity(String myID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
-		this(myID, myRequestURI, myInsertURI, myNickname, false);
+		this(myID, myRequestURI, myInsertURI, myNickname, false, false);
 	}
 	
 	public void databaseIntegrityTest() throws Exception {

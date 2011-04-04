@@ -634,6 +634,7 @@ public final class FCPInterface implements FredPluginFCP {
      *   PublishTrustList=true|false            (optional, default is true)
      *   PublishIntroductionPuzzles=true|false  (optional, default is true)
      *   AutoSubscribe=true|false				(optional, default is false)
+     *   DisplayImages=true|false				(optional, default is false)
      *   RequestURI=...                         (optional)
      *   InsertURI=...                          (optional)
      * Format of reply:
@@ -655,6 +656,7 @@ public final class FCPInterface implements FredPluginFCP {
             boolean publishTrustList = params.getBoolean("PublishTrustList", true);
             boolean publishIntroductionPuzzles = params.getBoolean("PublishIntroductionPuzzles", true);
             boolean autoSubscribe = params.getBoolean("AutoSubscribe", false);
+            boolean displayImages = params.getBoolean("DisplayImages", false);
 
             final String requestUriString = params.get("RequestURI");
             final String insertUriString = params.get("InsertURI");
@@ -675,6 +677,7 @@ public final class FCPInterface implements FredPluginFCP {
                         publishTrustList,
                         publishIntroductionPuzzles,
                         autoSubscribe,
+                        displayImages,
                         requestUri,
                         insertUri);
             } else {
@@ -682,7 +685,8 @@ public final class FCPInterface implements FredPluginFCP {
                         nickName,
                         publishTrustList,
                         publishIntroductionPuzzles,
-                        autoSubscribe);
+                        autoSubscribe,
+                        displayImages);
             }
 
             // id can't be null when we come here
