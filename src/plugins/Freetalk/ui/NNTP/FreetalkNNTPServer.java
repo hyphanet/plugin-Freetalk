@@ -73,10 +73,13 @@ public final class FreetalkNNTPServer implements Runnable {
 		
 		mIsRunning = false;
 		
-		while(mThread.isAlive()) {
-			try {
-				mThread.join();
-			} catch(InterruptedException e) { }
+		synchronized(this) {
+			while(mThread != null) {
+				try {
+					// We cannot .join() the thread because it might be re-used by the thread-pool after run() exits.
+					this.wait();
+				} catch (InterruptedException e) { }
+			}
 		}
 		
 		Logger.debug(this, "Terminated.");
@@ -123,6 +126,11 @@ public final class FreetalkNNTPServer implements Runnable {
 		}
 		
 		Logger.debug(this, "Main loop exiting...");
+		
+		synchronized(this) {
+			mThread = null;
+			notifyAll();
+		}
 	}
 	
 	private void acceptConnection(Socket clientSocket) throws SocketException {
