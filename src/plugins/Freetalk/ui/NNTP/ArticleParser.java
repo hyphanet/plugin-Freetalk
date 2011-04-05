@@ -510,8 +510,9 @@ public class ArticleParser {
 
 			try {
 				date = new SimpleDateFormat("d MMM yyyy HH:mm:ss Z").parse(dateHeader);
-			} catch (ParseException e) {
-				Logger.warning(this, "Failed while parsing date: " + dateHeader, e2);
+			}
+			catch (ParseException e) {
+				Logger.warning(this, "Failed while parsing date: " + dateHeader, e);
 				return false;
 			}
 		}
