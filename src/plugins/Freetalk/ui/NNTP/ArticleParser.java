@@ -5,6 +5,9 @@ package plugins.Freetalk.ui.NNTP;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -90,6 +93,10 @@ public class ArticleParser {
 
 	public String getText() {
 		return text;
+	}
+	
+	public Date getDate() {
+		return date;
 	}
 
 
@@ -429,6 +436,7 @@ public class ArticleParser {
 		String referencesHeader = getHeader(headLines, "references");
 		String inReplyToHeader = getHeader(headLines, "in-reply-to");
 		String transferEncodingHeader = getHeader(headLines, "content-transfer-encoding");
+		String dateHeader = getHeader(headLines, "date");
 
 		if (newsgroupsHeader == null) {
 			Logger.debug(this, "Unable to find Newsgroups header");
@@ -493,6 +501,20 @@ public class ArticleParser {
 		title = Message.makeTitleValid(subjectHeader);
 
 		boards = parseNewsgroups(newsgroupsHeader);
+
+		//Parse the date if present in the message
+		if(dateHeader != null) {
+			//Strip the optional day of week
+			if(dateHeader.indexOf(",") != -1)
+				dateHeader = dateHeader.substring(dateHeader.indexOf(",") + 2);
+
+			try {
+				date = new SimpleDateFormat("d MMM yyyy HH:mm:ss Z").parse(dateHeader);
+			} catch (ParseException e) {
+				Logger.warning(this, "Failed while parsing date: " + dateHeader, e2);
+				return false;
+			}
+		}
 
 		if (followupToHeader != null) {
 			ArrayList<String> followups = parseNewsgroups(followupToHeader);
