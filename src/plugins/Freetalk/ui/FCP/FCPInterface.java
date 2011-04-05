@@ -784,6 +784,7 @@ public final class FCPInterface implements FredPluginFCP {
     private void handlePutMessage(final PluginReplySender replysender, final SimpleFieldSet params, final Bucket data)
     throws PluginNotFoundException, InvalidParameterException
     {
+        // TODO: Optimization: We don't need this lock probably, see Javadoc of postMessage
         synchronized(mFreetalk.getMessageManager()) {
 
             try {

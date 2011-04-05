@@ -223,12 +223,17 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 
 	/**
 	 * Called by the {@link MessageManager} when an own message was posted.
-	 * 
-	 * Attention: This function locks the IdentityManager and the MessageManager, therefore the message manager should not lock itself prior to calling it if it
-	 * does not lock the identity manager before.
+	 * Schedules a thread to process the tasks which are related to the posted own message.
+	 * Does not take any locks.
 	 */
-	public void onOwnMessagePosted(OwnMessage message) {
-		proccessTasks(getOwnMessageTasks((OwnIdentity)message.getAuthor()), CurrentTimeUTC.getInMillis());
+	public void onOwnMessagePosted(final OwnMessage message) {
+		mTicker.queueTimedJob(
+			new Runnable() {
+				@Override
+				public void run() {
+					proccessTasks(getOwnMessageTasks((OwnIdentity)message.getAuthor()), CurrentTimeUTC.getInMillis());
+				}
+			},  1 * 1000);
 	}
 	
 	public void storeTaskWithoutCommit(PersistentTask task) {

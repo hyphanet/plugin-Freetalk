@@ -209,6 +209,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	
 	/**
 	 * This is the primary function for posting messages.
+	 * TODO: Optimization: This probably does not require any synchronization when calling since the storeWithoutComit of Message throws if the referenced objects do not exist anymore.
 	 * 
 	 * @param myParentMessage The message to which the new message is a reply. Null if the message should be a thread.
 	 * @param myBoards The boards to which the new message should be posted. Has to contain at least one board.
@@ -225,6 +226,9 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	public abstract OwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, OwnIdentity myAuthor,
 			String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws InvalidParameterException, Exception;
 
+	/**
+	 * TODO: Optimization: This probably does not require any synchronization when calling since the storeWithoutComit of Message throws if the referenced objects do not exist anymore. 
+	 */
 	public OwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<String> myBoards, String myReplyToBoard,
 			OwnIdentity myAuthor, String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
 

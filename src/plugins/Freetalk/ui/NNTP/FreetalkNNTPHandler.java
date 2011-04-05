@@ -822,6 +822,7 @@ public final class FreetalkNNTPHandler implements Runnable {
                 return;
             }
 
+            // TODO: Optimization: We don't need this lock probably, see Javadoc of postMessage
             synchronized(mMessageManager) {
                 try {
                     Message parentMessage;
