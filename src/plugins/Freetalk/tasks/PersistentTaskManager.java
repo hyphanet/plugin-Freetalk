@@ -23,6 +23,7 @@ import freenet.node.PrioRunnable;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.TrivialTicker;
+import freenet.support.codeshortification.IfNull;
 import freenet.support.io.NativeThread;
 
 public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCallback {
@@ -75,6 +76,7 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 	
 	public void start() {
 		Logger.debug(this, "Starting...");
+		IfNull.thenThrow(mTicker, "Ticker may only be null in unit tests, otherwise deadlocks can happen");
 		mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), 0, false, true);
 		Logger.debug(this, "Started.");
 	}
@@ -227,13 +229,17 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 	 * Does not take any locks.
 	 */
 	public void onOwnMessagePosted(final OwnMessage message) {
-		mTicker.queueTimedJob(
-			new Runnable() {
-				@Override
-				public void run() {
-					proccessTasks(getOwnMessageTasks((OwnIdentity)message.getAuthor()), CurrentTimeUTC.getInMillis());
-				}
-			},  1 * 1000);
+		final Runnable r = new Runnable() {
+			@Override
+			public void run() {
+				proccessTasks(getOwnMessageTasks((OwnIdentity)message.getAuthor()), CurrentTimeUTC.getInMillis());
+			}
+		};
+		
+		if(mTicker != null)
+			mTicker.queueTimedJob(r,  1 * 1000);
+		else // For unit tests only, can cause deadlocks in live code. start() won't work with mTicker==null so  we can safely do this. 
+			r.run();
 	}
 	
 	public void storeTaskWithoutCommit(PersistentTask task) {
