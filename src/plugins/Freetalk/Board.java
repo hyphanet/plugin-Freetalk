@@ -86,7 +86,13 @@ public class Board extends Persistent implements Comparable<Board> {
     	final ISO639_3.LanguageCode tlh = iso639_3.getLanguages().get("tlh");
     	IfNull.thenThrow(tlh);
     	languages.put("tlh", tlh);
-    	
+
+    	// No linguistic content, prefix won't be included in board name.  --TheSeeker
+		// Scope == "Special", therefore not in result of getLanguagesByScopeAndType  
+    	final ISO639_3.LanguageCode zxx = iso639_3.getLanguages().get("zxx");
+    	IfNull.thenThrow(zxx);
+    	languages.put("zxx", zxx);
+
         return languages;
     }
     
@@ -191,7 +197,7 @@ public class Board extends Persistent implements Comparable<Board> {
         // part of the input string must be valid on its own)
 
         String[] parts = name.split("\\.", -1); // The 1-argument version will not return empty parts!
-        if (parts.length < 2)
+        if (parts.length < 1) //no profix? no problem! --TheSeeker
             return false;
 
         for (int i = 0; i < parts.length; i++) {
@@ -199,9 +205,9 @@ public class Board extends Persistent implements Comparable<Board> {
                 return false;
         }
 
-        // first part of name must be a recognized language code
-
-        return (ALLOWED_LANGUAGES.containsKey(parts[0]));
+        // first part of name must be a recognized language code 
+		// lol, just kidding! --TheSeeker
+        return true;
     }
     
     /**
@@ -220,9 +226,25 @@ public class Board extends Persistent implements Comparable<Board> {
     
     /**
      * @return Returns the language code of the board. It is the token before the first '.' in the name of the board.
+	 * if the token isn't a language, because we're not using the prefixes, then return "no linguistic content" instead. --TheSeeker
      */
     public final ISO639_3.LanguageCode getLanguage() {
-    	return ALLOWED_LANGUAGES.get(mName.substring(0, mName.indexOf('.')));
+		int dotIndex = mName.indexOf('.');
+		String lang = "zxx";
+		
+		if ( dotIndex > 0 )
+		{
+			lang = mName.substring(0, dotIndex);
+		}
+		
+		if(ALLOWED_LANGUAGES.containsKey(lang))
+		{
+			return ALLOWED_LANGUAGES.get(lang);
+		}
+		else
+		{
+			return ALLOWED_LANGUAGES.get("zxx");
+		}
     }
 
     /**
@@ -236,7 +258,10 @@ public class Board extends Persistent implements Comparable<Board> {
      * @see getName()
      */
     public final String getNameWithoutLanguagePrefix() {
-        return mName.substring(mName.indexOf('.')+1);
+		if (ALLOWED_LANGUAGES.containsKey(mName.substring(0, mName.indexOf('.'))))
+			return mName.substring(mName.indexOf('.')+1);
+		else
+			return mName;
     }
     
     /**

@@ -30,16 +30,24 @@ public final class NewBoardPage extends WebPageImpl {
 		
 		String boardLanguage = "";
 		String boardName = "";
+		String boardDescription = "";
 		
 		if(mRequest.isPartSet("CreateBoard") && mRequest.getMethod().equals("POST")) {
 			try {
 				// TODO: Maybe introduce a specific limit for the language length... its not so important though, we have a limit, thats sufficient.
 			    boardLanguage = mRequest.getPartAsStringThrowing("BoardLanguage", Board.MAX_BOARDNAME_TEXT_LENGTH);
 				boardName = mRequest.getPartAsStringThrowing("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH);
+				boardDescription = mRequest.getPartAsStringThrowing("BoardDescription", Board.MAX_BOARDNAME_TEXT_LENGTH);
 				
-				final String fullBoardName = boardLanguage + "." + boardName;
+				//if we have selected 'no linguistic content' then don't add the prefix.
+				if(boardLanguage.equals("zxx"))
+					boardLanguage = "";
+				else
+					boardLanguage += ".";
 				
-				mFreetalk.getMessageManager().getOrCreateBoard(fullBoardName);
+				final String fullBoardName = boardLanguage + boardName;
+				
+				mFreetalk.getMessageManager().getOrCreateBoard(fullBoardName, boardDescription);
 				
 				SubscribedBoard subscribedBoard = mFreetalk.getMessageManager().subscribeToBoard(mOwnIdentity, fullBoardName);
 				
@@ -63,7 +71,7 @@ public final class NewBoardPage extends WebPageImpl {
 			}
 		}
 		else {
-			makeNewBoardPage("mul", ""); // Encourage the usage of multilingual boards by making it the default
+			makeNewBoardPage("zxx", ""); // Encourage the usage of no language prefix by making it the default
 		}
 	}
 	
@@ -100,7 +108,13 @@ public final class NewBoardPage extends WebPageImpl {
 		
 		nameBox.addChild("input", new String[] { "type", "size", "maxlength", "name", "value"},
 				new String[] {"text", "128", Integer.toString(Board.MAX_BOARDNAME_TEXT_LENGTH), "BoardName", boardName});
+
+		HTMLNode descBox = newBoardForm.addChild(getContentBox(l10n().getString("NewBoardPage.NewBoardBox.BoardDescBox.Header")));
+		descBox.addChild("p", l10n().getString("NewBoardPage.NewBoardBox.BoardDescBox.Text"));
 		
+		descBox.addChild("input", new String[] { "type", "size", "maxlength", "name", "value"},
+				new String[] {"text", "128", Integer.toString(Board.MAX_BOARDNAME_TEXT_LENGTH), "BoardDescription", boardName});
+
 		newBoardForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "CreateBoard", l10n().getString("NewBoardPage.NewBoardButton")});
 	}
 }

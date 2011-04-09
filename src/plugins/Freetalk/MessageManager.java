@@ -1244,7 +1244,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		return getOrCreateBoard(name, null);
 	}
 
-	private synchronized Board getOrCreateBoard(String name, String description) throws InvalidParameterException {
+	public synchronized Board getOrCreateBoard(String name, String description) throws InvalidParameterException {
 		name = name.toLowerCase();
 		
 		Board board;

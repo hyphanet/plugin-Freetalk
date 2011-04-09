@@ -715,17 +715,20 @@ public final class FCPInterface implements FredPluginFCP {
      * Format of request:
      *   Message=CreateBoard
      *   BoardName=abc
+	 *   BoardDesc=abc
      * Format of reply:
      *   Message=CreateBoardReply
      *   BoardCreated=true|false
      *   ErrorDescription=abc    (set when BoardCreated=false)
      *   StoredBoardName=abc     (set when BoardCreated=true)
+	 *   StoredBoardDesc=abc     (set when BoardCreated=true)
      */
     private void handleCreateBoard(final PluginReplySender replysender, final SimpleFieldSet params)
     throws PluginNotFoundException, InvalidParameterException
     {
         try {
             final String boardName = getMandatoryParameter(params, "BoardName");
+			final String boardDesc = getMandatoryParameter(params, "BoardDesc");
             if (!Board.isNameValid(boardName)) {
                 throw new InvalidParameterException("BoardName parameter is not valid");
             }
@@ -739,7 +742,7 @@ public final class FCPInterface implements FredPluginFCP {
                 } catch (final NoSuchBoardException e) {
                 }
 
-                board = mFreetalk.getMessageManager().getOrCreateBoard(boardName);
+                board = mFreetalk.getMessageManager().getOrCreateBoard(boardName, boardDesc);
             }
 
             // board can't be null when we come here
@@ -747,6 +750,7 @@ public final class FCPInterface implements FredPluginFCP {
             sfs.putOverwrite("Message", "CreateBoardReply");
             sfs.putOverwrite("BoardCreated", "true");
             sfs.putOverwrite("StoredBoardName", board.getName());
+			sfs.putOverwrite("StoredBoardDesc", board.getDescription(null));
             sfs.putOverwrite("ID", board.getID());
             replysender.send(sfs);
 
@@ -837,11 +841,12 @@ public final class FCPInterface implements FredPluginFCP {
                         throw new InvalidParameterException("Invalid TargetBoards parameter specified");
                     }
                     try {
-                        final Board board = mFreetalk.getMessageManager().getBoardByName(targetBoardName);
-                        targetBoards.add(board);
-                    } catch(final NoSuchBoardException e) {
-                        throw new InvalidParameterException("TargetBoard '"+targetBoardName+"' does not exist");
-                    }
+                        final Board board = mFreetalk.getMessageManager().getOrCreateBoard(targetBoardName);                        
+						targetBoards.add(board);
+                    } catch(final InvalidParameterException e) {						
+                        throw new InvalidParameterException("TargetBoard '"+targetBoardName+"' is invalid");
+					}                    
+					
                 }
 
                 // evaluate replyToBoard
@@ -849,9 +854,9 @@ public final class FCPInterface implements FredPluginFCP {
                 Board replyToBoard = null;
                 if (replyToBoardName != null ) {
                     try {
-                        replyToBoard = mFreetalk.getMessageManager().getBoardByName(replyToBoardName);
-                    } catch(final NoSuchBoardException e) {
-                        throw new InvalidParameterException("ReplyToBoard '"+replyToBoardName+"' does not exist");
+                        replyToBoard = mFreetalk.getMessageManager().getOrCreateBoard(replyToBoardName);
+                    } catch(final InvalidParameterException e) {
+                        throw new InvalidParameterException("ReplyToBoard '"+replyToBoardName+"' is invalid");
                     }
                     if (!targetBoards.contains(replyToBoard)) {
                         throw new InvalidParameterException("ReplyToBoard is not contained in TargetBoards");
