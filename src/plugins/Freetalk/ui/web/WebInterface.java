@@ -59,6 +59,7 @@ public final class WebInterface {
 	private final WebInterfaceToadlet homeToadlet;
 	private final WebInterfaceToadlet subscribedBoardsToadlet;
 	private final WebInterfaceToadlet selectBoardsToadlet;
+	private final WebInterfaceToadlet outboxToadlet;
 	private final WebInterfaceToadlet identitiesToadlet;
 	private final WebInterfaceToadlet settingsToadlet;
 	private final WebInterfaceToadlet logOutToadlet;
@@ -143,6 +144,27 @@ public final class WebInterface {
 			if(!mFreetalk.wotConnected())
 				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
 			return new SelectBoardsPage(webInterface, getLoggedInOwnIdentity(context), req, l10n());
+		}
+		
+		@Override
+		public boolean isEnabled(ToadletContext ctx) {
+			return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
+		}
+		
+	}
+	
+	class OutboxWebInterfaceToadlet extends WebInterfaceToadlet {
+
+		protected OutboxWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+			super(client, wi, core, pageTitle);
+		}
+
+		@Override
+		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+			if(!mFreetalk.wotConnected())
+				return new WoTIsMissingPage(webInterface, req, mFreetalk.wotOutdated(), l10n());
+			
+			return new OutboxPage(webInterface, getLoggedInOwnIdentity(context), req);
 		}
 		
 		@Override
@@ -708,6 +730,7 @@ public final class WebInterface {
 		logInToadlet = new LogInWebInterfaceToadlet(null, this, clientCore, "LogIn");
 		subscribedBoardsToadlet = new SubscribedBoardsWebInterfaceToadlet(null, this, clientCore, "SubscribedBoards");
 		selectBoardsToadlet = new SelectBoardsWebInterfaceToadlet(null, this, clientCore, "SelectBoards");
+		outboxToadlet = new OutboxWebInterfaceToadlet(null, this, clientCore, "Outbox");
 		identitiesToadlet = new IdentitiesWebInterfaceToadlet(null, this, clientCore, "identities");
 		settingsToadlet = new SettingsWebInterfaceToadlet(null, this, clientCore, "Settings");
 		logOutToadlet = new LogOutWebInterfaceToadlet(null, this, clientCore, "LogOut");
@@ -716,6 +739,7 @@ public final class WebInterface {
 		container.register(logInToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/LogIn", true, "WebInterface.DiscussionMenuItem.LogIn", "WebInterface.DiscussionMenuItem.LogIn.Tooltip", false, logInToadlet);
 		container.register(subscribedBoardsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/SubscribedBoards", true, "WebInterface.DiscussionMenuItem.SubscribedBoards", "WebInterface.DiscussionMenuItem.SubscribedBoards.Tooltip", false, subscribedBoardsToadlet);
 		container.register(selectBoardsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/SelectBoards", true, "WebInterface.DiscussionMenuItem.SelectBoards", "WebInterface.DiscussionMenuItem.SelectBoards.Tooltip", false, selectBoardsToadlet);
+		container.register(outboxToadlet, "WebInterface.DiscussionMenuName", OutboxPage.getURI(), true, "WebInterface.DiscussionMenuItem.Outbox", "WebInterface.DiscussionMenuItem.Outbox.Tooltip", false, outboxToadlet);
 		container.register(identitiesToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/identities", true, "WebInterface.DiscussionMenuItem.Identities", "WebInterface.DiscussionMenuItem.Identities.Tooltip", false, identitiesToadlet);
 		container.register(settingsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/Settings", true, "WebInterface.DiscussionMenuItem.Settings", "WebInterface.DiscussionMenuItem.Settings.Tooltip", false, settingsToadlet);
 		container.register(logOutToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/LogOut", true, "WebInterface.DiscussionMenuItem.LogOut", "WebInterface.DiscussionMenuItem.LogOut.Tooltip", false, logOutToadlet);
@@ -764,6 +788,7 @@ public final class WebInterface {
 				homeToadlet,
 				subscribedBoardsToadlet,
 				selectBoardsToadlet,
+				outboxToadlet,
 				identitiesToadlet,
 				settingsToadlet,
 				logOutToadlet,

@@ -553,7 +553,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	
 	public WoTIdentityManager getIdentityManager() {
 		return mIdentityManager;
-	}	
+	}
+	
+	public WoTMessageInserter getMessageInserter() {
+		return mMessageInserter;
+	}
 	
 	public WoTMessageManager getMessageManager() {
 		return mMessageManager;

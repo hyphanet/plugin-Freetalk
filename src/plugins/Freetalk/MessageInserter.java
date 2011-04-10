@@ -25,4 +25,11 @@ public abstract class MessageInserter extends TransferThread {
 		mIdentityManager = myIdentityManager;
 		mMessageManager = myMessageManager;
 	}
+
+	/**
+	 * Cancels the insert for the given message if one exists.
+	 * Synchronizes on this MessageInserter.
+	 * The MessageManager must be synchronized after the MessageInserter to prevent deadlocks.
+	 */
+	public abstract void abortMessageInsert(String messageID);
 }

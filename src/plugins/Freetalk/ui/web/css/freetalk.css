@@ -188,3 +188,32 @@
 .freetalk .message .body .error {
 	color: #f00;
 }
+
+
+/* Outbox page */
+
+.freetalk * .outbox .outbox-table {
+	width: 100%;
+}
+
+.freetalk * .outbox .outbox-table .message-row {
+	height: 1.1em;
+}
+
+.freetalk * .outbox .outbox-table .message-row .boards {
+	text-align: left;
+}
+.freetalk * .outbox .outbox-table .message-row .title {
+	text-align: left;
+}
+
+.freetalk * .outbox .outbox-table .message-row .date {
+	text-align: center;
+	white-space: nowrap;
+}
+
+.freetalk * .outbox .outbox-table .message-row .delete {
+	text-align: center;
+}
+
+

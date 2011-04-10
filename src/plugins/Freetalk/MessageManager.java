@@ -284,8 +284,25 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		q.constrain(OwnMessage.class);
 		return q.execute().size();
 	}
+	
+	public void deleteUnsentMessage(String messageID) throws NoSuchMessageException {
+		synchronized(mFreetalk.getMessageInserter()) {
+		synchronized(this) {
+			final OwnMessage message = getOwnMessage(messageID);
+			
+			if(message.wasInserted())
+				throw new UnsupportedOperationException("The message was inserted already");
+			
+			mFreetalk.getMessageInserter().abortMessageInsert(message.getID());
+			
+			deleteMessage(message);
+		}
+		}
+	}
 
 	private synchronized void deleteMessage(Message message) {
+		if(!(message instanceof OwnMessage)) { // OwnMessages cannot be rated / added to boards.
+		
 		for(MessageRating rating : getAllMessageRatings(message)) {
 			// We must not undo the effect because we do not want message deletion due to distrust of the author result in the distrust to be undone.
 			deleteMessageRatingWithoutRevertingEffect(rating); // This call does a full transaction.
@@ -326,10 +343,21 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 			}
 			
 		}
+		
+		}
 
 		synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
 		synchronized(db.lock()) {	
 			try {
+				if(message instanceof OwnMessage) {
+					final OwnMessage ownMessage = (OwnMessage)message;
+					
+					for(OwnMessageList.OwnMessageReference ref : getAllOwnReferencesToMessage(ownMessage.getID())) {
+						((OwnMessageList)ref.getMessageList()).removeMessageWithoutCommit(ownMessage);
+					}
+					
+					// clearParent / clearThread is not neccessary for OwnMessages.
+				} else {
 				// Clear the "message was downloaded" flags of the references to this message.
 				// This is necessary because the following transaction (deletion of the message lists of the identity) might fail and we should
 				///re-download the message if the identity is not deleted.
@@ -344,6 +372,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 				
 				for(Message threadReply : getAllThreadRepliesToMessage(message)) {
 					threadReply.clearThread();
+				}
 				}
 				
 				message.deleteWithoutCommit();
@@ -488,6 +517,8 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 
 				if(identity instanceof OwnIdentity) {
 					final OwnIdentity ownId = (OwnIdentity)identity;
+					
+					// TODO: Make sure that deleteMessage also works well for OwnMessages and use it.
 					
 					for(final OwnMessage message : getOwnMessagesBy(ownId)) {
 						message.deleteWithoutCommit();
@@ -1070,6 +1101,13 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		query.constrain(OwnMessageList.OwnMessageReference.class).not();
 		query.descend("mMessageID").constrain(id);
 		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query);
+	}
+	
+	private ObjectSet<OwnMessageList.OwnMessageReference> getAllOwnReferencesToMessage(final String id) {
+		final Query query = db.query();
+		query.constrain(OwnMessageList.OwnMessageReference.class);
+		query.descend("mMessageID").constrain(id);
+		return new Persistent.InitializingObjectSet<OwnMessageList.OwnMessageReference>(mFreetalk, query);
 	}
 	
 	private ObjectSet<Message> getAllRepliesToMessage(String messageID) {

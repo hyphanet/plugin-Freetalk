@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import java.util.Iterator;
+
 import plugins.Freetalk.Message.MessageID;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
@@ -91,6 +93,33 @@ public abstract class OwnMessageList extends MessageList {
 			
 			ref.setMessageList(this);			
 			newMessage.setMessageList(this);
+		}
+	}
+	
+	// TODO: This has not been tested in practice because we have no code for aborting OwnMessage inserts which are added to a message list already
+	// and the OwnIdentity-deletion code does not use it.
+	public synchronized void removeMessageWithoutCommit(OwnMessage message) {
+		synchronized(message) {
+			if(!message.wasInserted())
+				throw new IllegalStateException("Message was not inserted yet, so it has no URI, cannot be in MessageList");
+			
+			if(mIsBeingInserted)
+				throw new IllegalStateException("MessageList is being inserted, please abort the insert first.");
+			
+			for(Iterator<MessageReference> iter = mMessages.iterator(); iter.hasNext(); ) {
+				MessageReference ref = iter.next();
+				ref.initializeTransient(mFreetalk);
+				
+				if(ref.getURI().equals(message.getFreenetURI())) {
+					iter.remove();
+				}
+			
+				ref.setMessageList(null);
+				ref.deleteWithoutCommit();
+			}
+			
+			message.setMessageList(null);
+			message.storeWithoutCommit();
 		}
 	}
 	

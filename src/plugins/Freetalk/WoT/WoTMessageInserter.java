@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Random;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -154,6 +155,21 @@ public final class WoTMessageInserter extends MessageInserter {
 			if(tempB != null)
 				tempB.free();
 			Closer.close(os);
+		}
+	}
+	
+	@Override
+	public synchronized void abortMessageInsert(String messageID) {
+		if(!mMessageIDs.contains(messageID))
+			return;
+		
+		// TODO: Optimization: If we ever run in public gateway mode and therefore have thousands of pending inserts this needs to be optimized
+		for(Map.Entry<BaseClientPutter, String> entry : mPutterMessageIDs.entrySet()) {
+			if(messageID.equals(entry.getValue())) {
+				// The following will call onFailure which removes the request from mMessageIDs / mPutterMessageIDs
+				entry.getKey().cancel(null, mClientContext);
+				break;
+			}
 		}
 	}
 
