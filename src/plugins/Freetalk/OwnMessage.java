@@ -97,6 +97,26 @@ public abstract class OwnMessage extends Message {
 		mMessageList.initializeTransient(mFreetalk);
 		return mMessageList;
 	}
+	
+	/**
+	 * Not allowed for OwnMessage
+	 * @throws UnsupportedOperationException Always.
+	 */
+	@Override
+	public void setParent(Message message) {
+		throw new UnsupportedOperationException();
+		// ATTENTION: If you ever allow this please take care of message deletion routines which assume that OwnMessages do not have mParent!=null
+	}
+
+	/**
+	 * Not allowed for OwnMessage
+	 * @throws UnsupportedOperationException Always.
+	 */
+	@Override
+	public void setThread(Message thread) {
+		throw new UnsupportedOperationException();
+		// ATTENTION: If you ever allow this please take care of message deletion routines which assume that OwnMessages do not have mThread!=null
+	}
 
 	/**
 	 * Tells whether this message was inserted already. If a message was inserted, this does not necessarily mean that it will be visible to anyone:

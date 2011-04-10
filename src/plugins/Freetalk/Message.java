@@ -889,7 +889,7 @@ public abstract class Message extends Persistent {
 		return mThread;
 	}
 
-	public final synchronized void setThread(Message newParentThread) {
+	public synchronized void setThread(Message newParentThread) {
 		assert(mThread == null || mThread == newParentThread);
 
 		if(mThread != null)
@@ -924,7 +924,7 @@ public abstract class Message extends Persistent {
 		return mParent;
 	}
 
-	public final synchronized void setParent(Message newParent)  {
+	public synchronized void setParent(Message newParent)  {
 		assert(mParent == null || newParent == mParent);
 
 		if(mParent != null)
