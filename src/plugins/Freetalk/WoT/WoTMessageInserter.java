@@ -192,8 +192,10 @@ public final class WoTMessageInserter extends MessageInserter {
 		try {
 			if(e.getMode() == InsertException.CANCELLED)
 				Logger.normal(this, "Message insert cancelled for " + state.getURI());
-			else
+			else if(e.isFatal())
 				Logger.error(this, "Message insert failed", e);
+			else
+				Logger.warning(this, "Message insert failed non-fatally", e);
 		}
 		finally {
 			removeInsert(state);

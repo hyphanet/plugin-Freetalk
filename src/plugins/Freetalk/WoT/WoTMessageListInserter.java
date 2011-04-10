@@ -172,7 +172,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		try {
 			if(e.getMode() == InsertException.COLLISION) {
-				Logger.error(this, "WoTOwnMessageList insert collided, trying to insert with higher index ...");
+				Logger.warning(this, "WoTOwnMessageList insert collided, trying to insert with higher index ...");
 				try {
 					synchronized(mMessageManager) {
 						// We must call getOwnMessageList() before calling onMessageListInsertFailed() because the latter will increment the message list's
@@ -187,11 +187,17 @@ public final class WoTMessageListInserter extends MessageListInserter {
 				catch(Exception ex) {
 					Logger.error(this, "Inserting WoTOwnMessageList with higher index failed", ex);
 				}
-			} else
+			} else {
+				if(e.isFatal())
+					Logger.error(this, "WoTOwnMessageList insert failed", e);
+				else
+					Logger.warning(this, "WoTOwnMessageList insert failed non-fatally", e);
+				
 				mMessageManager.onMessageListInsertFailed(state.getURI(), false);
+			}
 		}
 		catch(Exception ex) {
-			Logger.error(this, "WoTOwnMessageList insert failed", ex);
+			Logger.error(this, "WoTOwnMessageList insert failed and failure handling threw", ex);
 		}
 		finally {
 			removeInsert(state);
