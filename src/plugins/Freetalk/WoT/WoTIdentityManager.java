@@ -54,24 +54,13 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	
 	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (3 * 60 * 1000) : (5 * 60 * 1000);
 	
-	private static final int GARBAGE_COLLECT_DELAY = Freetalk.FAST_DEBUG_MODE ? (1 * 60 * 1000) : (3 * THREAD_PERIOD);
 	
 	/** The amount of time between each attempt to connect to the WoT plugin */
 	private static final int WOT_RECONNECT_DELAY = 5 * 1000; 
 	
-	/** The minimal amount of time between fetching identities */
-	private static final int MINIMAL_IDENTITY_FETCH_DELAY = 60 * 1000;
-	
-	/** The minimal amount of time between fetching own identities */
-	private static final int MINIMAL_OWN_IDENTITY_FETCH_DELAY = 1000;
-	
+
 	private boolean mConnectedToWoT = false;
-	
-	private boolean mIdentityFetchInProgress = false;
-	private boolean mOwnIdentityFetchInProgress = false;
-	private long mLastIdentityFetchTime = 0;
-	private long mLastOwnIdentityFetchTime = 0;
-	
+
 	/** If true, this identity manager is being use in a unit test - it will return 0 for any score / trust value then */
 	private final boolean mIsUnitTest;
 
@@ -88,7 +77,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	
 	private boolean mShortestUniqueNicknameCacheNeedsUpdate = true;
 	
-	private WebOfTrustCache mWoTCache = new WebOfTrustCache();
+	private WebOfTrustCache mWoTCache = new WebOfTrustCache(this);
 	
 
 	public WoTIdentityManager(Freetalk myFreetalk, Executor myExecutor) {
@@ -233,18 +222,12 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	}
 	
 	public ObjectSet<WoTIdentity> getAllIdentities() {
-		Query q = db.query();
+		final Query q = db.query();
 		q.constrain(WoTIdentity.class);
 		return new Persistent.InitializingObjectSet<WoTIdentity>(mFreetalk, q);
 	}
 	
 	public synchronized ObjectSet<WoTOwnIdentity> ownIdentityIterator() {
-		try {
-			fetchOwnIdentities();
-			garbageCollectIdentities();
-		} 
-		catch(Exception e) {} /* Ignore, return the ones which are in database now */
-		
 		final Query q = db.query();
 		q.constrain(WoTOwnIdentity.class);
 		return new Persistent.InitializingObjectSet<WoTOwnIdentity>(mFreetalk, q);
@@ -296,47 +279,15 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	/**
 	 * Not synchronized, the involved identities might be deleted during the query - which is not really a problem.
 	 */
-	private String getProperty(OwnIdentity truster, Identity target, String property) throws Exception {
-		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		sfs.putOverwrite("Message", "GetIdentity");
-		sfs.putOverwrite("Truster", truster.getID());
-		sfs.putOverwrite("Identity", target.getID());
-
-		return sendFCPMessageBlocking(sfs, null, "Identity").params.get(property);
+	public int getScore(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotInTrustTreeException {
+		return mWoTCache.getScore(truster, trustee);
 	}
 
 	/**
 	 * Not synchronized, the involved identities might be deleted during the query - which is not really a problem.
 	 */
-	public int getScore(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotInTrustTreeException, Exception {
-		if(mIsUnitTest)
-			return 0;
-		
-		final String score = getProperty(truster, trustee, "Score");
-		
-		if(score.equals("null"))
-			throw new NotInTrustTreeException(truster, trustee);
-		
-		final int value = Integer.parseInt(score);
-		mWoTCache.putScore(truster, trustee, value);
-		return value;
-	}
-
-	/**
-	 * Not synchronized, the involved identities might be deleted during the query - which is not really a problem.
-	 */
-	public byte getTrust(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotTrustedException, Exception {
-		if(mIsUnitTest)
-			return 0;
-		
-		final String trust = getProperty(truster, trustee, "Trust");
-		
-		if(trust.equals("null"))
-			throw new NotTrustedException(truster, trustee);
-		
-		final byte value = Byte.parseByte(trust);
-		mWoTCache.putTrust(truster, trustee, value);
-		return value;
+	public byte getTrust(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotTrustedException {
+		return mWoTCache.getTrust(truster, trustee);
 	}
 
 	/**
@@ -357,57 +308,6 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		sendFCPMessageBlocking(request, null, "TrustSet");
 		mWoTCache.putTrust(wotTruster, wotTrustee, trust);
 	}
-
-	/**
-	 * Not synchronized, the involved identity might be deleted during the query - which is not really a problem.
-	 */
-	public List<WoTTrust> getReceivedTrusts(Identity trustee) throws Exception {
-		List<WoTTrust> result = new ArrayList<WoTTrust>();
-
-		SimpleFieldSet request = new SimpleFieldSet(true);
-		request.putOverwrite("Message", "GetTrusters");
-		request.putOverwrite("Context", "");
-		request.putOverwrite("Identity", trustee.getID());
-		try {
-			SimpleFieldSet answer = sendFCPMessageBlocking(request, null, "Identities").params;
-			for(int idx = 0; ; idx++) {
-				String id = answer.get("Identity"+idx);
-				if(id == null || id.equals("")) /* TODO: Figure out whether the second condition is necessary */
-					break;
-				try {
-					final WoTTrust trust = new WoTTrust(getIdentity(id), trustee, (byte)Integer.parseInt(answer.get("Value"+idx)), 
-							answer.get("Comment"+idx));
-					mWoTCache.putTrust(trust);
-					result.add(trust);
-				} catch (NoSuchIdentityException e) {
-				} catch (InvalidParameterException e) {
-				}
-			}
-		}
-		catch(PluginNotFoundException e) {
-			throw new WoTDisconnectedException();
-		}
-		return result;
-	}
-	
-	/**
-	 * Not synchronized, the involved identity might be deleted during the query - which is not really a problem.
-	 */
-	public int getReceivedTrustsCount(Identity trustee) throws Exception {
-		SimpleFieldSet request = new SimpleFieldSet(true);
-		request.putOverwrite("Message", "GetTrustersCount");
-		request.putOverwrite("Identity", trustee.getID());
-		request.putOverwrite("Context", Freetalk.WOT_CONTEXT);		
-		
-		try {
-			SimpleFieldSet answer = sendFCPMessageBlocking(request, null, "TrustersCount").params;
-			return Integer.parseInt(answer.get("Value"));
-		}
-		catch(PluginNotFoundException e) {
-			throw new WoTDisconnectedException();
-		}
-
-	}
 	
 	/**
 	 * Get the number of trust values for a given identity with the ability to select which values should be counted.
@@ -417,48 +317,12 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	 * @param selection Use 1 for counting trust values greater than or equal to zero, 0 for counting trust values exactly equal to 0 and -1 for counting trust
 	 * 		values less than zero.
 	 */
-	public int getReceivedTrustsCount(Identity trustee, int selection) throws Exception {
-		SimpleFieldSet request = new SimpleFieldSet(true);
-		request.putOverwrite("Message", "GetTrustersCount");
-		request.putOverwrite("Identity", trustee.getID());
-		request.putOverwrite("Context", Freetalk.WOT_CONTEXT);
-		
-		if(selection > 0)
-			request.putOverwrite("Selection", "+");
-		else if(selection == 0)
-			request.putOverwrite("Selection", "0");
-		else
-			request.putOverwrite("Selection", "-");
-		
-		try {
-			SimpleFieldSet answer = sendFCPMessageBlocking(request, null, "TrustersCount").params;
-			return Integer.parseInt(answer.get("Value"));
-		}
-		catch(PluginNotFoundException e) {
-			throw new WoTDisconnectedException();
-		}
+	public int getReceivedTrustsCount(WoTIdentity trustee, int selection) throws Exception {
+		return mWoTCache.getReceivedTrustCount(trustee, selection);
 	}
 	
-	public int getGivenTrustsCount(Identity trustee, int selection) throws Exception {
-		SimpleFieldSet request = new SimpleFieldSet(true);
-		request.putOverwrite("Message", "GetTrusteesCount");
-		request.putOverwrite("Identity", trustee.getID());
-		request.putOverwrite("Context", Freetalk.WOT_CONTEXT);
-		
-		if(selection > 0)
-			request.putOverwrite("Selection", "+");
-		else if(selection == 0)
-			request.putOverwrite("Selection", "0");
-		else
-			request.putOverwrite("Selection", "-");
-		
-		try {
-			SimpleFieldSet answer = sendFCPMessageBlocking(request, null, "TrusteesCount").params;
-			return Integer.parseInt(answer.get("Value"));
-		}
-		catch(PluginNotFoundException e) {
-			throw new WoTDisconnectedException();
-		}
+	public int getGivenTrustsCount(WoTIdentity trustee, int selection) throws Exception {
+		return mWoTCache.getGivenTrustCount(trustee, selection);
 	}
 	
 	public static final class IntroductionPuzzle {
@@ -562,94 +426,6 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		sendFCPMessageBlocking(params, null, "ContextAdded");
 	}
 	
-	/**
-	 * Fetches the identities with positive score from WoT and stores them in the database.
-	 * @throws Exception 
-	 */
-	private void fetchIdentities() throws Exception {		
-		// parseIdentities() acquires and frees the WoTIdentityManager-lock for each identity to allow other threads to access the identity manager while the
-		// parsing is in progress. Therefore, we do not take the lock for the whole execution of this function.
-		synchronized(this) {
-			if(mIdentityFetchInProgress)
-				return;
-			
-			long now = CurrentTimeUTC.getInMillis();
-			if((now - mLastIdentityFetchTime) < MINIMAL_IDENTITY_FETCH_DELAY)
-				return;
-			
-			mIdentityFetchInProgress = true;
-		}
-		
-		try {
-			Logger.normal(this, "Requesting identities with positive score from WoT ...");
-			SimpleFieldSet p1 = new SimpleFieldSet(true);
-			p1.putOverwrite("Message", "GetIdentitiesByScore");
-			p1.putOverwrite("Selection", "+");
-			p1.putOverwrite("Context", Freetalk.WOT_CONTEXT);
-			parseIdentities(sendFCPMessageBlocking(p1, null, "Identities").params, false);
-			
-			synchronized(this) {
-				// We must update the fetch-time after the parsing and only if the parsing succeeded:
-				// If we updated before the parsing and parsing failed or took ages (the thread sometimes takes 2 hours to execute, don't ask me why)
-				// then the garbage collector would delete identities.
-				mLastIdentityFetchTime = CurrentTimeUTC.getInMillis();
-			}
-		}
-		finally {
-			synchronized(this) {
-				mIdentityFetchInProgress = false;
-			}
-		}
-	
-			
-		// We usually call garbageCollectIdentities() after calling this function, it updates the cache already...
-		// if(mShortestUniqueNicknameCacheNeedsUpdate)
-		//	updateShortestUniqueNicknameCache();
-	}
-	
-	/**
-	 * Fetches the own identities with positive score from WoT and stores them in the database.
-	 * @throws Exception 
-	 */
-	private void fetchOwnIdentities() throws Exception {
-		// parseIdentities() acquires and frees the WoTIdentityManager-lock for each identity to allow other threads to access the identity manager while the
-		// parsing is in progress. Therefore, we do not take the lock for the whole execution of this function.
-		synchronized(this) {
-			if(mOwnIdentityFetchInProgress)
-				return;
-
-			long now = CurrentTimeUTC.getInMillis();
-			if((now - mLastOwnIdentityFetchTime) < MINIMAL_OWN_IDENTITY_FETCH_DELAY)
-				return;
-			
-			mOwnIdentityFetchInProgress = true;
-		}
-		
-		try {
-			Logger.normal(this, "Requesting own identities from WoT ...");
-			SimpleFieldSet p2 = new SimpleFieldSet(true);
-			p2.putOverwrite("Message","GetOwnIdentities");
-			parseIdentities(sendFCPMessageBlocking(p2, null, "OwnIdentities").params, true);
-			
-			synchronized(this) {
-				// We must update the fetch-time after the parsing and only if the parsing succeeded:
-				// If we updated before the parsing and parsing failed or took ages (the thread sometimes takes 2 hours to execute, don't ask me why)
-				// then the garbage collector would delete identities.
-				mLastOwnIdentityFetchTime = CurrentTimeUTC.getInMillis();
-			}
-		}
-		finally {
-			synchronized(this) {
-				mOwnIdentityFetchInProgress = false;
-			}
-		}
-		
-		// We usually call garbageCollectIdentities() after calling this function, it updates the cache already...
-		// if(mShortestUniqueNicknameCacheNeedsUpdate)
-		//	updateShortestUniqueNicknameCache();
-	}
-	
-
 	private void onNewIdentityAdded(Identity identity) {
 		Logger.normal(this, "onNewIdentityAdded " + identity);
 		
@@ -821,36 +597,6 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		}
 		
 		Logger.normal(this, "parseIdentities(bOwnIdentities==" + bOwnIdentities + " received " + idx + " identities. Ignored " + ignoredCount + "; New: " + newCount );
-	}
-	
-	@SuppressWarnings("unchecked")
-	private void garbageCollectIdentities() {
-		final MessageManager messageManager = mFreetalk.getMessageManager();
-		final PersistentTaskManager taskManager = mFreetalk.getTaskManager();
-		
-		synchronized(this) {
-			if(mIdentityFetchInProgress || mOwnIdentityFetchInProgress || mLastIdentityFetchTime == 0 || mLastOwnIdentityFetchTime == 0)
-				return;
-			
-		/* Executing the thread loop once will always take longer than THREAD_PERIOD. Therefore, if we set the limit to 3*THREAD_PERIOD,
-		 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */
-		long lastAcceptTime = Math.min(mLastIdentityFetchTime, mLastOwnIdentityFetchTime) - GARBAGE_COLLECT_DELAY;
-		lastAcceptTime = Math.max(lastAcceptTime, 0); // This is not really needed but a time less than 0 does not make sense.;
-		
-		Query q = db.query();
-		q.constrain(WoTIdentity.class);
-		q.descend("mLastReceivedFromWoT").constrain(lastAcceptTime).smaller();
-		ObjectSet<WoTIdentity> result = q.execute();
-		
-		for(WoTIdentity identity : result) {
-			identity.initializeTransient(mFreetalk);
-			Logger.debug(this, "Garbage collecting identity " + identity);
-			deleteIdentity(identity, messageManager, taskManager);
-		}
-		
-		if(mShortestUniqueNicknameCacheNeedsUpdate)
-			updateShortestUniqueNicknameCache();
-		}
 	}
 	
 	private synchronized void deleteIdentity(WoTIdentity identity, MessageManager messageManager, PersistentTaskManager taskManager) {
@@ -1064,8 +810,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		return nickname;
 	}
 	
-	private final class WebOfTrustCache {
-		public static final long EXPIRATION_DELAY = 5 * 60 * 1000;
+	private final class WebOfTrustCache implements NewIdentityCallback, IdentityDeletedCallback {
 		
 		private final class TrustKey {
 			public final String mTrusterID;
@@ -1093,40 +838,138 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			}
 		}
 		
-		private final LRUCache<TrustKey, Byte> mTrustCache = new LRUCache<TrustKey, Byte>(256, EXPIRATION_DELAY);
-		private final LRUCache<TrustKey, Integer> mScoreCache = new LRUCache<TrustKey, Integer>(256, EXPIRATION_DELAY);
-		
-		// TODO: Create getter methods in WoTIdentityManager which actually use this caching function...
-		public synchronized byte getTrust(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotTrustedException, Exception {
-			{
-				final Byte cachedValue = mTrustCache.get(new TrustKey(truster, trustee));
-				if(cachedValue != null)
-					return cachedValue;
+		private final class TrustCount {
+			public int mPositiveTrusts = 0;
+			public int mNegativeTrusts = 0;
+			
+			public int get(int selection) {
+				if(selection > 0)
+					return mPositiveTrusts;
+				else if(selection < 0)
+					return mNegativeTrusts;
+				
+				throw new RuntimeException("0 is included in positive selection");
 			}
 			
-			return WoTIdentityManager.this.getTrust(truster, trustee);	// This will update the cache
+			public void remove(int trustValue) {
+				if(trustValue >= 0)
+					--mPositiveTrusts;
+				else
+					--mNegativeTrusts;
+			}
+			
+			public void add(int trustValue) {
+				if(trustValue >= 0)
+					++mPositiveTrusts;
+				else
+					++mNegativeTrusts;
+			}
+		}
+		
+	
+		/**
+		 * For each <Truster,Trustee>-key the trust value is stored
+		 */
+		private final HashMap<TrustKey, Byte> mTrustCache = new HashMap<TrustKey, Byte>();
+		
+		/**
+		 * For each Truster-ID-key the given trust count is stored
+		 */
+		private final HashMap<String, TrustCount> mGivenTrustCountCache = new HashMap<String, TrustCount>();
+		
+		/**
+		 * For each Trustee-ID the received trust count is stored
+		 */
+		private final HashMap<String, TrustCount> mReceivedTrustCountCache = new HashMap<String, TrustCount>();
+		
+		/**
+		 * For each <Truster,Trustee>-key the score value is stored
+		 */
+		private final HashMap<TrustKey, Integer> mScoreCache = new HashMap<TrustKey, Integer>();
+		
+		/**
+		 * For each Trustee-ID the received score count is stored
+		 */
+		private final HashMap<String, TrustCount> mReceivedScoreCountCache = new HashMap<String, TrustCount>();
+
+		
+		protected WebOfTrustCache(WoTIdentityManager mIdentityManager) {
+			mIdentityManager.registerNewIdentityCallback(this, true);
+			mIdentityManager.registerIdentityDeletedCallback(this, true);
+		}
+		
+		@Override
+		public void onNewIdentityAdded(Identity identity) {
+			final String id = identity.getID();
+			mGivenTrustCountCache.put(id, new TrustCount());
+			mReceivedTrustCountCache.put(id, new TrustCount());
+			mReceivedScoreCountCache.put(id, new TrustCount());
+		}
+		
+		@Override
+		public void beforeIdentityDeletion(Identity identity) {
+			final String id = identity.getID();
+			mGivenTrustCountCache.remove(id);
+			mReceivedTrustCountCache.remove(id);
+			mReceivedScoreCountCache.remove(id);
+			
+		}
+		
+		// TODO: Create getter methods in WoTIdentityManager which actually use this caching function...
+		public byte getTrust(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotTrustedException {
+			final Byte value = mTrustCache.get(new TrustKey(truster, trustee));
+			if(value == null) throw new NotTrustedException(truster, trustee);
+			return value;
+		}
+		
+		public int getGivenTrustCount(final WoTIdentity truster, int selection) {
+			return mReceivedTrustCountCache.get(truster).get(selection);
+		}
+
+		
+		public int getReceivedTrustCount(final WoTIdentity trustee, int selection) {
+			return mGivenTrustCountCache.get(trustee).get(selection);
 		}
 
 		// TODO: Create getter methods in WoTIdentityManager which actually use this caching function...
-		public synchronized int getScore(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotInTrustTreeException, Exception {
-			{
-				final Integer cachedValue = mScoreCache.get(new TrustKey(truster, trustee));
-				if(cachedValue != null)
-					return cachedValue;
-			}
-			
-			return WoTIdentityManager.this.getScore(truster, trustee);	// This will update the cache
+		public int getScore(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotInTrustTreeException {
+			final Integer value = mScoreCache.get(new TrustKey(truster, trustee));
+			if(value == null) throw new NotInTrustTreeException(truster, trustee);
+			return value;
 		}
 		
 		public synchronized void putTrust(final WoTIdentity truster, final WoTIdentity trustee, final byte value) {
+			final Byte oldTrust = mTrustCache.get(new TrustKey(truster, trustee));
+			
+			if(oldTrust == null || Integer.signum(oldTrust) != Integer.signum(value)) {
+				final TrustCount trusterGivenCount = mGivenTrustCountCache.get(truster);
+				final TrustCount trusteeReceivedTrustCount = mReceivedTrustCountCache.get(trustee);	
+				
+				if(oldTrust != null) {
+					trusterGivenCount.remove(oldTrust);
+					trusteeReceivedTrustCount.remove(oldTrust);
+				}
+				
+				trusterGivenCount.add(value);
+				trusteeReceivedTrustCount.add(value);
+			}
+			
 			mTrustCache.put(new TrustKey(truster, trustee), value);
 		}
 		
-		public synchronized void putTrust(final WoTTrust trust) {
-			mTrustCache.put(new TrustKey(trust), trust.getValue());
-		}
-		
 		public synchronized void putScore(final WoTOwnIdentity truster, final WoTIdentity trustee, final int value) {
+			final Integer oldScore = mScoreCache.get(new TrustKey(truster, trustee));
+			
+			if(oldScore == null || Integer.signum(oldScore) != Integer.signum(value)) {
+				final TrustCount trusteeReceivedScoreCount = mReceivedScoreCountCache.get(trustee);	
+				
+				if(oldScore != null) {
+					trusteeReceivedScoreCount.remove(oldScore);
+				}
+				
+				trusteeReceivedScoreCount.add(value);
+			}
+			
 			mScoreCache.put(new TrustKey(truster, trustee), value);
 		}
 
