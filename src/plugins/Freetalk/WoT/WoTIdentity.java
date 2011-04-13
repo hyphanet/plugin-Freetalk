@@ -43,7 +43,8 @@ public class WoTIdentity extends Persistent implements Identity {
 	
 	/**
 	 * Used for garbage collecting old identities which are not returned by the WoT plugin anymore.
-	 * We delete them if they were not received for a certain time interval.
+	 * We delete them if they were not received in the latest synchronization with WoT.
+	 * @see {@link WoTIdentityManager#synchronizeIdentities(freenet.support.SimpleFieldSet)}
 	 */
 	private long mLastReceivedFromWoT;
 
@@ -158,18 +159,19 @@ public class WoTIdentity extends Persistent implements Identity {
 		return address;
 	}
 
+	/**
+	 * @see mLastReceivedFromWoT
+	 */
 	public synchronized long getLastReceivedFromWoT() {
 		// activate(1);	// 1 is the default activation depth, no need to execute activate(1)
 		return mLastReceivedFromWoT;
 	}
 	
 	/**
-	 * Set the time this identity was last received from the WoT plugin to the given UTC time in milliseconds
-	 * @param time
+	 * @see mLastReceivedFromWoT
 	 */
-	public synchronized void setLastReceivedFromWoT(long time) {
-		mLastReceivedFromWoT = time;
-		storeWithoutCommit(); // TODO: Move store() calls outside of class identity
+	public synchronized void setLastReceivedFromWoT(long importID) {
+		mLastReceivedFromWoT = importID;
 	}
 
 	/**

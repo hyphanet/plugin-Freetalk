@@ -475,7 +475,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		doShouldFetchStateChangedCallbacks(author, oldShouldFetch, newShouldFetch);
 	}
 	
-	private void importIdentity(boolean ownIdentity, String identityID, String requestURI, String insertURI, String nickname) {
+	private void importIdentity(boolean ownIdentity, String identityID, String requestURI, String insertURI, String nickname, long importID) {
 		synchronized(mFreetalk.getTaskManager()) {
 		synchronized(db.lock()) {
 			try {
@@ -484,6 +484,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 					new WoTIdentity(identityID, new FreenetURI(requestURI), nickname);
 
 				id.initializeTransient(mFreetalk);
+				id.setLastReceivedFromWoT(importID);
 				id.storeWithoutCommit();
 
 				onNewIdentityAdded(id);
@@ -500,43 +501,52 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
-	private void parseIdentities(SimpleFieldSet params, boolean bOwnIdentities) {
-		if(bOwnIdentities)
-			Logger.normal(this, "Parsing received own identities...");
-		else
-			Logger.normal(this, "Parsing received identities...");
+
+	/**
+	 * Parses the identities in the given SimpleFieldSet & imports all (except those which do not have a nickname yet because they were not downloaded)
+	 * Deletes any identities in the database which are not included in the passed SimpleFieldSet.
+	 */
+	private synchronized void synchronizeIdentities(SimpleFieldSet params) {
+		Logger.normal(this, "Parsing received identities...");
 	
 		int idx;
 		int ignoredCount = 0;
 		int newCount = 0;
 		
+		// For being able to delete the identities which do not exist anymore in the given SimpleFieldSet we generate a random ID of this import
+		// and store it on all received identities. The stored identities which do NOT have these ID are obsolete and must be deleted.
+		final long importID = mRandom.nextLong();
+		
 		for(idx = 0; ; idx++) {
-			String identityID = params.get("Identity"+idx);
-			if(identityID == null || identityID.equals("")) /* TODO: Figure out whether the second condition is necessary */
+			final String identityID = params.get("Identity"+idx);
+			if(identityID == null || identityID.length() == 0)
 				break;
-			String requestURI = params.get("RequestURI"+idx);
-			String insertURI = bOwnIdentities ? params.get("InsertURI"+idx) : null;
-			String nickname = params.get("Nickname"+idx);
 			
+			final String requestURI = params.get("RequestURI"+idx);
+			final String insertURI = params.get("InsertURI"+idx);
+			final String nickname = params.get("Nickname"+idx);
+			
+			final boolean isOwnIdentity = insertURI == null || insertURI.length() == 0;
+				
 			if(nickname == null || nickname.length() == 0) {
 				// If an identity publishes an invalid nickname in one of its first WoT inserts then WoT will return an empty
 				// nickname for that identity until a new XML was published with a valid nickname. We ignore the identity until
-				// then to prevent confusing error logs.
-				// TODO: Maybe handle this in WoT. Would require checks in many places though.
+				// then to prevent confusing error logs..
 				continue;
 			}
 			
-			synchronized(this) { /* We lock here and not during the whole function to allow other threads to execute */
-				Query q = db.query(); // TODO: Encapsulate the query in a function...
-				q.constrain(WoTIdentity.class);
-				q.descend("mID").constrain(identityID);
-				ObjectSet<WoTIdentity> result = q.execute();
-				WoTIdentity id = null; 
+
+				WoTIdentity id;
 				
-				if(result.size() == 0) {
+				try {
+					id = getIdentity(identityID);
+				} catch(NoSuchIdentityException e) {
+					id = null;
+				}
+				
+				if(id == null) {
 					try {
-						importIdentity(bOwnIdentities, identityID, requestURI, insertURI, nickname);
+						importIdentity(isOwnIdentity, identityID, requestURI, insertURI, nickname, importID);
 						++newCount;
 					}
 					catch(Exception e) {
@@ -546,11 +556,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 					Logger.debug(this, "Not importing already existing identity " + requestURI);
 					++ignoredCount;
 					
-					assert(result.size() == 1);
-					id = result.next();
-					id.initializeTransient(mFreetalk);
-					
-					if(bOwnIdentities != (id instanceof WoTOwnIdentity)) {
+					if(isOwnIdentity != (id instanceof WoTOwnIdentity)) {
 						// The type of the identity changed so we need to delete and re-import it.
 						
 						try {
@@ -558,20 +564,19 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 							// We MUST NOT take the following locks because deleteIdentity does other locks (MessageManager/TaskManager) which must happen before...
 							// synchronized(id)
 							// synchronized(db.lock()) 
-							deleteIdentity(id, mFreetalk.getMessageManager(), mFreetalk.getTaskManager());
-							importIdentity(bOwnIdentities, identityID, requestURI, insertURI, nickname);
+							deleteIdentity(id);
+							importIdentity(isOwnIdentity, identityID, requestURI, insertURI, nickname, importID);
 						}
 						catch(Exception e) {
 							Logger.error(this, "Replacing a WoTIdentity with WoTOwnIdentity failed.", e);
 						}
 						
-					} else { // Normal case: Update the last received time of the idefnt
+					} else { // Normal case: Update the last received ID of the identity;
 						synchronized(id) {
 						synchronized(db.lock()) {
 							try {
-								// TODO: The thread sometimes takes hours to parse the identities and I don't know why.
-								// So right now its better to re-query the time for each identity.
-								id.setLastReceivedFromWoT(CurrentTimeUTC.getInMillis());
+								id.setLastReceivedFromWoT(importID);
+								id.storeWithoutCommit();
 								id.checkedCommit(this);
 							}
 							catch(Exception e) {
@@ -581,15 +586,39 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 						}
 					}
 				}
-			}
-			
-			Thread.yield();
+
 		}
 		
-		Logger.normal(this, "parseIdentities(bOwnIdentities==" + bOwnIdentities + " received " + idx + " identities. Ignored " + ignoredCount + "; New: " + newCount );
+		Logger.normal(this, "Deleting obsolete identities...");
+		
+		int deletedCount = 0;
+		
+		for(WoTIdentity obsoleteIdentity : getObsoleteIdentities(importID)) {
+			try {
+				deleteIdentity(obsoleteIdentity);
+				++deletedCount;
+			} catch(RuntimeException e) {
+				Logger.error(this, "Deleting obsolete identity failed", e);
+			}
+		}
+		
+		Logger.normal(this, "Finished deleting obsolete identities.");
+		
+		Logger.normal(this, "synchronizeIdentities received " + idx + " identities. Ignored " + ignoredCount + "; New: " + newCount + "; deleted: " + deletedCount);
 	}
 	
-	private synchronized void deleteIdentity(WoTIdentity identity, MessageManager messageManager, PersistentTaskManager taskManager) {
+	/**
+	 * Get the identities which were last seen in an import with a different ID than the given one.
+	 * Does not return Own
+	 */
+	private ObjectSet<WoTIdentity> getObsoleteIdentities(long importID) {
+		final Query q = db.query();
+		q.constrain(WoTIdentity.class);
+		q.descend("mLastReceivedFromWoT").constrain(importID).not();
+		return new Persistent.InitializingObjectSet<WoTIdentity>(mFreetalk, q);
+	}
+	
+	private synchronized void deleteIdentity(WoTIdentity identity) {	
 		identity.initializeTransient(mFreetalk);
 		
 		beforeIdentityDeletion(identity);
@@ -640,6 +669,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	
 	private static final class SubscriptionClient implements FredPluginTalker, Runnable, PrioRunnable {
 		
+		private final WoTIdentityManager mIdentityManager;
 		private final PluginRespirator mPR;
 		private final TrivialTicker mTicker;
 		private final Random mRandom;
@@ -652,7 +682,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		
 		private boolean mLastPingSuccessful = false;
 		
-		public SubscriptionClient(PluginRespirator pr, TrivialTicker myTicker){
+		public SubscriptionClient(WoTIdentityManager myIdentityManager, PluginRespirator pr, TrivialTicker myTicker){
+			mIdentityManager = myIdentityManager;
 			mPR = pr;
 			mTicker = myTicker;
 			mRandom = mPR.getNode().fastWeakRandom;
@@ -813,13 +844,12 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			mFCPHandlers.put("Identities", new FCPMessageHandler() {
 				@Override
 				public void handle(SimpleFieldSet params) {
-					// TODO Auto-generated method stub
+					mIdentityManager.synchronizeIdentities(params);
 				}
 			});
 			
 			// Upon subscribing to the list of trust values, the WOT-plugin sends an initial list of all identities to synchronize us.
 			mFCPHandlers.put("TrustValues", new FCPMessageHandler() {
-				
 				@Override
 				public void handle(SimpleFieldSet params) {
 					// TODO Auto-generated method stub
@@ -910,7 +940,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 					for(WoTIdentity duplicate : duplicates) {
 						if(deleted.contains(duplicate.getID()) == false) {
 							Logger.error(duplicate, "Deleting duplicate identity " + duplicate.getRequestURI());
-							deleteIdentity(duplicate, messageManager, taskManager);
+							deleteIdentity(duplicate);
 						}
 					}
 					deleted.add(identity.getID());
