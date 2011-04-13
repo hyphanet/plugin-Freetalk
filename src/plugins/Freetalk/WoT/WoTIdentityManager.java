@@ -536,43 +536,43 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			}
 			
 
-				WoTIdentity id;
-				
+			WoTIdentity id;
+
+			try {
+				id = getIdentity(identityID);
+			} catch(NoSuchIdentityException e) {
+				id = null;
+			}
+
+			if(id == null) {
 				try {
-					id = getIdentity(identityID);
-				} catch(NoSuchIdentityException e) {
-					id = null;
+					importIdentity(isOwnIdentity, identityID, requestURI, insertURI, nickname, importID);
+					++newCount;
 				}
-				
-				if(id == null) {
+				catch(Exception e) {
+					Logger.error(this, "Importing a new identity failed.", e);
+				}
+			} else {
+				Logger.debug(this, "Not importing already existing identity " + requestURI);
+				++ignoredCount;
+
+				if(isOwnIdentity != (id instanceof WoTOwnIdentity)) {
+					// The type of the identity changed so we need to delete and re-import it.
+
 					try {
+						Logger.normal(this, "Identity type changed, replacing it: " + id);
+						// We MUST NOT take the following locks because deleteIdentity does other locks (MessageManager/TaskManager) which must happen before...
+						// synchronized(id)
+						// synchronized(db.lock()) 
+						deleteIdentity(id);
 						importIdentity(isOwnIdentity, identityID, requestURI, insertURI, nickname, importID);
-						++newCount;
 					}
 					catch(Exception e) {
-						Logger.error(this, "Importing a new identity failed.", e);
+						Logger.error(this, "Replacing a WoTIdentity with WoTOwnIdentity failed.", e);
 					}
-				} else {
-					Logger.debug(this, "Not importing already existing identity " + requestURI);
-					++ignoredCount;
-					
-					if(isOwnIdentity != (id instanceof WoTOwnIdentity)) {
-						// The type of the identity changed so we need to delete and re-import it.
-						
-						try {
-							Logger.normal(this, "Identity type changed, replacing it: " + id);
-							// We MUST NOT take the following locks because deleteIdentity does other locks (MessageManager/TaskManager) which must happen before...
-							// synchronized(id)
-							// synchronized(db.lock()) 
-							deleteIdentity(id);
-							importIdentity(isOwnIdentity, identityID, requestURI, insertURI, nickname, importID);
-						}
-						catch(Exception e) {
-							Logger.error(this, "Replacing a WoTIdentity with WoTOwnIdentity failed.", e);
-						}
-						
-					} else { // Normal case: Update the last received ID of the identity;
-						synchronized(id) {
+
+				} else { // Normal case: Update the last received ID of the identity;
+					synchronized(id) {
 						synchronized(db.lock()) {
 							try {
 								id.setLastReceivedFromWoT(importID);
@@ -583,9 +583,9 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 								Persistent.checkedRollback(db, this, e);
 							}
 						}
-						}
 					}
 				}
+			}
 
 		}
 		
