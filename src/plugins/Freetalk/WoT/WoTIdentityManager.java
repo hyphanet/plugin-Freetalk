@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Identity;
@@ -19,7 +20,6 @@ import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Persistent;
 import plugins.Freetalk.PluginTalkerBlocking;
 import plugins.Freetalk.exceptions.DuplicateIdentityException;
-import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import plugins.Freetalk.exceptions.NotTrustedException;
@@ -33,12 +33,14 @@ import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
+import freenet.pluginmanager.FredPluginTalker;
 import freenet.pluginmanager.PluginNotFoundException;
+import freenet.pluginmanager.PluginRespirator;
+import freenet.pluginmanager.PluginTalker;
 import freenet.support.Base64;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Executor;
 import freenet.support.IllegalBase64Exception;
-import freenet.support.LRUCache;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TrivialTicker;
@@ -69,7 +71,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	private final Random mRandom;
 
 	private PluginTalkerBlocking mTalker = null;
-
+	
 	/**
 	 * Caches the shortest unique nickname for each identity. Key = Identity it, Value = Shortest nickname.
 	 */
@@ -234,22 +236,16 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 
 	}
 
-	@SuppressWarnings("unchecked")
 	public synchronized WoTIdentity getIdentity(String id) throws NoSuchIdentityException {
-		Query q = db.query();
+		final Query q = db.query();
 		q.constrain(WoTIdentity.class);
 		q.descend("mID").constrain(id);
-		ObjectSet<WoTIdentity> result = q.execute();
+		final ObjectSet<WoTIdentity> result = new Persistent.InitializingObjectSet<WoTIdentity>(mFreetalk, q);
 		
 		switch(result.size()) {
-			case 1:
-				WoTIdentity identity = result.next();
-				identity.initializeTransient(mFreetalk);
-				return identity;
-			case 0:
-				throw new NoSuchIdentityException(id);
-			default:
-				throw new DuplicateIdentityException(id);
+			case 1: return result.next();
+			case 0: throw new NoSuchIdentityException(id);
+			default: throw new DuplicateIdentityException(id);
 		}
 	}
 	
@@ -257,22 +253,16 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		return getIdentity(WoTIdentity.getIDFromURI(uri));
 	}
 	
-	@SuppressWarnings("unchecked")
 	public synchronized WoTOwnIdentity getOwnIdentity(String id) throws NoSuchIdentityException {
-		Query q = db.query();
+		final Query q = db.query();
 		q.constrain(WoTOwnIdentity.class);
 		q.descend("mID").constrain(id);
-		ObjectSet<WoTOwnIdentity> result = q.execute();
+		final ObjectSet<WoTOwnIdentity> result = new Persistent.InitializingObjectSet<WoTOwnIdentity>(mFreetalk, q);
 		
 		switch(result.size()) {
-			case 1:
-				WoTOwnIdentity identity = result.next();
-				identity.initializeTransient(mFreetalk);
-				return identity;
-			case 0:
-				throw new NoSuchIdentityException(id);
-			default:
-				throw new DuplicateIdentityException(id);
+			case 1: return result.next();
+			case 0: throw new NoSuchIdentityException(id);
+			default: throw new DuplicateIdentityException(id);
 		}
 	}
 
@@ -647,22 +637,222 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			return false;
 		}
 	}
+	
+	private static final class SubscriptionClient implements FredPluginTalker, Runnable, PrioRunnable {
+		
+		private final PluginRespirator mPR;
+		private final TrivialTicker mTicker;
+		private final Random mRandom;
+		private PluginTalker mTalker;
+		
+		/**
+		 * The IDs of the Subscriptions we filed at the WebOfTrust-plugin
+		 */
+		private final HashSet<String> mSubscriptions = new HashSet<String>();		
+		
+		private boolean mLastPingSuccessful = false;
+		
+		public SubscriptionClient(PluginRespirator pr, TrivialTicker myTicker){
+			mPR = pr;
+			mTicker = myTicker;
+			mRandom = mPR.getNode().fastWeakRandom;
+			mTalker = null;
+			
+			createFCPMessageHandlers();
+		}
+		
+		public void start() {
+			Logger.debug(this, "Starting...");
+			mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), 0, false, true);
+			Logger.debug(this, "Started.");
+		}
+		
+		public void stop() {
+			Logger.debug(this, "Terminating...");
+			mTicker.shutdown();
+			unsubscribeAllSubscriptions();
+			disconnectFromWoT();
+			Logger.debug(this, "Terminated");
+		}
+		
+		@Override
+		public int getPriority() {
+			return NativeThread.LOW_PRIORITY;
+		}
+		
+		public void run() {
+			Logger.debug(this, "Main loop running...");
+			 
+			try {
+				checkConnectionToWoT();	
+				checkSubscriptions();
+			} finally {
+				final long sleepTime = connectedToWoT() ? (THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD)) : WOT_RECONNECT_DELAY;
+				Logger.debug(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
+				mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), sleepTime, false, true);
+			}
+			
+			Logger.debug(this, "Main loop finished.");
+		}
+		
+		private synchronized boolean checkConnectionToWoT() {
+			if(mTalker != null) {
+				// The handler for Ping-reply sets mLastPingSuccessful=true... so we set it to false upon sending a ping.
+				// This function is called by run() every few minutes, so if we reach this point the connection is alive
+				// if mLastPingSuccesful=true ... if false the connection is dead and we try to reconnect.
+				if(mLastPingSuccessful) {
+					final SimpleFieldSet sfs = new SimpleFieldSet(true);
+					sfs.putOverwrite("Message", "Ping");
+					mLastPingSuccessful = false;
+					mTalker.send(sfs, null);
+					return true;
+				} else
+					mTalker = null;
+			}
+			
+			try {
+				mTalker = mPR.getPluginTalker(this, Freetalk.WEB_OF_TRUST_NAME, UUID.randomUUID().toString());
+				mLastPingSuccessful = true;
+				checkSubscriptions();
+				return true;
+			} catch(PluginNotFoundException e) {
+				return false;
+			}
+		}
+		
+		public boolean connectedToWoT() {
+			return mTalker != null;
+		}
+		
+		private void disconnectFromWoT() {
+			// TODO: Implement proper disconnection in PluginTalker
+			mTalker = null;
+		}
+		
+		
+		private void checkSubscriptions() {
+			if(mSubscriptions.size() == 3)
+				return;
+			
+			if(!connectedToWoT())
+				return;
+			
+			subscribe("IdentityList");
+			subscribe("TrustList");
+			subscribe("ScoreList");
+		}
+		
+		private void subscribe(final String contentName) {
+			final SimpleFieldSet request = new SimpleFieldSet(true);
+			request.putOverwrite("Message", "Subscribe");
+			request.putOverwrite("To", contentName);
+			mTalker.send(request, null);
+		}
+		
+		private void unsubscribe(final String subscriptionID) {
+			final SimpleFieldSet request = new SimpleFieldSet(true);
+			request.putOverwrite("Message", "Unsubscribe");
+			request.putOverwrite("SubscriptionID", subscriptionID);
+			mTalker.send(request, null);
+		}
+		
+		/**
+		 * Unsubscribes from all existing subscriptions to the WOT plugin.
+		 * Does not prevent new subscriptions from being created afterwards.
+		 * - You should make sure that you call this after all code which could create subscriptions has been terminated.
+		 */
+		private void unsubscribeAllSubscriptions() {
+			synchronized(mSubscriptions) {
+				for(String subscription : mSubscriptions) {
+					unsubscribe(subscription);
+				}
+				
+				do {
+					try {
+						mSubscriptions.wait();
+					} catch(InterruptedException e) {}
+				} while(!mSubscriptions.isEmpty());
+			}
+		}
+		
+		private static interface FCPMessageHandler {
+			public void handle(final SimpleFieldSet params);
+		}
+		
+		private final HashMap<String, FCPMessageHandler> mFCPHandlers = new HashMap<String, FCPMessageHandler>();
+		
+		@Override
+		public void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data) {
+			mFCPHandlers.get(params.get("Message")).handle(params);
+		}
+		
+		private void createFCPMessageHandlers() {
+			mFCPHandlers.put("Subscribed", new FCPMessageHandler() {
+				@Override
+				public void handle(final SimpleFieldSet params) {
+					synchronized(mSubscriptions) {
+						mSubscriptions.add(params.get("Subscription"));
+						mSubscriptions.notifyAll();
+						assert(mSubscriptions.size() <= 3);
+					}
+				}
+			});
+			
+			mFCPHandlers.put("Unsubscribed", new FCPMessageHandler() {
+				@Override
+				public void handle(final SimpleFieldSet params) {
+					synchronized(mSubscriptions) {
+						final boolean subscriptionExisted = mSubscriptions.remove(params.get("Subscription"));
+						assert(subscriptionExisted);
+						mSubscriptions.notifyAll();
+					}
+				}
+			});
+
+			// Upon subscribing to the list of identities, the WOT-plugin sends an initial list of all identities to synchronize us.
+			mFCPHandlers.put("Identities", new FCPMessageHandler() {
+				@Override
+				public void handle(SimpleFieldSet params) {
+					// TODO Auto-generated method stub
+				}
+			});
+			
+			// Upon subscribing to the list of trust values, the WOT-plugin sends an initial list of all identities to synchronize us.
+			mFCPHandlers.put("TrustValues", new FCPMessageHandler() {
+				
+				@Override
+				public void handle(SimpleFieldSet params) {
+					// TODO Auto-generated method stub
+				}
+			});
+			
+			
+			// Upon subscribing to the list of trust values, the WOT-plugin sends an initial list of all identities to synchronize us.
+			mFCPHandlers.put("ScoreValues", new FCPMessageHandler() {
+				@Override
+				public void handle(SimpleFieldSet params) {
+					// TODO Auto-generated method stub
+				}
+			});
+			
+			mFCPHandlers.put("Pong", new FCPMessageHandler() {
+				@Override
+				public void handle(SimpleFieldSet params) {
+					synchronized(SubscriptionClient.this) {
+						mLastPingSuccessful = true;
+					}
+				}
+			});
+		}
+		
+	}
 
 	public void run() { 
 		Logger.debug(this, "Main loop running...");
 		 
 		try {
 			mConnectedToWoT = connectToWoT();
-		
-			if(mConnectedToWoT) {
-				try {
-					fetchOwnIdentities(); // Fetch the own identities first to prevent own-identities from being imported as normal identity...
-					fetchIdentities();
-					garbageCollectIdentities();
-				} catch (Exception e) {
-					Logger.error(this, "Fetching identities failed.", e);
-				}
-			}
+			
 		} finally {
 			final long sleepTime =  mConnectedToWoT ? (THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD)) : WOT_RECONNECT_DELAY;
 			Logger.debug(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
