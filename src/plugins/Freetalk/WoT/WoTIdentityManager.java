@@ -32,6 +32,7 @@ import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
+import freenet.node.FSParseException;
 import freenet.node.PrioRunnable;
 import freenet.pluginmanager.FredPluginTalker;
 import freenet.pluginmanager.PluginNotFoundException;
@@ -296,7 +297,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		request.putOverwrite("Comment", comment);
 
 		sendFCPMessageBlocking(request, null, "TrustSet");
-		mWoTCache.putTrust(wotTruster, wotTrustee, trust);
+		mWoTCache.putTrust(wotTruster, wotTrustee, trust, comment);
 	}
 	
 	/**
@@ -607,6 +608,57 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		Logger.normal(this, "synchronizeIdentities received " + idx + " identities. Ignored " + ignoredCount + "; New: " + newCount + "; deleted: " + deletedCount);
 	}
 	
+	private final void synchronizeTrustValues(final SimpleFieldSet data) throws NoSuchIdentityException {
+		synchronized(this) {
+		synchronized(mWoTCache) {
+			mWoTCache.clearTrustValues();
+			
+			for(int index=0; ; ++index) {
+				final String trusterID = data.get("Truster" + index);
+				
+				if(trusterID == null || trusterID.length() == 0)
+					break;
+				
+				final String trusteeID = data.get("Trustee" + index);
+				final byte value = Byte.parseByte(data.get("Value" + index));
+				final String comment = data.get("Comment" + index);
+				
+				// TODO: Optimization: putTrust does not actually need the WoTIdentity objects, it could
+				// be changed to only eat IDs. Then we could also remove the synchronization on the WoTIdentityManager.
+				// However for debugging purposes it is good to check whether the identities exist
+				mWoTCache.putTrust(getIdentity(trusterID), getIdentity(trusteeID), value, comment);
+			}
+		}
+		}
+	}
+	
+	private final void synchronizeScoreValues(final SimpleFieldSet data) throws NoSuchIdentityException {
+		synchronized(this) {
+		synchronized(mWoTCache) {
+			mWoTCache.clearScoreValues();
+			
+			for(int index=0; ; ++index) {
+				final String trusterID = data.get("Truster" + index);
+				
+				if(trusterID == null || trusterID.length() == 0)
+					break;
+				
+				final String trusteeID = data.get("Trustee" + index);
+				final int value = Integer.parseInt(data.get("Value" + index));
+				
+				// TODO: Optimization: putScore does not actually need the WoTIdentity objects, it could
+				// be changed to only eat IDs. Then we could also remove the synchronization on the WoTIdentityManager.
+				// However for debugging purposes it is good to check whether the identities exist
+				mWoTCache.putScore(getOwnIdentity(trusterID), getIdentity(trusteeID), value);
+				
+				// FIXME: We must delete messages of unwanted identities here.
+			}
+		}
+		}
+	}
+	
+
+	
 	/**
 	 * Get the identities which were last seen in an import with a different ID than the given one.
 	 * Does not return Own
@@ -852,7 +904,11 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			mFCPHandlers.put("TrustValues", new FCPMessageHandler() {
 				@Override
 				public void handle(SimpleFieldSet params) {
-					// TODO Auto-generated method stub
+					try {
+						mIdentityManager.synchronizeTrustValues(params);
+					} catch(Exception e) {
+						throw new RuntimeException(e);
+					}
 				}
 			});
 			
@@ -861,7 +917,11 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			mFCPHandlers.put("ScoreValues", new FCPMessageHandler() {
 				@Override
 				public void handle(SimpleFieldSet params) {
-					// TODO Auto-generated method stub
+					try {
+						mIdentityManager.synchronizeScoreValues(params);
+					} catch(Exception e) {
+						throw new RuntimeException(e);
+					}
 				}
 			});
 			
@@ -1136,10 +1196,15 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		}
 		
 		// TODO: Create getter methods in WoTIdentityManager which actually use this caching function...
-		public byte getTrust(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotTrustedException {
+		public byte getTrust(final WoTIdentity truster, final WoTIdentity trustee) throws NotTrustedException {
 			final Byte value = mTrustCache.get(new TrustKey(truster, trustee));
 			if(value == null) throw new NotTrustedException(truster, trustee);
 			return value;
+		}
+		
+		public String getTrustComment(final WoTIdentity truster, final WoTIdentity trustee) {
+			throw new UnsupportedOperationException("Not implemented yet");
+			// TODO: Implement in putTrust
 		}
 		
 		public int getGivenTrustCount(final WoTIdentity truster, int selection) {
@@ -1158,7 +1223,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			return value;
 		}
 		
-		public synchronized void putTrust(final WoTIdentity truster, final WoTIdentity trustee, final byte value) {
+		public synchronized void putTrust(final WoTIdentity truster, final WoTIdentity trustee, final byte value, String comment) {
 			final Byte oldTrust = mTrustCache.get(new TrustKey(truster, trustee));
 			
 			if(oldTrust == null || Integer.signum(oldTrust) != Integer.signum(value)) {
@@ -1191,6 +1256,16 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			}
 			
 			mScoreCache.put(new TrustKey(truster, trustee), value);
+		}
+		
+		protected synchronized void clearTrustValues() {
+			// No need to create a new table, we do not expect the WoT to suddenly shrink
+			mTrustCache.clear();
+		}
+		
+		protected synchronized void clearScoreValues() {
+			// No need to create a new table, we do not expect the WoT to suddenly shrink
+			mScoreCache.clear();
 		}
 
 	}
