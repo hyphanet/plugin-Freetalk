@@ -67,7 +67,7 @@ public final class NewBoardPage extends WebPageImpl {
 		}
 	}
 	
-	private HTMLNode getLanguageComboBox(String defaultLanguage) {
+	public static HTMLNode getLanguageComboBox(String defaultLanguage) {
 		final Map<String, LanguageCode> languages = Board.getAllowedLanguages();
 		final SortedMap<String, String> languagesSortedByName = new TreeMap<String, String>();
 		

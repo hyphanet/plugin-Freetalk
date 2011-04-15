@@ -191,7 +191,7 @@ public abstract class WebPageImpl implements WebPage {
 	 * 					the value of on entry is the value which is passed over http if the user submits the form with that entry selected.
 	 * @param defaultValue The value (= the value of the map entry) of the entry which should be selected by default
 	 */
-	protected HTMLNode getComboBox(String name, SortedMap<String, String> entries, String defaultValue) {
+	protected static HTMLNode getComboBox(String name, SortedMap<String, String> entries, String defaultValue) {
 		HTMLNode result = new HTMLNode("select", "name", name);
 		
 		for(Entry<String, String> entry : entries.entrySet()) {

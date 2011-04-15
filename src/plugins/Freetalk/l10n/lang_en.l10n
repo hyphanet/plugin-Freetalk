@@ -171,6 +171,7 @@ SelectBoardsPage.BoardTableHeader.Subscribe=Subscribe
 SelectBoardsPage.BoardTableHeader.Unsubscribe=Unsubscribe
 SelectBoardsPage.BoardTable.SubscribeButton=Subscribe
 SelectBoardsPage.BoardTable.UnsubscribeButton=Unsubscribe
+SelectBoardsPage.FilterButton=Filter
 SelectBoardsPage.SubscriptionSucceededBox.Header=Subscription succeeded
 SelectBoardsPage.SubscriptionSucceededBox.Text=You are now subscribed to the board ${link}${boardname}${/link}.
 SelectBoardsPage.UnsubscriptionSucceededBox.Header=Unsubscription succeeded

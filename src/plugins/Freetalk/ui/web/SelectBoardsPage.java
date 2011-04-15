@@ -11,6 +11,7 @@ import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.clients.http.RedirectException;
 import freenet.l10n.BaseL10n;
+import freenet.l10n.ISO639_3;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -90,6 +91,11 @@ public class SelectBoardsPage extends WebPageImpl {
 		deleteEmptyBoardsForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
 		deleteEmptyBoardsForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("SelectBoardsPage.SelectBoardsBox.DeleteEmptyBoardsButton") });
 		
+		HTMLNode buttonDiv2 = buttonRow.addChild("div", "class", "button-row-button");
+		HTMLNode languageFilterForm = addFormChild(buttonDiv2, Freetalk.PLUGIN_URI + "/SelectBoards", "SelectBoardsPage");
+		languageFilterForm.addChild(NewBoardPage.getLanguageComboBox("mul"));
+		languageFilterForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("SelectBoardsPage.FilterButton") });
+		
         // Clear margins after button row. TODO: Refactoring: Move to CSS
         boardsBox.addChild("div", "style", "clear: both;");
 		
@@ -108,8 +114,15 @@ public class SelectBoardsPage extends WebPageImpl {
 		
 		MessageManager messageManager = mFreetalk.getMessageManager(); 
 		
+		final boolean languageFiltered = mRequest.isPartSet("BoardLanguage");		
+		final String languageFilter = mRequest.getPartAsStringFailsafe("BoardLanguage", Board.MAX_BOARDNAME_TEXT_LENGTH);
+		final ISO639_3.LanguageCode languageFilterCode = Board.getAllowedLanguages().get(languageFilter);
+		
 		synchronized(messageManager) {
 			for(final Board board : messageManager.boardIteratorSortedByName()) {
+				if(languageFiltered && board.getLanguage() != languageFilterCode)
+					continue;
+				
 				row = boardsTable.addChild("tr", "id", board.getName());
 
 				// Language
@@ -156,6 +169,7 @@ public class SelectBoardsPage extends WebPageImpl {
 					HTMLNode unsubscribeForm = addFormChild(unsubscribeCell, Freetalk.PLUGIN_URI + "/SelectBoards" + "#" + board.getName(), "Unsubscribe");
 					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID()});
 					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "BoardName", board.getName()});
+					if(languageFiltered) unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "BoardLanguage", languageFilter}); 
 					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "submit", "Unsubscribe", l10n().getString("SelectBoardsPage.BoardTable.UnsubscribeButton") });
 				} catch(NoSuchBoardException e) {
 					// We are not subscribed to that board so we cannot fill all cells with information.
@@ -168,6 +182,7 @@ public class SelectBoardsPage extends WebPageImpl {
 					HTMLNode subscribeForm = addFormChild(subscribeCell, Freetalk.PLUGIN_URI + "/SelectBoards" + "#" + board.getName(), "Subscribe");
 					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID()});
 					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "BoardName", board.getName()});
+					if(languageFiltered) subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "BoardLanguage", languageFilter});
 					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "submit", "Subscribe", l10n().getString("SelectBoardsPage.BoardTable.SubscribeButton") });
 				}
 			}
