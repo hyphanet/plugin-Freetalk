@@ -156,51 +156,51 @@
 
 /* Thread page */
 
-.freetalk .message {
+.freetalk * .message {
 	table-layout: fixed;
 	width: 100%;
 }
 
-.freetalk .message .author .name {
+.freetalk * .message .author .name {
 	font-weight: bold;
 	font-style: italic;
 }
 
-.freetalk .message .author .trust-count {
+.freetalk * .message .author .trust-count {
 	color: #0c0;
 }
 
-.freetalk .message .author .distrust-count {
+.freetalk * .message .author .distrust-count {
 	color: #c00;
 }
 
-.freetalk .message .title {
+.freetalk * .message .title {
 	height: 1.2em;
 }
 
-.freetalk .message .title.unread {
+.freetalk * .message .title.unread {
 	background-color: #ddd;
 }
 
-.freetalk .message .title .date {
+.freetalk * .message .title .date {
 	float: right;
 	margin-left: 1ex;
 }
 
-.freetalk .message .title .text {
+.freetalk * .message .title .text {
 	font-weight: bold;
 }
 
-.freetalk .message .title .mark-unread-button {
+.freetalk * .message .title .mark-unread-button {
 	float: right;
 }
 
-.freetalk .message .body {
+.freetalk * .message .body {
 	white-space: pre-wrap;
 	vertical-align: top;
 }
 
-.freetalk .message .body .quote {
+.freetalk * .message .body .quote {
 	background-color: #eaeaea;
 	border-style: dashed;
 	border-width: 1px;
@@ -211,12 +211,12 @@
 	padding: 0.5em;
 }
 
-.freetalk .message .body .quote .author {
+.freetalk * .message .body .quote .author {
 	font-weight: bold;
 	margin-bottom: 0.1em;
 }
 
-.freetalk .message .body .code {
+.freetalk * .message .body .code {
 	font-family: monospace;
 	background-color: #fff;
 	border-style: dashed;
@@ -227,7 +227,7 @@
 	padding: 0.5em;
 }
 
-.freetalk .message .body .error {
+.freetalk * .message .body .error {
 	color: #f00;
 }
 
