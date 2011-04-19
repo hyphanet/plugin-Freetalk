@@ -76,6 +76,7 @@ public class SelectBoardsPage extends WebPageImpl {
 	
 	private void makeBoardsList() {
 		HTMLNode boardsBox = addContentBox(l10n().getString("SelectBoardsPage.SelectBoardsBox.Header"));
+		boardsBox = boardsBox.addChild("div", "class", "select-boards");
 		
 		boardsBox.addChild("p", l10n().getString("SelectBoardsPage.SelectBoardsBox.Text"));
 		
@@ -99,7 +100,7 @@ public class SelectBoardsPage extends WebPageImpl {
         // Clear margins after button row. TODO: Refactoring: Move to CSS
         boardsBox.addChild("div", "style", "clear: both;");
 		
-		HTMLNode boardsTable = boardsBox.addChild("table", "border", "0");
+		HTMLNode boardsTable = boardsBox.addChild("table", "class", "boards-table");
 		HTMLNode row = boardsTable.addChild("tr");
 		row.addChild("th", l10n().getString("SelectBoardsPage.BoardTableHeader.Language"));
 		row.addChild("th", l10n().getString("SelectBoardsPage.BoardTableHeader.Name"));
@@ -127,26 +128,26 @@ public class SelectBoardsPage extends WebPageImpl {
 
 				// Language
 				
-				row.addChild("td", new String[] { "align" }, new String[] { "left" }, board.getLanguage().referenceName);
+				row.addChild("td", "class", "language-cell", board.getLanguage().referenceName);
 				
 				// Name
 				
-				HTMLNode nameCell = row.addChild("th", new String[] { "align" }, new String[] { "left" });
+				HTMLNode nameCell = row.addChild("th", "class", "name-cell");
 				
 				//.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/SubscribeToBoard?identity=" + mOwnIdentity.getID() + "&name=" + board.getName(),
 				//		board.getName()));
 
 				// Description
-				row.addChild("td", new String[] { "align" }, new String[] { "left" },  board.getDescription(mOwnIdentity));
+				row.addChild("td", "class", "description-cell",  board.getDescription(mOwnIdentity));
 
 				// First seen
-				row.addChild("td", new String[] { "align" }, new String[] { "center" }, dateFormat.format(board.getFirstSeenDate()));
+				row.addChild("td", "class", "first-seen-cell", dateFormat.format(board.getFirstSeenDate()));
 				
 				// Latest message
-				HTMLNode latestMessageCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+				HTMLNode latestMessageCell = row.addChild("td", "class", "latest-message-cell");
 				
 				// Message count
-				HTMLNode messageCountCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+				HTMLNode messageCountCell = row.addChild("td", "class", "message-count-cell");
 
 				HTMLNode subscribeCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 				HTMLNode unsubscribeCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });

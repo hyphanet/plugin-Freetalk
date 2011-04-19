@@ -47,8 +47,45 @@
 	text-align: center;
 }
 
+/* SelectBoardsPage & BoardsPage */
 
+.freetalk * .boards-table .language-cell {
+	text-align: left;
+	white-space: nowrap;
+}
 
+.freetalk * .boards-table .name-cell {
+	text-align: left;
+	word-wrap: break-word;
+	word-break: break-all; 
+	overflow: hidden;
+}
+
+.freetalk * .boards-table .description-cell {
+	text-align: left;
+}
+
+.freetalk * .boards-table .first-seen-cell {
+	text-align: center;
+	white-space: nowrap;
+}
+
+.freetalk * .boards-table .latest-message-cell {
+	text-align: center;
+	white-space: nowrap;
+}
+
+.freetalk * .boards-table .message-count-cell {
+	text-align: center;
+}
+
+.freetalk * .boards-table .unread-count-cell {
+	text-align: center;
+}
+
+.freetalk * .boards-table .unread-count-0-cell {
+	text-align: center;
+}
 
 /* Threads page */
 
@@ -75,15 +112,20 @@
 	height: 1.1em;
 }
 
+/* removed because it didn't help with too long titles:	display: block; */
+
 .freetalk * .threads .threads-table .title-read {
+	word-wrap: break-word;
+	word-break: break-all; 
 	overflow: hidden;
-	display: block;
 }
 
+/* removed because it didn't help with too long titles:	display: block; */
+
 .freetalk * .threads .threads-table .title-unread {
+	word-wrap: break-word;
+	word-break: break-all;
 	overflow: hidden;
-	display: block;
-	
 	font-weight: bold;
 }
 
