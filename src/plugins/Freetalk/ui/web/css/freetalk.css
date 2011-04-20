@@ -29,6 +29,7 @@
 
 .freetalk * .messages .messages-table .author-name {
 	text-align: left;
+	white-space: nowrap;
 }
 .freetalk * .messages .messages-table .author-score {
 	text-align: right;
@@ -134,6 +135,7 @@
 
 .freetalk * .threads .threads-table .author-name {
 	text-align: left;
+	white-space: nowrap;
 }
 .freetalk * .threads .threads-table .author-score {
 	text-align: right;
