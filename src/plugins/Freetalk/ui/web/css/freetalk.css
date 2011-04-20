@@ -59,6 +59,7 @@
 	word-wrap: break-word;
 	word-break: break-all; 
 	overflow: hidden;
+	max-width: 400px;
 }
 
 .freetalk * .boards-table .description-cell {
@@ -118,6 +119,7 @@
 	word-wrap: break-word;
 	word-break: break-all; 
 	overflow: hidden;
+	max-width: 500px;
 }
 
 /* removed because it didn't help with too long titles:	display: block; */
@@ -126,6 +128,7 @@
 	word-wrap: break-word;
 	word-break: break-all;
 	overflow: hidden;
+	max-width: 500px;
 	font-weight: bold;
 }
 
