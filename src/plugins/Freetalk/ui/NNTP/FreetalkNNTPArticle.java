@@ -248,21 +248,22 @@ public class FreetalkNNTPArticle {
 	 * Transforms [quote] tags to ">-style" quotes, more appropriate for
 	 * NNTP newsreaders.
 	 */
-	private static String parseBBCodeToNNTPQuotes(String body) {
+	private static String parseBBCodeToNNTPQuotes(String body) {		
+		body=body.replaceAll("\\$","\\\\\\$");
 		final String pat = "\\[quote( author=\"([^\"]+)\" message=\"([^\"]+)\")?\\](.+)\\[/quote\\]";
 		final Pattern quotePattern = Pattern.compile(pat, Pattern.DOTALL);
 		Matcher quoteMatcher = quotePattern.matcher(body);
 		while(quoteMatcher.find()) {
 			String replacement;
 			//if(quoteMatcher.group(1) != null) {
-			//	replacement = "(" + quoteMatcher.group(3) + ")Â " + quoteMatcher.group(2) + "Â wrote:" + quoteMatcher.group(4);
+			//	replacement = "(" + quoteMatcher.group(3) + ") " + quoteMatcher.group(2) + " wrote:" + quoteMatcher.group(4);
 			//} else {
 				replacement = quoteMatcher.group(4);
 			//}
 			replacement = "> " + replacement.replace("\n", "\n> ");
 			body = quoteMatcher.replaceFirst(replacement);
 			quoteMatcher = quotePattern.matcher(body);
-		}
+		}		
 		final Pattern trimEmpty = Pattern.compile("^((>\\s*)*\\n)+");
 		return trimEmpty.matcher(body).replaceFirst("");
 	}
