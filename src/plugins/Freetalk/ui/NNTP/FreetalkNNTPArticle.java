@@ -248,12 +248,12 @@ public class FreetalkNNTPArticle {
 	 * Transforms [quote] tags to ">-style" quotes, more appropriate for
 	 * NNTP newsreaders.
 	 */
-	private static String parseBBCodeToNNTPQuotes(String body) {		
-		body=body.replaceAll("\\$","\\\\\\$");
+	private static String parseBBCodeToNNTPQuotes(String body) {				
 		final String pat = "\\[quote( author=\"([^\"]+)\" message=\"([^\"]+)\")?\\](.+)\\[/quote\\]";
 		final Pattern quotePattern = Pattern.compile(pat, Pattern.DOTALL);
 		Matcher quoteMatcher = quotePattern.matcher(body);
 		while(quoteMatcher.find()) {
+			body=body.replaceAll("\\$","\\\\\\$");
 			String replacement;
 			//if(quoteMatcher.group(1) != null) {
 			//	replacement = "(" + quoteMatcher.group(3) + ") " + quoteMatcher.group(2) + " wrote:" + quoteMatcher.group(4);
