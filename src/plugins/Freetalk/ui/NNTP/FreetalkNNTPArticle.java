@@ -256,7 +256,7 @@ public class FreetalkNNTPArticle {
 		while(quoteMatcher.find()) {
 			String replacement;
 			//if(quoteMatcher.group(1) != null) {
-			//	replacement = "(" + quoteMatcher.group(3) + ") " + quoteMatcher.group(2) + " wrote:" + quoteMatcher.group(4);
+			//	replacement = "(" + quoteMatcher.group(3) + ")Â " + quoteMatcher.group(2) + "Â wrote:" + quoteMatcher.group(4);
 			//} else {
 				replacement = quoteMatcher.group(4);
 			//}
