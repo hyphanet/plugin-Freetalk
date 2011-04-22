@@ -251,6 +251,7 @@ public class FreetalkNNTPArticle {
 	private static String parseBBCodeToNNTPQuotes(String body) {
 		final String pat = "\\[quote( author=\"([^\"]+)\" message=\"([^\"]+)\")?\\](.+)\\[/quote\\]";
 		final Pattern quotePattern = Pattern.compile(pat, Pattern.DOTALL);
+		body = body.replaceAll("\\\\","\\\\\\\\");
 		body = body.replaceAll("\\$","\\\\\\$");
 		Matcher quoteMatcher = quotePattern.matcher(body);
 		while(quoteMatcher.find()) {			
@@ -262,6 +263,7 @@ public class FreetalkNNTPArticle {
 			//}
 			replacement = "> " + replacement.replace("\n", "\n> ");
 			body = quoteMatcher.replaceFirst(replacement);
+			body = body.replaceAll("\\\\","\\\\\\\\");
 			body = body.replaceAll("\\$","\\\\\\$");
 			quoteMatcher = quotePattern.matcher(body);
 		}		
