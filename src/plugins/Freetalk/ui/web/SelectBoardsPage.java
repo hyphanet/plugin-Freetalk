@@ -11,6 +11,7 @@ import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.clients.http.RedirectException;
 import freenet.l10n.BaseL10n;
+import freenet.l10n.ISO639_3;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -75,6 +76,7 @@ public class SelectBoardsPage extends WebPageImpl {
 	
 	private void makeBoardsList() {
 		HTMLNode boardsBox = addContentBox(l10n().getString("SelectBoardsPage.SelectBoardsBox.Header"));
+		boardsBox = boardsBox.addChild("div", "class", "select-boards");
 		
 		boardsBox.addChild("p", l10n().getString("SelectBoardsPage.SelectBoardsBox.Text"));
 		
@@ -90,10 +92,15 @@ public class SelectBoardsPage extends WebPageImpl {
 		deleteEmptyBoardsForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "OwnIdentityID", mOwnIdentity.getID()});
 		deleteEmptyBoardsForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("SelectBoardsPage.SelectBoardsBox.DeleteEmptyBoardsButton") });
 		
+		HTMLNode buttonDiv2 = buttonRow.addChild("div", "class", "button-row-button");
+		HTMLNode languageFilterForm = addFormChild(buttonDiv2, Freetalk.PLUGIN_URI + "/SelectBoards", "SelectBoardsPage");
+		languageFilterForm.addChild(NewBoardPage.getLanguageComboBox("mul"));
+		languageFilterForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("SelectBoardsPage.FilterButton") });
+		
         // Clear margins after button row. TODO: Refactoring: Move to CSS
         boardsBox.addChild("div", "style", "clear: both;");
 		
-		HTMLNode boardsTable = boardsBox.addChild("table", "border", "0");
+		HTMLNode boardsTable = boardsBox.addChild("table", "class", "boards-table");
 		HTMLNode row = boardsTable.addChild("tr");
 		row.addChild("th", l10n().getString("SelectBoardsPage.BoardTableHeader.Language"));
 		row.addChild("th", l10n().getString("SelectBoardsPage.BoardTableHeader.Name"));
@@ -108,32 +115,39 @@ public class SelectBoardsPage extends WebPageImpl {
 		
 		MessageManager messageManager = mFreetalk.getMessageManager(); 
 		
+		final boolean languageFiltered = mRequest.isPartSet("BoardLanguage");		
+		final String languageFilter = mRequest.getPartAsStringFailsafe("BoardLanguage", Board.MAX_BOARDNAME_TEXT_LENGTH);
+		final ISO639_3.LanguageCode languageFilterCode = Board.getAllowedLanguages().get(languageFilter);
+		
 		synchronized(messageManager) {
 			for(final Board board : messageManager.boardIteratorSortedByName()) {
+				if(languageFiltered && board.getLanguage() != languageFilterCode)
+					continue;
+				
 				row = boardsTable.addChild("tr", "id", board.getName());
 
 				// Language
 				
-				row.addChild("td", new String[] { "align" }, new String[] { "left" }, board.getLanguage().referenceName);
+				row.addChild("td", "class", "language-cell", board.getLanguage().referenceName);
 				
 				// Name
 				
-				HTMLNode nameCell = row.addChild("th", new String[] { "align" }, new String[] { "left" });
+				HTMLNode nameCell = row.addChild("th", "class", "name-cell");
 				
 				//.addChild(new HTMLNode("a", "href", Freetalk.PLUGIN_URI + "/SubscribeToBoard?identity=" + mOwnIdentity.getID() + "&name=" + board.getName(),
 				//		board.getName()));
 
 				// Description
-				row.addChild("td", new String[] { "align" }, new String[] { "left" },  board.getDescription(mOwnIdentity));
+				row.addChild("td", "class", "description-cell",  board.getDescription(mOwnIdentity));
 
 				// First seen
-				row.addChild("td", new String[] { "align" }, new String[] { "center" }, dateFormat.format(board.getFirstSeenDate()));
+				row.addChild("td", "class", "first-seen-cell", dateFormat.format(board.getFirstSeenDate()));
 				
 				// Latest message
-				HTMLNode latestMessageCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+				HTMLNode latestMessageCell = row.addChild("td", "class", "latest-message-cell");
 				
 				// Message count
-				HTMLNode messageCountCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
+				HTMLNode messageCountCell = row.addChild("td", "class", "message-count-cell");
 
 				HTMLNode subscribeCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
 				HTMLNode unsubscribeCell = row.addChild("td", new String[] { "align" }, new String[] { "center" });
@@ -156,6 +170,7 @@ public class SelectBoardsPage extends WebPageImpl {
 					HTMLNode unsubscribeForm = addFormChild(unsubscribeCell, Freetalk.PLUGIN_URI + "/SelectBoards" + "#" + board.getName(), "Unsubscribe");
 					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID()});
 					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "BoardName", board.getName()});
+					if(languageFiltered) unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "BoardLanguage", languageFilter}); 
 					unsubscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "submit", "Unsubscribe", l10n().getString("SelectBoardsPage.BoardTable.UnsubscribeButton") });
 				} catch(NoSuchBoardException e) {
 					// We are not subscribed to that board so we cannot fill all cells with information.
@@ -168,6 +183,7 @@ public class SelectBoardsPage extends WebPageImpl {
 					HTMLNode subscribeForm = addFormChild(subscribeCell, Freetalk.PLUGIN_URI + "/SelectBoards" + "#" + board.getName(), "Subscribe");
 					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "OwnIdentityID", mOwnIdentity.getID()});
 					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "BoardName", board.getName()});
+					if(languageFiltered) subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "hidden", "BoardLanguage", languageFilter});
 					subscribeForm.addChild("input", new String[] {"type", "name", "value"}, new String[] { "submit", "Subscribe", l10n().getString("SelectBoardsPage.BoardTable.SubscribeButton") });
 				}
 			}

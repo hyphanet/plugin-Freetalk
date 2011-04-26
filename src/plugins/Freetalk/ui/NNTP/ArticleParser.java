@@ -26,8 +26,8 @@ import freenet.support.Logger;
 public class ArticleParser {
 
 	private static final Pattern encodedWordPattern = Pattern.compile("=\\?([^\\]\\[()<>@,;:\"/?.=]+)" // charset
-																	  + "\\?([^\\]\\[()<>@,;:\"/?.=]+)" // encoding
-																	  + "\\?([^? ]*)\\?="); // text
+	 + "\\?([^\\]\\[()<>@,;:\"/?.=]+)" // encoding
+	+ "\\?([^? ]*)\\?="); // text
 
 	/** Author's nickname (local part of mail address) */
 	private String authorName;
@@ -386,6 +386,58 @@ public class ArticleParser {
 		catch (Exception e) {
 			text = bodyCharset.decode(bytes).toString();
 		}
+
+		this.text = parseNNTPQuotesToBBCode(this.text);
+	}
+
+	/**
+	 * Parse the >-styled quotes back to the [quote] syntax.
+	 * @todo Parse the author name eventually, to [quote author=…]
+	 * @todo Try to remove the "On X, Y wrote:" line that newsreaders add
+	 * when replying (hard to do, because there is no clear syntax, and it
+	 * can be written in different languages).
+	 */
+	private static String parseNNTPQuotesToBBCode(String body) {
+		String[] lines = body.split("\n");
+		int prev = 0;
+		StringBuilder result = new StringBuilder();
+		//final Pattern quoteWithAuthorPattern = Pattern.compile("\\((.+)\\) (.+) wrote:\\s*");
+
+		for(String l : lines) {
+			int quoteDepth = 0;
+
+			String rawLine = l.trim();
+			while(rawLine.startsWith(">") || rawLine.startsWith(" ")) {
+				if(rawLine.startsWith(">")) quoteDepth++;
+				rawLine = rawLine.substring(1);
+			}
+
+			if(prev < quoteDepth) {
+				for(int i = 1; i < quoteDepth - prev; ++i) {
+					result.append("[quote]\n");
+				}
+
+				//Matcher m = quoteWithAuthorPattern.matcher(rawLine);
+				//if(m.matches()) {
+				//	result.append("[quote author=\"").append(m.group(2));
+				//	result.append("\" message=\"").append(m.group(1));
+				//	result.append("\"]\n");
+				//	rawLine = "";
+				//} else {
+					result.append("[quote]\n");
+				//}
+			} else if(prev > quoteDepth) {
+				for(int i = 0; i < prev - quoteDepth; ++i) {
+					result.append("[/quote]\n");
+				}
+			}
+
+			if(!rawLine.equals("")) {
+				result.append(rawLine).append("\n");
+			}
+			prev = quoteDepth;
+		}
+		return result.toString();
 	}
 
 	/**
