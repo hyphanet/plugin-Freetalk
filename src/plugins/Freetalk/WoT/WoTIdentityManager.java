@@ -925,6 +925,29 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				}
 			});
 			
+			mFCPHandlers.put("Identity", new FCPMessageHandler() {
+				@Override
+				public void handle(SimpleFieldSet params) {
+					// TODO Auto-generated method stub					
+				}
+			});
+			
+			mFCPHandlers.put("Trust", new FCPMessageHandler() {
+				@Override
+				public void handle(SimpleFieldSet params) {
+					// TODO Auto-generated method stub
+					
+				}
+			});
+			
+			mFCPHandlers.put("Score", new FCPMessageHandler() {
+				@Override
+				public void handle(SimpleFieldSet params) {
+					// TODO Auto-generated method stub
+					
+				}
+			});
+			
 			mFCPHandlers.put("Pong", new FCPMessageHandler() {
 				@Override
 				public void handle(SimpleFieldSet params) {
