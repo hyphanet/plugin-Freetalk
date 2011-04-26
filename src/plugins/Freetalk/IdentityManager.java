@@ -5,7 +5,9 @@ package plugins.Freetalk;
 
 import java.util.ArrayList;
 
+import plugins.Freetalk.exceptions.DuplicateElementException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
+import plugins.Freetalk.exceptions.NoSuchWantedStateException;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -173,6 +175,52 @@ public abstract class IdentityManager {
 	protected final void doShouldFetchStateChangedCallbacks(final Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
 		for(ShouldFetchStateChangedCallback callback : mShouldFetchStateChangedCallbacks) {
 			callback.onShouldFetchStateChanged(author, oldShouldFetch, newShouldFetch);
+		}
+	}
+	
+	protected final void doIndividualShouldFetchStateChangedCallbacks(final OwnIdentity owner, final Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
+		// TODO: Implement
+	}
+	
+	protected synchronized final IdentityWantedState getIndividualShouldFetchState(OwnIdentity owner, Identity author) throws NoSuchWantedStateException {
+		final Query q = db.query();
+		q.constrain(IdentityWantedState.class);
+		q.descend("mOwner").constrain(owner).identity();
+		q.descend("mRatedIdentity").constrain(author).identity();
+		final ObjectSet<IdentityWantedState> result = new Persistent.InitializingObjectSet<IdentityWantedState>(mFreetalk, q);
+		
+		switch(result.size()) {
+			case 1: return result.next();
+			case 0: throw new NoSuchWantedStateException("owner: " + owner + "; author: " + author);
+			default: throw new DuplicateElementException("owner: " + owner + "; author: " + author);
+		}
+	}
+	
+	protected synchronized final void setIndividualShouldFetchState(final String ownerID, final String authorID, boolean shouldFetch) throws NoSuchIdentityException {
+		synchronized(db.lock()) {
+			try {
+				final OwnIdentity owner = getOwnIdentity(ownerID);
+				final Identity author = getIdentity(authorID);
+				
+				IdentityWantedState state;
+				boolean stateChanged;
+				try {
+					state = getIndividualShouldFetchState(owner, author);
+					stateChanged = state.set(shouldFetch);
+				} catch(NoSuchWantedStateException e) {
+					state = new IdentityWantedState(owner, author, shouldFetch, null);
+					state.initializeTransient(mFreetalk);
+					stateChanged = true;
+				}
+				state.storeWithoutCommit();
+				
+				if(stateChanged)
+					doIndividualShouldFetchStateChangedCallbacks(owner, author, !shouldFetch, shouldFetch);
+					
+				Persistent.checkedCommit(db, this);
+			} catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(db, this, e);
+			}
 		}
 	}
 
