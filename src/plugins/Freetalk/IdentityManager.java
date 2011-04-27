@@ -188,13 +188,13 @@ public abstract class IdentityManager {
 		}
 	}
 	
-	private final void doIndividualShouldFetchStateChangedCallbacks(final OwnIdentity owner, final Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
+	private final void doIndividualWantedStateChangedCallbacks(final OwnIdentity owner, final Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
 		for(IndividualWantedStateChangedCallback callback : mIndividualWantedStateChangedCallbacks) {
 			callback.onIndividualWantedStateChanged(owner, author, oldShouldFetch, newShouldFetch);
 		}
 	}
 	
-	private synchronized final IdentityWantedState getIndividualShouldFetchState(OwnIdentity owner, Identity author) throws NoSuchWantedStateException {
+	private synchronized final IdentityWantedState getIndividualWantedState(OwnIdentity owner, Identity author) throws NoSuchWantedStateException {
 		final Query q = db.query();
 		q.constrain(IdentityWantedState.class);
 		q.descend("mOwner").constrain(owner).identity();
@@ -212,7 +212,7 @@ public abstract class IdentityManager {
 	/**
 	 * @return True, if any IdentityWantedState is true for the given author. Looks at each object, the value is not cached.
 	 */
-	private synchronized final boolean getOverallShouldFetchState(Identity author) {
+	private synchronized final boolean getOverallWantedState(Identity author) {
 		final Query q = db.query();
 		q.constrain(IdentityWantedState.class);
 		q.descend("mRatedIdentity").constrain(author).identity();
@@ -228,14 +228,14 @@ public abstract class IdentityManager {
 		return false;
 	}
 	
-	protected synchronized final void setOverallShouldFetchState(final String authorID, boolean shouldFetch) {
+	protected synchronized final void setOverallWantedState(final String authorID, boolean shouldFetch) {
 		synchronized(db.lock()) {
 			try {
 				final Identity author = getIdentity(authorID);
 				
 				// We do not have to do update the fetch state since it is not cached - getOverallShouldFetchState computes it from all individual states
 				
-				assert(getOverallShouldFetchState(author) == shouldFetch);
+				assert(getOverallWantedState(author) == shouldFetch);
 				
 				// if(stateChanged)	// We cannot figure that out, we trust the caller that it is the case
 					doOverallWantedStateChangedCallbacks(author, !shouldFetch, shouldFetch);
@@ -247,7 +247,7 @@ public abstract class IdentityManager {
 		}
 	}
 	
-	protected synchronized final void setIndividualShouldFetchState(final String ownerID, final String authorID, boolean shouldFetch) throws NoSuchIdentityException {
+	protected synchronized final void setIndividualWantedState(final String ownerID, final String authorID, boolean shouldFetch) throws NoSuchIdentityException {
 		synchronized(db.lock()) {
 			try {
 				final OwnIdentity owner = getOwnIdentity(ownerID);
@@ -256,7 +256,7 @@ public abstract class IdentityManager {
 				IdentityWantedState state;
 				boolean stateChanged;
 				try {
-					state = getIndividualShouldFetchState(owner, author);
+					state = getIndividualWantedState(owner, author);
 					stateChanged = state.set(shouldFetch);
 				} catch(NoSuchWantedStateException e) {
 					state = new IdentityWantedState(owner, author, shouldFetch, null);
@@ -266,7 +266,7 @@ public abstract class IdentityManager {
 				state.storeWithoutCommit();
 				
 				if(stateChanged)
-					doIndividualShouldFetchStateChangedCallbacks(owner, author, !shouldFetch, shouldFetch);
+					doIndividualWantedStateChangedCallbacks(owner, author, !shouldFetch, shouldFetch);
 					
 				Persistent.checkedCommit(db, this);
 			} catch(RuntimeException e) {
