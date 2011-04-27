@@ -182,19 +182,19 @@ public abstract class IdentityManager {
 		}
 	}
 	
-	protected final void doOverallWantedStateChangedCallbacks(final Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
+	private final void doOverallWantedStateChangedCallbacks(final Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
 		for(OverallWantedStateChangedCallback callback : mOverallWantedStateChangedCallbacks) {
 			callback.onOverallWantedStateChanged(author, oldShouldFetch, newShouldFetch);
 		}
 	}
 	
-	protected final void doIndividualShouldFetchStateChangedCallbacks(final OwnIdentity owner, final Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
+	private final void doIndividualShouldFetchStateChangedCallbacks(final OwnIdentity owner, final Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
 		for(IndividualWantedStateChangedCallback callback : mIndividualWantedStateChangedCallbacks) {
 			callback.onIndividualWantedStateChanged(owner, author, oldShouldFetch, newShouldFetch);
 		}
 	}
 	
-	protected synchronized final IdentityWantedState getIndividualShouldFetchState(OwnIdentity owner, Identity author) throws NoSuchWantedStateException {
+	private synchronized final IdentityWantedState getIndividualShouldFetchState(OwnIdentity owner, Identity author) throws NoSuchWantedStateException {
 		final Query q = db.query();
 		q.constrain(IdentityWantedState.class);
 		q.descend("mOwner").constrain(owner).identity();
@@ -205,6 +205,45 @@ public abstract class IdentityManager {
 			case 1: return result.next();
 			case 0: throw new NoSuchWantedStateException("owner: " + owner + "; author: " + author);
 			default: throw new DuplicateElementException("owner: " + owner + "; author: " + author);
+		}
+	}
+
+	
+	/**
+	 * @return True, if any IdentityWantedState is true for the given author. Looks at each object, the value is not cached.
+	 */
+	private synchronized final boolean getOverallShouldFetchState(Identity author) {
+		final Query q = db.query();
+		q.constrain(IdentityWantedState.class);
+		q.descend("mRatedIdentity").constrain(author).identity();
+		
+		// TODO: Optimization: For public gateway mode with large amounts of OwnIdentities we should cache this in the Identity object.
+		// Make sure to adapt the callers (especially setOverallShouldFetchState)
+		
+		for(IdentityWantedState state : new Persistent.InitializingObjectSet<IdentityWantedState>(mFreetalk, q)) {
+			if(state.get())
+				return true;
+		}
+		
+		return false;
+	}
+	
+	protected synchronized final void setOverallShouldFetchState(final String authorID, boolean shouldFetch) {
+		synchronized(db.lock()) {
+			try {
+				final Identity author = getIdentity(authorID);
+				
+				// We do not have to do update the fetch state since it is not cached - getOverallShouldFetchState computes it from all individual states
+				
+				assert(getOverallShouldFetchState(author) == shouldFetch);
+				
+				// if(stateChanged)	// We cannot figure that out, we trust the caller that it is the case
+					doOverallWantedStateChangedCallbacks(author, !shouldFetch, shouldFetch);
+				
+				Persistent.checkedCommit(db, this);
+			} catch (Exception e) {
+				Persistent.checkedRollbackAndThrow(db, this, new RuntimeException(e));
+			}
 		}
 	}
 	
