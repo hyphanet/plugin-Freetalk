@@ -47,7 +47,7 @@ import freenet.support.io.NativeThread;
  *  
  * @author xor (xor@freenetproject.org)
  */
-public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRetrieverCallback, PrioRunnable, IdentityManager.ShouldFetchStateChangedCallback {
+public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRetrieverCallback, PrioRunnable, IdentityManager.OverallWantedStateChangedCallback {
 
 	private static final long PROCESS_COMMANDS_DELAY = 60 * 1000;
 	
@@ -90,7 +90,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		mXML = myMessageListXML;
 		
 		deleteAllCommands();
-		mIdentityManager.registerShouldFetchStateChangedCallback(this);
+		mIdentityManager.registerOverallWantedStateChangedCallback(this);
 	}
 
 	public static abstract class FetcherCommand extends Persistent {
@@ -476,7 +476,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	 * 
 	 * Schedules start-fetch/abort-fetch commands.
 	 */
-	public void onShouldFetchStateChanged(Identity messageAuthor, boolean oldShouldFetch, boolean newShouldFetch) {
+	public void onOverallWantedStateChanged(Identity messageAuthor, boolean oldShouldFetch, boolean newShouldFetch) {
 		if(oldShouldFetch == newShouldFetch) {
 			throw new IllegalArgumentException("oldShouldFetch==newShouldFetch==" + newShouldFetch);
 		}

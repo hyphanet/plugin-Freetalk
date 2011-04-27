@@ -473,7 +473,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	
 	private void onShouldFetchStateChanged(Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
 		Logger.normal(this, "onShouldFetchStateChanged " + author);
-		doShouldFetchStateChangedCallbacks(author, oldShouldFetch, newShouldFetch);
+		doOverallWantedStateChangedCallbacks(author, oldShouldFetch, newShouldFetch);
 	}
 	
 	private void importIdentity(boolean ownIdentity, String identityID, String requestURI, String insertURI, String nickname, long importID) {

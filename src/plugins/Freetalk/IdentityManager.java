@@ -36,7 +36,7 @@ public abstract class IdentityManager {
 	
 	protected final ArrayList<OwnIdentityDeletedCallback> mOwnIdentityDeletedCallbacks = new ArrayList<OwnIdentityDeletedCallback>();
 	
-	protected final ArrayList<ShouldFetchStateChangedCallback> mShouldFetchStateChangedCallbacks = new ArrayList<ShouldFetchStateChangedCallback>();
+	protected final ArrayList<OverallWantedStateChangedCallback> mOverallWantedStateChangedCallbacks = new ArrayList<OverallWantedStateChangedCallback>();
 	
 
 	public IdentityManager(Freetalk myFreetalk, Executor myExecutor) {
@@ -107,8 +107,8 @@ public abstract class IdentityManager {
 		public void beforeOwnIdentityDeletion(OwnIdentity identity);
 	}
 	
-	public interface ShouldFetchStateChangedCallback {
-		public void onShouldFetchStateChanged(Identity messageAuthor, boolean oldShouldFetch, boolean newShouldFetch);
+	public interface OverallWantedStateChangedCallback {
+		public void onOverallWantedStateChanged(Identity messageAuthor, boolean oldShouldFetch, boolean newShouldFetch);
 	}
 
 
@@ -144,8 +144,8 @@ public abstract class IdentityManager {
 		mOwnIdentityDeletedCallbacks.add(listener);
 	}
 
-	public final void registerShouldFetchStateChangedCallback(final ShouldFetchStateChangedCallback listener) {
-		mShouldFetchStateChangedCallbacks.add(listener);
+	public final void registerOverallWantedStateChangedCallback(final OverallWantedStateChangedCallback listener) {
+		mOverallWantedStateChangedCallbacks.add(listener);
 	}
 	
 	protected final void doNewIdentityCallbacks(final Identity identity) {
@@ -172,9 +172,9 @@ public abstract class IdentityManager {
 		}
 	}
 	
-	protected final void doShouldFetchStateChangedCallbacks(final Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
-		for(ShouldFetchStateChangedCallback callback : mShouldFetchStateChangedCallbacks) {
-			callback.onShouldFetchStateChanged(author, oldShouldFetch, newShouldFetch);
+	protected final void doOverallWantedStateChangedCallbacks(final Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
+		for(OverallWantedStateChangedCallback callback : mOverallWantedStateChangedCallbacks) {
+			callback.onOverallWantedStateChanged(author, oldShouldFetch, newShouldFetch);
 		}
 	}
 	
