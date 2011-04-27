@@ -38,6 +38,8 @@ public abstract class IdentityManager {
 	
 	protected final ArrayList<OverallWantedStateChangedCallback> mOverallWantedStateChangedCallbacks = new ArrayList<OverallWantedStateChangedCallback>();
 	
+	protected final ArrayList<IndividualWantedStateChangedCallback> mIndividualWantedStateChangedCallbacks = new ArrayList<IndividualWantedStateChangedCallback>(); 
+	
 
 	public IdentityManager(Freetalk myFreetalk, Executor myExecutor) {
 		Logger.debug(this, "Creating identity manager...");
@@ -110,6 +112,10 @@ public abstract class IdentityManager {
 	public interface OverallWantedStateChangedCallback {
 		public void onOverallWantedStateChanged(Identity messageAuthor, boolean oldShouldFetch, boolean newShouldFetch);
 	}
+	
+	public interface IndividualWantedStateChangedCallback {
+		public void onIndividualWantedStateChanged(OwnIdentity owner, Identity messageAuthor, boolean oldShouldFetch, boolean newShouldFetch);
+	}
 
 
 	public final void registerNewIdentityCallback(final NewIdentityCallback listener, final boolean includeOwnIdentities) {
@@ -148,6 +154,10 @@ public abstract class IdentityManager {
 		mOverallWantedStateChangedCallbacks.add(listener);
 	}
 	
+	public final void registerIndividualWantedStateChangedCallback(final IndividualWantedStateChangedCallback listener) {
+		mIndividualWantedStateChangedCallbacks.add(listener);
+	}
+	
 	protected final void doNewIdentityCallbacks(final Identity identity) {
 		for(NewIdentityCallback callback : mNewIdentityCallbacks) {
 			callback.onNewIdentityAdded(identity);
@@ -179,7 +189,9 @@ public abstract class IdentityManager {
 	}
 	
 	protected final void doIndividualShouldFetchStateChangedCallbacks(final OwnIdentity owner, final Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
-		// TODO: Implement
+		for(IndividualWantedStateChangedCallback callback : mIndividualWantedStateChangedCallbacks) {
+			callback.onIndividualWantedStateChanged(owner, author, oldShouldFetch, newShouldFetch);
+		}
 	}
 	
 	protected synchronized final IdentityWantedState getIndividualShouldFetchState(OwnIdentity owner, Identity author) throws NoSuchWantedStateException {
