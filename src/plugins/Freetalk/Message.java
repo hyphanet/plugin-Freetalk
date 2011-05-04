@@ -695,7 +695,6 @@ public abstract class Message extends Persistent {
 		if(mThreadURI == null)
 			throw new NoSuchMessageException();
 
-		mThreadURI.initializeTransient(mFreetalk);
 		return mThreadURI;
 	}
 

@@ -100,7 +100,6 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 
 	@Override
 	public FreenetURI getFreenetURI() {
-		checkedActivate(3);
 		return mFreenetURI;
 	}
 	
@@ -117,8 +116,7 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 
 	@Override
 	public boolean equals(Object obj) {
-		final WoTMessageURI uri = (WoTMessageURI)obj;
-		checkedActivate(3);
+		WoTMessageURI uri = (WoTMessageURI)obj;
 		return uri.getFreenetURI().equals(mFreenetURI) && uri.getMessageID().equals(mMessageID);
 	}
 
@@ -130,7 +128,6 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 	 */
 	@Override
 	public String toString() {
-		checkedActivate(3);
 		return mFreenetURI.toString() + "#" + MessageID.construct(mMessageID).getUUID();
 	}
 
