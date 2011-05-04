@@ -6,10 +6,9 @@ package plugins.Freetalk.WoT;
 import java.net.MalformedURLException;
 import java.util.UUID;
 
-import junit.framework.TestCase;
+import plugins.Freetalk.DatabaseBasedTest;
 import plugins.Freetalk.Message.MessageID;
 import freenet.keys.FreenetURI;
-import freenet.support.Base64;
 
 /**
  * A test for class plugins.Freetalk.WoT.WoTMessagURI.
@@ -17,7 +16,7 @@ import freenet.support.Base64;
  * 
  * @author xor
  */
-public class WoTMessageURITest extends TestCase {
+public class WoTMessageURITest extends DatabaseBasedTest {
 	
 	/* Attributes of first testing WoTMessageURI */
 	private FreenetURI mSSK;
@@ -37,6 +36,8 @@ public class WoTMessageURITest extends TestCase {
 	
 
 	public void setUp() throws Exception {
+		super.setUp();
+			
 		mSSK = new FreenetURI("SSK@SZmdqGtog7v1wN3buILoMpucyD6V5krsYrVqFUfHosg,SLsRq9Q9ZlrmUS9KeyK2pmheJ4wbtW602UwX0o0E~w0,AQACAAE/Freetalk|MessageList-1");
 		mUUID = UUID.fromString("d5b0dcc4-91cb-4870-8ab9-8588e895fa5d");
 		mMessageID = MessageID.construct(mUUID, mSSK);
@@ -92,11 +93,13 @@ public class WoTMessageURITest extends TestCase {
 		/* Test construction of valid URIs */
 		
 		WoTMessageURI uri = new WoTMessageURI(mSSK, mMessageID);
+		uri.initializeTransient(mFreetalk);
 		assertEquals(mSSK, uri.getFreenetURI());
 		assertEquals(mMessageID, uri.getMessageID());
 		
 		/* The URI should always be stored as SSK even if constructed with USK */ 
 		uri = new WoTMessageURI(mSSK.uskForSSK(), mMessageID);
+		uri.initializeTransient(mFreetalk);
 		assertTrue(uri.getFreenetURI().isSSK());
 		assertEquals(mSSK, uri.getFreenetURI());
 	}
@@ -141,30 +144,34 @@ public class WoTMessageURITest extends TestCase {
 		/* Test construction of valid URIs */
 		
 		WoTMessageURI uri = new WoTMessageURI(mSSK.toASCIIString() + "#" + mUUID);
+		uri.initializeTransient(mFreetalk);
 		assertEquals(mSSK, uri.getFreenetURI());
 		assertEquals(mMessageID, uri.getMessageID());
 		
 		/* The URI should always be stored as SSK even if constructed with USK */
 		uri = new WoTMessageURI(mSSK.uskForSSK().toASCIIString() + "#" + mUUID);
+		uri.initializeTransient(mFreetalk);
 		assertTrue(uri.getFreenetURI().isSSK());
 		assertEquals(mSSK, uri.getFreenetURI());
 	}
 	
 	public void testGetFreenetURI() throws MalformedURLException {
 		WoTMessageURI uri = new WoTMessageURI(mSSK.toASCIIString() + "#" + mUUID);
+		uri.initializeTransient(mFreetalk);
 		assertEquals(mSSK, uri.getFreenetURI());
 	}
 	
 	public void testGetMessageID() throws MalformedURLException {
 		WoTMessageURI uri = new WoTMessageURI(mSSK.toASCIIString() + "#" + mUUID);
+		uri.initializeTransient(mFreetalk);
 		assertEquals(mMessageID, uri.getMessageID());
 	}
 
 	public void testEquals() {
-		WoTMessageURI uri1a = new WoTMessageURI(mSSK, mMessageID);
-		WoTMessageURI uri1b = new WoTMessageURI(mSSK, mMessageID);
-		WoTMessageURI uri2 = new WoTMessageURI(mSSK, mMessageID_withOtherUUIDbutSameSSK);
-		WoTMessageURI uri3 = new WoTMessageURI(mOtherSSK, mMessageID_withOtherSSKbutSameUUID);
+		WoTMessageURI uri1a = new WoTMessageURI(mSSK, mMessageID); uri1a.initializeTransient(mFreetalk);
+		WoTMessageURI uri1b = new WoTMessageURI(mSSK, mMessageID); uri1b.initializeTransient(mFreetalk);
+		WoTMessageURI uri2 = new WoTMessageURI(mSSK, mMessageID_withOtherUUIDbutSameSSK); uri2.initializeTransient(mFreetalk);
+		WoTMessageURI uri3 = new WoTMessageURI(mOtherSSK, mMessageID_withOtherSSKbutSameUUID); uri3.initializeTransient(mFreetalk);
 		
 		assertTrue(uri1a.equals(uri1a));
 		assertTrue(uri1a.equals(uri1b)); assertTrue(uri1b.equals(uri1a));
@@ -175,6 +182,7 @@ public class WoTMessageURITest extends TestCase {
 
 	public void testToString() {
 		WoTMessageURI uri = new WoTMessageURI(mSSK, mMessageID);
+		uri.initializeTransient(mFreetalk);
 		assertEquals(mSSK.toString() + "#" + mUUID, uri.toString());
 	}
 }
