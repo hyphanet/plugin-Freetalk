@@ -134,10 +134,12 @@ public final class Configuration extends Persistent {
 	}
 	
 	public int getDatabaseFormatVersion() {
+    	// checkedActivate(depth) is not needed, int is a db4o primitive type
 		return mDatabaseFormatVersion;
 	}
 	
 	protected void setDatabaseFormatVersion(int newVersion) {
+    	// checkedActivate(depth) is not needed, int is a db4o primitive type
 		if(newVersion <= mDatabaseFormatVersion)
 			throw new RuntimeException("mDatabaseFormatVersion==" + mDatabaseFormatVersion + "; newVersion==" + newVersion);
 		
@@ -152,6 +154,7 @@ public final class Configuration extends Persistent {
 	 */
 	public synchronized void set(String key, String value) {
 		IfNull.thenThrow(key, "Key");
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		if(value != null)
 			mStringParams.put(key, value);
 		else
@@ -166,6 +169,7 @@ public final class Configuration extends Persistent {
 	 */
 	public synchronized void set(String key, boolean value) {
 		IfNull.thenThrow(key, "Key");
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 	    mStringParams.put(key, Boolean.toString(value));
 	}
 	
@@ -177,6 +181,7 @@ public final class Configuration extends Persistent {
 	 */
 	public synchronized void set(String key, int value) {
 		IfNull.thenThrow(key, "Key");
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		mIntParams.put(key, value);
 	}
 
@@ -184,6 +189,7 @@ public final class Configuration extends Persistent {
 	 * Gets a String configuration parameter.
 	 */
 	public synchronized String getString(String key) {
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		return mStringParams.get(key);
 	}
 	
@@ -191,6 +197,7 @@ public final class Configuration extends Persistent {
 	 * Gets an Integer configuration parameter.
 	 */
 	public synchronized int getInt(String key) {
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		return mIntParams.get(key);
 	}
 	
@@ -198,6 +205,7 @@ public final class Configuration extends Persistent {
 	 * Gets a boolean configuration parameter.
 	 */
 	public synchronized boolean getBoolean(String key) {
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 	    return Boolean.valueOf( mStringParams.get(key) );
 	}
 
@@ -212,6 +220,7 @@ public final class Configuration extends Persistent {
 	 * Check wheter a String config parameter exists.
 	 */
 	public synchronized boolean containsString(String key) {
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		return mStringParams.containsKey(key);
 	}
 	
@@ -219,6 +228,7 @@ public final class Configuration extends Persistent {
 	 * Check wheter an Integer config parameter exists.
 	 */
 	public synchronized boolean containsInt(String key) {
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		return mIntParams.containsKey(key);
 	}
 
@@ -237,7 +247,9 @@ public final class Configuration extends Persistent {
 		 * function. Further the iterator would allow the user to delete keys
 		 * from the configuration.
 		 */
-
+		
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
+		
 		// TODO: there is a null pointer somewhere in here. i don't have the
 		// time for fixing it right now
 		return mStringParams.keySet().toArray(new String[mStringParams.size()]);
@@ -258,7 +270,9 @@ public final class Configuration extends Persistent {
 		 * function. Further the iterator would allow the user to delete keys
 		 * from the configuration.
 		 */
-
+		
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
+		
 		// TODO: there is a null pointer somewhere in here. i don't have the
 		// time for fixing it right now
 		return mIntParams.keySet().toArray(new String[mIntParams.size()]);
