@@ -27,7 +27,7 @@ import freenet.support.codeshortification.IfNull;
  * not need to manually create them. The <code>MessageManager</code> takes care of anything related to boards, to someone who just wants to
  * write a user interface this class can be considered as read-only.
  *
- * @author xor (xor@freenetproject.org)
+ * @author xor
  */
 @IndexedClass // TODO: Check whether we need the index
 public class Board extends Persistent implements Comparable<Board> {
@@ -115,7 +115,7 @@ public class Board extends Persistent implements Comparable<Board> {
 
 	@Override
 	public void databaseIntegrityTest() throws Exception {
-		checkedActivate(1); // String, int, boolean are db4o primitive types, depth 1 is enough
+		checkedActivate(3);
 		
 	    if(mID == null)
 	    	throw new NullPointerException("mID==null");
@@ -148,7 +148,7 @@ public class Board extends Persistent implements Comparable<Board> {
      * Does not provide synchronization, you have to lock the MessageManager, this Board and then the database before calling this function.
      */
     protected void storeWithoutCommit() {
-    	super.storeWithoutCommit(1); // String, int, boolean are db4o primitive types, depth 1 is enough
+    	super.storeWithoutCommit(3); // TODO: Figure out a suitable depth.
     }
 
 
@@ -215,7 +215,6 @@ public class Board extends Persistent implements Comparable<Board> {
      * 0, 1, 2 and so on. 
      */
     public final String getID() {
-    	// checkedActivate(depth) is not needed, String is a db4o primitive type
     	return mID;
     }
     
@@ -223,7 +222,6 @@ public class Board extends Persistent implements Comparable<Board> {
      * @return Returns the language code of the board. It is the token before the first '.' in the name of the board.
      */
     public final ISO639_3.LanguageCode getLanguage() {
-    	// checkedActivate(depth) is not needed, String is a db4o primitive type
     	return ALLOWED_LANGUAGES.get(mName.substring(0, mName.indexOf('.')));
     }
 
@@ -231,7 +229,6 @@ public class Board extends Persistent implements Comparable<Board> {
      * @return The name of this board. Only one board with a given name can exist at once. The name is case-insensitive.
      */
     public final String getName() {
-    	// checkedActivate(depth) is not needed, String is a db4o primitive type
         return mName;
     }
     
@@ -239,7 +236,6 @@ public class Board extends Persistent implements Comparable<Board> {
      * @see getName()
      */
     public final String getNameWithoutLanguagePrefix() {
-    	// checkedActivate(depth) is not needed, String is a db4o primitive type
         return mName.substring(mName.indexOf('.')+1);
     }
     
@@ -253,13 +249,10 @@ public class Board extends Persistent implements Comparable<Board> {
      * "From the view of the given OwnIdentity" means that votes are only counted when the own identity trusts the voter.
      */
     public String getDescription(OwnIdentity viewer) {
-    	// checkedActivate(depth) is not needed, String is a db4o primitive type
 		return mDescription;
     }
     
     protected boolean setDescription(String newDescription) {
-    	// checkedActivate(depth) is not needed, String is a db4o primitive type
-    	
 		boolean result = false;
 		if(mDescription == null || !mDescription.equals(newDescription))
 			result = true;
@@ -270,7 +263,6 @@ public class Board extends Persistent implements Comparable<Board> {
     }
 
     public final Date getFirstSeenDate() {
-    	// checkedActivate(depth) is not needed, Date is a db4o primitive type
         return mCreationDate;
     }
     
@@ -278,7 +270,6 @@ public class Board extends Persistent implements Comparable<Board> {
      * @return Returns true if at least one {@link SubscribedBoard} for this board exists, i.e. if we should download messages for this board.
      */
     public final boolean hasSubscriptions() {
-    	// checkedActivate(depth) is not needed, boolean is a db4o primitive type
     	return mHasSubscriptions;
     }
     
@@ -305,8 +296,6 @@ public class Board extends Persistent implements Comparable<Board> {
      * Does not check whether the {@link Board} object referenced by the message is equal to this {@link Board} object!
      */
     public final boolean contains(Message message) {
-    	// checkedActivate(depth) is not needed, String is a db4o primitive type
-    	
     	for(Board board : message.getBoards()) {
     		if(mName.equals(board.getName()))
     			return true;
@@ -350,7 +339,7 @@ public class Board extends Persistent implements Comparable<Board> {
 
 		@Override
 		public void databaseIntegrityTest() throws Exception {
-			checkedActivate(3); // One higher than necessary, we call getters on the member objects anyway
+			checkedActivate(3);
 			
 			if(mBoard == null)
 				throw new NullPointerException("mBoard==null");
@@ -391,26 +380,20 @@ public class Board extends Persistent implements Comparable<Board> {
 		}
 
     	public Board getBoard() {
-    		checkedActivate(2);
     		mBoard.initializeTransient(mFreetalk);
     		return mBoard;
     	}
     	
     	public Message getMessage() {
-    		checkedActivate(2);
     		mMessage.initializeTransient(mBoard.mFreetalk);
     		return mMessage;
     	}
     	
     	public int getMessageIndex() {
-        	// checkedActivate(depth) is not needed, int is a db4o primitive type
     		return mIndex;
     	}
     	
     	public Identity getAuthor() {
-    		checkedActivate(2);
-    		if(mAuthor instanceof Persistent)
-    			((Persistent)mAuthor).initializeTransient(mFreetalk);
     		return mAuthor;
     	}
     	
@@ -420,7 +403,7 @@ public class Board extends Persistent implements Comparable<Board> {
          */
         protected void storeWithoutCommit() {
         	try {
-        		checkedActivate(2);
+        		checkedActivate(3); // TODO: Figure out a suitable depth.
         		throwIfNotStored(mBoard);
         		throwIfNotStored(mMessage);
         		throwIfNotStored(mAuthor);
@@ -432,7 +415,7 @@ public class Board extends Persistent implements Comparable<Board> {
         }
         
     	protected void deleteWithoutCommit() {
-    		deleteWithoutCommit(2);
+    		deleteWithoutCommit(3); // TODO: Figure out a suitable depth.
 		}
 
     }
@@ -457,7 +440,6 @@ public class Board extends Persistent implements Comparable<Board> {
      * 	you do not store any message with it. This ensures that deleting the head message cannot cause it's index to be associated with a new, different message.
      */
 	protected final synchronized int takeFreeMessageIndexWithoutCommit() {
-    	// checkedActivate(depth) is not needed, int is a db4o primitive type
 		int result = mNextFreeMessageIndex++;
 		storeWithoutCommit();
 		return result;
@@ -539,7 +521,6 @@ public class Board extends Persistent implements Comparable<Board> {
 
     @Override
     public String toString() {
-    	// checkedActivate(depth) is not needed, String is a db4o primitive type
     	return super.toString() + " with mName: " + mName;
     }
 }
