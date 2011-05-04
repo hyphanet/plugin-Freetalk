@@ -250,7 +250,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	 */
 	@SuppressWarnings("unchecked")
 	private ExtObjectContainer openDatabase(File file) {
-		Logger.debug(this, "Using db4o " + Db4o.version());
+		Logger.minor(this, "Using db4o " + Db4o.version());
 		
 		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
 		
@@ -259,7 +259,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader())); // Needed because the node uses it's own classloader for plugins
 		cfg.exceptionsOnNotStorable(true); // Notify us if we tried to store a class which db4o won't store
 		cfg.activationDepth(5); // TODO: Decrease to 1 after we have explicit activation everywhere.
-		cfg.exceptionsOnNotStorable(true);
+		Logger.minor(this, "Default activation depth: " + cfg.activationDepth());
         cfg.automaticShutDown(false); // The shutdown hook does auto-commit() but we want to rollback(), we MUST NOT commit half-finished transactions
         
         // Performance config options:
