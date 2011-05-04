@@ -393,7 +393,12 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 				try {
 					p.databaseIntegrityTest();
 				} catch(Exception e) {
-					Logger.error(this, "Integrity test failed for " + p, e);
+					try {
+						Logger.error(this, "Integrity test failed for " + p, e);
+					} catch(Exception toStringException) {
+						Logger.error(this, "Integrity test failed for object and toString also failed, toString-Exception below", toStringException);
+						Logger.error(this, "Original integrity test failure below", e);
+					}
 				}
 			}
 		}
