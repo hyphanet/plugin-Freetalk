@@ -108,9 +108,6 @@ public abstract class Persistent {
 	 */
 	protected final void checkedActivate(final Object object, final int depth) {
 		if(mDB.isStored(object)) {
-			if(!mDB.isActive(object))
-				Logger.error(this, "Trying to store a non-active object: " + object);
-				
 			mDB.activate(this, depth);
 		}
 	}
@@ -342,6 +339,7 @@ public abstract class Persistent {
 	 * This date is stored in the database so it is constant for a given persistent object.
 	 */
 	public final Date getCreationDate() {
+		checkedActivate(1);
 		return mCreationDate;
 	}
 	
