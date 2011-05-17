@@ -50,18 +50,20 @@ public final class WoTMessageRating extends MessageRating {
 		if(!(getRater() instanceof WoTIdentity))
 			throw new IllegalStateException("getRater() == " + getRater());
 		
+		checkedActivate(1);
 		if(mValue < - 100 || mValue > 100)
 			throw new IllegalStateException("mValue ==  "+ mValue);
 	}
 
 	
 	public byte getValue() {
+		checkedActivate(1);
 		return mValue;
 	}
 	
 	public String toString() {
 		if(mDB != null)
-			return getRater() + " has rated the message " + getMessage() + " with " + mValue + " points.";
+			return getRater() + " has rated the message " + getMessage() + " with " + getValue() + " points.";
 		else
 			return super.toString();
 	}
@@ -104,11 +106,11 @@ public final class WoTMessageRating extends MessageRating {
 	}
 	
 	private void addValueToWoTTrust() throws NoSuchIdentityException {
-		addValueToWoTTrust(mValue);
+		addValueToWoTTrust(getValue());
 	}
 	
 	private void substractValueFromWoTTrust() throws NoSuchIdentityException {
-		addValueToWoTTrust((byte)-mValue);
+		addValueToWoTTrust((byte)-getValue());
 	}
 	
 	protected void storeAndCommit() {

@@ -121,7 +121,7 @@ public final class Configuration extends Persistent {
 	public synchronized void storeAndCommit() {
 		synchronized(mDB.lock()) {
 			try {
-				checkedActivate(4);
+				// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 				mDB.store(mStringParams, 3);
 				mDB.store(mIntParams, 3);
 				checkedStore();
@@ -134,12 +134,12 @@ public final class Configuration extends Persistent {
 	}
 	
 	public int getDatabaseFormatVersion() {
-    	// checkedActivate(depth) is not needed, int is a db4o primitive type
+		// checkedActivate(1); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		return mDatabaseFormatVersion;
 	}
 	
 	protected void setDatabaseFormatVersion(int newVersion) {
-    	// checkedActivate(depth) is not needed, int is a db4o primitive type
+		// checkedActivate(1); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		if(newVersion <= mDatabaseFormatVersion)
 			throw new RuntimeException("mDatabaseFormatVersion==" + mDatabaseFormatVersion + "; newVersion==" + newVersion);
 		

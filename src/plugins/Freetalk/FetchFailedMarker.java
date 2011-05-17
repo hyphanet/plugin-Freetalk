@@ -52,7 +52,7 @@ public class FetchFailedMarker extends Persistent {
 
 	@Override
 	public void databaseIntegrityTest() throws Exception {
-		checkedActivate(2);
+		checkedActivate(1);
 		
 		if(mReason == null)
 			throw new NullPointerException("mReason==null");
@@ -81,6 +81,7 @@ public class FetchFailedMarker extends Persistent {
 	 * NOT synchronized! Lock the MessageManager when working on FetchFailedMarker objects.
 	 */
 	public void setReason(Reason newReason) {
+		checkedActivate(1);
 		if(newReason == null) throw new NullPointerException();
 		
 		mReason = newReason;
@@ -90,7 +91,7 @@ public class FetchFailedMarker extends Persistent {
 	 * NOT synchronized! Lock the MessageManager when working on FetchFailedMarker objects.
 	 */
 	public Date getDate() {
-		// activate(1);	// 1 is the default activation depth => no need to activate.
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return mDate;
 	}
 
@@ -98,6 +99,7 @@ public class FetchFailedMarker extends Persistent {
 	 * NOT synchronized! Lock the MessageManager when working on FetchFailedMarker objects.
 	 */
 	public void setDate(Date newDate) {
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		mDate = newDate;
 	}
 	
@@ -105,7 +107,7 @@ public class FetchFailedMarker extends Persistent {
 	 * NOT synchronized! Lock the MessageManager when working on FetchFailedMarker objects.
 	 */
 	public int getNumberOfRetries() {
-		// activate(1);	// 1 is the default activation depth => no need to activate.
+		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		return mNumberOfRetries;
 	}
 	
@@ -113,7 +115,7 @@ public class FetchFailedMarker extends Persistent {
 	 * NOT synchronized! Lock the MessageManager when working on FetchFailedMarker objects.
 	 */
 	public void incrementNumberOfRetries() {
-		// activate(1);	// 1 is the default activation depth => no need to activate.
+		checkedActivate(1); // int is a db4o primitive type so 1 is enough
 		++mNumberOfRetries;
 	}
 	
@@ -121,7 +123,7 @@ public class FetchFailedMarker extends Persistent {
 	 * NOT synchronized! Lock the MessageManager when working on FetchFailedMarker objects.
 	 */
 	public Date getDateOfNextRetry() {
-		// activate(1);	// 1 is the default activation depth => no need to activate.
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return mDateOfNextRetry;
 	}
 	
@@ -129,30 +131,33 @@ public class FetchFailedMarker extends Persistent {
 	 * NOT synchronized! Lock the MessageManager when working on FetchFailedMarker objects.
 	 */
 	public void setDateOfNextRetry(Date newDate) {
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		mDateOfNextRetry = newDate;
 		setAllowRetryNow(!mDateOfNextRetry.after(mDate));
 	}
 	
 	public boolean isRetryAllowedNow() {
+		checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 		return mRetryAllowedNow;
 	}
 	
 	public void setAllowRetryNow(boolean allowRetryNow) {
+		checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 		mRetryAllowedNow = allowRetryNow;
 	}
 
 	public void storeWithoutCommit() {
-		super.storeWithoutCommit(2); // TODO: Figure out a suitable depth.
+		super.storeWithoutCommit(1);
 	}
 	
 	public void deleteWithoutCommit() {
-		super.deleteWithoutCommit(2); // TODO: Figure out a suitable depth.
+		super.deleteWithoutCommit(1);
 		// All members are db4o native types which we don't have to delete - 
 		// even mReason: Toad said that we do not have to delete enums on our own, db4o does the job.
 	}
 
 	public Reason getReason() {
-		checkedActivate(2); // TODO: Check whether this is enough for an enum, or even too much.
+		checkedActivate(1);
 		return mReason;
 	}
 

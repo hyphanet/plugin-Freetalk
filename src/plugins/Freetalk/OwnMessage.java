@@ -25,17 +25,17 @@ public abstract class OwnMessage extends Message {
 	public void databaseIntegrityTest() throws Exception {
 		super.databaseIntegrityTest();
 		
-		checkedActivate(3);
+		checkedActivate(1);
 		
 		if(!(mAuthor instanceof OwnIdentity))
 			throw new IllegalStateException("mAuthor is no OwnIdentity: " + mAuthor);
 		
 		if(mMessageList == null) {
 			if(mFreenetURI != null)
-				throw new IllegalStateException("mMessageList == null but mFreenetURI == " + mFreenetURI);
+				throw new IllegalStateException("mMessageList == null but mFreenetURI == " + getFreenetURI());
 			
 			if(mURI != null)
-				throw new IllegalStateException("mMessageList == null but mURI == " + mURI);
+				throw new IllegalStateException("mMessageList == null but mURI == " + getURI());
 		} // else is handled by super.databaseIntegrityTest();
 	}
 	
@@ -44,6 +44,8 @@ public abstract class OwnMessage extends Message {
 	/* Override for synchronization */	
 	@Override
 	public synchronized MessageURI getURI() {
+		checkedActivate(1);
+		mURI.initializeTransient(mFreetalk);
 		return mURI;
 	}
 	
@@ -59,14 +61,19 @@ public abstract class OwnMessage extends Message {
 	 * @return The CHK URI of the message.
 	 */
 	public synchronized FreenetURI getFreenetURI() {
+		checkedActivate(1);
+		
 		if(mFreenetURI == null)
 			throw new RuntimeException("getFreenetURI() called on the not inserted message " + this);
 		
+		checkedActivate(mFreenetURI, 2);
 		return mFreenetURI;
 	}
 	
 	// TODO: Remove the debug code if we are sure that db4o works
 	public synchronized boolean testFreenetURIisNull() {
+		checkedActivate(1);
+		
 		if(mFreenetURI != null) {
 			Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + this);
 			return false;
@@ -80,8 +87,15 @@ public abstract class OwnMessage extends Message {
 	 * Stores this OwnMessage in the database without committing the transaction.
 	 */
 	public synchronized void setMessageList(OwnMessageList newMessageList) {
+		checkedActivate(1);
+		
 		mMessageList = newMessageList;
 		try {
+			if(mURI != null) {
+				mURI.initializeTransient(mFreetalk);
+				mURI.deleteWithoutCommit();
+			}
+			
 			mURI = calculateURI();
 		} catch (NoSuchMessageListException e) {
 			throw new RuntimeException(e);
@@ -90,7 +104,7 @@ public abstract class OwnMessage extends Message {
 	}
 	
 	public synchronized MessageList getMessageList() throws NoSuchMessageListException {
-		checkedActivate(2);
+		checkedActivate(1);
 		if(mMessageList == null)
 			throw new NoSuchMessageListException("");
 		
@@ -123,6 +137,7 @@ public abstract class OwnMessage extends Message {
 	 * The message might only become visible if the message list which lists it has been inserted. This is implementation dependent, for example {@see WoTOwnMessage}.
 	 */
 	public synchronized boolean wasInserted() {
+		checkedActivate(1);
 		return (mFreenetURI != null);
 	}
 
@@ -131,6 +146,9 @@ public abstract class OwnMessage extends Message {
 	 * Stores this OwnMessage in the database without committing the transaction. 
 	 */
 	public synchronized void markAsInserted(FreenetURI myFreenetURI) {
+		checkedActivate(1);
+		if(mFreenetURI != null)
+			throw new RuntimeException("The message was inserted already.");
 		mFreenetURI = myFreenetURI;
 		storeWithoutCommit();
 	}
@@ -152,6 +170,6 @@ public abstract class OwnMessage extends Message {
 		
 		Logger.error(this, "toString() called before initializeTransient()!");
 		
-		return super.toString() + " (intializeTransient() not called!, message URI may be null, here it is: " + mURI + ")";
+		return super.toString() + " (intializeTransient() not called!)";
     }
 }

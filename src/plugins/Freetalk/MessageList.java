@@ -58,7 +58,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 
 	@Override
 	public void databaseIntegrityTest() throws Exception {
-		checkedActivate(3);
+		checkedActivate(1);
 		
 		if(mID == null)
 			throw new NullPointerException("mID==null");
@@ -68,7 +68,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		if(mAuthor == null)
 			throw new NullPointerException("mAuthor==null");
 		
-		id.throwIfAuthorDoesNotMatch(mAuthor);
+		id.throwIfAuthorDoesNotMatch(getAuthor());
 		
 		if(id.getIndex() != mIndex)
 			throw new IllegalStateException("mIndex does not match mID: " + mIndex);
@@ -76,8 +76,8 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		if(mMessages==null)
 			throw new NullPointerException("mMessages==null");
 		
-		if(mMessages.size() > MAX_MESSAGES_PER_MESSAGELIST)
-			throw new IllegalStateException("mMessages is too large: " + mMessages.size());
+		if(getMessages().size() > MAX_MESSAGES_PER_MESSAGELIST)
+			throw new IllegalStateException("mMessages is too large: " + getMessages().size());
 		
 		// TODO: Validate content of mMessages as we do in the constructor...
 	}
@@ -206,7 +206,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		
 		@Override
 		public void databaseIntegrityTest() throws Exception {		
-			checkedActivate(3);
+			checkedActivate(1);
 			
 			if(mMessageID == null)
 				throw new NullPointerException("mMessageID==null");
@@ -219,7 +219,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			if(mURI == null)
 				throw new NullPointerException("mURI==null");
 			
-			if(mMessageList.getReference(mURI) != this)
+			if(getMessageList().getReference(getURI()) != this)
 				throw new IllegalStateException("Parent message list does not contain this MessageReference.");
 			
 			if(!(this instanceof OwnMessageList.OwnMessageReference) && mBoard == null)
@@ -251,15 +251,17 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		
 		protected void storeWithoutCommit() {
 			try {
-				checkedActivate(3); // TODO: Figure out a suitable depth.
+				checkedActivate(1);
 				
 				// We cannot throwIfNotStored because MessageReference objects are usually created within the same transaction of creating the MessageList
 				//DBUtil.throwIfNotStored(db, mMessageList);
 				
 				// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
+				
 				if(mURI == null)
 					throw new NullPointerException("Should not happen: URI is null for " + this);
 				
+				checkedActivate(mURI, 2);
 				checkedStore(mURI);
 				checkedStore();
 			}
@@ -270,12 +272,14 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		
 		public void deleteWithoutCommit() {
 			try {
-				checkedActivate(3); // TODO: Figure out a suitable depth.
+				checkedActivate(1);
 				
 				checkedDelete();
 				
-				if(mURI != null)
+				if(mURI != null) {
+					checkedActivate(mURI, 2);
 					mURI.removeFrom(mDB);
+				}
 				else
 					Logger.error(this, "Should not happen: URI is null for " + this);
 			}
@@ -285,27 +289,29 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		}
 		
 		public String getMessageID() {
-			// checkedActivate(1);
+			checkedActivate(1); // String is a db4o primitive type so 1 is enough
 			return mMessageID;
 		}
 		
 		public FreenetURI getURI() {
-			checkedActivate(2);
+			checkedActivate(1);
+			checkedActivate(mURI, 2);
 			return mURI;
 		}
 		
 		public Board getBoard() {
-			checkedActivate(2);
+			checkedActivate(1);
+			mBoard.initializeTransient(mFreetalk);
 			return mBoard;
 		}
 		
 		public Date getDate() {
-			// checkedActivate(1);
+			checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 			return mDate;
 		}
 		
 		public synchronized boolean wasMessageDownloaded() {
-			// checkedActivate(1);
+			checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 			return mWasDownloaded;
 		}
 		
@@ -313,7 +319,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		 * Marks the MessageReference as downloaded and stores the change in the database, without committing the transaction.
 		 */
 		public synchronized void setMessageWasDownloadedFlag() {
-			// checkedActivate(1);
+			checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 			
 			// TODO: Figure out why this happens sometimes.
 			// assert(mWasDownloaded == false);
@@ -324,7 +330,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		 * Marks the MessageReference as not downloaded and stores the change in the database, without committing the transaction.
 		 */
 		public synchronized void clearMessageWasDownloadedFlag() {
-			// checkedActivate(1);
+			checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 			
 			// TODO: Figure out why this happens sometimes.
 			// assert(mWasDownloaded == true);
@@ -332,7 +338,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		}
 
 		public MessageList getMessageList() {
-			checkedActivate(2);
+			checkedActivate(1);
 			mMessageList.initializeTransient(mFreetalk);
 			return mMessageList;
 		}
@@ -341,12 +347,16 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		 * Called by it's parent <code>MessageList</code> to store the reference to it. Does not call store().
 		 */
 		protected void setMessageList(MessageList myMessageList) {
+			checkedActivate(1);
 			mMessageList = myMessageList;
 		}
 		
 		@Override
 		public String toString() {
-			return "[" + super.toString() + ": mMessageID: " + getMessageID() + "; mMessageURI: " + (mDB != null ? getURI() : "(cannot get because mDB==null)") + "]";
+			if(mDB == null)
+				return "[" + super.toString() + " (cannot get more info because mDB==null) ]";
+			else
+				return "[" + super.toString() + ": mMessageID: " + getMessageID() + "; mMessageURI: " + getURI() + "]";
 		}
 
 	}
@@ -368,7 +378,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		public void databaseIntegrityTest() throws Exception {
 			super.databaseIntegrityTest();
 			
-			// checkedActivate(1);
+			 checkedActivate(1);
 			
 			if(mMessageListID == null)
 				throw new NullPointerException("mMessageListID==null");
@@ -377,13 +387,16 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		}
 
 		public String getMessageListID() {
-			// checkedActivate(1);
+			checkedActivate(1); // String is a db4o primitive type so 1 is enough
 			return mMessageListID;
 		}
 		
 		@Override
 		public String toString() {
-			return "[" + super.toString() + ": mMessageListID: " + getMessageListID() + "]";
+			if(mDB == null)
+				return "[" + super.toString() + " (cannot get more info because mDB==null) ]";
+			else
+				return "[" + super.toString() + ": mMessageListID: " + getMessageListID() + "]";
 		}
 		
 	}
@@ -405,20 +418,20 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		public void databaseIntegrityTest() throws Exception {
 			super.databaseIntegrityTest();
 			
-			checkedActivate(2);
+			checkedActivate(1);
 			
 			if(mMessageReference == null)
 				throw new NullPointerException("mMessageReference==null");
 		}
 		
 		public void storeWithoutCommit() {
-			checkedActivate(2);
+			checkedActivate(1);
 			throwIfNotStored(mMessageReference);
 			super.storeWithoutCommit();
 		}
 
 		public MessageReference getMessageReference() {
-			checkedActivate(2);
+			checkedActivate(1);
 			mMessageReference.initializeTransient(mFreetalk);
 			return mMessageReference;
 		}
@@ -543,7 +556,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	
 	public void storeWithoutCommit() {
 		try {
-			checkedActivate(3); // TODO: Figure out a suitable depth.
+			checkedActivate(1);
 			
 			throwIfNotStored(mAuthor);
 			
@@ -556,10 +569,13 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			// TODO: Change class Persistent to provide a way to specify a store-depth so we can prevent implicit storage of this MessageList object in the
 			// following loop .. I hope that the implicit storage does not hurt meanwhile.. I have no sign of it so I'm marking as TO-DO and not FIX-ME,,,
 			
+			checkedActivate(mMessages, 2);
+			
 			for(MessageReference ref : mMessages) {
 				ref.initializeTransient(mFreetalk);
 				ref.storeWithoutCommit();
 			}
+			
 			mDB.store(mMessages, 1); // TODO: Do not use the lowlevel db4o function, rather add something to class Persistent...
 			checkedStore();
 		}
@@ -570,7 +586,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 
 	protected void deleteWithoutCommit() {
 		try {
-			checkedActivate(3); // TODO: Figure out a suitable depth.
+			checkedActivate(1);
 			
 			{ // First we have to delete the objects of type MessageListFetchFailedReference because this MessageList needs to exist in the db so we can query them
 				// TODO: This requires that we have locked the MessageManager, which is currently the case for every call to deleteWithoutCommit()
@@ -588,6 +604,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			
 			// Then we delete our list of MessageReferences before we delete each of it's MessageReferences 
 			// - less work of db4o, it does not have to null all the pointers to them.
+			checkedActivate(mMessages, 2);
 			MessageReference[] messages = mMessages.toArray(new MessageReference[mMessages.size()]);
 			mMessages.clear(); // I don't know why I'm doing this but it seems better to me - it makes clear that we delete the MessageReference objects on our own.
 			checkedDelete(mMessages);
@@ -625,7 +642,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	}
 	
 	public String getID() {
-		// checkedActivate(1);
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID;
 	}
 	
@@ -634,7 +651,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	 * @return
 	 */
 	public FreenetURI getURI() {
-		return generateURI(getAuthor().getRequestURI(), mIndex).sskForUSK();
+		return generateURI(getAuthor().getRequestURI(), getIndex()).sskForUSK();
 	}
 	
 	/**
@@ -646,7 +663,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	protected abstract FreenetURI generateURI(FreenetURI baseURI, long index);
 	
 	public Identity getAuthor() {
-		checkedActivate(2);
+		checkedActivate(1);
 		if(mAuthor instanceof Persistent) {
 			((Persistent)mAuthor).initializeTransient(mFreetalk);
 		}
@@ -654,7 +671,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	}
 	
 	public long getIndex() {
-		// checkedActivate(1);
+		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		return mIndex;
 	}
 	
@@ -662,11 +679,16 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	 * You have to synchronize on the <code>MessageList</code> when using this method.
 	 */
 	public Iterator<MessageReference> iterator() {
-		checkedActivate(3);
+		return getMessages().iterator();
+	}
+	
+	protected ArrayList<MessageReference> getMessages() {
+		checkedActivate(1);
+		checkedActivate(mMessages, 2);
 		for(MessageReference ref : mMessages) {
 			ref.initializeTransient(mFreetalk);
 		}
-		return mMessages.iterator();
+		return mMessages;
 	}
 	
 	public synchronized MessageReference getReference(FreenetURI messageURI) throws NoSuchMessageException {

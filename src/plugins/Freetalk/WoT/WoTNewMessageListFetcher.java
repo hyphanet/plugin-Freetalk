@@ -105,10 +105,12 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		
 		@Override
 		public void databaseIntegrityTest() throws Exception {
+			checkedActivate(1); // String is a db4o primitive type so 1 is enough
 			IfNull.thenThrow(mIdentityID, "mIdentityID");
 		}
 		
 		protected String getIdentityID() {
+			checkedActivate(1); // String is a db4o primitive type so 1 is enough
 			return mIdentityID;
 		}
 		
@@ -123,7 +125,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	}
 	
 	@IndexedClass
-	private static final class StartFetchCommand extends FetcherCommand {
+	public static final class StartFetchCommand extends FetcherCommand {
 
 		protected StartFetchCommand(WoTIdentity identity) {
 			super(identity.getID());
@@ -136,7 +138,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	}
 	
 	@IndexedClass
-	private static final class AbortFetchCommand extends FetcherCommand {
+	public static final class AbortFetchCommand extends FetcherCommand {
 
 		protected AbortFetchCommand(WoTIdentity identity) {
 			super(identity.getID());
@@ -145,7 +147,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	}
 	
 	@IndexedClass
-	private static final class UpdateEditionHintCommand extends FetcherCommand {
+	public static final class UpdateEditionHintCommand extends FetcherCommand {
 
 		protected UpdateEditionHintCommand(WoTIdentity identity) {
 			super(identity.getID());

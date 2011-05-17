@@ -273,6 +273,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         cfg.objectClass(Persistent.class).indexed(true);
         
         final Class<? extends Persistent>[] persistentClasses = new Class[] {
+        	Persistent.class,
         	Board.class,
         	Board.DownloadedMessageLink.class,
         	Configuration.class,

@@ -87,10 +87,12 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 	
 	@Override
 	public void databaseIntegrityTest() throws Exception {
-		checkedActivate(3);
+		checkedActivate(1);
 		
 		IfNull.thenThrow(mFreenetURI, "mFreenetURI");
 		IfNull.thenThrow(mMessageID, "mMessageID");
+		
+		checkedActivate(mFreenetURI, 2);
 		
 		if(!mFreenetURI.isSSK())
 			throw new IllegalStateException("mFreenetURI == " + mFreenetURI);
@@ -100,17 +102,20 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 
 	@Override
 	public FreenetURI getFreenetURI() {
-		checkedActivate(3);
+		checkedActivate(1);
+		checkedActivate(mFreenetURI, 2);
 		return mFreenetURI;
 	}
 	
 	@Override
 	public String getMessageID() {
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mMessageID;
 	}
 	
 	@Override
 	public void throwIfAuthorDoesNotMatch(Identity newAuthor) {
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		MessageID.construct(mMessageID).throwIfAuthorDoesNotMatch(newAuthor);
 	}
 	
@@ -118,7 +123,8 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 	@Override
 	public boolean equals(Object obj) {
 		final WoTMessageURI uri = (WoTMessageURI)obj;
-		checkedActivate(3);
+		checkedActivate(1);
+		checkedActivate(mFreenetURI, 2);
 		return uri.getFreenetURI().equals(mFreenetURI) && uri.getMessageID().equals(mMessageID);
 	}
 
@@ -130,17 +136,19 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 	 */
 	@Override
 	public String toString() {
-		checkedActivate(3);
+		checkedActivate(1);
+		checkedActivate(mFreenetURI, 2);
 		return mFreenetURI.toString() + "#" + MessageID.construct(mMessageID).getUUID();
 	}
 
 	@Override
 	protected void deleteWithoutCommit() {
 		try {
-			checkedActivate(3); // TODO: Figure out a suitable depth.
+			checkedActivate(1);
 			
 			checkedDelete();
 			
+			checkedActivate(mFreenetURI, 2);
 			mFreenetURI.removeFrom(mDB);
 		}
 		catch(RuntimeException e) {
@@ -151,10 +159,11 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 	@Override
 	protected void storeWithoutCommit() {
 		try {
-			checkedActivate(3); // TODO: Figure out a suitable depth.
+			checkedActivate(1);
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in removeFrom() !
 			
+			checkedActivate(mFreenetURI, 2);
 			checkedStore(mFreenetURI);
 			checkedStore();
 		}
@@ -165,6 +174,8 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 
 	@Override
 	public WoTMessageURI clone() {
+		checkedActivate(1);
+		checkedActivate(mFreenetURI, 2);
 		return new WoTMessageURI(mFreenetURI, MessageID.construct(mMessageID));
 	}
 	

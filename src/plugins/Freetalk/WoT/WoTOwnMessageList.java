@@ -34,8 +34,11 @@ public final class WoTOwnMessageList extends OwnMessageList {
 	 */
 	protected synchronized void incrementInsertIndex() {
 		long freeIndex = mFreetalk.getMessageManager().getFreeOwnMessageListIndex(getAuthor());
+		
+		checkedActivate(1);
+		
 		mIndex = Math.max(mIndex+1, freeIndex);
-		mID = MessageListID.construct(mAuthor, mIndex).toString();
+		mID = MessageListID.construct(getAuthor(), mIndex).toString();
 		
 		// TODO: Optimization: This is debug code which was added on 2011-02-13 for preventing DuplicateMessageListException, it can be removed after some months if they do not happen.
 		try {

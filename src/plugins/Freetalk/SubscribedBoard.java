@@ -58,12 +58,12 @@ public final class SubscribedBoard extends Board {
     public void databaseIntegrityTest() throws Exception {
     	super.databaseIntegrityTest();
     	
-    	checkedActivate(2);
+		checkedActivate(1);
     	
     	IfNull.thenThrow(mSubscriber, "mSubscriber");
     	IfNull.thenThrow(mParentBoard, "mParentBoard");
 
-    	IfNotEquals.thenThrow(getName(), mParentBoard.getName(), "mName");
+    	IfNotEquals.thenThrow(getName(), getParentBoard().getName(), "mName");
         	
     	if(mHighestSynchronizedParentMessageIndex < 0)
     		throw new IllegalStateException("mHighestSynchronizedParentMessageIndex == " + mHighestSynchronizedParentMessageIndex);
@@ -98,6 +98,7 @@ public final class SubscribedBoard extends Board {
     }
     
     protected void storeWithoutCommit() {
+		checkedActivate(1);
     	throwIfNotStored(mSubscriber);
     	throwIfNotStored(mParentBoard);
     	super.storeWithoutCommit();
@@ -107,7 +108,7 @@ public final class SubscribedBoard extends Board {
 		// TODO: When deleting a subscribed board, check whether the objects of class Message are being used by a subscribed board of another own identity.
 		// If not, delete the messages.
 		try {
-			checkedActivate(3); // TODO: Figure out a suitable depth.
+			checkedActivate(1);
 			
 			for(UnwantedMessageLink link : getAllUnwantedMessages()) {
 				link.deleteWithoutCommit();
@@ -126,6 +127,7 @@ public final class SubscribedBoard extends Board {
 	}
 	
 	public OwnIdentity getSubscriber() {
+		checkedActivate(1);
     	if(mSubscriber instanceof Persistent) {
     		final Persistent subscriber = (Persistent)mSubscriber;
     		subscriber.initializeTransient(mFreetalk);
@@ -134,11 +136,13 @@ public final class SubscribedBoard extends Board {
 	}
 	
 	public Board getParentBoard() {
+		checkedActivate(1);
 		mParentBoard.initializeTransient(mFreetalk);
 		return mParentBoard;
 	}
 
     public synchronized String getDescription() {
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
         return mDescription != null ? mDescription : super.getDescription(getSubscriber());
     }
     
@@ -180,6 +184,8 @@ public final class SubscribedBoard extends Board {
      * @throws Exception If one of the addMessage calls fails. 
      */
     protected synchronized final void synchronizeWithoutCommit() throws Exception {
+    	checkedActivate(1);
+    	
     	for(Board.DownloadedMessageLink messageLink : getParentBoard().getDownloadedMessagesAfterIndex(mHighestSynchronizedParentMessageIndex)) {
     		addMessage(messageLink.getMessage());
     		mHighestSynchronizedParentMessageIndex = messageLink.getMessageIndex();
@@ -605,7 +611,7 @@ public final class SubscribedBoard extends Board {
     			throw new NoSuchMessageException(message.getID());
     		case 1:
     			final UnwantedMessageLink link = results.next();
-    			assert(message.equals(link.mMessage));
+    			assert(message.equals(link.getMessage()));
     			return link;
     		default:
     			throw new DuplicateMessageException(message.getID());
@@ -640,8 +646,8 @@ public final class SubscribedBoard extends Board {
         switch(results.size()) {
 	        case 1:
 				final BoardReplyLink replyRef = results.next();
-				assert(threadID.equals(replyRef.mThreadID)); // The query works
-				assert(messageID.equals(replyRef.mMessageID)); // The query works
+				assert(threadID.equals(replyRef.getThreadID())); // The query works
+				assert(messageID.equals(replyRef.getMessageID())); // The query works
 				return replyRef;
 	        case 0:
 	        	throw new NoSuchMessageException(messageID);
@@ -663,7 +669,7 @@ public final class SubscribedBoard extends Board {
 	        case 1:
 				final BoardThreadLink threadRef = results.next();
 				threadRef.initializeTransient(mFreetalk);
-				assert(threadID.equals(threadRef.mThreadID)); // The query works
+				assert(threadID.equals(threadRef.getThreadID())); // The query works
 				return threadRef;
 	        case 0:
 	        	throw new NoSuchMessageException(threadID);
@@ -851,7 +857,7 @@ public final class SubscribedBoard extends Board {
     	int count = 0;
     	
     	for(final BoardMessageLink ref : getAllExpiredWantedMessages(now)) {
-    		if(ref.mNextWantedCheckDate == null) {
+    		if(ref.getNextWantedCheckDate() == null) {
     			Logger.warning(this, "Db4o bug: constrain(null).identity().not() did not work.");
     			continue;
     		}
@@ -1088,7 +1094,7 @@ public final class SubscribedBoard extends Board {
     	
     	@Override
     	public void databaseIntegrityTest() throws Exception {
-    		checkedActivate(2);
+    		checkedActivate(1); // Date/String are db4o primitive types so 1 is enough
     		
     		IfNull.thenThrow(mBoard, "mBoard");
     		IfNull.thenThrow(mMessage, "mMessage");
@@ -1110,32 +1116,32 @@ public final class SubscribedBoard extends Board {
         	for(BoardMessageLink ref : getBoard().getMessageLinks(getMessage().getID())) {
         		try {
         			ref.getMessage();
-        			throw new IllegalStateException("Both UnwantedMessageLink and non-ghost MessageReference exist for " + mMessage);
+        			throw new IllegalStateException("Both UnwantedMessageLink and non-ghost MessageReference exist for " + getMessage());
         		} catch(NoSuchMessageException e) { } 
         		
         	}
         	
         	try {
-        		getBoard().getParentBoard().getDownloadedMessageLink(mMessage);
+        		getBoard().getParentBoard().getDownloadedMessageLink(getMessage());
         	} catch(NoSuchMessageException e) {
-        		throw new IllegalStateException("Parent board does not have my message: " + mMessage);
+        		throw new IllegalStateException("Parent board does not have my message: " + getMessage());
         	}
     	}
     	
     	protected SubscribedBoard getBoard() {
-    		checkedActivate(2);
+    		checkedActivate(1);
     		mBoard.initializeTransient(mFreetalk);
     		return mBoard;
     	}
     	
     	protected Message getMessage() {
-			checkedActivate(2);
+			checkedActivate(1);
 			mMessage.initializeTransient(mFreetalk);
 			return mMessage;
 		}
     	
     	protected Identity getAuthor() {
-    		checkedActivate(2);
+    		checkedActivate(1);
     		if(mAuthor instanceof Persistent) {
     			Persistent author = (Persistent)mAuthor;
     			author.initializeTransient(mFreetalk);
@@ -1156,12 +1162,14 @@ public final class SubscribedBoard extends Board {
 		}
 
 		public void countRetry() {
+			checkedActivate(1);
     		++mNumberOfRetries;
     		mLastRetryDate = CurrentTimeUTC.get();
     		mNextRetryDate = computeNextCheckDate();
 		}
 
 		private Date computeNextCheckDate() {
+			checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 			if(mNumberOfRetries >=  MAXIMAL_RETRY_DELAY_AT_RETRY_COUNT)
 				return new Date(mLastRetryDate.getTime() + MAXIMAL_RETRY_DELAY);
 			
@@ -1170,14 +1178,15 @@ public final class SubscribedBoard extends Board {
     	}
     	
     	protected void storeWithoutCommit() {
-    		super.storeWithoutCommit(2);
+    		super.storeWithoutCommit(1);
     	}
     	
     	protected void deleteWithoutCommit() {
-    		super.deleteWithoutCommit(2);
+    		super.deleteWithoutCommit(1);
     	}
     	
     	public String toString() {
+			checkedActivate(1); // Date is a db4o primitive type so 1 is enough
     		return super.toString() + " with mBoard: (" + getBoard() + "); mMessage: (" + getMessage() + "); mAuthor: (" + getAuthor() +  "); mNumberOfRetries: " + mNumberOfRetries + 
     			"; mLastRetry: " + mLastRetryDate + "; mNextRetry: " + mNextRetryDate;
     	}
@@ -1269,6 +1278,7 @@ public final class SubscribedBoard extends Board {
 		}
 		
 		private void countWantedCheck(Date now) {
+			checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 			++mNumberOfWantedChecks;
 			mLastWantedCheckDate = now;
 			
@@ -1278,6 +1288,11 @@ public final class SubscribedBoard extends Board {
 				// The Math.min() is a double check
 				mNextWantedCheckDate = new Date(mLastWantedCheckDate.getTime() + Math.min(MINIMAL_RETRY_DELAY * (1<<mNumberOfWantedChecks), MAXIMAL_RETRY_DELAY));
 			}
+		}
+		
+		protected Date getNextWantedCheckDate() {
+			checkedActivate(1);
+			return mNextWantedCheckDate;
 		}
 		
 
@@ -1298,7 +1313,7 @@ public final class SubscribedBoard extends Board {
     	}
 		
 		public void databaseIntegrityTest() throws Exception {
-			checkedActivate(3);
+			checkedActivate(1); // Date/String are db4o primitive types so 1 is enough
 			
 			IfNull.thenThrow(mBoard, "mBoard");
 			IfNull.thenThrow(mAuthorID, "mAuthorID");
@@ -1314,12 +1329,12 @@ public final class SubscribedBoard extends Board {
 	    			throw new IllegalStateException("mMessage == " + message);
 	    		
 	    		if(!getBoard().contains(message))
-	    			throw new IllegalStateException("mBoard == " + mBoard + " does not contain mMessage == " + mMessage);
+	    			throw new IllegalStateException("mBoard == " + getBoard() + " does not contain mMessage == " + message);
 	    		
 	           	try {
-	        		getBoard().getParentBoard().getDownloadedMessageLink(mMessage);
+	        		getBoard().getParentBoard().getDownloadedMessageLink(message);
 	        	} catch(NoSuchMessageException e) {
-	        		throw new IllegalStateException("Parent board does not have my message: " + mMessage);
+	        		throw new IllegalStateException("Parent board does not have my message: " + message);
 	        	}
 	    		
 	    		IfNotEquals.thenThrow(mAuthorID, message.getAuthor().getID(), "mAuthorID");
@@ -1374,19 +1389,23 @@ public final class SubscribedBoard extends Board {
 		}
 		
 		protected final SubscribedBoard getBoard() {
+			checkedActivate(1);
 			mBoard.initializeTransient(mFreetalk);
 			return mBoard;
 		}
 		
         public final String getAuthorID() {
+			checkedActivate(1); // String is a db4o primitive type so 1 is enough
         	return mAuthorID;
         }
 		
         public final String getThreadID() {
+			checkedActivate(1); // String is a db4o primitive type so 1 is enough
         	return mThreadID;
         }
         
         public final String getMessageID() {
+			checkedActivate(1); // String is a db4o primitive type so 1 is enough
         	return mMessageID;
         }
     	
@@ -1395,7 +1414,7 @@ public final class SubscribedBoard extends Board {
          * @throws MessageNotFetchedException If the message belonging to this reference was not fetched yet.
          */
         public final Message getMessage() throws MessageNotFetchedException {
-        	checkedActivate(2);
+        	checkedActivate(1);
         	if(mMessage == null)
         		throw new MessageNotFetchedException(mMessageID);
         	
@@ -1406,6 +1425,8 @@ public final class SubscribedBoard extends Board {
 		protected void setMessage(Message myMessage) {
 			if(myMessage == null)
 				throw new NullPointerException();
+			
+			checkedActivate(1); // Date/String are db4o primitive types so 1 is enough
 			
 			if(!mMessageID.equals(myMessage.getID()))
 				throw new IllegalArgumentException("mMessageID==" + mMessageID + " but new message ID == " + myMessage.getID());
@@ -1419,6 +1440,7 @@ public final class SubscribedBoard extends Board {
 			}
 			
 			mMessage = myMessage;
+			mMessage.initializeTransient(mFreetalk);
 			mTitle = mMessage.getTitle();
 			mDate = mMessage.getDate();
 			
@@ -1433,6 +1455,7 @@ public final class SubscribedBoard extends Board {
 		}
 		
 		protected void removeMessage() {
+			checkedActivate(1);
 			mMessage = null;
 			
 			mLastWantedCheckDate = null;
@@ -1441,6 +1464,7 @@ public final class SubscribedBoard extends Board {
 		}
 		
 		public final String getMessageTitle() {
+			checkedActivate(1); // String is a db4o primitive type so 1 is enough
 			return mTitle;
 		}
 		
@@ -1448,14 +1472,18 @@ public final class SubscribedBoard extends Board {
 			if(Message.isTitleValid(title))
 				throw new IllegalArgumentException("Title is not valid: " + title);
 			
+			checkedActivate(1);
 			mTitle = title;
 		}
         
         public final Date getMessageDate() {
+			checkedActivate(1); // Date is a db4o primitive type so 1 is enough
         	return mDate;
         }
         
     	protected void setMessageDate(Date date) {
+			checkedActivate(1); // Date is a db4o primitive type so 1 is enough
+			
     		if(date.after(mDate))
     			throw new RuntimeException("Increasing the date guess does not make sense");
     		
@@ -1466,18 +1494,22 @@ public final class SubscribedBoard extends Board {
          * This index number is needed for NNTP and for synchronization with client-applications: They can check whether they have all messages by querying
          * for the highest available index number. */
         public final int getIndex() {
+			checkedActivate(1); // int is a db4o primitive type so 1 is enough
         	return mIndex;
         }
         
 		public final boolean wasRead() {
+			checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 			return mWasRead;
 		}
 		
 		protected final void markAsRead() {
+			checkedActivate(1);
 			mWasRead = true;
 		}
 		
-		protected final void markAsUnread() { 
+		protected final void markAsUnread() {
+			checkedActivate(1);
 			mWasRead = false;
 		}
         
@@ -1486,7 +1518,7 @@ public final class SubscribedBoard extends Board {
          */
         protected final void storeWithoutCommit() {
         	try {
-        		checkedActivate(2);
+        		checkedActivate(1);
         		throwIfNotStored(mBoard);
         		if(mMessage != null) throwIfNotStored(mMessage);
 
@@ -1513,7 +1545,7 @@ public final class SubscribedBoard extends Board {
         }
         
     	protected final void deleteWithoutCommit(ExtObjectContainer db) {
-    		deleteWithoutCommit(2);
+    		deleteWithoutCommit(1);
 		}
     	
     	@Override
@@ -1525,8 +1557,8 @@ public final class SubscribedBoard extends Board {
     			message = null;
     		}
     		
-    		return super.toString() + " with mBoard: (" + getBoard() + "); mAuthorID: " + mAuthorID + "; mThreadID: " + mThreadID + "; mMessageID: " + mMessageID + 
-    			"; subscriber: (" + getBoard().getSubscriber() + "); mMessage: (" + message + "); mTitle: " + mTitle; 
+    		return super.toString() + " with mBoard: (" + getBoard() + "); mAuthorID: " + getAuthorID() + "; mThreadID: " + getThreadID() + "; mMessageID: " + getMessageID() + 
+    			"; subscriber: (" + getBoard().getSubscriber() + "); mMessage: (" + message + "); mTitle: " + getMessageTitle(); 
     	}
     }
     
@@ -1563,11 +1595,11 @@ public final class SubscribedBoard extends Board {
     	public void databaseIntegrityTest() throws Exception {
     		super.databaseIntegrityTest();
     		
-    		checkedActivate(3);
+			checkedActivate(1); // String is a db4o primitive type so 1 is enough
     		
     		try {
 	    		if(getMessage().isThread())
-	    			throw new IllegalStateException("mMessage is thread: " + mMessage);
+	    			throw new IllegalStateException("mMessage is thread: " + getMessage());
     		} catch(NoSuchMessageException e) {}
     		
     		if(mMessage == null) {
@@ -1626,7 +1658,7 @@ public final class SubscribedBoard extends Board {
     	public void databaseIntegrityTest() throws Exception {
     		super.databaseIntegrityTest();
     		
-    		checkedActivate(3);
+    		checkedActivate(1);
     		
     		IfNotEquals.thenThrow(mMessageID, mThreadID, "mMessageID");
     		
@@ -1641,8 +1673,10 @@ public final class SubscribedBoard extends Board {
 				if(!reply.wasRead())
 					threadWasRead = false;
 				
-    			if(reply.mMessage != null)
+				try {
+					reply.getMessage();
     				hasActuallyFetchedReplies = true;
+				} catch(NoSuchMessageException e) { }
     		}
     		
     		if(wasThreadRead() != threadWasRead)
@@ -1656,7 +1690,7 @@ public final class SubscribedBoard extends Board {
 			boolean wasThreadRead = wasRead();
 
 			if(wasThreadRead) {
-				for(BoardReplyLink reply : mBoard.getAllThreadReplies(mThreadID, false)) {
+				for(BoardReplyLink reply : getBoard().getAllThreadReplies(getThreadID(), false)) {
 					if(!reply.wasRead()) {
 						wasThreadRead = false;
 						break;
@@ -1678,7 +1712,8 @@ public final class SubscribedBoard extends Board {
     		
     		final Date newDate = newMessage.getDate();
     		
-    		checkedActivate(2);
+			checkedActivate(1); // Date is a db4o primitive type so 1 is enough
+			
     		if(mMessage == null) {
     			// The thread has not been downloaded, we adjust its date to be the date of the first reply
     			if(newDate.before(mDate))
@@ -1696,8 +1731,10 @@ public final class SubscribedBoard extends Board {
     		// optimize getAllThreadReplies() we should just iterate over the unsorted replies list and do maximum search.
 
     		// TODO: Put this in a function "computeLastReplyDate"....
+    		
+			checkedActivate(1); // String/Date are db4o primitive types so 1 is enough
 
-    		final ObjectSet<BoardReplyLink> replies = mBoard.getAllThreadReplies(mThreadID, true);
+    		final ObjectSet<BoardReplyLink> replies = getBoard().getAllThreadReplies(mThreadID, true);
 
     		if(!removedMessage.getDate().before(mLastReplyDate)) {
     			final int repliesCount = replies.size();
@@ -1744,11 +1781,12 @@ public final class SubscribedBoard extends Board {
 		}
 		
 		public Date getLastReplyDate() {
+			checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 			return mLastReplyDate;
 		}
 		
 		public void setMessage(Message myThread) {
-			if(myThread.getID().equals(mThreadID) == false)
+			if(myThread.getID().equals(getThreadID()) == false)
 				throw new IllegalArgumentException();
 			
 			super.setMessage(myThread);
@@ -1760,18 +1798,23 @@ public final class SubscribedBoard extends Board {
 		 * Gets the "thread was read flag". This is false if the thread contains a single unread message.
 		 */
 		public boolean wasThreadRead() {
+			checkedActivate(1);
 			return mWasThreadRead;
 		}
 		
 		private void markThreadAsRead() {
+			checkedActivate(1);
 			mWasThreadRead = true;
 		}
 		
 		private void markThreadAsUnread() {
+			checkedActivate(1);
 			mWasThreadRead = false;
 		}
 		
 		private void changeThreadAndRepliesReadStateAndCommit(boolean newReadState) {
+			checkedActivate(1);
+			
 			synchronized(mBoard) {
 			synchronized(mDB.lock()) {
 				try {
@@ -1788,7 +1831,7 @@ public final class SubscribedBoard extends Board {
 					storeWithoutCommit();
 
 					// Mark its replies as unread
-					for(BoardReplyLink reference : mBoard.getAllThreadReplies(mThreadID, false)) {
+					for(BoardReplyLink reference : getBoard().getAllThreadReplies(mThreadID, false)) {
 						if(reference.wasRead() != newReadState) {
 							// TODO: Encapsulate in BoardMessageLink
 							if(newReadState)

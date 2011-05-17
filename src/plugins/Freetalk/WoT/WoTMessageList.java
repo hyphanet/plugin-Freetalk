@@ -37,14 +37,14 @@ public final class WoTMessageList extends MessageList {
 	}
 	
 	public WoTIdentity getAuthor() {
-		checkedActivate(2);
+		checkedActivate(1);
 		final WoTIdentity author = (WoTIdentity)mAuthor;
 		author.initializeTransient(mFreetalk);
 		return author;
 	}
 
 	public FreenetURI getURI() {
-		return assembleURI(getAuthor().getRequestURI(), mIndex).sskForUSK();
+		return assembleURI(getAuthor().getRequestURI(), getIndex()).sskForUSK();
 	}
 	
 	protected FreenetURI generateURI(FreenetURI baseURI, long index) {
