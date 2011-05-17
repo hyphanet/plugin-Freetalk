@@ -98,7 +98,7 @@ public final class WoTMessageManager extends MessageManager {
 			throw new IllegalArgumentException("Author is no WoTOwnIdentity");
 
 		Date date = myDate!=null ? myDate : CurrentTimeUTC.get();
-		m = WoTOwnMessage.construct((WoTMessageURI)myParentThreadURI, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
+		m = WoTOwnMessage.construct(mFreetalk, (WoTMessageURI)myParentThreadURI, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
 		m.initializeTransient(mFreetalk);
 		synchronized(this) {
 			m.storeAndCommit();

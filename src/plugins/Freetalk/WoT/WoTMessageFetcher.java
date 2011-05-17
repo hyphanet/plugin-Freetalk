@@ -79,9 +79,9 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	private final WoTMessageXML mXML;
 	
 
-	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager,
+	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, Freetalk myFreetalk, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager,
 			WoTMessageXML myMessageXML) {
-		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
+		super(myNode, myClient, myName, myFreetalk, myIdentityManager, myMessageManager);
 		mRandom = mNode.fastWeakRandom;
 		requestClient = myMessageManager.mRequestClient;
 		mXML = myMessageXML;
@@ -203,7 +203,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			list = (WoTMessageList)mMessageManager.getMessageList(messageListID);
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
-			Message message = mXML.decode(mMessageManager, inputStream, list, state.getURI());
+			Message message = mXML.decode(mFreetalk, inputStream, list, state.getURI());
 			mMessageManager.onMessageReceived(message);
 			
 			fetchMoreMessages = true;

@@ -176,7 +176,9 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 	public WoTMessageURI clone() {
 		checkedActivate(1);
 		checkedActivate(mFreenetURI, 2);
-		return new WoTMessageURI(mFreenetURI, MessageID.construct(mMessageID));
+		final WoTMessageURI clone = new WoTMessageURI(mFreenetURI, MessageID.construct(mMessageID));
+		clone.initializeTransient(mFreetalk);
+		return clone;
 	}
 	
 }

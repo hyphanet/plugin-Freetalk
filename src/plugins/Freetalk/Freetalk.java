@@ -179,7 +179,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		
 		Logger.debug(this, "Creating message fetcher...");
 		mMessageFetcher = new WoTMessageFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageFetcher",
-				mIdentityManager, mMessageManager, mMessageXML);
+				this, mIdentityManager, mMessageManager, mMessageXML);
 		mMessageFetcher.start();
 		
 		Logger.debug(this, "Creating message inserter...");

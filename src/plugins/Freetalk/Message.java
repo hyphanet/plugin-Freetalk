@@ -390,7 +390,12 @@ public abstract class Message extends Persistent {
 	}
 
 
-	protected Message(MessageURI newURI, FreenetURI newFreenetURI, MessageID newID, MessageList newMessageList, MessageURI newThreadURI, MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+	protected Message(Freetalk myFreetalk, MessageURI newURI, FreenetURI newFreenetURI, MessageID newID, MessageList newMessageList, MessageURI newThreadURI, MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+		initializeTransient(myFreetalk);
+		if(newURI != null) newURI.initializeTransient(mFreetalk);
+		if(newThreadURI != null) newThreadURI.initializeTransient(mFreetalk);
+		if(newParentURI != null) newParentURI.initializeTransient(mFreetalk);
+
 		if(newURI != null) // May be null first for own messages
 			newURI.throwIfAuthorDoesNotMatch(newAuthor);
 		// newFreenetURI cannot be validated, it is allowed to be CHK
@@ -486,8 +491,10 @@ public abstract class Message extends Persistent {
 
 			mAttachments = newAttachments.toArray(new Attachment[newAttachments.size()]);
 			
-			for(Attachment a : mAttachments)
+			for(Attachment a : mAttachments) {
+				a.initializeTransient(mFreetalk);
 				a.setMessage(this);
+			}
 		} else {
 			mAttachments = null;
 		}
