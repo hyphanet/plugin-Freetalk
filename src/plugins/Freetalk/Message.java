@@ -465,9 +465,9 @@ public abstract class Message extends Persistent {
 		mReplyToBoard = newReplyToBoard;
 		mTitle = makeTitleValid(newTitle);
 
-		if(newDate.after(getFetchDate())) {
-			Logger.warning(this, "Received bogus message date: Now = " + getFetchDate() + "; message date = " + newDate + "; message=" + mURI);
-			mDate = getFetchDate();
+		if(newDate.after(mCreationDate)) { // mCreationDate == getFetchDate()
+			Logger.warning(this, "Received bogus message date: Now = " + mCreationDate + "; message date = " + newDate + "; message=" + mURI);
+			mDate = mCreationDate;
 		} else {
 			mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
 		}
