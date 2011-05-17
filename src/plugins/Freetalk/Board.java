@@ -101,7 +101,7 @@ public class Board extends Persistent implements Comparable<Board> {
      * @param newName The name of the board. For restrictions, see <code>isNameValid()</code>
      * @throws InvalidParameterException If none or an invalid name is given.
      */
-    public Board(String newName, String description) throws InvalidParameterException {
+    public Board(String newName, String description, boolean hasSubscriptions) throws InvalidParameterException {
         if(newName==null || newName.length() == 0)
             throw new IllegalArgumentException("Empty board name.");
         if(!isNameValid(newName))
@@ -110,7 +110,7 @@ public class Board extends Persistent implements Comparable<Board> {
         mID = UUID.randomUUID().toString();
         mName = newName.toLowerCase();
         mDescription = description != null ? description : "";
-        mHasSubscriptions = false;
+        mHasSubscriptions = hasSubscriptions;
     }
 
 	@Override

@@ -1295,7 +1295,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 			synchronized(tm) {
 			synchronized(db.lock()) {
 			try {
-				board = new Board(name, description);
+				board = new Board(name, description, false);
 				board.initializeTransient(mFreetalk);
 				board.storeWithoutCommit();
 				Logger.debug(this, "Created board " + name);

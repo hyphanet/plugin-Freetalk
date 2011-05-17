@@ -42,7 +42,7 @@ public final class SubscribedBoard extends Board {
 
 	
 	public SubscribedBoard(Board myParentBoard, OwnIdentity mySubscriber) throws InvalidParameterException {
-		super(myParentBoard.getName(), myParentBoard.getDescription(mySubscriber));
+		super(myParentBoard.getName(), myParentBoard.getDescription(mySubscriber), true);
 		
 		// .getName() does this for us.
 		// if(myParentBoard == null) throw new NullPointerException();
@@ -51,7 +51,6 @@ public final class SubscribedBoard extends Board {
 		
 		mParentBoard = myParentBoard;
 		mSubscriber = mySubscriber;
-		setHasSubscriptions(true); // For super.databaseIntegrityTest()
 	}
 	
     
