@@ -553,7 +553,9 @@ public abstract class Persistent {
 		}
 
 		public Object[] toArray() {
-			throw new UnsupportedOperationException("ObjectSet provides array functionality already.");
+			final Object[] result = mObjectSet.toArray();
+			for(final Object o : result) ((Persistent)o).initializeTransient(mFreetalk);
+			return result;
 		}
 
 		public <T> T[] toArray(final T[] a) {
