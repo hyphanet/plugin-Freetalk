@@ -999,14 +999,13 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 
 	
 	// TODO: This function should be a feature of WoT.
-	@SuppressWarnings("unchecked")
 	private synchronized void updateShortestUniqueNicknameCache() {
 		Logger.debug(this, "Updating shortest unique nickname cache...");
 		
 		// We don't use getAllIdentities() because we do not need to have intializeTransient() called on each identity, we only query strings anyway.
 		final Query q = db.query();
 		q.constrain(WoTIdentity.class);
-		ObjectSet<WoTIdentity> result = q.execute();
+		ObjectSet<WoTIdentity> result = new Persistent.InitializingObjectSet<WoTIdentity>(mFreetalk, q);
 		final WoTIdentity[] identities = result.toArray(new WoTIdentity[result.size()]);
 		
 		Arrays.sort(identities, new Comparator<WoTIdentity>() {
