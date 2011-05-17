@@ -303,6 +303,9 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         	WoTMessageRating.class,
         	WoTMessageURI.class,
         	WoTNewMessageListFetcher.FetcherCommand.class,
+        	WoTNewMessageListFetcher.StartFetchCommand.class,
+        	WoTNewMessageListFetcher.AbortFetchCommand.class,
+        	WoTNewMessageListFetcher.UpdateEditionHintCommand.class,
         	WoTOwnIdentity.class,
         	WoTOwnMessage.class,
         	WoTOwnMessageList.class
