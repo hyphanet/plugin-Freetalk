@@ -32,11 +32,15 @@ public final class SubscribeToAllBoardsTask extends PersistentTask {
 	@Override
 	public void databaseIntegrityTest() throws Exception {
 		super.databaseIntegrityTest();
+		
+		checkedActivate(1);
 		IfNull.thenThrow(mOwner);
 	}
 
 	@Override
 	protected void process() {
+		checkedActivate(1);
+		
 		mNextProcessingTime = Long.MAX_VALUE;
 		mDeleteTime = 0;
 		
@@ -45,7 +49,7 @@ public final class SubscribeToAllBoardsTask extends PersistentTask {
 		// TODO: Optimization: Use unsorted iterator, there is none right now.
 		for(Board board : messageManager.boardIteratorSortedByName()) {
 			try {
-				messageManager.subscribeToBoard(mOwner, board.getName()); // Does not throw if subscription exists.
+				messageManager.subscribeToBoard(getOwner(), board.getName()); // Does not throw if subscription exists.
 			} catch(Exception e) {
 				mNextProcessingTime = CurrentTimeUTC.getInMillis() + 10 * 60 * 1000;
 				mDeleteTime = Long.MAX_VALUE;

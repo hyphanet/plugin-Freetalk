@@ -23,9 +23,11 @@ import plugins.Freetalk.WoT.WoTOldMessageListFetcher;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.WoT.WoTOwnMessage;
 import plugins.Freetalk.WoT.WoTOwnMessageList;
+import plugins.Freetalk.tasks.NewBoardTask;
 import plugins.Freetalk.tasks.OwnMessageTask;
 import plugins.Freetalk.tasks.PersistentTask;
 import plugins.Freetalk.tasks.PersistentTaskManager;
+import plugins.Freetalk.tasks.SubscribeToAllBoardsTask;
 import plugins.Freetalk.tasks.WoT.IntroduceIdentityTask;
 import plugins.Freetalk.ui.FCP.FCPInterface;
 import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
@@ -298,6 +300,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         	PersistentTask.class,
         	OwnMessageTask.class,
         	IntroduceIdentityTask.class,
+        	NewBoardTask.class,
+        	SubscribeToAllBoardsTask.class,
         	WoTIdentity.class,
         	WoTMessage.class,
         	WoTMessageList.class,
