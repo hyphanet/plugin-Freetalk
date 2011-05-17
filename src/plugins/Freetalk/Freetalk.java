@@ -281,6 +281,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         	Board.DownloadedMessageLink.class,
         	Configuration.class,
         	FetchFailedMarker.class,
+        	IdentityStatistics.class,
         	Message.class,
         	Message.Attachment.class,
         	MessageList.class,
