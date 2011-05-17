@@ -152,7 +152,7 @@ public final class WoTMessageListXML {
 	/**
 	 * @param inputStream An InputStream which must not return more than {@link MAX_XML_SIZE} bytes.
 	 */
-	public WoTMessageList decode(WoTMessageManager messageManager, WoTIdentity author, FreenetURI uri, InputStream inputStream) throws Exception {
+	public WoTMessageList decode(Freetalk freetalk, WoTIdentity author, FreenetURI uri, InputStream inputStream) throws Exception {
 		// May not be accurate by definition of available(). So the JavaDoc requires the callers to obey the size limit, this is a double-check.
 		if(inputStream.available() > MAX_XML_SIZE)
 			throw new IllegalArgumentException("XML contains too many bytes: " + inputStream.available());
@@ -211,13 +211,13 @@ public final class WoTMessageListXML {
 			
 			for(int boardIndex = 0; boardIndex < boardElements.getLength(); ++boardIndex) {
 				final Element boardElement = (Element)boardElements.item(boardIndex);
-				messageBoards.add(messageManager.getOrCreateBoard(boardElement.getAttribute("Name")));
+				messageBoards.add(freetalk.getMessageManager().getOrCreateBoard(boardElement.getAttribute("Name")));
 			}
 			
 			for(final Board board : messageBoards)
 				messages.add(new MessageList.MessageReference(messageID, messageURI, board, messageDate));
 		}
 		
-		return new WoTMessageList(author, uri, messages);
+		return new WoTMessageList(freetalk, author, uri, messages);
 	}
 }

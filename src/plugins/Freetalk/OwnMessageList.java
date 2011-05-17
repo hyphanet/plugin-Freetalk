@@ -85,7 +85,8 @@ public abstract class OwnMessageList extends MessageList {
 			if(newMessage.getAuthor() != mAuthor)
 				throw new IllegalStateException("Trying to add a message with wrong author " + newMessage.getAuthor() + " to an own message list of " + getAuthor());
 			
-			OwnMessageReference ref = new OwnMessageReference(newMessage);
+			final OwnMessageReference ref = new OwnMessageReference(newMessage);
+			ref.initializeTransient(mFreetalk);
 			checkedActivate(mMessages, 2);
 			mMessages.add(ref);
 			if(mMessages.size() > 1 && fitsIntoContainer() == false) {

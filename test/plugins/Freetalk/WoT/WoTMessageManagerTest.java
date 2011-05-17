@@ -131,7 +131,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		List<MessageList.MessageReference> references = new ArrayList<MessageList.MessageReference>(2);
 		references.add(messageRef);
 		
-		WoTMessageList list = new WoTMessageList(author, uri, references);
+		WoTMessageList list = new WoTMessageList(mFreetalk, author, uri, references);
 		list.initializeTransient(mFreetalk);
 		list.storeWithoutCommit();
 		Persistent.checkedCommit(db, this);

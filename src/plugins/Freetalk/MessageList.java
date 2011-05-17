@@ -451,10 +451,10 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	 * @throws InvalidParameterException
 	 * @throws NoSuchIdentityException
 	 */
-	public MessageList(final Identity myAuthor, final FreenetURI myURI, final List<MessageReference> newMessages)
+	public MessageList(Freetalk myFreetalk, final Identity myAuthor, final FreenetURI myURI, final List<MessageReference> newMessages)
 		throws InvalidParameterException, NoSuchIdentityException {
 		
-		this(myAuthor, myURI, new ArrayList<MessageReference>(newMessages));
+		this(myFreetalk, myAuthor, myURI, new ArrayList<MessageReference>(newMessages));
 		
 		if(mMessages.size() < 1)
 			throw new IllegalArgumentException("Trying to construct a message list with no messages.");
@@ -488,6 +488,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		HashMap<String, MessageInfo> messages = new HashMap<String, MessageInfo>(newMessages.size() * 2);
 		
 		for(MessageReference ref : mMessages) {
+			ref.initializeTransient(mFreetalk);
 			ref.setMessageList(this);
 			
 			 // Don't use getter methods because initializeTransient does not happen before the constructor
@@ -521,17 +522,19 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	 * @param myAuthor
 	 * @param myURI
 	 */
-	public MessageList(Identity myAuthor, FreenetURI myURI) {
-		this(myAuthor, myURI, new ArrayList<MessageReference>(0));
+	public MessageList(Freetalk myFreetalk, Identity myAuthor, FreenetURI myURI) {
+		this(myFreetalk, myAuthor, myURI, new ArrayList<MessageReference>(0));
 	}
 	
 	/**
 	 * General constructor for being used by public constructors.
 	 */
-	protected MessageList(Identity myAuthor, FreenetURI myURI, ArrayList<MessageReference> newMessages) {
+	protected MessageList(Freetalk myFreetalk, Identity myAuthor, FreenetURI myURI, ArrayList<MessageReference> newMessages) {
+		initializeTransient(myFreetalk);
+		
 		if(myURI == null)
 			throw new IllegalArgumentException("Trying to construct a MessageList with null URI.");
-		
+				
 		final MessageListID myID = new MessageListID(myURI);
 		myID.throwIfAuthorDoesNotMatch(myAuthor);
 		

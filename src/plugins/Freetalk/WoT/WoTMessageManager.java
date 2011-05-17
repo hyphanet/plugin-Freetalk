@@ -135,7 +135,7 @@ public final class WoTMessageManager extends MessageManager {
 	}
 	
 	public synchronized void onMessageListFetchFailed(Identity author, FreenetURI uri, FetchFailedMarker.Reason reason) {
-		WoTMessageList ghostList = new WoTMessageList(author, uri);
+		WoTMessageList ghostList = new WoTMessageList(mFreetalk, author, uri);
 		ghostList.initializeTransient(mFreetalk);
 		MessageList.MessageListFetchFailedMarker marker;
 		
@@ -253,6 +253,7 @@ public final class WoTMessageManager extends MessageManager {
 		
 		WoTOwnIdentity author = (WoTOwnIdentity)message.getAuthor();
 		WoTOwnMessageList list = new WoTOwnMessageList(author, getFreeOwnMessageListIndex(author));
+		list.initializeTransient(mFreetalk);
 		
 		// TODO: Optimization: This is debug code which was added on 2011-02-13 for preventing DuplicateMessageListException, it can be removed after some months if they do not happen.
 		try {
@@ -260,7 +261,6 @@ public final class WoTMessageManager extends MessageManager {
 			throw new RuntimeException("getFreeOwnMessageListIndex reported non-free index, taken by: " + existingList);
 		} catch(NoSuchMessageListException e) {}
 		
-		list.initializeTransient(mFreetalk);
 		list.addMessage(message);
 		list.storeWithoutCommit();
 		Logger.debug(this, "Found no list with free space, created the new list " + list.getID() + " for own message " + message.getID());

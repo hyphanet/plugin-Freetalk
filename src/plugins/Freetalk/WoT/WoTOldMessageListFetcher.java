@@ -65,7 +65,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	 */
 	private static final int IDENTITIES_LRU_QUEUE_SIZE_LIMIT = 1024;
 
-	
+	private final Freetalk mFreetalk;
 	private final WoTIdentityManager mIdentityManager;
 	private final WoTMessageManager mMessageManager;
 	private final ClientContext clientContext;
@@ -80,6 +80,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	public WoTOldMessageListFetcher(Freetalk myFreetalk, String myName, WoTMessageListXML myMessageListXML) {
 		super(myFreetalk.getPluginRespirator().getNode(), myFreetalk.getPluginRespirator().getHLSimpleClient(), myName);
 		
+		mFreetalk = myFreetalk;
 		mIdentityManager = myFreetalk.getIdentityManager();
 		mMessageManager = myFreetalk.getMessageManager();
 		clientContext = mNode.clientCore.clientContext;
@@ -224,7 +225,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 				
 				synchronized(mMessageManager) {
 					try {
-						WoTMessageList list = mXML.decode(mMessageManager, identity, state.getURI(), inputStream);
+						WoTMessageList list = mXML.decode(mFreetalk, identity, state.getURI(), inputStream);
 						mMessageManager.onMessageListReceived(list);
 						fetchMoreLists = true;
 					}

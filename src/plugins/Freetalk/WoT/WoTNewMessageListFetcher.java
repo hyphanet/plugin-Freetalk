@@ -510,7 +510,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 				
 				synchronized(mMessageManager) {
 					try {
-						WoTMessageList list = mXML.decode(mMessageManager, identity, uri, inputStream);
+						WoTMessageList list = mXML.decode(mFreetalk, identity, uri, inputStream);
 						mMessageManager.onMessageListReceived(list);
 					}
 					catch (Exception e) {

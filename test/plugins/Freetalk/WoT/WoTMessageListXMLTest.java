@@ -138,7 +138,7 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 		{
 			ByteArrayInputStream is = new ByteArrayInputStream(mHardcodedEncodedMessageList.getBytes("UTF-8"));
 			WoTOwnMessageList messageList = (WoTOwnMessageList)mMessageManager.getOwnMessageList(mMessageListID);
-			decodedList = mXML.decode(mMessageManager, messageList.getAuthor(), messageList.getURI(), is);
+			decodedList = mXML.decode(mFreetalk, messageList.getAuthor(), messageList.getURI(), is);
 			decodedList.initializeTransient(mFreetalk);
 		}
 

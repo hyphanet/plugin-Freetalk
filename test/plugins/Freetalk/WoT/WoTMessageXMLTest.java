@@ -72,7 +72,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 			messageReferences.add(new MessageList.MessageReference(myParentID, myParentFreenetURI, board, CurrentTimeUTC.get()));
 			messageReferences.add(new MessageList.MessageReference(myMessageID, mMessageFreenetURI, board, CurrentTimeUTC.get()));
 		}
-		WoTMessageList messageList = new WoTMessageList(myAuthor, WoTMessageList.assembleURI(authorRequestSSK, 123), messageReferences);
+		WoTMessageList messageList = new WoTMessageList(mFreetalk, myAuthor, WoTMessageList.assembleURI(authorRequestSSK, 123), messageReferences);
 		messageList.initializeTransient(mFreetalk);
 		messageList.storeWithoutCommit();
 		Persistent.checkedCommit(db, this);

@@ -19,14 +19,14 @@ import freenet.keys.FreenetURI;
 //@IndexedField // I can't think of any query which would need to get all WoTMessageList objects.
 public final class WoTMessageList extends MessageList {
 
-	public WoTMessageList(Identity myAuthor, FreenetURI myURI, List<MessageReference> newMessages) throws InvalidParameterException,
+	public WoTMessageList(Freetalk myFreetalk, Identity myAuthor, FreenetURI myURI, List<MessageReference> newMessages) throws InvalidParameterException,
 			NoSuchIdentityException {
-		super(myAuthor, myURI, newMessages);
+		super(myFreetalk, myAuthor, myURI, newMessages);
 		// TODO Auto-generated constructor stub
 	}
 
-	public WoTMessageList(Identity myAuthor, FreenetURI myURI) {
-		super(myAuthor, myURI);
+	public WoTMessageList(Freetalk myFreetalk, Identity myAuthor, FreenetURI myURI) {
+		super(myFreetalk, myAuthor, myURI);
 	}
 	
 	public void databaseIntegrityTest() throws Exception {
