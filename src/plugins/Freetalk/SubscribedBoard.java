@@ -890,13 +890,12 @@ public final class SubscribedBoard extends Board {
     	Logger.normal(this, "Finished checking the wanted-state of " + count +" wanted messages");
     }
     
-    @SuppressWarnings("unchecked")
 	public synchronized int getFirstMessageIndex() throws NoSuchMessageException {
     	final Query q = mDB.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mIndex").orderAscending();
-        ObjectSet<BoardMessageLink> result = q.execute();
+        final ObjectSet<BoardMessageLink> result = new Persistent.InitializingObjectSet<SubscribedBoard.BoardMessageLink>(mFreetalk, q);
         
         if(result.size() == 0)
         	throw new NoSuchMessageException();
@@ -904,13 +903,12 @@ public final class SubscribedBoard extends Board {
         return result.next().getIndex();
     }
 
-    @SuppressWarnings("unchecked")
 	public synchronized int getLastMessageIndex() throws NoSuchMessageException {
     	final Query q = mDB.query();
         q.constrain(BoardMessageLink.class);
         q.descend("mBoard").constrain(this).identity();
         q.descend("mIndex").orderDescending();
-        ObjectSet<BoardMessageLink> result = q.execute();
+        final ObjectSet<BoardMessageLink> result = new Persistent.InitializingObjectSet<SubscribedBoard.BoardMessageLink>(mFreetalk, q);
         
         if(result.size() == 0)
         	throw new NoSuchMessageException();
