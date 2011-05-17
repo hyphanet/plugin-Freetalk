@@ -427,6 +427,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			try {
 				System.gc();
 				db.rollback();
+				System.gc();
 				db.close();
 				db = null;
 			}
