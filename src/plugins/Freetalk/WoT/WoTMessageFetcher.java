@@ -126,6 +126,10 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		fetchMessages();
 	}
 	
+	public int getRunningFetchCount() {
+		return fetchCount();
+	}
+	
 	/**
 	 * Checks the database for unfetched messages and starts message fetches until this fetches is running the maximum of MAX_PARALLEL_MESSAGE_FETCH_COUNT fetches.
 	 * Does not abort fetches which were started by previous calls to this function: We use a finite retry count for each started fetch so the node should

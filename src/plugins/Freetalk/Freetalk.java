@@ -592,6 +592,18 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public PersistentTaskManager getTaskManager() {
 		return mTaskManager;
 	}
+	
+	public WoTNewMessageListFetcher getNewMessageListFetcher() {
+		return mNewMessageListFetcher;
+	}
+	
+	public WoTOldMessageListFetcher getOldMessageListFetcher() {
+		return mOldMessageListFetcher;
+	}
+	
+	public WoTMessageFetcher getMessageFetcher() {
+		return mMessageFetcher;
+	}	
 
 	public String getVersion() {
 		return Version.longVersionString;

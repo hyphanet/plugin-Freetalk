@@ -127,6 +127,10 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	protected void iterate() {
 		fetchMessageLists();
 	}
+	
+	public int getRunningFetchCount() {
+		return fetchCount();
+	}
 
 	/**
 	 * Starts fetches of MessageLists from MAX_PARALLEL_MESSAGELIST_FETCH_COUNT different identities. For each identity, it is attempted to start a fetch

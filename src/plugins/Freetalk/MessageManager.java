@@ -1545,8 +1545,25 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		query.descend("mCreationDate").orderDescending();
 		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query);
 	}
+	
+	/**
+	 * Gets the amount of all downloadable messages. This are the messages which where referenced in any non-own message list.
+	 * Messages which are posted to multiple boards are counted multiple times, once for each board.
+	 */
+	public final synchronized int countNonOwnMessageListMessageReferences() {
+		final Query query = db.query();
+		query.constrain(MessageList.MessageReference.class);
+		query.constrain(OwnMessageList.OwnMessageReference.class).not();
+		return query.execute().size();
+	}
 
-
+	public final synchronized int countNonOwnMessageLists() {
+		final Query query = db.query();
+		query.constrain(MessageList.class);
+		query.constrain(OwnMessageList.class).not();
+		return query.execute().size();
+	}
+	
 	/**
 	 * Get a list of all message lists from the given identity.
 	 * If the identity is an {@link OwnIdentity}, it's own message lists are only returned if they have been downloaded as normal message lists.
@@ -1666,6 +1683,12 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 			case 0: throw new NoSuchObjectException();
 			default: throw new DuplicateElementException("Duplicate IdentityStatistics for " + identity);
 		}
+	}
+	
+	public final ObjectSet<IdentityStatistics> getAllIdentityStatistics() {
+		final Query query = db.query();
+		query.constrain(IdentityStatistics.class);
+		return new Persistent.InitializingObjectSet<IdentityStatistics>(mFreetalk, query);
 	}
 	
 	/**

@@ -6,4 +6,6 @@ package plugins.Freetalk;
 
 public interface MessageListFetcher {
 
+	public int getRunningFetchCount();
+	
 }

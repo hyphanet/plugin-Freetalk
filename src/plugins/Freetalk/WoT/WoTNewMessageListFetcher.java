@@ -399,6 +399,10 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		updateEditionHint(retriever, editionHint);
 	}
 	
+	public int getRunningFetchCount() {
+		return mRequests.size();
+	}
+	
 	private synchronized void abortFetch(String identityID) {
 		USKRetriever retriever = mRequests.remove(identityID);
 

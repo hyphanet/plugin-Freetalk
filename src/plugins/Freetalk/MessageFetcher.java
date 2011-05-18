@@ -21,4 +21,6 @@ public abstract class MessageFetcher extends TransferThread {
 		mIdentityManager = myIdentityManager;
 		mMessageManager = myMessageManager;
 	}
+	
+	public abstract int getRunningFetchCount();
 }

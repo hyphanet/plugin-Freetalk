@@ -62,6 +62,7 @@ public final class WebInterface {
 	private final WebInterfaceToadlet outboxToadlet;
 	private final WebInterfaceToadlet identitiesToadlet;
 	private final WebInterfaceToadlet settingsToadlet;
+	private final WebInterfaceToadlet statisticsToadlet;
 	private final WebInterfaceToadlet logOutToadlet;
 	
 	// Invisible
@@ -211,6 +212,26 @@ public final class WebInterface {
 	        return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
 	    }
 	}
+	
+	// TODO: Show in advanced mode only
+	final class StatisticsToadlet extends WebInterfaceToadlet {
+	    
+	    protected StatisticsToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
+	        super(client, wi, core, pageTitle);
+	    }
+	    
+	    @Override
+	    WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+	        return new StatisticsPage(webInterface, getLoggedInOwnIdentity(context), req);
+	    }
+	    
+	    @Override
+	    public boolean isEnabled(ToadletContext ctx) {
+	        return super.isEnabled(ctx) && mSessionManager.sessionExists(ctx);
+	    }
+	    
+	}
+	
 	
 	protected final URI logIn;
 	
@@ -733,6 +754,7 @@ public final class WebInterface {
 		outboxToadlet = new OutboxWebInterfaceToadlet(null, this, clientCore, "Outbox");
 		identitiesToadlet = new IdentitiesWebInterfaceToadlet(null, this, clientCore, "identities");
 		settingsToadlet = new SettingsWebInterfaceToadlet(null, this, clientCore, "Settings");
+		statisticsToadlet = new StatisticsToadlet(null, this, clientCore, "Statistics");
 		logOutToadlet = new LogOutWebInterfaceToadlet(null, this, clientCore, "LogOut");
 
 		container.register(homeToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/", true, "WebInterface.DiscussionMenuItem.Home", "WebInterface.DiscussionMenuItem.Home.Tooltip", false, homeToadlet);
@@ -742,6 +764,7 @@ public final class WebInterface {
 		container.register(outboxToadlet, "WebInterface.DiscussionMenuName", OutboxPage.getURI(), true, "WebInterface.DiscussionMenuItem.Outbox", "WebInterface.DiscussionMenuItem.Outbox.Tooltip", false, outboxToadlet);
 		container.register(identitiesToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/identities", true, "WebInterface.DiscussionMenuItem.Identities", "WebInterface.DiscussionMenuItem.Identities.Tooltip", false, identitiesToadlet);
 		container.register(settingsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/Settings", true, "WebInterface.DiscussionMenuItem.Settings", "WebInterface.DiscussionMenuItem.Settings.Tooltip", false, settingsToadlet);
+		container.register(statisticsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/Statistics", true, "WebInterface.DiscussionMenuItem.Statistics", "WebInterface.DiscussionMenuItem.Statistics.Tooltip", true, statisticsToadlet);
 		container.register(logOutToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/LogOut", true, "WebInterface.DiscussionMenuItem.LogOut", "WebInterface.DiscussionMenuItem.LogOut.Tooltip", false, logOutToadlet);
 		
 		// Invisible pages
@@ -791,6 +814,7 @@ public final class WebInterface {
 				outboxToadlet,
 				identitiesToadlet,
 				settingsToadlet,
+				statisticsToadlet,
 				logOutToadlet,
 				logInToadlet,
 				createIdentityToadlet,
