@@ -6,6 +6,7 @@ package plugins.Freetalk.ui.NNTP;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import plugins.Freetalk.Board;
@@ -14,7 +15,6 @@ import plugins.Freetalk.Message;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.support.Logger;
-import java.util.regex.Matcher;
 
 /**
  * Object representing a single news article.
@@ -48,6 +48,17 @@ public class FreetalkNNTPArticle {
 	private String parsedMessageBody = null;
 
 	private final int mMessageIndex;
+	
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(FreetalkNNTPArticle.class);
+	}
+	
 
 	public FreetalkNNTPArticle(final Message message) {
 		this.mMessage = message;
@@ -239,7 +250,7 @@ public class FreetalkNNTPArticle {
 	public String getBody() {
 		if(this.parsedMessageBody == null) {
 			this.parsedMessageBody = parseBBCodeToNNTPQuotes(mMessage.getText());
-			Logger.debug(this, this.parsedMessageBody);
+			if(logDEBUG) Logger.debug(this, this.parsedMessageBody);
 		}
 		return this.parsedMessageBody;
 	}

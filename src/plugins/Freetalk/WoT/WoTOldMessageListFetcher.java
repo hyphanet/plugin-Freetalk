@@ -77,6 +77,16 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	
 	private final WoTMessageListXML mXML;
 	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(WoTOldMessageListFetcher.class);
+	}
+	
+	
 	public WoTOldMessageListFetcher(Freetalk myFreetalk, String myName, WoTMessageListXML myMessageListXML) {
 		super(myFreetalk.getPluginRespirator().getNode(), myFreetalk.getPluginRespirator().getHLSimpleClient(), myName);
 		
@@ -128,11 +138,11 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 		final int fetchCount = fetchCount();
 		
 		if(fetchCount >= MAX_PARALLEL_MESSAGELIST_FETCH_COUNT) { // Check before we do the expensive database query.
-			Logger.debug(this, "Got " + fetchCount + " fetches, not fetching any more.");
+			if(logDEBUG) Logger.debug(this, "Got " + fetchCount + " fetches, not fetching any more.");
 			return;
 		}
 		
-		Logger.debug(this, "Trying to start more message list fetches, amount of fetches now: " + fetchCount);
+		if(logDEBUG) Logger.debug(this, "Trying to start more message list fetches, amount of fetches now: " + fetchCount);
 		
 		fetchMessageListsCore();
 		
@@ -286,7 +296,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 					break;
 				
 				case FetchException.CANCELLED:
-					Logger.debug(this, "Cancelled downloading MessageList " + state.getURI());
+					if(logDEBUG) Logger.debug(this, "Cancelled downloading MessageList " + state.getURI());
 					break;
 					
 				default:

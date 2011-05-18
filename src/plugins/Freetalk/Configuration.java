@@ -55,6 +55,16 @@ public final class Configuration extends Persistent {
 	 * The {@link HashMap} that contains all {@link Integer} configuration parameters
 	 */
 	private final HashMap<String, Integer> mIntParams;
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(Configuration.class);
+	}
+	
 
 	/**
 	 * Creates a new Config object and stores the default values in it.
@@ -94,7 +104,7 @@ public final class Configuration extends Persistent {
 			ObjectSet<Configuration> result = db.queryByExample(Configuration.class);
 			
 			if(result.size() == 0) {
-				Logger.debug(myFreetalk, "Creating new Config...");
+				if(logDEBUG) Logger.debug(myFreetalk, "Creating new Config...");
 				config = new Configuration(myFreetalk);
 				config.storeAndCommit();
 			}
@@ -102,7 +112,7 @@ public final class Configuration extends Persistent {
 				if(result.size() > 1) /* Do not throw, we do not want to prevent Freetalk from starting up. */
 					Logger.error(myFreetalk, "Multiple config objects stored!");
 				
-				Logger.debug(myFreetalk, "Loaded config.");
+				if(logDEBUG) Logger.debug(myFreetalk, "Loaded config.");
 				config = result.next();
 				config.initializeTransient(myFreetalk);
 				config.checkedActivate(4);

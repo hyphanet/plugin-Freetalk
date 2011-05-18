@@ -25,7 +25,6 @@ import plugins.Freetalk.OwnMessageList;
 import plugins.Freetalk.Persistent;
 import plugins.Freetalk.Persistent.InitializingObjectSet;
 import plugins.Freetalk.exceptions.DuplicateElementException;
-import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
@@ -48,6 +47,16 @@ public final class WoTMessageManager extends MessageManager {
 	
 	/** One for all requests for WoTMessage*, for fairness. */
 	final RequestClient mRequestClient;
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(WoTMessageManager.class);
+	}
+	
 
 	public WoTMessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager, Freetalk myFreetalk, PluginRespirator myPluginRespirator) {
 		super(myDB, myIdentityManager, myFreetalk, myPluginRespirator);
@@ -242,12 +251,12 @@ public final class WoTMessageManager extends MessageManager {
 				list.addMessage(message);
 				list.storeWithoutCommit();
 				}
-				Logger.debug(this, "Added own message " + message + " to list " + list);
+				if(logDEBUG) Logger.debug(this, "Added own message " + message + " to list " + list);
 				return;
 			}
 			catch(RuntimeException e) {
 				/* The list is full. */
-				Logger.debug(this, "Not adding message " + message.getID() + " to message list " + list.getID(), e);
+				if(logDEBUG) Logger.debug(this, "Not adding message " + message.getID() + " to message list " + list.getID(), e);
 			}
 		}
 		
@@ -263,7 +272,7 @@ public final class WoTMessageManager extends MessageManager {
 		
 		list.addMessage(message);
 		list.storeWithoutCommit();
-		Logger.debug(this, "Found no list with free space, created the new list " + list.getID() + " for own message " + message.getID());
+		if(logDEBUG) Logger.debug(this, "Found no list with free space, created the new list " + list.getID() + " for own message " + message.getID());
 	}
 
 	/**

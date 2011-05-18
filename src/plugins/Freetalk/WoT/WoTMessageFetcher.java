@@ -78,6 +78,15 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	
 	private final WoTMessageXML mXML;
 	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(WoTMessageFetcher.class);
+	}
+	
 
 	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, Freetalk myFreetalk, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager,
 			WoTMessageXML myMessageXML) {
@@ -128,11 +137,11 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		final int fetchCount = fetchCount();
 		
 		if(fetchCount >= MAX_PARALLEL_MESSAGE_FETCH_COUNT) { // Check before we do the expensive database query.
-			Logger.minor(this, "Got " + fetchCount + "fetches, not fetching any more.");
+			if(logMINOR) Logger.minor(this, "Got " + fetchCount + "fetches, not fetching any more.");
 			return;
 		}
 		
-		Logger.minor(this, "Trying to start more message fetches, amount of fetches now: " + fetchCount);
+		if(logMINOR) Logger.minor(this, "Trying to start more message fetches, amount of fetches now: " + fetchCount);
 		
 		synchronized(mIdentityManager) { // TODO: Get rid of this lock by making anyOwnIdentityWantsMessagesFrom use a cache
 		synchronized(mMessageManager) { 
@@ -264,7 +273,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 					break;
 					
 				case FetchException.CANCELLED:
-					Logger.debug(this, "Cancelled downloading Message " + state.getURI());
+					if(logDEBUG) Logger.debug(this, "Cancelled downloading Message " + state.getURI());
 					break;
 					
 				default:

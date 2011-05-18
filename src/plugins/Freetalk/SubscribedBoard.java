@@ -39,6 +39,15 @@ public final class SubscribedBoard extends Board {
 	 * Index of the latest message which this board has pulled from it's parent board. 
 	 */
 	private int	mHighestSynchronizedParentMessageIndex = 0;
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(SubscribedBoard.class);
+	}
 
 	
 	public SubscribedBoard(Board myParentBoard, OwnIdentity mySubscriber) throws InvalidParameterException {
@@ -219,11 +228,11 @@ public final class SubscribedBoard extends Board {
 		
 		try {
 			UnwantedMessageLink link = getUnwantedMessageLink(newMessage);
-			Logger.minor(this, "Updating UnwantedMessageLink for " + newMessage);
+			if(logMINOR) Logger.minor(this, "Updating UnwantedMessageLink for " + newMessage);
 			link.countRetry();
 			link.storeWithoutCommit();
 		} catch(NoSuchMessageException e) {
-			Logger.minor(this, "Storing UnwantedMessageLink for " + newMessage);
+			if(logMINOR) Logger.minor(this, "Storing UnwantedMessageLink for " + newMessage);
 			UnwantedMessageLink link = new UnwantedMessageLink(this, newMessage);
 			link.initializeTransient(mFreetalk);
 			link.storeWithoutCommit();
@@ -237,17 +246,17 @@ public final class SubscribedBoard extends Board {
      * Deletes it if yes, if not, does nothing.
      */
     private final void maybeDeleteUnwantedMessageLink(Message newMessage) {
-    	Logger.minor(this, "maybeDeleteUnwantedMessageLink " + newMessage);
+    	if(logMINOR) Logger.minor(this, "maybeDeleteUnwantedMessageLink " + newMessage);
     	
 		try {
 			UnwantedMessageLink link = getUnwantedMessageLink(newMessage);
-			Logger.minor(this, "Link found, deleting: " + link);
+			if(logMINOR) Logger.minor(this, "Link found, deleting: " + link);
 			link.deleteWithoutCommit();
 		} catch(NoSuchMessageException e) {
-			Logger.minor(this, "No link found.");
+			if(logMINOR) Logger.minor(this, "No link found.");
 		}
 		
-		Logger.minor(this, "maybeDeleteUnwantedMessageLink finished.");
+		if(logMINOR) Logger.minor(this, "maybeDeleteUnwantedMessageLink finished.");
     }
     
     /**
@@ -846,7 +855,7 @@ public final class SubscribedBoard extends Board {
     	
     	if(Logger.shouldLog(Logger.LogLevel.DEBUG, this)) {
     		final int remaining = getAllUnwantedMessages().size();
-    		Logger.debug(this, "Remaining unwanted count: " + remaining);
+    		if(logDEBUG) Logger.debug(this, "Remaining unwanted count: " + remaining);
     	}
     }
     

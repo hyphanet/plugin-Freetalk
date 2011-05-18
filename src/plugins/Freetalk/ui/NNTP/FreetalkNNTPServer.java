@@ -40,6 +40,16 @@ public final class FreetalkNNTPServer implements Runnable {
 	private volatile boolean mIsRunning;
 
 	private final ArrayList<FreetalkNNTPHandler> clientHandlers;
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(FreetalkNNTPServer.class);
+	}
+	
 
 	public FreetalkNNTPServer(Freetalk ft, int port, String bindTo, String allowedHosts) {
 		mFreetalk = ft;
@@ -52,7 +62,7 @@ public final class FreetalkNNTPServer implements Runnable {
 	}
 	
 	public void start() {
-		Logger.debug(this, "Starting...");
+		if(logDEBUG) Logger.debug(this, "Starting...");
 		mIsRunning = true;
 		mFreetalk.getPluginRespirator().getNode().executor.execute(this, "Freetalk " + this.getClass().getSimpleName());
 		synchronized(this) {
@@ -62,14 +72,14 @@ public final class FreetalkNNTPServer implements Runnable {
 				} catch(InterruptedException e) { }
 			}
 		}
-		Logger.debug(this, "Started.");
+		if(logDEBUG) Logger.debug(this, "Started.");
 	}
 
 	/**
 	 * Shut down the server and disconnect any currently-connected clients.
 	 */
 	public void terminate() {
-		Logger.debug(this, "Terminating...");
+		if(logDEBUG) Logger.debug(this, "Terminating...");
 		
 		mIsRunning = false;
 		
@@ -82,14 +92,14 @@ public final class FreetalkNNTPServer implements Runnable {
 			}
 		}
 		
-		Logger.debug(this, "Terminated.");
+		if(logDEBUG) Logger.debug(this, "Terminated.");
 	}
 
 	/**
 	 * Main server connection loop
 	 */
 	public void run() {
-		Logger.debug(this, "Main loop started.");
+		if(logDEBUG) Logger.debug(this, "Main loop started.");
 		synchronized(this) {
 			mThread = Thread.currentThread();
 			notifyAll();
@@ -124,7 +134,7 @@ public final class FreetalkNNTPServer implements Runnable {
 				} catch(IOException e) {}
 			}
 			
-			Logger.debug(this, "Main loop exiting...");
+			if(logDEBUG) Logger.debug(this, "Main loop exiting...");
 			synchronized(this) {
 				mThread = null;
 				notifyAll();
@@ -140,7 +150,7 @@ public final class FreetalkNNTPServer implements Runnable {
 		}
 		
 		mFreetalk.getPluginRespirator().getNode().executor.execute(handler, "Freetalk NNTP Client " + clientSocket.getInetAddress());
-		Logger.debug(this, "Accepted an NNTP connection from " + clientSocket.getInetAddress());
+		if(logDEBUG) Logger.debug(this, "Accepted an NNTP connection from " + clientSocket.getInetAddress());
 	}
 	
 	private void garbageCollectDisconnectedHandlers() {
@@ -159,7 +169,7 @@ public final class FreetalkNNTPServer implements Runnable {
 	 */
 	private void terminateHandlers() {
 		try {
-		Logger.debug(this, "Closing client handlers...");
+		if(logDEBUG) Logger.debug(this, "Closing client handlers...");
 		synchronized(clientHandlers) {
 			// Close client sockets
 			for (final FreetalkNNTPHandler handler : clientHandlers) {

@@ -36,9 +36,19 @@ public abstract class IdentityManager {
 	
 	protected final ArrayList<ShouldFetchStateChangedCallback> mShouldFetchStateChangedCallbacks = new ArrayList<ShouldFetchStateChangedCallback>();
 	
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(IdentityManager.class);
+	}
+	
 
 	public IdentityManager(Freetalk myFreetalk, Executor myExecutor) {
-		Logger.debug(this, "Creating identity manager...");
+		if(logDEBUG) Logger.debug(this, "Creating identity manager...");
 		mFreetalk = myFreetalk;
 		db = mFreetalk.getDatabase();
 	}

@@ -52,6 +52,15 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	
 	private final WoTMessageListXML mXML;
 	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(WoTMessageListInserter.class);
+	}
+	
 
 	public WoTMessageListInserter(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager,
 			WoTMessageManager myMessageManager, WoTMessageListXML myMessageListXML) {
@@ -144,7 +153,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 			addInsert(pu);
 			tempB = null;
 
-			Logger.debug(this, "Started insert of WoTOwnMessageList at request URI " + list.getURI());
+			if(logDEBUG) Logger.debug(this, "Started insert of WoTOwnMessageList at request URI " + list.getURI());
 		}
 		finally {
 			if(tempB != null)
@@ -156,7 +165,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	@Override
 	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		try {
-			Logger.debug(this, "Successfully inserted WoTOwnMessageList at " + state.getURI());
+			if(logDEBUG) Logger.debug(this, "Successfully inserted WoTOwnMessageList at " + state.getURI());
 			mMessageManager.onMessageListInsertSucceeded(state.getURI());
 		}
 		catch(Exception e) {

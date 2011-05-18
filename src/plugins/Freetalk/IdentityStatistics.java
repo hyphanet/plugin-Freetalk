@@ -30,6 +30,16 @@ public final class IdentityStatistics extends Persistent {
 	private long mLowestFetchedMessageListIndex = -1;
 	
 	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(IdentityStatistics.class);
+	}
+	
+	
 	protected IdentityStatistics(final Identity myIdentity) {
 		mIdentity = myIdentity;
 	}
@@ -307,7 +317,7 @@ public final class IdentityStatistics extends Persistent {
 			
 			throwIfNotStored(mIdentity);
 			
-			Logger.debug(this, "Storing for " + getIdentity() + " with mLowestFetchedMessageListIndex == " + mLowestFetchedMessageListIndex
+			if(logDEBUG) Logger.debug(this, "Storing for " + getIdentity() + " with mLowestFetchedMessageListIndex == " + mLowestFetchedMessageListIndex
 					+ "; mHighestFetchedMessageListIndex == " + mHighestFetchedMessageListIndex);
 			
 			checkedStore();

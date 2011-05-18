@@ -5,7 +5,6 @@ package plugins.Freetalk.ui.NNTP;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -52,6 +51,16 @@ public class ArticleParser {
 
 	/** Body of message */
 	private String text;
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(ArticleParser.class);
+	}
+	
 
 
 	public ArticleParser() {
@@ -466,7 +475,7 @@ public class ArticleParser {
 		}
 
 		if (!bytes.hasRemaining()) {
-			Logger.debug(this, "Unable to find start of message body");
+			if(logDEBUG) Logger.debug(this, "Unable to find start of message body");
 			return false;
 		}
 
@@ -491,7 +500,7 @@ public class ArticleParser {
 		String dateHeader = getHeader(headLines, "date");
 
 		if (newsgroupsHeader == null) {
-			Logger.debug(this, "Unable to find Newsgroups header");
+			if(logDEBUG) Logger.debug(this, "Unable to find Newsgroups header");
 			return false;
 		}
 
@@ -524,12 +533,12 @@ public class ArticleParser {
 		String subjectHeader = getHeader(headLines, "subject");
 
 		if (fromHeader == null) {
-			Logger.debug(this, "Unable to find From header");
+			if(logDEBUG) Logger.debug(this, "Unable to find From header");
 			return false;
 		}
 
 		if (subjectHeader == null) {
-			Logger.debug(this, "Unable to find Subject header");
+			if(logDEBUG) Logger.debug(this, "Unable to find Subject header");
 			return false;
 		}
 
@@ -543,7 +552,7 @@ public class ArticleParser {
 
 		Mailbox addr = Mailbox.parseHeader(fromHeader);
 		if (addr == null) {
-			Logger.debug(this, "Unable to parse From header");
+			if(logDEBUG) Logger.debug(this, "Unable to parse From header");
 			return false;
 		}
 

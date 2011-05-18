@@ -34,6 +34,16 @@ import freenet.support.Logger;
 public final class WoTMessageRating extends MessageRating {
 	
 	private final byte mValue;
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(WoTMessageRating.class);
+	}
+	
 
 	protected WoTMessageRating(WoTOwnIdentity myRater, WoTMessage myMessage, byte myValue) {
 		super(myRater, myMessage);
@@ -115,7 +125,7 @@ public final class WoTMessageRating extends MessageRating {
 	
 	protected void storeAndCommit() {
 		synchronized(mDB.lock()) {
-			Logger.debug(this, "Storing rating " + this);
+			if(logDEBUG) Logger.debug(this, "Storing rating " + this);
 			try {
 				addValueToWoTTrust();
 			} catch(NoSuchIdentityException e) {
@@ -146,7 +156,7 @@ public final class WoTMessageRating extends MessageRating {
 	 */
 	protected void deleteAndCommit(boolean undoTrustChange) {
 		synchronized(mDB.lock()) {
-			Logger.debug(this, "Deleting rating " + this);
+			if(logDEBUG) Logger.debug(this, "Deleting rating " + this);
 			if(undoTrustChange) {
 			try {
 				substractValueFromWoTTrust();

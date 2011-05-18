@@ -72,6 +72,16 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	
 	private final WoTMessageListXML mXML;
 	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(WoTNewMessageListFetcher.class);
+	}
+	
+	
 	
 	public WoTNewMessageListFetcher(Freetalk myFreetalk, String myName, WoTMessageListXML myMessageListXML, ExtObjectContainer myDB) {
 		mFreetalk = myFreetalk;
@@ -193,7 +203,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	private synchronized void deleteAllCommands() {
 		synchronized(mDB.lock()) {
 			try {
-				Logger.debug(this, "Deleting all commands ...");
+				if(logDEBUG) Logger.debug(this, "Deleting all commands ...");
 				
 				int amount = 0;
 				
@@ -202,7 +212,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 					++amount;
 				}
 				
-				Logger.debug(this, "Deleted " + amount + " commands.");
+				if(logDEBUG) Logger.debug(this, "Deleted " + amount + " commands.");
 				
 				Persistent.checkedCommit(mDB, this);
 			}
@@ -217,17 +227,17 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	}
 	
 	private void storeStartFetchCommandWithoutCommit(String identityID) {
-		Logger.debug(this, "Start fetch command received for " + identityID);
+		if(logDEBUG) Logger.debug(this, "Start fetch command received for " + identityID);
 		
 		try {
 			getCommand(AbortFetchCommand.class, identityID).deleteWithoutCommit();
-			Logger.debug(this, "Deleting abort fetch command for " + identityID);
+			if(logDEBUG) Logger.debug(this, "Deleting abort fetch command for " + identityID);
 		}
 		catch(NoSuchCommandException e) { }
 		
 		try {
 			getCommand(StartFetchCommand.class, identityID);
-			Logger.debug(this, "Start fetch command already in queue!");
+			if(logDEBUG) Logger.debug(this, "Start fetch command already in queue!");
 		}
 		catch(NoSuchCommandException e) {
 			final StartFetchCommand c = new StartFetchCommand(identityID);
@@ -238,17 +248,17 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	}
 	
 	private void storeAbortFetchCommandWithoutCommit(WoTIdentity identity) {
-		Logger.debug(this, "Abort fetch command received for " + identity);
+		if(logDEBUG) Logger.debug(this, "Abort fetch command received for " + identity);
 		
 		try {
 			getCommand(StartFetchCommand.class, identity).deleteWithoutCommit();
-			Logger.debug(this, "Deleting start fetch command for " + identity);
+			if(logDEBUG) Logger.debug(this, "Deleting start fetch command for " + identity);
 		}
 		catch(NoSuchCommandException e) { }
 		
 		try {
 			getCommand(AbortFetchCommand.class, identity);
-			Logger.debug(this, "Abort fetch command already in queue!");
+			if(logDEBUG) Logger.debug(this, "Abort fetch command already in queue!");
 		}
 		catch(NoSuchCommandException e) {
 			final AbortFetchCommand c = new AbortFetchCommand(identity);
@@ -259,7 +269,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	}
 	
 	private void storeUpdateEditionHintCommandWithoutCommit(String identityID) {
-		Logger.debug(this, "Update edition hint command received for " + identityID);
+		if(logDEBUG) Logger.debug(this, "Update edition hint command received for " + identityID);
 		
 		try {
 			getCommand(AbortFetchCommand.class, identityID);
@@ -268,7 +278,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		catch(NoSuchCommandException e1) {
 			try {
 				getCommand(UpdateEditionHintCommand.class, identityID);
-				Logger.debug(this, "Update edition hint command already in queue!");
+				if(logDEBUG) Logger.debug(this, "Update edition hint command already in queue!");
 			}
 			catch(NoSuchCommandException e2) {
 				final UpdateEditionHintCommand c = new UpdateEditionHintCommand(identityID);
@@ -288,7 +298,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	}
 	
 	public void start() { 
-		Logger.debug(this, "Starting new-messagelist-fetches of all identities...");
+		if(logDEBUG) Logger.debug(this, "Starting new-messagelist-fetches of all identities...");
 		synchronized(this) {
 		synchronized(mIdentityManager) {
 			for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
@@ -313,7 +323,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		synchronized(mMessageManager) { // For getting latest edition numbers. TODO: Maybe cache them in the identity
 		synchronized(mDB.lock()) {
 			try  {
-				Logger.debug(this, "Processing commands ...");
+				if(logDEBUG) Logger.debug(this, "Processing commands ...");
 				
 				for(FetcherCommand command : getCommands(AbortFetchCommand.class)) {
 					try {
@@ -343,7 +353,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 					}
 				}
 				
-				Logger.debug(this, "Processing finished.");
+				if(logDEBUG) Logger.debug(this, "Processing finished.");
 				
 				Persistent.checkedCommit(mDB, this);
 			} catch(RuntimeException e) {
@@ -397,7 +407,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 			return;
 		}
 			
-		Logger.debug(this, "Aborting fetch for identity " + identityID);
+		if(logDEBUG) Logger.debug(this, "Aborting fetch for identity " + identityID);
 		abortFetch(retriever);
 	}
 	
@@ -415,7 +425,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 
 			final long editionHint = mMessageManager.getNewMessageListIndexEditionHint(identity);
 				
-			Logger.debug(this, "Updating edition hint to " + editionHint + " for " + identityID);
+			if(logDEBUG) Logger.debug(this, "Updating edition hint to " + editionHint + " for " + identityID);
 			updateEditionHint(retriever, editionHint);
 		} catch (NoSuchIdentityException e) {
 			Logger.error(this, "Updating edition hint failed, the identity was deleted already.", e);
@@ -430,7 +440,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		fetchContext.maxSplitfileBlockRetries = -1; // retry forever
 		fetchContext.maxNonSplitfileRetries = -1; // retry forever
 		fetchContext.maxOutputLength = WoTMessageListXML.MAX_XML_SIZE;
-		Logger.debug(this, "Subscribing to WoTMessageList queue " + usk); 
+		if(logDEBUG) Logger.debug(this, "Subscribing to WoTMessageList queue " + usk); 
 		return mUSKManager.subscribeContent(usk, this, true, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS, mRequestClient);
 	}
 	
@@ -447,7 +457,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	 * Stops all running requests.
 	 */
 	public synchronized void stop() {
-		Logger.debug(this, "Trying to stop all requests");
+		if(logDEBUG) Logger.debug(this, "Trying to stop all requests");
 		
 		mTicker.shutdown();
 		
@@ -460,7 +470,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		}
 		mRequests.clear();
 		
-		Logger.debug(this, "Stopped " + counter + " current requests");
+		if(logDEBUG) Logger.debug(this, "Stopped " + counter + " current requests");
 	}
 	
 	public short getPollingPriorityNormal() {
