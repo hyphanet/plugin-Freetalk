@@ -570,7 +570,7 @@ public class ArticleParser {
 				dateHeader = dateHeader.substring(dateHeader.indexOf(",") + 2);
 
 			try {
-				date = new SimpleDateFormat("d MMM yyyy HH:mm:ss Z").parse(dateHeader);
+				date = new SimpleDateFormat("d MMM yyyy HH:mm:ss Z", java.util.Locale.US).parse(dateHeader);
 			}
 			catch (ParseException e) {
 				Logger.warning(this, "Failed while parsing date: " + dateHeader, e);

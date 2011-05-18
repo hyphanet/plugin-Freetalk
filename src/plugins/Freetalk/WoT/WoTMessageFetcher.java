@@ -253,6 +253,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			switch(e.getMode()) {
 				case FetchException.DATA_NOT_FOUND:
 				case FetchException.ALL_DATA_NOT_FOUND:
+				case FetchException.RECENTLY_FAILED:
 					Logger.normal(this, "Data not found for message: " + state.getURI());
 					
 					try {
