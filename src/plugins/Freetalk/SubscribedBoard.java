@@ -835,7 +835,7 @@ public final class SubscribedBoard extends Board {
     	
     	for(final UnwantedMessageLink link : getAllExpiredUnwantedMessages(now)) {
     		++count;
-    		synchronized(mDB.lock()) {
+    		synchronized(Persistent.transactionLock(mDB)) {
     			try {
 		    		if(link.retry() == false)
 		    			link.storeWithoutCommit();
@@ -880,7 +880,7 @@ public final class SubscribedBoard extends Board {
     		}
     		
     		++count;
-    		synchronized(mDB.lock()) {
+    		synchronized(Persistent.transactionLock(mDB)) {
     			try {
     				if(ref.validateIfStillWanted(now)) {
     					ref.storeWithoutCommit();
@@ -1539,7 +1539,7 @@ public final class SubscribedBoard extends Board {
          * Does not provide synchronization, you have to lock this Board before calling this function.
          */
         public final void storeAndCommit() {
-        	synchronized(mDB.lock()) {
+        	synchronized(Persistent.transactionLock(mDB)) {
         		try {
 	        		storeWithoutCommit();
 	        		checkedCommit(this);
@@ -1822,7 +1822,7 @@ public final class SubscribedBoard extends Board {
 			checkedActivate(1);
 			
 			synchronized(mBoard) {
-			synchronized(mDB.lock()) {
+			synchronized(Persistent.transactionLock(mDB)) {
 				try {
 					// Mark this object as unread
 					if(newReadState) {

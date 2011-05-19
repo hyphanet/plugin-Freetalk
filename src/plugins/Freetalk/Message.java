@@ -1154,7 +1154,7 @@ public abstract class Message extends Persistent {
 	}
 
 	public final synchronized void storeAndCommit() {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				storeWithoutCommit();
 				checkedCommit(this);

@@ -201,7 +201,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	}
 	
 	private synchronized void deleteAllCommands() {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				if(logDEBUG) Logger.debug(this, "Deleting all commands ...");
 				
@@ -321,7 +321,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		synchronized(this) {
 		synchronized(mIdentityManager) { // Lock needed because we do getIdentityByID() in fetch()
 		synchronized(mMessageManager) { // For getting latest edition numbers. TODO: Maybe cache them in the identity
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try  {
 				if(logDEBUG) Logger.debug(this, "Processing commands ...");
 				

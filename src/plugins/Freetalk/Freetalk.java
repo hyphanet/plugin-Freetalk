@@ -379,7 +379,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			synchronized(mMessageManager) {
 				Logger.normal(this, "Doing stuff");
 			
-				synchronized(db.lock()) {
+				synchronized(Persistent.transactionLock(db)) {
 					try {
 						Persistent.checkedCommit(db, this);
 					} catch(RuntimeException e) {
@@ -433,7 +433,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			return;
 		}
 		
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			try {
 				System.gc();
 				db.rollback();

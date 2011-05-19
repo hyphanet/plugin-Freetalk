@@ -110,7 +110,7 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 		q.descend("mDeleteTime").constrain(currentTime).smaller();;
 		
 		for(PersistentTask task : new Persistent.InitializingObjectSet<PersistentTask>(mFreetalk, q)) {
-			synchronized(mDB.lock()) {
+			synchronized(Persistent.transactionLock(mDB)) {
 				try {
 					task.deleteWithoutCommit();
 					Persistent.checkedCommit(mDB, this);
@@ -217,7 +217,7 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 		q.descend("mOwner").constrain(identity).identity();
 		final ObjectSet<PersistentTask> tasks = new Persistent.InitializingObjectSet<PersistentTask>(mFreetalk, q);
 		
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				for(PersistentTask task : tasks) {
 					task.deleteWithoutCommit();

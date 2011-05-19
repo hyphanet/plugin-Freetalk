@@ -203,7 +203,7 @@ public class WoTIdentity extends Persistent implements Identity {
 	 * You have to synchronize on this object before modifying the identity and calling storeAndCommit. 
 	 */
 	public void storeAndCommit() {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			storeWithoutCommit();
 			checkedCommit(this);
 		}

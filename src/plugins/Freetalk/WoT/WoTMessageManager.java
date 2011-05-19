@@ -127,7 +127,7 @@ public final class WoTMessageManager extends MessageManager {
 	
 	@Override
 	public synchronized void onMessageListInsertFailed(FreenetURI uri,boolean collision) throws NoSuchMessageListException {
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			try {
 				WoTOwnMessageList list = (WoTOwnMessageList)getOwnMessageList(MessageListID.construct(uri).toString());
 				list.cancelInsert();
@@ -175,12 +175,12 @@ public final class WoTMessageManager extends MessageManager {
 				}
 			}
 			
-			// It's not possible to keep the synchronization order of message lists to synchronize BEFORE synchronizing on db.lock() some places so we 
+			// It's not possible to keep the synchronization order of message lists to synchronize BEFORE synchronizing on Persistent.transactionLock(db) some places so we 
 			// do not synchronize here.
 			// And in this function we don't need to synchronize on it anyway because it is not known to anything which might modify it anyway.
 			// In general, due to those issues the functions which modify message lists just use the message manager as synchronization object.
 			//synchronized(ghostList) {
-			synchronized(db.lock()) {
+			synchronized(Persistent.transactionLock(db)) {
 				try {
 					Date date = CurrentTimeUTC.get();
 					Date dateOfNextRetry;
@@ -222,7 +222,7 @@ public final class WoTMessageManager extends MessageManager {
 	public synchronized void onOwnMessageInserted(String id, FreenetURI freenetURI) throws NoSuchMessageException {
 		WoTOwnMessage message = (WoTOwnMessage) getOwnMessage(id);
 		synchronized(message) {
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			try {
 				message.markAsInserted(freenetURI);
 				addMessageToMessageList(message);
@@ -236,7 +236,7 @@ public final class WoTMessageManager extends MessageManager {
 	}
 	
 	/**
-	 * You have to synchronize on this MessageManager and on db.lock() when using this function.
+	 * You have to synchronize on this MessageManager and on Persistent.transactionLock(db) when using this function.
 	 */
 	private void addMessageToMessageList(WoTOwnMessage message) {
 		Query query = db.query();

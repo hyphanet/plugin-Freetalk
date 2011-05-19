@@ -99,7 +99,7 @@ public final class Configuration extends Persistent {
 	 * @return The config object.
 	 */
 	public static Configuration loadOrCreate(Freetalk myFreetalk, ExtObjectContainer db) {
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			Configuration config;
 			ObjectSet<Configuration> result = db.queryByExample(Configuration.class);
 			
@@ -129,7 +129,7 @@ public final class Configuration extends Persistent {
 	 * because the user interface will usually change many values at once.
 	 */
 	public synchronized void storeAndCommit() {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 				mDB.store(mStringParams, 3);

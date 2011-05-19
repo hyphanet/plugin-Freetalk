@@ -4,6 +4,7 @@
 package plugins.Freetalk.WoT;
 
 import plugins.Freetalk.MessageRating;
+import plugins.Freetalk.Persistent;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NotTrustedException;
 import freenet.support.Logger;
@@ -124,7 +125,7 @@ public final class WoTMessageRating extends MessageRating {
 	}
 	
 	protected void storeAndCommit() {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			if(logDEBUG) Logger.debug(this, "Storing rating " + this);
 			try {
 				addValueToWoTTrust();
@@ -155,7 +156,7 @@ public final class WoTMessageRating extends MessageRating {
 	 * 		because it can fail if the user has manually adjusted the trust value.
 	 */
 	protected void deleteAndCommit(boolean undoTrustChange) {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			if(logDEBUG) Logger.debug(this, "Deleting rating " + this);
 			if(undoTrustChange) {
 			try {

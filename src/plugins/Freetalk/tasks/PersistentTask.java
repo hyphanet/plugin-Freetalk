@@ -107,7 +107,7 @@ public abstract class PersistentTask extends Persistent {
 	}
 	
 	protected synchronized void storeAndCommit() {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			storeWithoutCommit();
 			checkedCommit(this);
 		}

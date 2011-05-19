@@ -181,7 +181,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		Logger.normal(this, "Created WoTOwnidentity via FCP, now storing... " + identity);
 		
 		synchronized(mFreetalk.getTaskManager()) { // Required by onNewOwnidentityAdded
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			try {
 				identity.initializeTransient(mFreetalk);
 				identity.storeWithoutCommit();
@@ -226,7 +226,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		Logger.normal(this, "Created WoTOwnidentity via FCP, now storing... " + identity);
 		
 		synchronized(mFreetalk.getTaskManager()) {
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			try {
 				identity.storeWithoutCommit();
 				onNewOwnIdentityAdded(identity);
@@ -721,7 +721,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	
 	private void importIdentity(boolean ownIdentity, String identityID, String requestURI, String insertURI, String nickname) {
 		synchronized(mFreetalk.getTaskManager()) {
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			try {
 				Logger.normal(this, "Importing identity from WoT: " + requestURI);
 				final WoTIdentity id = ownIdentity ? new WoTOwnIdentity(identityID, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
@@ -801,7 +801,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 							Logger.normal(this, "Identity type changed, replacing it: " + id);
 							// We MUST NOT take the following locks because deleteIdentity does other locks (MessageManager/TaskManager) which must happen before...
 							// synchronized(id)
-							// synchronized(db.lock()) 
+							// synchronized(Persistent.transactionLock(db)) 
 							deleteIdentity(id, mFreetalk.getMessageManager(), mFreetalk.getTaskManager());
 							importIdentity(bOwnIdentities, identityID, requestURI, insertURI, nickname);
 						}
@@ -811,7 +811,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 						
 					} else { // Normal case: Update the last received time of the idefnt
 						synchronized(id) {
-						synchronized(db.lock()) {
+						synchronized(Persistent.transactionLock(db)) {
 							try {
 								// TODO: The thread sometimes takes hours to parse the identities and I don't know why.
 								// So right now its better to re-query the time for each identity.
@@ -872,7 +872,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
  			beforeOwnIdentityDeletion((WoTOwnIdentity)identity);
 		
 		synchronized(identity) {
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			try {
 				identity.deleteWithoutCommit();
 				
@@ -968,7 +968,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		
 		synchronized(messageManager) {
 		synchronized(taskManager) {
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			try {
 				HashSet<String> deleted = new HashSet<String>();
 
