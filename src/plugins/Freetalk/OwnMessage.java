@@ -40,12 +40,14 @@ public abstract class OwnMessage extends Message {
 	}
 	
 
-	// TODO: I doubt that this is needed, was probably a quickshot. Remove it if not and make the parent function final.
-	/* Override for synchronization */	
+	/**
+	 * @return The URI of the Message if it was inserted already, null if it was not inserted yet.
+	 */
 	@Override
 	public synchronized MessageURI getURI() {
 		checkedActivate(1);
-		mURI.initializeTransient(mFreetalk);
+		if(mURI != null)
+			mURI.initializeTransient(mFreetalk);
 		return mURI;
 	}
 	
