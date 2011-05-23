@@ -190,7 +190,6 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 	 * 
 	 * @return The tasks which should be displayed on the web interface right now.
 	 */
-	@SuppressWarnings("unchecked")
 	public ObjectSet<PersistentTask> getVisibleTasks(OwnIdentity owner) {
 		Query q = mDB.query();
 		
@@ -203,7 +202,7 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 		
 		q.descend("mNextDisplayTime").orderDescending();
 		
-		return q.execute();
+		return new Persistent.InitializingObjectSet<PersistentTask>(mFreetalk, q);
 	}
 	
 	/**
