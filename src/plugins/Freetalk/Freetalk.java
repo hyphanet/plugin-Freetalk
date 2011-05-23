@@ -270,7 +270,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader())); // Needed because the node uses it's own classloader for plugins
 		cfg.exceptionsOnNotStorable(true); // Notify us if we tried to store a class which db4o won't store
-		cfg.activationDepth(5); // TODO: Decrease to 1 after we have explicit activation everywhere.
+		cfg.activationDepth(1); // TODO: Optimization: Check whether 0 is better. All database code was written to also work with 0.
 		cfg.updateDepth(1); // This must not be changed: We only activate(this, 1) before store(this).
 		Logger.normal(this, "Default activation depth: " + cfg.activationDepth());
         cfg.automaticShutDown(false); // The shutdown hook does auto-commit() but we want to rollback(), we MUST NOT commit half-finished transactions
