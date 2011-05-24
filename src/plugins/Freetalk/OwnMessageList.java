@@ -114,6 +114,7 @@ public abstract class OwnMessageList extends MessageList {
 			
 			for(Iterator<MessageReference> iter = mMessages.iterator(); iter.hasNext(); ) {
 				MessageReference ref = iter.next();
+				ref.initializeTransient(mFreetalk);
 				
 				if(ref.getURI().equals(message.getFreenetURI())) {
 					iter.remove();
