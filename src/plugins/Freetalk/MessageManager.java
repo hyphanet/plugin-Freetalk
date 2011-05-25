@@ -274,7 +274,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		q = db.query();
 		q.constrain(OwnMessageList.class);
 		q.descend("mWasInserted").constrain(false);
-		ObjectSet<OwnMessageList> notInsertedLists = q.execute();
+		ObjectSet<OwnMessageList> notInsertedLists = new Persistent.InitializingObjectSet<OwnMessageList>(mFreetalk, q);
 		for(OwnMessageList list : notInsertedLists)
 			unsentCount += list.getMessageCount();
 		
