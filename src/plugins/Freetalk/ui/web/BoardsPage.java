@@ -51,7 +51,7 @@ public final class BoardsPage extends WebPageImpl {
         row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.UnreadMessages"));
 		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.LatestMessage"));
 		
-		final DateFormat dateFormat = DateFormat.getInstance();
+		final DateFormat dateFormat = DateFormat.getDateTimeInstance();
 		
 		int boardCount = 0;
 		
