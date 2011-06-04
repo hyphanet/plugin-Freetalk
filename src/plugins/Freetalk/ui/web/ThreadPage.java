@@ -505,7 +505,7 @@ public final class ThreadPage extends WebPageImpl {
 	}
 
 	private static void addTextToNode(HTMLNode parent, String text) {
-		String[] lines = text.split("\n", -1);
+		String[] lines = text.split("\r?\n", -1);
 
 		parent.addChild("#", lines[0]);
 		for(int i = 1; i < lines.length; i++) {
