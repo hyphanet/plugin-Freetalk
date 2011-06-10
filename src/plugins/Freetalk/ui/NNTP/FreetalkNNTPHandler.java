@@ -617,6 +617,7 @@ public final class FreetalkNNTPHandler implements Runnable {
             serverDateFormat.setTimeZone(utcTimeZone);
             printTextResponseLine("111 " + serverDateFormat.format(date));
         }
+        mOutput.flush();
     }
     
     /**
