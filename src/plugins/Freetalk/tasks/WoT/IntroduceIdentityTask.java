@@ -9,6 +9,7 @@ import plugins.Freetalk.Configuration;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
+import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.tasks.OwnMessageTask;
 import plugins.Freetalk.ui.web.IntroduceIdentityPage;
 import plugins.Freetalk.ui.web.WebInterface;
@@ -55,6 +56,8 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 	public void databaseIntegrityTest() throws Exception {
 		super.databaseIntegrityTest();
 		
+		checkedActivate(1);
+		
 		IfNotEquals.thenThrow(mDeleteTime, Long.MAX_VALUE, "mDeleteTime");
 		
 		final long maxDelay = CurrentTimeUTC.getInMillis() + PROCESSING_INTERVAL;
@@ -64,7 +67,12 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 	}
 
 	public synchronized WebPage display(WebInterface myWebInterface) {
-		return new IntroduceIdentityPage(myWebInterface, (WoTOwnIdentity)mOwner, mID, mPuzzlesToSolve, myWebInterface.l10n());
+		checkedActivate(1);
+		try {
+			return new IntroduceIdentityPage(myWebInterface, (WoTOwnIdentity)getOwner(), mID, mPuzzlesToSolve, myWebInterface.l10n());
+		} catch (NoSuchIdentityException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -74,6 +82,8 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 	 */
 	public synchronized void process() {
 		WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
+		
+		checkedActivate(1);
 		
 		long now = CurrentTimeUTC.getInMillis(); 
 		
@@ -86,8 +96,8 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 			MessageManager messageManager = mFreetalk.getMessageManager();
 	
 			// We must tell the user to solve puzzles if he as written a message ...
-			if(messageManager.getOwnMessagesBy(mOwner).size() > 0   // TODO: Optimization: Create & use get(Own)MessageCount() ...
-				|| messageManager.getMessagesBy(mOwner).size() > 0) { // Also check for messages which are not stored as own messages anymore.  
+			if(messageManager.getOwnMessagesBy(getOwner()).size() > 0   // TODO: Optimization: Create & use get(Own)MessageCount() ...
+				|| messageManager.getMessagesBy(getOwner()).size() > 0) { // Also check for messages which are not stored as own messages anymore.  
 				
 				int minimumTrusterCount = mFreetalk.getConfig().getInt(Configuration.MINIMUM_TRUSTER_COUNT); 
 				
@@ -120,6 +130,8 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 	}
 	
 	public synchronized void onHideForSomeTime() {
+		checkedActivate(1);
+		
 		mWasHidden = true;
 		mPuzzlesToSolve = 0;
 		mNextProcessingTime = CurrentTimeUTC.getInMillis() + PROCESSING_INTERVAL;
@@ -129,6 +141,8 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 	}
 	
 	public synchronized void onPuzzleSolved() {
+		checkedActivate(1);
+		
 		if(mPuzzlesToSolve > 0) 
 			--mPuzzlesToSolve;
 		
@@ -142,6 +156,7 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 	}
 	
 	public synchronized int getNumberOfPuzzlesToSolve() {
+		checkedActivate(1);
 		return mPuzzlesToSolve;
 	}
 }

@@ -25,7 +25,6 @@ import plugins.Freetalk.OwnMessageList;
 import plugins.Freetalk.Persistent;
 import plugins.Freetalk.Persistent.InitializingObjectSet;
 import plugins.Freetalk.exceptions.DuplicateElementException;
-import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchFetchFailedMarkerException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
@@ -48,6 +47,16 @@ public final class WoTMessageManager extends MessageManager {
 	
 	/** One for all requests for WoTMessage*, for fairness. */
 	final RequestClient mRequestClient;
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(WoTMessageManager.class);
+	}
+	
 
 	public WoTMessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager, Freetalk myFreetalk, PluginRespirator myPluginRespirator) {
 		super(myDB, myIdentityManager, myFreetalk, myPluginRespirator);
@@ -98,7 +107,7 @@ public final class WoTMessageManager extends MessageManager {
 			throw new IllegalArgumentException("Author is no WoTOwnIdentity");
 
 		Date date = myDate!=null ? myDate : CurrentTimeUTC.get();
-		m = WoTOwnMessage.construct((WoTMessageURI)myParentThreadURI, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
+		m = WoTOwnMessage.construct(mFreetalk, (WoTMessageURI)myParentThreadURI, myParentMessage, myBoards, myReplyToBoard, myAuthor, myTitle, date, myText, myAttachments);
 		m.initializeTransient(mFreetalk);
 		synchronized(this) {
 			m.storeAndCommit();
@@ -118,7 +127,7 @@ public final class WoTMessageManager extends MessageManager {
 	
 	@Override
 	public synchronized void onMessageListInsertFailed(FreenetURI uri,boolean collision) throws NoSuchMessageListException {
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			try {
 				WoTOwnMessageList list = (WoTOwnMessageList)getOwnMessageList(MessageListID.construct(uri).toString());
 				list.cancelInsert();
@@ -135,7 +144,7 @@ public final class WoTMessageManager extends MessageManager {
 	}
 	
 	public synchronized void onMessageListFetchFailed(Identity author, FreenetURI uri, FetchFailedMarker.Reason reason) {
-		WoTMessageList ghostList = new WoTMessageList(author, uri);
+		WoTMessageList ghostList = new WoTMessageList(mFreetalk, author, uri);
 		ghostList.initializeTransient(mFreetalk);
 		MessageList.MessageListFetchFailedMarker marker;
 		
@@ -166,12 +175,12 @@ public final class WoTMessageManager extends MessageManager {
 				}
 			}
 			
-			// It's not possible to keep the synchronization order of message lists to synchronize BEFORE synchronizing on db.lock() some places so we 
+			// It's not possible to keep the synchronization order of message lists to synchronize BEFORE synchronizing on Persistent.transactionLock(db) some places so we 
 			// do not synchronize here.
 			// And in this function we don't need to synchronize on it anyway because it is not known to anything which might modify it anyway.
 			// In general, due to those issues the functions which modify message lists just use the message manager as synchronization object.
 			//synchronized(ghostList) {
-			synchronized(db.lock()) {
+			synchronized(Persistent.transactionLock(db)) {
 				try {
 					Date date = CurrentTimeUTC.get();
 					Date dateOfNextRetry;
@@ -213,7 +222,7 @@ public final class WoTMessageManager extends MessageManager {
 	public synchronized void onOwnMessageInserted(String id, FreenetURI freenetURI) throws NoSuchMessageException {
 		WoTOwnMessage message = (WoTOwnMessage) getOwnMessage(id);
 		synchronized(message) {
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			try {
 				message.markAsInserted(freenetURI);
 				addMessageToMessageList(message);
@@ -227,7 +236,7 @@ public final class WoTMessageManager extends MessageManager {
 	}
 	
 	/**
-	 * You have to synchronize on this MessageManager and on db.lock() when using this function.
+	 * You have to synchronize on this MessageManager and on Persistent.transactionLock(db) when using this function.
 	 */
 	private void addMessageToMessageList(WoTOwnMessage message) {
 		Query query = db.query();
@@ -242,17 +251,18 @@ public final class WoTMessageManager extends MessageManager {
 				list.addMessage(message);
 				list.storeWithoutCommit();
 				}
-				Logger.debug(this, "Added own message " + message + " to list " + list);
+				if(logDEBUG) Logger.debug(this, "Added own message " + message + " to list " + list);
 				return;
 			}
 			catch(RuntimeException e) {
 				/* The list is full. */
-				Logger.debug(this, "Not adding message " + message.getID() + " to message list " + list.getID(), e);
+				if(logDEBUG) Logger.debug(this, "Not adding message " + message.getID() + " to message list " + list.getID(), e);
 			}
 		}
 		
 		WoTOwnIdentity author = (WoTOwnIdentity)message.getAuthor();
 		WoTOwnMessageList list = new WoTOwnMessageList(author, getFreeOwnMessageListIndex(author));
+		list.initializeTransient(mFreetalk);
 		
 		// TODO: Optimization: This is debug code which was added on 2011-02-13 for preventing DuplicateMessageListException, it can be removed after some months if they do not happen.
 		try {
@@ -260,10 +270,9 @@ public final class WoTMessageManager extends MessageManager {
 			throw new RuntimeException("getFreeOwnMessageListIndex reported non-free index, taken by: " + existingList);
 		} catch(NoSuchMessageListException e) {}
 		
-		list.initializeTransient(mFreetalk);
 		list.addMessage(message);
 		list.storeWithoutCommit();
-		Logger.debug(this, "Found no list with free space, created the new list " + list.getID() + " for own message " + message.getID());
+		if(logDEBUG) Logger.debug(this, "Found no list with free space, created the new list " + list.getID() + " for own message " + message.getID());
 	}
 
 	/**

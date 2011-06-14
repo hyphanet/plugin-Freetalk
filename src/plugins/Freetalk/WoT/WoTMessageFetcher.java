@@ -78,10 +78,19 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	
 	private final WoTMessageXML mXML;
 	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(WoTMessageFetcher.class);
+	}
+	
 
-	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager,
+	public WoTMessageFetcher(Node myNode, HighLevelSimpleClient myClient, String myName, Freetalk myFreetalk, WoTIdentityManager myIdentityManager, WoTMessageManager myMessageManager,
 			WoTMessageXML myMessageXML) {
-		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
+		super(myNode, myClient, myName, myFreetalk, myIdentityManager, myMessageManager);
 		mRandom = mNode.fastWeakRandom;
 		requestClient = myMessageManager.mRequestClient;
 		mXML = myMessageXML;
@@ -117,6 +126,10 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		fetchMessages();
 	}
 	
+	public int getRunningFetchCount() {
+		return fetchCount();
+	}
+	
 	/**
 	 * Checks the database for unfetched messages and starts message fetches until this fetches is running the maximum of MAX_PARALLEL_MESSAGE_FETCH_COUNT fetches.
 	 * Does not abort fetches which were started by previous calls to this function: We use a finite retry count for each started fetch so the node should
@@ -128,11 +141,11 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		final int fetchCount = fetchCount();
 		
 		if(fetchCount >= MAX_PARALLEL_MESSAGE_FETCH_COUNT) { // Check before we do the expensive database query.
-			Logger.minor(this, "Got " + fetchCount + "fetches, not fetching any more.");
+			if(logMINOR) Logger.minor(this, "Got " + fetchCount + "fetches, not fetching any more.");
 			return;
 		}
 		
-		Logger.minor(this, "Trying to start more message fetches, amount of fetches now: " + fetchCount);
+		if(logMINOR) Logger.minor(this, "Trying to start more message fetches, amount of fetches now: " + fetchCount);
 		
 		synchronized(mIdentityManager) { // TODO: Get rid of this lock by making anyOwnIdentityWantsMessagesFrom use a cache
 		synchronized(mMessageManager) { 
@@ -203,7 +216,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			list = (WoTMessageList)mMessageManager.getMessageList(messageListID);
 			bucket = result.asBucket();
 			inputStream = bucket.getInputStream();
-			Message message = mXML.decode(mMessageManager, inputStream, list, state.getURI());
+			Message message = mXML.decode(mFreetalk, inputStream, list, state.getURI());
 			mMessageManager.onMessageReceived(message);
 			
 			fetchMoreMessages = true;
@@ -244,6 +257,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 			switch(e.getMode()) {
 				case FetchException.DATA_NOT_FOUND:
 				case FetchException.ALL_DATA_NOT_FOUND:
+				case FetchException.RECENTLY_FAILED:
 					Logger.normal(this, "Data not found for message: " + state.getURI());
 					
 					try {
@@ -264,7 +278,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 					break;
 					
 				case FetchException.CANCELLED:
-					Logger.debug(this, "Cancelled downloading Message " + state.getURI());
+					if(logDEBUG) Logger.debug(this, "Cancelled downloading Message " + state.getURI());
 					break;
 					
 				default:

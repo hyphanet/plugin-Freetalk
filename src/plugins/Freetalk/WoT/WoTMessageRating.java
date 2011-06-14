@@ -4,6 +4,7 @@
 package plugins.Freetalk.WoT;
 
 import plugins.Freetalk.MessageRating;
+import plugins.Freetalk.Persistent;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NotTrustedException;
 import freenet.support.Logger;
@@ -34,6 +35,16 @@ import freenet.support.Logger;
 public final class WoTMessageRating extends MessageRating {
 	
 	private final byte mValue;
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(WoTMessageRating.class);
+	}
+	
 
 	protected WoTMessageRating(WoTOwnIdentity myRater, WoTMessage myMessage, byte myValue) {
 		super(myRater, myMessage);
@@ -50,18 +61,20 @@ public final class WoTMessageRating extends MessageRating {
 		if(!(getRater() instanceof WoTIdentity))
 			throw new IllegalStateException("getRater() == " + getRater());
 		
+		checkedActivate(1);
 		if(mValue < - 100 || mValue > 100)
 			throw new IllegalStateException("mValue ==  "+ mValue);
 	}
 
 	
 	public byte getValue() {
+		checkedActivate(1);
 		return mValue;
 	}
 	
 	public String toString() {
 		if(mDB != null)
-			return getRater() + " has rated the message " + getMessage() + " with " + mValue + " points.";
+			return getRater() + " has rated the message " + getMessage() + " with " + getValue() + " points.";
 		else
 			return super.toString();
 	}
@@ -104,16 +117,16 @@ public final class WoTMessageRating extends MessageRating {
 	}
 	
 	private void addValueToWoTTrust() throws NoSuchIdentityException {
-		addValueToWoTTrust(mValue);
+		addValueToWoTTrust(getValue());
 	}
 	
 	private void substractValueFromWoTTrust() throws NoSuchIdentityException {
-		addValueToWoTTrust((byte)-mValue);
+		addValueToWoTTrust((byte)-getValue());
 	}
 	
 	protected void storeAndCommit() {
-		synchronized(mDB.lock()) {
-			Logger.debug(this, "Storing rating " + this);
+		synchronized(Persistent.transactionLock(mDB)) {
+			if(logDEBUG) Logger.debug(this, "Storing rating " + this);
 			try {
 				addValueToWoTTrust();
 			} catch(NoSuchIdentityException e) {
@@ -143,8 +156,8 @@ public final class WoTMessageRating extends MessageRating {
 	 * 		because it can fail if the user has manually adjusted the trust value.
 	 */
 	protected void deleteAndCommit(boolean undoTrustChange) {
-		synchronized(mDB.lock()) {
-			Logger.debug(this, "Deleting rating " + this);
+		synchronized(Persistent.transactionLock(mDB)) {
+			if(logDEBUG) Logger.debug(this, "Deleting rating " + this);
 			if(undoTrustChange) {
 			try {
 				substractValueFromWoTTrust();

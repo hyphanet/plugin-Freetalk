@@ -58,17 +58,18 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 	public void databaseIntegrityTest() throws Exception {
 		super.databaseIntegrityTest();
 		
-		checkedActivate(3);
+		checkedActivate(1);
 		
 		IfNull.thenThrow(mInsertURI, "mInsertURI");
 		
-		if(!Arrays.equals(getRequestURI().getCryptoKey(), mInsertURI.getCryptoKey()))
+		if(!Arrays.equals(getRequestURI().getCryptoKey(), getInsertURI().getCryptoKey()))
 			throw new IllegalStateException("Request and insert URI do not fit together!");
 	}
 
 
 	public FreenetURI getInsertURI() {
-		checkedActivate(3); // String[] is no nested object to db4o so 3 is sufficient.
+		checkedActivate(1);
+		checkedActivate(mInsertURI, 2);
 		return mInsertURI;
 	}
 
@@ -99,20 +100,24 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 	}
 	
 	public boolean wantsAutoSubscribeToNewBoards() {
+		checkedActivate(1);
 		return mAutoSubscribeToNewBoards;
 	}
 
 	public void setAutoSubscribeToNewboards(boolean autoSubscribeToNewBoards) {
+		checkedActivate(1);
 		mAutoSubscribeToNewBoards = autoSubscribeToNewBoards;
 	}
 	
 	@Override
 	public boolean wantsImageDisplay() {
+		checkedActivate(1);
 		return mDisplayImages;
 	}
 
 	@Override
 	public void setWantsImageDisplay(boolean wantsImageDisplay) {
+		checkedActivate(1);
 		mDisplayImages = wantsImageDisplay;
 	}
 	
@@ -122,6 +127,7 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
      * @return Whether this Identity auto-subscribes to boards subscribed in NNTP client or not.
      */
     public boolean nntpAutoSubscribeBoards() {
+    	checkedActivate(1);
         return mNntpAutoSubscribeBoards;
     }
     
@@ -129,16 +135,18 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
      * Sets if this Identity auto-subscribes to boards subscribed in NNTP client. 
      */
     public void setNntpAutoSubscribeBoards(boolean nntpAutoSubscribeBoards) {
+    	checkedActivate(1);
         mNntpAutoSubscribeBoards = nntpAutoSubscribeBoards;
     }
     
 	public void storeWithoutCommit() {
 		try {
 			// 3 is the maximal depth of all getter functions. You have to adjust this when changing the set of member variables.
-			checkedActivate(3);
+			checkedActivate(1);
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 
+			checkedActivate(mInsertURI, 2);
 			checkedStore(mInsertURI);
 			checkedStore();
 		}
@@ -149,12 +157,12 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 
 	protected void deleteWithoutCommit() {	
 		try {
-			// super.deleteWithoutCommit() does the following already so there is no need to do it here
-			// 3 is the maximal depth of all getter functions. You have to adjust this when changing the set of member variables.
-			// DBUtil.checkedActivate(db, this, 3);
-			
+			// super.deleteWithoutCommit() does the following already so there is no need to do it here:
+			// // 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			// checkedActivate(this, 1);
 			super.deleteWithoutCommit();
 			
+			checkedActivate(mInsertURI, 2);
 			mInsertURI.removeFrom(mDB);
 		}
 		catch(RuntimeException e) {

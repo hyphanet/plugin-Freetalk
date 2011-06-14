@@ -72,13 +72,13 @@ public class WoTIdentity extends Persistent implements Identity {
 	
 	@Override
 	public void databaseIntegrityTest() throws Exception {
-		checkedActivate(3);
+		checkedActivate(1);
 		
 		IfNull.thenThrow(mID, "mID");
-		IfNull.thenThrow(mRequestURI, "mRequestURI");
+		IfNull.thenThrow(getRequestURI(), "mRequestURI");
 		IfNull.thenThrow(mNickname, "mNickname");
 		
-		IfNotEquals.thenThrow(IdentityID.construct(mID), IdentityID.constructFromURI(mRequestURI), "mID");
+		IfNotEquals.thenThrow(IdentityID.construct(mID), IdentityID.constructFromURI(getRequestURI()), "mID");
 		
 		try {
 			validateNickname(mNickname);
@@ -92,7 +92,7 @@ public class WoTIdentity extends Persistent implements Identity {
 	
 
 	public String getID() {
-		// activate(1);	// 1 is the default activation depth, no need to execute activate(1).
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID;
 	}
 	
@@ -112,17 +112,18 @@ public class WoTIdentity extends Persistent implements Identity {
 	}
 
 	public FreenetURI getRequestURI() {
-		checkedActivate(3); // String[] is no nested object to db4o so 3 is sufficient.
+		checkedActivate(1);
+		checkedActivate(mRequestURI, 2);
 		return mRequestURI;
 	}
 
 	public String getNickname() {
-		// activate(1);	// 1 is the default activation depth, no need to execute activate(1)
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mNickname;
 	}
 
 	protected String getNickname(int maxLength) {
-		// activate(1);	// 1 is the default activation depth, no need to execute activate(1)
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		if(mNickname.length() > maxLength) {
 			return mNickname.substring(0, maxLength) + "...";
 		}
@@ -134,7 +135,7 @@ public class WoTIdentity extends Persistent implements Identity {
 	}
 
 	public String getFreetalkAddress() {
-		// activate(1);	// 1 is the default activation depth, no need to execute activate(1)
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mNickname + "@" + mID + "." + Freetalk.WOT_CONTEXT.toLowerCase();	
 	}
 	
@@ -163,7 +164,7 @@ public class WoTIdentity extends Persistent implements Identity {
 	 * @see mLastReceivedFromWoT
 	 */
 	public synchronized long getLastReceivedFromWoT() {
-		// activate(1);	// 1 is the default activation depth, no need to execute activate(1)
+		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		return mLastReceivedFromWoT;
 	}
 	
@@ -171,7 +172,9 @@ public class WoTIdentity extends Persistent implements Identity {
 	 * @see mLastReceivedFromWoT
 	 */
 	public synchronized void setLastReceivedFromWoT(long importID) {
+		checkedActivate(1);
 		mLastReceivedFromWoT = importID;
+		storeWithoutCommit(); // TODO: Move store() calls outside of class identity
 	}
 
 	/**
@@ -203,7 +206,7 @@ public class WoTIdentity extends Persistent implements Identity {
 	 * You have to synchronize on this object before modifying the identity and calling storeAndCommit. 
 	 */
 	public void storeAndCommit() {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			storeWithoutCommit();
 			checkedCommit(this);
 		}
@@ -211,11 +214,12 @@ public class WoTIdentity extends Persistent implements Identity {
 
 	protected void storeWithoutCommit() {
 		try {		
-			// 3 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			checkedActivate(3);
+			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(1);
 
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 			
+			checkedActivate(mRequestURI, 2);
 			checkedStore(mRequestURI);
 			checkedStore();
 		}
@@ -226,11 +230,12 @@ public class WoTIdentity extends Persistent implements Identity {
 	
 	protected void deleteWithoutCommit() {
 		try {
-			// 3 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			checkedActivate(this, 3);
+			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(this, 1);
 			
 			checkedDelete();
 			
+			checkedActivate(mRequestURI, 2);
 			mRequestURI.removeFrom(mDB);
 		}
 		catch(RuntimeException e) {

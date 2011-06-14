@@ -102,6 +102,15 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	private final TrivialTicker mTicker;
 	private final Random mRandom;
 	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(MessageManager.class);
+	}
+	
 
 	public MessageManager(ExtObjectContainer myDB, IdentityManager myIdentityManager, Freetalk myFreetalk, PluginRespirator myPluginRespirator) {
 		assert(myDB != null);
@@ -138,7 +147,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	}
 	
 	public void run() {
-		Logger.debug(this, "Main loop running...");
+		if(logDEBUG) Logger.debug(this, "Main loop running...");
 		
 		try {
 			// Must be called periodically because they are not called on demand.
@@ -147,11 +156,11 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 			recheckWantedMessages();
 		}  finally {
 			long sleepTime = THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
-			Logger.debug(this, "Sleeping for " + sleepTime/(60*1000) + " minutes.");
+			if(logDEBUG) Logger.debug(this, "Sleeping for " + sleepTime/(60*1000) + " minutes.");
 			mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), sleepTime, false, true);
 		}
 		
-		Logger.debug(this, "Main loop finished.");
+		if(logDEBUG) Logger.debug(this, "Main loop finished.");
 	}
 	
 	private final Runnable mNewMessageProcessor = new PrioRunnable() {
@@ -160,7 +169,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		}
 		
 		public void run() {
-			Logger.debug(MessageManager.this, "Processing new messages...");
+			if(logDEBUG) Logger.debug(MessageManager.this, "Processing new messages...");
 			
 			boolean success1 = addMessagesToBoards(); // Normally does not fail
 			
@@ -175,7 +184,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	};
 	
 	private void scheduleNewMessageProcessing() {
-		Logger.debug(this, "Scheduling new message processing to be run in " + PROCESS_NEW_MESSAGES_DELAY / (60*1000) + " minutes...");
+		if(logDEBUG) Logger.debug(this, "Scheduling new message processing to be run in " + PROCESS_NEW_MESSAGES_DELAY / (60*1000) + " minutes...");
 		if(mTicker != null)
 			mTicker.queueTimedJob(mNewMessageProcessor, "Freetalk " + this.getClass().getSimpleName(), PROCESS_NEW_MESSAGES_DELAY, false, true);
 		else { // For unit tests
@@ -185,12 +194,12 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	
 	
 	public void start() {
-		Logger.debug(this, "Starting...");
+		if(logDEBUG) Logger.debug(this, "Starting...");
 		
 		createDefaultBoards();
 		
 		long startupDelay = STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY); 
-		Logger.debug(this, "Main loop will run in " + startupDelay/(60*1000) + " minutes.");
+		if(logDEBUG) Logger.debug(this, "Main loop will run in " + startupDelay/(60*1000) + " minutes.");
 		mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), startupDelay, false, true);
 		
 		// It might happen that Freetalk is shutdown after a message has been downloaded and before addMessagesToBoards was called:
@@ -198,13 +207,13 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		// Therefore, we must call addMessagesToBoards (and synchronizeSubscribedBoards) during startup.
 		scheduleNewMessageProcessing();
 		
-		Logger.debug(this, "Started.");
+		if(logDEBUG) Logger.debug(this, "Started.");
 	}
 
 	public void terminate() {
-		Logger.debug(this, "Stopping ..."); 
+		if(logDEBUG) Logger.debug(this, "Stopping ..."); 
 		mTicker.shutdown();
-		Logger.debug(this, "Stopped.");
+		if(logDEBUG) Logger.debug(this, "Stopped.");
 	}
 	
 	/**
@@ -265,7 +274,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		q = db.query();
 		q.constrain(OwnMessageList.class);
 		q.descend("mWasInserted").constrain(false);
-		ObjectSet<OwnMessageList> notInsertedLists = q.execute();
+		ObjectSet<OwnMessageList> notInsertedLists = new Persistent.InitializingObjectSet<OwnMessageList>(mFreetalk, q);
 		for(OwnMessageList list : notInsertedLists)
 			unsentCount += list.getMessageCount();
 		
@@ -311,7 +320,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		for(Board board : message.getBoards()) {
 			synchronized(board) {
 			synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
-			synchronized(db.lock()) {
+			synchronized(Persistent.transactionLock(db)) {
 			try {
 				board.deleteMessage(message);
 				message.setLinkedIn(false);
@@ -328,7 +337,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 			for(SubscribedBoard subscribedBoard : subscribedBoardIterator(board.getName())) {
 				synchronized(subscribedBoard) {
 				synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
-				synchronized(db.lock()) {
+				synchronized(Persistent.transactionLock(db)) {
 				try {
 					subscribedBoard.deleteMessage(message);
 					subscribedBoard.checkedCommit(this);
@@ -347,7 +356,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		}
 
 		synchronized(message) { // TODO: Check whether we actually need to lock messages. I don't think so.
-		synchronized(db.lock()) {	
+		synchronized(Persistent.transactionLock(db)) {	
 			try {
 				if(message instanceof OwnMessage) {
 					final OwnMessage ownMessage = (OwnMessage)message;
@@ -450,7 +459,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 				continue;
 			}
 			
-			synchronized(db.lock()) {
+			synchronized(Persistent.transactionLock(db)) {
 				try {
 					Logger.normal(this, "Deleting empty board " + board);
 					board.deleteWithoutCommit();
@@ -485,8 +494,8 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	 * Deletes any messages and message lists referencing to it and commits the transaction.
 	 */
 	public synchronized void beforeIdentityDeletion(Identity identity) {
-		Logger.debug(this, "Deleting all objects of identity " + identity);
-		// We use multiple transactions here: We cannot acquire the db.lock() before deleteMessageRatting, board.deleteWithoutCommit and
+		if(logDEBUG) Logger.debug(this, "Deleting all objects of identity " + identity);
+		// We use multiple transactions here: We cannot acquire the Persistent.transactionLock(db) before deleteMessageRatting, board.deleteWithoutCommit and
 		// deleteMessage. Each of them synchronize on message ratings / boards, therefore we must acquire the db.lock after synchronizing on each object.
 		// TODO: Check whether this can result in bad side effects. IMHO it cannot.
 		// If it can, add some mechanism similar to addMessagesToBoards()/synchronizeSubscribedBoards which handles half-deleted identities.
@@ -507,7 +516,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 			deleteMessage(message); // This does a full transaction and commits it.
 		}
 
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			try {
 				for(MessageList messageList : getMessageListsBy(identity)) {
 					messageList.deleteWithoutCommit();
@@ -536,7 +545,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 					getIdentityStatistics(identity).deleteWithoutCommit();
 				} catch(NoSuchObjectException e) {}
 
-				Logger.debug(this, "beforeIdentityDeletion finished for " + identity);
+				if(logDEBUG) Logger.debug(this, "beforeIdentityDeletion finished for " + identity);
 				Persistent.checkedCommit(db, this);
 			}
 			catch(RuntimeException e) {
@@ -555,7 +564,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	 * @throws NoSuchMessageListException If there is no such {@link OwnMessageList}.
 	 */
 	public synchronized void onMessageListInsertStarted(OwnMessageList list) {
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			try {
 				list.throwIfNotStored();
 				list.beginOfInsert();
@@ -576,7 +585,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	 * @throws NoSuchMessageListException If there is no such {@link OwnMessageList}.
 	 */
 	public synchronized void onMessageListInsertSucceeded(FreenetURI uri) throws NoSuchMessageListException {
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			try {
 				OwnMessageList list = getOwnMessageList(MessageListID.construct(uri).toString());
 				list.markAsInserted();
@@ -611,7 +620,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 			wasDownloadedAlready = false;
 		}
 		
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			try {
 				if(!wasDownloadedAlready) {
 					message.storeWithoutCommit();
@@ -684,9 +693,9 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 			for(Board board : message.getBoards()) {
 				synchronized(board) {
 				synchronized(message) {
-				synchronized(db.lock()) {
+				synchronized(Persistent.transactionLock(db)) {
 					try {
-						Logger.debug(this, "Adding message to board: " + message);
+						if(logDEBUG) Logger.debug(this, "Adding message to board: " + message);
 						board.addMessage(message);
 						board.checkedCommit(this);
 					}
@@ -701,7 +710,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 			
 			if(messageSuccessful) {
 				synchronized(message) {
-				synchronized(db.lock()) {
+				synchronized(Persistent.transactionLock(db)) {
 					message.setLinkedIn(true);
 					message.storeAndCommit();
 				}
@@ -725,7 +734,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 			// No need to lock the parent board because we do not modify it and we've locked the MessageManager which prevents writes to the parent board.
 			// synchronized(board.getParentBoard()) {
 			synchronized(board) {
-			synchronized(db.lock()) {
+			synchronized(Persistent.transactionLock(db)) {
 				try {
 					board.synchronizeWithoutCommit();
 					board.checkedCommit(this);
@@ -748,7 +757,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	public synchronized void onMessageListReceived(MessageList list) {
 		list.initializeTransient(mFreetalk);
 		
-		// It's not possible to keep the synchronization order of message lists to synchronize BEFORE synchronizing on db.lock() some places so we 
+		// It's not possible to keep the synchronization order of message lists to synchronize BEFORE synchronizing on Persistent.transactionLock(db) some places so we 
 		// do not synchronize here.
 		// And in this function we don't need to synchronize on it anyway because it is not known to anything which might modify it anyway.
 		// In general, due to those issues the functions which modify message lists just use the message manager as synchronization object. 
@@ -767,7 +776,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 			ghostList = getMessageList(list.getID());
 			
 			if(marker == null) {
-				Logger.debug(this, "Downloaded a MessageList which we already have: " + list);
+				if(logDEBUG) Logger.debug(this, "Downloaded a MessageList which we already have: " + list);
 				return;
 			}
 
@@ -775,7 +784,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 			ghostList = null;
 		}
 
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 				try {
 					if(marker != null) {
 						// TODO: This is usually an error, but it is no error if the fetched list is the only list which there was a ghost list for (i.e. edition 0)
@@ -833,10 +842,10 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	public synchronized void onMessageFetchFailed(MessageReference messageReference, FetchFailedMarker.Reason reason) {
 		try {
 			get(messageReference.getMessageID());
-			Logger.debug(this, "Trying to mark a message as 'download failed' which we actually have: " + messageReference.getURI());
+			if(logDEBUG) Logger.debug(this, "Trying to mark a message as 'download failed' which we actually have: " + messageReference.getURI());
 		}
 		catch(NoSuchMessageException e) {
-			synchronized(db.lock()) {
+			synchronized(Persistent.transactionLock(db)) {
 			try {				
 				Date date = CurrentTimeUTC.get();
 				
@@ -963,7 +972,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		int amount = 0;
 		
 		for(FetchFailedMarker marker : getExpiredFetchFailedMarkers(now)) {
-			synchronized(db.lock()) {
+			synchronized(Persistent.transactionLock(db)) {
 				try {
 					if(marker instanceof MessageFetchFailedMarker) {
 						MessageFetchFailedMarker m = (MessageFetchFailedMarker)marker;
@@ -990,7 +999,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 					
 					++amount;
 					
-					Logger.debug(this, "Cleared marker " + marker);
+					if(logDEBUG) Logger.debug(this, "Cleared marker " + marker);
 					marker.setAllowRetryNow(true);
 					marker.checkedCommit(this);
 				}
@@ -1293,12 +1302,12 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		catch(NoSuchBoardException e) {
 			PersistentTaskManager tm = mFreetalk.getTaskManager();
 			synchronized(tm) {
-			synchronized(db.lock()) {
+			synchronized(Persistent.transactionLock(db)) {
 			try {
-				board = new Board(name, description);
+				board = new Board(name, description, false);
 				board.initializeTransient(mFreetalk);
 				board.storeWithoutCommit();
-				Logger.debug(this, "Created board " + name);
+				if(logDEBUG) Logger.debug(this, "Created board " + name);
 				board.checkedCommit(this);
 				
 				tm.storeTaskWithoutCommit(new NewBoardTask(board));
@@ -1415,7 +1424,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 					return getSubscription(subscriber, boardName);
 				}
 				catch(NoSuchBoardException e) {
-					synchronized(db.lock()) {
+					synchronized(Persistent.transactionLock(db)) {
 						try {
 							SubscribedBoard subscribedBoard = new SubscribedBoard(board, subscriber);
 							subscribedBoard.initializeTransient(mFreetalk);
@@ -1423,7 +1432,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 							subscribedBoard.synchronizeWithoutCommit();
 							
 							if(board.hasSubscriptions() == false) {
-								Logger.debug(this, "First subscription received for board " + board + ", setting it's HasSubscriptions flag.");
+								if(logDEBUG) Logger.debug(this, "First subscription received for board " + board + ", setting it's HasSubscriptions flag.");
 								board.setHasSubscriptions(true);
 								board.storeWithoutCommit();
 							}
@@ -1448,14 +1457,14 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	
 	protected synchronized void unsubscribeFromBoard(OwnIdentity subscriber, SubscribedBoard subscribedBoard) {
 		synchronized(subscribedBoard) {
-			synchronized(db.lock()) {
+			synchronized(Persistent.transactionLock(db)) {
 				try {
 					subscribedBoard.deleteWithoutCommit();
 					
 					if(subscribedBoardIterator(subscribedBoard.getName()).isEmpty()) {
 						try {
 							Board board = getBoardByName(subscribedBoard.getName());
-							Logger.debug(this, "Last subscription to board " + board + " removed, clearing it's HasSubscriptions flag.");
+							if(logDEBUG) Logger.debug(this, "Last subscription to board " + board + " removed, clearing it's HasSubscriptions flag.");
 							board.setHasSubscriptions(false);
 							board.storeWithoutCommit();
 						} catch (NoSuchBoardException e) { 
@@ -1536,8 +1545,25 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		query.descend("mCreationDate").orderDescending();
 		return new Persistent.InitializingObjectSet<MessageList.MessageReference>(mFreetalk, query);
 	}
+	
+	/**
+	 * Gets the amount of all downloadable messages. This are the messages which where referenced in any non-own message list.
+	 * Messages which are posted to multiple boards are counted multiple times, once for each board.
+	 */
+	public final synchronized int countNonOwnMessageListMessageReferences() {
+		final Query query = db.query();
+		query.constrain(MessageList.MessageReference.class);
+		query.constrain(OwnMessageList.OwnMessageReference.class).not();
+		return query.execute().size();
+	}
 
-
+	public final synchronized int countNonOwnMessageLists() {
+		final Query query = db.query();
+		query.constrain(MessageList.class);
+		query.constrain(OwnMessageList.class).not();
+		return query.execute().size();
+	}
+	
 	/**
 	 * Get a list of all message lists from the given identity.
 	 * If the identity is an {@link OwnIdentity}, it's own message lists are only returned if they have been downloaded as normal message lists.
@@ -1659,6 +1685,12 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		}
 	}
 	
+	public final ObjectSet<IdentityStatistics> getAllIdentityStatistics() {
+		final Query query = db.query();
+		query.constrain(IdentityStatistics.class);
+		return new Persistent.InitializingObjectSet<IdentityStatistics>(mFreetalk, query);
+	}
+	
 	/**
 	 * Not synchronized because it is typically being used in a transaction anyway - we need to store the created object.
 	 */
@@ -1766,10 +1798,10 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
     		try {
     			try {
     				final Board existingBoard = getBoardByName(boardInfo[0]);
-    				synchronized(db.lock()) {
+    				synchronized(Persistent.transactionLock(db)) {
     					try {
     						if(existingBoard.setDescription(boardInfo[1])) {
-    							Logger.debug(this, "Updated description for " + existingBoard);
+    							if(logDEBUG) Logger.debug(this, "Updated description for " + existingBoard);
     							existingBoard.storeWithoutCommit();
     							Persistent.checkedCommit(db, this);
     						}

@@ -168,7 +168,7 @@ public abstract class Message extends Persistent {
 		}
 
 		public void databaseIntegrityTest() throws Exception {
-			checkedActivate(3);
+			checkedActivate(1);
 			
 			if(mMessage == null)
 				throw new NullPointerException("mMessage==null");
@@ -182,7 +182,7 @@ public abstract class Message extends Persistent {
 		    if(mFilename == null)
 		    	throw new NullPointerException("mFilename==null");
 		    
-		    if(!mFilename.equals(mURI.getPreferredFilename()))
+		    if(!mFilename.equals(getURI().getPreferredFilename()))
 		    	throw new IllegalStateException("mFilename does not match expected filename: mFilename==" + mFilename 
 		    			+ "; expected==" + mURI.getPreferredFilename());
 		    
@@ -202,28 +202,30 @@ public abstract class Message extends Persistent {
 		}
 		
 		protected void setMessage(Message message) {
+			checkedActivate(1);
 			mMessage = message;
 		}
 		
 		public Message getMessage() {
-			checkedActivate(2);
+			checkedActivate(1);
 			mMessage.initializeTransient(mFreetalk);
 			return mMessage;
 		}
 		
 		
 		public FreenetURI getURI() {
-			checkedActivate(3);
+			checkedActivate(1);
+			checkedActivate(mURI, 2);
 			return mURI;
 		}
 
 		public String getFilename() {
-			// checkedActivate(1); not needed, String is a db4o primitive
+			checkedActivate(1); // String is a db4o primitive type so 1 is enough
 			return mFilename;
 		}
 		
 		public MimeType getMIMEType() {
-			// checkedActivate(1); not needed, String is a db4o primitive
+			checkedActivate(1); // String is a db4o primitive type so 1 is enough
 			try {
 				return new MimeType(mMIMEType);
 			} catch(MimeTypeParseException e) {
@@ -232,18 +234,20 @@ public abstract class Message extends Persistent {
 		}
 		
 		public long getSize() {
-			// checkedActivate(1); not needed, long is a db4o primitive
+			checkedActivate(1); // long is a db4o primitive type so 1 is enough
 			return mSize;
 		}
 		
 		@Override
 		protected void storeWithoutCommit() {
 			try {
-				checkedActivate(3); // TODO: Figure out a suitable depth.
+				checkedActivate(1);
 				
 				// You have to take care to keep the list of stored objects synchronized with those being deleted in removeFrom() !
 				
+				checkedActivate(mURI, 2);
 				checkedStore(mURI);
+				
 				checkedStore();
 			}
 			catch(RuntimeException e) {
@@ -254,10 +258,11 @@ public abstract class Message extends Persistent {
 		@Override
 		protected void deleteWithoutCommit() {
 			try {
-				checkedActivate(3); // TODO: Figure out a suitable depth.
+				checkedActivate(1);
 				
 				checkedDelete();
 				
+				checkedActivate(mURI, 2);
 				mURI.removeFrom(mDB);
 			}
 			catch(RuntimeException e) {
@@ -385,7 +390,12 @@ public abstract class Message extends Persistent {
 	}
 
 
-	protected Message(MessageURI newURI, FreenetURI newFreenetURI, MessageID newID, MessageList newMessageList, MessageURI newThreadURI, MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+	protected Message(Freetalk myFreetalk, MessageURI newURI, FreenetURI newFreenetURI, MessageID newID, MessageList newMessageList, MessageURI newThreadURI, MessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+		initializeTransient(myFreetalk);
+		if(newURI != null) newURI.initializeTransient(mFreetalk);
+		if(newThreadURI != null) newThreadURI.initializeTransient(mFreetalk);
+		if(newParentURI != null) newParentURI.initializeTransient(mFreetalk);
+
 		if(newURI != null) // May be null first for own messages
 			newURI.throwIfAuthorDoesNotMatch(newAuthor);
 		// newFreenetURI cannot be validated, it is allowed to be CHK
@@ -460,9 +470,9 @@ public abstract class Message extends Persistent {
 		mReplyToBoard = newReplyToBoard;
 		mTitle = makeTitleValid(newTitle);
 
-		if(newDate.after(getFetchDate())) {
-			Logger.warning(this, "Received bogus message date: Now = " + getFetchDate() + "; message date = " + newDate + "; message=" + mURI);
-			mDate = getFetchDate();
+		if(newDate.after(mCreationDate)) { // mCreationDate == getFetchDate()
+			Logger.warning(this, "Received bogus message date: Now = " + mCreationDate + "; message date = " + newDate + "; message=" + mURI);
+			mDate = mCreationDate;
 		} else {
 			mDate = newDate; // TODO: Check out whether Date provides a function for getting the timezone and throw an Exception if not UTC.
 		}
@@ -481,8 +491,10 @@ public abstract class Message extends Persistent {
 
 			mAttachments = newAttachments.toArray(new Attachment[newAttachments.size()]);
 			
-			for(Attachment a : mAttachments)
+			for(Attachment a : mAttachments) {
+				a.initializeTransient(mFreetalk);
 				a.setMessage(this);
+			}
 		} else {
 			mAttachments = null;
 		}
@@ -490,7 +502,7 @@ public abstract class Message extends Persistent {
 
 	@Override
 	public void databaseIntegrityTest() throws Exception {
-		checkedActivate(3);
+		checkedActivate(1);
 
 	    if(mID == null)
 	    	throw new NullPointerException("mID==null");
@@ -498,7 +510,7 @@ public abstract class Message extends Persistent {
 	    if(mAuthor == null)
 	    	throw new NullPointerException("mAuthor==null");
 	    
-	    MessageID.construct(mID).throwIfAuthorDoesNotMatch(mAuthor);
+	    MessageID.construct(mID).throwIfAuthorDoesNotMatch(getAuthor());
 	    
 	    if(!(this instanceof OwnMessage)) {
 		    if(mURI == null)
@@ -521,7 +533,7 @@ public abstract class Message extends Persistent {
 		    
 		    // It would be wrong because message URI contains the URI of the message list, not the URI of the message itself.
 		    
-		    messageURI.throwIfAuthorDoesNotMatch(mAuthor);
+		    messageURI.throwIfAuthorDoesNotMatch(getAuthor());
 		    
 		    if(!messageURI.getMessageID().equals(mID))
 		    	throw new IllegalStateException("mID == " + mID + " not matched for mURI == " + mURI);
@@ -545,7 +557,7 @@ public abstract class Message extends Persistent {
 	    		throw new IllegalStateException("mMessageList author does not match mAuthor: " + mMessageList);
 
 	    	try {
-	    		final MessageList.MessageReference ref = getMessageList().getReference(mFreenetURI);
+	    		final MessageList.MessageReference ref = getMessageList().getReference(getFreenetURI());
 	    		IfNotEquals.thenThrow(mID, ref.getMessageID(), "mID");
 	    	} catch(NoSuchMessageException e) {
 	    		throw new IllegalStateException("mMessageList does not contain this message: " + mMessageList);
@@ -625,10 +637,10 @@ public abstract class Message extends Persistent {
 
 	    // Attachments inherit class Persistent and therefore have their own integrity test
 	    
-	    if(mThread != null && !mThreadID.equals(mThread.getID()))
+	    if(mThread != null && !mThreadID.equals(getThread().getID()))
 	    	throw new IllegalStateException("mThread does not match thread ID: " + mThread);
 		
-		if(mParent != null && !mParentID.endsWith(mParent.getID()))
+		if(mParent != null && !mParentID.endsWith(getParent().getID()))
 			throw new IllegalStateException("mParent does not match parent ID: " + mParent);
 		
 		if(mWasLinkedIn) {
@@ -647,7 +659,7 @@ public abstract class Message extends Persistent {
 	 * Get the URI of the message.
 	 */
 	public MessageURI getURI() { /* Not synchronized because only OwnMessage might change the URI */
-		checkedActivate(3); // It's likely that the URI will be used so we fully activate it.
+		checkedActivate(1);
 		assert(mURI != null);
 
 		mURI.initializeTransient(mFreetalk);
@@ -658,13 +670,15 @@ public abstract class Message extends Persistent {
 	 * Gets the FreenetURI where this message is actually stored, i.e. the CHK URI of the message.
 	 */
 	protected FreenetURI getFreenetURI() {
-		checkedActivate(2);
+		checkedActivate(1);
 		assert(mFreenetURI != null);
+		checkedActivate(mFreenetURI, 2);
 
 		return mFreenetURI;
 	}
 
 	public final String getID() {
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID; // Is final.
 	}
 
@@ -672,7 +686,7 @@ public abstract class Message extends Persistent {
 	 * @throws NoSuchMessageListException Only an OwnMessage will throw this. Normal messages always have a list.
 	 */
 	public synchronized MessageList getMessageList() throws NoSuchMessageListException {
-		checkedActivate(2);
+		checkedActivate(1);
 		assert(mMessageList != null);
 
 		mMessageList.initializeTransient(mFreetalk);
@@ -680,7 +694,7 @@ public abstract class Message extends Persistent {
 	}
 
 	protected final synchronized void clearMessageList() {
-		checkedActivate(2);
+		checkedActivate(1);
 		mMessageList = null;
 		storeWithoutCommit();
 	}
@@ -690,11 +704,12 @@ public abstract class Message extends Persistent {
 	 * @throws NoSuchMessageException
 	 */
 	public final synchronized MessageURI getThreadURI() throws NoSuchMessageException {
-		checkedActivate(2);
+		checkedActivate(1);
 
 		if(mThreadURI == null)
 			throw new NoSuchMessageException();
 
+		mThreadURI.initializeTransient(mFreetalk);
 		return mThreadURI;
 	}
 
@@ -709,7 +724,7 @@ public abstract class Message extends Persistent {
 	 * @throws NoSuchMessageException If the message is a thread itself.
 	 */
 	public final synchronized String getThreadID() throws NoSuchMessageException {
-		// checkedActivate(1);
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 
 		if(mThreadID == null)
 			throw new NoSuchMessageException();
@@ -737,7 +752,7 @@ public abstract class Message extends Persistent {
 	 * Get the MessageURI to which this message is a reply. Null if the message is a thread.
 	 */
 	public final MessageURI getParentURI() throws NoSuchMessageException {
-		checkedActivate(3); // It's likely that the URI will be used so we fully activate it.
+		checkedActivate(1);
 
 		if(mParentURI == null)
 			throw new NoSuchMessageException();
@@ -747,7 +762,7 @@ public abstract class Message extends Persistent {
 	}
 
 	public final String getParentID() throws NoSuchMessageException {
-		// checkedActivate(1);
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 
 		if(mParentID == null)
 			throw new NoSuchMessageException();
@@ -776,7 +791,7 @@ public abstract class Message extends Persistent {
 	 * specify the URI of a parent message it is still a thread if there is no parent thread URI!
 	 */
 	public final boolean isThread() {
-		checkedActivate(2);
+		checkedActivate(1);
 
 		return mThreadURI == null;
 	}
@@ -786,7 +801,7 @@ public abstract class Message extends Persistent {
 	 * The transient fields of the returned boards are initialized already.
 	 */
 	public final Board[] getBoards() {
-		checkedActivate(2);
+		checkedActivate(1);
 		assert(mBoards != null);
 
 		for(Board b : mBoards)
@@ -795,7 +810,7 @@ public abstract class Message extends Persistent {
 	}
 
 	public final Board getReplyToBoard() throws NoSuchBoardException {
-		checkedActivate(2);
+		checkedActivate(1);
 
 		if(mReplyToBoard == null)
 			throw new NoSuchBoardException();
@@ -808,7 +823,7 @@ public abstract class Message extends Persistent {
 	 * Get the author of the message.
 	 */
 	public final Identity getAuthor() {
-		checkedActivate(2);
+		checkedActivate(1);
 		assert(mAuthor != null);
 
 		if(mAuthor instanceof Persistent) {
@@ -822,7 +837,7 @@ public abstract class Message extends Persistent {
 	 * Get the title of the message.
 	 */
 	public final String getTitle() {
-		// checkedActivate(1);
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		assert(mTitle != null);
 
 		return mTitle;
@@ -832,7 +847,7 @@ public abstract class Message extends Persistent {
 	 * Get the date when the message was written in <strong>UTC time</strong>.
 	 */
 	public final Date getDate() {
-		// checkedActivate(1);
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		assert(mDate != null);
 
 		return mDate;
@@ -842,7 +857,7 @@ public abstract class Message extends Persistent {
 	 * Get the date when the message was fetched by Freetalk.
 	 */
 	public final Date getFetchDate() {
-		// checkedActivate(1);
+		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		assert(mCreationDate != null);
 
 		return mCreationDate;
@@ -852,7 +867,7 @@ public abstract class Message extends Persistent {
 	 * Get the text of the message.
 	 */
 	public final String getText() {
-		// checkedActivate(1);
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		assert(mText != null);
 
 		return mText;
@@ -862,7 +877,7 @@ public abstract class Message extends Persistent {
 	 * Get the attachments of the message, in the order in which they were received.
 	 */
 	public final Attachment[] getAttachments() {
-		checkedActivate(3);
+		checkedActivate(1);
 		if(mAttachments != null) {
 			for(Attachment a : mAttachments)
 				a.initializeTransient(mFreetalk);
@@ -880,7 +895,7 @@ public abstract class Message extends Persistent {
 	 */
 	public final synchronized Message getThread() throws NoSuchMessageException {
 		/* TODO: Find all usages of this function and check whether we might want to use a higher depth here */
-		checkedActivate(2);
+		checkedActivate(1);
 
 		if(mThread == null)
 			throw new NoSuchMessageException();
@@ -890,12 +905,14 @@ public abstract class Message extends Persistent {
 	}
 
 	public synchronized void setThread(Message newParentThread) {
+		checkedActivate(1);
+		
 		assert(mThread == null || mThread == newParentThread);
 
 		if(mThread != null)
 			Logger.warning(this, "Thread already exists for " + this + ": existing==" + mThread + "; new==" + newParentThread);
 
-		if(!newParentThread.getID().equals(mThreadID)) // mThreadID needs no activation
+		if(!newParentThread.getID().equals(mThreadID))
 			throw new IllegalArgumentException("Trying to set a message as thread which has the wrong ID: " + newParentThread.getID());
 
 		if(newParentThread instanceof OwnMessage)
@@ -906,6 +923,7 @@ public abstract class Message extends Persistent {
 	}
 
 	protected final synchronized void clearThread() {
+		checkedActivate(1);
 		mThread = null;
 		storeWithoutCommit();
 	}
@@ -915,7 +933,7 @@ public abstract class Message extends Persistent {
 	 */
 	public synchronized Message getParent() throws NoSuchMessageException {
 		/* TODO: Find all usages of this function and check whether we might want to use a higher depth here */
-		checkedActivate(2);
+		checkedActivate(1);
 
 		if(mParent == null)
 			throw new NoSuchMessageException();
@@ -925,12 +943,14 @@ public abstract class Message extends Persistent {
 	}
 
 	public synchronized void setParent(Message newParent)  {
+		checkedActivate(1);
+		
 		assert(mParent == null || newParent == mParent);
 
 		if(mParent != null)
 			Logger.warning(this, "Parent already exists for " + this + ": existing==" + mParent + "; new==" + newParent);
 
-		if(!newParent.getID().equals(mParentID)) // mParentID needs no activation
+		if(!newParent.getID().equals(mParentID))
 			throw new IllegalArgumentException("Trying to set a message as parent which has the wrong ID: " + newParent.getID());
 
 		if(newParent instanceof OwnMessage)
@@ -941,6 +961,7 @@ public abstract class Message extends Persistent {
 	}
 
 	protected final synchronized void clearParent() {
+		checkedActivate(1);
 		mParent = null;
 		storeWithoutCommit();
 	}
@@ -951,7 +972,7 @@ public abstract class Message extends Persistent {
 	 *
 	 */
 	protected final synchronized boolean wasLinkedIn() {
-		// checkedActivate(1);
+		checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 		return mWasLinkedIn;
 	}
 
@@ -960,6 +981,7 @@ public abstract class Message extends Persistent {
 	 * For an explanation of this flag please read the documentation of {@link wasLinkedIn}.
 	 */
 	protected final synchronized void setLinkedIn(boolean wasLinkedIn) {
+		checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 		mWasLinkedIn = wasLinkedIn;
 	}
 
@@ -1132,7 +1154,7 @@ public abstract class Message extends Persistent {
 	}
 
 	public final synchronized void storeAndCommit() {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				storeWithoutCommit();
 				checkedCommit(this);
@@ -1145,7 +1167,9 @@ public abstract class Message extends Persistent {
 
 	public void storeWithoutCommit() {
 		try {
-			checkedActivate(3); // 3 is the maximum depth of all getter functions. You have to adjust this when adding new members.
+			// 1 is the maximum depth of all getter functions, except those for FreenetURI, which we manually activate.
+			// You have to adjust this when adding new members.
+			checkedActivate(1);
 
 			for(Board board : mBoards)
 				throwIfNotStored(board);
@@ -1163,7 +1187,8 @@ public abstract class Message extends Persistent {
 				mURI.storeWithoutCommit();
 			}
 			if(mFreenetURI != null) {
-				// It's a FreenetURI so it does not extend Persistent.
+				// It's a FreenetURI so it does not extend Persistent and we need to manually activate & store it
+				checkedActivate(mFreenetURI, 2);
 				checkedStore(mFreenetURI);
 			}
 			if(mThreadURI != null) {
@@ -1201,7 +1226,7 @@ public abstract class Message extends Persistent {
 
 	protected void deleteWithoutCommit() {
 		try {
-			checkedActivate(3); // TODO: Figure out a suitable depth.
+			checkedActivate(1);
 
 			checkedDelete(this);
 
@@ -1215,6 +1240,7 @@ public abstract class Message extends Persistent {
 			}
 			if(mFreenetURI != null) {
 				// It's a FreenetURI so there is no transient initialization
+				checkedActivate(mFreenetURI, 2);
 				mFreenetURI.removeFrom(mDB);
 			}
 			if(mURI != null) {
@@ -1237,11 +1263,16 @@ public abstract class Message extends Persistent {
 
 	@Override
 	public boolean equals(Object obj) {
-		if(obj instanceof Message) {
-			Message otherMessage = (Message)obj;
-			return mID.equals(otherMessage.getID()); // mID needs no activation
-		} else
+		if(obj == this)
+			return true;
+		
+		if(!(obj instanceof Message))
 			return false;
+		
+		// TODO: Fully compare all members so we can use this for unit tests etc.
+	
+		Message otherMessage = (Message)obj;
+		return getID().equals(otherMessage.getID());
 	}
 
 	public String toString() {

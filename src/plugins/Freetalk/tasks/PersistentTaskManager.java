@@ -37,6 +37,15 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 	private final TrivialTicker mTicker;
 	private final Random mRandom;
 	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(PersistentTaskManager.class);
+	}
+	
 	
 	public PersistentTaskManager(Freetalk myFreetalk, ExtObjectContainer myDB) {
 		assert(myDB != null);
@@ -55,7 +64,7 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 	}
 	
 	public void run() {
-		Logger.debug(this, "Main loop running...");
+		if(logDEBUG) Logger.debug(this, "Main loop running...");
 
 		try {
 			long now = CurrentTimeUTC.getInMillis();
@@ -66,25 +75,25 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 		} finally {
 			if(mTicker != null) {
 				final long sleepTime =  THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
-				Logger.debug(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
+				if(logDEBUG) Logger.debug(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
 				mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), sleepTime, false, true);
 			}
 		}
 		
-		Logger.debug(this, "Main loop finished.");
+		if(logDEBUG) Logger.debug(this, "Main loop finished.");
 	}
 	
 	public void start() {
-		Logger.debug(this, "Starting...");
+		if(logDEBUG) Logger.debug(this, "Starting...");
 		IfNull.thenThrow(mTicker, "Ticker may only be null in unit tests, otherwise deadlocks can happen");
 		mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), 0, false, true);
-		Logger.debug(this, "Started.");
+		if(logDEBUG) Logger.debug(this, "Started.");
 	}
 	
 	public void terminate() {
-		Logger.debug(this, "Terminating ...");
+		if(logDEBUG) Logger.debug(this, "Terminating ...");
 		mTicker.shutdown();
-		Logger.debug(this, "Terminated.");
+		if(logDEBUG) Logger.debug(this, "Terminated.");
 	}
 	
 	public void processTasksSoon() {
@@ -101,7 +110,7 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 		q.descend("mDeleteTime").constrain(currentTime).smaller();;
 		
 		for(PersistentTask task : new Persistent.InitializingObjectSet<PersistentTask>(mFreetalk, q)) {
-			synchronized(mDB.lock()) {
+			synchronized(Persistent.transactionLock(mDB)) {
 				try {
 					task.deleteWithoutCommit();
 					Persistent.checkedCommit(mDB, this);
@@ -181,7 +190,6 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 	 * 
 	 * @return The tasks which should be displayed on the web interface right now.
 	 */
-	@SuppressWarnings("unchecked")
 	public ObjectSet<PersistentTask> getVisibleTasks(OwnIdentity owner) {
 		Query q = mDB.query();
 		
@@ -194,7 +202,7 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 		
 		q.descend("mNextDisplayTime").orderDescending();
 		
-		return q.execute();
+		return new Persistent.InitializingObjectSet<PersistentTask>(mFreetalk, q);
 	}
 	
 	/**
@@ -208,13 +216,13 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 		q.descend("mOwner").constrain(identity).identity();
 		final ObjectSet<PersistentTask> tasks = new Persistent.InitializingObjectSet<PersistentTask>(mFreetalk, q);
 		
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				for(PersistentTask task : tasks) {
 					task.deleteWithoutCommit();
 				}
 				
-				Logger.debug(this, "Deleted tasks of " + identity);
+				if(logDEBUG) Logger.debug(this, "Deleted tasks of " + identity);
 				Persistent.checkedCommit(mDB, this);
 			}
 			catch(RuntimeException e) {

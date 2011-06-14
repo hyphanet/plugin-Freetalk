@@ -37,15 +37,15 @@ public abstract class OwnMessageList extends MessageList {
 	public void databaseIntegrityTest() throws Exception {
 		super.databaseIntegrityTest();
 		
-		checkedActivate(3);
+		checkedActivate(1);
 		
 		if(!(mAuthor instanceof OwnIdentity))
-			throw new IllegalStateException("mAuthor is no OwnIdentity: " + mAuthor);
+			throw new IllegalStateException("mAuthor is no OwnIdentity: " + getAuthor());
 			
 		if(mIsBeingInserted && mWasInserted)
 			throw new IllegalStateException("mIsBeingInserted == true and mWasInserted == true");
 		
-		for(MessageReference ref : mMessages) {
+		for(MessageReference ref : getMessages()) {
 			if(!(ref instanceof OwnMessageReference))
 				throw new IllegalStateException("Found non-own MessageReference: " + ref);
 		}
@@ -66,7 +66,7 @@ public abstract class OwnMessageList extends MessageList {
 	 * @return
 	 */
 	public FreenetURI getInsertURI() {
-		return generateURI(getAuthor().getInsertURI(), mIndex).sskForUSK();
+		return generateURI(getAuthor().getInsertURI(), getIndex()).sskForUSK();
 	}
 
 	/**
@@ -77,14 +77,17 @@ public abstract class OwnMessageList extends MessageList {
 	 * @throws Exception If the message list is full.
 	 */
 	public synchronized void addMessage(OwnMessage newMessage) {
+		checkedActivate(1);
 		synchronized(newMessage) {
 			if(mIsBeingInserted || mWasInserted)
 				throw new IllegalStateException("Trying to add a message to a message list which is already being inserted.");
 			
 			if(newMessage.getAuthor() != mAuthor)
-				throw new IllegalStateException("Trying to add a message with wrong author " + newMessage.getAuthor() + " to an own message list of " + mAuthor);
+				throw new IllegalStateException("Trying to add a message with wrong author " + newMessage.getAuthor() + " to an own message list of " + getAuthor());
 			
-			OwnMessageReference ref = new OwnMessageReference(newMessage);
+			final OwnMessageReference ref = new OwnMessageReference(newMessage);
+			ref.initializeTransient(mFreetalk);
+			checkedActivate(mMessages, 2);
 			mMessages.add(ref);
 			if(mMessages.size() > 1 && fitsIntoContainer() == false) {
 				mMessages.remove(ref);
@@ -99,12 +102,15 @@ public abstract class OwnMessageList extends MessageList {
 	// TODO: This has not been tested in practice because we have no code for aborting OwnMessage inserts which are added to a message list already
 	// and the OwnIdentity-deletion code does not use it.
 	public synchronized void removeMessageWithoutCommit(OwnMessage message) {
+		checkedActivate(1);
 		synchronized(message) {
 			if(!message.wasInserted())
 				throw new IllegalStateException("Message was not inserted yet, so it has no URI, cannot be in MessageList");
 			
 			if(mIsBeingInserted)
 				throw new IllegalStateException("MessageList is being inserted, please abort the insert first.");
+			
+			checkedActivate(mMessages, 2);
 			
 			for(Iterator<MessageReference> iter = mMessages.iterator(); iter.hasNext(); ) {
 				MessageReference ref = iter.next();
@@ -124,6 +130,8 @@ public abstract class OwnMessageList extends MessageList {
 	}
 	
 	public synchronized int getMessageCount() {
+		checkedActivate(1);
+		checkedActivate(mMessages, 2);
 		return mMessages.size();
 	}
 
@@ -138,6 +146,7 @@ public abstract class OwnMessageList extends MessageList {
 	 * Stores this OwnMessageList in the database without committing the transaction.
 	 */
 	public synchronized void beginOfInsert() {
+		checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 		mIsBeingInserted = true;
 		storeWithoutCommit();
 	}
@@ -146,6 +155,7 @@ public abstract class OwnMessageList extends MessageList {
 	 * Stores this OwnMessageList in the database without committing the transaction.
 	 */
 	public synchronized void cancelInsert() {
+		checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 		if(mWasInserted)
 			throw new RuntimeException("The OwnMessageList was already inserted.");
 		
@@ -154,6 +164,7 @@ public abstract class OwnMessageList extends MessageList {
 	}
 	
 	public synchronized boolean wasInserted() {
+		checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
 		return mWasInserted;
 	}
 
@@ -161,6 +172,8 @@ public abstract class OwnMessageList extends MessageList {
 	 * Stores this OwnMessageList in the database without committing the transaction.
 	 */
 	public synchronized void markAsInserted() {
+		checkedActivate(1); // boolean is a db4o primitive type so 1 is enough
+		
 		if(mIsBeingInserted == false)
 			throw new RuntimeException("Trying to mark a MessageList as 'inserted' which was not marked as 'being inserted': This MUST NOT happen:" +
 					" Messages can still be added to a list if it is not marked as being inserted. If it is being inserted already without being marked," +

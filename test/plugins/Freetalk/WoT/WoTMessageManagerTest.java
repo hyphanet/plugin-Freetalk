@@ -131,7 +131,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		List<MessageList.MessageReference> references = new ArrayList<MessageList.MessageReference>(2);
 		references.add(messageRef);
 		
-		WoTMessageList list = new WoTMessageList(author, uri, references);
+		WoTMessageList list = new WoTMessageList(mFreetalk, author, uri, references);
 		list.initializeTransient(mFreetalk);
 		list.storeWithoutCommit();
 		Persistent.checkedCommit(db, this);
@@ -147,6 +147,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		UUID myUUID = UUID.randomUUID();
 		FreenetURI myListURI = WoTMessageList.assembleURI(author.getRequestURI(), mMessageListIndex++);
 		WoTMessageURI myURI = new WoTMessageURI(myListURI + "#" + myUUID);
+		myURI.initializeTransient(mFreetalk);
 		
 		MessageList.MessageReference ref = new MessageList.MessageReference(MessageID.construct(myURI.getMessageID()),
 				myFreenetURI, mBoard, CurrentTimeUTC.get());
@@ -155,7 +156,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 		
 		WoTMessageURI myParentURI = myParent != null ? myParent.getURI() : null;
 		
-		WoTMessage message = WoTMessage.construct(myList, myFreenetURI, MessageID.construct(myURI.getMessageID()),
+		WoTMessage message = WoTMessage.construct(mFreetalk, myList, myFreenetURI, MessageID.construct(myURI.getMessageID()),
 				myThreadURI, myParentURI, mBoards, mBoards.iterator().next(),  author, "message " + myUUID, CurrentTimeUTC.get(),
 				"message body " + myUUID, null);
 		

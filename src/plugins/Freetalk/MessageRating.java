@@ -69,7 +69,7 @@ public abstract class MessageRating extends Persistent {
 	}
 	
 	public void databaseIntegrityTest() throws Exception {
-		checkedActivate(2);
+		checkedActivate(1);
 		
 		if(mRater == null)
 			throw new NullPointerException("mRater == null");
@@ -80,10 +80,8 @@ public abstract class MessageRating extends Persistent {
 		if(mMessageAuthor == null)
 			throw new NullPointerException("mMessageAuthor == null");
 		
-		mMessage.initializeTransient(mFreetalk);
-		
-		if(mMessage.getAuthor() != mMessageAuthor)
-			throw new IllegalStateException("mMessageAuthor == " + mMessageAuthor + " but mMessage.getAuthor() == " + mMessage.getAuthor());
+		if(getMessage().getAuthor() != mMessageAuthor)
+			throw new IllegalStateException("mMessageAuthor == " + getMessageAuthor() + " but getMessage().getAuthor() == " + getMessage().getAuthor());
 	}
 	
 	/**
@@ -93,7 +91,7 @@ public abstract class MessageRating extends Persistent {
 	 * The transient fields of the returned object will be initialized by this getter already though.
 	 */
 	public final OwnIdentity getRater() {
-		checkedActivate(2); assert(mRater != null);
+		checkedActivate(1); assert(mRater != null);
 		if(mRater instanceof Persistent) {
 			Persistent rater = (Persistent)mRater;
 			rater.initializeTransient(mFreetalk);
@@ -108,13 +106,13 @@ public abstract class MessageRating extends Persistent {
 	 * The transient fields of the returned object will be initialized by this getter already though.
 	 */
 	public final Message getMessage() {
-		checkedActivate(2); assert(mMessage != null);
+		checkedActivate(1); assert(mMessage != null);
 		mMessage.initializeTransient(mFreetalk);
 		return mMessage;
 	}
 	
 	public final Identity getMessageAuthor() {
-		checkedActivate(2); assert(mMessageAuthor != null);
+		checkedActivate(1); assert(mMessageAuthor != null);
 		
 		if(mMessageAuthor instanceof Persistent)
 			((Persistent)mMessageAuthor).initializeTransient(mFreetalk);
@@ -122,16 +120,10 @@ public abstract class MessageRating extends Persistent {
 		return mMessageAuthor;
 	}
 	
-	public final Date getDate() {
-		// 1 is the default activation depth so we don't need to activate this because Date is a native type for db4o
-		// checkedActivate(1); assert(mDate != null);
-		return mCreationDate;
-	}
-	
 	protected void storeWithoutCommit() {
 		try {		
-			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			checkedActivate(2);
+			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(1);
 			
 			throwIfNotStored(getRater());
 			throwIfNotStored(getMessage());
@@ -153,7 +145,7 @@ public abstract class MessageRating extends Persistent {
 		
 		Logger.error(this, "toString() called before initializeTransient()!");
 		
-		return super.toString() + " (intializeTransient() not called!, rater and message may be null: " + mRater + " has rated the message " + mMessage + ")";
+		return super.toString() + " (intializeTransient() not called!)";
 	}
 
 }

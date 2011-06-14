@@ -617,6 +617,7 @@ public final class FreetalkNNTPHandler implements Runnable {
             serverDateFormat.setTimeZone(utcTimeZone);
             printTextResponseLine("111 " + serverDateFormat.format(date));
         }
+        mOutput.flush();
     }
     
     /**
@@ -947,7 +948,7 @@ public final class FreetalkNNTPHandler implements Runnable {
             }
         }
         catch (Throwable e) {
-            Logger.error(this, "Error in NNTP handler, closing socket: " + e.getMessage());
+            Logger.error(this, "Error in NNTP handler, closing socket: " + e.getMessage(), e);
             try {
                 mSocket.close();
             } catch (IOException e1) {

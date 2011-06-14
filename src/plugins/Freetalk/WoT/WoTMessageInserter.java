@@ -73,6 +73,15 @@ public final class WoTMessageInserter extends MessageInserter {
 	
 	private final WoTMessageXML mXML;
 	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(WoTMessageInserter.class);
+	}
+	
 	
 	public WoTMessageInserter(Node myNode, HighLevelSimpleClient myClient, String myName, WoTIdentityManager myIdentityManager,
 			WoTMessageManager myMessageManager, WoTMessageXML myMessageXML) {
@@ -149,7 +158,7 @@ public final class WoTMessageInserter extends MessageInserter {
 			mMessageIDs.add(m.getID());
 			tempB = null;
 
-			Logger.debug(this, "Started insert of message from " + m.getAuthor().getNickname());
+			if(logDEBUG) Logger.debug(this, "Started insert of message from " + m.getAuthor().getNickname());
 		}
 		finally {
 			if(tempB != null)

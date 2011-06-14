@@ -55,6 +55,16 @@ public final class Configuration extends Persistent {
 	 * The {@link HashMap} that contains all {@link Integer} configuration parameters
 	 */
 	private final HashMap<String, Integer> mIntParams;
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(Configuration.class);
+	}
+	
 
 	/**
 	 * Creates a new Config object and stores the default values in it.
@@ -89,12 +99,12 @@ public final class Configuration extends Persistent {
 	 * @return The config object.
 	 */
 	public static Configuration loadOrCreate(Freetalk myFreetalk, ExtObjectContainer db) {
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			Configuration config;
 			ObjectSet<Configuration> result = db.queryByExample(Configuration.class);
 			
 			if(result.size() == 0) {
-				Logger.debug(myFreetalk, "Creating new Config...");
+				if(logDEBUG) Logger.debug(myFreetalk, "Creating new Config...");
 				config = new Configuration(myFreetalk);
 				config.storeAndCommit();
 			}
@@ -102,7 +112,7 @@ public final class Configuration extends Persistent {
 				if(result.size() > 1) /* Do not throw, we do not want to prevent Freetalk from starting up. */
 					Logger.error(myFreetalk, "Multiple config objects stored!");
 				
-				Logger.debug(myFreetalk, "Loaded config.");
+				if(logDEBUG) Logger.debug(myFreetalk, "Loaded config.");
 				config = result.next();
 				config.initializeTransient(myFreetalk);
 				config.checkedActivate(4);
@@ -119,9 +129,9 @@ public final class Configuration extends Persistent {
 	 * because the user interface will usually change many values at once.
 	 */
 	public synchronized void storeAndCommit() {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-				checkedActivate(4);
+				// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 				mDB.store(mStringParams, 3);
 				mDB.store(mIntParams, 3);
 				checkedStore();
@@ -134,10 +144,12 @@ public final class Configuration extends Persistent {
 	}
 	
 	public int getDatabaseFormatVersion() {
+		// checkedActivate(1); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		return mDatabaseFormatVersion;
 	}
 	
 	protected void setDatabaseFormatVersion(int newVersion) {
+		// checkedActivate(1); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		if(newVersion <= mDatabaseFormatVersion)
 			throw new RuntimeException("mDatabaseFormatVersion==" + mDatabaseFormatVersion + "; newVersion==" + newVersion);
 		
@@ -152,6 +164,7 @@ public final class Configuration extends Persistent {
 	 */
 	public synchronized void set(String key, String value) {
 		IfNull.thenThrow(key, "Key");
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		if(value != null)
 			mStringParams.put(key, value);
 		else
@@ -166,6 +179,7 @@ public final class Configuration extends Persistent {
 	 */
 	public synchronized void set(String key, boolean value) {
 		IfNull.thenThrow(key, "Key");
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 	    mStringParams.put(key, Boolean.toString(value));
 	}
 	
@@ -177,6 +191,7 @@ public final class Configuration extends Persistent {
 	 */
 	public synchronized void set(String key, int value) {
 		IfNull.thenThrow(key, "Key");
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		mIntParams.put(key, value);
 	}
 
@@ -184,6 +199,7 @@ public final class Configuration extends Persistent {
 	 * Gets a String configuration parameter.
 	 */
 	public synchronized String getString(String key) {
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		return mStringParams.get(key);
 	}
 	
@@ -191,6 +207,7 @@ public final class Configuration extends Persistent {
 	 * Gets an Integer configuration parameter.
 	 */
 	public synchronized int getInt(String key) {
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		return mIntParams.get(key);
 	}
 	
@@ -198,6 +215,7 @@ public final class Configuration extends Persistent {
 	 * Gets a boolean configuration parameter.
 	 */
 	public synchronized boolean getBoolean(String key) {
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 	    return Boolean.valueOf( mStringParams.get(key) );
 	}
 
@@ -212,6 +230,7 @@ public final class Configuration extends Persistent {
 	 * Check wheter a String config parameter exists.
 	 */
 	public synchronized boolean containsString(String key) {
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		return mStringParams.containsKey(key);
 	}
 	
@@ -219,6 +238,7 @@ public final class Configuration extends Persistent {
 	 * Check wheter an Integer config parameter exists.
 	 */
 	public synchronized boolean containsInt(String key) {
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
 		return mIntParams.containsKey(key);
 	}
 
@@ -237,7 +257,9 @@ public final class Configuration extends Persistent {
 		 * function. Further the iterator would allow the user to delete keys
 		 * from the configuration.
 		 */
-
+		
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
+		
 		// TODO: there is a null pointer somewhere in here. i don't have the
 		// time for fixing it right now
 		return mStringParams.keySet().toArray(new String[mStringParams.size()]);
@@ -258,7 +280,9 @@ public final class Configuration extends Persistent {
 		 * function. Further the iterator would allow the user to delete keys
 		 * from the configuration.
 		 */
-
+		
+		// checkedActivate(4); // We fully activate the Config object when obtaining it from the database so we don't need this.
+		
 		// TODO: there is a null pointer somewhere in here. i don't have the
 		// time for fixing it right now
 		return mIntParams.keySet().toArray(new String[mIntParams.size()]);

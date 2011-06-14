@@ -5,7 +5,6 @@ package plugins.Freetalk.ui.NNTP;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -26,8 +25,8 @@ import freenet.support.Logger;
 public class ArticleParser {
 
 	private static final Pattern encodedWordPattern = Pattern.compile("=\\?([^\\]\\[()<>@,;:\"/?.=]+)" // charset
-																	  + "\\?([^\\]\\[()<>@,;:\"/?.=]+)" // encoding
-																	  + "\\?([^? ]*)\\?="); // text
+	 + "\\?([^\\]\\[()<>@,;:\"/?.=]+)" // encoding
+	+ "\\?([^? ]*)\\?="); // text
 
 	/** Author's nickname (local part of mail address) */
 	private String authorName;
@@ -52,6 +51,16 @@ public class ArticleParser {
 
 	/** Body of message */
 	private String text;
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(ArticleParser.class);
+	}
+	
 
 
 	public ArticleParser() {
@@ -386,6 +395,58 @@ public class ArticleParser {
 		catch (Exception e) {
 			text = bodyCharset.decode(bytes).toString();
 		}
+
+		this.text = parseNNTPQuotesToBBCode(this.text);
+	}
+
+	/**
+	 * Parse the >-styled quotes back to the [quote] syntax.
+	 * @todo Parse the author name eventually, to [quote author=…]
+	 * @todo Try to remove the "On X, Y wrote:" line that newsreaders add
+	 * when replying (hard to do, because there is no clear syntax, and it
+	 * can be written in different languages).
+	 */
+	private static String parseNNTPQuotesToBBCode(String body) {
+		String[] lines = body.split("\n");
+		int prev = 0;
+		StringBuilder result = new StringBuilder();
+		//final Pattern quoteWithAuthorPattern = Pattern.compile("\\((.+)\\) (.+) wrote:\\s*");
+
+		for(String l : lines) {
+			int quoteDepth = 0;
+
+			String rawLine = l.trim();
+			while(rawLine.startsWith(">") || rawLine.startsWith(" ")) {
+				if(rawLine.startsWith(">")) quoteDepth++;
+				rawLine = rawLine.substring(1);
+			}
+
+			if(prev < quoteDepth) {
+				for(int i = 1; i < quoteDepth - prev; ++i) {
+					result.append("[quote]\n");
+				}
+
+				//Matcher m = quoteWithAuthorPattern.matcher(rawLine);
+				//if(m.matches()) {
+				//	result.append("[quote author=\"").append(m.group(2));
+				//	result.append("\" message=\"").append(m.group(1));
+				//	result.append("\"]\n");
+				//	rawLine = "";
+				//} else {
+					result.append("[quote]\n");
+				//}
+			} else if(prev > quoteDepth) {
+				for(int i = 0; i < prev - quoteDepth; ++i) {
+					result.append("[/quote]\n");
+				}
+			}
+
+			if(!rawLine.equals("")) {
+				result.append(rawLine).append("\n");
+			}
+			prev = quoteDepth;
+		}
+		return result.toString();
 	}
 
 	/**
@@ -414,7 +475,7 @@ public class ArticleParser {
 		}
 
 		if (!bytes.hasRemaining()) {
-			Logger.debug(this, "Unable to find start of message body");
+			if(logDEBUG) Logger.debug(this, "Unable to find start of message body");
 			return false;
 		}
 
@@ -439,7 +500,7 @@ public class ArticleParser {
 		String dateHeader = getHeader(headLines, "date");
 
 		if (newsgroupsHeader == null) {
-			Logger.debug(this, "Unable to find Newsgroups header");
+			if(logDEBUG) Logger.debug(this, "Unable to find Newsgroups header");
 			return false;
 		}
 
@@ -472,12 +533,12 @@ public class ArticleParser {
 		String subjectHeader = getHeader(headLines, "subject");
 
 		if (fromHeader == null) {
-			Logger.debug(this, "Unable to find From header");
+			if(logDEBUG) Logger.debug(this, "Unable to find From header");
 			return false;
 		}
 
 		if (subjectHeader == null) {
-			Logger.debug(this, "Unable to find Subject header");
+			if(logDEBUG) Logger.debug(this, "Unable to find Subject header");
 			return false;
 		}
 
@@ -491,7 +552,7 @@ public class ArticleParser {
 
 		Mailbox addr = Mailbox.parseHeader(fromHeader);
 		if (addr == null) {
-			Logger.debug(this, "Unable to parse From header");
+			if(logDEBUG) Logger.debug(this, "Unable to parse From header");
 			return false;
 		}
 
@@ -509,7 +570,7 @@ public class ArticleParser {
 				dateHeader = dateHeader.substring(dateHeader.indexOf(",") + 2);
 
 			try {
-				date = new SimpleDateFormat("d MMM yyyy HH:mm:ss Z").parse(dateHeader);
+				date = new SimpleDateFormat("d MMM yyyy HH:mm:ss Z", java.util.Locale.US).parse(dateHeader);
 			}
 			catch (ParseException e) {
 				Logger.warning(this, "Failed while parsing date: " + dateHeader, e);

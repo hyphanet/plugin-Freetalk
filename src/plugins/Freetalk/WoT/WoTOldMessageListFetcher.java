@@ -65,7 +65,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	 */
 	private static final int IDENTITIES_LRU_QUEUE_SIZE_LIMIT = 1024;
 
-	
+	private final Freetalk mFreetalk;
 	private final WoTIdentityManager mIdentityManager;
 	private final WoTMessageManager mMessageManager;
 	private final ClientContext clientContext;
@@ -77,9 +77,20 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	
 	private final WoTMessageListXML mXML;
 	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(WoTOldMessageListFetcher.class);
+	}
+	
+	
 	public WoTOldMessageListFetcher(Freetalk myFreetalk, String myName, WoTMessageListXML myMessageListXML) {
 		super(myFreetalk.getPluginRespirator().getNode(), myFreetalk.getPluginRespirator().getHLSimpleClient(), myName);
 		
+		mFreetalk = myFreetalk;
 		mIdentityManager = myFreetalk.getIdentityManager();
 		mMessageManager = myFreetalk.getMessageManager();
 		clientContext = mNode.clientCore.clientContext;
@@ -116,6 +127,10 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	protected void iterate() {
 		fetchMessageLists();
 	}
+	
+	public int getRunningFetchCount() {
+		return fetchCount();
+	}
 
 	/**
 	 * Starts fetches of MessageLists from MAX_PARALLEL_MESSAGELIST_FETCH_COUNT different identities. For each identity, it is attempted to start a fetch
@@ -127,11 +142,11 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 		final int fetchCount = fetchCount();
 		
 		if(fetchCount >= MAX_PARALLEL_MESSAGELIST_FETCH_COUNT) { // Check before we do the expensive database query.
-			Logger.debug(this, "Got " + fetchCount + " fetches, not fetching any more.");
+			if(logDEBUG) Logger.debug(this, "Got " + fetchCount + " fetches, not fetching any more.");
 			return;
 		}
 		
-		Logger.debug(this, "Trying to start more message list fetches, amount of fetches now: " + fetchCount);
+		if(logDEBUG) Logger.debug(this, "Trying to start more message list fetches, amount of fetches now: " + fetchCount);
 		
 		fetchMessageListsCore();
 		
@@ -224,7 +239,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 				
 				synchronized(mMessageManager) {
 					try {
-						WoTMessageList list = mXML.decode(mMessageManager, identity, state.getURI(), inputStream);
+						WoTMessageList list = mXML.decode(mFreetalk, identity, state.getURI(), inputStream);
 						mMessageManager.onMessageListReceived(list);
 						fetchMoreLists = true;
 					}
@@ -260,6 +275,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 			switch(e.getMode()) {
 				case FetchException.DATA_NOT_FOUND:
 				case FetchException.ALL_DATA_NOT_FOUND:
+				case FetchException.RECENTLY_FAILED:
 					assert(state.getURI().isSSK());
 					
 					// We requested an old MessageList, i.e. it's index is lower than the index of the latest known MessageList, so the requested MessageList
@@ -285,7 +301,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 					break;
 				
 				case FetchException.CANCELLED:
-					Logger.debug(this, "Cancelled downloading MessageList " + state.getURI());
+					if(logDEBUG) Logger.debug(this, "Cancelled downloading MessageList " + state.getURI());
 					break;
 					
 				default:

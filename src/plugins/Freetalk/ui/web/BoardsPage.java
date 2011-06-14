@@ -36,12 +36,13 @@ public final class BoardsPage extends WebPageImpl {
 
 	private void makeBoardsList() {
 		HTMLNode boardsBox = addContentBox(l10n().getString("BoardsPage.BoardList.Header"));
+		boardsBox = boardsBox.addChild("div", "class", "boards");
 
 		// TODO: Use GET, not POST
 		HTMLNode selectBoardsForm = addFormChild(boardsBox, SelectBoardsPage.getURI(), "SelectBoardsPage");
 		selectBoardsForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"submit", "submit", l10n().getString("BoardsPage.SelectBoardsButton")});
 
-		HTMLNode boardsTable = boardsBox.addChild("table", "border", "0");
+		HTMLNode boardsTable = boardsBox.addChild("table", "class", "boards-table");
 		HTMLNode row = boardsTable.addChild("tr");
 		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.Language"));
 		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.Name"));
@@ -50,7 +51,7 @@ public final class BoardsPage extends WebPageImpl {
         row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.UnreadMessages"));
 		row.addChild("th", l10n().getString("BoardsPage.BoardTableHeader.LatestMessage"));
 		
-		final DateFormat dateFormat = DateFormat.getInstance();
+		final DateFormat dateFormat = DateFormat.getDateTimeInstance();
 		
 		int boardCount = 0;
 		
@@ -63,18 +64,18 @@ public final class BoardsPage extends WebPageImpl {
 				row = boardsTable.addChild("tr");
 				
 				/* Language */
-				row.addChild("td", new String[] { "align" }, new String[] { "left" }, board.getLanguage().referenceName);
+				row.addChild("td", "class", "language-cell", board.getLanguage().referenceName);
 
 				/* Name */
 				
-				HTMLNode nameCell = row.addChild(unreadMessageCount>0 ? "th" : "td", new String[] { "align" }, new String[] { "left" });
+				HTMLNode nameCell = row.addChild(unreadMessageCount>0 ? "th" : "td", "class", "name-cell");
 				nameCell.addChild(new HTMLNode("a", "href", BoardPage.getURI(board), board.getName()));
 
 				/* Description - disabled because it makes more sense on the SelectBoardsPage. TODO: Allow enabling in configuration. */
 				// row.addChild("td", new String[] { "align" }, new String[] { "center" },  board.getDescription());
 
 				/* Message count */
-				row.addChild("td", new String[] { "align" }, new String[] { "center" }, Integer.toString(board.messageCount()));
+				row.addChild("td", "class", "message-count-cell", Integer.toString(board.messageCount()));
 				
 
 				// Find latest message date
@@ -93,13 +94,13 @@ public final class BoardsPage extends WebPageImpl {
 				
 			    /* Unread messages count, bold when there are unread messages & linked to first unread message then */
 	            if(unreadMessageCount > 0)
-	            	row.addChild("th", new String[] { "align" }, new String[] { "center" })
+	            	row.addChild("th", "class", "unread-count-cell")
 	            		.addChild("a", "href", BoardPage.getFirstUnreadURI(board.getName()), Integer.toString(unreadMessageCount));
 				else
-					row.addChild("td", new String[] { "align" }, new String[] { "center" }, Integer.toString(unreadMessageCount));
+					row.addChild("td", "class", "unread-count-0-cell", Integer.toString(unreadMessageCount));
 
 			    /* Latest message date, bold when the latest message is unread */
-				row.addChild((latestMessage == null || latestMessage.wasRead()) ? "td" : "th", new String[] { "align" }, new String[] { "center" },
+				row.addChild((latestMessage == null || latestMessage.wasRead()) ? "td" : "th", "class", "latest-message-cell",
 						latestMessageDateString);
 			}
 		}

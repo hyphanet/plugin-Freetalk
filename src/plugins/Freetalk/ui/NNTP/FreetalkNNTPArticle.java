@@ -6,6 +6,7 @@ package plugins.Freetalk.ui.NNTP;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import plugins.Freetalk.Board;
@@ -44,7 +45,20 @@ public class FreetalkNNTPArticle {
 
 	private final Message mMessage;
 
+	private String parsedMessageBody = null;
+
 	private final int mMessageIndex;
+	
+	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(FreetalkNNTPArticle.class);
+	}
+	
 
 	public FreetalkNNTPArticle(final Message message) {
 		this.mMessage = message;
@@ -234,7 +248,36 @@ public class FreetalkNNTPArticle {
 	 * Get the message body.
 	 */
 	public String getBody() {
-		return mMessage.getText();
+		if(this.parsedMessageBody == null) {
+			this.parsedMessageBody = parseBBCodeToNNTPQuotes(mMessage.getText());
+			if(logDEBUG) Logger.debug(this, this.parsedMessageBody);
+		}
+		return this.parsedMessageBody;
+	}
+
+	/**
+	 * Transforms [quote] tags to ">-style" quotes, more appropriate for
+	 * NNTP newsreaders.
+	 */
+	private static String parseBBCodeToNNTPQuotes(String body) {
+		final String pat = "\\[quote( author=\"([^\"]+)\" message=\"([^\"]+)\")?\\](.+)\\[/quote\\]";
+		final Pattern quotePattern = Pattern.compile(pat, Pattern.DOTALL);
+		body = Matcher.quoteReplacement(body);
+		Matcher quoteMatcher = quotePattern.matcher(body);
+		while(quoteMatcher.find()) {			
+			String replacement;
+			//if(quoteMatcher.group(1) != null) {
+			//	replacement = "(" + quoteMatcher.group(3) + ") " + quoteMatcher.group(2) + " wrote:" + quoteMatcher.group(4);
+			//} else {
+				replacement = quoteMatcher.group(4);
+			//}
+			replacement = "> " + replacement.replace("\n", "\n> ");
+			body = quoteMatcher.replaceFirst(replacement);
+			body = Matcher.quoteReplacement(body);
+			quoteMatcher = quotePattern.matcher(body);
+		}		
+		final Pattern trimEmpty = Pattern.compile("^((>\\s*)*\\n)+");
+		return trimEmpty.matcher(body).replaceFirst("");
 	}
 
 	/**

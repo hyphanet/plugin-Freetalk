@@ -72,7 +72,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 			messageReferences.add(new MessageList.MessageReference(myParentID, myParentFreenetURI, board, CurrentTimeUTC.get()));
 			messageReferences.add(new MessageList.MessageReference(myMessageID, mMessageFreenetURI, board, CurrentTimeUTC.get()));
 		}
-		WoTMessageList messageList = new WoTMessageList(myAuthor, WoTMessageList.assembleURI(authorRequestSSK, 123), messageReferences);
+		WoTMessageList messageList = new WoTMessageList(mFreetalk, myAuthor, WoTMessageList.assembleURI(authorRequestSSK, 123), messageReferences);
 		messageList.initializeTransient(mFreetalk);
 		messageList.storeWithoutCommit();
 		Persistent.checkedCommit(db, this);
@@ -85,7 +85,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		final GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
 		calendar.set(2009, 05-1, 03, 16, 15, 14); final Date date = calendar.getTime();
 		
-		WoTMessage message = WoTMessage.construct(messageList, mMessageFreenetURI, myMessageID,
+		WoTMessage message = WoTMessage.construct(mFreetalk, messageList, mMessageFreenetURI, myMessageID,
 				new WoTMessageURI(messageList.getURI(), myThreadID), // Thread
 				new WoTMessageURI(messageList.getURI(), myParentID), // Parent
 				myBoards, myBoard, myAuthor,
@@ -135,7 +135,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 		
 		ByteArrayInputStream is = new ByteArrayInputStream(mHardcodedEncodedMessage.getBytes("UTF-8"));
 		ByteArrayOutputStream decodedAndEncodedMessage = new ByteArrayOutputStream(4096);
-		Message decodedMessage = mXML.decode(mMessageManager, is, (WoTMessageList)mMessageManager.getMessageList(mMessageListID), mMessageFreenetURI);
+		Message decodedMessage = mXML.decode(mFreetalk, is, (WoTMessageList)mMessageManager.getMessageList(mMessageListID), mMessageFreenetURI);
 		decodedMessage.initializeTransient(mFreetalk);
 		mXML.encode(decodedMessage, decodedAndEncodedMessage);		
 		

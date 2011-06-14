@@ -23,9 +23,11 @@ import plugins.Freetalk.WoT.WoTOldMessageListFetcher;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.WoT.WoTOwnMessage;
 import plugins.Freetalk.WoT.WoTOwnMessageList;
+import plugins.Freetalk.tasks.NewBoardTask;
 import plugins.Freetalk.tasks.OwnMessageTask;
 import plugins.Freetalk.tasks.PersistentTask;
 import plugins.Freetalk.tasks.PersistentTaskManager;
+import plugins.Freetalk.tasks.SubscribeToAllBoardsTask;
 import plugins.Freetalk.tasks.WoT.IntroduceIdentityTask;
 import plugins.Freetalk.ui.FCP.FCPInterface;
 import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
@@ -119,11 +121,21 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	
 	private FreetalkNNTPServer mNNTPServer;
 	
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(Freetalk.class);
+	}
+	
+	
 	/**
 	 * Constructor for the node.
 	 */
 	public Freetalk() {
-		Logger.debug(this, "Freetalk plugin constructed.");
+		if(logDEBUG) Logger.debug(this, "Freetalk plugin constructed.");
 	}
 
 	/**
@@ -138,13 +150,13 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 
 	public void runPlugin(PluginRespirator myPR) {
 		try {
-		Logger.debug(this, "Plugin starting up...");
+		if(logDEBUG) Logger.debug(this, "Plugin starting up...");
 
 		mPluginRespirator = myPR;
 
-		Logger.debug(this, "Opening database...");
+		if(logDEBUG) Logger.debug(this, "Opening database...");
 		db = openDatabase(new File(getUserDataDirectory(), DATABASE_FILENAME));
-		Logger.debug(this, "Database opened.");
+		if(logDEBUG) Logger.debug(this, "Database opened.");
 		
 		mConfig = Configuration.loadOrCreate(this, db);
 		if(mConfig.getDatabaseFormatVersion() > Freetalk.DATABASE_FORMAT_VERSION)
@@ -152,42 +164,42 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		
 		// Create & start the core classes
 		
-		Logger.debug(this, "Creating identity manager...");
+		if(logDEBUG) Logger.debug(this, "Creating identity manager...");
 		mIdentityManager = new WoTIdentityManager(this, mPluginRespirator.getNode().executor);
 		
-		Logger.debug(this, "Creating message manager...");
+		if(logDEBUG) Logger.debug(this, "Creating message manager...");
 		mMessageManager = new WoTMessageManager(db, mIdentityManager, this, mPluginRespirator);
 		
-		Logger.debug(this, "Creating task manager...");
+		if(logDEBUG) Logger.debug(this, "Creating task manager...");
 		mTaskManager = new PersistentTaskManager(this, db);
 		
 		upgradeDatabase();
 		databaseIntegrityTest(); // Some tests need the Identity-/Message-/TaskManager so we call this after creating them.
 		
-		Logger.debug(this, "Creating message XML...");
+		if(logDEBUG) Logger.debug(this, "Creating message XML...");
 		mMessageXML = new WoTMessageXML();
 		
-		Logger.debug(this, "Creating message list XML...");
+		if(logDEBUG) Logger.debug(this, "Creating message list XML...");
 		mMessageListXML = new WoTMessageListXML();
 		
-		Logger.debug(this, "Creating old-messagelist fetcher...");
+		if(logDEBUG) Logger.debug(this, "Creating old-messagelist fetcher...");
 		mOldMessageListFetcher = new WoTOldMessageListFetcher(this, "Freetalk WoTOldMessageListFetcher", mMessageListXML);
 		
-		Logger.debug(this, "Creating new-messagelist fetcher...");
+		if(logDEBUG) Logger.debug(this, "Creating new-messagelist fetcher...");
 		mNewMessageListFetcher = new WoTNewMessageListFetcher(this, "Freetalk WoTNewMessageListFetcher", mMessageListXML, db);
 		mNewMessageListFetcher.start();
 		
-		Logger.debug(this, "Creating message fetcher...");
+		if(logDEBUG) Logger.debug(this, "Creating message fetcher...");
 		mMessageFetcher = new WoTMessageFetcher(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageFetcher",
-				mIdentityManager, mMessageManager, mMessageXML);
+				this, mIdentityManager, mMessageManager, mMessageXML);
 		mMessageFetcher.start();
 		
-		Logger.debug(this, "Creating message inserter...");
+		if(logDEBUG) Logger.debug(this, "Creating message inserter...");
 		mMessageInserter = new WoTMessageInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageInserter",
 				mIdentityManager, mMessageManager, mMessageXML);
 		mMessageInserter.start();
 
-		Logger.debug(this, "Creating message list inserter...");
+		if(logDEBUG) Logger.debug(this, "Creating message list inserter...");
 		mMessageListInserter = new WoTMessageListInserter(mPluginRespirator.getNode(), mPluginRespirator.getHLSimpleClient(), "Freetalk WoTMessageListInserter",
 				mIdentityManager, mMessageManager, mMessageListXML);
 		mMessageListInserter.start();
@@ -204,14 +216,14 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		
 		// Create & start the UI
 		
-		Logger.debug(this, "Creating Web interface...");
+		if(logDEBUG) Logger.debug(this, "Creating Web interface...");
 		mWebInterface = new WebInterface(this);
 
-		Logger.debug(this, "Creating FCP interface...");
+		if(logDEBUG) Logger.debug(this, "Creating FCP interface...");
 		mFCPInterface = new FCPInterface(this);
 
 		if (mConfig.getBoolean(Configuration.NNTP_SERVER_ENABLED)) {
-    		Logger.debug(this, "Creating NNTP server...");
+    		if(logDEBUG) Logger.debug(this, "Creating NNTP server...");
     		String bindTo = mConfig.getString(Configuration.NNTP_SERVER_BINDTO);
 			if (bindTo == null) {
 				bindTo = "127.0.0.1";
@@ -223,11 +235,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			mNNTPServer = new FreetalkNNTPServer(this, 1199, bindTo, allowedHosts);
 			mNNTPServer.start();
 		} else {
-            Logger.debug(this, "NNTP server disabled by user...");
+            if(logDEBUG) Logger.debug(this, "NNTP server disabled by user...");
 		    mNNTPServer = null;
 		}
 
-		Logger.debug(this, "Plugin loaded.");
+		if(logDEBUG) Logger.debug(this, "Plugin loaded.");
 		}
 		catch(RuntimeException e) {
 			Logger.error(this, "Startup failed!", e);
@@ -250,7 +262,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	 */
 	@SuppressWarnings("unchecked")
 	private ExtObjectContainer openDatabase(File file) {
-		Logger.debug(this, "Using db4o " + Db4o.version());
+		Logger.normal(this, "Using db4o " + Db4o.version());
 		
 		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
 		
@@ -258,8 +270,9 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader())); // Needed because the node uses it's own classloader for plugins
 		cfg.exceptionsOnNotStorable(true); // Notify us if we tried to store a class which db4o won't store
-		cfg.activationDepth(5); // TODO: Decrease to 1 after we have explicit activation everywhere.
-		cfg.exceptionsOnNotStorable(true);
+		cfg.activationDepth(1); // TODO: Optimization: Check whether 0 is better. All database code was written to also work with 0.
+		cfg.updateDepth(1); // This must not be changed: We only activate(this, 1) before store(this).
+		Logger.normal(this, "Default activation depth: " + cfg.activationDepth());
         cfg.automaticShutDown(false); // The shutdown hook does auto-commit() but we want to rollback(), we MUST NOT commit half-finished transactions
         
         // Performance config options:
@@ -273,10 +286,12 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         cfg.objectClass(Persistent.class).indexed(true);
         
         final Class<? extends Persistent>[] persistentClasses = new Class[] {
+        	Persistent.class,
         	Board.class,
         	Board.DownloadedMessageLink.class,
         	Configuration.class,
         	FetchFailedMarker.class,
+        	IdentityStatistics.class,
         	Message.class,
         	Message.Attachment.class,
         	MessageList.class,
@@ -296,12 +311,17 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         	PersistentTask.class,
         	OwnMessageTask.class,
         	IntroduceIdentityTask.class,
+        	NewBoardTask.class,
+        	SubscribeToAllBoardsTask.class,
         	WoTIdentity.class,
         	WoTMessage.class,
         	WoTMessageList.class,
         	WoTMessageRating.class,
         	WoTMessageURI.class,
         	WoTNewMessageListFetcher.FetcherCommand.class,
+        	WoTNewMessageListFetcher.StartFetchCommand.class,
+        	WoTNewMessageListFetcher.AbortFetchCommand.class,
+        	WoTNewMessageListFetcher.UpdateEditionHintCommand.class,
         	WoTOwnIdentity.class,
         	WoTOwnMessage.class,
         	WoTOwnMessageList.class
@@ -314,7 +334,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         	// for the classes where we need them does not cause any harm.
         	classHasIndex = true;
         	
-        	Logger.debug(this, "Peristent class: " + clazz.getCanonicalName() + "; hasIndex==" + classHasIndex);
+        	if(logDEBUG) Logger.debug(this, "Peristent class: " + clazz.getCanonicalName() + "; hasIndex==" + classHasIndex);
         	
         	// TODO: Make very sure that it has no negative side effects if we disable class indices for some classes
         	// Maybe benchmark in comparison to a database which has class indices enabled for ALL classes.
@@ -323,7 +343,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         	// Check the class' fields for @IndexedField annotations
         	for(Field field : clazz.getDeclaredFields()) {
         		if(field.getAnnotation(Persistent.IndexedField.class) != null) {
-        			Logger.debug(this, "Registering indexed field " + clazz.getCanonicalName() + '.' + field.getName());
+        			if(logDEBUG) Logger.debug(this, "Registering indexed field " + clazz.getCanonicalName() + '.' + field.getName());
         			cfg.objectClass(clazz).objectField(field.getName()).indexed(true);
         		}
         	}
@@ -332,7 +352,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
     		final Persistent.IndexedField annotation =  clazz.getAnnotation(Persistent.IndexedField.class);
     		if(annotation != null) {
         		for(String fieldName : annotation.names()) {
-        			Logger.debug(this, "Registering indexed field " + clazz.getCanonicalName() + '.' + fieldName);
+        			if(logDEBUG) Logger.debug(this, "Registering indexed field " + clazz.getCanonicalName() + '.' + fieldName);
         			cfg.objectClass(clazz).objectField(fieldName).indexed(true);
         		}
     		}
@@ -359,7 +379,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			synchronized(mMessageManager) {
 				Logger.normal(this, "Doing stuff");
 			
-				synchronized(db.lock()) {
+				synchronized(Persistent.transactionLock(db)) {
 					try {
 						Persistent.checkedCommit(db, this);
 					} catch(RuntimeException e) {
@@ -393,7 +413,12 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 				try {
 					p.databaseIntegrityTest();
 				} catch(Exception e) {
-					Logger.error(this, "Integrity test failed for " + p, e);
+					try {
+						Logger.error(this, "Integrity test failed for " + p, e);
+					} catch(Exception toStringException) {
+						Logger.error(this, "Integrity test failed for object and toString also failed, toString-Exception below", toStringException);
+						Logger.error(this, "Original integrity test failure below", e);
+					}
 				}
 			}
 		}
@@ -408,10 +433,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			return;
 		}
 		
-		synchronized(db.lock()) {
+		synchronized(Persistent.transactionLock(db)) {
 			try {
 				System.gc();
 				db.rollback();
+				System.gc();
 				db.close();
 				db = null;
 			}
@@ -422,14 +448,14 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	}
 	
 	public synchronized void handleWotConnected() {
-		Logger.debug(this, "Connected to WoT plugin.");
+		if(logDEBUG) Logger.debug(this, "Connected to WoT plugin.");
 		wotConnected = true;
 	}
 	
 	private boolean wotConnected;
 	
 	public synchronized void handleWotDisconnected() {
-		Logger.debug(this, "Disconnected from WoT plugin");
+		if(logDEBUG) Logger.debug(this, "Disconnected from WoT plugin");
 		wotConnected = false;
 	}
 	
@@ -442,7 +468,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	}
 
 	public void terminate() {
-		Logger.debug(this, "Terminating Freetalk ...");
+		if(logDEBUG) Logger.debug(this, "Terminating Freetalk ...");
 		
 		/* We use single try/catch blocks so that failure of termination of one service does not prevent termination of the others */
 		try {
@@ -532,7 +558,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			Logger.error(this, "Error while closing database.", e);
 		}
 		
-		Logger.debug(this, "Freetalk plugin terminated.");
+		if(logDEBUG) Logger.debug(this, "Freetalk plugin terminated.");
 	}
 	
 	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
@@ -566,6 +592,18 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public PersistentTaskManager getTaskManager() {
 		return mTaskManager;
 	}
+	
+	public WoTNewMessageListFetcher getNewMessageListFetcher() {
+		return mNewMessageListFetcher;
+	}
+	
+	public WoTOldMessageListFetcher getOldMessageListFetcher() {
+		return mOldMessageListFetcher;
+	}
+	
+	public WoTMessageFetcher getMessageFetcher() {
+		return mMessageFetcher;
+	}	
 
 	public String getVersion() {
 		return Version.longVersionString;
@@ -593,12 +631,12 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
      */
     public void setLanguage(final BaseL10n.LANGUAGE newLanguage) {
         Freetalk.l10n = new PluginL10n(this, newLanguage);
-        Logger.debug(this, "Set LANGUAGE to: " + newLanguage.isoCode);
+        if(logDEBUG) Logger.debug(this, "Set LANGUAGE to: " + newLanguage.isoCode);
     }
 
 	public void setTheme(THEME newTheme) {
 		mTheme = newTheme;
-		Logger.debug(this, "Set THEME to: " + mTheme.code);
+		if(logDEBUG) Logger.debug(this, "Set THEME to: " + mTheme.code);
 	}
 
     /**

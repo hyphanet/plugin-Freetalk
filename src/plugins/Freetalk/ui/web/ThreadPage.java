@@ -393,7 +393,7 @@ public final class ThreadPage extends WebPageImpl {
 		for (final Quoting.TextElement t : elements) {
 			switch(t.mType) {
 			case PlainText: {
-				parent.addChild("#", t.mContent);
+				addTextToNode(parent, t.mContent);
 				break;
 			}
 
@@ -497,10 +497,20 @@ public final class ThreadPage extends WebPageImpl {
 			}
 
 			case Error: {
-				parent.addChild("span", "class", "error", t.mContent);
+				addTextToNode(parent.addChild("span", "class", "error"), t.mContent);
 				break;
 			}
 			}
+		}
+	}
+
+	private static void addTextToNode(HTMLNode parent, String text) {
+		String[] lines = text.split("\r?\n", -1);
+
+		parent.addChild("#", lines[0]);
+		for(int i = 1; i < lines.length; i++) {
+			parent.addChild("br");
+			parent.addChild("#", lines[i]);
 		}
 	}
 

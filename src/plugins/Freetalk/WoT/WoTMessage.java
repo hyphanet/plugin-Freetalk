@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import plugins.Freetalk.Board;
+import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Identity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.MessageList;
@@ -48,18 +49,19 @@ public final class WoTMessage extends Message {
 	/**
 	 * Constructor for received messages.
 	 */
-	public static WoTMessage construct(MessageList newMessageList, FreenetURI myFreenetURI, MessageID newID, WoTMessageURI newThreadURI, WoTMessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
+	public static WoTMessage construct(Freetalk myFreetalk, MessageList newMessageList, FreenetURI myFreenetURI, MessageID newID, WoTMessageURI newThreadURI, WoTMessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate, String newText, List<Attachment> newAttachments) throws InvalidParameterException {
 		// The Message constructor allows MessageList to be null, we don't since every WoT message should be obtained from a MessageList
 		if(newMessageList == null)
 			throw new NullPointerException("MessageList is null");
 		
-		return new WoTMessage(WoTOwnMessage.calculateURI(newMessageList, newID), myFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
+		return new WoTMessage(myFreetalk, WoTOwnMessage.calculateURI(newMessageList, newID), myFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText, newAttachments);
 	}
 
-	protected WoTMessage(WoTMessageURI newURI, FreenetURI newFreenetURI, MessageID newID, MessageList newMessageList, WoTMessageURI newThreadURI,
+	protected WoTMessage(Freetalk myFreetalk, WoTMessageURI newURI, FreenetURI newFreenetURI, MessageID newID, MessageList newMessageList, WoTMessageURI newThreadURI,
 			WoTMessageURI newParentURI, Set<Board> newBoards, Board newReplyToBoard, Identity newAuthor, String newTitle, Date newDate,
 			String newText, List<Attachment> newAttachments) throws InvalidParameterException {
-		super(newURI, newFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText,
+		
+		super(myFreetalk, newURI, newFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText,
 				newAttachments);
 	}
 	

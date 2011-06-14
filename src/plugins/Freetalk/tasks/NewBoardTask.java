@@ -33,6 +33,8 @@ public final class NewBoardTask extends PersistentTask {
 	
 	@Override
 	public void databaseIntegrityTest() throws Exception {
+		checkedActivate(1);
+		
 		IfNull.thenThrow(mBoardName, "mBoardName");
 		
 		if(!Board.isNameValid(mBoardName))
@@ -41,6 +43,8 @@ public final class NewBoardTask extends PersistentTask {
 
 	@Override
 	protected void process() {
+		checkedActivate(1);
+		
 		mNextProcessingTime = Long.MAX_VALUE;
 		mDeleteTime = 0;
 		

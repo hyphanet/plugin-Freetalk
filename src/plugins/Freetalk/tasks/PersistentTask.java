@@ -54,7 +54,7 @@ public abstract class PersistentTask extends Persistent {
 	}
 	
 	public void databaseIntegrityTest() throws Exception {
-		checkedActivate(2);
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		
 		IfNull.thenThrow(mID, "mID");
 		
@@ -62,7 +62,7 @@ public abstract class PersistentTask extends Persistent {
 	}
 	
 	public OwnIdentity getOwner() throws NoSuchIdentityException {
-		checkedActivate(2);
+		checkedActivate(1);
 		if(mOwner == null)
 			throw new NoSuchIdentityException();
 		
@@ -92,7 +92,7 @@ public abstract class PersistentTask extends Persistent {
 	
 	protected void storeWithoutCommit() {
 		try {
-			checkedActivate(3); // TODO: Figure out a suitable depth.
+			checkedActivate(1);
 			
 			// We cannot throw because PersistentTasks are usually created within the transaction which is used to create the owner.
 			// if(mOwner != null) DBUtil.throwIfNotStored(mDB, mOwner);
@@ -107,14 +107,14 @@ public abstract class PersistentTask extends Persistent {
 	}
 	
 	protected synchronized void storeAndCommit() {
-		synchronized(mDB.lock()) {
+		synchronized(Persistent.transactionLock(mDB)) {
 			storeWithoutCommit();
 			checkedCommit(this);
 		}
 	}
 	
 	protected void deleteWithoutCommit() {
-		deleteWithoutCommit(3);
+		deleteWithoutCommit(1);
 	}
 
 }
