@@ -661,7 +661,6 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	
 	/**
 	 * Get the identities which were last seen in an import with a different ID than the given one.
-	 * Does not return Own
 	 */
 	private ObjectSet<WoTIdentity> getObsoleteIdentities(long importID) {
 		final Query q = db.query();
