@@ -43,7 +43,7 @@ public final class IdentityWantedState extends Persistent {
 
 	@Override
 	public void databaseIntegrityTest() throws Exception {
-		checkedActivate(2);
+		checkedActivate(1);
 		
 		IfNull.thenThrow(mOwner, "mOwnIdentity");
 		IfNull.thenThrow(mRatedIdentity, "mRatedIdentity");
@@ -54,8 +54,8 @@ public final class IdentityWantedState extends Persistent {
 	
 	protected void deleteWithoutCommit() {
 		try {
-			// 2 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
-			checkedActivate(2);
+			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
+			checkedActivate(1);
 			checkedDelete(mManualOverride); // TODO: Optimization: Does db4o require this?
 			checkedDelete(this);
 		}
@@ -69,13 +69,14 @@ public final class IdentityWantedState extends Persistent {
 	 * @return True, if the state was changed, false if it did not change.
 	 */
 	protected boolean set(boolean newWantedState) {
+		checkedActivate(1);
 		final boolean changed = (mManualOverride != null) ? (false) : (mIsWanted != newWantedState);
 		mIsWanted = newWantedState;
 		return changed;
 	}
 	
 	protected boolean get() {
-		checkedActivate(2); // TODO: Optimization: Does db4o require this for Boolean?
+		checkedActivate(1); // TODO: Optimization: Does db4o require this for Boolean?
 		return	mManualOverride != null ? mManualOverride : mIsWanted;
 	}
 
