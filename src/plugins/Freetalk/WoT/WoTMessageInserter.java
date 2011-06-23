@@ -248,5 +248,12 @@ public final class WoTMessageInserter extends MessageInserter {
 
 	@Override
 	public void onMajorProgress(ObjectContainer container) { }
+
+	@Override
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
+			ObjectContainer container) {
+		metadata.free();
+		throw new UnsupportedOperationException();
+	}
 	
 }
