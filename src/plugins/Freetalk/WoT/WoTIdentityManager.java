@@ -943,7 +943,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	public void start() {
 		if(logDEBUG) Logger.debug(this, "Starting...");
 		
-		deleteDuplicateIdentities();
+		if(logDEBUG)
+			deleteDuplicateIdentities();
 		
 		mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), 0, false, true);
 		
@@ -972,7 +973,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			try {
 				HashSet<String> deleted = new HashSet<String>();
 
-				Logger.normal(this, "Searching for duplicate identities ...");
+				Logger.debug(this, "Searching for duplicate identities ...");
 
 				for(WoTIdentity identity : getAllIdentities()) {
 					Query q = db.query();
@@ -991,7 +992,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				}
 				Persistent.checkedCommit(db, this);
 
-				Logger.normal(this, "Finished searching for duplicate identities.");
+				Logger.debug(this, "Finished searching for duplicate identities.");
 			}
 			catch(RuntimeException e) {
 				Persistent.checkedRollback(db, this, e);
