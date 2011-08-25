@@ -150,7 +150,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 
 	public void runPlugin(PluginRespirator myPR) {
 		try {
-		if(logDEBUG) Logger.debug(this, "Plugin starting up...");
+		Logger.normal(this, "Plugin starting up...");
 
 		mPluginRespirator = myPR;
 
@@ -244,7 +244,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		    mNNTPServer = null;
 		}
 
-		if(logDEBUG) Logger.debug(this, "Plugin loaded.");
+		Logger.normal(this, "Freetalk starting up completed.");
 		}
 		catch(RuntimeException e) {
 			Logger.error(this, "Startup failed!", e);
