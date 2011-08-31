@@ -5,7 +5,7 @@
 	<property name="freenet-cvs-snapshot.location" location="../fred/dist/freenet.jar"/>
 	<!-- you can modify and uncomment the following line if you want to experiment with newer db4o versions without recompiling freenet-ext.jar -->
 	<!-- <property name="db4o.location" location="../fred/db4o-7.12/lib/db4o-7.12.145.14409-all-java5.jar"/> -->
-	<property name="freenet-ext.location" location="../fred/lib/freenet-ext.jar"/>
+	<property name="freenet-ext.location" location="../fred/lib/freenet/freenet-ext.jar"/>
 	<property name="debug-node-freetalk-plugin.location" location="../fred/plugins/Freetalk.jar"/>
 	<property name="svn.revision" value="@custom@"/>
 	<property name="source-version" value="1.6"/>
@@ -39,6 +39,7 @@
 		<arg value="describe" />
 		<arg value="--always" />
 		<arg value="--abbrev=4" />
+		<arg value="--dirty" />
 	</exec>
 
 	<condition property="git.revision" value="${git.describe}" else="@unknown@">

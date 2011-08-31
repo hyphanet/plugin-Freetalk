@@ -340,4 +340,11 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	@Override
 	public void onMajorProgress(ObjectContainer container) { }
 
+	@Override
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
+			ObjectContainer container) {
+		metadata.free();
+		throw new UnsupportedOperationException();
+	}
+
 }
