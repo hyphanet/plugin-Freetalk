@@ -168,43 +168,126 @@ public abstract class IdentityManager {
 		mIndividualWantedStateChangedCallbacks.add(listener);
 	}
 	
-	protected final void doNewIdentityCallbacks(final Identity identity) {
+	/**
+	 * Interface function for child classes of IdentityManager.
+	 * Must be called when a new {@link Identity} was stored to the database.
+	 * 
+	 * Must NOT be called when a new {@link OwnIdentity} was stored - use handleNewOwnIdentityWithoutCommit instead.
+	 * 
+	 * This will NOT mark the identity as wanted - identities are allowed to exist even if no OwnIdentity wants their messages.
+	 */
+	protected final void handleNewIdentityWithoutCommit(final Identity identity) {
+		if(identity instanceof OwnIdentity)
+			throw new IllegalArgumentException("OwnIdentity passed to handleNewIdentityWithoutCommit, see JavaDoc.");
+		
+		doNewIdentityCallbacks(identity);
+	}
+	
+	private final void doNewIdentityCallbacks(final Identity identity) {
+		Logger.minor(this, "New Identity, doing callbacks: " + identity);
+		
 		for(NewIdentityCallback callback : mNewIdentityCallbacks) {
 			callback.onNewIdentityAdded(identity);
 		}
 	}
 	
-	protected final void doNewOwnIdentityCallbacks(final OwnIdentity identity) {
+	/**
+	 * Interface function for child classes of IdentityManager.
+	 * Must be called when a new {@link OwnIdentity} was stored to the database.
+	 * 
+	 * This will NOT mark the identity as wanted - identities are allowed to exist even if no OwnIdentity wants their messages.
+	 * Further, this will NOT even mark the own identity as wanted by itself, this must be done explicitly by handleIndividualWantedStateChangedWithoutCommit
+	 */
+	protected final void handleNewOwnIdentityWithoutCommit(final OwnIdentity identity) {
+		doNewIdentityCallbacks(identity);
+		doNewOwnIdentityCallbacks(identity);
+	}
+	
+	private final void doNewOwnIdentityCallbacks(final OwnIdentity identity) {
+		Logger.minor(this, "New OwnIdentity, doing callbacks: " + identity);
+		
 		for(NewOwnIdentityCallback callback : mNewOwnIdentityCallbacks) {
 			callback.onNewOwnIdentityAdded(identity);
 		}
 	}
 	
-	protected final void doIdentityDeletedCallbacks(final Identity identity) {
+	/**
+	 * Interface function for child classes of IdentityManager.
+	 * Must be called before an identity is being deleted from the database.
+	 * 
+	 * Must NOT be called when a new {@link OwnIdentity} is being deleted - use handleOwnIdentityDeletedWithoutCommit instead.
+	 * 
+	 * This will delete all wanted-states of the identity, effectively marking it as unwanted for message fetching.
+	 */
+	protected final void handleIdentityDeletedWithoutCommit(final Identity identity) {
+		if(identity instanceof OwnIdentity)
+			throw new IllegalArgumentException("OwnIdentity passed to handleIdentityDeletedWithoutCommit, see JavaDoc.");
+		
+		deleteAllWantedStatesWithoutCommit(identity); // This also does the callbacks.
+		
+		doIdentityDeletedCallbacks(identity);
+	}
+	
+	private final void doIdentityDeletedCallbacks(final Identity identity) {
+		Logger.minor(this, "Identity deleted, doing callbacks: " + identity);
+		
 		for(IdentityDeletedCallback callback : mIdentityDeletedCallbacks) {
 			callback.beforeIdentityDeletion(identity);
 		}
 	}
 	
-	protected final void doOwnIdentityDeletedCallbacks(final OwnIdentity identity) {
+	/**
+	 * Interface function for child classes of IdentityManager.
+	 * Must be called before an {@link OwnIdentity} is being deleted from the database.
+	 * 
+	 * This will delete all wanted-states of the identity, effectively marking it as unwanted for message fetching.
+	 */
+	protected final void handleOwnIdentityDeletedWithoutCommit(final OwnIdentity identity) {
+		deleteAllWantedStatesWithoutCommit(identity); // This also does the callbacks.
+		
+		doIdentityDeletedCallbacks(identity);
+		doOwnIdentityDeletedCallbacks(identity);
+	}
+	
+	private final void doOwnIdentityDeletedCallbacks(final OwnIdentity identity) {
+		Logger.minor(this, "OwnIdentity deleted, doing callbacks: " + identity);
+		
 		for(OwnIdentityDeletedCallback callback : mOwnIdentityDeletedCallbacks) {
 			callback.beforeOwnIdentityDeletion(identity);
 		}
 	}
 	
+	/**
+	 * Interface function for child classes of IdentityManager.
+	 * Must be called when the wanted-state of an author-{@link Identity} in the scope of an {@link OwnIdentity} changes
+	 * - in other words, when an OwnIdentity changes his decision of whether it wants messages from the author-Identity.
+	 * 
+	 * This will take care of all necessities which arise from that: Message deletion / message subscription, etc.
+	 * It will also notice when the overall wanted state has changed (due to all individual states being changed to true/false) and
+	 * do the necessary callbacks - that's why there is no function "handleOverallWantedStateChangedWithoutCommit".
+	 * @throws NoSuchIdentityException 
+	 */
+	protected final void handleIndividualWantedStateChangedWithoutCommit(final OwnIdentity owner, final Identity author, boolean newShouldFetch) {
+		setIndividualWantedStateWithoutCommit(owner, author, newShouldFetch); // This also does the callbacks.
+	}
+	
 	private final void doOverallWantedStateChangedCallbacks(final Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
+		Logger.minor(this, "Overall wanted state changed from " + oldShouldFetch + " to " + newShouldFetch + ", doing callbacks: " + author);
+		
 		for(OverallWantedStateChangedCallback callback : mOverallWantedStateChangedCallbacks) {
 			callback.onOverallWantedStateChanged(author, oldShouldFetch, newShouldFetch);
 		}
 	}
 	
 	private final void doIndividualWantedStateChangedCallbacks(final OwnIdentity owner, final Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
+		Logger.minor(this, "Individual wanted state changed from " + oldShouldFetch + " to " + newShouldFetch + ", doing callbacks: " + author);
+		
 		for(IndividualWantedStateChangedCallback callback : mIndividualWantedStateChangedCallbacks) {
 			callback.onIndividualWantedStateChanged(owner, author, oldShouldFetch, newShouldFetch);
 		}
 	}
 	
-	private synchronized final IdentityWantedState getIndividualWantedState(OwnIdentity owner, Identity author) throws NoSuchWantedStateException {
+	protected synchronized final IdentityWantedState getIndividualWantedState(OwnIdentity owner, Identity author) throws NoSuchWantedStateException {
 		final Query q = db.query();
 		q.constrain(IdentityWantedState.class);
 		q.descend("mOwner").constrain(owner).identity();
@@ -238,51 +321,102 @@ public abstract class IdentityManager {
 		return false;
 	}
 	
-	protected synchronized final void setOverallWantedState(final String authorID, boolean shouldFetch) {
-		synchronized(db.lock()) {
-			try {
-				final Identity author = getIdentity(authorID);
-				
-				// We do not have to do update the fetch state since it is not cached - getOverallShouldFetchState computes it from all individual states
-				
-				assert(getOverallWantedState(author) == shouldFetch);
-				
-				// if(stateChanged)	// We cannot figure that out, we trust the caller that it is the case
-					doOverallWantedStateChangedCallbacks(author, !shouldFetch, shouldFetch);
-				
-				Persistent.checkedCommit(db, this);
-			} catch (Exception e) {
-				Persistent.checkedRollbackAndThrow(db, this, new RuntimeException(e));
-			}
+//	protected synchronized final void setOverallWantedState(final String authorID, boolean shouldFetch) {
+//		synchronized(db.lock()) {
+//			try {
+//				final Identity author = getIdentity(authorID);
+//				
+//				// We do not have to do update the fetch state since it is not cached - getOverallShouldFetchState computes it from all individual states
+//				
+//				assert(getOverallWantedState(author) == shouldFetch);
+//				
+//				// if(stateChanged)	// We cannot figure that out, we trust the caller that it is the case
+//					doOverallWantedStateChangedCallbacks(author, !shouldFetch, shouldFetch);
+//				
+//				Persistent.checkedCommit(db, this);
+//			} catch (Exception e) {
+//				Persistent.checkedRollbackAndThrow(db, this, new RuntimeException(e));
+//			}
+//		}
+//	}
+	
+	protected final void setIndividualWantedStateWithoutCommit(final OwnIdentity owner, final Identity author, boolean shouldFetch) {
+		final boolean oldOverallWantedState = getOverallWantedState(author);
+		
+		IdentityWantedState state;
+		boolean stateChanged;
+		
+		try {
+			state = getIndividualWantedState(owner, author);
+			stateChanged = state.set(shouldFetch);
+		} catch(NoSuchWantedStateException e) {
+			state = new IdentityWantedState(owner, author, shouldFetch, null);
+			state.initializeTransient(mFreetalk);
+			stateChanged = true;
+		}
+		state.storeWithoutCommit();
+
+		if(stateChanged) {
+			doIndividualWantedStateChangedCallbacks(owner, author, !shouldFetch, shouldFetch);
+		
+			// TODO: Optimization: We could avoid getOverallWantedState in some cases by considering in which way the individual state changed.
+			if(oldOverallWantedState != getOverallWantedState(author))
+				doOverallWantedStateChangedCallbacks(author, oldOverallWantedState, !oldOverallWantedState);
 		}
 	}
 	
-	protected synchronized final void setIndividualWantedState(final String ownerID, final String authorID, boolean shouldFetch) throws NoSuchIdentityException {
-		synchronized(db.lock()) {
-			try {
-				final OwnIdentity owner = getOwnIdentity(ownerID);
-				final Identity author = getIdentity(authorID);
+//	protected synchronized final void setIndividualWantedState(final String ownerID, final String authorID, boolean shouldFetch) throws NoSuchIdentityException {
+//		synchronized(db.lock()) {
+//			try {
+//				final OwnIdentity owner = getOwnIdentity(ownerID);
+//				final Identity author = getIdentity(authorID);
+//				
+//				IdentityWantedState state;
+//				boolean stateChanged;
+//				try {
+//					state = getIndividualWantedState(owner, author);
+//					stateChanged = state.set(shouldFetch);
+//				} catch(NoSuchWantedStateException e) {
+//					state = new IdentityWantedState(owner, author, shouldFetch, null);
+//					state.initializeTransient(mFreetalk);
+//					stateChanged = true;
+//				}
+//				state.storeWithoutCommit();
+//				
+//				if(stateChanged)
+//					doIndividualWantedStateChangedCallbacks(owner, author, !shouldFetch, shouldFetch);
+//					
+//				Persistent.checkedCommit(db, this);
+//			} catch(RuntimeException e) {
+//				Persistent.checkedRollbackAndThrow(db, this, e);
+//			}
+//		}
+//	}
+	
+	/**
+	 * Deletes all global and individual wanted-states of the given author, effectively marking him as unwanted.
+	 * After this, it calls the wanted-state-changed callbacks. 
+	 */
+	protected final void deleteAllWantedStatesWithoutCommit(final Identity author) {
+		final Query q = db.query();
+		q.constrain(IdentityWantedState.class);
+		q.descend("mRatedIdentity").constrain(author).identity();
+		
+		// TODO: Optimization: For public gateway mode with large amounts of OwnIdentities we should cache this in the Identity object.
+		// Make sure to adapt the callers (especially setOverallShouldFetchState)
+		
+		boolean oldOverallWantedState = false;
+		
+		for(IdentityWantedState state : new Persistent.InitializingObjectSet<IdentityWantedState>(mFreetalk, q)) {
+			if(!oldOverallWantedState && state.get()) // We check overallWantedState first as it is faster than get()
+				oldOverallWantedState = true;
 				
-				IdentityWantedState state;
-				boolean stateChanged;
-				try {
-					state = getIndividualWantedState(owner, author);
-					stateChanged = state.set(shouldFetch);
-				} catch(NoSuchWantedStateException e) {
-					state = new IdentityWantedState(owner, author, shouldFetch, null);
-					state.initializeTransient(mFreetalk);
-					stateChanged = true;
-				}
-				state.storeWithoutCommit();
-				
-				if(stateChanged)
-					doIndividualWantedStateChangedCallbacks(owner, author, !shouldFetch, shouldFetch);
-					
-				Persistent.checkedCommit(db, this);
-			} catch(RuntimeException e) {
-				Persistent.checkedRollbackAndThrow(db, this, e);
-			}
+			doIndividualWantedStateChangedCallbacks(state.getOwner(), author, state.get(), false);
+			state.deleteWithoutCommit();
 		}
+		
+		if(oldOverallWantedState==true) // The identity was wanted by at least one own identity and now nobody wants it
+			doOverallWantedStateChangedCallbacks(author, true, false);		
 	}
 
 
