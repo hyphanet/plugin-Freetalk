@@ -74,10 +74,27 @@ public final class IdentityWantedState extends Persistent {
 		mIsWanted = newWantedState;
 		return changed;
 	}
+
+	/**
+	 * Returns true if a call to {@link #set(boolean)} with the given value would change the wanted-state.
+	 * Use this for checking whether you have to call {@link IdentityManager#handleIndividualWantedStateChangedWithoutCommit(OwnIdentity, Identity, boolean, boolean)}.
+	 */
+	public boolean callingSetWouldChangeWantedState(boolean newWantedState) {
+		checkedActivate(1);
+		return (mManualOverride != null) ? (false) : (mIsWanted != newWantedState);	
+	}
 	
 	protected boolean get() {
 		checkedActivate(1); // TODO: Optimization: Does db4o require this for Boolean?
 		return	mManualOverride != null ? mManualOverride : mIsWanted;
 	}
+	
+	protected OwnIdentity getOwner() {
+		checkedActivate(1);
+		if(mOwner instanceof Persistent)
+			((Persistent) mOwner).initializeTransient(mFreetalk);
+		return mOwner;
+	}
+
 
 }
