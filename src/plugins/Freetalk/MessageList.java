@@ -673,6 +673,13 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		return mAuthor;
 	}
 	
+	/**
+	 * Faster than getAuthor().getID() since it will not require activation of the author object.
+	 */
+	public final String getAuthorID() {
+		return MessageListID.construct(getID()).getAuthorID().toString();
+	}
+	
 	public long getIndex() {
 		checkedActivate(1); // long is a db4o primitive type so 1 is enough
 		return mIndex;
