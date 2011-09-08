@@ -78,7 +78,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String WOT_PLUGIN_URI = "/WebOfTrust";
 	public static final String WOT_CONTEXT = PLUGIN_TITLE;
 	public static final String DATABASE_FILENAME = PLUGIN_TITLE + ".db4o";
-	public static final int DATABASE_FORMAT_VERSION = 1;
+	public static final int DATABASE_FORMAT_VERSION = 2;
 
 	/* References from the node */
 	
