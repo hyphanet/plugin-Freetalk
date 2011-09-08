@@ -45,10 +45,4 @@ public interface OwnIdentity extends Identity {
 	 */
 	public void setWantsImageDisplay(boolean wantsImageDisplay);
 	
-
-	
-	/**
-	 * @throws Exception If the decision cannot be made right now. Practically this means that the connection to the WoT plugin is not working right now.
-	 */
-	public boolean wantsMessagesFrom(Identity identity) throws Exception;
 }

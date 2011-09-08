@@ -73,32 +73,6 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 		return mInsertURI;
 	}
 
-	public boolean wantsMessagesFrom(Identity identity) throws Exception {
-		if(!(identity instanceof WoTIdentity))
-			throw new IllegalArgumentException();
-		
-		try {
-			// TODO: Investigate whether we could make the lower limit configurable. It would require us not to delete the identities if the configurated limit is
-			// below zero. That would involve chaning WoT though. Or we could only allow positive limits.
-			return getScoreFor((WoTIdentity)identity) >= 0;
-		}
-		catch(NotInTrustTreeException e) {
-			return false;
-		}
-	}
-
-	public int getScoreFor(WoTIdentity identity) throws NotInTrustTreeException, Exception {
-		return mFreetalk.getIdentityManager().getScore(this, identity);
-	}
-
-	public int getTrustIn(WoTIdentity identity) throws NotTrustedException, Exception {
-		return mFreetalk.getIdentityManager().getTrust(this, identity);
-	}
-
-	public void setTrust(WoTIdentity identity, byte trust, String comment) throws Exception {
-		mFreetalk.getIdentityManager().setTrust(this, identity, trust, comment);
-	}
-	
 	public boolean wantsAutoSubscribeToNewBoards() {
 		checkedActivate(1);
 		return mAutoSubscribeToNewBoards;

@@ -83,25 +83,45 @@ public abstract class IdentityManager {
 
 	public abstract ObjectSet<? extends OwnIdentity> ownIdentityIterator();
 	
+	/**
+	 * Gets the {@link Identity} with the given ID. 
+	 * IDs are unique, there can only be one identity with a given ID.
+	 * Will also return an {@link OwnIdentity} if it is one.
+	 * @throws NoSuchIdentityException If no {@link Identity} or {@link OwnIdentity} with the given ID exists.
+	 */
 	public abstract Identity getIdentity(String id) throws NoSuchIdentityException;
 	
-	public abstract OwnIdentity getOwnIdentity(String id) throws NoSuchIdentityException;
-
-	public synchronized boolean anyOwnIdentityWantsMessagesFrom(Identity identity) {		
-		for(final OwnIdentity oid : ownIdentityIterator()) {
-			try {
-				if (oid.wantsMessagesFrom(identity))
-					return true;
-			} catch(NoSuchIdentityException e) {
-				// The own identity was deleted meanwhile, ignore
-			} catch(Exception e) {
-				Logger.error(this, "anyOwnIdentityWantsMessagesFrom: wantsMessagesFrom() failed, skipping the current OwnIdentity.", e);
-			}
+	/**
+	 * Returns true if an {@link Identity} or {@link OwnIdentity} with the given ID exists.
+	 */
+	public final boolean identityExists(String id) {
+		try {
+			getIdentity(id);
+			return true;
+		} catch(NoSuchIdentityException e) {
+			return false;
 		}
-
-		return false;
 	}
-
+	
+	/**
+	 * Gets the {@link OwnIdentity} with the given ID. 
+	 * IDs are unique, there can only be one identity with a given ID.
+	 * 
+	 * @throws NoSuchIdentityException If no {@link OwnIdentity} with the given ID exists.
+	 */
+	public abstract OwnIdentity getOwnIdentity(String id) throws NoSuchIdentityException;
+	
+	/**
+	 * Returns true if an {@link OwnIdentity} with the given ID exists.
+	 */
+	public final boolean ownIdentityExists(String id) {
+		try {
+			getOwnIdentity(id);
+			return true;
+		} catch(NoSuchIdentityException e) {
+			return false;
+		}
+	}
 
 	public interface NewIdentityCallback {
 		public void onNewIdentityAdded(Identity identity);
