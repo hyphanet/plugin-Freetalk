@@ -130,6 +130,10 @@ public class WoTIdentity extends Persistent implements Identity {
 		return mNickname;
 	}
 
+	/**
+	 * @deprecated FIXME: Optimization: Implement a getter in WoTIdentityManager which can query by ID so we don't have to obtain identity objects from the database
+	 * when we have their ID only and want the nickname but don't need the identity object.
+	 */
 	public String getShortestUniqueName() {
 		return mFreetalk.getIdentityManager().getShortestUniqueName(this);
 	}
