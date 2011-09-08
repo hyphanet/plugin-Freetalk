@@ -20,5 +20,9 @@ public final class NotInTrustTreeException extends NoSuchObjectException {
 	public NotInTrustTreeException(WoTOwnIdentity treeOwner, WoTIdentity target) {
 		super(target + " is not in the trust treee of " + treeOwner);
 	}
+	
+	public NotInTrustTreeException(String treeOwner, String target) {
+		super(target + " is not in the trust treee of " + treeOwner);
+	}
 
 }

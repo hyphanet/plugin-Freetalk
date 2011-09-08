@@ -18,4 +18,8 @@ public final class NotTrustedException extends NoSuchObjectException {
 	public NotTrustedException(WoTIdentity truster, WoTIdentity trustee) {
 		super(truster.getNickname() + " does not trust " + trustee.getNickname());
 	}
+	
+	public NotTrustedException(String trusterID, String trusteeID) {
+		super(trusterID + " does not trust " + trusteeID);
+	}
 }
