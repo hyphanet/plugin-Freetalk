@@ -21,6 +21,7 @@ import plugins.Freetalk.Persistent;
 import plugins.Freetalk.PluginTalkerBlocking;
 import plugins.Freetalk.exceptions.DuplicateIdentityException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
+import plugins.Freetalk.exceptions.NoSuchWantedStateException;
 import plugins.Freetalk.exceptions.NotInTrustTreeException;
 import plugins.Freetalk.exceptions.NotTrustedException;
 import plugins.Freetalk.exceptions.WoTDisconnectedException;
@@ -51,11 +52,18 @@ import freenet.support.io.NativeThread;
 /**
  * An identity manager which uses the identities from the WoT plugin.
  * 
+ * FIXME: Optimization: All functions which require WoT(Own)Identity objects just for obtaining the ID from them to query values out of caches
+ * (shortest unique nickname cache, WebOfTrustCache) should be changed to only require an identity ID to make sure that callers don't
+ * query identities from the database uselessly
+ * FIXME: Also re-check whether the functions which already have duplicates which take a ID instead of an identity are used everywhere where they could be.
+ * 
  * @author xor (xor@freenetproject.org)
  */
 public final class WoTIdentityManager extends IdentityManager implements PrioRunnable {
 	
 	private static final int THREAD_PERIOD = Freetalk.FAST_DEBUG_MODE ? (3 * 60 * 1000) : (5 * 60 * 1000);
+	
+	private static final int SHORTEST_NICKNAME_CACHE_UPDATE_DELAY = 30 * 1000;
 	
 	
 	/** The amount of time between each attempt to connect to the WoT plugin */
@@ -80,7 +88,10 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	
 	private boolean mShortestUniqueNicknameCacheNeedsUpdate = true;
 	
-	private WebOfTrustCache mWoTCache = new WebOfTrustCache(this);
+	/**
+	 * @see WebOfTrustCache
+	 */
+	private final WebOfTrustCache mWoTCache = new WebOfTrustCache(this);
 	
 	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
@@ -109,6 +120,99 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		mIsUnitTest = true;
 		mTicker = null;
 		mRandom = null;
+	}
+	
+	// FIXME: Check all callers of callHandle* for whether they do proper synchronization as needed by the subscribers of these events
+	// This is a hack, instead subscribers should state which synchronization they need, however we have no infrastructure for that yet.
+	
+	/**
+	 * Called by this WoTIdentityManager after a new WoTIdentity has been stored to the database and before committing the transaction.
+	 * 
+	 * The purpose of this function is to do necessary stuff which is specific to WoTIdentityManager and then call 
+	 * super.handleNewIdentityWithoutCommit, which deals with general stuff and deploys the new-own-identity-callbacks.
+	 * 
+	 * Specific stuff which done is:
+	 * - Marks the shortest unique nickname cache for an update.
+	 */
+	private final void callHandleNewIdentityWithoutCommit(final WoTIdentity identity) {		
+		queueShortesUniqueNicknameCacheUpdate();
+		
+		super.handleNewIdentityWithoutCommit(identity);
+	}
+	
+	/**
+	 * Called by this WoTIdentityManager after a new WoTOwnIdentity has been stored to the database and before committing the transaction.
+	 * 
+	 * The purpose of this function is to do necessary stuff which is specific to WoTIdentityManager and then call 
+	 * super.handleNewOwnIdentityWithoutCommit, which deals with general stuff and deploys the new-own-identity-callbacks.
+	 * 
+	 * Specific stuff which done is:
+	 * - Marks the shortest unique nickname cache for an update.
+	 * - Adds the "Freetalk" WOT-context to the identity and stores an {@link IntroduceIdentityTask} for the identity.
+	 * Then
+	 * - Stores an {@link IntroduceIdentityTask} for the identity
+	 * 
+	 * You have to lock this WoTIdentityManager, the PersistentTaskManager and the database before calling this function.
+	 */
+	private final void callHandleNewOwnIdentityWithoutCommit(final WoTOwnIdentity newIdentity) {
+		queueShortesUniqueNicknameCacheUpdate();
+		
+		// TODO: Do after an own message is posted. I have not decided at which place to do this :|
+		try {
+			addFreetalkContext(newIdentity);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+			
+		PersistentTask introductionTask = new IntroduceIdentityTask(newIdentity);
+		mFreetalk.getTaskManager().storeTaskWithoutCommit(introductionTask);
+		
+		super.handleNewOwnIdentityWithoutCommit(newIdentity);
+	}
+	
+	/**
+	 * Called by this WoTIdentityManager before a WoTIdentity is deleted from the database (and thus before committing the transaction).
+	 * Not called for WoTOwnIdentity objects.
+	 * 
+	 * The purpose of this function is to do necessary stuff which is specific to WoTIdentityManager and then call 
+	 * super.handleIdentityDeletedWithoutCommit, which deals with general stuff and deploys the identity-deleted-callbacks.
+	 * 
+	 * Specific stuff which done is:
+	 * - Marks the shortest unique nickname cache for an update.
+	 */
+	private final void callHandleIdentityDeletedWithoutCommit(final WoTIdentity identity) {
+		queueShortesUniqueNicknameCacheUpdate();
+		
+		super.handleIdentityDeletedWithoutCommit(identity);
+	}
+	
+	/**
+	 * Called by this WoTIdentityManager before a WoTOwnIdentity is deleted from the database (and thus before committing the transaction).
+	 * 
+	 * The purpose of this function is to do necessary stuff which is specific to WoTIdentityManager and then call 
+	 * super.handleOwnIdentityDeletedWithoutCommit, which deals with general stuff and deploys the own-identity-deleted-callbacks.
+	 * 
+	 * Specific stuff which done is:
+	 * - Marks the shortest unique nickname cache for an update.
+	 */
+	private final void callHandleOwnIdentityDeletedWithoutCommit(final WoTOwnIdentity identity) {
+		queueShortesUniqueNicknameCacheUpdate();
+		
+		// We don't need to delete the PersistentTask which callHandleNewOwnIdentityWithoutCommit created,
+		// the PersistentTaskManager registers a callback for identity deletion & deletes all related tasks.
+		
+		super.handleOwnIdentityDeletedWithoutCommit(identity);
+	}
+	
+	/**
+	 * Called by this WoTIdentityManager after the wanted-state of an identity has changed, i.e. its WOT-score changed from "good" to "bad"
+	 * or vice versa in the view of an own identity, which changes the "do we want the messages of that identity?" state, we call it "wanted state".
+	 * 
+	 * The purpose of this function is to do necessary stuff which is specific to WoTIdentityManager and then call 
+	 * super.handleIndividualWantedStateChangedWithoutCommit, which deals with general stuff and deploys the wanted-state-changed-callbacks.
+	 */
+	private final void callHandleIndividualWantedStateChangedWithoutCommit(final WoTOwnIdentity owner, final WoTIdentity author, boolean newShouldFetch) {
+		super.handleIndividualWantedStateChangedWithoutCommit(owner, author, newShouldFetch);
 	}
 	
 	
@@ -163,6 +267,11 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		params.putOverwrite("Context", Freetalk.WOT_CONTEXT);
 		PluginTalkerBlocking.Result result = sendFCPMessageBlocking(params, null, "IdentityCreated");
 		
+		// The cleanest implementation of identity creation would NOT create the WoTOwnIdentity object in the database now:
+		// We receive "new identity" events from WOT and have event-handling code for this, it would be ideal to only update the database there.
+		// HOWEVER we need to store the user's settings such as autoSubscribeToNewBoards, displayImages, etc. and there is no suitable place
+		// for storing them besides the database.
+		
 		WoTOwnIdentity identity = new WoTOwnIdentity(result.params.get("ID"),
 				new FreenetURI(result.params.get("RequestURI")),
 				new FreenetURI(result.params.get("InsertURI")),
@@ -175,9 +284,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		synchronized(mFreetalk.getTaskManager()) { // Required by onNewOwnidentityAdded
 		synchronized(Persistent.transactionLock(db)) {
 			try {
-				identity.initializeTransient(mFreetalk);
 				identity.storeWithoutCommit();
-				onNewOwnIdentityAdded(identity);
+				callHandleNewOwnIdentityWithoutCommit(identity);
 				identity.checkedCommit(this);
 				Logger.normal(this, "Stored new WoTOwnIdentity " + identity);
 				
@@ -205,6 +313,11 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		params.putOverwrite("InsertURI", newInsertURI.toString());
 		PluginTalkerBlocking.Result result = sendFCPMessageBlocking(params, null, "IdentityCreated");
 		
+		// The cleanest implementation of identity creation would NOT create the WoTOwnIdentity object in the database now:
+		// We receive "new identity" events from WOT and have event-handling code for this, it would be ideal to only update the database there.
+		// HOWEVER we need to store the user's settings such as autoSubscribeToNewBoards, displayImages, etc. and there is no suitable place
+		// for storing them besides the database.
+		
 		/* We take the URIs which were returned by the WoT plugin instead of the requested ones because this allows the identity to work
 		 * even if the WoT plugin ignores our requested URIs: If we just stored the URIs we requested, we would store an identity with
 		 * wrong URIs which would result in the identity not being useable. */
@@ -221,7 +334,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		synchronized(Persistent.transactionLock(db)) {
 			try {
 				identity.storeWithoutCommit();
-				onNewOwnIdentityAdded(identity);
+				callHandleNewOwnIdentityWithoutCommit(identity);
 				identity.checkedCommit(this);
 				Logger.normal(this, "Stored new WoTOwnIdentity " + identity);
 			}
@@ -240,7 +353,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		return new Persistent.InitializingObjectSet<WoTIdentity>(mFreetalk, q);
 	}
 	
-	public synchronized ObjectSet<WoTOwnIdentity> ownIdentityIterator() {
+	public ObjectSet<WoTOwnIdentity> ownIdentityIterator() {
 		final Query q = db.query();
 		q.constrain(WoTOwnIdentity.class);
 		return new Persistent.InitializingObjectSet<WoTOwnIdentity>(mFreetalk, q);
@@ -278,36 +391,51 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	}
 
 	/**
-	 * Not synchronized, the involved identities might be deleted during the query - which is not really a problem.
+	 * If you only have IDs of the identities available, please use {@link #getScore(String, String)}
+	 * instead of querying the identity objects from the database - that function obtains the score without
+	 * a database query which is significantly faster.
 	 */
 	public int getScore(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotInTrustTreeException {
+		return getScore(truster.getID(), trustee.getID());
+	}
+	
+	public int getScore(final String truster, final String trustee) throws NotInTrustTreeException {
 		return mWoTCache.getScore(truster, trustee);
 	}
 
 	/**
-	 * Not synchronized, the involved identities might be deleted during the query - which is not really a problem.
+	 * If you only have IDs of the identities available, please use {@link #getTrust(String, String)}
+	 * instead of querying the identity objects from the database - that function obtains the trust without
+	 * a database query which is significantly faster.
 	 */
-	public byte getTrust(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotTrustedException {
-		return mWoTCache.getTrust(truster, trustee);
+	public byte getTrust(final WoTIdentity truster, final WoTIdentity trustee) throws NotTrustedException {
+		return getTrust(truster.getID(), trustee.getID());
 	}
 
+	
+	public byte getTrust(final String trusterID, final String trusteeID) throws NotTrustedException {
+		return mWoTCache.getTrust(trusterID, trusteeID);
+	}
+
+	
 	/**
 	 * Not synchronized, the involved identities might be deleted during the query or some other WoT client might modify the trust value
 	 * during the query - which is not really a problem, you should not be modifying trust values of your own identity with multiple clients simultaneously.
 	 */
-	public void setTrust(OwnIdentity truster, Identity trustee, byte trust, String comment) throws Exception {
-		WoTOwnIdentity wotTruster = (WoTOwnIdentity)truster;
-		WoTIdentity wotTrustee = (WoTIdentity)trustee;
-		
+	public void setTrust(WoTOwnIdentity truster, WoTIdentity trustee, byte trust, String comment) throws Exception {
 		SimpleFieldSet request = new SimpleFieldSet(true);
 		request.putOverwrite("Message", "SetTrust");
-		request.putOverwrite("Truster", wotTruster.getID());
-		request.putOverwrite("Trustee", wotTrustee.getID());
+		request.putOverwrite("Truster", truster.getID());
+		request.putOverwrite("Trustee", trustee.getID());
 		request.putOverwrite("Value", Integer.toString(trust));
 		request.putOverwrite("Comment", comment);
 
 		sendFCPMessageBlocking(request, null, "TrustSet");
-		mWoTCache.putTrust(wotTruster, wotTrustee, trust, comment);
+		
+		// We will receive an event-notification from WOT about the trust change anyway, it is probably better to only have one place
+		// where we handle trust changes and that place is the event-handling code.
+		
+		// mWoTCache.putTrust(truster.getID(), trustee.getID(), trust, comment);
 	}
 	
 	/**
@@ -319,11 +447,11 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	 * 		values less than zero.
 	 */
 	public int getReceivedTrustsCount(WoTIdentity trustee, int selection) throws Exception {
-		return mWoTCache.getReceivedTrustCount(trustee, selection);
+		return mWoTCache.getReceivedTrustCount(trustee.getID(), selection);
 	}
 	
-	public int getGivenTrustsCount(WoTIdentity trustee, int selection) throws Exception {
-		return mWoTCache.getGivenTrustCount(trustee, selection);
+	public int getGivenTrustsCount(WoTIdentity truster, int selection) throws Exception {
+		return mWoTCache.getGivenTrustCount(truster.getID(), selection);
 	}
 	
 	public static final class IntroductionPuzzle {
@@ -427,200 +555,287 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		sendFCPMessageBlocking(params, null, "ContextAdded");
 	}
 	
-	private void onNewIdentityAdded(Identity identity) {
-		Logger.normal(this, "onNewIdentityAdded " + identity);
-		
-		mShortestUniqueNicknameCacheNeedsUpdate = true;
-		
-		doNewIdentityCallbacks(identity);
-		
-		if(!(identity instanceof OwnIdentity))
-			onShouldFetchStateChanged(identity, false, true);
-	}
-
-	/**
-	 * Called by this WoTIdentityManager after a new WoTIdentity has been stored to the database and before committing the transaction.
-	 * 
-	 * You have to lock this WoTIdentityManager, the PersistentTaskManager and the database before calling this function.
-	 * 
-	 * @param newIdentity
-	 * @throws Exception If adding the Freetalk context to the identity in WoT failed.
-	 */
-	private void onNewOwnIdentityAdded(OwnIdentity identity) {
-		Logger.normal(this, "onNewOwnIdentityAdded " + identity);
-		
-		WoTOwnIdentity newIdentity = (WoTOwnIdentity)identity;
-		
-		// TODO: Do after an own message is posted. I have not decided at which place to do this :|
-		try {
-			addFreetalkContext(newIdentity);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-			
-		PersistentTask introductionTask = new IntroduceIdentityTask((WoTOwnIdentity)newIdentity);
-		mFreetalk.getTaskManager().storeTaskWithoutCommit(introductionTask);
-		
-		doNewOwnIdentityCallbacks(newIdentity);
-		onShouldFetchStateChanged(newIdentity, false, true);
-	}
-	
-	private void beforeIdentityDeletion(Identity identity) {
-		Logger.normal(this, "beforeIdentityDeletion " + identity);
-		
-		doIdentityDeletedCallbacks(identity);
-		
-		if(!(identity instanceof OwnIdentity)) // Don't call it twice
-			onShouldFetchStateChanged(identity, true, false);
-	}
-	
-	private void beforeOwnIdentityDeletion(OwnIdentity identity) {
-		Logger.normal(this, "beforeOwnIdentityDeletion " + identity);
-		
-		doOwnIdentityDeletedCallbacks(identity);
-		onShouldFetchStateChanged(identity, true, false);
-	}
-	
-	private void onShouldFetchStateChanged(Identity author, boolean oldShouldFetch, boolean newShouldFetch) {
-		Logger.normal(this, "onShouldFetchStateChanged " + author);
-		doOverallWantedStateChangedCallbacks(author, oldShouldFetch, newShouldFetch);
-	}
-	
 	private void importIdentity(boolean ownIdentity, String identityID, String requestURI, String insertURI, String nickname, long importID) {
+		synchronized(this) {
+			try {
+				final Identity existingIdentity = getIdentity(identityID);
+				
+				// If we receive an event which tells us that the type of an identity has changed, we shall 
+				// handle it as if it was deleted and then added again - this is the easiest way to implement handling type-changes
+				// FIXME: Implement this in the callers of this function.
+				if((existingIdentity instanceof OwnIdentity) != ownIdentity)
+					throw new RuntimeException("Type of identity changed, cannot import: " + existingIdentity);
+				
+				// The identity already exists because:
+				// - WoT currently does not differentiate between "new identity" notifications and "identity changed" notifications
+				// - When the user creates an own identity via Freetalk, it is stored in the database directly without waiting for the WOT callback
+				// TODO: Process "identity changed" notifications, maybe there is some information on identities with which we should deal
+				if(logDEBUG)
+					Logger.debug(this, "Not importing identity, it already exists: " + identityID);
+				return;
+			} catch(NoSuchIdentityException e) {}
+		
+			// FIXME: Check whether this locking is enough / too much
+			synchronized(mFreetalk.getTaskManager()) {
+			synchronized(Persistent.transactionLock(db)) {
+				try {
+					Logger.normal(this, "Importing identity from WoT: " + requestURI);
+					final WoTIdentity id = ownIdentity ? new WoTOwnIdentity(identityID, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
+						new WoTIdentity(identityID, new FreenetURI(requestURI), nickname);
+	
+					id.initializeTransient(mFreetalk);
+					id.setLastReceivedFromWoT(importID);
+					id.storeWithoutCommit();
+	
+					if(ownIdentity)
+						callHandleNewOwnIdentityWithoutCommit((WoTOwnIdentity)id);
+					else 
+						callHandleNewIdentityWithoutCommit(id);
+	
+					id.checkedCommit(this);
+				}
+				catch(Exception e) {
+					Persistent.checkedRollbackAndThrow(db, this, new RuntimeException(e));
+				}
+			}
+			}
+		}
+	}
+	
+	/**
+	 * Imports a {@link WoTIdentity} from a {@link SimpleFieldSet} with contents as specified by the WOT FCP function "GetIdentity"
+	 */
+	private final void importIdentity(final boolean ownIdentity, final SimpleFieldSet data) {
+		assert(data.get("Message").equals(ownIdentity ? "OwnIdentity" : "Identity"));
+		
+		final String nickname = data.get("Nickname");
+		final String identityID = data.get("ID");
+		
+		// FIXME: Check whether we successfully obtain the identity due to identity-changed notifications when the nickname is available.
+		if(nickname == null) {
+			Logger.normal(this, "Ignoring identity while nickname is null: " + identityID);
+			return;
+		}
+		
+		final String requestURI = data.get("RequestURI");
+		final String insertURI = ownIdentity ? data.get("InsertURI") : null;
+		final long importID = mRandom.nextLong();
+		
+		importIdentity(ownIdentity, identityID, requestURI, insertURI, nickname, importID);
+	}
+	
+	/**
+	 * Imports a {@link WoTTrust} from a {@link SimpleFieldSet} with contents as specified by the WOT FCP function "GetTrust"
+	 */
+	private final void importTrustValue(final SimpleFieldSet data) throws NoSuchIdentityException {
+		// FIXME: Handle trust deletion
+		
+		assert(data.get("Message").equals("Trust"));
+		
+		final String trusterID = data.get("Truster");
+		final String trusteeID = data.get("Trustee");
+		final byte value = Byte.parseByte(data.get("Value"));
+		final String comment = data.get("Comment");
+		
+		// We don't need a transaction, the trust-values are not stored in the database
+				
+		mWoTCache.putTrust(trusterID, trusteeID, value, comment);
+
+		// No need to synchronize the wanted-states of identities here: Only the score of an identity is relevant.
+	}
+	
+	/**
+	 * Imports a {@link WoTScore} from a {@link SimpleFieldSet} with contents as specified by the WOT FCP function "GetScore"
+	 */
+	private final void importScoreValue(final SimpleFieldSet data) throws NoSuchIdentityException {
+		// FIXME: Handle score deletion
+		
+		assert(data.get("Message").equals("Score"));
+		
+		final String trusterID = data.get("Truster");
+		final String trusteeID = data.get("Trustee");
+		final int value = Integer.parseInt(data.get("Value"));
+		
+		synchronized(mWoTCache) {
+			boolean wantedStateChanged = false;
+			
+			try {
+				if(Integer.signum(mWoTCache.getScore(trusterID, trusteeID)) != Integer.signum(value)) 
+					wantedStateChanged = true;
+			} catch (NotInTrustTreeException e) {
+				wantedStateChanged = true;
+			}
+			
+			if(!wantedStateChanged) {
+				// The score did not change from positive to negative (or vice-versa) so we do not need to update 
+				// the database contents and can update the cache & return without synchronizing on this WoTIdentityManager
+				mWoTCache.putScore(trusterID, trusteeID, value);
+				return;
+			} else {
+				// We cannot update the cache now due to locking issues - see the comment below
+			}
+		}
+		
+		// The wanted-state changed so we need to synchronize on this WoTIdentityManager & update the wanted-state in the database.
+		// We must release & re-take the WoTCache lock because the locking order must be: WoTIdentityManager first, then WoTCache.
+		// FIXME: Figure out whether we need all of those locks
+		synchronized(this) {
+		synchronized(mFreetalk.getMessageManager()) {
 		synchronized(mFreetalk.getTaskManager()) {
+		synchronized(mWoTCache) {
 		synchronized(Persistent.transactionLock(db)) {
 			try {
-				Logger.normal(this, "Importing identity from WoT: " + requestURI);
-				final WoTIdentity id = ownIdentity ? new WoTOwnIdentity(identityID, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
-					new WoTIdentity(identityID, new FreenetURI(requestURI), nickname);
-
-				id.initializeTransient(mFreetalk);
-				id.setLastReceivedFromWoT(importID);
-				id.storeWithoutCommit();
-
-				onNewIdentityAdded(id);
-
-				if(ownIdentity)
-					onNewOwnIdentityAdded((WoTOwnIdentity)id);
-
-				id.checkedCommit(this);
+				// We must re-detect whether it has really changed because we have released the lock on the WoTCache in between.
+				boolean wantedStateChanged = false;
+				try {
+					if(Integer.signum(mWoTCache.getScore(trusterID, trusteeID)) != Integer.signum(value)) 
+						wantedStateChanged = true;
+				} catch (NotInTrustTreeException e) {
+					wantedStateChanged = true;
+				}
+				
+				mWoTCache.putScore(trusterID, trusteeID, value);
+				
+				if(wantedStateChanged) {
+					final boolean shouldFetch = value >= 0;
+					
+					callHandleIndividualWantedStateChangedWithoutCommit(getOwnIdentity(trusterID), getIdentity(trusteeID), shouldFetch);
+				}
+				Persistent.checkedCommit(db, this);
 			}
-			catch(Exception e) {
-				Persistent.checkedRollbackAndThrow(db, this, new RuntimeException(e));
+			catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(db, this, e);
 			}
+		}
+		}
+		}
 		}
 		}
 	}
 	
-
+	
 	/**
 	 * Parses the identities in the given SimpleFieldSet & imports all (except those which do not have a nickname yet because they were not downloaded)
 	 * Deletes any identities in the database which are not included in the passed SimpleFieldSet.
+	 * 
+	 * FIXME: Check the transaction-layout, especially the locking, should be similar to synchronizeScoreValues
+	 * FIXME: Add a validation mode: For debugging, WOT also triggers an identity synchronization during shutdown: We can then check whether our
+	 * cache which we created from incremental change-notifications is correct.
 	 */
 	private synchronized void synchronizeIdentities(SimpleFieldSet params) {
-		Logger.normal(this, "Parsing received identities...");
-	
-		int idx;
-		int ignoredCount = 0;
-		int newCount = 0;
+		synchronized(mFreetalk.getMessageManager()) {
+		synchronized(mFreetalk.getTaskManager()) {
+		synchronized(Persistent.transactionLock(db)) {
+		try {
+			Logger.normal(this, "Parsing received identities...");
 		
-		// For being able to delete the identities which do not exist anymore in the given SimpleFieldSet we generate a random ID of this import
-		// and store it on all received identities. The stored identities which do NOT have these ID are obsolete and must be deleted.
-		final long importID = mRandom.nextLong();
-		
-		for(idx = 0; ; idx++) {
-			final String identityID = params.get("Identity"+idx);
-			if(identityID == null || identityID.length() == 0)
-				break;
+			int count;
+			int ignoredCount = 0;
+			int newCount = 0;
+			int typeChangedCount = 0;
 			
-			final String requestURI = params.get("RequestURI"+idx);
-			final String insertURI = params.get("InsertURI"+idx);
-			final String nickname = params.get("Nickname"+idx);
+			// For being able to delete the identities which do not exist anymore in the given SimpleFieldSet we generate a random ID of this import
+			// and store it on all received identities. The stored identities which do NOT have these ID are obsolete and must be deleted.
+			final long importID = mRandom.nextLong();
 			
-			final boolean isOwnIdentity = insertURI == null || insertURI.length() == 0;
+			for(count = 0; ; count++) {
+				final String identityID = params.get("Identity"+count);
+				if(identityID == null || identityID.length() == 0)
+					break;
 				
-			if(nickname == null || nickname.length() == 0) {
-				// If an identity publishes an invalid nickname in one of its first WoT inserts then WoT will return an empty
-				// nickname for that identity until a new XML was published with a valid nickname. We ignore the identity until
-				// then to prevent confusing error logs..
-				continue;
-			}
-			
-
-			WoTIdentity id;
-
-			try {
-				id = getIdentity(identityID);
-			} catch(NoSuchIdentityException e) {
-				id = null;
-			}
-
-			if(id == null) {
+				final String requestURI = params.get("RequestURI"+count);
+				final String insertURI = params.get("InsertURI"+count);
+				final String nickname = params.get("Nickname"+count);
+				
+				final boolean isOwnIdentity = insertURI == null || insertURI.length() == 0;
+					
+				if(nickname == null || nickname.length() == 0) {
+					// If an identity publishes an invalid nickname in one of its first WoT inserts then WoT will return an empty
+					// nickname for that identity until a new XML was published with a valid nickname. We ignore the identity until
+					// then to prevent confusing error logs..
+					continue;
+				}
+				
+	
+				WoTIdentity id;
+	
 				try {
+					id = getIdentity(identityID);
+				} catch(NoSuchIdentityException e) {
+					id = null;
+				}
+	
+				if(id == null) {
 					importIdentity(isOwnIdentity, identityID, requestURI, insertURI, nickname, importID);
 					++newCount;
-				}
-				catch(Exception e) {
-					Logger.error(this, "Importing a new identity failed.", e);
-				}
-			} else {
-				if(logDEBUG) Logger.debug(this, "Not importing already existing identity " + requestURI);
-				++ignoredCount;
-
-				if(isOwnIdentity != (id instanceof WoTOwnIdentity)) {
-					// The type of the identity changed so we need to delete and re-import it.
-
-					try {
-						Logger.normal(this, "Identity type changed, replacing it: " + id);
-						// We MUST NOT take the following locks because deleteIdentity does other locks (MessageManager/TaskManager) which must happen before...
-						// synchronized(id)
-						// synchronized(Persistent.transactionLock(db)) 
-						deleteIdentity(id);
-						importIdentity(isOwnIdentity, identityID, requestURI, insertURI, nickname, importID);
-					}
-					catch(Exception e) {
-						Logger.error(this, "Replacing a WoTIdentity with WoTOwnIdentity failed.", e);
-					}
-
-				} else { // Normal case: Update the last received ID of the identity;
-					synchronized(id) {
-						synchronized(Persistent.transactionLock(db)) {
-							try {
-								id.setLastReceivedFromWoT(importID);
-								id.storeWithoutCommit();
-								id.checkedCommit(this);
-							}
-							catch(Exception e) {
-								Persistent.checkedRollback(db, this, e);
-							}
+				} else {
+					if(isOwnIdentity != (id instanceof WoTOwnIdentity)) {
+						// The type of the identity changed so we need to delete and re-import it.
+						++typeChangedCount;
+	
+						try {
+							Logger.normal(this, "Identity type changed, replacing it: " + id);
+							// We MUST NOT take the following locks because deleteIdentity does other locks (MessageManager/TaskManager) which must happen before...
+							// synchronized(id)
+							// synchronized(Persistent.transactionLock(db)) 
+							deleteIdentity(id);
+							importIdentity(isOwnIdentity, identityID, requestURI, insertURI, nickname, importID);
+						}
+						catch(Exception e) {
+							Logger.error(this, "Replacing a WoTIdentity with WoTOwnIdentity failed.", e);
+							throw new RuntimeException(e);
+						}
+	
+					} else { // Normal case: Update the last received ID of the identity;
+						if(logDEBUG) Logger.debug(this, "Not importing already existing identity " + requestURI);
+						
+						++ignoredCount;
+						synchronized(id) {
+							id.setLastReceivedFromWoT(importID);
+							id.storeWithoutCommit();
 						}
 					}
 				}
+	
 			}
-
-		}
-		
-		Logger.normal(this, "Deleting obsolete identities...");
-		
-		int deletedCount = 0;
-		
-		for(WoTIdentity obsoleteIdentity : getObsoleteIdentities(importID)) {
-			try {
-				deleteIdentity(obsoleteIdentity);
-				++deletedCount;
-			} catch(RuntimeException e) {
-				Logger.error(this, "Deleting obsolete identity failed", e);
+			
+			Logger.normal(this, "Deleting obsolete identities...");
+			
+			int deletedCount = 0;
+			
+			for(WoTIdentity obsoleteIdentity : getObsoleteIdentities(importID)) {
+				try {
+					deleteIdentity(obsoleteIdentity);
+					++deletedCount;
+				} catch(RuntimeException e) {
+					Logger.error(this, "Deleting obsolete identity failed", e);
+				}
 			}
+			
+			Logger.normal(this, "Finished deleting obsolete identities.");
+			
+			Logger.normal(this, "synchronizeIdentities received " + count + " identities. Ignored " + ignoredCount + "; New: " + newCount + 
+					"; deleted: " + deletedCount + "; type changed: " + typeChangedCount);
+		
+			Persistent.checkedCommit(db, this);
+		} catch(RuntimeException e) {
+			Persistent.checkedRollbackAndThrow(db, this, e);
 		}
-		
-		Logger.normal(this, "Finished deleting obsolete identities.");
-		
-		Logger.normal(this, "synchronizeIdentities received " + idx + " identities. Ignored " + ignoredCount + "; New: " + newCount + "; deleted: " + deletedCount);
+		}
+		}
+		}
 	}
 	
-	private final void synchronizeTrustValues(final SimpleFieldSet data) throws NoSuchIdentityException {
+	/**
+	 * FIXME: Add a validation mode: For debugging, WOT also triggers a trust synchronization during shutdown: We can then check whether our
+	 * cache which we created from incremental change-notifications is correct.
+	 */
+	private final void synchronizeTrustValues(final SimpleFieldSet data) {
 		synchronized(this) {
 		synchronized(mWoTCache) {
+		// We do not have to do a transaction since we only act upon the WoT-cache which is in-memory
+		//synchronized(Persistent.transactionLock(db)) {
+		try {
 			mWoTCache.clearTrustValues();
 			
 			for(int index=0; ; ++index) {
@@ -633,18 +848,35 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				final byte value = Byte.parseByte(data.get("Value" + index));
 				final String comment = data.get("Comment" + index);
 				
-				// TODO: Optimization: putTrust does not actually need the WoTIdentity objects, it could
-				// be changed to only eat IDs. Then we could also remove the synchronization on the WoTIdentityManager.
-				// However for debugging purposes it is good to check whether the identities exist
-				mWoTCache.putTrust(getIdentity(trusterID), getIdentity(trusteeID), value, comment);
+				mWoTCache.putTrust(trusterID, trusteeID, value, comment);
+				
+				// No need to synchronize the wanted-states of identities here: Only the score of an identity is relevant.
 			}
+		} catch(Exception e) {
+			// We are no transaction.
+			//	Persistent.checkedRollbackAndThrow(db, this, new RuntimeException(e));
+			
+			// We do not need to undo the changes to the WOT-cache here:
+			// If an exception is thrown during the trust-synchronization, WOT will be told that the current synchronization-processing
+			// failed and try to synchronize again after some minutes.
+			throw new RuntimeException(e);
+		}
+		// }
 		}
 		}
 	}
 	
-	private final void synchronizeScoreValues(final SimpleFieldSet data) throws NoSuchIdentityException {
+	/**
+	 * FIXME: Add a validation mode: For debugging, WOT also triggers a score synchronization during shutdown: We can then check whether our
+	 * cache which we created from incremental change-notifications is correct.
+	 */
+	private final void synchronizeScoreValues(final SimpleFieldSet data) {
 		synchronized(this) {
+		synchronized(mFreetalk.getMessageManager()) { // FIXME: Do we need this lock?
+		synchronized(mFreetalk.getTaskManager()) { // FIXME: Do we need this lock?
 		synchronized(mWoTCache) {
+		synchronized(Persistent.transactionLock(db)) {
+		try {
 			mWoTCache.clearScoreValues();
 			
 			for(int index=0; ; ++index) {
@@ -656,13 +888,34 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				final String trusteeID = data.get("Trustee" + index);
 				final int value = Integer.parseInt(data.get("Value" + index));
 				
-				// TODO: Optimization: putScore does not actually need the WoTIdentity objects, it could
-				// be changed to only eat IDs. Then we could also remove the synchronization on the WoTIdentityManager.
-				// However for debugging purposes it is good to check whether the identities exist
-				mWoTCache.putScore(getOwnIdentity(trusterID), getIdentity(trusteeID), value);
+				mWoTCache.putScore(trusterID, trusteeID, value);		
 				
-				// FIXME: We must delete messages of unwanted identities here.
+				final WoTOwnIdentity truster = getOwnIdentity(trusterID);
+				final WoTIdentity trustee = getIdentity(trusteeID);
+				final boolean identityIsWanted = (value >= 0);
+				
+				boolean doCallback = false;
+				
+				try {
+					if(getIndividualWantedState(truster, trustee).callingSetWouldChangeWantedState(identityIsWanted))
+						doCallback = true;
+				} catch(NoSuchWantedStateException e) {
+					doCallback = true;	
+				}
+				
+				if(doCallback)
+					callHandleIndividualWantedStateChangedWithoutCommit(truster, trustee, identityIsWanted);
 			}
+		} catch(Exception e) {
+			// We do not need to undo the changes to the WOT-cache here:
+			// If an exception is thrown during the score-synchronization, WOT will be told that the current synchronization-processing
+			// failed and try to synchronize again after some minutes.
+			
+			Persistent.checkedRollbackAndThrow(db, this, new RuntimeException(e));
+		}
+		}
+		}
+		}
 		}
 		}
 	}
@@ -682,17 +935,17 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	private synchronized void deleteIdentity(WoTIdentity identity) {	
 		identity.initializeTransient(mFreetalk);
 		
-		beforeIdentityDeletion(identity);
-
-		if(identity instanceof WoTOwnIdentity)
- 			beforeOwnIdentityDeletion((WoTOwnIdentity)identity);
-		
+		synchronized(mFreetalk.getMessageManager()) { // FIXME: Do we need this lock?
+		synchronized(mFreetalk.getTaskManager()) { // FIXME: Do we need this lock?
 		synchronized(identity) {
 		synchronized(Persistent.transactionLock(db)) {
 			try {
-				identity.deleteWithoutCommit();
+				if(identity instanceof WoTOwnIdentity)
+		 			callHandleOwnIdentityDeletedWithoutCommit((WoTOwnIdentity)identity);
+				else
+					callHandleIdentityDeletedWithoutCommit(identity);
 				
-				Logger.normal(this, "Identity deleted: " + identity);
+				identity.deleteWithoutCommit();
 				identity.checkedCommit(this);
 			}
 			catch(RuntimeException e) {
@@ -700,8 +953,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			}
 		}
 		}
-		
-		mShortestUniqueNicknameCacheNeedsUpdate = true;
+		}
+		}
 	}
 
 	private synchronized boolean connectToWoT() {
@@ -913,11 +1166,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			mFCPHandlers.put("TrustValues", new FCPMessageHandler() {
 				@Override
 				public void handle(SimpleFieldSet params) {
-					try {
-						mIdentityManager.synchronizeTrustValues(params);
-					} catch(Exception e) {
-						throw new RuntimeException(e);
-					}
+					mIdentityManager.synchronizeTrustValues(params);
 				}
 			});
 			
@@ -926,34 +1175,43 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			mFCPHandlers.put("ScoreValues", new FCPMessageHandler() {
 				@Override
 				public void handle(SimpleFieldSet params) {
-					try {
-						mIdentityManager.synchronizeScoreValues(params);
-					} catch(Exception e) {
-						throw new RuntimeException(e);
-					}
+					mIdentityManager.synchronizeScoreValues(params);
 				}
 			});
 			
 			mFCPHandlers.put("Identity", new FCPMessageHandler() {
 				@Override
 				public void handle(SimpleFieldSet params) {
-					// TODO Auto-generated method stub					
+					mIdentityManager.importIdentity(false, params);				
+				}
+			});
+			
+			mFCPHandlers.put("OwnIdentity", new FCPMessageHandler() {
+				@Override
+				public void handle(SimpleFieldSet params) {
+					mIdentityManager.importIdentity(true, params);
 				}
 			});
 			
 			mFCPHandlers.put("Trust", new FCPMessageHandler() {
 				@Override
 				public void handle(SimpleFieldSet params) {
-					// TODO Auto-generated method stub
-					
+					try {
+						mIdentityManager.importTrustValue(params);
+					} catch (NoSuchIdentityException e) {
+						throw new RuntimeException(e);
+					}
 				}
 			});
 			
 			mFCPHandlers.put("Score", new FCPMessageHandler() {
 				@Override
 				public void handle(SimpleFieldSet params) {
-					// TODO Auto-generated method stub
-					
+					try {
+						mIdentityManager.importScoreValue(params);
+					} catch(NoSuchIdentityException e) {
+						throw new RuntimeException(e);
+					}
 				}
 			});
 			
@@ -975,6 +1233,14 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		try {
 			mConnectedToWoT = connectToWoT();
 			
+			if(mShortestUniqueNicknameCacheNeedsUpdate) {
+				try {
+					updateShortestUniqueNicknameCache();
+				} catch(Exception e) {
+					Logger.error(this, "Initializing shortest unique nickname cache failed", e);
+				}
+			}
+			
 		} finally {
 			final long sleepTime =  mConnectedToWoT ? (THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD)) : WOT_RECONNECT_DELAY;
 			if(logDEBUG) Logger.debug(this, "Sleeping for " + (sleepTime / (60*1000)) + " minutes.");
@@ -988,6 +1254,12 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		return NativeThread.MIN_PRIORITY;
 	}
 	
+	private void queueShortesUniqueNicknameCacheUpdate() {
+		// TODO: Do not abuse the main loop for running this - it also checks the connection to WOT
+		mShortestUniqueNicknameCacheNeedsUpdate = true;
+		mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), SHORTEST_NICKNAME_CACHE_UPDATE_DELAY, false, true);
+	}
+	
 	public void start() {
 		if(logDEBUG) Logger.debug(this, "Starting...");
 		
@@ -995,13 +1267,6 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			deleteDuplicateIdentities();
 		
 		mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), 0, false, true);
-		
-		// TODO: Queue this as a job aswell.
-		try {
-			updateShortestUniqueNicknameCache();
-		} catch(Exception e) {
-			Logger.error(this, "Initializing shortest unique nickname cache failed", e);
-		}
 		
 		if(logDEBUG) Logger.debug(this, "Started.");
 	}
@@ -1122,6 +1387,10 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		return nickname;
 	}
 	
+	/**
+	 * This class provides an in-memory cache of all {@link WoTTrust} and {@link WoTScore} values of WOT.
+	 * This significantly speeds up queries which are needed by the web interface.
+	 */
 	private final class WebOfTrustCache implements NewIdentityCallback, IdentityDeletedCallback {
 		
 		private final class TrustKey {
@@ -1133,10 +1402,11 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				mTrusteeID = trust.getTrustee().getID();
 			}
 			
-			public TrustKey(final WoTIdentity truster, final WoTIdentity trustee) {
-				mTrusterID = truster.getID();
-				mTrusteeID = trustee.getID();
+			public TrustKey(final String trusterID, final String trusteeID) {
+				mTrusterID = trusterID;
+				mTrusteeID = trusteeID;
 			}
+				
 			
 			@Override
 			public boolean equals(final Object o) {
@@ -1228,39 +1498,53 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		}
 		
 		// TODO: Create getter methods in WoTIdentityManager which actually use this caching function...
-		public byte getTrust(final WoTIdentity truster, final WoTIdentity trustee) throws NotTrustedException {
-			final Byte value = mTrustCache.get(new TrustKey(truster, trustee));
-			if(value == null) throw new NotTrustedException(truster, trustee);
+		public byte getTrust(final String trusterID, final String trusteeID) throws NotTrustedException {
+			assert(identityExists(trusterID));
+			assert(identityExists(trusteeID));
+			
+			final Byte value = mTrustCache.get(new TrustKey(trusterID, trusteeID));
+			if(value == null) throw new NotTrustedException(trusterID, trusteeID);
 			return value;
 		}
 		
-		public String getTrustComment(final WoTIdentity truster, final WoTIdentity trustee) {
+		public String getTrustComment(final String trusterID, final String trusteeID) {
 			throw new UnsupportedOperationException("Not implemented yet");
 			// TODO: Implement in putTrust
+			
+//			assert(identityExists(trusterID));
+//			assert(identityExists(trusteeID));
 		}
 		
-		public int getGivenTrustCount(final WoTIdentity truster, int selection) {
-			return mReceivedTrustCountCache.get(truster).get(selection);
+		public int getGivenTrustCount(final String trusterID, int selection) {
+			assert(identityExists(trusterID));
+			return mReceivedTrustCountCache.get(trusterID).get(selection);
 		}
 
 		
-		public int getReceivedTrustCount(final WoTIdentity trustee, int selection) {
-			return mGivenTrustCountCache.get(trustee).get(selection);
+		public int getReceivedTrustCount(final String trusteeID, int selection) {
+			assert(identityExists(trusteeID));
+			
+			return mGivenTrustCountCache.get(trusteeID).get(selection);
 		}
 
-		// TODO: Create getter methods in WoTIdentityManager which actually use this caching function...
-		public int getScore(final WoTOwnIdentity truster, final WoTIdentity trustee) throws NotInTrustTreeException {
-			final Integer value = mScoreCache.get(new TrustKey(truster, trustee));
-			if(value == null) throw new NotInTrustTreeException(truster, trustee);
+		public int getScore(final String trusterID, final String trusteeID) throws NotInTrustTreeException {
+			assert(ownIdentityExists(trusterID));
+			assert(identityExists(trusteeID));
+			
+			final Integer value = mScoreCache.get(new TrustKey(trusterID, trusteeID));
+			if(value == null) throw new NotInTrustTreeException(trusterID, trusteeID);
 			return value;
 		}
 		
-		public synchronized void putTrust(final WoTIdentity truster, final WoTIdentity trustee, final byte value, String comment) {
-			final Byte oldTrust = mTrustCache.get(new TrustKey(truster, trustee));
+		public synchronized void putTrust(final String trusterID, final String trusteeID, final byte value, String comment) {
+			assert(identityExists(trusterID));
+			assert(identityExists(trusteeID));
+			
+			final Byte oldTrust = mTrustCache.get(new TrustKey(trusterID, trusteeID));
 			
 			if(oldTrust == null || Integer.signum(oldTrust) != Integer.signum(value)) {
-				final TrustCount trusterGivenCount = mGivenTrustCountCache.get(truster);
-				final TrustCount trusteeReceivedTrustCount = mReceivedTrustCountCache.get(trustee);	
+				final TrustCount trusterGivenCount = mGivenTrustCountCache.get(trusterID);
+				final TrustCount trusteeReceivedTrustCount = mReceivedTrustCountCache.get(trusteeID);	
 				
 				if(oldTrust != null) {
 					trusterGivenCount.remove(oldTrust);
@@ -1271,14 +1555,17 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				trusteeReceivedTrustCount.add(value);
 			}
 			
-			mTrustCache.put(new TrustKey(truster, trustee), value);
+			mTrustCache.put(new TrustKey(trusterID, trusteeID), value);
 		}
 		
-		public synchronized void putScore(final WoTOwnIdentity truster, final WoTIdentity trustee, final int value) {
-			final Integer oldScore = mScoreCache.get(new TrustKey(truster, trustee));
+		public synchronized void putScore(final String trusterID, final String trusteeID, final int value) {
+			assert(ownIdentityExists(trusterID));
+			assert(identityExists(trusteeID));
+			
+			final Integer oldScore = mScoreCache.get(new TrustKey(trusterID, trusteeID));
 			
 			if(oldScore == null || Integer.signum(oldScore) != Integer.signum(value)) {
-				final TrustCount trusteeReceivedScoreCount = mReceivedScoreCountCache.get(trustee);	
+				final TrustCount trusteeReceivedScoreCount = mReceivedScoreCountCache.get(trusteeID);	
 				
 				if(oldScore != null) {
 					trusteeReceivedScoreCount.remove(oldScore);
@@ -1287,7 +1574,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				trusteeReceivedScoreCount.add(value);
 			}
 			
-			mScoreCache.put(new TrustKey(truster, trustee), value);
+			mScoreCache.put(new TrustKey(trusterID, trusteeID), value);
 		}
 		
 		protected synchronized void clearTrustValues() {
