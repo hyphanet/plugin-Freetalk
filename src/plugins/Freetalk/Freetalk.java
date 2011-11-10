@@ -34,6 +34,8 @@ import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
 import plugins.Freetalk.ui.web.WebInterface;
 
 import com.db4o.Db4o;
+import com.db4o.io.CachedIoAdapter;
+import com.db4o.io.RandomAccessFileAdapter;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
@@ -270,6 +272,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		Logger.normal(this, "Using db4o " + Db4o.version());
 		
 		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
+		// use cached io
+		RandomAccessFileAdapter delegateAdapter = new RandomAccessFileAdapter();
+		// A cache with 4096 pages of 4096KB size, gives a 16MiB cache
+		cfg.io(new CachedIoAdapter(delegateAdapter,4096,4096));
+
 		
 		// Required config options:
 		
