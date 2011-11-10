@@ -574,7 +574,7 @@ public final class FreetalkNNTPHandler implements Runnable {
          */
         
         // For now, we don't require a PASS
-        if (!subcmd.equalsIgnoreCase("USER")) {
+        if (!subcmd.equalsIgnoreCase("USER") && !subcmd.equalsIgnoreCase("PASS")) {
             printStatusLine("502 Command unavailable");
             return;
         }
