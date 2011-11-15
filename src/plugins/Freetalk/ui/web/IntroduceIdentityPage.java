@@ -92,7 +92,7 @@ public final class IntroduceIdentityPage extends TaskPage {
 		
 		try {
 			puzzleIDs = mIdentityManager.getIntroductionPuzzles((WoTOwnIdentity)mOwnIdentity, mNumberOfPuzzles);
-			trusterCount = mIdentityManager.getReceivedTrustsCount((WoTOwnIdentity)mOwnIdentity);
+			trusterCount = mIdentityManager.getReceivedTrustsCount((WoTOwnIdentity)mOwnIdentity, 1);
 		} catch (Exception e) {
 			Logger.error(this, "getIntroductionPuzzles() failed", e);
 

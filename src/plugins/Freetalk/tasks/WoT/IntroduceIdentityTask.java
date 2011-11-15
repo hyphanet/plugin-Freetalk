@@ -101,8 +101,8 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 				
 				int minimumTrusterCount = mFreetalk.getConfig().getInt(Configuration.MINIMUM_TRUSTER_COUNT); 
 				
-				// ... and if he has not received enough trust values.
-				if(identityManager.getReceivedTrustsCount(mOwner) < minimumTrusterCount) {
+				// ... and if he has not received enough positive (>= 0) trust values.
+				if(identityManager.getReceivedTrustsCount((WoTOwnIdentity)mOwner, 1) < minimumTrusterCount) {
 					mPuzzlesToSolve = minimumTrusterCount * 2;  
 					mNextDisplayTime = now;
 					mNextProcessingTime = now + PROCESSING_INTERVAL; // schedule this task again for processing because introductions are not the only way to get onto trust lists
