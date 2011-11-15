@@ -127,11 +127,12 @@ public final class BoardPage extends WebPageImpl {
 					authorScore = "?"; 
 					
 					try {
-						author = identityManager.getIdentity(threadReference.getAuthorID());
+						final String authorID = threadReference.getAuthorID();
+						// FIXME: Optimization: Query shortest unique nickname by ID only 
+						author = identityManager.getIdentity(authorID);
 						authorText = author.getShortestUniqueName();
 						
-						// TODO: Get rid of the cast somehow, we should maybe call this WoTBoardPage :|
-						final int score = ((WoTOwnIdentity)mOwnIdentity).getScoreFor((WoTIdentity)author);
+						final int score = identityManager.getScore(mOwnIdentity.getID(), authorID);
 						if (score == Integer.MAX_VALUE)
 							authorScore = l10n().getString("Common.WebOfTrust.Score.Infinite");
 						else
@@ -139,8 +140,6 @@ public final class BoardPage extends WebPageImpl {
 					} catch(NoSuchIdentityException e) { 
 					} catch(NotInTrustTreeException e) {
 						authorScore = l10n().getString("Common.WebOfTrust.ScoreNull");
-					} catch(Exception e) {
-						Logger.error(this, "getScoreFor() failed", e);
 					}
 				}
 				

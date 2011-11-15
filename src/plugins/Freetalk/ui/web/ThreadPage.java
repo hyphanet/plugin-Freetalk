@@ -14,9 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.Configuration;
 import plugins.Freetalk.Freetalk;
-import plugins.Freetalk.Identity;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Quoting;
@@ -26,6 +24,7 @@ import plugins.Freetalk.SubscribedBoard.BoardReplyLink;
 import plugins.Freetalk.SubscribedBoard.BoardThreadLink;
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
+import plugins.Freetalk.WoT.WoTMessageManager;
 import plugins.Freetalk.WoT.WoTMessageRating;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.MessageNotFetchedException;
@@ -55,6 +54,9 @@ public final class ThreadPage extends WebPageImpl {
 	private boolean mFirstUnread = true;
 
 	private static final DateFormat mLocalDateFormat = DateFormat.getDateTimeInstance();
+	
+	private final WoTIdentityManager mIdentityManager;
+	private final WoTMessageManager mMessageManager;
 
 	public ThreadPage(WebInterface myWebInterface, OwnIdentity viewer, HTTPRequest request, BaseL10n _baseL10n)
 	throws NoSuchMessageException, NoSuchBoardException, NoSuchElementException {
@@ -69,8 +71,11 @@ public final class ThreadPage extends WebPageImpl {
 			threadID = request.getPartAsStringFailsafe("ThreadID", 256); // TODO: Use a constant for max thread ID length
 
 		mMarktThreadAsUnread = mRequest.isPartSet("MarkThreadAsUnread");
+		
+		mIdentityManager = mFreetalk.getIdentityManager();
+		mMessageManager = mFreetalk.getMessageManager();
 
-		mBoard = mFreetalk.getMessageManager().getSubscription(mOwnIdentity, boardName);
+		mBoard = mMessageManager.getSubscription(mOwnIdentity, boardName);
 		mThreadID = threadID;
 	}
 
@@ -80,7 +85,7 @@ public final class ThreadPage extends WebPageImpl {
 
 			// TODO: Optimization: We do NOT want to lock the identity manager here. We have to do it to prevent deadlocks because there is
 			// no non-locking getIdentity() which could be used in addThreadNotDownloadedWarning/addReplyNotDownloadedWarning
-			synchronized(mFreetalk.getIdentityManager()) {
+			synchronized(mIdentityManager) {
         	
         	// Normally, we would have to lock the MessageManager because we call storeAndCommit() on BoardMessageLink objects:
         	// The board might be deleted between getSubscription() and the synchronized(mBoard) - the storeAndCommit() would result in orphan objects.
@@ -153,7 +158,7 @@ public final class ThreadPage extends WebPageImpl {
 		HTMLNode row = table.addChild("tr", "class", "message");
 
 		try {
-			addAuthorNode(row, mFreetalk.getIdentityManager().getIdentity(ref.getAuthorID()));
+			addAuthorNode(row, mIdentityManager.getIdentity(ref.getAuthorID()));
 		} catch(NoSuchIdentityException e) {
 			HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width" },
 					new String[] { "left", "top", "2", "15%" }, "");
@@ -181,7 +186,7 @@ public final class ThreadPage extends WebPageImpl {
 		HTMLNode row = table.addChild("tr", "class", "message");
 
 		try {
-			addAuthorNode(row, mFreetalk.getIdentityManager().getIdentity(ref.getAuthorID()));
+			addAuthorNode(row, mIdentityManager.getIdentity(ref.getAuthorID()));
 		} catch(NoSuchIdentityException e) {
 			HTMLNode authorNode = row.addChild("td", new String[] { "align", "valign", "rowspan", "width" },
 					new String[] { "left", "top", "2", "15%" }, "");
@@ -277,7 +282,6 @@ public final class ThreadPage extends WebPageImpl {
         	authorNode.addChild("#", l10n().getString("ThreadPage.Author.TrusteesCountUnknown"));
         }
         
-        Integer intTrust = null;
         
         if(author == mOwnIdentity) {
         	authorNode.addChild("br");
@@ -288,15 +292,11 @@ public final class ThreadPage extends WebPageImpl {
 	        // Your trust value
 	        authorNode.addChild("br");
 	        
-	        String trust;
+	        String trust = null;
 	        try {
-	            intTrust = ((WoTOwnIdentity)mOwnIdentity).getTrustIn(author);
-	            trust = Integer.toString(intTrust); 
+	            trust = Byte.toString(mIdentityManager.getTrust((WoTOwnIdentity)mOwnIdentity, author)); 
 	        } catch (NotTrustedException e) {
 	            trust = l10n().getString("ThreadPage.Author.YourTrustNone");
-	        } catch (Exception e) {
-	        	Logger.error(this, "getTrust() failed", e);
-	        	trust = l10n().getString("ThreadPage.Author.YourTrustUnknown");
 	        }
 	        
 	        authorNode.addChild("#", l10n().getString("ThreadPage.Author.YourTrust") + ": "+trust);
@@ -307,12 +307,9 @@ public final class ThreadPage extends WebPageImpl {
 	        
 	        String txtScore;
 	        try {
-	        	final int score = ((WoTIdentityManager)mFreetalk.getIdentityManager()).getScore((WoTOwnIdentity)mOwnIdentity, author);
+	        	final int score = mIdentityManager.getScore((WoTOwnIdentity)mOwnIdentity, author);
 	        	txtScore = Integer.toString(score);
 	        } catch(NotInTrustTreeException e) {
-	        	txtScore = l10n().getString("Common.WebOfTrust.ScoreNull");
-	        } catch(Exception e) {
-	        	Logger.error(this, "getScore() failed", e);
 	        	txtScore = l10n().getString("Common.WebOfTrust.ScoreNull");
 	        }
 	        
@@ -365,8 +362,8 @@ public final class ThreadPage extends WebPageImpl {
 				Integer intTrust;
 
 				try {
-					intTrust = ((WoTOwnIdentity)mOwnIdentity).getTrustIn(author);
-				} catch(Exception e2) {
+					intTrust = new Integer(mIdentityManager.getTrust((WoTOwnIdentity)mOwnIdentity, author));
+				} catch(NotTrustedException e2) {
 					intTrust = null;
 				}
 
@@ -385,7 +382,7 @@ public final class ThreadPage extends WebPageImpl {
 		row = table.addChild("tr", "class", "body");
 		HTMLNode text = row.addChild("td", "align", "left", "");
 		Quoting.TextElement element = Quoting.parseText(message);
-		elementsToHTML(text, element.mChildren, mOwnIdentity, mFreetalk.getIdentityManager());
+		elementsToHTML(text, element.mChildren, mOwnIdentity, mIdentityManager);
 		addReplyButton(text, message.getID());
 	}
 
@@ -514,11 +511,9 @@ public final class ThreadPage extends WebPageImpl {
 		}
 	}
 
-	private void addTrustersInfo(HTMLNode parent, Identity author) throws Exception {
-		WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
-
-		int trustedBy = identityManager.getReceivedTrustsCount(author, 1);
-		int distrustedBy = identityManager.getReceivedTrustsCount(author, -1);
+	private void addTrustersInfo(HTMLNode parent, WoTIdentity author) throws Exception {
+		int trustedBy = mIdentityManager.getReceivedTrustsCount(author, 1);
+		int distrustedBy = mIdentityManager.getReceivedTrustsCount(author, -1);
 
 		parent.addChild("abbr", new String[]{"title", "class"}, new String[]{ l10n().getString("Common.WebOfTrust.TrustedByCount.Description"), "trust-count"},
 				String.valueOf(trustedBy));
@@ -529,11 +524,9 @@ public final class ThreadPage extends WebPageImpl {
 				String.valueOf(distrustedBy));
 	}
 
-	private void addTrusteesInfo(HTMLNode parent, Identity author) throws Exception {
-		WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
-
-		int trustsCount = identityManager.getGivenTrustsCount(author, 1);
-		int distrustsCount = identityManager.getGivenTrustsCount(author, -1);
+	private void addTrusteesInfo(HTMLNode parent, WoTIdentity author) throws Exception {
+		int trustsCount = mIdentityManager.getGivenTrustsCount(author, 1);
+		int distrustsCount = mIdentityManager.getGivenTrustsCount(author, -1);
 
 		parent.addChild("abbr", new String[]{"title", "class"},
 				new String[]{ l10n().getString("Common.WebOfTrust.PositiveGivenTrustsCount.Description"), "trust-count"},

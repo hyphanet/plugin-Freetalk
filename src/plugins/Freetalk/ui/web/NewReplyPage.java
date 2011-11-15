@@ -233,16 +233,12 @@ public class NewReplyPage extends WebPageImpl {
 			return;
 		} catch(NoSuchMessageRatingException e) { }
 
-		Byte currentTrust = null;
+		Byte currentTrust;
 
 		try {
 			currentTrust = mFreetalk.getIdentityManager().getTrust((WoTOwnIdentity)mOwnIdentity, (WoTIdentity)identity);
 		} catch(NotTrustedException e) {
-
-		} catch (Exception e) {
-			Logger.error(this, "Getting current trust failed", e);
-			rateMessageBox.addChild("p", l10n().getString("NewReplyPage.RateMessageBox.GetTrustError")); // TODO: Show the exception & stack trace
-			return;
+			currentTrust = null;
 		}
 
 		rateMessageBox.addChild("p", l10n().getString("NewReplyPage.RateMessageBox.CurrentTrust", "value",

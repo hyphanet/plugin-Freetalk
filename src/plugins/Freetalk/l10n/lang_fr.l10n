@@ -84,7 +84,6 @@ ThreadPage.Author.TrusteesCountUnknown=Inconnu
 ThreadPage.Author.TrustersCountUnknown=Inconnu
 ThreadPage.Author.YourTrust=Votre confiance
 ThreadPage.Author.YourTrustNone=Aucune
-ThreadPage.Author.YourTrustUnknown=Inconnue
 ThreadPage.Rating.Rate.Text=Confiance ${points}
 ThreadPage.Rating.RatedWith.Text=Confiance ${points}
 ThreadPage.ThreadIsNoThreadWarning.Text=L'auteur du deuxième message ci-dessous a répondu au premier message en indiquant qu'il devrait devenir un nouveau sujet, le premier message n'était pas destiné à être un sujet par son auteur, il était une réponse à ${link}ce${/link} thread.

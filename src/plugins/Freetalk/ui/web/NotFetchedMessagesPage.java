@@ -7,8 +7,10 @@ import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Identity;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageList.MessageFetchFailedMarker;
+import plugins.Freetalk.MessageList.MessageListID;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.WoT.WoTIdentity;
+import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTMessageManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
@@ -69,6 +71,7 @@ public class NotFetchedMessagesPage extends WebPageImpl {
 		
 		HTMLNode table = messagesTable.addChild("tbody");
 		
+		final WoTIdentityManager identityManager = mFreetalk.getIdentityManager();
 		final WoTMessageManager messageManager = mFreetalk.getMessageManager();
 		
 		synchronized(messageManager) {
@@ -91,6 +94,7 @@ public class NotFetchedMessagesPage extends WebPageImpl {
 				
 				// Author related stuff
 				{
+					final MessageList list = ref.getMessageList();
 					Identity author = null;
 					
 					// TODO: Use a colored "unknown" if the author/score is unknown
@@ -99,19 +103,17 @@ public class NotFetchedMessagesPage extends WebPageImpl {
 					authorScore = "?"; 
 					
 					try {
-						author = ref.getMessageList().getAuthor();
+						author = list.getAuthor();
+						// FIXME: Obtain the nickname by ID from WoTIdentityManager
 						authorText = author.getShortestUniqueName();
 						
-						// TODO: Get rid of the cast somehow, we should maybe call this WoTBoardPage :|
-						final int score = ((WoTOwnIdentity)mOwnIdentity).getScoreFor((WoTIdentity)author);
+						final int score = identityManager.getScore(mOwnIdentity.getID(), list.getAuthorID());
 						if (score == Integer.MAX_VALUE)
 							authorScore = "-"; // TODO: l10n
 						else
 							authorScore = Integer.toString(score);
 					} catch(NotInTrustTreeException e) {
 						authorScore = l10n().getString("Common.WebOfTrust.ScoreNull");
-					} catch(Exception e) {
-						Logger.error(this, "getScoreFor() failed", e);
 					}
 				}
                 

@@ -92,8 +92,6 @@ public final class WoTMessageRating extends MessageRating {
 		
 		try {
 			trustValue = identityManager.getTrust(rater, messageAuthor);
-		} catch(NoSuchIdentityException e) {
-			throw e;
 		} catch (NotTrustedException e) {
 			trustValue = 0;
 		} catch (Exception e) {
