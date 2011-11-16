@@ -297,24 +297,33 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		return NativeThread.LOW_PRIORITY;
 	}
 	
+	/**
+	 * Starts this fetcher.
+	 * Does an initial subscription to all identities which are returned by {@link IdentityManager.getAllWantedIdentities}. 
+	 * Should be called BEFORE the IdentityManager is started to ensure that the callbacks of {@link IdentityManager.OverallWantedStateChangedCallback}
+	 * are pushed after the initial subscription to all wanted identities. (TODO: I think it might not break anything if it is called AFTER the
+	 * IdentityManager is started, check it out.)
+	 */
 	public void start() { 
-		if(logDEBUG) Logger.debug(this, "Starting new-messagelist-fetches of all identities...");
+		if(logDEBUG) Logger.debug(this, "Starting new-messagelist-fetches of all wanted identities...");
 		synchronized(this) {
 		synchronized(mIdentityManager) {
-			for(WoTIdentity identity : mIdentityManager.getAllIdentities()) {
-				// The connection to WoT might not exist yet so we just fetch all identities.
-				// The identity manager will abort the fetches of obsolete identities while garbage collecting them
-				//if(mIdentityManager.anyOwnIdentityWantsMessagesFrom(identity)) {
-					try {
-						fetch(identity);
-					}
-					catch(Exception e) {
-						Logger.error(this, "Fetching identity failed!", e);
-					}
-				//}
+			for(Identity identity : mIdentityManager.getAllWantedIdentities()) {
+				if(!(identity instanceof WoTIdentity)) {
+					Logger.error(this, "Received non-WoT Identity: " + identity);
+					continue;
+				}
+				
+				try {
+					fetch((WoTIdentity)identity);
+				}
+				catch(Exception e) {
+					Logger.error(this, "Fetching identity failed!", e);
+				}
 			}
 		}
 		}
+		if(logDEBUG) Logger.debug(this, "Finished starting new-messagelist-fetches of all wanted identities.");
 	}
 	
 	public void run() {

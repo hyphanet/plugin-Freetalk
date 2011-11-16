@@ -4,7 +4,10 @@
 package plugins.Freetalk;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
+import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.exceptions.DuplicateElementException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchWantedStateException;
@@ -72,6 +75,57 @@ public abstract class IdentityManager {
 			boolean displayImages, FreenetURI requestURI, FreenetURI insertURI) throws Exception;
 
 	public abstract Iterable<? extends Identity> getAllIdentities();
+	
+	/**
+	 * You must synchronize on this IdentityManager while processing the returned Iterable.
+	 * @return The set of all Identities for which at least one {@link IdentityWantedState} is true.
+	 */
+	public Iterable<? extends Identity> getAllWantedIdentities() {
+		// TODO: Optimization: Cache the overall wanted state of each identity so we can do this with a single O(n) query. 
+		// The current implementation is O(n*m) where n is the number of identities and m is the number of IdentityWantedState per identity.
+		// This still is fast as long as there are few IdentityWantedState objects per identity, i.e. there are few OwnIdetities 
+		
+		return new Iterable<Identity>() {
+			@Override
+			public Iterator<Identity> iterator() {
+				return new Iterator<Identity>() {
+					final Iterator<? extends Identity> allIdentities = getAllIdentities().iterator();
+					Identity next = null;
+
+					@Override
+					public boolean hasNext() {
+						if(next != null)
+							return true;
+						
+						while(allIdentities.hasNext()) {
+							final Identity maybeNext = allIdentities.next();
+							if(getOverallWantedState(maybeNext)) {
+								next = maybeNext;
+								break;
+							}
+						}
+						
+						return next != null;
+					}
+
+					@Override
+					public Identity next() {
+						if(next == null)
+							throw new NoSuchElementException();
+						
+						final Identity result = next;
+						next = null;
+						return result;
+					}
+
+					@Override
+					public void remove() {
+						throw new UnsupportedOperationException();
+					}
+				};
+			}
+		};
+	}
 	
 	public synchronized int countKnownIdentities() {
 		/* TODO: This should probably take an OwnIdentity as param and count the identities seen by it */
