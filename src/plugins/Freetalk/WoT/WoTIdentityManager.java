@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -913,6 +914,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				if(doCallback)
 					callHandleIndividualWantedStateChangedWithoutCommit(truster, trustee, identityIsWanted);
 			}
+			Persistent.checkedCommit(db, this);
 		} catch(Exception e) {
 			// We do not need to undo the changes to the WOT-cache here:
 			// If an exception is thrown during the score-synchronization, WOT will be told that the current synchronization-processing
