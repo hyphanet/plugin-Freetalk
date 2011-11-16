@@ -89,6 +89,11 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	private boolean mShortestUniqueNicknameCacheNeedsUpdate = true;
 	
 	/**
+	 * @see SubscriptionClient
+	 */
+	private final SubscriptionClient mSubscriptionClient;
+	
+	/**
 	 * @see WebOfTrustCache
 	 */
 	private final WebOfTrustCache mWoTCache = new WebOfTrustCache(this);
@@ -110,6 +115,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		
 		mTicker = new TrivialTicker(myExecutor);
 		mRandom = mFreetalk.getPluginRespirator().getNode().fastWeakRandom;
+		mSubscriptionClient = new SubscriptionClient(mFreetalk.getIdentityManager(), mFreetalk.getPluginRespirator(), mTicker);
 	}
 	
 	/**
@@ -120,6 +126,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		mIsUnitTest = true;
 		mTicker = null;
 		mRandom = null;
+		mSubscriptionClient = new SubscriptionClient(mFreetalk.getIdentityManager(), null, null);
 	}
 	
 	// FIXME: Check all callers of callHandle* for whether they do proper synchronization as needed by the subscribers of these events
@@ -1000,7 +1007,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			mIdentityManager = myIdentityManager;
 			mPR = pr;
 			mTicker = myTicker;
-			mRandom = mPR.getNode().fastWeakRandom;
+			mRandom = mPR == null ? null : mPR.getNode().fastWeakRandom;
 			mTalker = null;
 			
 			createFCPMessageHandlers();
@@ -1014,9 +1021,13 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		
 		public void stop() {
 			Logger.debug(this, "Terminating...");
-			mTicker.shutdown();
-			unsubscribeAllSubscriptions();
-			disconnectFromWoT();
+			try {
+				mTicker.shutdown();
+				unsubscribeAllSubscriptions();
+				disconnectFromWoT();
+			} catch(RuntimeException e) {
+				Logger.error(this, "Termination failed", e);
+			}
 			Logger.debug(this, "Terminated");
 		}
 		
@@ -1268,6 +1279,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		
 		mTicker.queueTimedJob(this, "Freetalk " + this.getClass().getSimpleName(), 0, false, true);
 		
+		mSubscriptionClient.start();
+		
 		if(logDEBUG) Logger.debug(this, "Started.");
 	}
 	
@@ -1318,6 +1331,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	public void terminate() {
 		if(logDEBUG) Logger.debug(this, "Terminating ...");
 		mTicker.shutdown();
+		mSubscriptionClient.stop();
 		if(logDEBUG) Logger.debug(this, "Terminated.");
 	}
 
