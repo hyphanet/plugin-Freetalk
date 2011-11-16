@@ -12,6 +12,11 @@ import freenet.support.Logger;
  * It is used for {@link MessageList} and {@link Message} download decisions.
  * It also speeds up Freetalk by caching the results of complex database queries.
  * 
+ * When the overall {@link IdentityWantedState} of an identity is true (in other words, when at least one {@link OwnIdentity} exists which wants to download
+ * the messages of the identity), an IdentityStatistics object must be stored in the database:
+ * The {@link WoTOldMessageListFetcher} downloads {@link MessageList}s of identities for which an IdentityWantedState exists.
+ * Vice versa, if the messages of an Identity are unwanted, the IdentityStatistics must be deleted.
+ * 
  * @author xor (xor@freenetproject.org)
  */
 public final class IdentityStatistics extends Persistent {

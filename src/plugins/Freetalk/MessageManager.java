@@ -12,7 +12,9 @@ import java.util.Random;
 import java.util.Set;
 
 import plugins.Freetalk.IdentityManager.IdentityDeletedCallback;
+import plugins.Freetalk.IdentityManager.NewIdentityCallback;
 import plugins.Freetalk.IdentityManager.NewOwnIdentityCallback;
+import plugins.Freetalk.IdentityManager.OverallWantedStateChangedCallback;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.MessageList.MessageFetchFailedMarker;
 import plugins.Freetalk.MessageList.MessageListFetchFailedMarker;
@@ -54,7 +56,7 @@ import freenet.support.io.NativeThread;
  * 
  * @author xor (xor@freenetproject.org)
  */
-public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCallback, IdentityDeletedCallback {
+public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCallback, OverallWantedStateChangedCallback, IdentityDeletedCallback {
 
 	protected final IdentityManager mIdentityManager;
 	
@@ -127,6 +129,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		mRandom = mPluginRespirator.getNode().fastWeakRandom;
 		
 		mIdentityManager.registerNewOwnIdentityCallback(this);
+		mIdentityManager.registerOverallWantedStateChangedCallback(this);
 		mIdentityManager.registerIdentityDeletedCallback(this, true);
 	}
 	
@@ -474,12 +477,50 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		return deletedBoards;
 	}
 	
+	
+	public void onOverallWantedStateChanged(Identity messageAuthor, boolean oldShouldFetch, boolean newShouldFetch)
+	{
+		if(newShouldFetch == true) {
+			// To ensure that the WoTOldMessageListFetcher fetches messages of an identity, an IdentityStatistics object for the identity must exist.
+			// We do NOT create it here though: The WoTNewMessageListFetcher also receives this callback and subscribes to the USK of the author
+			// As soon as it fetches & stores the first MessageList, an IdentityStatistics object will automatically be created & stored.
+			// This will then trigger the WoTOldMessageListFetcher to start fetching the edition of the previous message list,
+			// which is hopefully a high edition number, as the WoTNewMessageListFetcher had tried to fetch the highest USK edition by 
+			// using date based hints.
+			// In other words: If we created an IdentityStatistics object right here, it would result in the WoTOldMessageListFetcher
+			// being notified that no MessageList has been fetched yet, and it would not do anything anyway.
+			/*
+			IdentityStatistics stats = getOrCreateIdentityStatistics(messageAuthor);
+			stats.storeWithoutCommit();
+			*/
+		} else {
+			// TODO: We might implement two level handling of unwanted identities:
+			// - Stage 1: Stop fetching new messages from them
+			// - Stage 2: After the identity has been unwanted for some minutes/hours, delete its messages
+			// If we implement this, part of stopping the fetching of messages of that identity would be to  delete it's IdentityStatistics object.
+			// This would stop the WoTOldMessageListFetcher.
+			// Right now I'm also too lazy for figuring out what else we would have to do.
+			/*
+			try {
+				getIdentityStatistics(messageAuthor).deleteWithoutCommit();
+			} catch(NoSuchObjectException e) {
+				
+			}
+			*/
+			
+			// FIXME: Implement deletion of all objects of the identity here.
+			// FIXME: We cannot just use beforeIdentityDeletion() because its synchronization scheme does not work for what we need.
+			// Instead we should add a simple Persistent class which flags an identity for deletion.
+		}
+	}
+
 	/**
-	 * Called by the IdentityManager after a new Identity has been stored to the database and before committing the transaction.
-	 * The IdentityManager and PersistentTaskManager are locked when this function is called.
+	 * Called by the IdentityManager after a new OwnIdentity has been stored to the database and before committing the transaction.
+	 * FIXME: Validate javadoc: "The IdentityManager and PersistentTaskManager are locked when this function is called."
 	 * 
 	 * Creates a SubscribeToAllBoardsTask for the identity if auto-subscription to boards is enabled.
 	 */
+	@Override
 	public void onNewOwnIdentityAdded(OwnIdentity identity) {
 		if(identity.wantsAutoSubscribeToNewBoards()) {
 			// We cannot subscribe to the boards here because we lack the lock to the MessageManager
