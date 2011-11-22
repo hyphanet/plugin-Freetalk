@@ -5,6 +5,7 @@ package plugins.Freetalk;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.Boolean;
 
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
@@ -42,6 +43,7 @@ import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 import com.db4o.ext.Db4oIOException;
 import com.db4o.ext.DatabaseClosedException;
+import com.db4o.ext.BackupInProgressException;
 
 import freenet.clients.http.PageMaker.THEME;
 import freenet.l10n.BaseL10n;
@@ -86,6 +88,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String BACKUP1_FILENAME = PLUGIN_TITLE + ".db4o.backup1";
 	public static final String BACKUP2_FILENAME = PLUGIN_TITLE + ".db4o.backup2"; 
 	public static final String BACKUP3_FILENAME = PLUGIN_TITLE + ".db4o.backup3"; 
+	public static final String BACKUPDUMMY_FILENAME = PLUGIN_TITLE + ".db4o.dummybackup"; 
 	public static final int DATABASE_FORMAT_VERSION = 1;
 
 	/* References from the node */
@@ -168,11 +171,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		File backup2 = new File(getUserDataDirectory(), BACKUP2_FILENAME);
 		File backup3 = new File(getUserDataDirectory(), BACKUP3_FILENAME);
 		try {
-			if (backup1.exists() && backup2.exists()) { // 1+2->3
+			if (!backup3.exists()) { // 1+2->3
 				db.backup(backup3.getAbsolutePath());
 				backup1.delete();
 			}
-			else if (backup2.exists() && backup3.exists()) { // 2+3->1
+			else if (!backup1.exists()) { // 2+3->1
 				db.backup(backup1.getAbsolutePath());
 				backup2.delete();
 			}
@@ -184,6 +187,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			Logger.error(this, "Cannot backup: Database closed!", e);
 		} catch (Db4oIOException e) {
 			Logger.error(this, "Cannot backup: IoException!", e);
+		} catch (BackupInProgressException e) {
+			Logger.error(this, "Cannot backup: Another backup is already running!", e);
 		}
 	}
 
@@ -300,13 +305,67 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         
         return freetalkDirectory;
 	}
+
+	/** 
+	 * Restore the database from the most recent backup file.
+	 */
+	private void restoreDatabase(File file) {
+		File mostRecentBackup;
+		File backup1 = new File(getUserDataDirectory(), BACKUP1_FILENAME);
+		File backup2 = new File(getUserDataDirectory(), BACKUP2_FILENAME);
+		File backup3 = new File(getUserDataDirectory(), BACKUP3_FILENAME);
+		File backupdummy = new File(getUserDataDirectory(), BACKUPDUMMY_FILENAME);
+		if (!backup1.exists()) {
+			mostRecentBackup = backup3;
+		} else if (!backup2.exists()) {
+			mostRecentBackup = backup1;
+		} else {
+			mostRecentBackup = backup2;
+		}
+		ExtObjectContainer restorer = Db4o.openFile(mostRecentBackup.getAbsolutePath()).ext();
+		try {
+			restorer.backup(file.getAbsolutePath());
+		} catch (DatabaseClosedException e) {
+			Logger.error(this, "Cannot restore: Database closed!", e);
+		} catch (Db4oIOException e) {
+			Logger.error(this, "Cannot restore: IoException!", e);
+		}
+		// make sure this backup finishes.
+		while (true) {
+			try {
+				restorer.backup(backupdummy.getAbsolutePath());
+				break;
+			} catch (BackupInProgressException e) {
+				// this is what we want. As soon as we don't get this
+				// anymore, we break.
+			} catch (DatabaseClosedException e) {
+				Logger.error(this, "Cannot restore: Database closed!", e);
+				break;
+			} catch (Db4oIOException e) {
+				Logger.error(this, "Cannot restore: IoException!", e);
+				break;
+			}
+			
+		}
+		
+		// TODO: We need to find out when it is finished and only return afterwards.
+	}
 	
+	private ExtObjectContainer openDatabase(File file) {
+		return openDatabase(file, false);
+	}
+
 	/**
 	 * ATTENTION: This function is duplicated in the Web Of Trust plugin, please backport any changes.
 	 */
 	@SuppressWarnings("unchecked")
-	private ExtObjectContainer openDatabase(File file) {
+	private ExtObjectContainer openDatabase(File file, Boolean restore) {
 		Logger.normal(this, "Using db4o " + Db4o.version());
+
+		// 
+		if (restore) {
+			restoreDatabase(file);
+		}
 		
 		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
 		// use cached io
