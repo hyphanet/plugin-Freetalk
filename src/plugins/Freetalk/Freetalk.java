@@ -43,6 +43,8 @@ import com.db4o.io.CachedIoAdapter;
 import com.db4o.io.RandomAccessFileAdapter;
 import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
+import com.db4o.ext.Db4oIOException;
+import com.db4o.ext.DatabaseClosedException;
 
 import freenet.clients.http.PageMaker.THEME;
 import freenet.l10n.BaseL10n;
@@ -184,17 +186,23 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		File backup1 = new File(getUserDataDirectory(), BACKUP1_FILENAME);
 		File backup2 = new File(getUserDataDirectory(), BACKUP2_FILENAME);
 		File backup3 = new File(getUserDataDirectory(), BACKUP3_FILENAME);
-		if (backup1.exists() && backup2.exists()) { // 1+2->3
-			db.backup(backup3.getAbsolutePath());
-			backup1.delete();
-		}
-		else if (backup2.exists() && backup3.exists()) { // 2+3->1
-			db.backup(backup1.getAbsolutePath());
-			backup2.delete();
-		}
-		else {
-			db.backup(backup2.getAbsolutePath()); // 3+1 -> 2
-			backup3.delete();
+		try {
+			if (backup1.exists() && backup2.exists()) { // 1+2->3
+				db.backup(backup3.getAbsolutePath());
+				backup1.delete();
+			}
+			else if (backup2.exists() && backup3.exists()) { // 2+3->1
+				db.backup(backup1.getAbsolutePath());
+				backup2.delete();
+			}
+			else {
+				db.backup(backup2.getAbsolutePath()); // 3+1 -> 2
+				backup3.delete();
+			}
+		} catch (DatabaseClosedException e) {
+			Logger.error(this, "Cannot backup: Database closed!", e);
+		} catch (Db4oIOException e) {
+			Logger.error(this, "Cannot backup: IoException!", e);
 		}
 	}
 
