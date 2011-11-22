@@ -35,6 +35,7 @@ import plugins.Freetalk.ui.web.WebInterface;
 
 import com.db4o.Db4o;
 import com.db4o.io.CachedIoAdapter;
+import com.db4o.io.NonFlushingIoAdapter;
 import com.db4o.io.RandomAccessFileAdapter;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
@@ -274,8 +275,10 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
 		// use cached io
 		RandomAccessFileAdapter delegateAdapter = new RandomAccessFileAdapter();
+		NonFlushingIoAdapter nonFlushingIoAdapter = new NonFlushingIoAdapter(delegateAdapter);
 		// A cache with 4096 pages of 4096KB size, gives a 16MiB cache
-		cfg.io(new CachedIoAdapter(delegateAdapter,4096,4096));
+		cfg.io(new CachedIoAdapter(nonFlushingIoAdapter,4096,4096));
+		// TODO: add a backup!
 
 		
 		// Required config options:
