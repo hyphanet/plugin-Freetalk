@@ -33,7 +33,6 @@ import plugins.Freetalk.tasks.WoT.IntroduceIdentityTask;
 import plugins.Freetalk.ui.FCP.FCPInterface;
 import plugins.Freetalk.ui.NNTP.FreetalkNNTPServer;
 import plugins.Freetalk.ui.web.WebInterface;
-import plugins.Freetalk.ExterminatingStorageDecorator;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
@@ -89,6 +88,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String DATABASE_FILENAME = PLUGIN_TITLE + ".db4o";
 	public static final String BACKUP1_FILENAME = PLUGIN_TITLE + ".db4o.backup1";
 	public static final String BACKUP2_FILENAME = PLUGIN_TITLE + ".db4o.backup2";
+	public static final String BACKUP3_FILENAME = PLUGIN_TITLE + ".db4o.backup3";
 	public static final int DATABASE_FORMAT_VERSION = 3;
 	/**
 	 * FIXME: Test various values of this and {@link #DATABASE_CACHE_PAGE_COUNT}, especially
@@ -175,17 +175,26 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 
 	/** 
 	 * Do a backup. Throw away the other file after finishing.
+	 * 
+	 * backup 1-3 are used sequentially. One is always non-existent.
+	 * The non-existent is the new target and the older of the
+	 * existing ones gets deleted.
 	 */
 	public void backup(ExtObjectContainer db) {
 		File backup1 = new File(getUserDataDirectory(), BACKUP1_FILENAME);
 		File backup2 = new File(getUserDataDirectory(), BACKUP2_FILENAME);
-		if (backup1.exists) {
-			ExterminatingStorageDectorator notifactionStorage = new ExterminatingStorageDectorator(backup1);
-			db.backup(backup2);
+		File backup3 = new File(getUserDataDirectory(), BACKUP3_FILENAME);
+		if (backup1.exists() && backup2.exists()) { // 1+2->3
+			db.backup(backup3.getAbsolutePath());
+			backup1.delete();
+		}
+		else if (backup2.exists() && backup3.exists()) { // 2+3->1
+			db.backup(backup1.getAbsolutePath());
+			backup2.delete();
 		}
 		else {
-			ExterminatingStorageDectorator notifactionStorage = new ExterminatingStorageDectorator(backup2);
-			db.backup(backup1);
+			db.backup(backup2.getAbsolutePath()); // 3+1 -> 2
+			backup3.delete();
 		}
 	}
 
