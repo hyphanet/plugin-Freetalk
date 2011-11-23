@@ -315,12 +315,18 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		File backup2 = new File(getUserDataDirectory(), BACKUP2_FILENAME);
 		File backup3 = new File(getUserDataDirectory(), BACKUP3_FILENAME);
 		File backupdummy = new File(getUserDataDirectory(), BACKUPDUMMY_FILENAME);
-		if (!backup1.exists()) {
+		if (!backup2.exists() && backup1.exists()) {
+			mostRecentBackup = backup1;
+		} else if (!backup3.exists() && backup2.exists()) {
+			mostRecentBackup = backup2;
+		} else if (!backup1.exists() && backup3.exists()) {
 			mostRecentBackup = backup3;
-		} else if (!backup2.exists()) {
+		} else if (backup1.exists() && backup2.exists() && backup3.exists()) {
+			Logger.error(this, "Cannot find the most recent backup. Choosing the first. Might be wrong. Sorry.");
+			// TODO: Check the modified dates and choose the latest.
 			mostRecentBackup = backup1;
 		} else {
-			mostRecentBackup = backup2;
+			Logger.error(this, "No backup found. Sorry.");
 		}
 		ExtObjectContainer restorer = Db4o.openFile(mostRecentBackup.getAbsolutePath()).ext();
 		try {
