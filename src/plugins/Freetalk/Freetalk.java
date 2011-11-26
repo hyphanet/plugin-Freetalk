@@ -383,6 +383,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		 * <ArneBab> mark pointers to be modified->commit mode->modify pointers->not-in-commit-mode.
 		 * <ArneBab> on a *hardware* crash, the write order *on disk* could be wrong.
 		 * So in the case of a *hardware* crash, we *have to* get a backup.
+		 * Which is true with fsync, too (harddisk-buffers don’t get flushed on fsync). 
 		*/
 		NonFlushingIoAdapter nonFlushingIoAdapter = new NonFlushingIoAdapter(delegateAdapter);
 		// A cache with 4096 pages of 4096KB size, gives a 16MiB cache
