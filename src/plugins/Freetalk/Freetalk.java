@@ -376,6 +376,13 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		com.db4o.config.Configuration cfg = Db4o.newConfiguration();
 		// use cached io
 		RandomAccessFileAdapter delegateAdapter = new RandomAccessFileAdapter();
+		/** use non-flushing IO. 
+		 * <ArneBab> the algorithm is written there in the docstring
+		 * <p0s> ArneBab: then document your understanding of it in the pull request please.
+		 * <ArneBab> mark pointers to be modified→commit mode→modify pointers→not-in-commit-mode.
+		 * <ArneBab> on a *hardware* crash, the write order *on disk* could be wrong.
+		 * So in the case of a *hardware* crash, we *have to* get a backup.
+		*/
 		NonFlushingIoAdapter nonFlushingIoAdapter = new NonFlushingIoAdapter(delegateAdapter);
 		// A cache with 4096 pages of 4096KB size, gives a 16MiB cache
 		cfg.io(new CachedIoAdapter(nonFlushingIoAdapter,4096,4096));
