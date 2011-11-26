@@ -380,7 +380,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		/** use non-flushing IO. 
 		 * <ArneBab> the algorithm is written there in the docstring
 		 * <p0s> ArneBab: then document your understanding of it in the pull request please.
-		 * <ArneBab> mark pointers to be modified→commit mode→modify pointers→not-in-commit-mode.
+		 * <ArneBab> mark pointers to be modified->commit mode->modify pointers->not-in-commit-mode.
 		 * <ArneBab> on a *hardware* crash, the write order *on disk* could be wrong.
 		 * So in the case of a *hardware* crash, we *have to* get a backup.
 		*/
