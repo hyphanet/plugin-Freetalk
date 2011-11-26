@@ -328,6 +328,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			mostRecentBackup = backup1;
 		} else {
 			Logger.error(this, "No backup found. Sorry.");
+			return;
 		}
 		ExtObjectContainer restorer = Db4o.openFile(mostRecentBackup.getAbsolutePath()).ext();
 		try {
