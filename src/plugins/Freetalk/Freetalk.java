@@ -190,6 +190,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		} catch (BackupInProgressException e) {
 			Logger.error(this, "Cannot backup: Another backup is already running!", e);
 		}
+		// TODO: Use the monitoring from the restorer and first write to a dummy-file which gets moved to the backup location after the backup finishes. 
 	}
 
 	public void runPlugin(PluginRespirator myPR) {
