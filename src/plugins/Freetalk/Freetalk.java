@@ -428,8 +428,6 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		NonFlushingIoAdapter nonFlushingIoAdapter = new NonFlushingIoAdapter(delegateAdapter);
 		// A cache with 16384 pages of 4096KB size, gives a 64MiB cache
 		cfg.io(new CachedIoAdapter(nonFlushingIoAdapter,16384,4096));
-		// TODO: add a backup!
-
 		
 		// Required config options:
 		
