@@ -93,6 +93,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String BACKUP2_FILENAME = PLUGIN_TITLE + ".db4o.backup2";
 	public static final String BACKUP3_FILENAME = PLUGIN_TITLE + ".db4o.backup3";
 	public static final String BACKUPDUMMY_FILENAME = PLUGIN_TITLE + ".db4o.dummybackup";
+	public static final String BACKUPTEMP_FILENAME = PLUGIN_TITLE + ".db4o.temp"; 
 	public static final int DATABASE_FORMAT_VERSION = 3;
 	/**
 	 * FIXME: Test various values of this and {@link #DATABASE_CACHE_PAGE_COUNT}, especially
@@ -188,20 +189,25 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		File backup1 = new File(getUserDataDirectory(), BACKUP1_FILENAME);
 		File backup2 = new File(getUserDataDirectory(), BACKUP2_FILENAME);
 		File backup3 = new File(getUserDataDirectory(), BACKUP3_FILENAME);
+		File backupdummy = new File(getUserDataDirectory(), BACKUPDUMMY_FILENAME);
+		File backuptemp = new File(getUserDataDirectory(), BACKUPTEMP_FILENAME);
+		File backup;
+		File deprecated; 
+		if (!backup3.exists()) { // 1+2->3
+			backup = backup3;
+			deprecated = backup1;
+		}
+		else if (!backup1.exists()) { // 2+3->1
+			backup = backup1;
+			deprecated = backup2;
+		}
+		else {
+			assert(!backup2.exists());
+			backup = backup2;
+			deprecated = backup3;
+		}
 		try {
-			if (!backup3.exists()) { // 1+2->3
-				db.backup(backup3.getAbsolutePath());
-				backup1.delete();
-			}
-			else if (!backup1.exists()) { // 2+3->1
-				db.backup(backup1.getAbsolutePath());
-				backup2.delete();
-			}
-			else {
-				assert(!backup2.exists());
-				db.backup(backup2.getAbsolutePath()); // 3+1 -> 2
-				backup3.delete();
-			}
+			db.backup(backuptemp.getAbsolutePath());
 		} catch (DatabaseClosedException e) {
 			Logger.error(this, "Cannot backup: Database closed!", e);
 		} catch (Db4oIOException e) {
@@ -209,7 +215,29 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		} catch (BackupInProgressException e) {
 			Logger.error(this, "Cannot backup: Another backup is already running!", e);
 		}
-		// TODO: Use the monitoring from the restorer and first write to a dummy-file which gets moved to the backup location after the backup finishes. 
+		// make sure this backup finishes, then move it to the target location and remove the deprecated file.
+		while (true) {
+			try {
+				db.backup(backupdummy.getAbsolutePath());
+				// we only get here, if the backup throws no errors.
+				// Else we get the appropriate catch.
+				backuptemp.renameTo(backup);
+				deprecated.delete();
+				break;
+			} catch (BackupInProgressException e) {
+				// this is what we want. As soon as we don't get this
+				// anymore, the backup finished.
+				// TODO: Add a wait condition.
+			} catch (DatabaseClosedException e) {
+				Logger.error(this, "Cannot restore: Database closed!", e);
+				backuptemp.delete();
+				break;
+			} catch (Db4oIOException e) {
+				Logger.error(this, "Cannot restore: IoException!", e);
+				backuptemp.delete();
+				break;
+			}
+		}
 	}
 
 	@Override public void runPlugin(PluginRespirator myPR) {
@@ -364,6 +392,9 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		while (true) {
 			try {
 				restorer.backup(backupdummy.getAbsolutePath());
+				// we only get here, if the backup throws no errors.
+				// Else we get the appropriate catch and the loop continues.
+				// TODO: Add a wait condition.
 				break;
 			} catch (BackupInProgressException e) {
 				// this is what we want. As soon as we don't get this
