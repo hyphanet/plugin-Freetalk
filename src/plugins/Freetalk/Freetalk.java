@@ -426,8 +426,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		 * Which is true with fsync, too (harddisk-buffers don’t get flushed on fsync). 
 		*/
 		NonFlushingIoAdapter nonFlushingIoAdapter = new NonFlushingIoAdapter(delegateAdapter);
-		// A cache with 4096 pages of 4096KB size, gives a 16MiB cache
-		cfg.io(new CachedIoAdapter(nonFlushingIoAdapter,4096,4096));
+		// A cache with 16384 pages of 4096KB size, gives a 64MiB cache
+		cfg.io(new CachedIoAdapter(nonFlushingIoAdapter,16384,4096));
 		// TODO: add a backup!
 
 		
