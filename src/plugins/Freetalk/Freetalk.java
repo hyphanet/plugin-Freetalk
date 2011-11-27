@@ -6,6 +6,7 @@ package plugins.Freetalk;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.Thread;
 
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
@@ -227,7 +228,10 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			} catch (BackupInProgressException e) {
 				// this is what we want. As soon as we don't get this
 				// anymore, the backup finished.
-				// TODO: Add a wait condition.
+				try {
+					Thread.sleep(10);	}
+				catch(InterruptedException f) {
+				}
 			} catch (DatabaseClosedException e) {
 				Logger.error(this, "Cannot restore: Database closed!", e);
 				backuptemp.delete();
@@ -399,6 +403,10 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			} catch (BackupInProgressException e) {
 				// this is what we want. As soon as we don't get this
 				// anymore, we break.
+				try {
+					Thread.sleep(10);
+				} catch(InterruptedException f) {
+				}
 			} catch (DatabaseClosedException e) {
 				Logger.error(this, "Cannot restore: Database closed!", e);
 				break;
