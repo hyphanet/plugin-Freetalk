@@ -198,31 +198,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			Logger.error(this, "Cannot backup: Another backup is already running!", e);
 		}
 		// make sure this backup finishes, then move it to the target location and remove the deprecated file.
-		while (true) {
-			try {
-				db.backup(backupdummy.getAbsolutePath());
-				// we only get here, if the backup throws no errors.
-				// Else we get the appropriate catch.
-				backuptemp.renameTo(backup);
-				deprecated.delete();
-				break;
-			} catch (BackupInProgressException e) {
-				// this is what we want. As soon as we don't get this
-				// anymore, the backup finished.
-				try {
-					Thread.sleep(10);	}
-				catch(InterruptedException f) {
-				}
-			} catch (DatabaseClosedException e) {
-				Logger.error(this, "Cannot restore: Database closed!", e);
-				backuptemp.delete();
-				break;
-			} catch (Db4oIOException e) {
-				Logger.error(this, "Cannot restore: IoException!", e);
-				backuptemp.delete();
-				break;
-			}
-		}
+		// TODO: Do that without blocking. Till we have that, we only know that the backup before the last backup should be complete.
 	}
 
 	public void runPlugin(PluginRespirator myPR) {
@@ -340,7 +316,9 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	}
 
 	/** 
-	 * Restore the database from the most recent backup file.
+	 * Restore the database from a backup file.
+	 * 
+	 * Restores to a consistent state, so it takes the previous last backup. The last one could have been corrupted in the crash just like the database.
 	 */
 	private void restoreDatabase(File file) {
 		File mostRecentBackup;
@@ -348,14 +326,14 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		File backup2 = new File(getUserDataDirectory(), BACKUP2_FILENAME);
 		File backup3 = new File(getUserDataDirectory(), BACKUP3_FILENAME);
 		File backupdummy = new File(getUserDataDirectory(), BACKUPDUMMY_FILENAME);
-		if (!backup2.exists() && backup1.exists()) {
-			mostRecentBackup = backup1;
-		} else if (!backup3.exists() && backup2.exists()) {
-			mostRecentBackup = backup2;
-		} else if (!backup1.exists() && backup3.exists()) {
+		if (!backup2.exists() && backup1.exists() && backup3.exists()) {
 			mostRecentBackup = backup3;
+		} else if (!backup3.exists() && backup2.exists() && backup1.exists()) {
+			mostRecentBackup = backup1;
+		} else if (!backup1.exists() && backup3.exists() && backup2.exists()) {
+			mostRecentBackup = backup2;
 		} else if (backup1.exists() && backup2.exists() && backup3.exists()) {
-			Logger.error(this, "Cannot find the most recent backup. Choosing the first. Might be wrong. Sorry.");
+			Logger.error(this, "Cannot distinguish between the backups. Choosing the first. Might be wrong. Sorry.");
 			// TODO: Check the modified dates and choose the latest.
 			mostRecentBackup = backup1;
 		} else {
