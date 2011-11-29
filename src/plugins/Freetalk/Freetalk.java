@@ -319,6 +319,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	 * Restore the database from a backup file.
 	 * 
 	 * Restores to a consistent state, so it takes the previous last backup. The last one could have been corrupted in the crash just like the database.
+	 * 
+	 * TODO: To find out if the db needs to be restored: commit some note just before closing the db nd one just after opening. If the closing commit isn’t there, we need to restore.
 	 */
 	private void restoreDatabase(File file) {
 		File mostRecentBackup;
