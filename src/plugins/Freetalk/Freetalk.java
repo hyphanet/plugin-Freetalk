@@ -204,6 +204,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public void runPlugin(PluginRespirator myPR) {
 		try {
 		Logger.normal(this, "Plugin starting up...");
+		Logger.warning(this, "This Freetalk build is using unfinished nofsync patches. It might have already corrupted its database due to some stray filesystem issue. Don't try debugging with this log.");
 
 		mPluginRespirator = myPR;
 
