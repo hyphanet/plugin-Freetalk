@@ -317,6 +317,26 @@ public class Board extends Persistent implements Comparable<Board> {
     }
     
     /**
+     * A QueuedMessageLink represent a message which we might want to download:
+     * - The author of the message must be in the "wanted by any own identity"-state.
+     * - The {@link Board} to which the message was posted has subscriptions (mHasSubscriptions == true)
+     * 
+     * Notice that this does NOT guarantee that an OwnIdentity exists which actually wants the messages of this board from the given identity:
+     * It is possible that the subscription to this board came from an OwnIdentity which does not want the messages of the given identity.
+     * 
+     * FIXME: This problem could be solved in two ways:
+     * 1. Have a class "QueuedSubscribedMessageLink" which is maintained by SubscribedBoards and represents the messages which we are actually
+     * going to download
+     * 2. Assume that Freetalk typically represents one single user and therefore conclude that it is okay if we download messages which
+     * fit the above case: As long as any own identity wants the messages of an identity, the single user behind Freetalk wants them, and
+     * as long as any own identity is subscribed to a given board, the other own identities of that user might also subscribe to it.
+     * 
+     */
+    public static final class QueuedMessageLink extends Persistent {
+    	// FIXME: Implement.
+    }
+    
+    /**
      * A DownloadedMessageLink links an actually downloaded message to a board - in opposite to {@link MessageList.MessageReference} which mark messages which might be downloaded or not.  
      * These DownloadedMessageLink objects are used for querying the database for messages which belong to a certain board.
      * - Since a message can be posted to multiple boards, we need these helper objects for being able to do fast queries on the message lists of boards.

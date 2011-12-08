@@ -293,6 +293,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         final Class<? extends Persistent>[] persistentClasses = new Class[] {
         	Persistent.class,
         	Board.class,
+        	Board.QueuedMessageLink.class,
         	Board.DownloadedMessageLink.class,
         	Configuration.class,
         	FetchFailedMarker.class,
