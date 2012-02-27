@@ -809,6 +809,7 @@ public final class FreetalkNNTPHandler implements Runnable {
         }
         else {
             printStatusLine("500 Command not recognized");
+            Logger.warning(this, "Command not recognized: " + command);
         }
 
         return false;
