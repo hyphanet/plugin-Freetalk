@@ -74,6 +74,15 @@ public final class FreetalkNNTPHandler implements Runnable {
 
     /** Pattern for matching valid "range" arguments. */
     private static final Pattern rangePattern = Pattern.compile("(\\d+)(-(\\d+)?)?");
+    
+	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
+	
+	private static transient volatile boolean logDEBUG = false;
+	private static transient volatile boolean logMINOR = false;
+	
+	static {
+		Logger.registerClass(FreetalkNNTPHandler.class);
+	}
 
 
     public FreetalkNNTPHandler(final Freetalk ft, final Socket socket) throws SocketException {
@@ -940,6 +949,9 @@ public final class FreetalkNNTPHandler implements Runnable {
             printStatusLine("200 Welcome to Freetalk");
             while (!mSocket.isClosed()) {
                 final String line = utf8.decode(readLineBytes(is)).toString();
+                
+                if(logDEBUG) Logger.debug(this, "Received NNTP command: " + line);
+                
                 synchronized(this) {
 	                if (beginCommand(line)) {
 	                    finishCommand(line, readTextDataBytes(is));
