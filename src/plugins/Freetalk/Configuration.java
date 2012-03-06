@@ -9,6 +9,7 @@ import plugins.Freetalk.Persistent.IndexedClass;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
+import com.db4o.query.Query;
 
 import freenet.support.Logger;
 import freenet.support.codeshortification.IfNull;
@@ -154,6 +155,33 @@ public final class Configuration extends Persistent {
 			throw new RuntimeException("mDatabaseFormatVersion==" + mDatabaseFormatVersion + "; newVersion==" + newVersion);
 		
 		mDatabaseFormatVersion = newVersion;
+	}
+	
+	/**
+	 * Warning: This function is not synchronized, use it only in single threaded mode.
+	 * 
+	 * For being used to obtain the database version of a database which is a different one than the database which {@link Freetalk.getDatabase()} would return.
+	 * 
+	 * @return The Freetalk database format version of the given database. -1 if there is no Configuration stored in it or multiple configurations exist.
+	 */
+	@SuppressWarnings("deprecation")
+	protected static int peekDatabaseFormatVersion(Freetalk myFreetalk, ExtObjectContainer myDatabase) {
+		final Query query = myDatabase.query();
+		query.constrain(Configuration.class);
+		@SuppressWarnings("unchecked")
+		ObjectSet<Configuration> result = (ObjectSet<Configuration>)query.execute(); 
+		
+		switch(result.size()) {
+			case 1: {
+				final Configuration config = (Configuration)result.next();
+				config.initializeTransient(myFreetalk, myDatabase);
+				// For the HashMaps to stay alive we need to activate to full depth.
+				config.checkedActivate(4);
+				return config.getDatabaseFormatVersion();
+			}
+			default:
+				return -1;
+		}
 	}
 
 	/**
