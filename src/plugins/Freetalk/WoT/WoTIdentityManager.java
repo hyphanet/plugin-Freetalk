@@ -32,6 +32,7 @@ import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
+import freenet.node.FSParseException;
 import freenet.node.PrioRunnable;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.support.Base64;
@@ -597,13 +598,6 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			p1.putOverwrite("Selection", "+");
 			p1.putOverwrite("Context", Freetalk.WOT_CONTEXT);
 			parseIdentities(sendFCPMessageBlocking(p1, null, "Identities").params, false);
-			
-			synchronized(this) {
-				// We must update the fetch-time after the parsing and only if the parsing succeeded:
-				// If we updated before the parsing and parsing failed or took ages (the thread sometimes takes 2 hours to execute, don't ask me why)
-				// then the garbage collector would delete identities.
-				mLastIdentityFetchTime = CurrentTimeUTC.getInMillis();
-			}
 		}
 		finally {
 			synchronized(this) {
@@ -640,13 +634,6 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			SimpleFieldSet p2 = new SimpleFieldSet(true);
 			p2.putOverwrite("Message","GetOwnIdentities");
 			parseIdentities(sendFCPMessageBlocking(p2, null, "OwnIdentities").params, true);
-			
-			synchronized(this) {
-				// We must update the fetch-time after the parsing and only if the parsing succeeded:
-				// If we updated before the parsing and parsing failed or took ages (the thread sometimes takes 2 hours to execute, don't ask me why)
-				// then the garbage collector would delete identities.
-				mLastOwnIdentityFetchTime = CurrentTimeUTC.getInMillis();
-			}
 		}
 		finally {
 			synchronized(this) {
@@ -828,6 +815,24 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			}
 			
 			Thread.yield();
+		}
+		
+		try {
+			final int expectedIdentityAmount = params.getInt("Amount");
+			if(idx == expectedIdentityAmount) {
+				synchronized(this) {
+					// We must update the fetch-time after the parsing and only if the parsing succeeded:
+					// If we updated before the parsing and parsing failed or took ages (the thread sometimes takes 2 hours to execute, don't ask me why)
+					// then the garbage collector would delete identities.
+					if(bOwnIdentities)
+						mLastOwnIdentityFetchTime = CurrentTimeUTC.getInMillis();
+					else
+						mLastIdentityFetchTime = CurrentTimeUTC.getInMillis();
+				}
+			} else
+				Logger.error(this, "Parsed identity count does not match expected amount: expected: " + expectedIdentityAmount + "; actual amount: " + idx);
+		} catch(FSParseException e) {
+			Logger.error(this, "GetIdentitiesByScore did not specify Amount of identities! Maybe WOT older than build0012?", e);
 		}
 		
 		Logger.normal(this, "parseIdentities(bOwnIdentities==" + bOwnIdentities + " received " + idx + " identities. Ignored " + ignoredCount + "; New: " + newCount );
