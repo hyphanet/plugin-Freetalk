@@ -837,23 +837,39 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		
 		Logger.normal(this, "parseIdentities(bOwnIdentities==" + bOwnIdentities + " received " + idx + " identities. Ignored " + ignoredCount + "; New: " + newCount );
 	}
+
+	private void garbageCollectIdentities() {
+		garbageCollectIdentities(true);
+		garbageCollectIdentities(false);
+	}
 	
 	@SuppressWarnings("unchecked")
-	private void garbageCollectIdentities() {
+	private void garbageCollectIdentities(boolean ownIdentities) {
 		final MessageManager messageManager = mFreetalk.getMessageManager();
 		final PersistentTaskManager taskManager = mFreetalk.getTaskManager();
 		
 		synchronized(this) {
-			if(mIdentityFetchInProgress || mOwnIdentityFetchInProgress || mLastIdentityFetchTime == 0 || mLastOwnIdentityFetchTime == 0)
+			// An identity fetch can change the type of an identity, so we do not check whether this function was supposed to GC
+			// identities or own identities - we abort if any identity fetch is in progress / no full fetch was done yet.
+			if(mIdentityFetchInProgress || mOwnIdentityFetchInProgress)
+				return;
+			
+			if((ownIdentities && mLastOwnIdentityFetchTime == 0) || (!ownIdentities && mLastIdentityFetchTime == 0))
 				return;
 
 			/* Executing the thread loop once will always take longer than THREAD_PERIOD. Therefore, if we set the limit to 3*THREAD_PERIOD,
 			 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */
-			long lastAcceptTime = Math.min(mLastIdentityFetchTime, mLastOwnIdentityFetchTime) - GARBAGE_COLLECT_DELAY;
+			long lastAcceptTime = (ownIdentities ? mLastOwnIdentityFetchTime : mLastIdentityFetchTime) - GARBAGE_COLLECT_DELAY;
 			lastAcceptTime = Math.max(lastAcceptTime, 0); // This is not really needed but a time less than 0 does not make sense.;
 
 			Query q = db.query();
-			q.constrain(WoTIdentity.class);
+			if(ownIdentities)
+				q.constrain(WoTOwnIdentity.class);
+			else {
+				q.constrain(WoTIdentity.class);
+				q.constrain(WoTOwnIdentity.class).not();
+			}
+			
 			q.descend("mLastReceivedFromWoT").constrain(lastAcceptTime).smaller();
 			ObjectSet<WoTIdentity> result = q.execute();
 
