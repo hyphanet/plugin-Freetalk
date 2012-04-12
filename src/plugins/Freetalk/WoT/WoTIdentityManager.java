@@ -846,25 +846,25 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		synchronized(this) {
 			if(mIdentityFetchInProgress || mOwnIdentityFetchInProgress || mLastIdentityFetchTime == 0 || mLastOwnIdentityFetchTime == 0)
 				return;
-			
-		/* Executing the thread loop once will always take longer than THREAD_PERIOD. Therefore, if we set the limit to 3*THREAD_PERIOD,
-		 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */
-		long lastAcceptTime = Math.min(mLastIdentityFetchTime, mLastOwnIdentityFetchTime) - GARBAGE_COLLECT_DELAY;
-		lastAcceptTime = Math.max(lastAcceptTime, 0); // This is not really needed but a time less than 0 does not make sense.;
-		
-		Query q = db.query();
-		q.constrain(WoTIdentity.class);
-		q.descend("mLastReceivedFromWoT").constrain(lastAcceptTime).smaller();
-		ObjectSet<WoTIdentity> result = q.execute();
-		
-		for(WoTIdentity identity : result) {
-			identity.initializeTransient(mFreetalk);
-			if(logDEBUG) Logger.debug(this, "Garbage collecting identity " + identity);
-			deleteIdentity(identity, messageManager, taskManager);
-		}
-		
-		if(mShortestUniqueNicknameCacheNeedsUpdate)
-			updateShortestUniqueNicknameCache();
+
+			/* Executing the thread loop once will always take longer than THREAD_PERIOD. Therefore, if we set the limit to 3*THREAD_PERIOD,
+			 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */
+			long lastAcceptTime = Math.min(mLastIdentityFetchTime, mLastOwnIdentityFetchTime) - GARBAGE_COLLECT_DELAY;
+			lastAcceptTime = Math.max(lastAcceptTime, 0); // This is not really needed but a time less than 0 does not make sense.;
+
+			Query q = db.query();
+			q.constrain(WoTIdentity.class);
+			q.descend("mLastReceivedFromWoT").constrain(lastAcceptTime).smaller();
+			ObjectSet<WoTIdentity> result = q.execute();
+
+			for(WoTIdentity identity : result) {
+				identity.initializeTransient(mFreetalk);
+				if(logDEBUG) Logger.debug(this, "Garbage collecting identity " + identity);
+				deleteIdentity(identity, messageManager, taskManager);
+			}
+
+			if(mShortestUniqueNicknameCacheNeedsUpdate)
+				updateShortestUniqueNicknameCache();
 		}
 	}
 	
