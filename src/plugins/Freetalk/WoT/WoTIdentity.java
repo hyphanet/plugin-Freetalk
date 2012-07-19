@@ -43,7 +43,7 @@ public class WoTIdentity extends Persistent implements Identity {
 	
 	/**
 	 * Used for garbage collecting old identities which are not returned by the WoT plugin anymore.
-	 * We delete them if they were not received for a certain time interval.
+	 * We delete them if their last fetch ID is different to the fetch ID of the current fetch.
 	 */
 	private long mLastReceivedFromWoT;
 
@@ -64,7 +64,7 @@ public class WoTIdentity extends Persistent implements Identity {
 		mID = myID;
 		mRequestURI = myRequestURI;
 		mNickname = myNickname;
-		mLastReceivedFromWoT = CurrentTimeUTC.getInMillis();
+		mLastReceivedFromWoT = 0;
 		
 		IfNotEquals.thenThrow(IdentityID.construct(mID), IdentityID.constructFromURI(mRequestURI), "myID");
 	}
@@ -165,12 +165,11 @@ public class WoTIdentity extends Persistent implements Identity {
 	}
 	
 	/**
-	 * Set the time this identity was last received from the WoT plugin to the given UTC time in milliseconds
-	 * @param time
+	 * Set the ID of the identity fetch in which this identity was last received from the WoT plugin to the given unique ID.
 	 */
-	public synchronized void setLastReceivedFromWoT(long time) {
+	public synchronized void setLastReceivedFromWoT(long fetchID) {
 		checkedActivate(1);
-		mLastReceivedFromWoT = time;
+		mLastReceivedFromWoT = fetchID;
 		storeWithoutCommit(); // TODO: Move store() calls outside of class identity
 	}
 

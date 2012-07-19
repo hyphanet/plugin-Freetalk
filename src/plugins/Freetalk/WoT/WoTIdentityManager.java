@@ -73,6 +73,9 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	private long mLastIdentityFetchTime = 0;
 	private long mLastOwnIdentityFetchTime = 0;
 	
+	private long mLastIdentityFetchID = 0;
+	private long mLastOwnIdentityFetchID = 0;
+	
 	/** If true, this identity manager is being use in a unit test - it will return 0 for any score / trust value then */
 	private final boolean mIsUnitTest;
 
@@ -177,6 +180,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				new FreenetURI(result.params.get("InsertURI")),
 				newNickname, autoSubscribeToNewBoards, displayImages);
 		
+		identity.setLastReceivedFromWoT(mLastOwnIdentityFetchID);
 		identity.initializeTransient(mFreetalk);
 		
 		Logger.normal(this, "Created WoTOwnidentity via FCP, now storing... " + identity);
@@ -222,6 +226,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				new FreenetURI(result.params.get("InsertURI")),
 				newNickname, autoSubscribeToNewBoards, displayImages);
 		
+		identity.setLastReceivedFromWoT(mLastOwnIdentityFetchID);
 		identity.initializeTransient(mFreetalk);
 		
 		Logger.normal(this, "Created WoTOwnidentity via FCP, now storing... " + identity);
@@ -602,6 +607,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		finally {
 			synchronized(this) {
 				mIdentityFetchInProgress = false;
+				// Disable garbage collection for the next iteration since importing failed
+				mLastIdentityFetchID = 0;
 			}
 		}
 	
@@ -638,6 +645,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		finally {
 			synchronized(this) {
 				mOwnIdentityFetchInProgress = false;
+				// Disable garbage collection for the next iteration since importing failed
+				mLastOwnIdentityFetchID = 0;
 			}
 		}
 		
@@ -706,7 +715,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		doShouldFetchStateChangedCallbacks(author, oldShouldFetch, newShouldFetch);
 	}
 	
-	private void importIdentity(boolean ownIdentity, String identityID, String requestURI, String insertURI, String nickname) {
+	private void importIdentity(boolean ownIdentity, String identityID, String requestURI, String insertURI, String nickname, long fetchID) {
 		synchronized(mFreetalk.getTaskManager()) {
 		synchronized(Persistent.transactionLock(db)) {
 			try {
@@ -714,6 +723,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				final WoTIdentity id = ownIdentity ? new WoTOwnIdentity(identityID, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
 					new WoTIdentity(identityID, new FreenetURI(requestURI), nickname);
 
+				id.setLastReceivedFromWoT(fetchID);
 				id.initializeTransient(mFreetalk);
 				id.storeWithoutCommit();
 
@@ -742,6 +752,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		int ignoredCount = 0;
 		int newCount = 0;
 		
+		long fetchID = mRandom.nextLong();
+		
 		for(idx = 0; ; idx++) {
 			String identityID = params.get("Identity"+idx);
 			if(identityID == null || identityID.equals("")) /* TODO: Figure out whether the second condition is necessary */
@@ -767,7 +779,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				
 				if(result.size() == 0) {
 					try {
-						importIdentity(bOwnIdentities, identityID, requestURI, insertURI, nickname);
+						importIdentity(bOwnIdentities, identityID, requestURI, insertURI, nickname, fetchID);
 						++newCount;
 					}
 					catch(Exception e) {
@@ -790,7 +802,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 							// synchronized(id)
 							// synchronized(Persistent.transactionLock(db)) 
 							deleteIdentity(id, mFreetalk.getMessageManager(), mFreetalk.getTaskManager());
-							importIdentity(bOwnIdentities, identityID, requestURI, insertURI, nickname);
+							importIdentity(bOwnIdentities, identityID, requestURI, insertURI, nickname, fetchID);
 						}
 						catch(Exception e) {
 							Logger.error(this, "Replacing a WoTIdentity with WoTOwnIdentity failed.", e);
@@ -800,9 +812,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 						synchronized(id) {
 						synchronized(Persistent.transactionLock(db)) {
 							try {
-								// TODO: The thread sometimes takes hours to parse the identities and I don't know why.
-								// So right now its better to re-query the time for each identity.
-								id.setLastReceivedFromWoT(CurrentTimeUTC.getInMillis());
+								id.setLastReceivedFromWoT(fetchID);
 								id.checkedCommit(this);
 							}
 							catch(Exception e) {
@@ -820,17 +830,21 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		try {
 			final int expectedIdentityAmount = params.getInt("Amount");
 			if(idx == expectedIdentityAmount) {
-				synchronized(this) {
-					// We must update the fetch-time after the parsing and only if the parsing succeeded:
-					// If we updated before the parsing and parsing failed or took ages (the thread sometimes takes 2 hours to execute, don't ask me why)
-					// then the garbage collector would delete identities.
-					if(bOwnIdentities)
-						mLastOwnIdentityFetchTime = CurrentTimeUTC.getInMillis();
-					else
-						mLastIdentityFetchTime = CurrentTimeUTC.getInMillis();
-				}
-			} else
+				// We must update the fetch-ID after the parsing and only if the parsing succeeded:
+				// If we updated before the parsing and parsing failed then the garbage collector would delete identities.
+				if(bOwnIdentities)
+					mLastOwnIdentityFetchID = fetchID;
+				else
+					mLastIdentityFetchID = fetchID;
+			} else { // Importing failed - we received a corrupted data set
 				Logger.error(this, "Parsed identity count does not match expected amount: expected: " + expectedIdentityAmount + "; actual amount: " + idx);
+				
+				// Disable garbage collection for the next iteration since importing failed
+				if(bOwnIdentities)
+					mLastOwnIdentityFetchID = 0;
+				else
+					mLastIdentityFetchID = 0;
+			}
 		} catch(FSParseException e) {
 			Logger.error(this, "GetIdentitiesByScore did not specify Amount of identities! Maybe WOT older than build0012?", e);
 		}
@@ -843,24 +857,26 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		garbageCollectIdentities(false);
 	}
 	
+	/**
+	 * Deletes all identities whose mLastReceivedFromWoT field does not match the ID of the last fetch (which is stored in mLast(Own)IdentityFetchID)
+	 */
 	@SuppressWarnings("unchecked")
 	private void garbageCollectIdentities(boolean ownIdentities) {
 		final MessageManager messageManager = mFreetalk.getMessageManager();
 		final PersistentTaskManager taskManager = mFreetalk.getTaskManager();
 		
 		synchronized(this) {
-			// An identity fetch can change the type of an identity, so we do not check whether this function was supposed to GC
-			// identities or own identities - we abort if any identity fetch is in progress / no full fetch was done yet.
+			// We must abort garbage collection if an identity fetch is in progress since the mLast(Own)IdentityFetchID which we use to delete
+			// identities is updated AFTER the fetch has succeeded but the IDs which are stored in the identities are updated sequentially
+			// in single transactions. So if we GC'ed while a fetch was in progress, we would delete lots of identities because their fetch ID 
+			// would mismatch mLast(Own)IdentityFetchID
 			if(mIdentityFetchInProgress || mOwnIdentityFetchInProgress)
 				return;
 			
-			if((ownIdentities && mLastOwnIdentityFetchTime == 0) || (!ownIdentities && mLastIdentityFetchTime == 0))
+			if((ownIdentities && mLastOwnIdentityFetchID == 0) || (!ownIdentities && mLastIdentityFetchID == 0))
 				return;
 
-			/* Executing the thread loop once will always take longer than THREAD_PERIOD. Therefore, if we set the limit to 3*THREAD_PERIOD,
-			 * it will hit identities which were last received before more than 2*THREAD_LOOP, not exactly 3*THREAD_LOOP. */
-			long lastAcceptTime = (ownIdentities ? mLastOwnIdentityFetchTime : mLastIdentityFetchTime) - GARBAGE_COLLECT_DELAY;
-			lastAcceptTime = Math.max(lastAcceptTime, 0); // This is not really needed but a time less than 0 does not make sense.;
+			long acceptID = ownIdentities ? mLastOwnIdentityFetchID : mLastIdentityFetchID;
 
 			Query q = db.query();
 			if(ownIdentities)
@@ -870,7 +886,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				q.constrain(WoTOwnIdentity.class).not();
 			}
 			
-			q.descend("mLastReceivedFromWoT").constrain(lastAcceptTime).smaller();
+			q.descend("mLastReceivedFromWoT").constrain(acceptID).not();
 			ObjectSet<WoTIdentity> result = q.execute();
 
 			for(WoTIdentity identity : result) {
