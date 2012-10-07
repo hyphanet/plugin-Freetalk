@@ -1112,7 +1112,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	private final class WebOfTrustCache {
 		public static final long EXPIRATION_DELAY = 5 * 60 * 1000;
 		
-		private final class TrustKey {
+		private final class TrustKey implements Comparable<TrustKey> {
 			public final String mTrusterID;
 			public final String mTrusteeID;
 			
@@ -1135,6 +1135,13 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			@Override
 			public int hashCode() {
 				return mTrusterID.hashCode() ^ mTrusteeID.hashCode();
+			}
+
+			@Override
+			public int compareTo(TrustKey o) {
+				int cmp = mTrusterID.compareTo(o.mTrusterID);
+				if(cmp != 0) return cmp;
+				return mTrusteeID.compareTo(o.mTrusteeID);
 			}
 		}
 		
