@@ -35,6 +35,11 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) 
 			throws ToadletContextClosedException, IOException, RedirectException {
+		if(!ctx.isAllowedFullAccess()) {
+			sendUnauthorizedPage(ctx);
+			return;
+		}
+		
 		String ret;
 		WebPage page = makeWebPage(req, ctx);
 		ret = page.toHTML(ctx);
@@ -42,6 +47,10 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 	}
 	
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		if(!ctx.isAllowedFullAccess()) {
+			sendUnauthorizedPage(ctx);
+			return;
+		}
 		
 		String pass = request.getPartAsString("formPassword", 32);
 		if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
