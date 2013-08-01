@@ -178,8 +178,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				new FreenetURI(result.params.get("InsertURI")),
 				newNickname, autoSubscribeToNewBoards, displayImages);
 		
-		identity.setLastReceivedFromWoT(mLastOwnIdentityFetchID);
 		identity.initializeTransient(mFreetalk);
+		identity.setLastReceivedFromWoT(mLastOwnIdentityFetchID);
 		
 		Logger.normal(this, "Created WoTOwnidentity via FCP, now storing... " + identity);
 		
@@ -224,8 +224,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				new FreenetURI(result.params.get("InsertURI")),
 				newNickname, autoSubscribeToNewBoards, displayImages);
 		
-		identity.setLastReceivedFromWoT(mLastOwnIdentityFetchID);
 		identity.initializeTransient(mFreetalk);
+		identity.setLastReceivedFromWoT(mLastOwnIdentityFetchID);
 		
 		Logger.normal(this, "Created WoTOwnidentity via FCP, now storing... " + identity);
 		
@@ -721,8 +721,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				final WoTIdentity id = ownIdentity ? new WoTOwnIdentity(identityID, new FreenetURI(requestURI), new FreenetURI(insertURI), nickname) :
 					new WoTIdentity(identityID, new FreenetURI(requestURI), nickname);
 
-				id.setLastReceivedFromWoT(fetchID);
 				id.initializeTransient(mFreetalk);
+				id.setLastReceivedFromWoT(fetchID);
 				id.storeWithoutCommit();
 
 				onNewIdentityAdded(id);
