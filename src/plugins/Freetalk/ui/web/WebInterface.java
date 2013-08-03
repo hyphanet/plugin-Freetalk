@@ -267,10 +267,8 @@ public final class WebInterface {
 		/** Log an user in from a POST and redirect to the BoardsPage */
 		@Override
 		public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-			if(!ctx.isAllowedFullAccess()) {
-				sendUnauthorizedPage(ctx);
-				return;
-			}
+		    if(!ctx.checkFullAccess(this))
+		        return;
 			
 			String pass = request.getPartAsString("formPassword", 32);
 			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
@@ -310,10 +308,8 @@ public final class WebInterface {
 		}
 		
 		public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext context) throws ToadletContextClosedException, IOException, RedirectException {
-			if(!context.isAllowedFullAccess()) {
-				sendUnauthorizedPage(context);
-				return;
-			}
+		    if(!context.checkFullAccess(this))
+		        return;
 			
 			String pass = request.getPartAsStringFailsafe("formPassword", 32);
 			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
@@ -596,10 +592,8 @@ public final class WebInterface {
 		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 			// ATTENTION: The same code is used in WoT's WebInterface.java. Please synchronize any changes which happen there.
 			
-			if(!ctx.isAllowedFullAccess()) {
-				sendUnauthorizedPage(ctx);
-				return;
-			}
+		    if(!ctx.checkFullAccess(this))
+		        return;
 			
 			WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 			
@@ -694,10 +688,8 @@ public final class WebInterface {
 		 */
 		@Override
 		public void handleMethodGET(URI uri, HTTPRequest httpRequest, ToadletContext context) throws ToadletContextClosedException, IOException, RedirectException {
-			if(!context.isAllowedFullAccess()) {
-				sendUnauthorizedPage(context);
-				return;
-			}
+		    if(!context.checkFullAccess(this))
+		        return;
 			
 			InputStream cssInputStream = null;
 			ByteArrayOutputStream cssBufferOutputStream = null;
