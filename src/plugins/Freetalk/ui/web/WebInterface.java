@@ -12,27 +12,27 @@ import java.net.URISyntaxException;
 import java.net.URLConnection;
 
 import plugins.Freetalk.Board;
-import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.Freetalk;
+import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
+import plugins.Freetalk.WoT.WoTIdentityManager.IntroductionPuzzle;
 import plugins.Freetalk.WoT.WoTMessage;
 import plugins.Freetalk.WoT.WoTMessageManager;
 import plugins.Freetalk.WoT.WoTOwnIdentity;
-import plugins.Freetalk.WoT.WoTIdentityManager.IntroductionPuzzle;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.filter.ContentFilter;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SessionManager;
+import freenet.clients.http.SessionManager.Session;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
-import freenet.clients.http.SessionManager.Session;
-import freenet.client.filter.ContentFilter;
 import freenet.l10n.BaseL10n;
 import freenet.node.NodeClientCore;
 import freenet.support.Logger;
@@ -267,6 +267,9 @@ public final class WebInterface {
 		/** Log an user in from a POST and redirect to the BoardsPage */
 		@Override
 		public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		    if(!ctx.checkFullAccess(this))
+		        return;
+			
 			String pass = request.getPartAsString("formPassword", 32);
 			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
 				writeHTMLReply(ctx, 403, "Forbidden", "Invalid form password.");
@@ -305,6 +308,9 @@ public final class WebInterface {
 		}
 		
 		public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext context) throws ToadletContextClosedException, IOException, RedirectException {
+		    if(!context.checkFullAccess(this))
+		        return;
+			
 			String pass = request.getPartAsStringFailsafe("formPassword", 32);
 			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
 				writeHTMLReply(context, 403, "Forbidden", "Invalid form password.");
@@ -584,8 +590,10 @@ public final class WebInterface {
 		}
 
 		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-			
 			// ATTENTION: The same code is used in WoT's WebInterface.java. Please synchronize any changes which happen there.
+			
+		    if(!ctx.checkFullAccess(this))
+		        return;
 			
 			WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 			
@@ -680,6 +688,9 @@ public final class WebInterface {
 		 */
 		@Override
 		public void handleMethodGET(URI uri, HTTPRequest httpRequest, ToadletContext context) throws ToadletContextClosedException, IOException, RedirectException {
+		    if(!context.checkFullAccess(this))
+		        return;
+			
 			InputStream cssInputStream = null;
 			ByteArrayOutputStream cssBufferOutputStream = null;
 			byte[] cssBuffer = new byte[0];
@@ -757,15 +768,15 @@ public final class WebInterface {
 		statisticsToadlet = new StatisticsToadlet(null, this, clientCore, "Statistics");
 		logOutToadlet = new LogOutWebInterfaceToadlet(null, this, clientCore, "LogOut");
 
-		container.register(homeToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/", true, "WebInterface.DiscussionMenuItem.Home", "WebInterface.DiscussionMenuItem.Home.Tooltip", false, homeToadlet);
-		container.register(logInToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/LogIn", true, "WebInterface.DiscussionMenuItem.LogIn", "WebInterface.DiscussionMenuItem.LogIn.Tooltip", false, logInToadlet);
-		container.register(subscribedBoardsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/SubscribedBoards", true, "WebInterface.DiscussionMenuItem.SubscribedBoards", "WebInterface.DiscussionMenuItem.SubscribedBoards.Tooltip", false, subscribedBoardsToadlet);
-		container.register(selectBoardsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/SelectBoards", true, "WebInterface.DiscussionMenuItem.SelectBoards", "WebInterface.DiscussionMenuItem.SelectBoards.Tooltip", false, selectBoardsToadlet);
-		container.register(outboxToadlet, "WebInterface.DiscussionMenuName", OutboxPage.getURI(), true, "WebInterface.DiscussionMenuItem.Outbox", "WebInterface.DiscussionMenuItem.Outbox.Tooltip", false, outboxToadlet);
-		container.register(identitiesToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/identities", true, "WebInterface.DiscussionMenuItem.Identities", "WebInterface.DiscussionMenuItem.Identities.Tooltip", false, identitiesToadlet);
-		container.register(settingsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/Settings", true, "WebInterface.DiscussionMenuItem.Settings", "WebInterface.DiscussionMenuItem.Settings.Tooltip", false, settingsToadlet);
+		container.register(homeToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/", true, "WebInterface.DiscussionMenuItem.Home", "WebInterface.DiscussionMenuItem.Home.Tooltip", true, homeToadlet);
+		container.register(logInToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/LogIn", true, "WebInterface.DiscussionMenuItem.LogIn", "WebInterface.DiscussionMenuItem.LogIn.Tooltip", true, logInToadlet);
+		container.register(subscribedBoardsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/SubscribedBoards", true, "WebInterface.DiscussionMenuItem.SubscribedBoards", "WebInterface.DiscussionMenuItem.SubscribedBoards.Tooltip", true, subscribedBoardsToadlet);
+		container.register(selectBoardsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/SelectBoards", true, "WebInterface.DiscussionMenuItem.SelectBoards", "WebInterface.DiscussionMenuItem.SelectBoards.Tooltip", true, selectBoardsToadlet);
+		container.register(outboxToadlet, "WebInterface.DiscussionMenuName", OutboxPage.getURI(), true, "WebInterface.DiscussionMenuItem.Outbox", "WebInterface.DiscussionMenuItem.Outbox.Tooltip", true, outboxToadlet);
+		container.register(identitiesToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/identities", true, "WebInterface.DiscussionMenuItem.Identities", "WebInterface.DiscussionMenuItem.Identities.Tooltip", true, identitiesToadlet);
+		container.register(settingsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/Settings", true, "WebInterface.DiscussionMenuItem.Settings", "WebInterface.DiscussionMenuItem.Settings.Tooltip", true, settingsToadlet);
 		container.register(statisticsToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/Statistics", true, "WebInterface.DiscussionMenuItem.Statistics", "WebInterface.DiscussionMenuItem.Statistics.Tooltip", true, statisticsToadlet);
-		container.register(logOutToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/LogOut", true, "WebInterface.DiscussionMenuItem.LogOut", "WebInterface.DiscussionMenuItem.LogOut.Tooltip", false, logOutToadlet);
+		container.register(logOutToadlet, "WebInterface.DiscussionMenuName", Freetalk.PLUGIN_URI+"/LogOut", true, "WebInterface.DiscussionMenuItem.LogOut", "WebInterface.DiscussionMenuItem.LogOut.Tooltip", true, logOutToadlet);
 		
 		// Invisible pages
 		createIdentityToadlet = new CreateIdentityWebInterfaceToadlet(null, this, clientCore, "CreateIdentity");
@@ -781,19 +792,19 @@ public final class WebInterface {
 		introduceIdentityToadlet = new IntroduceIdentityWebInterfaceToadlet(null, this, clientCore, "IntroduceIdentity");
 		cssToadlet = new CSSWebInterfaceToadlet(null, this, clientCore, "CSS");
 		
-		container.register(logInToadlet, null, Freetalk.PLUGIN_URI + "/LogIn", true, false);
-		container.register(createIdentityToadlet, null, Freetalk.PLUGIN_URI + "/CreateIdentity", true, false);
-		container.register(newThreadToadlet, null, Freetalk.PLUGIN_URI + "/NewThread", true, false);
-		container.register(showBoardToadlet, null, Freetalk.PLUGIN_URI + "/showBoard", true, false);
-		container.register(showThreadToadlet, null, Freetalk.PLUGIN_URI + "/showThread", true, false);
-		container.register(showNotFetchedMessagesToadlet, null, Freetalk.PLUGIN_URI + "/showNotFetchedMessages", true, false);
-		container.register(newReplyToadlet, null, Freetalk.PLUGIN_URI + "/NewReply", true, false);
-		container.register(newBoardToadlet, null, Freetalk.PLUGIN_URI + "/NewBoard", true, false);
-		container.register(deleteEmptyBoardsToadlet, null, Freetalk.PLUGIN_URI + "/DeleteEmptyBoards", true, false);
-		container.register(changeTrustToadlet, null, Freetalk.PLUGIN_URI + "/ChangeTrust", true, false);
-		container.register(getPuzzleToadlet, null, Freetalk.PLUGIN_URI + "/GetPuzzle", true, false);
-		container.register(introduceIdentityToadlet, null, Freetalk.PLUGIN_URI + "/IntroduceIdentity", true, false);
-		container.register(cssToadlet, null, Freetalk.PLUGIN_URI + "/css/", true, false);
+		container.register(logInToadlet, null, Freetalk.PLUGIN_URI + "/LogIn", true, true);
+		container.register(createIdentityToadlet, null, Freetalk.PLUGIN_URI + "/CreateIdentity", true, true);
+		container.register(newThreadToadlet, null, Freetalk.PLUGIN_URI + "/NewThread", true, true);
+		container.register(showBoardToadlet, null, Freetalk.PLUGIN_URI + "/showBoard", true, true);
+		container.register(showThreadToadlet, null, Freetalk.PLUGIN_URI + "/showThread", true, true);
+		container.register(showNotFetchedMessagesToadlet, null, Freetalk.PLUGIN_URI + "/showNotFetchedMessages", true, true);
+		container.register(newReplyToadlet, null, Freetalk.PLUGIN_URI + "/NewReply", true, true);
+		container.register(newBoardToadlet, null, Freetalk.PLUGIN_URI + "/NewBoard", true, true);
+		container.register(deleteEmptyBoardsToadlet, null, Freetalk.PLUGIN_URI + "/DeleteEmptyBoards", true, true);
+		container.register(changeTrustToadlet, null, Freetalk.PLUGIN_URI + "/ChangeTrust", true, true);
+		container.register(getPuzzleToadlet, null, Freetalk.PLUGIN_URI + "/GetPuzzle", true, true);
+		container.register(introduceIdentityToadlet, null, Freetalk.PLUGIN_URI + "/IntroduceIdentity", true, true);
+		container.register(cssToadlet, null, Freetalk.PLUGIN_URI + "/css/", true, true);
 	}
 	
 	
