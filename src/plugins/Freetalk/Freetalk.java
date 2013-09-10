@@ -407,7 +407,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		
 		if(backupFile.exists()) {
 			try {
-				FileUtil.secureDelete(databaseFile, mPluginRespirator.getNode().fastWeakRandom);
+				FileUtil.secureDelete(databaseFile);
 			} catch(IOException e) {
 				Logger.warning(this, "Deleting of the database failed: " + databaseFile.getAbsolutePath());
 			}
@@ -468,7 +468,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		}	
 
 		final File tmpFile = new File(databaseFile.getAbsolutePath() + ".temp");
-		FileUtil.secureDelete(tmpFile, random);
+		FileUtil.secureDelete(tmpFile);
 
 		/* As opposed to the default, BTreeIDMapping uses an on-disk file instead of in-memory for mapping IDs. 
 		/* Reduces memory usage during defragmentation while being slower.
