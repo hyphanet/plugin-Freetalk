@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import java.util.Date;
-
 import freenet.support.Logger;
 
 /**
