@@ -2,6 +2,8 @@
 <!-- ant build file for Freetalk -->
 
 <project name="Freetalk" default="dist" basedir=".">
+	<property file="override.properties"/>
+	
 	<property name="freenet-cvs-snapshot.location" location="../fred/dist/freenet.jar"/>
 	<!-- you can modify and uncomment the following line if you want to experiment with newer db4o versions without recompiling freenet-ext.jar -->
 	<!-- <property name="db4o.location" location="../fred/db4o-7.12/lib/db4o-7.12.145.14409-all-java5.jar"/> -->
