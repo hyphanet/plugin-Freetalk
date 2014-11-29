@@ -615,14 +615,14 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	}
 	
 	public synchronized void handleWotConnected() {
-		if(logDEBUG) Logger.debug(this, "Connected to WoT plugin.");
+		Logger.normal(this, "Connected to WoT plugin.");
 		wotConnected = true;
 	}
 	
 	private boolean wotConnected;
 	
 	public synchronized void handleWotDisconnected() {
-		if(logDEBUG) Logger.debug(this, "Disconnected from WoT plugin");
+		Logger.normal(this, "Disconnected from WoT plugin");
 		wotConnected = false;
 	}
 	
