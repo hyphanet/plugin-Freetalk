@@ -41,6 +41,7 @@ public interface Identity {
 				throw new IllegalArgumentException("ID is too long, length: " + id.length());
 			
 			try {
+				@SuppressWarnings("unused")
 				final byte[] routingKey = Base64.decode(id);
 				// TODO: Implement, its not important right now: FreenetURI.throwIfInvalidRoutingKey(routingKey)
 			} catch (IllegalBase64Exception e) {
