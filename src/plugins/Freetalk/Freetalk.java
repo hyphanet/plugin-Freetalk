@@ -6,8 +6,6 @@ package plugins.Freetalk;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.Random;
-
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTMessage;
@@ -131,6 +129,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
 	
 	private static transient volatile boolean logDEBUG = false;
+	@SuppressWarnings("unused")
 	private static transient volatile boolean logMINOR = false;
 	
 	static {
@@ -437,7 +436,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			return;
 		}
 		
-		final Random random = mPluginRespirator.getNode().fastWeakRandom;
+		mPluginRespirator.getNode();
 		
 		// Open it first, because defrag will throw if it needs to upgrade the file.
 		{
@@ -515,8 +514,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			}
 		} else {
 			final double change = 100.0 * (((double)(oldSize - newSize)) / ((double)oldSize));
-			FileUtil.secureDelete(tmpFile, random);
-			FileUtil.secureDelete(backupFile, random);
+			FileUtil.secureDelete(tmpFile);
+			FileUtil.secureDelete(backupFile);
 			Logger.normal(this, "Defragment completed. "+SizeUtil.formatSize(oldSize)+" ("+oldSize+") -> "
 					+SizeUtil.formatSize(newSize)+" ("+newSize+") ("+(int)change+"% shrink)");
 		}
