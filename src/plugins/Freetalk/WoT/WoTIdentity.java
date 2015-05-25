@@ -232,7 +232,7 @@ public class WoTIdentity extends Persistent implements Identity {
 			checkedDelete();
 			
 			checkedActivate(mRequestURI, 2);
-			mRequestURI.removeFrom(mDB);
+			mDB.delete(mRequestURI);
 		}
 		catch(RuntimeException e) {
 			checkedRollbackAndThrow(e);

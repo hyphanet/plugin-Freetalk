@@ -278,7 +278,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 				
 				if(mURI != null) {
 					checkedActivate(mURI, 2);
-					mURI.removeFrom(mDB);
+					mDB.delete(mURI);
 				}
 				else
 					Logger.error(this, "Should not happen: URI is null for " + this);

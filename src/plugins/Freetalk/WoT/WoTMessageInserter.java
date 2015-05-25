@@ -27,16 +27,21 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.client.InsertException.InsertExceptionMode;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Periodically wakes up and inserts messages as CHK. The CHK URIs are then stored in the messages.
@@ -72,6 +77,8 @@ public final class WoTMessageInserter extends MessageInserter {
 	private final HashSet<String> mMessageIDs = new HashSet<String>(2*ESTIMATED_PARALLEL_MESSAGE_INSERT_COUNT);
 	
 	private final WoTMessageXML mXML;
+
+	private RequestClient requestClient;
 	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
 	
@@ -89,6 +96,7 @@ public final class WoTMessageInserter extends MessageInserter {
 		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
 		mXML = myMessageXML;
+		requestClient = myMessageManager.mRequestClient;
 	}
 
 	@Override
@@ -139,7 +147,7 @@ public final class WoTMessageInserter extends MessageInserter {
 	 * You have to synchronize on this <code>WoTMessageInserter</code> when using this function.
 	 */
 	protected void insertMessage(OwnMessage m) throws InsertException, IOException, TransformerException, ParserConfigurationException {
-		Bucket tempB = mTBF.makeBucket(2048 + m.getText().length()); /* TODO: set to a reasonable value */
+		RandomAccessBucket tempB = mTBF.makeBucket(2048 + m.getText().length()); /* TODO: set to a reasonable value */
 		OutputStream os = null;
 		
 		try {
@@ -152,7 +160,7 @@ public final class WoTMessageInserter extends MessageInserter {
 			InsertBlock ib = new InsertBlock(tempB, null, m.getInsertURI());
 			InsertContext ictx = mClient.getInsertContext(true);
 
-			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+			ClientPutter pu = mClient.insert(ib, null, false, ictx, this, RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 			addInsert(pu);
 			mPutterMessageIDs.put(pu, m.getID());
 			mMessageIDs.add(m.getID());
@@ -176,14 +184,14 @@ public final class WoTMessageInserter extends MessageInserter {
 		for(Map.Entry<BaseClientPutter, String> entry : mPutterMessageIDs.entrySet()) {
 			if(messageID.equals(entry.getValue())) {
 				// The following will call onFailure which removes the request from mMessageIDs / mPutterMessageIDs
-				entry.getKey().cancel(null, mClientContext);
+				entry.getKey().cancel(mClientContext);
 				break;
 			}
 		}
 	}
 
 	@Override
-	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
+	public synchronized void onSuccess(BaseClientPutter state) {
 		try {
 			mMessageManager.onOwnMessageInserted(mPutterMessageIDs.get(state), state.getURI());
 		}
@@ -197,9 +205,9 @@ public final class WoTMessageInserter extends MessageInserter {
 	}
 	
 	@Override
-	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
+	public synchronized void onFailure(InsertException e, BaseClientPutter state) {
 		try {
-			if(e.getMode() == InsertException.CANCELLED)
+			if(e.getMode() == InsertExceptionMode.COLLISION)
 				Logger.normal(this, "Message insert cancelled for " + state.getURI());
 			else if(e.isFatal())
 				Logger.error(this, "Message insert failed", e);
@@ -235,25 +243,31 @@ public final class WoTMessageInserter extends MessageInserter {
 	/* Not needed functions*/
 	
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) { }
+	public void onSuccess(FetchResult result, ClientGetter state) { }
 	
 	@Override
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) { }
+	public void onFailure(FetchException e, ClientGetter state) { }
 	
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
 	
 	@Override
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }
+	public void onFetchable(BaseClientPutter state) { }
 
 	@Override
-	public void onMajorProgress(ObjectContainer container) { }
-
-	@Override
-	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
-			ObjectContainer container) {
+	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		metadata.free();
 		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void onResume(ClientContext context) throws ResumeFailedException {
+		// FIXME: do we need to do something here?
+	}
+
+	@Override
+	public RequestClient getRequestClient() {
+		return requestClient;
 	}
 	
 }

@@ -163,7 +163,7 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 			super.deleteWithoutCommit();
 			
 			checkedActivate(mInsertURI, 2);
-			mInsertURI.removeFrom(mDB);
+			mDB.delete(mInsertURI);
 		}
 		catch(RuntimeException e) {
 			checkedRollbackAndThrow(e);

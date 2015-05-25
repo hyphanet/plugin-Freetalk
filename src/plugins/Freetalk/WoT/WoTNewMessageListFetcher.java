@@ -449,7 +449,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	}
 	
 	private void abortFetch(USKRetriever retriever) {
-		retriever.cancel(null, mClientContext);
+		retriever.cancel(mClientContext);
 		mUSKManager.unsubscribeContent(retriever.getOriginalUSK(), retriever, true);
 	}
 	
@@ -468,7 +468,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		USKRetriever[] retrievers = mRequests.values().toArray(new USKRetriever[mRequests.size()]);		
 		int counter = 0;		 
 		for(USKRetriever r : retrievers) {
-			r.cancel(null, mClientContext);
+			r.cancel(mClientContext);
 			mUSKManager.unsubscribeContent(r.getOriginalUSK(), r, true);
 			 ++counter;
 		}

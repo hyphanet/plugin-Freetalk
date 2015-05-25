@@ -149,7 +149,7 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 			checkedDelete();
 			
 			checkedActivate(mFreenetURI, 2);
-			mFreenetURI.removeFrom(mDB);
+			mDB.delete(mFreenetURI);
 		}
 		catch(RuntimeException e) {
 			checkedRollbackAndThrow(e);

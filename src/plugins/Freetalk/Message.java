@@ -263,7 +263,7 @@ public abstract class Message extends Persistent {
 				checkedDelete();
 				
 				checkedActivate(mURI, 2);
-				mURI.removeFrom(mDB);
+				mDB.delete(mURI);
 			}
 			catch(RuntimeException e) {
 				checkedRollbackAndThrow(e);
@@ -1241,7 +1241,7 @@ public abstract class Message extends Persistent {
 			if(mFreenetURI != null) {
 				// It's a FreenetURI so there is no transient initialization
 				checkedActivate(mFreenetURI, 2);
-				mFreenetURI.removeFrom(mDB);
+				mDB.delete(mFreenetURI);
 			}
 			if(mURI != null) {
 				mURI.initializeTransient(mFreetalk);
