@@ -26,7 +26,8 @@ import freenet.support.codeshortification.IfNull;
  * Represents a forum / newsgroups / discussion board in Freetalk. Boards are created by the <code>MessageManager</code> on demand, you do
  * not need to manually create them. The <code>MessageManager</code> takes care of anything related to boards, to someone who just wants to
  * write a user interface this class can be considered as read-only.
- *
+ * 
+ * {@docRoot}
  * @author xor (xor@freenetproject.org)
  */
 @IndexedClass // TODO: Check whether we need the index
@@ -35,24 +36,14 @@ public class Board extends Persistent implements Comparable<Board> {
     /* Constants */
 
     private static transient final Map<String, ISO639_3.LanguageCode> ALLOWED_LANGUAGES = Collections.unmodifiableMap(loadAllowedLanguages());
-
-    // Characters not allowed in board names:
-    //  ! , ? * [ \ ] (space)  not allowed by NNTP
-    //  / : < > | "            not allowed in filenames on certain platforms
-    //                         (a problem for some newsreaders)
     private static transient final String DISALLOWED_NAME_CHARACTERS = "!,?*[\\] /:<>|\"";
-
     public static transient final int MAX_BOARDNAME_TEXT_LENGTH = 256;
-
-
-    /* Attributes, stored in the database */
     
+    /* Attributes, stored in the database */
     @IndexedField
     private final String mID;
-
     @IndexedField
     private final String mName;
-    
     private String mDescription;
     
     /** True if at least one {@link SubscribedBoard} for this Board exists, i.e. if we should download messages of this board. */
