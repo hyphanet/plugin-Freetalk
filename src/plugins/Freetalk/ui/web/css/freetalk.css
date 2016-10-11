@@ -1,0 +1,266 @@
+/* Freetalk Main CSS Header File */
+
+/* General stuff */
+
+.freetalk * .button-row {
+	float: left;
+	margin-right: 1ex;
+}
+
+.freetalk * .button-row-button {
+	float: left;
+	display: inline;
+}
+
+/* Not fetched messages page */ 
+
+.freetalk * .messages .messages-table {
+	width: 100%;
+}
+
+.freetalk * .messages .messages-table .message-row {
+	height: 1.1em;
+}
+
+.freetalk * .messages .messages-table .uri {
+	overflow: hidden;
+	display: block;
+}
+
+.freetalk * .messages .messages-table .author-name {
+	text-align: left;
+	white-space: nowrap;
+}
+.freetalk * .messages .messages-table .author-score {
+	text-align: right;
+}
+
+.freetalk * .messages .messages-table .date {
+	text-align: center;
+	white-space: nowrap;
+}
+
+.freetalk * .messages .messages-table .failed-fetches {
+	text-align: right;
+}
+
+.freetalk * .messages .messages-table .failure-reason {
+	text-align: center;
+}
+
+/* SelectBoardsPage & BoardsPage */
+
+.freetalk * .boards-table .language-cell {
+	text-align: left;
+	white-space: nowrap;
+}
+
+.freetalk * .boards-table .name-cell {
+	text-align: left;
+	word-wrap: break-word;
+	word-break: break-all; 
+	overflow: hidden;
+	max-width: 400px;
+}
+
+.freetalk * .boards-table .description-cell {
+	text-align: left;
+}
+
+.freetalk * .boards-table .first-seen-cell {
+	text-align: center;
+	white-space: nowrap;
+}
+
+.freetalk * .boards-table .latest-message-cell {
+	text-align: center;
+	white-space: nowrap;
+}
+
+.freetalk * .boards-table .message-count-cell {
+	text-align: center;
+}
+
+.freetalk * .boards-table .unread-count-cell {
+	text-align: center;
+}
+
+.freetalk * .boards-table .unread-count-0-cell {
+	text-align: center;
+}
+
+/* Threads page */
+
+.freetalk * .threads .button-row .new-thread-button {
+	float: left;
+}
+.freetalk * .threads .button-row .mark-all-read-button {
+	float: right;
+}
+
+.freetalk * .threads .button-row .mark-all-unread-button {
+	float: right;
+}
+
+.freetalk * .threads .button-row .show-not-fetched-button {
+	float: right;
+}
+
+.freetalk * .threads .threads-table {
+	width: 100%;
+}
+
+.freetalk * .threads .threads-table .thread-row {
+	height: 1.1em;
+}
+
+/* removed because it didn't help with too long titles:	display: block; */
+
+.freetalk * .threads .threads-table .title-read {
+	word-wrap: break-word;
+	word-break: break-all; 
+	overflow: hidden;
+	max-width: 500px;
+}
+
+/* removed because it didn't help with too long titles:	display: block; */
+
+.freetalk * .threads .threads-table .title-unread {
+	word-wrap: break-word;
+	word-break: break-all;
+	overflow: hidden;
+	max-width: 500px;
+	font-weight: bold;
+}
+
+.freetalk * .threads .threads-table .author-name {
+	text-align: left;
+	white-space: nowrap;
+}
+.freetalk * .threads .threads-table .author-score {
+	text-align: right;
+}
+
+.freetalk * .threads .threads-table .date {
+	text-align: center;
+	white-space:nowrap;
+}
+
+.freetalk * .threads .threads-table .reply-count {
+	text-align: right;
+}
+
+.freetalk * .threads .threads-table .unread-count {
+	text-align: right;
+	font-weight: bold;
+}
+
+.freetalk * .threads .threads-table .unread-count-0 {
+	text-align: right;
+}
+
+/* Thread page */
+
+.freetalk .message {
+	table-layout: fixed;
+	width: 100%;
+}
+
+.freetalk .message .author .name {
+	font-weight: bold;
+	font-style: italic;
+}
+
+.freetalk .message .author .trust-count {
+	color: #0c0;
+}
+
+.freetalk .message .author .distrust-count {
+	color: #c00;
+}
+
+.freetalk .message .title {
+	height: 1.2em;
+}
+
+.freetalk .message .title.unread {
+	background-color: #ddd;
+}
+
+.freetalk .message .title .date {
+	float: right;
+	margin-left: 1ex;
+}
+
+.freetalk .message .title .text {
+	font-weight: bold;
+}
+
+.freetalk .message .title .mark-unread-button {
+	float: right;
+}
+
+.freetalk .message .body {
+	white-space: pre-wrap;
+	vertical-align: top;
+}
+
+.freetalk .message .body .quote {
+	background-color: #eaeaea;
+	border-style: dashed;
+	border-width: 1px;
+	border-color: #000;
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+	margin-left: 1em;
+	padding: 0.5em;
+}
+
+.freetalk .message .body .quote .author {
+	font-weight: bold;
+	margin-bottom: 0.1em;
+}
+
+.freetalk .message .body .code {
+	font-family: monospace;
+	background-color: #fff;
+	border-style: dashed;
+	border-width: 1px;
+	border-color: #000;
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+	padding: 0.5em;
+}
+
+.freetalk .message .body .error {
+	color: #f00;
+}
+
+
+/* Outbox page */
+
+.freetalk * .outbox .outbox-table {
+	width: 100%;
+}
+
+.freetalk * .outbox .outbox-table .message-row {
+	height: 1.1em;
+}
+
+.freetalk * .outbox .outbox-table .message-row .boards {
+	text-align: left;
+}
+.freetalk * .outbox .outbox-table .message-row .title {
+	text-align: left;
+}
+
+.freetalk * .outbox .outbox-table .message-row .date {
+	text-align: center;
+	white-space: nowrap;
+}
+
+.freetalk * .outbox .outbox-table .message-row .delete {
+	text-align: center;
+}
+
+
