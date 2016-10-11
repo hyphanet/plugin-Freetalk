@@ -63,7 +63,7 @@ public final class Configuration extends Persistent {
 	private static transient volatile boolean logMINOR = false;
 	
 	static {
-		Logger.registerClass(Configuration.class);
+		java.util.logging.Logger.registerClass(Configuration.class);
 	}
 	
 
