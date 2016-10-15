@@ -160,7 +160,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		mTaskManager = new PersistentTaskManager(this, db);
 	}
 
-	public void runPlugin(PluginRespirator myPR) {
+	@Override public void runPlugin(PluginRespirator myPR) {
 		try {
 		Logger.normal(this, "Plugin starting up...");
 
@@ -634,7 +634,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		return false;
 	}
 
-	public void terminate() {
+	@Override public void terminate() {
 		if(logDEBUG) Logger.debug(this, "Terminating Freetalk ...");
 		
 		/* We use single try/catch blocks so that failure of termination of one service does not prevent termination of the others */
@@ -728,7 +728,9 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		if(logDEBUG) Logger.debug(this, "Freetalk plugin terminated.");
 	}
 	
-	public void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
+	@Override public void handle(
+			PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) {
+		
 		mFCPInterface.handle(replysender, params, data, accesstype);
 	}
 	
@@ -772,11 +774,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		return mMessageFetcher;
 	}	
 
-	public String getVersion() {
+	@Override public String getVersion() {
 		return Version.longVersionString;
 	}
-	
-	public long getRealVersion() {
+
+	@Override public long getRealVersion() {
 		return Version.getRealVersion();
 	}
 
@@ -786,7 +788,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
      * @param arg0
      * @return
      */
-    public String getString(String arg0) {
+    @Override public String getString(String arg0) {
         return getBaseL10n().getString(arg0);
     }
 
@@ -796,12 +798,12 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
      * selects another language in the UI.
      * @param newLanguage Language to use.
      */
-    public void setLanguage(final BaseL10n.LANGUAGE newLanguage) {
+    @Override public void setLanguage(final BaseL10n.LANGUAGE newLanguage) {
         Freetalk.l10n = new PluginL10n(this, newLanguage);
         if(logDEBUG) Logger.debug(this, "Set LANGUAGE to: " + newLanguage.isoCode);
     }
 
-	public void setTheme(THEME newTheme) {
+	@Override public void setTheme(THEME newTheme) {
 		mTheme = newTheme;
 		if(logDEBUG) Logger.debug(this, "Set THEME to: " + mTheme.code);
 	}
@@ -810,7 +812,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
      * This is where our L10n files are stored.
      * @return Path of our L10n files.
      */
-    public String getL10nFilesBasePath() {
+    @Override public String getL10nFilesBasePath() {
         return "plugins/Freetalk/l10n/";
     }
 
@@ -818,7 +820,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
      * This is the mask of our L10n files : lang_en.l10n, lang_de.10n, ...
      * @return Mask of the L10n files.
      */
-    public String getL10nFilesMask() {
+    @Override public String getL10nFilesMask() {
         return "lang_${lang}.l10n";
     }
 
@@ -828,7 +830,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
      * override is not implemented in the node yet.
      * @return Mask of the override L10n files.
      */
-    public String getL10nOverrideFilesMask() {
+    @Override public String getL10nOverrideFilesMask() {
         return "Freetalk_lang_${lang}.override.l10n";
     }
 
@@ -837,7 +839,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
      * resources inside the plugin's Jar, for example L10n files.
      * @return
      */
-    public ClassLoader getPluginClassLoader() {
+    @Override public ClassLoader getPluginClassLoader() {
         return Freetalk.class.getClassLoader();
     }
     
