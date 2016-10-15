@@ -167,7 +167,7 @@ public abstract class Message extends Persistent {
 			mSize = mySize;
 		}
 
-		public void databaseIntegrityTest() throws Exception {
+		@Override public void databaseIntegrityTest() throws Exception {
 			checkedActivate(1);
 			
 			if(mMessage == null)
@@ -366,7 +366,7 @@ public abstract class Message extends Persistent {
 				throw new IllegalArgumentException("Message ID contains the wrong author ID (should be " + authorID  + "): " + mID);
 		}
 
-		public final String toString() {
+		@Override public final String toString() {
 			return mID;
 		}
 
@@ -378,7 +378,7 @@ public abstract class Message extends Persistent {
 			return mAuthorID;
 		}
 
-		public final boolean equals(final Object o) {
+		@Override public final boolean equals(final Object o) {
 			if(o instanceof MessageID)
 				return mID.equals(((MessageID)o).mID);
 
@@ -1165,7 +1165,7 @@ public abstract class Message extends Persistent {
 		}
 	}
 
-	public void storeWithoutCommit() {
+	@Override public void storeWithoutCommit() {
 		try {
 			// 1 is the maximum depth of all getter functions, except those for FreenetURI, which we manually activate.
 			// You have to adjust this when adding new members.
@@ -1224,7 +1224,7 @@ public abstract class Message extends Persistent {
 		}
 	}
 
-	protected void deleteWithoutCommit() {
+	@Override protected void deleteWithoutCommit() {
 		try {
 			checkedActivate(1);
 
@@ -1275,7 +1275,7 @@ public abstract class Message extends Persistent {
 		return getID().equals(otherMessage.getID());
 	}
 
-	public String toString() {
+	@Override public String toString() {
 		if(mDB != null) {
 			MessageURI threadURI;
 			MessageURI parentURI;
