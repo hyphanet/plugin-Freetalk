@@ -310,7 +310,7 @@ public final class IdentityStatistics extends Persistent {
 
 	// TODO: This is public since we need it in WoTMessageManager. It could be made private if WoTMessageManager.onMessageListFetchFailed
 	// called a method of MessageManager for calling this function instead of calling it directly.
-	public final void storeWithoutCommit() {
+	@Override public final void storeWithoutCommit() {
 		try {		
 			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(1);
