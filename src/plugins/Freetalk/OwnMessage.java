@@ -21,8 +21,8 @@ public abstract class OwnMessage extends Message {
 		super(myFreetalk, newURI, newFreenetURI, newID, newMessageList, newThreadURI, newParentURI, newBoards, newReplyToBoard, newAuthor, newTitle, newDate, newText,
 				newAttachments);
 	}
-	
-	public void databaseIntegrityTest() throws Exception {
+
+	@Override public void databaseIntegrityTest() throws Exception {
 		super.databaseIntegrityTest();
 		
 		checkedActivate(1);
@@ -62,7 +62,7 @@ public abstract class OwnMessage extends Message {
 	 * @throws RuntimeException If the message was not inserted yet and therefore the real URI is unknown.
 	 * @return The CHK URI of the message.
 	 */
-	public synchronized FreenetURI getFreenetURI() {
+	@Override public synchronized FreenetURI getFreenetURI() {
 		checkedActivate(1);
 		
 		if(mFreenetURI == null)
@@ -104,8 +104,8 @@ public abstract class OwnMessage extends Message {
 		}
 		storeWithoutCommit();
 	}
-	
-	public synchronized MessageList getMessageList() throws NoSuchMessageListException {
+
+	@Override public synchronized MessageList getMessageList() throws NoSuchMessageListException {
 		checkedActivate(1);
 		if(mMessageList == null)
 			throw new NoSuchMessageListException("");
@@ -155,7 +155,7 @@ public abstract class OwnMessage extends Message {
 		storeWithoutCommit();
 	}
 
-    public String toString() {
+	@Override public String toString() {
     	if(mDB != null) {
     		MessageURI uri = getURI();
     		if(uri != null)
