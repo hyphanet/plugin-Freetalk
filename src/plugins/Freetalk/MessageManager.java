@@ -141,12 +141,12 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 		mTicker = null;
 		mRandom = null;
 	}
-	
-	public int getPriority() {
+
+	@Override public int getPriority() {
 		return NativeThread.MIN_PRIORITY;
 	}
-	
-	public void run() {
+
+	@Override public void run() {
 		if(logDEBUG) Logger.debug(this, "Main loop running...");
 		
 		try {
@@ -164,11 +164,11 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	}
 	
 	private final Runnable mNewMessageProcessor = new PrioRunnable() {
-		public int getPriority() {
+		@Override public int getPriority() {
 			return NativeThread.NORM_PRIORITY;
 		}
-		
-		public void run() {
+
+		@Override public void run() {
 			if(logDEBUG) Logger.debug(MessageManager.this, "Processing new messages...");
 			
 			boolean success1 = addMessagesToBoards(); // Normally does not fail
@@ -480,7 +480,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	 * 
 	 * Creates a SubscribeToAllBoardsTask for the identity if auto-subscription to boards is enabled.
 	 */
-	public void onNewOwnIdentityAdded(OwnIdentity identity) {
+	@Override public void onNewOwnIdentityAdded(OwnIdentity identity) {
 		if(identity.wantsAutoSubscribeToNewBoards()) {
 			// We cannot subscribe to the boards here because we lack the lock to the MessageManager
 			mFreetalk.getTaskManager().storeTaskWithoutCommit(new SubscribeToAllBoardsTask(identity));
@@ -493,7 +493,7 @@ public abstract class MessageManager implements PrioRunnable, NewOwnIdentityCall
 	 * 
 	 * Deletes any messages and message lists referencing to it and commits the transaction.
 	 */
-	public synchronized void beforeIdentityDeletion(Identity identity) {
+	@Override public synchronized void beforeIdentityDeletion(Identity identity) {
 		if(logDEBUG) Logger.debug(this, "Deleting all objects of identity " + identity);
 		// We use multiple transactions here: We cannot acquire the Persistent.transactionLock(db) before deleteMessageRatting, board.deleteWithoutCommit and
 		// deleteMessage. Each of them synchronize on message ratings / boards, therefore we must acquire the db.lock after synchronizing on each object.
