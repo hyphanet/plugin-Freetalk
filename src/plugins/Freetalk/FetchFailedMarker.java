@@ -146,11 +146,11 @@ public class FetchFailedMarker extends Persistent {
 		mRetryAllowedNow = allowRetryNow;
 	}
 
-	public void storeWithoutCommit() {
+	@Override public void storeWithoutCommit() {
 		super.storeWithoutCommit(1);
 	}
-	
-	public void deleteWithoutCommit() {
+
+	@Override public void deleteWithoutCommit() {
 		super.deleteWithoutCommit(1);
 		// All members are db4o native types which we don't have to delete - 
 		// even mReason: Toad said that we do not have to delete enums on our own, db4o does the job.
