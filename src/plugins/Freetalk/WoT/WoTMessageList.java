@@ -28,26 +28,26 @@ public final class WoTMessageList extends MessageList {
 	public WoTMessageList(Freetalk myFreetalk, Identity myAuthor, FreenetURI myURI) {
 		super(myFreetalk, myAuthor, myURI);
 	}
-	
-	public void databaseIntegrityTest() throws Exception {
+
+	@Override public void databaseIntegrityTest() throws Exception {
 		super.databaseIntegrityTest();
 		
 		if(!(getAuthor() instanceof WoTIdentity))
 			throw new IllegalStateException("mAuthor == " + getAuthor());
 	}
-	
-	public WoTIdentity getAuthor() {
+
+	@Override public WoTIdentity getAuthor() {
 		checkedActivate(1);
 		final WoTIdentity author = (WoTIdentity)mAuthor;
 		author.initializeTransient(mFreetalk);
 		return author;
 	}
 
-	public FreenetURI getURI() {
+	@Override public FreenetURI getURI() {
 		return assembleURI(getAuthor().getRequestURI(), getIndex()).sskForUSK();
 	}
-	
-	protected FreenetURI generateURI(FreenetURI baseURI, long index) {
+
+	@Override protected FreenetURI generateURI(FreenetURI baseURI, long index) {
 		return assembleURI(baseURI, index);
 	}
 	
