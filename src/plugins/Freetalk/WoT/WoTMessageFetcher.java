@@ -125,8 +125,8 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	protected synchronized void iterate() {
 		fetchMessages();
 	}
-	
-	public int getRunningFetchCount() {
+
+	@Override public int getRunningFetchCount() {
 		return fetchCount();
 	}
 	
