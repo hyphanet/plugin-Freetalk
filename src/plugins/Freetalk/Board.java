@@ -147,7 +147,7 @@ public class Board extends Persistent implements Comparable<Board> {
      * 
      * Does not provide synchronization, you have to lock the MessageManager, this Board and then the database before calling this function.
      */
-    protected void storeWithoutCommit() {
+    @Override protected void storeWithoutCommit() {
     	super.storeWithoutCommit(1); // String, int, boolean are db4o primitive types, depth 1 is enough
     }
 
@@ -297,7 +297,7 @@ public class Board extends Persistent implements Comparable<Board> {
     /**
      * Compare boards by comparing their names; provided so we can sort an array of boards.
      */
-    public int compareTo(Board b) {
+    @Override public int compareTo(Board b) {
         return getName().compareTo(b.getName());
     }
     
@@ -419,7 +419,7 @@ public class Board extends Persistent implements Comparable<Board> {
         /**
          * Does not provide synchronization, you have to lock the MessageManager, this Board and then the database before calling this function.
          */
-        protected void storeWithoutCommit() {
+        @Override protected void storeWithoutCommit() {
         	try {
         		checkedActivate(1);
         		throwIfNotStored(mBoard);
@@ -431,8 +431,8 @@ public class Board extends Persistent implements Comparable<Board> {
         		checkedRollbackAndThrow(e);
         	}
         }
-        
-    	protected void deleteWithoutCommit() {
+
+        @Override protected void deleteWithoutCommit() {
     		deleteWithoutCommit(2);
 		}
 
