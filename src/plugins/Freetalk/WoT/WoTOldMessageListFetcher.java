@@ -124,11 +124,11 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 		return THREAD_PERIOD/2 + mRandom.nextInt(THREAD_PERIOD);
 	}
 
-	protected void iterate() {
+	@Override protected void iterate() {
 		fetchMessageLists();
 	}
 	
-	public int getRunningFetchCount() {
+	@Override public int getRunningFetchCount() {
 		return fetchCount();
 	}
 
@@ -319,7 +319,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	 * This method must be synchronized because onFailure is synchronized and TransferThread calls abortAllTransfers() during shutdown without
 	 * synchronizing on this object.
 	 */
-	protected synchronized void abortAllTransfers() {
+	@Override protected synchronized void abortAllTransfers() {
 		super.abortAllTransfers();
 	}
 	
