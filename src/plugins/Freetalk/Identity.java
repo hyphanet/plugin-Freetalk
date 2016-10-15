@@ -56,12 +56,12 @@ public interface Identity {
 			
 			return new IdentityID(Base64.encode(requestURI.getRoutingKey()));
 		}
-		
-		public final String toString() {
+
+		@Override public final String toString() {
 			return mID;
 		}
-		
-		public final boolean equals(final Object o) {
+
+		@Override public final boolean equals(final Object o) {
 			if(o instanceof IdentityID)
 				return mID.equals(((IdentityID)o).mID);
 			
