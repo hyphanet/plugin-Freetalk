@@ -54,8 +54,8 @@ public final class WoTMessageRating extends MessageRating {
 		
 		mValue = myValue;
 	}
-	
-	public void databaseIntegrityTest() throws Exception {
+
+	@Override public void databaseIntegrityTest() throws Exception {
 		super.databaseIntegrityTest();
 		
 		if(!(getRater() instanceof WoTIdentity))
@@ -71,8 +71,8 @@ public final class WoTMessageRating extends MessageRating {
 		checkedActivate(1);
 		return mValue;
 	}
-	
-	public String toString() {
+
+	@Override public String toString() {
 		if(mDB != null)
 			return getRater() + " has rated the message " + getMessage() + " with " + getValue() + " points.";
 		else
@@ -185,12 +185,12 @@ public final class WoTMessageRating extends MessageRating {
 			}
 		}
 	}
-	
-	protected void storeWithoutCommit() {
+
+	@Override protected void storeWithoutCommit() {
 		throw new UnsupportedOperationException("Please use storeAndCommit()");
 	}
-	
-	protected void deleteWithoutCommit() {
+
+	@Override protected void deleteWithoutCommit() {
 		throw new UnsupportedOperationException("Please use deleteAndCommit()");
 	}
 }
