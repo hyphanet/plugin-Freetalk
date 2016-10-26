@@ -52,8 +52,8 @@ public abstract class PersistentTask extends Persistent {
 		mNextDisplayTime = Long.MAX_VALUE;
 		mDeleteTime = Long.MAX_VALUE;
 	}
-	
-	public void databaseIntegrityTest() throws Exception {
+
+	@Override public void databaseIntegrityTest() throws Exception {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		
 		IfNull.thenThrow(mID, "mID");
@@ -89,8 +89,8 @@ public abstract class PersistentTask extends Persistent {
 	 * Called by the WebPage when the user clicks the "Hide for some time" button.
 	 */
 	public abstract void onHideForSomeTime();
-	
-	protected void storeWithoutCommit() {
+
+	@Override protected void storeWithoutCommit() {
 		try {
 			checkedActivate(1);
 			
@@ -112,8 +112,8 @@ public abstract class PersistentTask extends Persistent {
 			checkedCommit(this);
 		}
 	}
-	
-	protected void deleteWithoutCommit() {
+
+	@Override protected void deleteWithoutCommit() {
 		deleteWithoutCommit(1);
 	}
 
