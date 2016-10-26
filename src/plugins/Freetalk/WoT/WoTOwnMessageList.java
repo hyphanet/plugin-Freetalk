@@ -16,8 +16,8 @@ public final class WoTOwnMessageList extends OwnMessageList {
 		super(newAuthor, newIndex);
 		// TODO Auto-generated constructor stub
 	}
-	
-	public void databaseIntegrityTest() throws Exception {
+
+	@Override public void databaseIntegrityTest() throws Exception {
 		super.databaseIntegrityTest();
 		
 		if(!(getAuthor() instanceof WoTIdentity))
@@ -48,15 +48,15 @@ public final class WoTOwnMessageList extends OwnMessageList {
 		
 		storeWithoutCommit();
 	}
-	
-	public WoTOwnIdentity getAuthor() {
+
+	@Override public WoTOwnIdentity getAuthor() {
 		return (WoTOwnIdentity)super.getAuthor();
 	}
 
 	/**
 	 * Returns true if the XML of this message list fits into a single SSK block.
 	 */
-	protected boolean fitsIntoContainer() {
+	@Override protected boolean fitsIntoContainer() {
 		if(!super.fitsIntoContainer())
 			return false;
 	
