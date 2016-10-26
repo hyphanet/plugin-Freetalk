@@ -15,8 +15,8 @@ public abstract class OwnMessageTask extends PersistentTask {
 	protected OwnMessageTask(OwnIdentity myOwner) {
 		super(myOwner);
 	}
-	
-	public void databaseIntegrityTest() throws Exception {
+
+	@Override public void databaseIntegrityTest() throws Exception {
 		super.databaseIntegrityTest();
 		
 		checkedActivate(1);
