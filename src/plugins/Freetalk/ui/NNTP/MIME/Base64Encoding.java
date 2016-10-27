@@ -35,7 +35,7 @@ public class Base64Encoding extends TransferEncoding {
 		ignoreErrors = false;
 	}
 
-	public void setIgnoreErrors(boolean ignore) {
+	@Override public void setIgnoreErrors(boolean ignore) {
 		ignoreErrors = ignore;
 	}
 
@@ -43,7 +43,7 @@ public class Base64Encoding extends TransferEncoding {
 		return (byte) encodedChars[bits & 0x3f];
 	}
 
-	public ByteBuffer encode(ByteBuffer input) {
+	@Override public ByteBuffer encode(ByteBuffer input) {
 		ByteBuffer result = ByteBuffer.allocate(100);
 		int bits = 0;
 		int byteCount = 0;
@@ -92,7 +92,7 @@ public class Base64Encoding extends TransferEncoding {
 		return result;
 	}
 
-	public ByteBuffer decode(ByteBuffer input) throws InvalidEncodedTextException {
+	@Override public ByteBuffer decode(ByteBuffer input) throws InvalidEncodedTextException {
 		ByteBuffer result = ByteBuffer.allocate(100);
 		int bits = 0;
 		int bitCount = 0;
