@@ -105,7 +105,7 @@ public final class FreetalkNNTPGroup {
                 private int currentIndex = startIndex;
                 private Message currentMessage = null;
 
-                public boolean hasNext() {
+                @Override public boolean hasNext() {
                     if (currentMessage != null)
                         return true;
 
@@ -125,7 +125,7 @@ public final class FreetalkNNTPGroup {
                     return false;
                 }
 
-                public FreetalkNNTPArticle next() {
+                @Override public FreetalkNNTPArticle next() {
                     if (!hasNext())
                         throw new NoSuchElementException();
                     else {
@@ -135,7 +135,7 @@ public final class FreetalkNNTPGroup {
                     }
                 }
 
-                public void remove() {
+                @Override public void remove() {
                     throw new UnsupportedOperationException();
                 }
             };
