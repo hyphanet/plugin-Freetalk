@@ -58,12 +58,12 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 		
 		mFreetalk.getIdentityManager().registerOwnIdentityDeletedCallback(this);
 	}
-	
-	public int getPriority() {
+
+	@Override public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
-	
-	public void run() {
+
+	@Override public void run() {
 		if(logDEBUG) Logger.debug(this, "Main loop running...");
 
 		try {
@@ -210,7 +210,7 @@ public class PersistentTaskManager implements PrioRunnable, OwnIdentityDeletedCa
 	 * 
 	 * Deletes all it's tasks and commits the transaction.
 	 */
-	public synchronized void beforeOwnIdentityDeletion(OwnIdentity identity) {
+	@Override public synchronized void beforeOwnIdentityDeletion(OwnIdentity identity) {
 		final Query q = mDB.query();
 		q.constrain(PersistentTask.class);
 		q.descend("mOwner").constrain(identity).identity();
