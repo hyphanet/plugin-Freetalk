@@ -116,7 +116,7 @@ public abstract class WebPageImpl implements WebPage {
 	 * @return HTML code of the page.
 	 * @throws RedirectException 
 	 */
-	public final String toHTML(ToadletContext ctx) throws RedirectException {
+	@Override public final String toHTML(ToadletContext ctx) throws RedirectException {
 		PageNode page;
 		if(mOwnIdentity != null)
 			page = mPM.getPageNode(Freetalk.PLUGIN_TITLE + " - " + mOwnIdentity.getShortestUniqueName(), ctx);
@@ -144,7 +144,7 @@ public abstract class WebPageImpl implements WebPage {
 	 * Adds this WebPage to the given page as a HTMLNode.
 	 * @throws RedirectException 
 	 */
-	public final void addToPage(HTMLNode contentNode) throws RedirectException {
+	@Override public final void addToPage(HTMLNode contentNode) throws RedirectException {
 		mContentNode = contentNode;
 		make();
 	}
