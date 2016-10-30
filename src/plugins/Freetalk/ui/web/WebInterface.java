@@ -306,8 +306,10 @@ public final class WebInterface {
 		protected ChangeTrustWebInterfaceToadlet(HighLevelSimpleClient client, WebInterface wi, NodeClientCore core, String pageTitle) {
 			super(client, wi, core, pageTitle);
 		}
-		
-		public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext context) throws ToadletContextClosedException, IOException, RedirectException {
+
+		@Override public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext context)
+				throws ToadletContextClosedException, IOException, RedirectException {
+			
 		    if(!context.checkFullAccess(this))
 		        return;
 			
@@ -370,7 +372,7 @@ public final class WebInterface {
 			return homeToadlet;
 		}
 
-		WebPage makeWebPage(HTTPRequest httpRequest, ToadletContext context) {
+		@Override WebPage makeWebPage(HTTPRequest httpRequest, ToadletContext context) {
 			/* will not be reached. */
 			return null;
 		}
@@ -589,7 +591,9 @@ public final class WebInterface {
 			super(client, wi, core, pageTitle);
 		}
 
-		public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		@Override public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
+				throws ToadletContextClosedException, IOException {
+			
 			// ATTENTION: The same code is used in WoT's WebInterface.java. Please synchronize any changes which happen there.
 			
 		    if(!ctx.checkFullAccess(this))
@@ -629,7 +633,9 @@ public final class WebInterface {
 			}
 		}
 		
-		WebPage makeWebPage(HTTPRequest req, ToadletContext context) throws RedirectException {
+		@Override WebPage makeWebPage(HTTPRequest req, ToadletContext context)
+				throws RedirectException {
+			
 			// not expected to make it here
 			return new Welcome(webInterface, getLoggedInOwnIdentity(context), req, l10n());
 		}
