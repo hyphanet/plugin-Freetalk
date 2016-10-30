@@ -22,8 +22,8 @@ public final class NewThreadPage extends WebPageImpl {
 		super(myWebInterface, viewer, request, _baseL10n);
 		mBoard = mFreetalk.getMessageManager().getBoardByName(request.getPartAsStringFailsafe("BoardName", Board.MAX_BOARDNAME_TEXT_LENGTH));
 	}
-	
-	public void make() {
+
+	@Override public void make() {
 		String threadSubject = "";
 		String threadText = "";
 		
