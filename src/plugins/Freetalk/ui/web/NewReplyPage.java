@@ -49,7 +49,7 @@ public class NewReplyPage extends WebPageImpl {
 		mParentMessage = mFreetalk.getMessageManager().get(request.getPartAsStringFailsafe("ParentMessageID", 128)); /* TODO: adapt to maximal ID length when it has been decided */
 	}
 
-	public void make() {
+	@Override public void make() {
 		makeBreadcrumbs();
 
 		if((mRequest.isPartSet("CreateReply") || mRequest.isPartSet("CreatePreview")) && mRequest.getMethod().equals("POST")) {
