@@ -41,7 +41,7 @@ public class WoTMessageListXMLTest extends DatabaseBasedTest {
 	private WoTMessageListXML mXML;
 
 	@SuppressWarnings("deprecation")
-	public void setUp() throws Exception {
+	@Override public void setUp() throws Exception {
 		super.setUp();
 		
 		mMessageManager = mFreetalk.getMessageManager();
