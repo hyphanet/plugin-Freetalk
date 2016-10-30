@@ -40,7 +40,7 @@ public class WoTMessageXMLTest extends DatabaseBasedTest {
 	
 	private String mHardcodedEncodedMessage;
 		
-	public void setUp() throws Exception {
+	@Override public void setUp() throws Exception {
 		super.setUp();
 
 		mMessageManager = mFreetalk.getMessageManager();
