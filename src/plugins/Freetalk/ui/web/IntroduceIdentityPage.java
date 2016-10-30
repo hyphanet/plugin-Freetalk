@@ -152,7 +152,7 @@ public final class IntroduceIdentityPage extends TaskPage {
 		contentBox.addChild("#", l10n().getString("IntroduceIdentityPage.EnoughPuzzlesSolved.Text"));
 	}
 
-	public void make() throws RedirectException {
+	@Override public void make() throws RedirectException {
 		if(mNumberOfPuzzles > 0) {
 			showPuzzles();
 		} else {
