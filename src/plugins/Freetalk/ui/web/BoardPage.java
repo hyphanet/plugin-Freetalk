@@ -40,7 +40,7 @@ public final class BoardPage extends WebPageImpl {
 		mMarkAllThreadsAsUnread = mRequest.isPartSet("MarkAllThreadsAsUnread");
 	}
 
-	public final void make() {
+	@Override public final void make() {
 		makeBreadcrumbs();
 
 		HTMLNode threadsBox = addContentBox(l10n().getString("BoardPage.Threads.Header", "boardname" , mBoard.getName()));
