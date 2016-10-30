@@ -17,7 +17,7 @@ public final class LogInPage extends WebPageImpl {
 		super(myWebInterface, null, request, _baseL10n);
 	}
 
-	public void make() throws RedirectException {
+	@Override public void make() throws RedirectException {
 		makeWelcomeBox();
 		if(mFreetalk.getIdentityManager().ownIdentityIterator().hasNext()) {
 			makeLoginBox();
