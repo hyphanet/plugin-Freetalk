@@ -71,7 +71,7 @@ public class WoTMessageManagerTest extends DatabaseBasedTest {
 	
 	
 
-	protected void setUp() throws Exception {
+	@Override protected void setUp() throws Exception {
 		super.setUp();
 		
 		mMessageManager = mFreetalk.getMessageManager();
