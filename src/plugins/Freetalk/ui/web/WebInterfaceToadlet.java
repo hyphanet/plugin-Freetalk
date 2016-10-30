@@ -33,7 +33,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 		return Freetalk.PLUGIN_URI + "/" + pageTitle;
 	}
 
-	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) 
+	@Override public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException, RedirectException {
 	    if(!ctx.checkFullAccess(this))
 	        return;
@@ -64,7 +64,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 		return Freetalk.PLUGIN_URI + "/" + pageTitle;
 	}
 
-	public boolean isEnabled(ToadletContext ctx) {
+	@Override public boolean isEnabled(ToadletContext ctx) {
 		return webInterface.getFreetalk().wotConnected();
 	}
 	
