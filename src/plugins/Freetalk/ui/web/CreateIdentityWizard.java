@@ -38,7 +38,7 @@ public class CreateIdentityWizard extends WebPageImpl {
 		super(myWebInterface, null, request, _baseL10n);
 	}
 
-	public void make() {
+	@Override public void make() {
 		makeCreateIdentityBox();
 	}
 
