@@ -52,8 +52,8 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 		
 		mPuzzlesToSolve = 0;
 	}
-	
-	public void databaseIntegrityTest() throws Exception {
+
+	@Override public void databaseIntegrityTest() throws Exception {
 		super.databaseIntegrityTest();
 		
 		checkedActivate(1);
@@ -66,7 +66,7 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 			throw new IllegalStateException("mNextProcessingTime == " + new Date(mNextProcessingTime));
 	}
 
-	public synchronized WebPage display(WebInterface myWebInterface) {
+	@Override public synchronized WebPage display(WebInterface myWebInterface) {
 		checkedActivate(1);
 		try {
 			return new IntroduceIdentityPage(myWebInterface, (WoTOwnIdentity)getOwner(), mID, mPuzzlesToSolve, myWebInterface.l10n());
@@ -80,7 +80,7 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 	 * - upon timeout of the mNextProcessingTime
 	 * - when an own message is posted of the owning identity.
 	 */
-	public synchronized void process() {
+	@Override public synchronized void process() {
 		WoTIdentityManager identityManager = (WoTIdentityManager)mFreetalk.getIdentityManager();
 		
 		checkedActivate(1);
@@ -128,8 +128,8 @@ public class IntroduceIdentityTask extends OwnMessageTask {
 		}
 		
 	}
-	
-	public synchronized void onHideForSomeTime() {
+
+	@Override public synchronized void onHideForSomeTime() {
 		checkedActivate(1);
 		
 		mWasHidden = true;

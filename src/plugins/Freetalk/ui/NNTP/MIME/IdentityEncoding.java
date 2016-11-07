@@ -18,16 +18,16 @@ public class IdentityEncoding extends TransferEncoding {
 		//this.require7Bit = require7Bit;
 	}
 
-	public void setIgnoreErrors(boolean ignore) {
+	@Override public void setIgnoreErrors(boolean ignore) {
 
 	}
 
-	public ByteBuffer encode(ByteBuffer input) {
+	@Override public ByteBuffer encode(ByteBuffer input) {
 		// FIXME: maybe we should validate the input here?
 		return input.slice();
 	}
 
-	public ByteBuffer decode(ByteBuffer input) {
+	@Override public ByteBuffer decode(ByteBuffer input) {
 		return input.slice();
 	}
 }

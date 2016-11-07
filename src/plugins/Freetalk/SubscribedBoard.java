@@ -61,9 +61,8 @@ public final class SubscribedBoard extends Board {
 		mParentBoard = myParentBoard;
 		mSubscriber = mySubscriber;
 	}
-	
-    
-    public void databaseIntegrityTest() throws Exception {
+
+	@Override public void databaseIntegrityTest() throws Exception {
     	super.databaseIntegrityTest();
     	
 		checkedActivate(1);
@@ -104,15 +103,15 @@ public final class SubscribedBoard extends Board {
 			}
     	}
     }
-    
-    protected void storeWithoutCommit() {
+
+	@Override protected void storeWithoutCommit() {
 		checkedActivate(1);
     	throwIfNotStored(mSubscriber);
     	throwIfNotStored(mParentBoard);
     	super.storeWithoutCommit();
     }
-	
-	protected void deleteWithoutCommit() {
+
+	@Override protected void deleteWithoutCommit() {
 		// TODO: When deleting a subscribed board, check whether the objects of class Message are being used by a subscribed board of another own identity.
 		// If not, delete the messages.
 		try {
@@ -347,7 +346,7 @@ public final class SubscribedBoard extends Board {
      * 
      * @throws Exception If wantsMessagesFrom(author of newMessage) fails. 
      */
-    protected synchronized final void addMessage(Message newMessage) throws Exception {
+    @Override protected synchronized final void addMessage(Message newMessage) throws Exception {
     	Logger.normal(this, "addMessage " + newMessage + " for " + getSubscriber());
     	
     	// Sanity checks
@@ -1182,16 +1181,16 @@ public final class SubscribedBoard extends Board {
 			// The Math.min() is a double check
 			return new Date(mLastRetryDate.getTime() + Math.min(MINIMAL_RETRY_DELAY * (1<<mNumberOfRetries), MAXIMAL_RETRY_DELAY));
     	}
-    	
-    	protected void storeWithoutCommit() {
+
+		@Override protected void storeWithoutCommit() {
     		super.storeWithoutCommit(1);
     	}
-    	
-    	protected void deleteWithoutCommit() {
+
+		@Override protected void deleteWithoutCommit() {
     		super.deleteWithoutCommit(1);
     	}
-    	
-    	public String toString() {
+
+		@Override public String toString() {
 			checkedActivate(1); // Date is a db4o primitive type so 1 is enough
     		return super.toString() + " with mBoard: (" + getBoard() + "); mMessage: (" + getMessage() + "); mAuthor: (" + getAuthor() +  "); mNumberOfRetries: " + mNumberOfRetries + 
     			"; mLastRetry: " + mLastRetryDate + "; mNextRetry: " + mNextRetryDate;
@@ -1317,8 +1316,8 @@ public final class SubscribedBoard extends Board {
 			Random random = mBoard.mFreetalk.getPluginRespirator() != null ? mBoard.mFreetalk.getPluginRespirator().getNode().random : new Random();
 			mNextWantedCheckDate = new Date(mLastWantedCheckDate.getTime() + MINIMAL_RETRY_DELAY + Math.abs(random.nextLong() % (3*MINIMAL_RETRY_DELAY)));
     	}
-		
-		public void databaseIntegrityTest() throws Exception {
+
+		@Override public void databaseIntegrityTest() throws Exception {
 			checkedActivate(1); // Date/String are db4o primitive types so 1 is enough
 			
 			IfNull.thenThrow(mBoard, "mBoard");
@@ -1522,7 +1521,7 @@ public final class SubscribedBoard extends Board {
         /**
          * Does not provide synchronization, you have to lock the MessageManager, this Board and then the database before calling this function.
          */
-        protected final void storeWithoutCommit() {
+        @Override protected final void storeWithoutCommit() {
         	try {
         		checkedActivate(1);
         		throwIfNotStored(mBoard);
@@ -1790,8 +1789,8 @@ public final class SubscribedBoard extends Board {
 			checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 			return mLastReplyDate;
 		}
-		
-		public void setMessage(Message myThread) {
+
+		@Override public void setMessage(Message myThread) {
 			if(myThread.getID().equals(getThreadID()) == false)
 				throw new IllegalArgumentException();
 			

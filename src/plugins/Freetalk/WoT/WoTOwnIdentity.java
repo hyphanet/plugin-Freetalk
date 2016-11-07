@@ -54,8 +54,8 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 	public WoTOwnIdentity(String myID, FreenetURI myRequestURI, FreenetURI myInsertURI, String myNickname) {
 		this(myID, myRequestURI, myInsertURI, myNickname, false, false);
 	}
-	
-	public void databaseIntegrityTest() throws Exception {
+
+	@Override public void databaseIntegrityTest() throws Exception {
 		super.databaseIntegrityTest();
 		
 		checkedActivate(1);
@@ -67,13 +67,13 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 	}
 
 
-	public FreenetURI getInsertURI() {
+	@Override public FreenetURI getInsertURI() {
 		checkedActivate(1);
 		checkedActivate(mInsertURI, 2);
 		return mInsertURI;
 	}
 
-	public boolean wantsMessagesFrom(Identity identity) throws Exception {
+	@Override public boolean wantsMessagesFrom(Identity identity) throws Exception {
 		if(!(identity instanceof WoTIdentity))
 			throw new IllegalArgumentException();
 		
@@ -98,13 +98,13 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 	public void setTrust(WoTIdentity identity, byte trust, String comment) throws Exception {
 		mFreetalk.getIdentityManager().setTrust(this, identity, trust, comment);
 	}
-	
-	public boolean wantsAutoSubscribeToNewBoards() {
+
+	@Override public boolean wantsAutoSubscribeToNewBoards() {
 		checkedActivate(1);
 		return mAutoSubscribeToNewBoards;
 	}
 
-	public void setAutoSubscribeToNewboards(boolean autoSubscribeToNewBoards) {
+	@Override public void setAutoSubscribeToNewboards(boolean autoSubscribeToNewBoards) {
 		checkedActivate(1);
 		mAutoSubscribeToNewBoards = autoSubscribeToNewBoards;
 	}
@@ -126,7 +126,7 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
      * 
      * @return Whether this Identity auto-subscribes to boards subscribed in NNTP client or not.
      */
-    public boolean nntpAutoSubscribeBoards() {
+    @Override public boolean nntpAutoSubscribeBoards() {
     	checkedActivate(1);
         return mNntpAutoSubscribeBoards;
     }
@@ -134,12 +134,12 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
     /**
      * Sets if this Identity auto-subscribes to boards subscribed in NNTP client. 
      */
-    public void setNntpAutoSubscribeBoards(boolean nntpAutoSubscribeBoards) {
+    @Override public void setNntpAutoSubscribeBoards(boolean nntpAutoSubscribeBoards) {
     	checkedActivate(1);
         mNntpAutoSubscribeBoards = nntpAutoSubscribeBoards;
     }
-    
-	public void storeWithoutCommit() {
+
+	@Override public void storeWithoutCommit() {
 		try {
 			// 3 is the maximal depth of all getter functions. You have to adjust this when changing the set of member variables.
 			checkedActivate(1);
@@ -155,7 +155,7 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 		}
 	}
 
-	protected void deleteWithoutCommit() {	
+	@Override protected void deleteWithoutCommit() {	
 		try {
 			// super.deleteWithoutCommit() does the following already so there is no need to do it here:
 			// // 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.

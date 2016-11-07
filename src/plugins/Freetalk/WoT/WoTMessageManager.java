@@ -63,15 +63,15 @@ public final class WoTMessageManager extends MessageManager {
 		
 		mRequestClient = new RequestClient() {
 
-			public boolean persistent() {
+			@Override public boolean persistent() {
 				return false;
 			}
 
-			public void removeFrom(ObjectContainer container) {
+			@Override public void removeFrom(ObjectContainer container) {
 				throw new UnsupportedOperationException();
 			}
 
-			public boolean realTimeFlag() {
+			@Override public boolean realTimeFlag() {
 				return false; // We want throughput.
 			}
 			
@@ -89,12 +89,15 @@ public final class WoTMessageManager extends MessageManager {
 	/**
 	 * Only for being used by the MessageManager itself and by unit tests.
 	 */
-	protected synchronized void clearExpiredFetchFailedMarkers() {
+	@Override protected synchronized void clearExpiredFetchFailedMarkers() {
 		super.clearExpiredFetchFailedMarkers();
 	}
 
-	public WoTOwnMessage postMessage(MessageURI myParentThreadURI, Message myParentMessage, Set<Board> myBoards, Board myReplyToBoard, 
-			OwnIdentity myAuthor, String myTitle, Date myDate, String myText, List<Attachment> myAttachments) throws Exception {
+	@Override public WoTOwnMessage postMessage(
+			MessageURI myParentThreadURI, Message myParentMessage, Set<Board> myBoards,
+			Board myReplyToBoard, OwnIdentity myAuthor, String myTitle, Date myDate, String myText,
+			List<Attachment> myAttachments) throws Exception {
+		
 		WoTOwnMessage m;
 		
 		if(myParentThreadURI != null && !(myParentThreadURI instanceof WoTMessageURI))
@@ -142,8 +145,10 @@ public final class WoTMessageManager extends MessageManager {
 			}
 		}
 	}
-	
-	public synchronized void onMessageListFetchFailed(Identity author, FreenetURI uri, FetchFailedMarker.Reason reason) {
+
+	@Override public synchronized void onMessageListFetchFailed(
+			Identity author, FreenetURI uri, FetchFailedMarker.Reason reason) {
+		
 		WoTMessageList ghostList = new WoTMessageList(mFreetalk, author, uri);
 		ghostList.initializeTransient(mFreetalk);
 		MessageList.MessageListFetchFailedMarker marker;
@@ -429,7 +434,9 @@ public final class WoTMessageManager extends MessageManager {
 	/**
 	 * This function is not synchronized to allow calls to it when only having locked a {@link Board} and not the whole MessageManager.
 	 */
-	public WoTMessageRating getMessageRating(final OwnIdentity rater, final Message message) throws NoSuchMessageRatingException {
+	@Override public WoTMessageRating getMessageRating(
+			final OwnIdentity rater, final Message message) throws NoSuchMessageRatingException {
+		
 		if(!(rater instanceof WoTOwnIdentity))
 			throw new IllegalArgumentException("No WoT identity: " + rater);
 		
@@ -448,15 +455,15 @@ public final class WoTMessageManager extends MessageManager {
 			default: throw new DuplicateElementException("Duplicate rating from " + rater + " of " + message);
 		}
 	}
-	
-	public ObjectSet<WoTMessageRating> getAllMessageRatings(final Message message) {
+
+	@Override public ObjectSet<WoTMessageRating> getAllMessageRatings(final Message message) {
 		final Query query = db.query();
 		query.constrain(WoTMessageRating.class);
 		query.descend("mMessage").constrain(message).identity();
 		return new Persistent.InitializingObjectSet<WoTMessageRating>(mFreetalk, query);
 	}
-	
-	public ObjectSet<? extends MessageRating> getAllMessageRatingsBy(OwnIdentity rater) {
+
+	@Override public ObjectSet<? extends MessageRating> getAllMessageRatingsBy(OwnIdentity rater) {
 		final Query query = db.query();
 		query.constrain(WoTMessageRating.class);
 		query.descend("mRater").constrain(rater).identity();

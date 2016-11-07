@@ -70,8 +70,8 @@ public final class WoTOwnMessage extends OwnMessage {
 				throw new IllegalStateException("super.getMessageList() == " + super.getMessageList());
 		} catch(NoSuchMessageListException e) {}
 	}
-	
-	public WoTMessageURI calculateURI() throws NoSuchMessageListException {
+
+	@Override public WoTMessageURI calculateURI() throws NoSuchMessageListException {
 		return calculateURI(getMessageList(), MessageID.construct(this));
 	}
 	
@@ -82,7 +82,7 @@ public final class WoTOwnMessage extends OwnMessage {
 	/**
 	 * Generate the insert URI for a message.
 	 */
-	public synchronized FreenetURI getInsertURI() {
+	@Override public synchronized FreenetURI getInsertURI() {
 		return FreenetURI.EMPTY_CHK_URI;
 	}
 

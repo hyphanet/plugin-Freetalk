@@ -24,7 +24,7 @@ public final class IdentityEditor extends WebPageImpl {
 		super(myWebInterface, viewer, request, _baseL10n);
 	}
 
-	public final void make() throws RedirectException {
+	@Override public final void make() throws RedirectException {
 		if(mOwnIdentity == null)
 			throw new RedirectException(logIn);
 		makeOwnIdentitiesBox();

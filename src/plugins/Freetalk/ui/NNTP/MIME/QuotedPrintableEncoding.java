@@ -26,7 +26,7 @@ public class QuotedPrintableEncoding extends TransferEncoding {
 		ignoreErrors = false;
 	}
 
-	public void setIgnoreErrors(boolean ignore) {
+	@Override public void setIgnoreErrors(boolean ignore) {
 		ignoreErrors = ignore;
 	}
 
@@ -89,7 +89,7 @@ public class QuotedPrintableEncoding extends TransferEncoding {
 		return false;
 	}
 
-	public synchronized ByteBuffer encode(ByteBuffer input) {
+	@Override public synchronized ByteBuffer encode(ByteBuffer input) {
 		boolean cr = false;
 
 		outputBuffer = ByteBuffer.allocate(100);
@@ -135,7 +135,7 @@ public class QuotedPrintableEncoding extends TransferEncoding {
 			throw new IllegalArgumentException();
 	}
 
-	public ByteBuffer decode(ByteBuffer input) throws InvalidEncodedTextException {
+	@Override public ByteBuffer decode(ByteBuffer input) throws InvalidEncodedTextException {
 		ByteBuffer result = ByteBuffer.allocate(100);
 
 		while (input.hasRemaining()) {

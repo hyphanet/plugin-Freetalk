@@ -74,7 +74,7 @@ public final class ThreadPage extends WebPageImpl {
 		mThreadID = threadID;
 	}
 
-	public final void make() {
+	@Override public final void make() {
 		try {
 			synchronized (mLocalDateFormat) {
 

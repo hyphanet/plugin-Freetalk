@@ -940,7 +940,7 @@ public final class FreetalkNNTPHandler implements Runnable {
     /**
      * Main command loop
      */
-    public void run() {
+    @Override public void run() {
         try {
         	final InputStream is = mSocket.getInputStream();
             mOutput = new BufferedWriter(new OutputStreamWriter(mSocket.getOutputStream(), "UTF-8"), 8192);

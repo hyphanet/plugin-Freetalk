@@ -65,8 +65,8 @@ public abstract class MessageRating extends Persistent {
 		mMessage = myMessage;
 		mMessageAuthor = mMessage.getAuthor();
 	}
-	
-	public void databaseIntegrityTest() throws Exception {
+
+	@Override public void databaseIntegrityTest() throws Exception {
 		checkedActivate(1);
 		
 		if(mRater == null)
@@ -117,8 +117,8 @@ public abstract class MessageRating extends Persistent {
 			
 		return mMessageAuthor;
 	}
-	
-	protected void storeWithoutCommit() {
+
+	@Override protected void storeWithoutCommit() {
 		try {		
 			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(1);
@@ -134,8 +134,7 @@ public abstract class MessageRating extends Persistent {
 		}
 	}
 
-	
-	public String toString() {
+	@Override public String toString() {
 		if(mDB != null)
 			return getRater() + " has rated the message " + getMessage();
 		

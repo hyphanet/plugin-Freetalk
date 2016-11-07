@@ -18,7 +18,7 @@ public class WoTIsMissingPage extends WebPageImpl {
 		mNeedsNewWoT = wotIsOutdated;
 	}
 
-	public void make() {
+	@Override public void make() {
         final String[] l10nLinkSubstitutionInput = new String[] { "link", "/link" };
         final String[] l10nLinkSubstitutionOutput = new String[] { "<a href=\"/plugins\">", "</a>" };
         

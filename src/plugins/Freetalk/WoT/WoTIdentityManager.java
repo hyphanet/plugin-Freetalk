@@ -158,10 +158,10 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		
 		return result;
 	}
-	
-	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles, 
-			boolean autoSubscribeToNewBoards, boolean displayImages)
-		throws Exception  {
+
+	@Override public synchronized WoTOwnIdentity createOwnIdentity(String newNickname,
+			boolean publishesTrustList, boolean publishesIntroductionPuzzles,
+			boolean autoSubscribeToNewBoards, boolean displayImages) throws Exception  {
 		
 		Logger.normal(this, "Creating new own identity via FCP, nickname: " + newNickname);
 		
@@ -201,9 +201,12 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		
 		return identity;
 	}
-	
-	public synchronized WoTOwnIdentity createOwnIdentity(String newNickname, boolean publishesTrustList, boolean publishesIntroductionPuzzles, boolean autoSubscribeToNewBoards,
-			boolean displayImages, FreenetURI newRequestURI, FreenetURI newInsertURI) throws Exception {
+
+	@Override public synchronized WoTOwnIdentity createOwnIdentity(String newNickname,
+			boolean publishesTrustList, boolean publishesIntroductionPuzzles,
+			boolean autoSubscribeToNewBoards, boolean displayImages, FreenetURI newRequestURI,
+			FreenetURI newInsertURI) throws Exception {
+		
 		Logger.normal(this, "Creating new own identity via FCP, nickname: " + newNickname);
 		
 		SimpleFieldSet params = new SimpleFieldSet(true);
@@ -245,14 +248,14 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		
 		return identity;
 	}
-	
-	public ObjectSet<WoTIdentity> getAllIdentities() {
+
+	@Override public ObjectSet<WoTIdentity> getAllIdentities() {
 		Query q = db.query();
 		q.constrain(WoTIdentity.class);
 		return new Persistent.InitializingObjectSet<WoTIdentity>(mFreetalk, q);
 	}
-	
-	public synchronized ObjectSet<WoTOwnIdentity> ownIdentityIterator() {
+
+	@Override public synchronized ObjectSet<WoTOwnIdentity> ownIdentityIterator() {
 		try {
 			fetchOwnIdentities();
 			garbageCollectIdentities();
@@ -266,7 +269,9 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	}
 
 	@SuppressWarnings("unchecked")
-	public synchronized WoTIdentity getIdentity(String id) throws NoSuchIdentityException {
+	@Override public synchronized WoTIdentity getIdentity(String id)
+			throws NoSuchIdentityException {
+		
 		Query q = db.query();
 		q.constrain(WoTIdentity.class);
 		q.descend("mID").constrain(id);
@@ -287,9 +292,11 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	public Identity getIdentityByURI(FreenetURI uri) throws NoSuchIdentityException {
 		return getIdentity(WoTIdentity.getIDFromURI(uri));
 	}
-	
+
 	@SuppressWarnings("unchecked")
-	public synchronized WoTOwnIdentity getOwnIdentity(String id) throws NoSuchIdentityException {
+	@Override public synchronized WoTOwnIdentity getOwnIdentity(String id)
+			throws NoSuchIdentityException {
+		
 		Query q = db.query();
 		q.constrain(WoTOwnIdentity.class);
 		q.descend("mID").constrain(id);
@@ -947,7 +954,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		}
 	}
 
-	public void run() { 
+	@Override public void run() { 
 		if(logDEBUG) Logger.debug(this, "Main loop running...");
 		 
 		try {
@@ -970,12 +977,12 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		
 		if(logDEBUG) Logger.debug(this, "Main loop finished.");
 	}
-	
-	public int getPriority() {
+
+	@Override public int getPriority() {
 		return NativeThread.MIN_PRIORITY;
 	}
-	
-	public void start() {
+
+	@Override public void start() {
 		if(logDEBUG) Logger.debug(this, "Starting...");
 		
 		if(logDEBUG)
@@ -1036,8 +1043,8 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		}
 		}
 	}
-	
-	public void terminate() {
+
+	@Override public void terminate() {
 		if(logDEBUG) Logger.debug(this, "Terminating ...");
 		mTicker.shutdown();
 		if(logDEBUG) Logger.debug(this, "Terminated.");
@@ -1056,7 +1063,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		
 		Arrays.sort(identities, new Comparator<WoTIdentity>() {
 
-			public int compare(WoTIdentity i1, WoTIdentity i2) {
+			@Override public int compare(WoTIdentity i1, WoTIdentity i2) {
 				return i1.getFreetalkAddress().compareToIgnoreCase(i2.getFreetalkAddress());
 			}
 			

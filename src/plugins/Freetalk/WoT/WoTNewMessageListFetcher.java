@@ -123,12 +123,12 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 			checkedActivate(1); // String is a db4o primitive type so 1 is enough
 			return mIdentityID;
 		}
-		
-		protected void storeWithoutCommit() {
+
+		@Override protected void storeWithoutCommit() {
 			super.storeWithoutCommit(1);
 		}
-		
-		protected void deleteWithoutCommit() {
+
+		@Override protected void deleteWithoutCommit() {
 			super.deleteWithoutCommit(1);
 		}
 
@@ -292,8 +292,8 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	private void scheduleCommandProcessing() {
 		mTicker.queueTimedJob(this, "FT NewMessageListFetcher", PROCESS_COMMANDS_DELAY, false, true);
 	}
-	
-	public int getPriority() {
+
+	@Override public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
 	}
 	
@@ -316,8 +316,8 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		}
 		}
 	}
-	
-	public void run() {
+
+	@Override public void run() {
 		synchronized(this) {
 		synchronized(mIdentityManager) { // Lock needed because we do getIdentityByID() in fetch()
 		synchronized(mMessageManager) { // For getting latest edition numbers. TODO: Maybe cache them in the identity
@@ -398,8 +398,8 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		mRequests.put(identity.getID(), retriever);
 		updateEditionHint(retriever, editionHint);
 	}
-	
-	public int getRunningFetchCount() {
+
+	@Override public int getRunningFetchCount() {
 		return mRequests.size();
 	}
 	
@@ -476,12 +476,12 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 		
 		if(logDEBUG) Logger.debug(this, "Stopped " + counter + " current requests");
 	}
-	
-	public short getPollingPriorityNormal() {
+
+	@Override public short getPollingPriorityNormal() {
 		return RequestStarter.UPDATE_PRIORITY_CLASS;
 	}
 
-	public short getPollingPriorityProgress() {
+	@Override public short getPollingPriorityProgress() {
 		return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 	}
 	
@@ -492,7 +492,9 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	 * 
 	 * Schedules start-fetch/abort-fetch commands.
 	 */
-	public void onShouldFetchStateChanged(Identity messageAuthor, boolean oldShouldFetch, boolean newShouldFetch) {
+	@Override public void onShouldFetchStateChanged(
+			Identity messageAuthor, boolean oldShouldFetch, boolean newShouldFetch) {
+		
 		if(oldShouldFetch == newShouldFetch) {
 			throw new IllegalArgumentException("oldShouldFetch==newShouldFetch==" + newShouldFetch);
 		}
@@ -507,7 +509,7 @@ public final class WoTNewMessageListFetcher implements MessageListFetcher, USKRe
 	/**
 	 * Called when a {@link WoTMessageList} was successfully fetched.
 	 */
-	public void onFound(USK origUSK, long edition, FetchResult result) {
+	@Override public void onFound(USK origUSK, long edition, FetchResult result) {
 		final FreenetURI uri = origUSK.getURI().setSuggestedEdition(edition);
 		
 		Logger.normal(this, "Fetched WoTMessageList: " + uri);

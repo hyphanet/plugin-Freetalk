@@ -35,7 +35,7 @@ public class WoTMessageURITest extends DatabaseBasedTest {
 	private String mInvalidUUID;
 	
 
-	public void setUp() throws Exception {
+	@Override public void setUp() throws Exception {
 		super.setUp();
 			
 		mSSK = new FreenetURI("SSK@SZmdqGtog7v1wN3buILoMpucyD6V5krsYrVqFUfHosg,SLsRq9Q9ZlrmUS9KeyK2pmheJ4wbtW602UwX0o0E~w0,AQACAAE/Freetalk|MessageList-1");
@@ -53,7 +53,7 @@ public class WoTMessageURITest extends DatabaseBasedTest {
 		mInvalidUUID = "d5b0dcc491cb48708ab98588e895fa5d";
 	}
 
-	public void tearDown() throws Exception {
+	@Override public void tearDown() throws Exception {
 	}
 
 	public void testWoTMessageURIFreenetURIString() {

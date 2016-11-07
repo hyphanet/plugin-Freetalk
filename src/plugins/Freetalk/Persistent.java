@@ -418,93 +418,93 @@ public abstract class Persistent {
 		public InitializingObjectSet(final Freetalk myFreetalk, final Query myQuery) {
 			this(myFreetalk, myQuery.execute());
 		}
-	
-		public ExtObjectSet ext() {
+
+		@Override public ExtObjectSet ext() {
 			throw new UnsupportedOperationException();
 		}
 
-		public boolean hasNext() {
+		@Override public boolean hasNext() {
 			return mObjectSet.hasNext();
 		}
 
-		public Type next() {
+		@Override public Type next() {
 			final Type next = mObjectSet.next();
 			next.initializeTransient(mFreetalk);
 			return next;
 		}
 
-		public void reset() {
+		@Override public void reset() {
 			mObjectSet.reset();
 		}
 
-		public int size() {
+		@Override public int size() {
 			return mObjectSet.size();
 		}
 
-		public boolean add(final Type e) {
+		@Override public boolean add(final Type e) {
 			throw new UnsupportedOperationException();
 		}
 
-		public void add(final int index, final Type element) {
+		@Override public void add(final int index, final Type element) {
 			throw new UnsupportedOperationException();
 		}
 
-		public boolean addAll(final Collection<? extends Type> c) {
+		@Override public boolean addAll(final Collection<? extends Type> c) {
 			throw new UnsupportedOperationException();
 		}
 
-		public boolean addAll(final int index, final Collection<? extends Type> c) {
+		@Override public boolean addAll(final int index, final Collection<? extends Type> c) {
 			throw new UnsupportedOperationException();
 		}
 
-		public void clear() {
+		@Override public void clear() {
 			throw new UnsupportedOperationException();
 		}
 
-		public boolean contains(final Object o) {
+		@Override public boolean contains(final Object o) {
 			return mObjectSet.contains(o);
 		}
 
-		public boolean containsAll(final Collection<?> c) {
+		@Override public boolean containsAll(final Collection<?> c) {
 			return mObjectSet.containsAll(c);
 		}
 
-		public Type get(final int index) {
+		@Override public Type get(final int index) {
 			Type object = mObjectSet.get(index);
 			object.initializeTransient(mFreetalk);
 			return object;
 		}
 
-		public int indexOf(final Object o) {
+		@Override public int indexOf(final Object o) {
 			return mObjectSet.indexOf(o);
 		}
 
-		public boolean isEmpty() {
+		@Override public boolean isEmpty() {
 			return mObjectSet.isEmpty();
 		}
 
-		public final Iterator<Type> iterator() {
+		@Override public final Iterator<Type> iterator() {
 			return new Iterator<Type>() {
 				final Iterator<Type> mIterator = mObjectSet.iterator(); 
-				
-				public boolean hasNext() {
+
+				@Override public boolean hasNext() {
 					return mIterator.hasNext();
 				}
 
-				public Type next() {
+				@Override public Type next() {
 					final Type next = mIterator.next();
 					next.initializeTransient(mFreetalk);
 					return next;
 				}
 
-				public void remove() {
+				@Override public void remove() {
 					throw new UnsupportedOperationException();
 				}
 				
 			};
 		}
 
-		public int lastIndexOf(final Object o) {
+		@Override public int lastIndexOf(final Object o) {
 			return mObjectSet.lastIndexOf(o);
 		}
 
@@ -515,93 +515,93 @@ public abstract class Persistent {
 				 mIterator = myIterator;
 			}
 
-			public void add(final ListType e) {
+			@Override public void add(final ListType e) {
 				throw new UnsupportedOperationException();
 			}
 
-			public boolean hasNext() {
+			@Override public boolean hasNext() {
 				return mIterator.hasNext();
 			}
 
-			public boolean hasPrevious() {
+			@Override public boolean hasPrevious() {
 				return mIterator.hasPrevious();
 			}
 
-			public ListType next() {
+			@Override public ListType next() {
 				final ListType next = mIterator.next();
 				next.initializeTransient(mFreetalk);
 				return next;
 			}
 
-			public int nextIndex() {
+			@Override public int nextIndex() {
 				return mIterator.nextIndex();
 			}
 
-			public ListType previous() {
+			@Override public ListType previous() {
 				final ListType previous = mIterator.previous();
 				previous.initializeTransient(mFreetalk);
 				return previous;
 			}
 
-			public int previousIndex() {
+			@Override public int previousIndex() {
 				return mIterator.previousIndex();
 			}
 
-			public void remove() {
+			@Override public void remove() {
 				throw new UnsupportedOperationException();
 			}
 
-			public void set(final ListType e) {
+			@Override public void set(final ListType e) {
 				throw new UnsupportedOperationException();
 			}
 		}
 		
-		public ListIterator<Type> listIterator() {
+		@Override public ListIterator<Type> listIterator() {
 			return new InitializingListIterator<Type>(mObjectSet.listIterator());
 		}
 		
-		public ListIterator<Type> listIterator(final int index) {
+		@Override public ListIterator<Type> listIterator(final int index) {
 			return new InitializingListIterator<Type>(mObjectSet.listIterator(index));
 		}
 
-		public boolean remove(final Object o) {
+		@Override public boolean remove(final Object o) {
 			throw new UnsupportedOperationException();
 		}
 
-		public Type remove(final int index) {
+		@Override public Type remove(final int index) {
 			throw new UnsupportedOperationException();
 		}
 
-		public boolean removeAll(final Collection<?> c) {
+		@Override public boolean removeAll(final Collection<?> c) {
 			throw new UnsupportedOperationException();
 		}
 
-		public boolean retainAll(final Collection<?> c) {
+		@Override public boolean retainAll(final Collection<?> c) {
 			throw new UnsupportedOperationException();
 		}
 
-		public Type set(final int index, final Type element) {
+		@Override public Type set(final int index, final Type element) {
 			throw new UnsupportedOperationException();
 		}
 
-		public List<Type> subList(final int fromIndex, final int toIndex) {
+		@Override public List<Type> subList(final int fromIndex, final int toIndex) {
 			throw new UnsupportedOperationException();
 		}
 
-		public Object[] toArray() {
+		@Override public Object[] toArray() {
 			final Object[] result = mObjectSet.toArray();
 			for(final Object o : result) ((Persistent)o).initializeTransient(mFreetalk);
 			return result;
 		}
 
-		public <T> T[] toArray(final T[] a) {
+		@Override public <T> T[] toArray(final T[] a) {
 			final T[] result = mObjectSet.toArray(a);
 			for(final T t : result)
 				((Persistent)t).initializeTransient(mFreetalk);
 			return result;
 		}
 
-		public void remove() {
+		@Override public void remove() {
 			throw new UnsupportedOperationException();
 		}
 

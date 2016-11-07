@@ -154,8 +154,8 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		public final IdentityID getAuthorID() {
 			return mAuthorID;
 		}
-		
-		public final String toString() {
+
+		@Override public final String toString() {
 			return mID;
 		}
 	}
@@ -247,9 +247,8 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			}
 			}
 		}
-		
-		
-		protected void storeWithoutCommit() {
+
+		@Override protected void storeWithoutCommit() {
 			try {
 				checkedActivate(1);
 				
@@ -269,8 +268,8 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 				checkedRollbackAndThrow(e);
 			}
 		}
-		
-		public void deleteWithoutCommit() {
+
+		@Override public void deleteWithoutCommit() {
 			try {
 				checkedActivate(1);
 				
@@ -423,8 +422,8 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			if(mMessageReference == null)
 				throw new NullPointerException("mMessageReference==null");
 		}
-		
-		public void storeWithoutCommit() {
+
+		@Override public void storeWithoutCommit() {
 			checkedActivate(1);
 			throwIfNotStored(mMessageReference);
 			super.storeWithoutCommit();
@@ -555,9 +554,9 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		mIndex = myID.getIndex();
 		mMessages = new ArrayList<MessageReference>(16); /* TODO: Find a reasonable value */
 	}
-	
-	
-	public void storeWithoutCommit() {
+
+
+	@Override public void storeWithoutCommit() {
 		try {
 			checkedActivate(1);
 			
@@ -587,7 +586,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		}
 	}
 
-	protected void deleteWithoutCommit() {
+	@Override protected void deleteWithoutCommit() {
 		try {
 			checkedActivate(1);
 			
@@ -681,7 +680,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 	/**
 	 * You have to synchronize on the <code>MessageList</code> when using this method.
 	 */
-	public Iterator<MessageReference> iterator() {
+	@Override public Iterator<MessageReference> iterator() {
 		return getMessages().iterator();
 	}
 	
@@ -702,8 +701,8 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		
 		throw new NoSuchMessageException();
 	}
-	
-	public String toString() {
+
+	@Override public String toString() {
 		if(mDB != null)
 			return getURI().toString();
 		

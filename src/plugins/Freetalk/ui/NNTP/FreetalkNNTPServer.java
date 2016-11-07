@@ -98,7 +98,7 @@ public final class FreetalkNNTPServer implements Runnable {
 	/**
 	 * Main server connection loop
 	 */
-	public void run() {
+	@Override public void run() {
 		if(logDEBUG) Logger.debug(this, "Main loop started.");
 		synchronized(this) {
 			mThread = Thread.currentThread();

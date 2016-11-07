@@ -27,14 +27,14 @@ public abstract class OwnMessageList extends MessageList {
 		public OwnMessageReference(OwnMessage myMessage) {
 			super(MessageID.construct(myMessage), myMessage.getFreenetURI(), null, myMessage.getDate());
 		}
-		
-		public void databaseIntegrityTest() throws Exception {
+
+		@Override public void databaseIntegrityTest() throws Exception {
 			super.databaseIntegrityTest(); 
 		}
 
 	}
-	
-	public void databaseIntegrityTest() throws Exception {
+
+	@Override public void databaseIntegrityTest() throws Exception {
 		super.databaseIntegrityTest();
 		
 		checkedActivate(1);
@@ -56,8 +56,8 @@ public abstract class OwnMessageList extends MessageList {
 	public OwnMessageList(OwnIdentity newAuthor, long newIndex) {
 		super(newAuthor, newIndex);
 	}
-	
-	public OwnIdentity getAuthor() {
+
+	@Override public OwnIdentity getAuthor() {
 		return (OwnIdentity)super.getAuthor();
 	}
 

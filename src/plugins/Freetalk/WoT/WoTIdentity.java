@@ -90,7 +90,7 @@ public class WoTIdentity extends Persistent implements Identity {
 	}
 	
 
-	public String getID() {
+	@Override public String getID() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mID;
 	}
@@ -110,13 +110,13 @@ public class WoTIdentity extends Persistent implements Identity {
 		return Base64.encode(uri.getRoutingKey());
 	}
 
-	public FreenetURI getRequestURI() {
+	@Override public FreenetURI getRequestURI() {
 		checkedActivate(1);
 		checkedActivate(mRequestURI, 2);
 		return mRequestURI;
 	}
 
-	public String getNickname() {
+	@Override public String getNickname() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mNickname;
 	}
@@ -129,11 +129,11 @@ public class WoTIdentity extends Persistent implements Identity {
 		return mNickname;
 	}
 
-	public String getShortestUniqueName() {
+	@Override public String getShortestUniqueName() {
 		return mFreetalk.getIdentityManager().getShortestUniqueName(this);
 	}
 
-	public String getFreetalkAddress() {
+	@Override public String getFreetalkAddress() {
 		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		return mNickname + "@" + mID + "." + Freetalk.WOT_CONTEXT.toLowerCase();	
 	}
@@ -194,7 +194,7 @@ public class WoTIdentity extends Persistent implements Identity {
 		if(newNickname.length() > 30) throw new InvalidParameterException("Nickname is too long, the limit is 30 characters.");
 	}
 
-	protected void checkedCommit(Object loggingObject) {
+	@Override protected void checkedCommit(Object loggingObject) {
 		super.checkedCommit(loggingObject);
 	}
 	
@@ -208,7 +208,7 @@ public class WoTIdentity extends Persistent implements Identity {
 		}
 	}
 
-	protected void storeWithoutCommit() {
+	@Override protected void storeWithoutCommit() {
 		try {		
 			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(1);
@@ -223,8 +223,8 @@ public class WoTIdentity extends Persistent implements Identity {
 			checkedRollbackAndThrow(e);
 		}
 	}
-	
-	protected void deleteWithoutCommit() {
+
+	@Override protected void deleteWithoutCommit() {
 		try {
 			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(this, 1);
@@ -239,7 +239,7 @@ public class WoTIdentity extends Persistent implements Identity {
 		}
 	}
 
-	public String toString() {
+	@Override public String toString() {
 		if(mDB != null)
 			return getFreetalkAddress();
 		

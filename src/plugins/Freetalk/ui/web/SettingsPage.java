@@ -26,7 +26,7 @@ public class SettingsPage extends WebPageImpl {
         super(myWebInterface, viewer, request, _baseL10n);
     }
 
-    public void make() throws RedirectException {
+    @Override public void make() throws RedirectException {
         if (mOwnIdentity == null) {
             throw new RedirectException(logIn);
         }

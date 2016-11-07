@@ -70,7 +70,8 @@ public final class FCPInterface implements FredPluginFCP {
      * @param data a bucket of data passed in, can be null
      * @param access 0: direct call (plugin to plugin), 1: FCP restricted access,  2: FCP full access
      */
-    public void handle(final PluginReplySender replysender, final SimpleFieldSet params, final Bucket data, final int accesstype) {
+    @Override public void handle(final PluginReplySender replysender, final SimpleFieldSet params,
+            final Bucket data, final int accesstype) {
 
         try {
             if (isTerminated) {

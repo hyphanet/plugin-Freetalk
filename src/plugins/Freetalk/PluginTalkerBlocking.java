@@ -86,8 +86,8 @@ public class PluginTalkerBlocking implements FredPluginTalker {
 		}
 	}
 
-	
-	public void onReply(String pluginname, String indentifier, SimpleFieldSet params, Bucket data) {
+	@Override public void onReply(
+			String pluginname, String indentifier, SimpleFieldSet params, Bucket data) {
 		
 		// TODO: This has one more synchronization issue: If an old request times out and it's sendBlocking throws an exception therefore,
 		// the next call to sendBlocking might receive the late answer to the previous call as reply - that is the wrong reply!

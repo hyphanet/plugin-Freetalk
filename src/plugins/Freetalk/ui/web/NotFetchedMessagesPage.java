@@ -36,8 +36,8 @@ public class NotFetchedMessagesPage extends WebPageImpl {
 		
 		mBoardIsSubscribed = boardIsSubscribed;
 	}
-	
-	public final void make() {
+
+	@Override public final void make() {
 		makeBreadcrumbs();
 
 		HTMLNode messagesBox = addContentBox(l10n().getString("NotFetchedMessagesPage.Messages.Header", "boardname" , mBoard.getName()));

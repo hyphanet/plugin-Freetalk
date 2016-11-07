@@ -125,7 +125,7 @@ public abstract class IdentityManager {
 		
 		if(includeOwnIdentities) {
 			registerNewOwnIdentityCallback(new NewOwnIdentityCallback() {
-				public void onNewOwnIdentityAdded(OwnIdentity identity) {
+				@Override public void onNewOwnIdentityAdded(OwnIdentity identity) {
 					listener.onNewIdentityAdded(identity);
 				}
 			});
@@ -141,7 +141,7 @@ public abstract class IdentityManager {
 		
 		if(includeOwnIdentities) {
 			registerOwnIdentityDeletedCallback(new OwnIdentityDeletedCallback() {
-				public void beforeOwnIdentityDeletion(OwnIdentity identity) {
+				@Override public void beforeOwnIdentityDeletion(OwnIdentity identity) {
 					listener.beforeIdentityDeletion(identity);
 				}
 			});

@@ -34,7 +34,7 @@ public final class ErrorPage extends WebPageImpl {
 		Logger.error(this, "Internal error", t);
 	}
 
-	public final void make() {
+	@Override public final void make() {
 		HTMLNode errorBox = addAlertBox(mErrorTitle);
 		errorBox.addChild("#", mErrorMessage);
 	}
