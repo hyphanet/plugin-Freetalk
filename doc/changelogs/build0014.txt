@@ -27,11 +27,22 @@ CHANGELOG - prefixed with the bugtracker issue number:
 
 CHANGELOG about stuff only interesting for developers:
 
-- 0000004: .............................................................
-           .............................................................
-  
-  Blah.
-  Blah.
+- 0006402: [Code quality] Before adapting to purge-db4o, add @Override
+           to everything
+
+  Java's @Override annotations may seem useless at first look, but they
+  serve a solid purpose:
+  If the parent function is removed the compiler will notify you with an
+  error. Thus when e.g. callbacks are removed from a parent interface
+  you will notice that you don't get them anymore.
+  Without @Override annotations on your implementations of the callbacks
+  they would just silently not be called anymore which can trigger all
+  kinds of bugs in your code.
+
+  As the Freenet callback API changed a lot with fred build01468 some
+  callbacks did in fact disappear. To ensure the adaptation of Freetalk
+  is done correctly Eclipse was used to add @Override annotations to all
+  overriden functions in Freetalk before adapting it to build01468.
 
 
 Thanks to:
