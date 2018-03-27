@@ -255,9 +255,9 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		removeFetch(state); // This must be called before we call fetchMessages() because fetchMessages has a parallel fetch count limit.
 		
 			switch(e.getMode()) {
-				case FetchException.DATA_NOT_FOUND:
-				case FetchException.ALL_DATA_NOT_FOUND:
-				case FetchException.RECENTLY_FAILED:
+				case DATA_NOT_FOUND:
+				case ALL_DATA_NOT_FOUND:
+				case RECENTLY_FAILED:
 					Logger.normal(this, "Data not found for message: " + state.getURI());
 					
 					try {
@@ -277,7 +277,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 					}
 					break;
 					
-				case FetchException.CANCELLED:
+				case CANCELLED:
 					if(logDEBUG) Logger.debug(this, "Cancelled downloading Message " + state.getURI());
 					break;
 					

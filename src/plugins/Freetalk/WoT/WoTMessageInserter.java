@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import static freenet.client.InsertException.InsertExceptionMode.CANCELLED;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -199,7 +201,7 @@ public final class WoTMessageInserter extends MessageInserter {
 	@Override
 	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		try {
-			if(e.getMode() == InsertException.CANCELLED)
+			if(e.getMode() == CANCELLED)
 				Logger.normal(this, "Message insert cancelled for " + state.getURI());
 			else if(e.isFatal())
 				Logger.error(this, "Message insert failed", e);

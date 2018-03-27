@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import static freenet.client.InsertException.InsertExceptionMode.COLLISION;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
@@ -180,7 +182,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	@Override
 	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		try {
-			if(e.getMode() == InsertException.COLLISION) {
+			if(e.getMode() == COLLISION) {
 				Logger.warning(this, "WoTOwnMessageList insert collided, trying to insert with higher index ...");
 				try {
 					synchronized(mMessageManager) {

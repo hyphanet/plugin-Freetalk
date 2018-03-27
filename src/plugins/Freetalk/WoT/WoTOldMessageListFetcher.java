@@ -273,9 +273,9 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	public synchronized void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		try {
 			switch(e.getMode()) {
-				case FetchException.DATA_NOT_FOUND:
-				case FetchException.ALL_DATA_NOT_FOUND:
-				case FetchException.RECENTLY_FAILED:
+				case DATA_NOT_FOUND:
+				case ALL_DATA_NOT_FOUND:
+				case RECENTLY_FAILED:
 					assert(state.getURI().isSSK());
 					
 					// We requested an old MessageList, i.e. it's index is lower than the index of the latest known MessageList, so the requested MessageList
@@ -300,7 +300,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 
 					break;
 				
-				case FetchException.CANCELLED:
+				case CANCELLED:
 					if(logDEBUG) Logger.debug(this, "Cancelled downloading MessageList " + state.getURI());
 					break;
 					
