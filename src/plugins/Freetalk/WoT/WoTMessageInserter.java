@@ -37,6 +37,7 @@ import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 
@@ -141,7 +142,8 @@ public final class WoTMessageInserter extends MessageInserter {
 	 * You have to synchronize on this <code>WoTMessageInserter</code> when using this function.
 	 */
 	protected void insertMessage(OwnMessage m) throws InsertException, IOException, TransformerException, ParserConfigurationException {
-		Bucket tempB = mTBF.makeBucket(2048 + m.getText().length()); /* TODO: set to a reasonable value */
+		// TODO: Performance: Set to a reasonable default size
+		RandomAccessBucket tempB = mTBF.makeBucket(2048 + m.getText().length());
 		OutputStream os = null;
 		
 		try {
