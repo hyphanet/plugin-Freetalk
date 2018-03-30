@@ -179,7 +179,7 @@ public final class WoTMessageInserter extends MessageInserter {
 		for(Map.Entry<BaseClientPutter, String> entry : mPutterMessageIDs.entrySet()) {
 			if(messageID.equals(entry.getValue())) {
 				// The following will call onFailure which removes the request from mMessageIDs / mPutterMessageIDs
-				entry.getKey().cancel(null, mClientContext);
+				entry.getKey().cancel(mClientContext);
 				break;
 			}
 		}
