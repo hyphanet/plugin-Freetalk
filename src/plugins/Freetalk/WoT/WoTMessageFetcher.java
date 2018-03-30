@@ -326,6 +326,9 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	@Override
 	public void onMajorProgress(ObjectContainer container) { }
 
-	@Override public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) { }
+	@Override public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
+		metadata.free();
+		throw new UnsupportedOperationException();
+	}
 
 }
