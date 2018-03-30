@@ -340,7 +340,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	public void onFailure(InsertException e, BaseClientPutter state) { }
 	
 	@Override
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }
+	public void onFetchable(BaseClientPutter state) { }
 
 	@Override public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		metadata.free();

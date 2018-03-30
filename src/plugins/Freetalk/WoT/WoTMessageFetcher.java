@@ -326,7 +326,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	public void onFailure(InsertException e, BaseClientPutter state) { }
 	
 	@Override
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }
+	public void onFetchable(BaseClientPutter state) { }
 
 	@Override public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		metadata.free();

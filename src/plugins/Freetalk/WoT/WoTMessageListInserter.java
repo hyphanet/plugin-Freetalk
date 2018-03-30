@@ -238,7 +238,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
 	
 	@Override
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }
+	public void onFetchable(BaseClientPutter state) { }
 
 	@Override public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		metadata.free();
