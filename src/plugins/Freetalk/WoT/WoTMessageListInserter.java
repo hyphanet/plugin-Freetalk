@@ -235,7 +235,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	public void onFailure(FetchException e, ClientGetter state) { }
 	
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
 	
 	@Override
 	public void onFetchable(BaseClientPutter state) { }

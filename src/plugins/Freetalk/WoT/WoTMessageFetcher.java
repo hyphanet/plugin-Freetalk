@@ -317,7 +317,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	/* Not needed functions, called for inserts */
 
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
 	
 	@Override
 	public void onSuccess(BaseClientPutter state, ObjectContainer container) { }
