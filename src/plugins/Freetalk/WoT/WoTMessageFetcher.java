@@ -323,7 +323,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	public void onSuccess(BaseClientPutter state, ObjectContainer container) { }
 	
 	@Override
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) { }
+	public void onFailure(InsertException e, BaseClientPutter state) { }
 	
 	@Override
 	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }

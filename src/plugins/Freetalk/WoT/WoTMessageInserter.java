@@ -201,7 +201,7 @@ public final class WoTMessageInserter extends MessageInserter {
 	}
 	
 	@Override
-	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
+	public synchronized void onFailure(InsertException e, BaseClientPutter state) {
 		try {
 			if(e.getMode() == CANCELLED)
 				Logger.normal(this, "Message insert cancelled for " + state.getURI());
