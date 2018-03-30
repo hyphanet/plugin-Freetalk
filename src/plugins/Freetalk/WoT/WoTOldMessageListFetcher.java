@@ -275,7 +275,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	}
 
 	@Override
-	public synchronized void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+	public synchronized void onFailure(FetchException e, ClientGetter state) {
 		try {
 			switch(e.getMode()) {
 				case DATA_NOT_FOUND:

@@ -242,7 +242,7 @@ public final class WoTMessageInserter extends MessageInserter {
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) { }
 	
 	@Override
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) { }
+	public void onFailure(FetchException e, ClientGetter state) { }
 	
 	@Override
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
