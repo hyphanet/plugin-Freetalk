@@ -205,7 +205,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	}
 
 	@Override
-	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.normal(this, "Fetched message: " + state.getURI());
 		final String messageListID = mMessageLists.get(state);
 		removeFetch(state); // This must be called before we call fetchMessages() because fetchMessages has a parallel fetch count limit.

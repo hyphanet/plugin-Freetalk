@@ -226,7 +226,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	}
 
 	@Override
-	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.normal(this, "Fetched MessageList: " + state.getURI());
 
 		Bucket bucket = null;

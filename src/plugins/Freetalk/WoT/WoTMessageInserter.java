@@ -239,7 +239,7 @@ public final class WoTMessageInserter extends MessageInserter {
 	/* Not needed functions*/
 	
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) { }
+	public void onSuccess(FetchResult result, ClientGetter state) { }
 	
 	@Override
 	public void onFailure(FetchException e, ClientGetter state) { }
