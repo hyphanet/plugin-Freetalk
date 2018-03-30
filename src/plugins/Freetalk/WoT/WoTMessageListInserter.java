@@ -135,8 +135,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	 * You have to synchronize on this <code>WoTMessageListInserter</code> and then on the <code>WoTMessageManager</code> when using this function.
 	 */
 	private void insertMessageList(WoTOwnMessageList list) throws TransformerException, ParserConfigurationException, NoSuchMessageException, IOException, InsertException {
-		// TODO: Performance: Set to a reasonable default size
-		RandomAccessBucket tempB = mTBF.makeBucket(4096);
+		RandomAccessBucket tempB = mTBF.makeBucket(WoTMessageListXML.MAX_XML_SIZE);
 		OutputStream os = null;
 		
 		try {

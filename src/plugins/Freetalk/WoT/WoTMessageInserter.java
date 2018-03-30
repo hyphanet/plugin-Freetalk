@@ -142,8 +142,7 @@ public final class WoTMessageInserter extends MessageInserter {
 	 * You have to synchronize on this <code>WoTMessageInserter</code> when using this function.
 	 */
 	protected void insertMessage(OwnMessage m) throws InsertException, IOException, TransformerException, ParserConfigurationException {
-		// TODO: Performance: Set to a reasonable default size
-		RandomAccessBucket tempB = mTBF.makeBucket(2048 + m.getText().length());
+		RandomAccessBucket tempB = mTBF.makeBucket(WoTMessageXML.MAX_XML_SIZE);
 		OutputStream os = null;
 		
 		try {
