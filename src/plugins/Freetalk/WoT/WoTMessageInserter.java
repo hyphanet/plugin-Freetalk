@@ -20,9 +20,6 @@ import javax.xml.transform.TransformerException;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageInserter;
 import plugins.Freetalk.OwnMessage;
-
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -34,6 +31,7 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -62,7 +60,9 @@ public final class WoTMessageInserter extends MessageInserter {
 	private final WoTMessageManager mMessageManager;
 	
 	private final Random mRandom;
-	
+
+	private final RequestClient mRequestClient;
+
 	/**
 	 * For each <code>BaseClientPutter</code> (= an object associated with an insert) this HashMap stores the ID of the message which is being
 	 * inserted by the <code>BaseClientPutter</code>.
@@ -91,6 +91,7 @@ public final class WoTMessageInserter extends MessageInserter {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
 		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
+		mRequestClient = mMessageManager.mRequestClient;
 		mXML = myMessageXML;
 	}
 
@@ -108,7 +109,11 @@ public final class WoTMessageInserter extends MessageInserter {
 	public int getPriority() {
 		return NativeThread.NORM_PRIORITY;
 	}
-	
+
+	@Override public RequestClient getRequestClient() {
+		return mRequestClient;
+	}
+
 	@Override
 	protected long getStartupDelay() {
 		return STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY);
