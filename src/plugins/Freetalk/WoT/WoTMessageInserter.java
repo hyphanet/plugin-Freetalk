@@ -154,8 +154,9 @@ public final class WoTMessageInserter extends MessageInserter {
 			/* We do not specifiy a ClientMetaData with mimetype because that would result in the insertion of an additional CHK */
 			InsertBlock ib = new InsertBlock(tempB, null, m.getInsertURI());
 			InsertContext ictx = mClient.getInsertContext(true);
-
-			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+			ClientPutter pu = mClient.insert(
+				ib, null, false, ictx, this, RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+			
 			addInsert(pu);
 			mPutterMessageIDs.put(pu, m.getID());
 			mMessageIDs.add(m.getID());
