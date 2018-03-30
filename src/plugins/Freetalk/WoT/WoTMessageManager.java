@@ -67,10 +67,6 @@ public final class WoTMessageManager extends MessageManager {
 				return false;
 			}
 
-			@Override public void removeFrom(ObjectContainer container) {
-				throw new UnsupportedOperationException();
-			}
-
 			@Override public boolean realTimeFlag() {
 				return false; // We want throughput.
 			}
