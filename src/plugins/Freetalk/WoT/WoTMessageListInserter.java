@@ -167,7 +167,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	}
 
 	@Override
-	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
+	public synchronized void onSuccess(BaseClientPutter state) {
 		try {
 			if(logDEBUG) Logger.debug(this, "Successfully inserted WoTOwnMessageList at " + state.getURI());
 			mMessageManager.onMessageListInsertSucceeded(state.getURI());

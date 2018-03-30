@@ -320,7 +320,7 @@ public final class WoTMessageFetcher extends MessageFetcher {
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
 	
 	@Override
-	public void onSuccess(BaseClientPutter state, ObjectContainer container) { }
+	public void onSuccess(BaseClientPutter state) { }
 	
 	@Override
 	public void onFailure(InsertException e, BaseClientPutter state) { }

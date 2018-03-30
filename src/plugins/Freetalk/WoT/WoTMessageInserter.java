@@ -187,7 +187,7 @@ public final class WoTMessageInserter extends MessageInserter {
 	}
 
 	@Override
-	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
+	public synchronized void onSuccess(BaseClientPutter state) {
 		try {
 			mMessageManager.onOwnMessageInserted(mPutterMessageIDs.get(state), state.getURI());
 		}
