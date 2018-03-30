@@ -113,7 +113,11 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	public int getPriority() {
 		return NativeThread.NORM_PRIORITY;
 	}
-	
+
+	@Override public RequestClient getRequestClient() {
+		return mRequestClient;
+	}
+
 	@Override
 	protected long getStartupDelay() {
 		return STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY);
@@ -210,7 +214,8 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
 		fetchContext.maxNonSplitfileRetries = 2;
 		fetchContext.maxOutputLength = WoTMessageListXML.MAX_XML_SIZE; // TODO: fetch() also takes a maxSize parameter, why?
-		ClientGetter g = mClient.fetch(uri, WoTMessageListXML.MAX_XML_SIZE, mRequestClient, this, fetchContext, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
+		ClientGetter g = mClient.fetch(uri, WoTMessageListXML.MAX_XML_SIZE, this, fetchContext,
+			RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 		addFetch(g);
 		Logger.normal(this, "Trying to fetch MessageList from " + uri);
 		
