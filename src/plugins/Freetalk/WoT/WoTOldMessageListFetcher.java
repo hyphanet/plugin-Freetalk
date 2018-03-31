@@ -15,9 +15,6 @@ import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageListFetcher;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
-
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -34,6 +31,7 @@ import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Periodically wakes up and fetches "old" {@link MessageList}s from identities.
@@ -347,4 +345,8 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 		throw new UnsupportedOperationException();
 	}
 
+	@Override public void onResume(ClientContext context) throws ResumeFailedException {
+		assert(false);
+		throw new ResumeFailedException("This class doesn't create persistent requests!");
+	}
 }

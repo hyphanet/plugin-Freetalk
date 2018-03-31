@@ -17,7 +17,6 @@ import plugins.Freetalk.MessageList;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
 
-import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
 import freenet.client.FetchContext;
@@ -26,6 +25,7 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
@@ -35,6 +35,7 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Periodically wakes up and fetches messages by their CHK URI. The CHK URIs of messages are obtained by querying the <code>MessageManager</code>
@@ -333,4 +334,8 @@ public final class WoTMessageFetcher extends MessageFetcher {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override public void onResume(ClientContext context) throws ResumeFailedException {
+		assert(false);
+		throw new ResumeFailedException("This class doesn't create persistent requests!");
+	}
 }

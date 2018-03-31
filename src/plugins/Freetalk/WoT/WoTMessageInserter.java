@@ -27,6 +27,7 @@ import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
@@ -38,6 +39,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Periodically wakes up and inserts messages as CHK. The CHK URIs are then stored in the messages.
@@ -259,5 +261,9 @@ public final class WoTMessageInserter extends MessageInserter {
 		metadata.free();
 		throw new UnsupportedOperationException();
 	}
-	
+
+	@Override public void onResume(ClientContext context) throws ResumeFailedException {
+		assert(false);
+		throw new ResumeFailedException("This class doesn't create persistent requests!");
+	}
 }
