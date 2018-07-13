@@ -85,7 +85,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String WOT_PLUGIN_URI = "/WebOfTrust";
 	public static final String WOT_CONTEXT = PLUGIN_TITLE;
 	public static final String DATABASE_FILENAME = PLUGIN_TITLE + ".db4o";
-	public static final int DATABASE_FORMAT_VERSION = 1;
+	public static final int DATABASE_FORMAT_VERSION = 3;
 
 	/* References from the node */
 	
@@ -557,6 +557,38 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		
 		if(oldVersion == Freetalk.DATABASE_FORMAT_VERSION)
 			return;
+		
+		// No upgrade code available for the given database version. Prevent startup by throwing.
+		
+		if(oldVersion < 3) {
+			// As part of adapting to fred's purge-db4o API changes with Freetalk branch
+			// issue-0006912-compilefix-for-purge-db4o Freetalk shouldn't store FreenetURI objects
+			// in its db4o database anymore because the db4o code was removed from FreenetURI by
+			// fred. The backwards-compatible approach of upgrading old databases would have been
+			// to keep the member variables of type FreenetURI in Freetalk's classes and move their
+			// content to String variables in this upgrade function.
+			// However given that Freetalk build0013 broke Freetalk completely in 2012 there likely
+			// weren't any Freetalk users for the past 6 years and thus the effort to salvage those
+			// databases isn't worth it.
+			// Thus the type of the member variables was just changed to String without providing
+			// code to preserve the old FreenetURI values.
+			// If you want to write update code for rescuing an old database please see the commits
+			// following the commit which added this comment for which FreenetURI fields were
+			// affected. Revert them and do the same thing as WoT did with the FreenetURI problem.
+			// However I would be thankful if you refrained from doing so, I'd like to use the
+			// opportunity of Freetalk being out of use for 6 years to rewrite lots of it without
+			// being restrained by legacy cruft :) In fact I can't promise that I will not refuse
+			// to merge such changes, instead of filing a PR you should merely use them for
+			// converting your database into something which can be consumed by this branch here.
+			//
+			// FIXME: Actually implement the above type change of the fields as part of fixing the
+			// remaining compiler errors on this branch due to the FreenetURI change.
+			
+			throw new RuntimeException("Databases of the legacy Freetalk versions up to build0013"
+				+ " aren't supported anymore, sorry. Staying compatible with that would impair"
+				+ " development too much considering Freetalk wasn't working since 2012 anyway."
+				+ " If you really need the data use Freetalk build0012 with fred build01467.");
+		}
 		
 		throw new RuntimeException("Your database is too outdated to be upgraded automatically, please create a new one by deleting " 
 				+ DATABASE_FILENAME + ". Contact the developers if you really need your old data.");

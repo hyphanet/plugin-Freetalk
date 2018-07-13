@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import static freenet.client.InsertException.InsertExceptionMode.CANCELLED;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -18,9 +20,6 @@ import javax.xml.transform.TransformerException;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.MessageInserter;
 import plugins.Freetalk.OwnMessage;
-
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -28,15 +27,19 @@ import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Periodically wakes up and inserts messages as CHK. The CHK URIs are then stored in the messages.
@@ -59,7 +62,9 @@ public final class WoTMessageInserter extends MessageInserter {
 	private final WoTMessageManager mMessageManager;
 	
 	private final Random mRandom;
-	
+
+	private final RequestClient mRequestClient;
+
 	/**
 	 * For each <code>BaseClientPutter</code> (= an object associated with an insert) this HashMap stores the ID of the message which is being
 	 * inserted by the <code>BaseClientPutter</code>.
@@ -88,6 +93,7 @@ public final class WoTMessageInserter extends MessageInserter {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
 		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
+		mRequestClient = mMessageManager.mRequestClient;
 		mXML = myMessageXML;
 	}
 
@@ -105,7 +111,11 @@ public final class WoTMessageInserter extends MessageInserter {
 	public int getPriority() {
 		return NativeThread.NORM_PRIORITY;
 	}
-	
+
+	@Override public RequestClient getRequestClient() {
+		return mRequestClient;
+	}
+
 	@Override
 	protected long getStartupDelay() {
 		return STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY);
@@ -139,7 +149,7 @@ public final class WoTMessageInserter extends MessageInserter {
 	 * You have to synchronize on this <code>WoTMessageInserter</code> when using this function.
 	 */
 	protected void insertMessage(OwnMessage m) throws InsertException, IOException, TransformerException, ParserConfigurationException {
-		Bucket tempB = mTBF.makeBucket(2048 + m.getText().length()); /* TODO: set to a reasonable value */
+		RandomAccessBucket tempB = mTBF.makeBucket(WoTMessageXML.MAX_XML_SIZE);
 		OutputStream os = null;
 		
 		try {
@@ -151,8 +161,9 @@ public final class WoTMessageInserter extends MessageInserter {
 			/* We do not specifiy a ClientMetaData with mimetype because that would result in the insertion of an additional CHK */
 			InsertBlock ib = new InsertBlock(tempB, null, m.getInsertURI());
 			InsertContext ictx = mClient.getInsertContext(true);
-
-			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+			ClientPutter pu = mClient.insert(
+				ib, null, false, ictx, this, RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+			
 			addInsert(pu);
 			mPutterMessageIDs.put(pu, m.getID());
 			mMessageIDs.add(m.getID());
@@ -176,14 +187,14 @@ public final class WoTMessageInserter extends MessageInserter {
 		for(Map.Entry<BaseClientPutter, String> entry : mPutterMessageIDs.entrySet()) {
 			if(messageID.equals(entry.getValue())) {
 				// The following will call onFailure which removes the request from mMessageIDs / mPutterMessageIDs
-				entry.getKey().cancel(null, mClientContext);
+				entry.getKey().cancel(mClientContext);
 				break;
 			}
 		}
 	}
 
 	@Override
-	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
+	public synchronized void onSuccess(BaseClientPutter state) {
 		try {
 			mMessageManager.onOwnMessageInserted(mPutterMessageIDs.get(state), state.getURI());
 		}
@@ -197,9 +208,9 @@ public final class WoTMessageInserter extends MessageInserter {
 	}
 	
 	@Override
-	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
+	public synchronized void onFailure(InsertException e, BaseClientPutter state) {
 		try {
-			if(e.getMode() == InsertException.CANCELLED)
+			if(e.getMode() == CANCELLED)
 				Logger.normal(this, "Message insert cancelled for " + state.getURI());
 			else if(e.isFatal())
 				Logger.error(this, "Message insert failed", e);
@@ -235,25 +246,24 @@ public final class WoTMessageInserter extends MessageInserter {
 	/* Not needed functions*/
 	
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) { }
+	public void onSuccess(FetchResult result, ClientGetter state) { }
 	
 	@Override
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) { }
+	public void onFailure(FetchException e, ClientGetter state) { }
 	
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
 	
 	@Override
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }
+	public void onFetchable(BaseClientPutter state) { }
 
-	@Override
-	public void onMajorProgress(ObjectContainer container) { }
-
-	@Override
-	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
-			ObjectContainer container) {
+	@Override public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		metadata.free();
 		throw new UnsupportedOperationException();
 	}
-	
+
+	@Override public void onResume(ClientContext context) throws ResumeFailedException {
+		assert(false);
+		throw new ResumeFailedException("This class doesn't create persistent requests!");
+	}
 }

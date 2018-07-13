@@ -45,7 +45,15 @@ import freenet.support.Logger;
 
 public final class WoTMessageManager extends MessageManager {
 	
-	/** One for all requests for WoTMessage*, for fairness. */
+	/**
+	 * One RequestClient is used for all requests and inserts of messages and message lists.
+	 * This means their request priority values are enforced in relation to all other requests and
+	 * inserts of messages and message lists.
+	 * Requests and inserts of other plugins or fred itself have different RequestClients. Among
+	 * those and our RequestClient fred will chose requests in a round robin fashion IIRC.
+	 * TODO: Code quality: Make private and have external classes obtain this by a getter.
+	 * FIXME: Code quality: Update "developer-documentation/RequestClient and priority map.txt" at
+	 * the WoT repository to reflect this. */
 	final RequestClient mRequestClient;
 	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
@@ -65,10 +73,6 @@ public final class WoTMessageManager extends MessageManager {
 
 			@Override public boolean persistent() {
 				return false;
-			}
-
-			@Override public void removeFrom(ObjectContainer container) {
-				throw new UnsupportedOperationException();
 			}
 
 			@Override public boolean realTimeFlag() {

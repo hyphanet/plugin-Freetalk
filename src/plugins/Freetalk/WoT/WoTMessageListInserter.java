@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import static freenet.client.InsertException.InsertExceptionMode.COLLISION;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
@@ -17,9 +19,6 @@ import plugins.Freetalk.MessageList.MessageListID;
 import plugins.Freetalk.MessageListInserter;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
-
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -27,15 +26,19 @@ import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * @author xor (xor@freenetproject.org)
@@ -49,7 +52,9 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	private final WoTMessageManager mMessageManager;
 	
 	private final Random mRandom;
-	
+
+	private final RequestClient mRequestClient;
+
 	private final WoTMessageListXML mXML;
 	
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
@@ -67,6 +72,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 		super(myNode, myClient, myName, myIdentityManager, myMessageManager);
 		mMessageManager = myMessageManager;
 		mRandom = mNode.fastWeakRandom;
+		mRequestClient = mMessageManager.mRequestClient;
 		mXML = myMessageListXML;
 	}
 	
@@ -98,7 +104,11 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	public int getPriority() {
 		return NativeThread.NORM_PRIORITY;
 	}
-	
+
+	@Override public RequestClient getRequestClient() {
+		return mRequestClient;
+	}
+
 	@Override
 	protected long getStartupDelay() {
 		return STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY);
@@ -132,7 +142,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	 * You have to synchronize on this <code>WoTMessageListInserter</code> and then on the <code>WoTMessageManager</code> when using this function.
 	 */
 	private void insertMessageList(WoTOwnMessageList list) throws TransformerException, ParserConfigurationException, NoSuchMessageException, IOException, InsertException {
-		Bucket tempB = mTBF.makeBucket(4096); /* TODO: set to a reasonable value */
+		RandomAccessBucket tempB = mTBF.makeBucket(WoTMessageListXML.MAX_XML_SIZE);
 		OutputStream os = null;
 		
 		try {
@@ -148,8 +158,9 @@ public final class WoTMessageListInserter extends MessageListInserter {
 			/* We do not specifiy a ClientMetaData with mimetype because that would result in the insertion of an additional CHK */
 			InsertBlock ib = new InsertBlock(tempB, null, list.getInsertURI());
 			InsertContext ictx = mClient.getInsertContext(true);
-
-			ClientPutter pu = mClient.insert(ib, false, null, false, ictx, this, RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+			ClientPutter pu = mClient.insert(
+				ib, null, false, ictx, this, RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+			
 			addInsert(pu);
 			tempB = null;
 
@@ -163,7 +174,7 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	}
 
 	@Override
-	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
+	public synchronized void onSuccess(BaseClientPutter state) {
 		try {
 			if(logDEBUG) Logger.debug(this, "Successfully inserted WoTOwnMessageList at " + state.getURI());
 			mMessageManager.onMessageListInsertSucceeded(state.getURI());
@@ -178,9 +189,9 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	}
 
 	@Override
-	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
+	public synchronized void onFailure(InsertException e, BaseClientPutter state) {
 		try {
-			if(e.getMode() == InsertException.COLLISION) {
+			if(e.getMode() == COLLISION) {
 				Logger.warning(this, "WoTOwnMessageList insert collided, trying to insert with higher index ...");
 				try {
 					synchronized(mMessageManager) {
@@ -225,25 +236,24 @@ public final class WoTMessageListInserter extends MessageListInserter {
 	/* Not needed functions*/
 	
 	@Override
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) { }
+	public void onSuccess(FetchResult result, ClientGetter state) { }
 	
 	@Override
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) { }
+	public void onFailure(FetchException e, ClientGetter state) { }
 	
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
 	
 	@Override
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }
+	public void onFetchable(BaseClientPutter state) { }
 
-	@Override
-	public void onMajorProgress(ObjectContainer container) { }
-
-	@Override
-	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
-			ObjectContainer container) {
+	@Override public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		metadata.free();
 		throw new UnsupportedOperationException();
 	}
 
+	@Override public void onResume(ClientContext context) throws ResumeFailedException {
+		assert(false);
+		throw new ResumeFailedException("This class doesn't create persistent requests!");
+	}
 }

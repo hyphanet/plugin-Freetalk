@@ -15,9 +15,6 @@ import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageListFetcher;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
-
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -34,6 +31,7 @@ import freenet.support.TransferThread;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
+import freenet.support.io.ResumeFailedException;
 
 /**
  * Periodically wakes up and fetches "old" {@link MessageList}s from identities.
@@ -113,7 +111,11 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	public int getPriority() {
 		return NativeThread.NORM_PRIORITY;
 	}
-	
+
+	@Override public RequestClient getRequestClient() {
+		return mRequestClient;
+	}
+
 	@Override
 	protected long getStartupDelay() {
 		return STARTUP_DELAY/2 + mRandom.nextInt(STARTUP_DELAY);
@@ -210,7 +212,8 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 		fetchContext.maxSplitfileBlockRetries = 2; /* 3 and above or -1 = cooldown queue. -1 is infinite */
 		fetchContext.maxNonSplitfileRetries = 2;
 		fetchContext.maxOutputLength = WoTMessageListXML.MAX_XML_SIZE; // TODO: fetch() also takes a maxSize parameter, why?
-		ClientGetter g = mClient.fetch(uri, WoTMessageListXML.MAX_XML_SIZE, mRequestClient, this, fetchContext, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
+		ClientGetter g = mClient.fetch(uri, WoTMessageListXML.MAX_XML_SIZE, this, fetchContext,
+			RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 		addFetch(g);
 		Logger.normal(this, "Trying to fetch MessageList from " + uri);
 		
@@ -221,7 +224,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	}
 
 	@Override
-	public synchronized void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.normal(this, "Fetched MessageList: " + state.getURI());
 
 		Bucket bucket = null;
@@ -270,12 +273,12 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	}
 
 	@Override
-	public synchronized void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+	public synchronized void onFailure(FetchException e, ClientGetter state) {
 		try {
 			switch(e.getMode()) {
-				case FetchException.DATA_NOT_FOUND:
-				case FetchException.ALL_DATA_NOT_FOUND:
-				case FetchException.RECENTLY_FAILED:
+				case DATA_NOT_FOUND:
+				case ALL_DATA_NOT_FOUND:
+				case RECENTLY_FAILED:
 					assert(state.getURI().isSSK());
 					
 					// We requested an old MessageList, i.e. it's index is lower than the index of the latest known MessageList, so the requested MessageList
@@ -300,7 +303,7 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 
 					break;
 				
-				case FetchException.CANCELLED:
+				case CANCELLED:
 					if(logDEBUG) Logger.debug(this, "Cancelled downloading MessageList " + state.getURI());
 					break;
 					
@@ -326,25 +329,24 @@ public final class WoTOldMessageListFetcher extends TransferThread implements Me
 	/* Not needed functions, called for inserts */
 
 	@Override
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) { }
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) { }
 	
 	@Override
-	public void onSuccess(BaseClientPutter state, ObjectContainer container) { }
+	public void onSuccess(BaseClientPutter state) { }
 	
 	@Override
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) { }
+	public void onFailure(InsertException e, BaseClientPutter state) { }
 	
 	@Override
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) { }
+	public void onFetchable(BaseClientPutter state) { }
 
-	@Override
-	public void onMajorProgress(ObjectContainer container) { }
-
-	@Override
-	public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state,
-			ObjectContainer container) {
+	@Override public void onGeneratedMetadata(Bucket metadata, BaseClientPutter state) {
 		metadata.free();
 		throw new UnsupportedOperationException();
 	}
 
+	@Override public void onResume(ClientContext context) throws ResumeFailedException {
+		assert(false);
+		throw new ResumeFailedException("This class doesn't create persistent requests!");
+	}
 }

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import java.net.MalformedURLException;
 import java.util.Arrays;
 
 import plugins.Freetalk.Identity;
@@ -29,7 +30,9 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 	
 	/* Attributes, stored in the database. */
 
-	private final FreenetURI mInsertURI;
+	/** The {@link FreenetURI} used to insert this identity's content to Freenet.
+	 *  Is a SSK insert URI. */
+	private final String mInsertURI;
 	
 	/**
 	 * If true then the identity is auto-subscribed to new boards when they are discovered
@@ -46,7 +49,7 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 		super(myID, myRequestURI, myNickname);
 		if(myInsertURI == null)
 			throw new IllegalArgumentException();
-		mInsertURI = myInsertURI;
+		mInsertURI = myInsertURI.toString();
 		mAutoSubscribeToNewBoards = autoSubscribeToNewBoards;
 		mDisplayImages = displayImages;
 	}
@@ -62,15 +65,21 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 		
 		IfNull.thenThrow(mInsertURI, "mInsertURI");
 		
+		// Throws MalformedURLException if invalid.
+		new FreenetURI(mInsertURI);
+		
 		if(!Arrays.equals(getRequestURI().getCryptoKey(), getInsertURI().getCryptoKey()))
 			throw new IllegalStateException("Request and insert URI do not fit together!");
 	}
 
 
 	@Override public FreenetURI getInsertURI() {
-		checkedActivate(1);
-		checkedActivate(mInsertURI, 2);
-		return mInsertURI;
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
+		try {
+			return new FreenetURI(mInsertURI);
+		} catch (MalformedURLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override public boolean wantsMessagesFrom(Identity identity) throws Exception {
@@ -145,9 +154,10 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 			checkedActivate(1);
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
-
-			checkedActivate(mInsertURI, 2);
-			checkedStore(mInsertURI);
+			
+			// No need to manually store the String members: It is a db4o primitive type and as such
+			// will be stored along with this object.
+			
 			checkedStore();
 		}
 		catch(RuntimeException e) {
@@ -157,13 +167,13 @@ public final class WoTOwnIdentity extends WoTIdentity implements OwnIdentity {
 
 	@Override protected void deleteWithoutCommit() {	
 		try {
+			// No need to manually delete the String members: It is a db4o primitive type and as
+			// such will be deleted along with this object.
+			
 			// super.deleteWithoutCommit() does the following already so there is no need to do it here:
 			// // 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			// checkedActivate(this, 1);
 			super.deleteWithoutCommit();
-			
-			checkedActivate(mInsertURI, 2);
-			mInsertURI.removeFrom(mDB);
 		}
 		catch(RuntimeException e) {
 			checkedRollbackAndThrow(e);

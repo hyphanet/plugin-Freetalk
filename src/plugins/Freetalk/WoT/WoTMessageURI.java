@@ -33,7 +33,8 @@ import freenet.support.codeshortification.IfNull;
 // @IndexedField // I can't think of any query which would need to get all WoTMessageURI objects.
 public final class WoTMessageURI extends MessageURI implements Cloneable {
 
-	private final FreenetURI mFreenetURI;
+	/** Actually is a {@link FreenetURI} - stored as String to ease storage inside db4o. */
+	private final String mFreenetURI;
 	private final String mMessageID;
 
 	public WoTMessageURI(FreenetURI myFreenetURI, MessageID myMessageID) {
@@ -44,9 +45,11 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 			throw new IllegalArgumentException("Trying to create a WoTMessageURI without an ID.");
 			
 		
-		mFreenetURI = myFreenetURI.isUSK() ? myFreenetURI.sskForUSK() : myFreenetURI.clone();
-		if(!mFreenetURI.isSSK())
+		if(myFreenetURI.isUSK())
+			myFreenetURI = myFreenetURI.sskForUSK();
+		if(!myFreenetURI.isSSK())
 			throw new IllegalArgumentException("Trying to create a WoTMessageURI with illegal key type: " + myFreenetURI.getKeyType());
+		mFreenetURI = myFreenetURI.toString();
 		
 		myMessageID.throwIfAuthorDoesNotMatch(IdentityID.constructFromURI(myFreenetURI));
 		 		
@@ -67,10 +70,15 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 		if(tokenizer.countTokens() < 2)
 			throw new MalformedURLException("Invalid Message URI: Message list specified but no UUID given: " + uri);
 		
-		FreenetURI tempURI = new FreenetURI(tokenizer.nextToken());
-		mFreenetURI = tempURI.isUSK() ? tempURI.sskForUSK() : tempURI;
-		if(!mFreenetURI.isSSK()) /* TODO: USK is only allowed for legacy because there are broken message lists in the network. Remove */
-			throw new MalformedURLException("Trying to create a WoTMessageURI with illegal key type " + mFreenetURI.getKeyType());
+		FreenetURI freenetURI = new FreenetURI(tokenizer.nextToken());
+		// FIXME: USK is only allowed for legacy reasons because there are broken message lists on
+		// the network. Remove.
+		if(freenetURI.isUSK())
+			freenetURI = freenetURI.sskForUSK();
+		if(!freenetURI.isSSK())
+			throw new MalformedURLException("Trying to create a WoTMessageURI with illegal key type " + freenetURI.getKeyType());
+		
+		mFreenetURI = freenetURI.toString();
 		
 		String stringUUID = tokenizer.nextToken();
 		UUID uuid;
@@ -82,29 +90,33 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 			throw new MalformedURLException("Invalid UUID: " + stringUUID);
 		}
 		
-		mMessageID = MessageID.construct(uuid, mFreenetURI).toString();
+		mMessageID = MessageID.construct(uuid, freenetURI).toString();
 	}
 	
 	@Override
 	public void databaseIntegrityTest() throws Exception {
-		checkedActivate(1);
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		
 		IfNull.thenThrow(mFreenetURI, "mFreenetURI");
 		IfNull.thenThrow(mMessageID, "mMessageID");
 		
-		checkedActivate(mFreenetURI, 2);
+		// Throws MalformedURLException if invalid.
+		new FreenetURI(mFreenetURI);
 		
-		if(!mFreenetURI.isSSK())
-			throw new IllegalStateException("mFreenetURI == " + mFreenetURI);
+		if(!getFreenetURI().isSSK())
+			throw new IllegalStateException("mFreenetURI is not an SSK: " + mFreenetURI);
 		
-		IfNotEquals.thenThrow(MessageID.construct(mMessageID).getAuthorID(), IdentityID.constructFromURI(mFreenetURI), "author ID from mMessageID");
+		IfNotEquals.thenThrow(MessageID.construct(mMessageID).getAuthorID(), IdentityID.constructFromURI(getFreenetURI()), "author ID from mMessageID");
 	}
 
 	@Override
 	public FreenetURI getFreenetURI() {
-		checkedActivate(1);
-		checkedActivate(mFreenetURI, 2);
-		return mFreenetURI;
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
+		try {
+			return new FreenetURI(mFreenetURI);
+		} catch (MalformedURLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	@Override
@@ -124,8 +136,7 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 	public boolean equals(Object obj) {
 		final WoTMessageURI uri = (WoTMessageURI)obj;
 		checkedActivate(1);
-		checkedActivate(mFreenetURI, 2);
-		return uri.getFreenetURI().equals(mFreenetURI) && uri.getMessageID().equals(mMessageID);
+		return uri.getFreenetURI().equals(getFreenetURI()) && uri.getMessageID().equals(mMessageID);
 	}
 
 	/**
@@ -136,9 +147,8 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 	 */
 	@Override
 	public String toString() {
-		checkedActivate(1);
-		checkedActivate(mFreenetURI, 2);
-		return mFreenetURI.toString() + "#" + MessageID.construct(mMessageID).getUUID();
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
+		return mFreenetURI + "#" + MessageID.construct(mMessageID).getUUID();
 	}
 
 	@Override
@@ -146,10 +156,10 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 		try {
 			checkedActivate(1);
 			
-			checkedDelete();
+			// No need to manually delete the String members: It is a db4o primitive type and as
+			// such will be deleted along with this object.
 			
-			checkedActivate(mFreenetURI, 2);
-			mFreenetURI.removeFrom(mDB);
+			checkedDelete();
 		}
 		catch(RuntimeException e) {
 			checkedRollbackAndThrow(e);
@@ -163,8 +173,9 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 			
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in removeFrom() !
 			
-			checkedActivate(mFreenetURI, 2);
-			checkedStore(mFreenetURI);
+			// No need to manually store the String members: It is a db4o primitive type and as such
+			// will be stored along with this object.
+			
 			checkedStore();
 		}
 		catch(RuntimeException e) {
@@ -175,8 +186,7 @@ public final class WoTMessageURI extends MessageURI implements Cloneable {
 	@Override
 	public WoTMessageURI clone() {
 		checkedActivate(1);
-		checkedActivate(mFreenetURI, 2);
-		final WoTMessageURI clone = new WoTMessageURI(mFreenetURI, MessageID.construct(mMessageID));
+		final WoTMessageURI clone = new WoTMessageURI(getFreenetURI(), MessageID.construct(mMessageID));
 		clone.initializeTransient(mFreetalk);
 		return clone;
 	}

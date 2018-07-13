@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -59,20 +60,27 @@ public abstract class OwnMessage extends Message {
 	public abstract FreenetURI getInsertURI();
 
 	/**
-	 * @throws RuntimeException If the message was not inserted yet and therefore the real URI is unknown.
+	 * @throws RuntimeException If the message was not inserted yet and therefore the real URI is
+	 *     unknown. FIXME: Also thrown if mFreenetURI is corrupted. Perhaps use something different
+	 *     than RuntimeException for the former case? Review callers to determine that.
 	 * @return The CHK URI of the message.
 	 */
 	@Override public synchronized FreenetURI getFreenetURI() {
-		checkedActivate(1);
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		
 		if(mFreenetURI == null)
 			throw new RuntimeException("getFreenetURI() called on the not inserted message " + this);
 		
-		checkedActivate(mFreenetURI, 2);
-		return mFreenetURI;
+		try {
+			return new FreenetURI(mFreenetURI);
+		} catch (MalformedURLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	// TODO: Remove the debug code if we are sure that db4o works
+	// FIXME: Given that mFreenetURI was changed to being a db4o primitive type from previously
+	// being of an arbitrary class unknown to db4o this test might not be reasonable anymore.
 	public synchronized boolean testFreenetURIisNull() {
 		checkedActivate(1);
 		
@@ -151,7 +159,7 @@ public abstract class OwnMessage extends Message {
 		checkedActivate(1);
 		if(mFreenetURI != null)
 			throw new RuntimeException("The message was inserted already.");
-		mFreenetURI = myFreenetURI;
+		mFreenetURI = myFreenetURI.toString();
 		storeWithoutCommit();
 	}
 
@@ -161,9 +169,10 @@ public abstract class OwnMessage extends Message {
     		if(uri != null)
     			return uri.toString();
     		
-    		FreenetURI freenetURI = mFreenetURI; // We cannot use the getter here because it throws if the URI is null.
-    		if(freenetURI != null)
-    			return freenetURI.toString();
+    		// We cannot use the getter for mFreenetURI here because it throws if the URI is null.
+    		checkedActivate(1); // String is a db4o primitive type so 1 is enough
+    		if(mFreenetURI != null)
+    			return mFreenetURI;
     		
     		return "ID:" + getID() + " (no URI present, inserted=" + wasInserted() + ")";
     	}

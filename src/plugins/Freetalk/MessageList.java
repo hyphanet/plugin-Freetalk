@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -175,8 +176,9 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		@IndexedField
 		private final String mMessageID;
 		
+		/** Actually is a {@link FreenetURI} - stored as String to ease storage inside db4o. */
 		@IndexedField
-		private final FreenetURI mURI; 
+		private final String mFreenetURI;
 		
 		@IndexedField
 		private final Board mBoard;
@@ -199,7 +201,7 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 				throw new NullPointerException("Message date is null.");
 			
 			mMessageID = newMessageID.toString();
-			mURI = newURI.clone(); // Prevent weird db4o problems.
+			mFreenetURI = newURI.toString();
 			mBoard = myBoard;
 			mDate = myDate;
 		}
@@ -216,8 +218,11 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			
 			MessageID.construct(mMessageID).throwIfAuthorDoesNotMatch(getMessageList().getAuthor());
 			
-			if(mURI == null)
-				throw new NullPointerException("mURI==null");
+			if(mFreenetURI == null)
+				throw new NullPointerException("mFreenetURI==null");
+			
+			// Throws MalformedURLException if invalid.
+			new FreenetURI(mFreenetURI);
 			
 			if(getMessageList().getReference(getURI()) != this)
 				throw new IllegalStateException("Parent message list does not contain this MessageReference.");
@@ -252,16 +257,15 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			try {
 				checkedActivate(1);
 				
+				// You have to take care to keep the list of stored objects synchronized with those
+				// being deleted in deleteWithoutCommit()!
+				
 				// We cannot throwIfNotStored because MessageReference objects are usually created within the same transaction of creating the MessageList
 				//DBUtil.throwIfNotStored(db, mMessageList);
 				
-				// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
+				// No need to manually store the String and Date fields: They are db4o primitive
+				// types and as such will be stored along with this object.
 				
-				if(mURI == null)
-					throw new NullPointerException("Should not happen: URI is null for " + this);
-				
-				checkedActivate(mURI, 2);
-				checkedStore(mURI);
 				checkedStore();
 			}
 			catch(RuntimeException e) {
@@ -273,14 +277,10 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			try {
 				checkedActivate(1);
 				
-				checkedDelete();
+				// No need to manually delete the String and Date fields: They are db4o primitive
+				// types and as such will be deleted along with this object.
 				
-				if(mURI != null) {
-					checkedActivate(mURI, 2);
-					mURI.removeFrom(mDB);
-				}
-				else
-					Logger.error(this, "Should not happen: URI is null for " + this);
+				checkedDelete();
 			}
 			catch(RuntimeException e) {
 				checkedRollbackAndThrow(e);
@@ -293,9 +293,12 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		}
 		
 		public FreenetURI getURI() {
-			checkedActivate(1);
-			checkedActivate(mURI, 2);
-			return mURI;
+			checkedActivate(1); // String is a db4o primitive type so 1 is enough
+			try {
+				return new FreenetURI(mFreenetURI);
+			} catch (MalformedURLException e) {
+				throw new RuntimeException(e);
+			}
 		}
 		
 		public Board getBoard() {
@@ -467,10 +470,10 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 		// We use an ID=>MessageInfo hash table for that, MessageInfo being:
 		
 		class MessageInfo {
-			final FreenetURI uri;
+			final String uri;
 			final HashSet<Board> boards;
 			
-			public MessageInfo(FreenetURI myURI) {
+			public MessageInfo(String myURI) {
 				uri = myURI;
 				boards = new HashSet<Board>(Math.min(newMessages.size(), Message.MAX_BOARDS_PER_MESSAGE) * 2);
 			}
@@ -502,10 +505,10 @@ public abstract class MessageList extends Persistent implements Iterable<Message
 			MessageInfo info = messages.get(ref.mMessageID);
 			
 			if(info != null) {
-				if(info.uri.equals(ref.mURI) == false)
+				if(info.uri.equals(ref.mFreenetURI) == false)
 					throw new IllegalArgumentException("Trying to create a MessageList which maps one message ID to multiple URIs: " + ref.getMessageID());
 			} else {
-				info = new MessageInfo(ref.mURI);
+				info = new MessageInfo(ref.mFreenetURI);
 				messages.put(ref.mMessageID, info);
 			}
 			
