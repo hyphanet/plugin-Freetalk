@@ -66,6 +66,7 @@ public abstract class Message extends Persistent {
 
 	/**
 	 * The physical URI of the message. Null until the message was inserted and the URI is known.
+	 * Actually is a {@link FreenetURI} - stored as String to ease storage inside db4o.
 	 * Not final because for OwnMessages it is set after the Message was inserted. */
 	protected String mFreenetURI;
 
@@ -127,7 +128,8 @@ public abstract class Message extends Persistent {
 	public static class Attachment extends Persistent {
 		private Message mMessage;
 		
-		private final FreenetURI mURI;
+		/** Actually is a {@link FreenetURI} - stored as String to ease storage inside db4o. */
+		private final String mFreenetURI;
 		
 		/**
 		 * We store the filename - which is stored in the URI as well - for fast database searches. 
@@ -162,8 +164,8 @@ public abstract class Message extends Persistent {
 			}
 			
 			mMessage = null; // Is not available when the UI constructs attachments
-			mURI = myURI;
-			mFilename = mURI.getPreferredFilename();
+			mFreenetURI = myURI.toString();
+			mFilename = myURI.getPreferredFilename();
 			mMIMEType = myMIMEType.toString();
 			mSize = mySize;
 		}
@@ -174,8 +176,11 @@ public abstract class Message extends Persistent {
 			if(mMessage == null)
 				throw new NullPointerException("mMessage==null");
 			
-		    if(mURI == null)
-		    	throw new NullPointerException("mURI==null");
+		    if(mFreenetURI == null)
+		    	throw new NullPointerException("mFreenetURI==null");
+		    
+		    // Throws MalformedURLException if invalid.
+		    new FreenetURI(mFreenetURI);
 		    		
 		    if(mSize < 0)
 		    	throw new IllegalStateException("mSize is negative: " + mSize);
@@ -185,7 +190,7 @@ public abstract class Message extends Persistent {
 		    
 		    if(!mFilename.equals(getURI().getPreferredFilename()))
 		    	throw new IllegalStateException("mFilename does not match expected filename: mFilename==" + mFilename 
-		    			+ "; expected==" + mURI.getPreferredFilename());
+		    			+ "; expected==" + getURI().getPreferredFilename());
 		    
 		    try {
 		    	new MimeType(mMIMEType);
@@ -215,9 +220,12 @@ public abstract class Message extends Persistent {
 		
 		
 		public FreenetURI getURI() {
-			checkedActivate(1);
-			checkedActivate(mURI, 2);
-			return mURI;
+			checkedActivate(1); // String is a db4o primitive type so 1 is enough
+			try {
+				return new FreenetURI(mFreenetURI);
+			} catch (MalformedURLException e) {
+				throw new RuntimeException(e);
+			}
 		}
 
 		public String getFilename() {
@@ -241,34 +249,17 @@ public abstract class Message extends Persistent {
 		
 		@Override
 		protected void storeWithoutCommit() {
-			try {
-				checkedActivate(1);
-				
-				// You have to take care to keep the list of stored objects synchronized with those being deleted in removeFrom() !
-				
-				checkedActivate(mURI, 2);
-				checkedStore(mURI);
-				
-				checkedStore();
-			}
-			catch(RuntimeException e) {
-				checkedRollbackAndThrow(e);
-			}
+			// This class only stores members of its own which are db4o primitive types so we don't
+			// need to manually deal with storing/deleting them and can use the super implementation.
+			// (mMessage is not subject to that as an Attachment can only exist while its message
+			// exists, i.e. storage of the Message is handled by outside code.)
+			super.storeWithoutCommit();
 		}
 		
 		@Override
 		protected void deleteWithoutCommit() {
-			try {
-				checkedActivate(1);
-				
-				checkedDelete();
-				
-				checkedActivate(mURI, 2);
-				mURI.removeFrom(mDB);
-			}
-			catch(RuntimeException e) {
-				checkedRollbackAndThrow(e);
-			}
+			// See storeWithoutCommit() for why we use the super implementation.
+			super.deleteWithoutCommit();
 		}
 
 	}
