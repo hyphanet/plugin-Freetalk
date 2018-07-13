@@ -4,6 +4,7 @@
 package plugins.Freetalk;
 
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -65,8 +66,8 @@ public abstract class Message extends Persistent {
 
 	/**
 	 * The physical URI of the message. Null until the message was inserted and the URI is known.
-	 */
-	protected FreenetURI mFreenetURI; /* Not final because for OwnMessages it is set after the Message was inserted */
+	 * Not final because for OwnMessages it is set after the Message was inserted. */
+	protected String mFreenetURI;
 
 	/**
 	 * The ID of the message. Format: Hex encoded author routing key + "@" + hex encoded random UUID.
@@ -434,7 +435,7 @@ public abstract class Message extends Persistent {
 		}
 		
 		mURI = newURI != null ? newURI.clone() : null;
-		mFreenetURI = newFreenetURI != null ? newFreenetURI.clone() : null;
+		mFreenetURI = newFreenetURI != null ? newFreenetURI.toString() : null;
 		mMessageList = newMessageList;
 		mAuthor = newAuthor;
 		mID = newID.toString();
@@ -519,6 +520,9 @@ public abstract class Message extends Persistent {
 		    if(mFreenetURI == null)
 		    	throw new NullPointerException("mFreenetURI==null");
 		    
+		    // Throws MalformedURIException if invalid.
+		    new FreenetURI(mFreenetURI);
+		    
 	    	if(mMessageList == null)
 	    		throw new IllegalStateException("mMessageList==null");
 	    }
@@ -528,7 +532,7 @@ public abstract class Message extends Persistent {
 		    
 		    // The following check would be wrong (explanation below):
 		    
-		    // if(!messageURI.getFreenetURI().equals(mFreenetURI))
+		    // if(!messageURI.getFreenetURI().equals(new FreenetURI(mFreenetURI)))
 		    //	throw new IllegalStateException("mURI and mFreenetURI mismatch: mURI==" + mURI + "; mFreenetURI==" + mFreenetURI);
 		    
 		    // It would be wrong because message URI contains the URI of the message list, not the URI of the message itself.
@@ -546,6 +550,8 @@ public abstract class Message extends Persistent {
 		    
 		    if(mFreenetURI == null)
 		    	throw new NullPointerException("mFreenetURI == null");
+		    
+		    new FreenetURI(mFreenetURI);
 		    
 	    	final MessageList messageList = getMessageList(); // Call initializeTransient
 	    	
@@ -670,11 +676,14 @@ public abstract class Message extends Persistent {
 	 * Gets the FreenetURI where this message is actually stored, i.e. the CHK URI of the message.
 	 */
 	protected FreenetURI getFreenetURI() {
-		checkedActivate(1);
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		assert(mFreenetURI != null);
-		checkedActivate(mFreenetURI, 2);
-
-		return mFreenetURI;
+		
+		try {
+			return new FreenetURI(mFreenetURI);
+		} catch (MalformedURLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	public final String getID() {
@@ -1186,11 +1195,10 @@ public abstract class Message extends Persistent {
 				mURI.initializeTransient(mFreetalk);
 				mURI.storeWithoutCommit();
 			}
-			if(mFreenetURI != null) {
-				// It's a FreenetURI so it does not extend Persistent and we need to manually activate & store it
-				checkedActivate(mFreenetURI, 2);
-				checkedStore(mFreenetURI);
-			}
+			
+			// No need to manually store mFreenetURI: It is a db4o primitive type and as such will
+			// be stored along with this object.
+			
 			if(mThreadURI != null) {
 				mThreadURI.initializeTransient(mFreetalk);
 				mThreadURI.storeWithoutCommit();
@@ -1238,11 +1246,10 @@ public abstract class Message extends Persistent {
 				mThreadURI.initializeTransient(mFreetalk);
 				mThreadURI.deleteWithoutCommit();
 			}
-			if(mFreenetURI != null) {
-				// It's a FreenetURI so there is no transient initialization
-				checkedActivate(mFreenetURI, 2);
-				mFreenetURI.removeFrom(mDB);
-			}
+			
+			// No need to delete mFreenetURI: Strings are a db4o primitive type and as such will be
+			// deleted along with this object.
+				
 			if(mURI != null) {
 				mURI.initializeTransient(mFreetalk);
 				mURI.deleteWithoutCommit();
