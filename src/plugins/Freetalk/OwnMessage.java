@@ -169,7 +169,8 @@ public abstract class OwnMessage extends Message {
     		if(uri != null)
     			return uri.toString();
     		
-    		// We cannot use the getter here because it throws if the URI is null.
+    		// We cannot use the getter for mFreenetURI here because it throws if the URI is null.
+    		checkedActivate(1); // String is a db4o primitive type so 1 is enough
     		if(mFreenetURI != null)
     			return mFreenetURI;
     		
