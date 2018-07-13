@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk.WoT;
 
+import java.net.MalformedURLException;
+
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Identity;
 import plugins.Freetalk.Persistent;
@@ -10,7 +12,6 @@ import plugins.Freetalk.Persistent.IndexedClass;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
-import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
 import freenet.support.codeshortification.IfNotEquals;
@@ -35,8 +36,9 @@ public class WoTIdentity extends Persistent implements Identity {
 	@IndexedField
 	private final String mID;
     
-	/** The requestURI used to fetch this identity from Freenet */
-	private final FreenetURI mRequestURI;
+	/** The {@link FreenetURI} used to fetch this identity from Freenet.
+	 *  Is a SSK request URI. */
+	private final String mRequestURI;
 	
 	/** The nickname of this Identity */
 	private final String mNickname;
@@ -62,20 +64,23 @@ public class WoTIdentity extends Persistent implements Identity {
 		}
 		
 		mID = myID;
-		mRequestURI = myRequestURI;
+		mRequestURI = myRequestURI.toString();
 		mNickname = myNickname;
 		mLastReceivedFromWoT = 0;
 		
-		IfNotEquals.thenThrow(IdentityID.construct(mID), IdentityID.constructFromURI(mRequestURI), "myID");
+		IfNotEquals.thenThrow(IdentityID.construct(mID), IdentityID.constructFromURI(myRequestURI), "myID");
 	}
 	
 	@Override
 	public void databaseIntegrityTest() throws Exception {
-		checkedActivate(1);
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
 		
 		IfNull.thenThrow(mID, "mID");
-		IfNull.thenThrow(getRequestURI(), "mRequestURI");
+		IfNull.thenThrow(mRequestURI, "mRequestURI");
 		IfNull.thenThrow(mNickname, "mNickname");
+		
+		// Throws MalformedURLException if invalid
+		new FreenetURI(mRequestURI);
 		
 		IfNotEquals.thenThrow(IdentityID.construct(mID), IdentityID.constructFromURI(getRequestURI()), "mID");
 		
@@ -111,9 +116,12 @@ public class WoTIdentity extends Persistent implements Identity {
 	}
 
 	@Override public FreenetURI getRequestURI() {
-		checkedActivate(1);
-		checkedActivate(mRequestURI, 2);
-		return mRequestURI;
+		checkedActivate(1); // String is a db4o primitive type so 1 is enough
+		try {
+			return new FreenetURI(mRequestURI);
+		} catch (MalformedURLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override public String getNickname() {
@@ -215,8 +223,9 @@ public class WoTIdentity extends Persistent implements Identity {
 
 			// You have to take care to keep the list of stored objects synchronized with those being deleted in deleteWithoutCommit() !
 			
-			checkedActivate(mRequestURI, 2);
-			checkedStore(mRequestURI);
+			// No need to manually store the String members: It is a db4o primitive type and as such
+			// will be stored along with this object.
+			
 			checkedStore();
 		}
 		catch(RuntimeException e) {
@@ -229,10 +238,10 @@ public class WoTIdentity extends Persistent implements Identity {
 			// 1 is the maximal depth of all getter functions. You have to adjust this when introducing new member variables.
 			checkedActivate(this, 1);
 			
-			checkedDelete();
+			// No need to manually delete the String members: It is a db4o primitive type and as
+			// such will be deleted along with this object.
 			
-			checkedActivate(mRequestURI, 2);
-			mRequestURI.removeFrom(mDB);
+			checkedDelete();
 		}
 		catch(RuntimeException e) {
 			checkedRollbackAndThrow(e);
