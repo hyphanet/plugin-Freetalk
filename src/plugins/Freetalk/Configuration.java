@@ -60,6 +60,7 @@ public final class Configuration extends Persistent {
 	/* These booleans are used for preventing the construction of log-strings if logging is disabled (for saving some cpu cycles) */
 	
 	private static transient volatile boolean logDEBUG = false;
+	@SuppressWarnings("unused")
 	private static transient volatile boolean logMINOR = false;
 	
 	static {
