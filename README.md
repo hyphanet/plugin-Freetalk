@@ -56,3 +56,7 @@ Make sure to load the WebOfTrust plugin as well.
   * Put bcprov.jar in ```fred/lib```
 * If necessary fix the build paths for your Eclipse projects so they refer to the correct JAR paths.
 * Disable automatic building in Eclipse as the Ant builders take quite a bit of time to execute.
+ 
+## Debugging
+
+Run fred's class ```freenet.node.NodeStarter``` using the Eclipse debugger.
