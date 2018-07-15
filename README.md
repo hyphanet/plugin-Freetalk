@@ -24,6 +24,26 @@ months upon writing code for backwards compatibility. Sorry :)
 
 ## Compiling
 
+### Dependencies
+
+Clone the [fred](https://github.com/freenet/fred),
+[plugin-WebOfTrust](https://github.com/xor-freenet/plugin-WebOfTrust) and plugin-Freetalk
+repositories into a single directory.  
+Compile fred and WebOfTrust using their instructions.
+  
+### Compiling by command line
+
+```bash
+ant clean
+ant
+# If you get errors about missing classes check build.xml for whether the JAR locations are correct.
+```
+
+The output ```Freetalk.jar``` will be in the ```dist``` directory.  
+You can load it on the ```Plugins``` page of the Freenet web interface.  
+Make sure to load the WebOfTrust plugin as well.
+
+### Using Eclipse
 * Install Eclipse (Luna)
 * Make sure you have the git plugin (already included in Luna)
 * Clone the fred, plugin-WebOfTrust and plugin-Freetalk repositories somewhere on your hard drive. Disregard all references to "staging", those are left over from an old system. If you want to do development make sure to clone them first in github.
