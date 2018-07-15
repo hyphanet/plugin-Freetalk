@@ -7,11 +7,11 @@ It intends to do so by:
 * integrating into the Freenet web interface by being a plugin instead of being a standalone
   application with its own web interface.
 * being written in Java instead of C++ to avoid remote code execution exploits.
-* using the [WebOfTrust](https://github.com/xor-freenet/plugin-WebOfTrust) plugin (bundled with
-  Freenet) for spam filtering instead of a single-use trust system to ensure user identities can be
+* using the [WebOfTrust](https://github.com/freenet/plugin-WebOfTrust) plugin (bundled with Freenet)
+  for spam filtering instead of a single-use trust system to ensure user identities can be
   used across different Freenet plugins such as FlogHelper (bundled) and
   [Sone](https://github.com/Bombe/Sone).
-  
+
 ## Usage
 
 As of 2018 Freetalk is currently in development by [xor-freenet](https://github.com/xor-freenet) and
@@ -27,10 +27,10 @@ months upon writing code for backwards compatibility. Sorry :)
 ### Dependencies
 
 Clone the [fred](https://github.com/freenet/fred),
-[plugin-WebOfTrust](https://github.com/xor-freenet/plugin-WebOfTrust) and plugin-Freetalk
+[plugin-WebOfTrust](https://github.com/freenet/plugin-WebOfTrust) and plugin-Freetalk
 repositories into a single directory.  
 Compile fred and WebOfTrust using their instructions.
-  
+
 ### Compiling by command line
 
 ```bash
