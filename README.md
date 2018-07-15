@@ -44,17 +44,14 @@ You can load it on the ```Plugins``` page of the Freenet web interface.
 Make sure to load the WebOfTrust plugin as well.
 
 ### Using Eclipse
-* Install Eclipse (Luna)
-* Make sure you have the git plugin (already included in Luna)
-* Clone the fred, plugin-WebOfTrust and plugin-Freetalk repositories somewhere on your hard drive. Disregard all references to "staging", those are left over from an old system. If you want to do development make sure to clone them first in github.
-  * https://github.com/freenet/plugin-Freetalk
-  * https://github.com/freenet/fred
-  * https://github.com/freenet/plugin-WebOfTrust
-* Import these git repositories in Eclipse
-* Add libraries (tip: get these from your existing freenet install)
+
+* Import the project files of the aformentioned repositories in Eclipse. fred currently does not
+  ship one, you can use an old release for now. The newest which still includes the project can be
+  obtained with:  
+  ```git checkout build01480```.
+* Since build01480 does not automatically download its dependencies, get them from an existing
+  Freenet installation:
   * Put freenet-ext.jar in fred/lib/freenet
-  * put bcprov.jar in fred/lib
-* (maybe not needed) Fix the build paths for your eclipse projects so they refer to the correct freenet-ext and bcprov jars
-* Have fun in eclipse and then run "ant" from the fred, plugin-WebOfTrust and plugin-Freetalk directories
-* The jars will end up in the "dist" subdirectory.
-* Import Freetalk.jar into Freenet at the plugins page
+  * Put bcprov.jar in fred/lib
+* If necessary fix the build paths for your Eclipse projects so they refer to the correct JAR paths.
+* Disable automatic building in Eclipse as the Ant builders take quite a bit of time to execute.
