@@ -26,10 +26,9 @@ months upon writing code for backwards compatibility. Sorry :)
 
 ### Dependencies
 
-Clone the [fred](https://github.com/freenet/fred),
-[plugin-WebOfTrust](https://github.com/freenet/plugin-WebOfTrust) and plugin-Freetalk
-repositories into a single directory.  
-Compile fred and WebOfTrust using their instructions.
+Clone the [fred](https://github.com/freenet/fred) and plugin-Freetalk repositories into a single
+directory.  
+Compile fred using its instructions.
 
 ### Compiling by command line
 
@@ -45,9 +44,9 @@ Make sure to load the WebOfTrust plugin as well.
 
 ### Using Eclipse
 
-* Import the project files of the aformentioned repositories in Eclipse. fred currently does not
-  ship one, you can use an old release for now. The newest which still includes the project can be
-  obtained with:  
+* Import the project configurations which fred and Freetalk ship in Eclipse.
+  As of 2018-07 fred currently does not ship one, you can use an old release for now. The newest
+  which still includes the project can be obtained with:  
   ```git checkout build01480```.
 * Since build01480 does not automatically download its dependencies, get them from an existing
   Freenet installation:
