@@ -60,3 +60,7 @@ Make sure to load the WebOfTrust plugin as well.
 ## Debugging
 
 Run fred's class ```freenet.node.NodeStarter``` using the Eclipse debugger.
+
+## License
+
+GNU General Public License, version 2, or at your option any later version.
