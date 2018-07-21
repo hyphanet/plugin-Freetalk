@@ -568,20 +568,33 @@ public final class FreetalkNNTPHandler implements Runnable {
      * For subcmd USER we expect the Freetalk address as value.
      * We extract the identity ID and look it up.
      * 
-     * A subcmd of PASS is currently not required and will always result in success, independent
-     * of which password was given.
+     * A subcmd of PASS is currently not required and will always result in response code 482 as
+     * demanded by the RFC, independent of which password was given.
      * 
-     * @param subcmd  Must be USER or PASS  (PASS not yet supported!)
+     * @param subcmd  Must be USER or PASS
      * @param value   Value of subcmd
      */
     private void handleAuthInfo(final String subcmd, final String value) throws IOException {
+        boolean userCommand = subcmd.equalsIgnoreCase("USER");
+        boolean passCommand = subcmd.equalsIgnoreCase("PASS");
         
-        // For now, we don't require a PASS
-        if (!subcmd.equalsIgnoreCase("USER") && !subcmd.equalsIgnoreCase("PASS")) {
+        if (!userCommand && !passCommand) {
             printStatusLine("502 Command unavailable");
             return;
         }
-
+        
+        if (passCommand) {
+            // The RFC states:
+            // "If the server requires only a username, it MUST NOT give a 381 response to AUTHINFO
+            // USER and MUST give a 482 response to AUTHINFO PASS.".
+            // As we don't require a password we do send 482 now.
+            // TODO: Usability: Does the RFC permit sending a more descriptive error message?
+            printStatusLine("482 Authentication commands issued out of sequence");
+            return;
+        }
+        
+        assert (userCommand);
+        
         // already authenticated?
         if (mAuthenticatedUser != null) {
             printStatusLine("502 Command unavailable");
