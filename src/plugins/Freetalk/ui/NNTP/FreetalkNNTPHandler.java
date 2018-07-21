@@ -563,15 +563,18 @@ public final class FreetalkNNTPHandler implements Runnable {
 
     /**
      * Handle the AUTHINFO command, authenticate provided own identity.
-     * For USER we expect the Freetalk address. We extract the identity ID and lookup it.
+     * Specified at: http://tools.ietf.org/html/rfc4643#section-2.3.3
+     * 
+     * For subcmd USER we expect the Freetalk address as value.
+     * We extract the identity ID and look it up.
+     * 
+     * A subcmd of PASS is currently not required and will always result in success, independent
+     * of which password was given.
      * 
      * @param subcmd  Must be USER or PASS  (PASS not yet supported!)
      * @param value   Value of subcmd
      */
     private void handleAuthInfo(final String subcmd, final String value) throws IOException {
-        /*
-         * For AUTHINFO example see here: http://tools.ietf.org/html/rfc4643#section-2.3.3
-         */
         
         // For now, we don't require a PASS
         if (!subcmd.equalsIgnoreCase("USER") && !subcmd.equalsIgnoreCase("PASS")) {
