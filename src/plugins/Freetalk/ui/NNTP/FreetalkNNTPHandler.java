@@ -563,22 +563,38 @@ public final class FreetalkNNTPHandler implements Runnable {
 
     /**
      * Handle the AUTHINFO command, authenticate provided own identity.
-     * For USER we expect the Freetalk address. We extract the identity ID and lookup it.
+     * Specified at: http://tools.ietf.org/html/rfc4643#section-2.3.3
      * 
-     * @param subcmd  Must be USER or PASS  (PASS not yet supported!)
+     * For subcmd USER we expect the Freetalk address as value.
+     * We extract the identity ID and look it up.
+     * 
+     * A subcmd of PASS is currently not required and will always result in response code 482 as
+     * demanded by the RFC, independent of which password was given.
+     * 
+     * @param subcmd  Must be USER or PASS
      * @param value   Value of subcmd
      */
     private void handleAuthInfo(final String subcmd, final String value) throws IOException {
-        /*
-         * For AUTHINFO example see here: http://tools.ietf.org/html/rfc4643#section-2.3.3
-         */
+        boolean userCommand = subcmd.equalsIgnoreCase("USER");
+        boolean passCommand = subcmd.equalsIgnoreCase("PASS");
         
-        // For now, we don't require a PASS
-        if (!subcmd.equalsIgnoreCase("USER")) {
+        if (!userCommand && !passCommand) {
             printStatusLine("502 Command unavailable");
             return;
         }
-
+        
+        if (passCommand) {
+            // The RFC states:
+            // "If the server requires only a username, it MUST NOT give a 381 response to AUTHINFO
+            // USER and MUST give a 482 response to AUTHINFO PASS.".
+            // As we don't require a password we do send 482 now.
+            // TODO: Usability: Does the RFC permit sending a more descriptive error message?
+            printStatusLine("482 Authentication commands issued out of sequence");
+            return;
+        }
+        
+        assert (userCommand);
+        
         // already authenticated?
         if (mAuthenticatedUser != null) {
             printStatusLine("502 Command unavailable");
@@ -595,8 +611,8 @@ public final class FreetalkNNTPHandler implements Runnable {
         if (oi == null) {
             printStatusLine("481 Authentication failed");
         } else {
-            printStatusLine("281 Authentication accepted");
             mAuthenticatedUser = oi; // assign authenticated id
+            printStatusLine("281 Authentication accepted");
         }
     }
     
