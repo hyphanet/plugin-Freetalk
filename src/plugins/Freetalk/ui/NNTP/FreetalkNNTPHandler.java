@@ -611,8 +611,8 @@ public final class FreetalkNNTPHandler implements Runnable {
         if (oi == null) {
             printStatusLine("481 Authentication failed");
         } else {
-            printStatusLine("281 Authentication accepted");
             mAuthenticatedUser = oi; // assign authenticated id
+            printStatusLine("281 Authentication accepted");
         }
     }
     
