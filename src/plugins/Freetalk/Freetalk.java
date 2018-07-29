@@ -280,9 +280,6 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	private com.db4o.config.Configuration getNewDatabaseConfiguration() {
 		final com.db4o.config.Configuration cfg = Db4o.newConfiguration();
 		
-		// 4096 byte page size * 4096 pages = 16 MiB cache
-		cfg.io(new CachedIoAdapter(new RandomAccessFileAdapter(), 4096, 4096));
-		
 		// Required config options:
 		
 		cfg.reflectWith(new JdkReflector(getPluginClassLoader())); // Needed because the node uses it's own classloader for plugins
@@ -293,8 +290,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         cfg.automaticShutDown(false); // The shutdown hook does auto-commit() but we want to rollback(), we MUST NOT commit half-finished transactions
         
         // Performance config options:
+        
         cfg.callbacks(false); // We don't use callbacks yet. TODO: Investigate whether we might want to use them
         cfg.classActivationDepthConfigurable(false);
+		// 4096 byte page size * 4096 pages = 16 MiB cache
+		cfg.io(new CachedIoAdapter(new RandomAccessFileAdapter(), 4096, 4096));
 
         // Registration of indices (also performance)
         
