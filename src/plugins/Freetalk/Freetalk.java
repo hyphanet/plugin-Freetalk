@@ -6,6 +6,7 @@ package plugins.Freetalk;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
 import plugins.Freetalk.WoT.WoTMessage;
@@ -38,6 +39,8 @@ import com.db4o.ObjectContainer;
 import com.db4o.defragment.Defragment;
 import com.db4o.defragment.DefragmentConfig;
 import com.db4o.ext.ExtObjectContainer;
+import com.db4o.io.CachedIoAdapter;
+import com.db4o.io.RandomAccessFileAdapter;
 import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 
@@ -84,6 +87,14 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String WOT_CONTEXT = PLUGIN_TITLE;
 	public static final String DATABASE_FILENAME = PLUGIN_TITLE + ".db4o";
 	public static final int DATABASE_FORMAT_VERSION = 3;
+	/**
+	 * FIXME: Test various values of this and {@link #DATABASE_CACHE_PAGE_COUNT}, especially
+	 * considering that db4o implements the cache using a linked list and iterating over to find a
+	 * key at every read may be slow for large page counts.
+	 * TODO: Make configurable. */
+	public static final int DATABASE_CACHE_PAGE_SIZE_BYTES = 4096;
+	/** TODO: Make configurable. */
+	public static final int DATABASE_CACHE_PAGE_COUNT = 4096;
 
 	/* References from the node */
 	
@@ -287,8 +298,12 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         cfg.automaticShutDown(false); // The shutdown hook does auto-commit() but we want to rollback(), we MUST NOT commit half-finished transactions
         
         // Performance config options:
+        
         cfg.callbacks(false); // We don't use callbacks yet. TODO: Investigate whether we might want to use them
         cfg.classActivationDepthConfigurable(false);
+		cfg.io(new CachedIoAdapter(new RandomAccessFileAdapter(),
+			DATABASE_CACHE_PAGE_SIZE_BYTES,
+			DATABASE_CACHE_PAGE_COUNT));
 
         // Registration of indices (also performance)
         
