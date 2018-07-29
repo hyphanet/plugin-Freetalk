@@ -280,9 +280,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	private com.db4o.config.Configuration getNewDatabaseConfiguration() {
 		final com.db4o.config.Configuration cfg = Db4o.newConfiguration();
 		
-		RandomAccessFileAdapter delegateAdapter = new RandomAccessFileAdapter();
 		// 4096 byte page size * 4096 pages = 16 MiB cache
-		cfg.io(new CachedIoAdapter(delegateAdapter, 4096, 4096));
+		cfg.io(new CachedIoAdapter(new RandomAccessFileAdapter(), 4096, 4096));
 		
 		// Required config options:
 		
