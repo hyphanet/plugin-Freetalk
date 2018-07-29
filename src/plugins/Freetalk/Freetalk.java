@@ -87,6 +87,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String WOT_CONTEXT = PLUGIN_TITLE;
 	public static final String DATABASE_FILENAME = PLUGIN_TITLE + ".db4o";
 	public static final int DATABASE_FORMAT_VERSION = 3;
+	public static final int DATABASE_CACHE_PAGE_SIZE_BYTES = 4096;
+	public static final int DATABASE_CACHE_PAGE_COUNT = 4096;
 
 	/* References from the node */
 	
@@ -293,8 +295,9 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         
         cfg.callbacks(false); // We don't use callbacks yet. TODO: Investigate whether we might want to use them
         cfg.classActivationDepthConfigurable(false);
-		// 4096 byte page size * 4096 pages = 16 MiB cache
-		cfg.io(new CachedIoAdapter(new RandomAccessFileAdapter(), 4096, 4096));
+		cfg.io(new CachedIoAdapter(new RandomAccessFileAdapter(),
+			DATABASE_CACHE_PAGE_SIZE_BYTES,
+			DATABASE_CACHE_PAGE_COUNT));
 
         // Registration of indices (also performance)
         
