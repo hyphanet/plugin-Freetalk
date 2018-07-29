@@ -87,7 +87,13 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String WOT_CONTEXT = PLUGIN_TITLE;
 	public static final String DATABASE_FILENAME = PLUGIN_TITLE + ".db4o";
 	public static final int DATABASE_FORMAT_VERSION = 3;
+	/**
+	 * FIXME: Test various values of this and {@link #DATABASE_CACHE_PAGE_COUNT}, especially
+	 * considering that db4o implements the cache using a linked list and iterating over to find a
+	 * key at every read may be slow for large page counts.
+	 * TODO: Make configurable. */
 	public static final int DATABASE_CACHE_PAGE_SIZE_BYTES = 4096;
+	/** TODO: Make configurable. */
 	public static final int DATABASE_CACHE_PAGE_COUNT = 4096;
 
 	/* References from the node */
