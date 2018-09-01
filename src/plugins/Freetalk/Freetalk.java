@@ -176,7 +176,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	/** 
 	 * Do a backup. Throw away the other file after finishing.
 	 * 
-	 * backup 1-3 are used sequentially. One is always non-existent.
+	 * Backups 1-3 are used sequentially. One is always non-existent.
 	 * The non-existent is the new target and the older of the
 	 * existing ones gets deleted.
 	 */
