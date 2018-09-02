@@ -90,11 +90,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String WOT_PLUGIN_URI = "/WebOfTrust";
 	public static final String WOT_CONTEXT = PLUGIN_TITLE;
 	public static final String DATABASE_FILENAME = PLUGIN_TITLE + ".db4o";
-	public static final String BACKUP1_FILENAME =     DATABASE_FILENAME + ".backup1";
-	public static final String BACKUP2_FILENAME =     DATABASE_FILENAME + ".backup2";
-	public static final String BACKUP3_FILENAME =     DATABASE_FILENAME + ".backup3";
-	public static final String BACKUPDUMMY_FILENAME = DATABASE_FILENAME + ".dummybackup";
-	public static final String BACKUPTEMP_FILENAME =  DATABASE_FILENAME + ".temp";
+	public static final String DATABASE_BACKUP1_FILENAME =     DATABASE_FILENAME + ".backup1";
+	public static final String DATABASE_BACKUP2_FILENAME =     DATABASE_FILENAME + ".backup2";
+	public static final String DATABASE_BACKUP3_FILENAME =     DATABASE_FILENAME + ".backup3";
+	public static final String DATABASE_BACKUPDUMMY_FILENAME = DATABASE_FILENAME + ".dummybackup";
+	public static final String DATABASE_BACKUPTEMP_FILENAME =  DATABASE_FILENAME + ".temp";
 	public static final int DATABASE_FORMAT_VERSION = 3;
 	/**
 	 * FIXME: Test various values of this and {@link #DATABASE_CACHE_PAGE_COUNT}, especially
@@ -187,11 +187,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	 * existing ones gets deleted.
 	 */
 	public void backup(ExtObjectContainer db) {
-		File backup1 = new File(getUserDataDirectory(), BACKUP1_FILENAME);
-		File backup2 = new File(getUserDataDirectory(), BACKUP2_FILENAME);
-		File backup3 = new File(getUserDataDirectory(), BACKUP3_FILENAME);
-		File backupdummy = new File(getUserDataDirectory(), BACKUPDUMMY_FILENAME);
-		File backuptemp = new File(getUserDataDirectory(), BACKUPTEMP_FILENAME);
+		File backup1 = new File(getUserDataDirectory(), DATABASE_BACKUP1_FILENAME);
+		File backup2 = new File(getUserDataDirectory(), DATABASE_BACKUP2_FILENAME);
+		File backup3 = new File(getUserDataDirectory(), DATABASE_BACKUP3_FILENAME);
+		File backupdummy = new File(getUserDataDirectory(), DATABASE_BACKUPDUMMY_FILENAME);
+		File backuptemp = new File(getUserDataDirectory(), DATABASE_BACKUPTEMP_FILENAME);
 		File backup;
 		File deprecated;
 		if (!backup3.exists()) { // 1+2->3
@@ -377,10 +377,10 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	 *   https://bugs.freenetproject.org/view.php?id=7001 */
 	private void restoreDatabase(File file) {
 		File mostRecentBackup;
-		File backup1 = new File(getUserDataDirectory(), BACKUP1_FILENAME);
-		File backup2 = new File(getUserDataDirectory(), BACKUP2_FILENAME);
-		File backup3 = new File(getUserDataDirectory(), BACKUP3_FILENAME);
-		File backupdummy = new File(getUserDataDirectory(), BACKUPDUMMY_FILENAME);
+		File backup1 = new File(getUserDataDirectory(), DATABASE_BACKUP1_FILENAME);
+		File backup2 = new File(getUserDataDirectory(), DATABASE_BACKUP2_FILENAME);
+		File backup3 = new File(getUserDataDirectory(), DATABASE_BACKUP3_FILENAME);
+		File backupdummy = new File(getUserDataDirectory(), DATABASE_BACKUPDUMMY_FILENAME);
 		if (!backup2.exists() && backup1.exists()) {
 			mostRecentBackup = backup1;
 		} else if (!backup3.exists() && backup2.exists()) {
