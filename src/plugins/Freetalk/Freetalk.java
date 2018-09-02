@@ -189,6 +189,22 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	 * existing ones gets deleted.
 	 */
 	public void backup(ExtObjectContainer db) {
+		if(true) {
+			throw new UnsupportedOperationException(
+				"This function is unfinished, please resolve all TODOs before using it!");
+			
+			// TODO:
+			// - Freetalk compensates db4o's lack of locking by using its own locks. Is that safe
+			//   with regards to db.backup()? If not then this function should only be called
+			//   while no Freetalk processing threads are running, or the function should be changed
+			//   to take all of the locks.
+			// - Replace the harcoded 3 file logic with a generic one which supports N files.
+			//   Determine the oldest file by the modification date.
+			// - The function is entirely untested, both with regards to unit tests as well as not
+			//   even having run it once.
+			// - Also resolve the below TODOs!
+		}
+		
 		File backup1 = new File(getUserDataDirectory(), DATABASE_BACKUP1_FILENAME);
 		File backup2 = new File(getUserDataDirectory(), DATABASE_BACKUP2_FILENAME);
 		File backup3 = new File(getUserDataDirectory(), DATABASE_BACKUP3_FILENAME);
