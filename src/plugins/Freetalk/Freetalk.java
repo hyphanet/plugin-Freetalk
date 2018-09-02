@@ -90,11 +90,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String WOT_PLUGIN_URI = "/WebOfTrust";
 	public static final String WOT_CONTEXT = PLUGIN_TITLE;
 	public static final String DATABASE_FILENAME = PLUGIN_TITLE + ".db4o";
-	public static final String BACKUP1_FILENAME = PLUGIN_TITLE + ".db4o.backup1";
-	public static final String BACKUP2_FILENAME = PLUGIN_TITLE + ".db4o.backup2";
-	public static final String BACKUP3_FILENAME = PLUGIN_TITLE + ".db4o.backup3";
-	public static final String BACKUPDUMMY_FILENAME = PLUGIN_TITLE + ".db4o.dummybackup";
-	public static final String BACKUPTEMP_FILENAME = PLUGIN_TITLE + ".db4o.temp";
+	public static final String BACKUP1_FILENAME =     DATABASE_FILENAME + ".backup1";
+	public static final String BACKUP2_FILENAME =     DATABASE_FILENAME + ".backup2";
+	public static final String BACKUP3_FILENAME =     DATABASE_FILENAME + ".backup3";
+	public static final String BACKUPDUMMY_FILENAME = DATABASE_FILENAME + ".dummybackup";
+	public static final String BACKUPTEMP_FILENAME =  DATABASE_FILENAME + ".temp";
 	public static final int DATABASE_FORMAT_VERSION = 3;
 	/**
 	 * FIXME: Test various values of this and {@link #DATABASE_CACHE_PAGE_COUNT}, especially
