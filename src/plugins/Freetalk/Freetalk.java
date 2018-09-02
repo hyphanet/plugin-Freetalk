@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import static java.lang.Thread.sleep;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -232,8 +234,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 				// this is what we want. As soon as we don't get this
 				// anymore, the backup finished.
 				try {
-					Thread.sleep(10);	}
-				catch(InterruptedException f) {
+					sleep(100);
+				} catch(InterruptedException f) {
 					// TODO: Check if db4o provides a way to interrupt the backup procedure, if yes
 					// do so and return.
 				}
@@ -418,7 +420,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 				// this is what we want. As soon as we don't get this
 				// anymore, we break.
 				try {
-					Thread.sleep(10);
+					sleep(100);
 				} catch(InterruptedException f) {
 					// TODO: Check if db4o provides a way to interrupt the backup (= in our case
 					// restore) procedure, if yes do so and return.
