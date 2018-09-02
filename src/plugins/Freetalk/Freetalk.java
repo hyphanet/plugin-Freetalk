@@ -93,7 +93,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String BACKUP2_FILENAME = PLUGIN_TITLE + ".db4o.backup2";
 	public static final String BACKUP3_FILENAME = PLUGIN_TITLE + ".db4o.backup3";
 	public static final String BACKUPDUMMY_FILENAME = PLUGIN_TITLE + ".db4o.dummybackup";
-	public static final String BACKUPTEMP_FILENAME = PLUGIN_TITLE + ".db4o.temp"; 
+	public static final String BACKUPTEMP_FILENAME = PLUGIN_TITLE + ".db4o.temp";
 	public static final int DATABASE_FORMAT_VERSION = 3;
 	/**
 	 * FIXME: Test various values of this and {@link #DATABASE_CACHE_PAGE_COUNT}, especially
@@ -192,7 +192,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		File backupdummy = new File(getUserDataDirectory(), BACKUPDUMMY_FILENAME);
 		File backuptemp = new File(getUserDataDirectory(), BACKUPTEMP_FILENAME);
 		File backup;
-		File deprecated; 
+		File deprecated;
 		if (!backup3.exists()) { // 1+2->3
 			backup = backup3;
 			deprecated = backup1;
