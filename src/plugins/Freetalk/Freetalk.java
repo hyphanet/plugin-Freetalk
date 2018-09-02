@@ -339,6 +339,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		} else if (!backup2.exists()) {
 			mostRecentBackup = backup1;
 		} else {
+			assert(!backup3.exists());
 			mostRecentBackup = backup2;
 		}
 		ExtObjectContainer restorer = Db4o.openFile(mostRecentBackup.getAbsolutePath()).ext();
