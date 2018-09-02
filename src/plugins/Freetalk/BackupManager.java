@@ -130,7 +130,7 @@ final class BackupManager {
 	 *   and before renaming it back.
 	 * - creating/deleting a "Freetalk.db4o.lock" file. This may be the better solution due to:
 	 *   https://bugs.freenetproject.org/view.php?id=7001 */
-	void restoreDatabase(File file) {
+	void restore(File file) {
 		if(true) {
 			throw new UnsupportedOperationException(
 				"This function is unfinished, please resolve all TODOs before using it!");
