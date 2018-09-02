@@ -187,11 +187,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		File backup2 = new File(getUserDataDirectory(), BACKUP2_FILENAME);
 		File backup3 = new File(getUserDataDirectory(), BACKUP3_FILENAME);
 		try {
-			if (backup1.exists() && backup2.exists()) { // 1+2->3
+			if (!backup3.exists()) { // 1+2->3
 				db.backup(backup3.getAbsolutePath());
 				backup1.delete();
 			}
-			else if (backup2.exists() && backup3.exists()) { // 2+3->1
+			else if (!backup1.exists()) { // 2+3->1
 				db.backup(backup1.getAbsolutePath());
 				backup2.delete();
 			}
