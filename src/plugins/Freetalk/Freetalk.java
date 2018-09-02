@@ -394,6 +394,19 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	 * - creating/deleting a "Freetalk.db4o.lock" file. This may be the better solution due to:
 	 *   https://bugs.freenetproject.org/view.php?id=7001 */
 	private void restoreDatabase(File file) {
+		if(true) {
+			throw new UnsupportedOperationException(
+				"This function is unfinished, please resolve all TODOs before using it!");
+			
+			// TODO:
+			// - Ensure this only is called if Freetalk isn't using the main database yet.
+			// - Replace the harcoded 3 file logic with a generic one which supports N files.
+			//   Determine the oldest file by the modification date!
+			// - The function is entirely untested, both with regards to unit tests as well as not
+			//   even having run it once.
+			// - Also resolve the below TODOs!
+		}
+		
 		File mostRecentBackup;
 		File backup1 = new File(getUserDataDirectory(), DATABASE_BACKUP1_FILENAME);
 		File backup2 = new File(getUserDataDirectory(), DATABASE_BACKUP2_FILENAME);
@@ -417,7 +430,14 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			return;
 		}
 		ExtObjectContainer restorer = Db4o.openFile(mostRecentBackup.getAbsolutePath()).ext();
-		try {
+		try  {
+			// TODO: The dummy file persists after this returns. Easiest fix would be this:
+			// TODO: Just copy the file. backup() exists for the purpose of being able to do backups
+			// while the database is in use. However restoring is not something which can happen
+			// while the database is in use because we're restoring from a backup, not from a live
+			// database. So the sole advantage of backup() isn't relevant here.
+			// Just copying the file would have the advantage that we can get rid of the below
+			// lengthy while() loop.
 			restorer.backup(file.getAbsolutePath());
 		} catch (DatabaseClosedException e) {
 			Logger.error(this, "Cannot restore: Database closed!", e);
