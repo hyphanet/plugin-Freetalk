@@ -235,11 +235,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 					// do so and return.
 				}
 			} catch (DatabaseClosedException e) {
-				Logger.error(this, "Cannot restore: Database closed!", e);
+				Logger.error(this, "Cannot backup: Database closed!", e);
 				backuptemp.delete();
 				break;
 			} catch (Db4oIOException e) {
-				Logger.error(this, "Cannot restore: IoException!", e);
+				Logger.error(this, "Cannot backup: IoException!", e);
 				backuptemp.delete();
 				break;
 			}
