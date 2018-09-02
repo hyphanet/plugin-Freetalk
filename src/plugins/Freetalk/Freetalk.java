@@ -220,8 +220,11 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		while (true) {
 			try {
 				db.backup(backupdummy.getAbsolutePath());
-				// we only get here, if the backup throws no errors.
-				// Else we get the appropriate catch.
+				// We only get here, if the backup throws no errors, else we get the appropriate
+				// catch. Thus the backup is finished now and we can rename the file to the main
+				// name.
+				// TODO: Flush filesystem buffers before renaming to ensure the backup cannot be
+				// invalid if the system crashes during backup.
 				backuptemp.renameTo(backup);
 				deprecated.delete();
 				break;
