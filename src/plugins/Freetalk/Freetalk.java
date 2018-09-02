@@ -196,6 +196,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 				backup2.delete();
 			}
 			else {
+				assert(!backup2.exists());
 				db.backup(backup2.getAbsolutePath()); // 3+1 -> 2
 				backup3.delete();
 			}
