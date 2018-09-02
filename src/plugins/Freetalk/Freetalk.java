@@ -38,14 +38,14 @@ import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.defragment.Defragment;
 import com.db4o.defragment.DefragmentConfig;
+import com.db4o.ext.BackupInProgressException;
+import com.db4o.ext.DatabaseClosedException;
+import com.db4o.ext.Db4oIOException;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.io.CachedIoAdapter;
 import com.db4o.io.RandomAccessFileAdapter;
 import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
-import com.db4o.ext.Db4oIOException;
-import com.db4o.ext.DatabaseClosedException;
-import com.db4o.ext.BackupInProgressException;
 
 import freenet.clients.http.PageMaker.THEME;
 import freenet.l10n.BaseL10n;
