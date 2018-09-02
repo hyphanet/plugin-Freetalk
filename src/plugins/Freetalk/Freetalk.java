@@ -231,6 +231,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 				try {
 					Thread.sleep(10);	}
 				catch(InterruptedException f) {
+					// TODO: Check if db4o provides a way to interrupt the backup procedure, if yes
+					// do so and return.
 				}
 			} catch (DatabaseClosedException e) {
 				Logger.error(this, "Cannot restore: Database closed!", e);
@@ -406,6 +408,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 				try {
 					Thread.sleep(10);
 				} catch(InterruptedException f) {
+					// TODO: Check if db4o provides a way to interrupt the backup (= in our case
+					// restore) procedure, if yes do so and return.
 				}
 			} catch (DatabaseClosedException e) {
 				Logger.error(this, "Cannot restore: Database closed!", e);
