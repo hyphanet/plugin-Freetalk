@@ -379,7 +379,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		} else if (!backup1.exists() && backup3.exists()) {
 			mostRecentBackup = backup3;
 		} else if (backup1.exists() && backup2.exists() && backup3.exists()) {
-			Logger.error(this, "Cannot find the most recent backup. Choosing the first. Might be wrong. Sorry.");
+			Logger.error(this, "Cannot distinguish between the backups. Choosing the first. Might be wrong. Sorry.");
 			// TODO: Check the modified dates and choose the latest.
 			mostRecentBackup = backup1;
 		} else {
