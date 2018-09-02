@@ -366,8 +366,15 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	/** 
 	 * Restore the database from the most recent backup file.
 	 * 
-	 * TODO: To find out if the db needs to be restored: commit some note just before closing the db nd one just after opening. If the closing commit isn’t there, we need to restore.
-	 */
+	 * TODO: To find out if the db needs to be restored: Add a "dirty=true" flag to the Freetalk
+	 * database at startup, remove it as the very last part of shutdown.
+	 * Restore if dirty=true.
+	 * This could e.g. be implemented by:
+	 * - renaming the database file to "Freetalk.db4o.dirty" while Freetalk is running, and renaming
+	 *   it back at shutdown. Make sure to flush the filesystem buffers after closing the database
+	 *   and before renaming it back.
+	 * - creating/deleting a "Freetalk.db4o.lock" file. This may be the better solution due to:
+	 *   https://bugs.freenetproject.org/view.php?id=7001 */
 	private void restoreDatabase(File file) {
 		File mostRecentBackup;
 		File backup1 = new File(getUserDataDirectory(), BACKUP1_FILENAME);
