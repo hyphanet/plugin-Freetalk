@@ -92,6 +92,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	public static final String BACKUP1_FILENAME = PLUGIN_TITLE + ".db4o.backup1";
 	public static final String BACKUP2_FILENAME = PLUGIN_TITLE + ".db4o.backup2";
 	public static final String BACKUP3_FILENAME = PLUGIN_TITLE + ".db4o.backup3";
+	public static final String BACKUPDUMMY_FILENAME = PLUGIN_TITLE + ".db4o.dummybackup";
 	public static final int DATABASE_FORMAT_VERSION = 3;
 	/**
 	 * FIXME: Test various values of this and {@link #DATABASE_CACHE_PAGE_COUNT}, especially
@@ -323,7 +324,52 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         
         return freetalkDirectory;
 	}
-	
+
+	/** 
+	 * Restore the database from the most recent backup file.
+	 */
+	private void restoreDatabase(File file) {
+		File mostRecentBackup;
+		File backup1 = new File(getUserDataDirectory(), BACKUP1_FILENAME);
+		File backup2 = new File(getUserDataDirectory(), BACKUP2_FILENAME);
+		File backup3 = new File(getUserDataDirectory(), BACKUP3_FILENAME);
+		File backupdummy = new File(getUserDataDirectory(), BACKUPDUMMY_FILENAME);
+		if (!backup1.exists()) {
+			mostRecentBackup = backup3;
+		} else if (!backup2.exists()) {
+			mostRecentBackup = backup1;
+		} else {
+			mostRecentBackup = backup2;
+		}
+		ExtObjectContainer restorer = Db4o.openFile(mostRecentBackup.getAbsolutePath()).ext();
+		try {
+			restorer.backup(file.getAbsolutePath());
+		} catch (DatabaseClosedException e) {
+			Logger.error(this, "Cannot restore: Database closed!", e);
+		} catch (Db4oIOException e) {
+			Logger.error(this, "Cannot restore: IoException!", e);
+		}
+		// make sure this backup finishes.
+		while (true) {
+			try {
+				restorer.backup(backupdummy.getAbsolutePath());
+				break;
+			} catch (BackupInProgressException e) {
+				// this is what we want. As soon as we don't get this
+				// anymore, we break.
+			} catch (DatabaseClosedException e) {
+				Logger.error(this, "Cannot restore: Database closed!", e);
+				break;
+			} catch (Db4oIOException e) {
+				Logger.error(this, "Cannot restore: IoException!", e);
+				break;
+			}
+			
+		}
+		
+		// TODO: We need to find out when it is finished and only return afterwards.
+	}
+
 	@SuppressWarnings("unchecked")
 	private com.db4o.config.Configuration getNewDatabaseConfiguration() {
 		final com.db4o.config.Configuration cfg = Db4o.newConfiguration();
