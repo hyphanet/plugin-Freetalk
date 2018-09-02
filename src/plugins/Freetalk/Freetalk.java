@@ -45,6 +45,7 @@ import com.db4o.query.Query;
 import com.db4o.reflect.jdk.JdkReflector;
 import com.db4o.ext.Db4oIOException;
 import com.db4o.ext.DatabaseClosedException;
+import com.db4o.ext.BackupInProgressException;
 
 import freenet.clients.http.PageMaker.THEME;
 import freenet.l10n.BaseL10n;
@@ -204,6 +205,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			Logger.error(this, "Cannot backup: Database closed!", e);
 		} catch (Db4oIOException e) {
 			Logger.error(this, "Cannot backup: IoException!", e);
+		} catch (BackupInProgressException e) {
+			Logger.error(this, "Cannot backup: Another backup is already running!", e);
 		}
 	}
 
