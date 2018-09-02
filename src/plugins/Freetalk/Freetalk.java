@@ -432,8 +432,6 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 			}
 			
 		}
-		
-		// TODO: We need to find out when it is finished and only return afterwards.
 	}
 
 	@SuppressWarnings("unchecked")
