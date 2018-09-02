@@ -15,11 +15,11 @@ import freenet.support.Logger;
 
 final class BackupManager {
 
-	public static final String DATABASE_BACKUP1_FILENAME =     DATABASE_FILENAME + ".backup1";
-	public static final String DATABASE_BACKUP2_FILENAME =     DATABASE_FILENAME + ".backup2";
-	public static final String DATABASE_BACKUP3_FILENAME =     DATABASE_FILENAME + ".backup3";
-	public static final String DATABASE_BACKUPDUMMY_FILENAME = DATABASE_FILENAME + ".dummybackup";
-	public static final String DATABASE_BACKUPTEMP_FILENAME =  DATABASE_FILENAME + ".temp";
+	static final String DATABASE_BACKUP1_FILENAME =     DATABASE_FILENAME + ".backup1";
+	static final String DATABASE_BACKUP2_FILENAME =     DATABASE_FILENAME + ".backup2";
+	static final String DATABASE_BACKUP3_FILENAME =     DATABASE_FILENAME + ".backup3";
+	static final String DATABASE_BACKUPDUMMY_FILENAME = DATABASE_FILENAME + ".dummybackup";
+	static final String DATABASE_BACKUPTEMP_FILENAME =  DATABASE_FILENAME + ".temp";
 
 	private final Freetalk mFT;
 
@@ -39,7 +39,7 @@ final class BackupManager {
 	 * The non-existent is the new target and the older of the
 	 * existing ones gets deleted.
 	 */
-	private void backup(ExtObjectContainer db) {
+	void backup(ExtObjectContainer db) {
 		if(true) {
 			throw new UnsupportedOperationException(
 				"This function is unfinished, please resolve all TODOs before using it!");
