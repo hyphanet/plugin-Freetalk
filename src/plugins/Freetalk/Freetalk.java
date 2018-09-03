@@ -418,6 +418,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	
 	/**
 	 * ATTENTION: This function is duplicated in the Web Of Trust plugin, please backport any changes.
+	 * TODO: Replace with {@link BackupManager}, along with the code at
+	 * {@link #defragmentDatabase(File)}.
 	 */
 	private synchronized void restoreDatabaseBackup(File databaseFile, File backupFile) throws IOException {
 		Logger.warning(this, "Trying to restore database backup: " + backupFile.getAbsolutePath());

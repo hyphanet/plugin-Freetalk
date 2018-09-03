@@ -13,6 +13,17 @@ import com.db4o.ext.ExtObjectContainer;
 
 import freenet.support.Logger;
 
+/**
+ * WARNING: THIS IS UNFINISHED!
+ * 
+ * TODO: Please resolve all TODOs in this class before putting this to use.
+ * Once they are resolved:
+ * - make this run a daemon which periodically does a backup.
+ * - create an instance of this in class {@link Freetalk} at startup. Try to see whether we have to
+ *   restore from a backup then (a below TODO explains how to determine that).
+ * - make {@link Freetalk#defragmentDatabase(File)} place its backup where this function would
+ *   place it, and replace {@link Freetalk#restoreDatabaseBackup(File, File)} with our
+ *   {@link #restore(File)}. */
 final class BackupManager {
 
 	static final String DATABASE_BACKUP1_FILENAME =     DATABASE_FILENAME + ".backup1";
