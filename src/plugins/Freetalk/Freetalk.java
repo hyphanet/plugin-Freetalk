@@ -3,9 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import static java.lang.Thread.sleep;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.Thread;
 
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
@@ -38,6 +41,9 @@ import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.defragment.Defragment;
 import com.db4o.defragment.DefragmentConfig;
+import com.db4o.ext.BackupInProgressException;
+import com.db4o.ext.DatabaseClosedException;
+import com.db4o.ext.Db4oIOException;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.io.CachedIoAdapter;
 import com.db4o.io.RandomAccessFileAdapter;
@@ -275,7 +281,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		}
 	}
 	
-	private File getUserDataDirectory() {
+	File getUserDataDirectory() {
         final File freetalkDirectory = new File(mPluginRespirator.getNode().getUserDir(), PLUGIN_TITLE);
         
         if(!freetalkDirectory.exists() && !freetalkDirectory.mkdir())
@@ -283,7 +289,7 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
         
         return freetalkDirectory;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private com.db4o.config.Configuration getNewDatabaseConfiguration() {
 		final com.db4o.config.Configuration cfg = Db4o.newConfiguration();
@@ -412,6 +418,8 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	
 	/**
 	 * ATTENTION: This function is duplicated in the Web Of Trust plugin, please backport any changes.
+	 * TODO: Replace with {@link BackupManager}, along with the code at
+	 * {@link #defragmentDatabase(File)}.
 	 */
 	private synchronized void restoreDatabaseBackup(File databaseFile, File backupFile) throws IOException {
 		Logger.warning(this, "Trying to restore database backup: " + backupFile.getAbsolutePath());
