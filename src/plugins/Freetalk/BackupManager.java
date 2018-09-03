@@ -27,11 +27,6 @@ final class BackupManager {
 		mUserDataDirectory = ft.getUserDataDirectory();
 	}
 
-	private final File getUserDataDirectory() {
-		return mUserDataDirectory;
-	}
-	
-
 	/** 
 	 * Do a backup. Throw away the other file after finishing.
 	 * 
@@ -56,11 +51,11 @@ final class BackupManager {
 			// - Also resolve the below TODOs!
 		}
 		
-		File backup1 = new File(getUserDataDirectory(), DATABASE_BACKUP1_FILENAME);
-		File backup2 = new File(getUserDataDirectory(), DATABASE_BACKUP2_FILENAME);
-		File backup3 = new File(getUserDataDirectory(), DATABASE_BACKUP3_FILENAME);
-		File backupdummy = new File(getUserDataDirectory(), DATABASE_BACKUPDUMMY_FILENAME);
-		File backuptemp = new File(getUserDataDirectory(), DATABASE_BACKUPTEMP_FILENAME);
+		File backup1 = new File(mUserDataDirectory, DATABASE_BACKUP1_FILENAME);
+		File backup2 = new File(mUserDataDirectory, DATABASE_BACKUP2_FILENAME);
+		File backup3 = new File(mUserDataDirectory, DATABASE_BACKUP3_FILENAME);
+		File backupdummy = new File(mUserDataDirectory, DATABASE_BACKUPDUMMY_FILENAME);
+		File backuptemp = new File(mUserDataDirectory, DATABASE_BACKUPTEMP_FILENAME);
 		File backup;
 		File deprecated;
 		if (!backup3.exists()) { // 1+2->3
@@ -145,10 +140,10 @@ final class BackupManager {
 		}
 		
 		File mostRecentBackup;
-		File backup1 = new File(getUserDataDirectory(), DATABASE_BACKUP1_FILENAME);
-		File backup2 = new File(getUserDataDirectory(), DATABASE_BACKUP2_FILENAME);
-		File backup3 = new File(getUserDataDirectory(), DATABASE_BACKUP3_FILENAME);
-		File backupdummy = new File(getUserDataDirectory(), DATABASE_BACKUPDUMMY_FILENAME);
+		File backup1 = new File(mUserDataDirectory, DATABASE_BACKUP1_FILENAME);
+		File backup2 = new File(mUserDataDirectory, DATABASE_BACKUP2_FILENAME);
+		File backup3 = new File(mUserDataDirectory, DATABASE_BACKUP3_FILENAME);
+		File backupdummy = new File(mUserDataDirectory, DATABASE_BACKUPDUMMY_FILENAME);
 		if (!backup2.exists() && backup1.exists()) {
 			mostRecentBackup = backup1;
 		} else if (!backup3.exists() && backup2.exists()) {
