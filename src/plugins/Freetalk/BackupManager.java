@@ -21,14 +21,14 @@ final class BackupManager {
 	static final String DATABASE_BACKUPDUMMY_FILENAME = DATABASE_FILENAME + ".dummybackup";
 	static final String DATABASE_BACKUPTEMP_FILENAME =  DATABASE_FILENAME + ".temp";
 
-	private final Freetalk mFT;
+	private final File mUserDataDirectory;
 
 	BackupManager(Freetalk ft) {
-		mFT = ft;
+		mUserDataDirectory = ft.getUserDataDirectory();
 	}
 
 	private final File getUserDataDirectory() {
-		return mFT.getUserDataDirectory();
+		return mUserDataDirectory;
 	}
 	
 
