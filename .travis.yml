@@ -1,6 +1,7 @@
 language: java
 
 # We need Ubuntu 14.04 due to very new JUnit API which WoT needs
+# FIXME: Does this also apply to Freetalk?
 dist: trusty
 # Disabling sudo routes the build to a Docker container instead of a VM
 # which speeds up the build.
@@ -17,8 +18,8 @@ addons:
     - python3-pip
   # TODO: Code quality: Remove this workaround for https://github.com/travis-ci/travis-ci/issues/5227
   hosts:
-    - freenet-plugin-WebOfTrust
-  hostname: freenet-plugin-WebOfTrust
+    - freenet-plugin-Freetalk
+  hostname: freenet-plugin-Freetalk
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
@@ -43,11 +44,11 @@ before_install:
   # TODO: freenet.jar won't contain class Version if we don't run the
   # clean task in a separate execution of Gradle. Why?
   - ./gradlew clean
-  # "copyRuntimeLibs" copies the JAR *and* dependencies - which WoT also
+  # "copyRuntimeLibs" copies the JAR *and* dependencies - which Freetalk also
   # needs - to build/output/
   - ./gradlew jar copyRuntimeLibs -x test
   - cd "$TRAVIS_BUILD_DIR"
-  # Print the checksums of the WoT dependencies - for debugging
+  # Print the checksums of the Freetalk dependencies - for debugging
   - sha256sum ../fred/build/output/*
 
 script: ant
@@ -60,10 +61,11 @@ jdk:
   # openjdk9: As of 2018-05-12 isn't available on Travis yet.
   # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
 
-deploy:
-  provider: script
-  # Prevent Travis from deleting the JAR before we can deploy it (wtf?)
-  skip_cleanup: true
-  script: ./.travis.upload-jar-to-freenet.sh
-  on:
-    all_branches: true
+# FIXME: Adapt to Freetalk and enable
+# deploy:
+#   provider: script
+#   # Prevent Travis from deleting the JAR before we can deploy it (wtf?)
+#   skip_cleanup: true
+#   script: ./.travis.upload-jar-to-freenet.sh
+#   on:
+#     all_branches: true
