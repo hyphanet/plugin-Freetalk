@@ -23,7 +23,7 @@
 	<property name="build-test" location="build-test/"/>
 	<property name="dist" location="dist/"/>
 	<property name="src" location="src/"/>
-	<property name="junit.location" value="/usr/share/java/junit.jar"/>
+	<property name="junit.location" value="/usr/share/java/junit4.jar"/>
 	<property name="version.src" value="plugins/Freetalk/Version.java" />
 	<property name="version.build" value="plugins/Freetalk/Version.class" />
 
