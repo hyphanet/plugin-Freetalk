@@ -4,11 +4,17 @@
 <project name="Freetalk" default="dist" basedir=".">
 	<property file="override.properties"/>
 	
-	<property name="freenet-cvs-snapshot.location" location="../fred/dist/freenet.jar"/>
-	<!-- you can modify and uncomment the following line if you want to experiment with newer db4o versions without recompiling freenet-ext.jar -->
-	<!-- <property name="db4o.location" location="../fred/db4o-7.12/lib/db4o-7.12.145.14409-all-java5.jar"/> -->
-	<property name="freenet-ext.location" location="../fred/lib/freenet/freenet-ext.jar"/>
-	<property name="bcprov.location" location="../fred/lib/bcprov.jar"/>
+	<!-- Freenet build01481 compiled with "./gradlew jar copyRuntimeLibs" will copy the         -->
+	<!-- freenet.jar and its dependencies to this directory:                                    -->
+	<property name="freenet.lib.new.location"   location="../fred/build/output/"/>
+	<!-- Older Freenet builds will use these places for the JARs, some of which have to be      -->
+	<!-- downloaded manually:                                                                   -->
+	<property name="freenet.lib.old.location.1" location="../fred/lib/bcprov.jar"/>
+	<property name="freenet.lib.old.location.2" location="../fred/lib/jna-platform.jar"/>
+	<property name="freenet.lib.old.location.3" location="../fred/lib/jna.jar"/>
+	<property name="freenet.lib.old.location.4" location="../fred/lib/freenet/freenet-ext.jar"/>
+	<property name="freenet.lib.old.location.5" location="../fred/dist/freenet.jar"/>
+	
 	<property name="debug-node-freetalk-plugin.location" location="../fred/plugins/Freetalk.jar"/>
 	<property name="svn.revision" value="@custom@"/>
 	<property name="source-version" value="1.6"/>
@@ -17,24 +23,41 @@
 	<property name="build-test" location="build-test/"/>
 	<property name="dist" location="dist/"/>
 	<property name="src" location="src/"/>
-	<property name="junit.location" value="/usr/share/java/junit.jar"/>
+	<property name="junit.location" value="/usr/share/java/junit4.jar"/>
 	<property name="version.src" value="plugins/Freetalk/Version.java" />
 	<property name="version.build" value="plugins/Freetalk/Version.class" />
 
 	<available file="src/plugins/Freetalk/Version.java" property="version.present"/>
-	<available file="${junit.location}" property="junit.present"/>
 	
 	<path id="libraries.classpath">
-		<pathelement location="${db4o.location}"/>
-		<pathelement location="${bcprov.location}"/>
-		<pathelement location="${freenet-ext.location}"/>
-		<pathelement location="${freenet-cvs-snapshot.location}"/>
+		<!-- Use filesets instead of <pathelement> to:
+		     - allow using wildcards when including freenet.lib.new.location so we don't need to
+		       synchronize the list of JARs which fred needs with what this build file includes.
+		     - for the old JAR locations ensure the print-libs task won't print files which don't
+		       exist as that is what he wildcard usage dictates for thew new location already. -->
+		
+		<fileset dir="${freenet.lib.new.location}" erroronmissingdir="no" casesensitive="no">
+			<include name="**/*.jar"/>
+		</fileset>
+		<fileset file="${freenet.lib.old.location.1}" erroronmissingdir="no"/>
+		<fileset file="${freenet.lib.old.location.2}" erroronmissingdir="no"/>
+		<fileset file="${freenet.lib.old.location.3}" erroronmissingdir="no"/>
+		<fileset file="${freenet.lib.old.location.4}" erroronmissingdir="no"/>
+		<fileset file="${freenet.lib.old.location.5}" erroronmissingdir="no"/>
 	</path>
 	
 	<path id="junit.classpath">
 		<pathelement location="${junit.location}" />
 	</path>
 	
+	<!-- For print-libs task: All runtime dependencies of Freetalk plus the build-time dependencies.
+	     Uses <fileset> instead of <pathelement> so it only contains only those which exist as that
+	     is what lib.path does already. -->
+	<path id="lib.external.all.path">
+		<path refid="libraries.classpath"/>
+		<path refid="junit.classpath" />
+	</path>
+
 	<presetdef name="javac">
 			<!--
 			Workaround for ant 1.8 misfeature. TODO: Remove when ant fixes this.
@@ -68,17 +91,29 @@
 		</and>
 	</condition>
 
+	<target name="print-libs">
+		<echo>External dependencies on classpath follow, but ONLY those which did exist.</echo>
+		<echo>(This cannot tell which JARs are missing because that would require ant-contrib</echo>
+		<echo>and I don't want to require Freenet release managers to install it. Sorry.)</echo>
+		<echo></echo>
+		<echo>If compiling fails due to missing classes please:</echo>
+		<echo>- ensure fred was built with "./gradlew jar copyRuntimeLibs" to make it copy</echo>
+		<echo>  its dependencies' JARs to "build/output/".</echo>
+		<echo>- compare the found JARs against the configuration at top of build.xml to find</echo>
+		<echo>  out which JARs are missing.</echo>
+		<echo></echo>
+		<pathconvert refid="lib.external.all.path" pathsep="${line.separator}" property="all.path.printable"/>
+		<echo>${all.path.printable}</echo>
+	</target>
+
 	<target name="mkdir">
 		<mkdir dir="${build}"/>
 		<mkdir dir="${build-test}"/>
 		<mkdir dir="${dist}"/>
-		<echo message="Using ${freenet-cvs-snapshot.location} as freenet-cvs-snapshot.jar"/>
-		<echo message="Using ${freenet-ext.location} as freenet-ext.jar"/>
-		<echo message="Using ${bcprov.location} as bcprov.jar"/>
 	</target>
 
 	<!-- ================================================== -->
-	<target name="compile" depends="mkdir" >
+	<target name="compile" depends="print-libs, mkdir" >
 		<!-- Create the time stamp -->
 		<tstamp/>
 
@@ -112,7 +147,7 @@
 
 	<!-- ================================================== -->
 
-	<target name="unit-build" depends="compile" if="junit.present">
+	<target name="unit-build" depends="compile" unless="${test.skip}">
 		<javac srcdir="test/" destdir="${build-test}" debug="on" optimize="on" source="${source-version}" target="${target-version}">
 			<classpath>
 				<pathelement path="${build}"/>
@@ -125,7 +160,7 @@
 		</javac>
 	</target>
 
-	<target name="junit" depends="unit-build" if="junit.present" unless="${test.skip}">
+	<target name="junit" depends="unit-build" unless="${test.skip}">
 		<junit printsummary="yes" fork="yes" haltonfailure="yes">
 			<classpath>
 				<pathelement path="${build}"/>
