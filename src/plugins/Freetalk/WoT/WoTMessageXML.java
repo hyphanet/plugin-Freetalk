@@ -33,7 +33,6 @@ import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.Message.MessageID;
-import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.Version;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
