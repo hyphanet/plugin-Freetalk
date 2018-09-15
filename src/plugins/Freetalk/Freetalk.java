@@ -3,12 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-import static java.lang.Thread.sleep;
-
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.Thread;
 
 import plugins.Freetalk.WoT.WoTIdentity;
 import plugins.Freetalk.WoT.WoTIdentityManager;
@@ -41,9 +38,6 @@ import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.defragment.Defragment;
 import com.db4o.defragment.DefragmentConfig;
-import com.db4o.ext.BackupInProgressException;
-import com.db4o.ext.DatabaseClosedException;
-import com.db4o.ext.Db4oIOException;
 import com.db4o.ext.ExtObjectContainer;
 import com.db4o.io.CachedIoAdapter;
 import com.db4o.io.RandomAccessFileAdapter;

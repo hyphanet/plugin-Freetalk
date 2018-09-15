@@ -12,18 +12,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.TimeZone;
 
-import javax.activation.MimeType;
-
 import plugins.Freetalk.Board;
 import plugins.Freetalk.DatabaseBasedTest;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Message;
-import plugins.Freetalk.Version;
 import plugins.Freetalk.Message.Attachment;
 import plugins.Freetalk.Message.MessageID;
 import plugins.Freetalk.MessageList;
 import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.Persistent;
+import plugins.Freetalk.Version;
+import plugins.Freetalk.util.MimeType;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 
