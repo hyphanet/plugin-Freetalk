@@ -12,7 +12,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TimeZone;
 
-import javax.activation.MimeType;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -38,6 +37,7 @@ import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.Version;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.util.MimeType;
 import freenet.keys.FreenetURI;
 
 /**

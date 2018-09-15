@@ -11,8 +11,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.activation.MimeType;
-
 import plugins.Freetalk.Board;
 import plugins.Freetalk.Freetalk;
 import plugins.Freetalk.Identity;
@@ -31,6 +29,7 @@ import plugins.Freetalk.exceptions.MessageNotFetchedException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchIdentityException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
+import plugins.Freetalk.util.MimeType;
 import freenet.keys.FreenetURI;
 import freenet.pluginmanager.FredPluginFCP;
 import freenet.pluginmanager.PluginNotFoundException;

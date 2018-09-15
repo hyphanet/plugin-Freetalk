@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import static plugins.Freetalk.util.MimeType.DEFAULT_MIME_TYPE;
+
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
@@ -12,15 +14,14 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
 
-import javax.activation.MimeType;
-import javax.activation.MimeTypeParseException;
-
 import plugins.Freetalk.Identity.IdentityID;
 import plugins.Freetalk.Persistent.IndexedField;
 import plugins.Freetalk.exceptions.InvalidParameterException;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.exceptions.NoSuchMessageException;
 import plugins.Freetalk.exceptions.NoSuchMessageListException;
+import plugins.Freetalk.util.MimeType;
+import plugins.Freetalk.util.MimeTypeParseException;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.StringValidityChecker;
@@ -157,7 +158,7 @@ public abstract class Message extends Persistent {
 			
 			if(myMIMEType == null) {
 				try {
-					myMIMEType = new MimeType("application/octet-stream");
+					myMIMEType = new MimeType(DEFAULT_MIME_TYPE);
 				} catch (MimeTypeParseException e) {
 					throw new RuntimeException(e);
 				}
