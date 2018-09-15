@@ -156,13 +156,8 @@ public abstract class Message extends Persistent {
 			if(mySize < -1)
 				throw new IllegalArgumentException("Illegal size");
 			
-			if(myMIMEType == null) {
-				try {
-					myMIMEType = new MimeType(DEFAULT_MIME_TYPE);
-				} catch (MimeTypeParseException e) {
-					throw new RuntimeException(e);
-				}
-			}
+			if(myMIMEType == null)
+				myMIMEType = DEFAULT_MIME_TYPE;
 			
 			mMessage = null; // Is not available when the UI constructs attachments
 			mFreenetURI = myURI.toString();

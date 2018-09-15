@@ -15,7 +15,7 @@ import freenet.client.DefaultMIMETypes;
  * TODO: Code quality: Is there another class in the JRE to replace Java's MimeType with? */
 public final class MimeType implements Cloneable {
 
-	public static final String DEFAULT_MIME_TYPE = DefaultMIMETypes.DEFAULT_MIME_TYPE;
+	public static final MimeType DEFAULT_MIME_TYPE = new MimeType();
 
 	private final String mMimeType;
 
@@ -24,6 +24,10 @@ public final class MimeType implements Cloneable {
 			throw new MimeTypeParseException(string);
 		
 		mMimeType = string;
+	}
+
+	private MimeType() {
+		mMimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
 	}
 
 	@Override public MimeType clone() {
