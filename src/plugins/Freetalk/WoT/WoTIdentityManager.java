@@ -179,6 +179,16 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				newNickname, autoSubscribeToNewBoards, displayImages);
 		
 		identity.initializeTransient(mFreetalk);
+		// FIXME: If mIdentityFetchInProgress is true, then the mLastOwnIdentityFetchID will be
+		// changed at the end of the fetch, possibly *after* we have finished here. The garbage
+		// collector will then at its next iteration delete all identities which had received a
+		// different value upon setLastReceivedFromWoT(). So the OwnIdentity we create here will
+		// also be deleted!
+		// - It is probably not worth fixing this anymore though, as branch event-notifications will
+		// revamp the whole mechanism of how Identitys are obtained from WoT.
+		// However if we do want to fix it now it may be possible to do so:
+		// Store the ID of the currently in-progress fetch in a separate member variable and use
+		// it here.
 		identity.setLastReceivedFromWoT(mLastOwnIdentityFetchID);
 		
 		Logger.normal(this, "Created WoTOwnidentity via FCP, now storing... " + identity);
@@ -228,6 +238,16 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				newNickname, autoSubscribeToNewBoards, displayImages);
 		
 		identity.initializeTransient(mFreetalk);
+		// FIXME: If mIdentityFetchInProgress is true, then the mLastOwnIdentityFetchID will be
+		// changed at the end of the fetch, possibly *after* we have finished here. The garbage
+		// collector will then at its next iteration delete all identities which had received a
+		// different value upon setLastReceivedFromWoT(). So the OwnIdentity we create here will
+		// also be deleted!
+		// - It is probably not worth fixing this anymore though, as branch event-notifications will
+		// revamp the whole mechanism of how Identitys are obtained from WoT.
+		// However if we do want to fix it now it may be possible to do so:
+		// Store the ID of the currently in-progress fetch in a separate member variable and use
+		// it here.
 		identity.setLastReceivedFromWoT(mLastOwnIdentityFetchID);
 		
 		Logger.normal(this, "Created WoTOwnidentity via FCP, now storing... " + identity);
