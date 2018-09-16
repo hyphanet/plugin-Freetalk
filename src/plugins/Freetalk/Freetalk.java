@@ -181,6 +181,10 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 		if(logDEBUG) Logger.debug(this, "Database opened.");
 		
 		mConfig = Configuration.loadOrCreate(this, db);
+		// FIXME: We need to open the database in read-only mode to decide this, like WoT was
+		// somewhat recently changed to do. I don't recall the reason of it right now but it should
+		// be possible to obtain from the commit history of WoT. What I can say is that it caused
+		// severe database breakage to not do so so please DO investigate this before a release.
 		if(mConfig.getDatabaseFormatVersion() > Freetalk.DATABASE_FORMAT_VERSION)
 			throw new RuntimeException("The Freetalk plugin's database format is newer than the Freetalk plugin which is being used.");
 		
