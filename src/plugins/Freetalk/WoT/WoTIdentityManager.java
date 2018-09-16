@@ -608,12 +608,15 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			p1.putOverwrite("Selection", "+");
 			p1.putOverwrite("Context", Freetalk.WOT_CONTEXT);
 			parseIdentities(sendFCPMessageBlocking(p1, null, "Identities").params, false);
-		}
-		finally {
+		} catch(Exception e) {
 			synchronized(this) {
-				mIdentityFetchInProgress = false;
 				// Disable garbage collection for the next iteration since importing failed
 				mLastIdentityFetchID = 0;
+			}
+			throw e;
+		} finally {
+			synchronized(this) {
+				mIdentityFetchInProgress = false;
 			}
 		}
 	
@@ -646,12 +649,15 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			SimpleFieldSet p2 = new SimpleFieldSet(true);
 			p2.putOverwrite("Message","GetOwnIdentities");
 			parseIdentities(sendFCPMessageBlocking(p2, null, "OwnIdentities").params, true);
-		}
-		finally {
+		} catch(Exception e) {
 			synchronized(this) {
-				mOwnIdentityFetchInProgress = false;
 				// Disable garbage collection for the next iteration since importing failed
 				mLastOwnIdentityFetchID = 0;
+			}
+			throw e;
+		} finally {
+			synchronized(this) {
+				mOwnIdentityFetchInProgress = false;
 			}
 		}
 		
