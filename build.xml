@@ -2,6 +2,7 @@
 <!-- ant build file for Freetalk -->
 
 <project name="Freetalk" default="dist" basedir=".">
+	<!-- You can use this file to override the below properties. -->
 	<property file="override.properties"/>
 	
 	<!-- Freenet build01481 compiled with "./gradlew jar copyRuntimeLibs" will copy the         -->
