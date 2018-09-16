@@ -617,6 +617,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		} finally {
 			synchronized(this) {
 				mIdentityFetchInProgress = false;
+				mLastIdentityFetchTime = CurrentTimeUTC.getInMillis();
 			}
 		}
 	
@@ -658,6 +659,7 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 		} finally {
 			synchronized(this) {
 				mOwnIdentityFetchInProgress = false;
+				mLastOwnIdentityFetchTime = CurrentTimeUTC.getInMillis();
 			}
 		}
 		
