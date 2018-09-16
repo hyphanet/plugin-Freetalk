@@ -58,8 +58,11 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	/** The amount of time between each attempt to connect to the WoT plugin */
 	private static final int WOT_RECONNECT_DELAY = 5 * 1000; 
 	
-	/** The minimal amount of time between fetching identities */
-	private static final int MINIMAL_IDENTITY_FETCH_DELAY = 60 * 1000;
+	/**
+	 * The minimal amount of time between fetching identities.
+	 * FIXME: Ignore this after the user manually distrusts an Identity. May not be necessary to
+	 * fix this anymore though as this logic will be replaced by branch event-notifications soon. */
+	private static final int MINIMAL_IDENTITY_FETCH_DELAY = 60 * 60 * 1000;
 	
 	/** The minimal amount of time between fetching own identities */
 	private static final int MINIMAL_OWN_IDENTITY_FETCH_DELAY = 1000;
