@@ -837,18 +837,22 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			if(idx == expectedIdentityAmount) {
 				// We must update the fetch-ID after the parsing and only if the parsing succeeded:
 				// If we updated before the parsing and parsing failed then the garbage collector would delete identities.
+				synchronized(this) {
 				if(bOwnIdentities)
 					mLastOwnIdentityFetchID = fetchID;
 				else
 					mLastIdentityFetchID = fetchID;
+				}
 			} else { // Importing failed - we received a corrupted data set
 				Logger.error(this, "Parsed identity count does not match expected amount: expected: " + expectedIdentityAmount + "; actual amount: " + idx);
 				
 				// Disable garbage collection for the next iteration since importing failed
+				synchronized(this) {
 				if(bOwnIdentities)
 					mLastOwnIdentityFetchID = 0;
 				else
 					mLastIdentityFetchID = 0;
+				}
 			}
 		} catch(FSParseException e) {
 			Logger.error(this, "GetIdentitiesByScore did not specify Amount of identities! Maybe WOT older than build0012?", e);
