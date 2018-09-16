@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import freenet.clients.fcp.FCPPluginConnection;
 import freenet.pluginmanager.FredPluginTalker;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
@@ -11,6 +12,17 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
+/**
+ * @deprecated FIXME: This MUST be replaced with fred's new "plugin-fcp-rewrite" API because the old
+ * plugin FCP API it uses is fundamentally broken and thus this implementation here is buggy and
+ * CANNOT be bugfixed without using the new API:
+ * The old API does not provide unique IDs for each FCP message so it is impossible to tell which
+ * message we receive is the reply to which message we have sent and are waiting for the reply of.
+ * This causes this class to possibly deliver replies to the wrong message sender.
+ * 
+ * Specifically use {@link FCPPluginConnection#sendSynchronous(freenet.clients.fcp.FCPPluginMessage,
+ * long)}.*/
+@Deprecated
 public class PluginTalkerBlocking implements FredPluginTalker {
 	
 	/**

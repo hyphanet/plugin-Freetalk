@@ -58,8 +58,11 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 	/** The amount of time between each attempt to connect to the WoT plugin */
 	private static final int WOT_RECONNECT_DELAY = 5 * 1000; 
 	
-	/** The minimal amount of time between fetching identities */
-	private static final int MINIMAL_IDENTITY_FETCH_DELAY = 60 * 1000;
+	/**
+	 * The minimal amount of time between fetching identities.
+	 * FIXME: Ignore this after the user manually distrusts an Identity. May not be necessary to
+	 * fix this anymore though as this logic will be replaced by branch event-notifications soon. */
+	private static final int MINIMAL_IDENTITY_FETCH_DELAY = 60 * 60 * 1000;
 	
 	/** The minimal amount of time between fetching own identities */
 	private static final int MINIMAL_OWN_IDENTITY_FETCH_DELAY = 1000;
@@ -179,6 +182,16 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				newNickname, autoSubscribeToNewBoards, displayImages);
 		
 		identity.initializeTransient(mFreetalk);
+		// FIXME: If mIdentityFetchInProgress is true, then the mLastOwnIdentityFetchID will be
+		// changed at the end of the fetch, possibly *after* we have finished here. The garbage
+		// collector will then at its next iteration delete all identities which had received a
+		// different value upon setLastReceivedFromWoT(). So the OwnIdentity we create here will
+		// also be deleted!
+		// - It is probably not worth fixing this anymore though, as branch event-notifications will
+		// revamp the whole mechanism of how Identitys are obtained from WoT.
+		// However if we do want to fix it now it may be possible to do so:
+		// Store the ID of the currently in-progress fetch in a separate member variable and use
+		// it here.
 		identity.setLastReceivedFromWoT(mLastOwnIdentityFetchID);
 		
 		Logger.normal(this, "Created WoTOwnidentity via FCP, now storing... " + identity);
@@ -228,6 +241,16 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 				newNickname, autoSubscribeToNewBoards, displayImages);
 		
 		identity.initializeTransient(mFreetalk);
+		// FIXME: If mIdentityFetchInProgress is true, then the mLastOwnIdentityFetchID will be
+		// changed at the end of the fetch, possibly *after* we have finished here. The garbage
+		// collector will then at its next iteration delete all identities which had received a
+		// different value upon setLastReceivedFromWoT(). So the OwnIdentity we create here will
+		// also be deleted!
+		// - It is probably not worth fixing this anymore though, as branch event-notifications will
+		// revamp the whole mechanism of how Identitys are obtained from WoT.
+		// However if we do want to fix it now it may be possible to do so:
+		// Store the ID of the currently in-progress fetch in a separate member variable and use
+		// it here.
 		identity.setLastReceivedFromWoT(mLastOwnIdentityFetchID);
 		
 		Logger.normal(this, "Created WoTOwnidentity via FCP, now storing... " + identity);
@@ -608,12 +631,16 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			p1.putOverwrite("Selection", "+");
 			p1.putOverwrite("Context", Freetalk.WOT_CONTEXT);
 			parseIdentities(sendFCPMessageBlocking(p1, null, "Identities").params, false);
-		}
-		finally {
+		} catch(Exception e) {
 			synchronized(this) {
-				mIdentityFetchInProgress = false;
 				// Disable garbage collection for the next iteration since importing failed
 				mLastIdentityFetchID = 0;
+			}
+			throw e;
+		} finally {
+			synchronized(this) {
+				mIdentityFetchInProgress = false;
+				mLastIdentityFetchTime = CurrentTimeUTC.getInMillis();
 			}
 		}
 	
@@ -646,12 +673,16 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			SimpleFieldSet p2 = new SimpleFieldSet(true);
 			p2.putOverwrite("Message","GetOwnIdentities");
 			parseIdentities(sendFCPMessageBlocking(p2, null, "OwnIdentities").params, true);
-		}
-		finally {
+		} catch(Exception e) {
 			synchronized(this) {
-				mOwnIdentityFetchInProgress = false;
 				// Disable garbage collection for the next iteration since importing failed
 				mLastOwnIdentityFetchID = 0;
+			}
+			throw e;
+		} finally {
+			synchronized(this) {
+				mOwnIdentityFetchInProgress = false;
+				mLastOwnIdentityFetchTime = CurrentTimeUTC.getInMillis();
 			}
 		}
 		
@@ -837,18 +868,22 @@ public final class WoTIdentityManager extends IdentityManager implements PrioRun
 			if(idx == expectedIdentityAmount) {
 				// We must update the fetch-ID after the parsing and only if the parsing succeeded:
 				// If we updated before the parsing and parsing failed then the garbage collector would delete identities.
+				synchronized(this) {
 				if(bOwnIdentities)
 					mLastOwnIdentityFetchID = fetchID;
 				else
 					mLastIdentityFetchID = fetchID;
+				}
 			} else { // Importing failed - we received a corrupted data set
 				Logger.error(this, "Parsed identity count does not match expected amount: expected: " + expectedIdentityAmount + "; actual amount: " + idx);
 				
 				// Disable garbage collection for the next iteration since importing failed
+				synchronized(this) {
 				if(bOwnIdentities)
 					mLastOwnIdentityFetchID = 0;
 				else
 					mLastIdentityFetchID = 0;
+				}
 			}
 		} catch(FSParseException e) {
 			Logger.error(this, "GetIdentitiesByScore did not specify Amount of identities! Maybe WOT older than build0012?", e);

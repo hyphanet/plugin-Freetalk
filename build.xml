@@ -2,6 +2,7 @@
 <!-- ant build file for Freetalk -->
 
 <project name="Freetalk" default="dist" basedir=".">
+	<!-- You can use this file to override the below properties. -->
 	<property file="override.properties"/>
 	
 	<!-- Freenet build01481 compiled with "./gradlew jar copyRuntimeLibs" will copy the         -->
@@ -59,19 +60,19 @@
 	</path>
 
 	<presetdef name="javac">
-			<!--
-			Workaround for ant 1.8 misfeature. TODO: Remove when ant fixes this.
-			
-			If we don't set this to false, we will get "warning: 'includeantruntime' was not set, defaulting to
-			build.sysclasspath=last; set to false for repeatable builds"
-			
-			(includeAntRuntime = "Whether to include the Ant run-time libraries in the classpath; defaults to yes, 
-			unless build.sysclasspath is set. It is usually best to set this to false so the script's behavior 
-			is not sensitive to the environment in which it is run."
-			Source: https://ant.apache.org/manual/Tasks/javac.html)
-			-->
-			<javac includeantruntime="false" />
-		</presetdef>
+		<!--
+		Workaround for ant 1.8 misfeature. TODO: Remove when ant fixes this.
+		
+		If we don't set this to false, we will get "warning: 'includeantruntime' was not set, defaulting to
+		build.sysclasspath=last; set to false for repeatable builds"
+		
+		(includeAntRuntime = "Whether to include the Ant run-time libraries in the classpath; defaults to yes, 
+		unless build.sysclasspath is set. It is usually best to set this to false so the script's behavior 
+		is not sensitive to the environment in which it is run."
+		Source: https://ant.apache.org/manual/Tasks/javac.html)
+		-->
+		<javac includeantruntime="false" />
+	</presetdef>
 
 	<exec executable="git"
 		failifexecutionfails="false"
