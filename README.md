@@ -66,7 +66,3 @@ Now building should work using the `Project` menu or toolbar buttons.
 * Load the `WebOfTrust` plugin.
 * Use the `Load Plugin` box to load `PARENT_DIRECTORY/plugin-Freetalk/dist/Freetalk.jar`.
 * After the plugin is loaded, Freetalk will be accessible at the `Forums` menu.
-
-## License
-
-GNU General Public License, version 2, or at your option any later version.
