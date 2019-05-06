@@ -38,8 +38,8 @@ ant
 # If you get errors about missing classes check build.xml for whether the JAR locations are correct.
 ```
 
-The output ```Freetalk.jar``` will be in the ```dist``` directory.  
-You can load it on the ```Plugins``` page of the Freenet web interface.  
+The output `Freetalk.jar` will be in the `dist` directory.  
+You can load it on the `Plugins` page of the Freenet web interface.  
 Make sure to load the WebOfTrust plugin as well.
 
 ### Compiling with Eclipse
@@ -47,9 +47,9 @@ Make sure to load the WebOfTrust plugin as well.
 * Import the project configurations which fred and Freetalk ship in Eclipse.  
   **NOTICE:** As of 2018-07 fred currently does not ship one, you can use an old release for now.
   The newest which still includes the project can be obtained with:  
-  	```git checkout build01480```  
+  	`git checkout build01480`  
   Be aware that its build instructions will be different compared to newer releases, so check the
-  ```README.md``` after the above command.
+  `README.md` after the above command.
 * Since build01480 does not automatically download its dependencies, get them from an existing
   Freenet installation:
   * Put `freenet-ext.jar` in `fred/lib/freenet`
@@ -61,7 +61,7 @@ Now building should work using the `Project` menu or toolbar buttons.
 
 ## Debugging
 
-Run fred's class ```freenet.node.NodeStarter``` using the Eclipse debugger.
+Run fred's class `freenet.node.NodeStarter` using the Eclipse debugger.  
 
 ## License
 
