@@ -51,8 +51,8 @@ Make sure to load the `WebOfTrust` plugin as well.
   	`git checkout build01480`  
   Be aware that its build instructions will be different compared to newer releases, so check the
   `README.md` after the above command.
-* Since build01480 does not automatically download its dependencies, get them from an existing
-  Freenet installation:
+* Since Freenet `build01480` does not automatically download its dependencies, get them from an
+  existing Freenet installation:
   * Put `freenet-ext.jar` in `fred/lib/freenet`
   * Put `bcprov.jar` (from e.g. `bcprov-jdk15on-149.jar`, name may vary) in `fred/lib`.
 * If necessary fix the build paths for your Eclipse projects so they refer to the correct JAR paths.
