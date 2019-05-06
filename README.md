@@ -26,8 +26,8 @@ months upon writing code for backwards compatibility. Sorry :)
 
 ### Dependencies
 
-Clone the [fred](https://github.com/freenet/fred) and plugin-Freetalk repositories into a single
-directory.  
+Clone the [fred](https://github.com/freenet/fred) and plugin-Freetalk repositories into the same
+parent directory.  
 Compile fred using its instructions.
 
 ### Compiling by command line
