@@ -42,7 +42,7 @@ The output ```Freetalk.jar``` will be in the ```dist``` directory.
 You can load it on the ```Plugins``` page of the Freenet web interface.  
 Make sure to load the WebOfTrust plugin as well.
 
-### Using Eclipse
+### Compiling with Eclipse
 
 * Import the project configurations which fred and Freetalk ship in Eclipse.  
   **NOTICE:** As of 2018-07 fred currently does not ship one, you can use an old release for now.
