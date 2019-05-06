@@ -58,7 +58,7 @@ Make sure to load the WebOfTrust plugin as well.
 * Disable automatic building in Eclipse's `Project` menu as the Ant builders take quite a bit of time to execute.
 
 Now building should work using the `Project` menu or toolbar buttons.
- 
+
 ## Debugging
 
 Run fred's class ```freenet.node.NodeStarter``` using the Eclipse debugger.
