@@ -61,11 +61,11 @@ Now building should work using the `Project` menu or toolbar buttons.
 
 ## Debugging
 
-Run fred's class `freenet.node.NodeStarter` using the Eclipse debugger.  
-Browse to Freenet's [Plugins page](http://127.0.0.1:8888/plugins/).  
-Load the `WebOfTrust` plugin.  
-Use the `Load Plugin` box to load `PARENT_DIRECTORY/plugin-Freetalk/dist/Freetalk.jar`.  
-After the plugin is loaded, Freetalk will be accessible at the `Forums` menu.  
+* Run fred's class `freenet.node.NodeStarter` using the Eclipse debugger.
+* Browse to Freenet's [Plugins page](http://127.0.0.1:8888/plugins/).
+* Load the `WebOfTrust` plugin.
+* Use the `Load Plugin` box to load `PARENT_DIRECTORY/plugin-Freetalk/dist/Freetalk.jar`.
+* After the plugin is loaded, Freetalk will be accessible at the `Forums` menu.
 
 ## License
 
