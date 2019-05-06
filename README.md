@@ -40,7 +40,7 @@ ant
 
 The output `Freetalk.jar` will be in the `dist` directory.  
 You can load it on the `Plugins` page of the Freenet web interface.  
-Make sure to load the WebOfTrust plugin as well.
+Make sure to load the `WebOfTrust` plugin as well.
 
 ### Compiling with Eclipse
 
