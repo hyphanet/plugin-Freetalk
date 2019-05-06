@@ -1,4 +1,4 @@
-# Freetalk - a forum system for Freenet
+# Freetalk - a forum system for Freenet [![Build status of branch master on xor-freenet's repository](https://travis-ci.org/xor-freenet/plugin-Freetalk.svg?branch=master "Build status of branch master on xor-freenet's repository")](https://travis-ci.org/xor-freenet/plugin-Freetalk/builds)
 
 Freetalk aims to provide a user-friendly and secure alternative to the "Freenet Message System"
 (FMS) C++ daemon.
@@ -26,8 +26,8 @@ months upon writing code for backwards compatibility. Sorry :)
 
 ### Dependencies
 
-Clone the [fred](https://github.com/freenet/fred) and plugin-Freetalk repositories into a single
-directory.  
+Clone the [fred](https://github.com/freenet/fred) and plugin-Freetalk repositories into the same
+parent directory.  
 Compile fred using its instructions.
 
 ### Compiling by command line
@@ -38,29 +38,31 @@ ant
 # If you get errors about missing classes check build.xml for whether the JAR locations are correct.
 ```
 
-The output ```Freetalk.jar``` will be in the ```dist``` directory.  
-You can load it on the ```Plugins``` page of the Freenet web interface.  
-Make sure to load the WebOfTrust plugin as well.
+The output `Freetalk.jar` will be in the `dist` directory.  
+You can load it on the `Plugins` page of the Freenet web interface.  
+Make sure to load the `WebOfTrust` plugin as well.
 
-### Using Eclipse
+### Compiling with Eclipse
 
 * Import the project configurations which fred and Freetalk ship in Eclipse.  
   **NOTICE:** As of 2018-07 fred currently does not ship one, you can use an old release for now.
   The newest which still includes the project can be obtained with:  
-  	```git checkout build01480```  
+  	`git checkout build01480`  
   Be aware that its build instructions will be different compared to newer releases, so check the
-  ```README.md``` after the above command.
-* Since build01480 does not automatically download its dependencies, get them from an existing
-  Freenet installation:
-  * Put freenet-ext.jar in ```fred/lib/freenet```
-  * Put bcprov.jar in ```fred/lib```
+  `README.md` after the above command.
+* Since Freenet `build01480` does not automatically download its dependencies, get them from an
+  existing Freenet installation:
+  * Put `freenet-ext.jar` in `fred/lib/freenet`
+  * Put `bcprov.jar` (from e.g. `bcprov-jdk15on-149.jar`, name may vary) in `fred/lib`.
 * If necessary fix the build paths for your Eclipse projects so they refer to the correct JAR paths.
-* Disable automatic building in Eclipse as the Ant builders take quite a bit of time to execute.
- 
+* Disable automatic building in Eclipse's `Project` menu as the Ant builders take quite a bit of time to execute.
+
+Now building should work using the `Project` menu or toolbar buttons.
+
 ## Debugging
 
-Run fred's class ```freenet.node.NodeStarter``` using the Eclipse debugger.
-
-## License
-
-GNU General Public License, version 2, or at your option any later version.
+* Run fred's class `freenet.node.NodeStarter` using the Eclipse debugger.
+* Browse to Freenet's [Plugins page](http://127.0.0.1:8888/plugins/).
+* Load the `WebOfTrust` plugin.
+* Use the `Load Plugin` box to load `PARENT_DIRECTORY/plugin-Freetalk/dist/Freetalk.jar`.
+* After the plugin is loaded, Freetalk will be accessible at the `Forums` menu.
