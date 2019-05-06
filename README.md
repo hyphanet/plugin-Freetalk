@@ -1,5 +1,4 @@
-[![Build status of branch master on xor-freenet's repository](https://travis-ci.org/xor-freenet/plugin-Freetalk.svg?branch=master "Build status of branch master on xor-freenet's repository")](https://travis-ci.org/xor-freenet/plugin-Freetalk/builds)
-# Freetalk - a forum system for Freenet
+# Freetalk - a forum system for Freenet [![Build status of branch master on xor-freenet's repository](https://travis-ci.org/xor-freenet/plugin-Freetalk.svg?branch=master "Build status of branch master on xor-freenet's repository")](https://travis-ci.org/xor-freenet/plugin-Freetalk/builds)
 
 Freetalk aims to provide a user-friendly and secure alternative to the "Freenet Message System"
 (FMS) C++ daemon.
