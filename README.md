@@ -55,7 +55,7 @@ Make sure to load the WebOfTrust plugin as well.
   * Put `freenet-ext.jar` in `fred/lib/freenet`
   * Put `bcprov.jar` (from e.g. `bcprov-jdk15on-149.jar`, name may vary) in `fred/lib`.
 * If necessary fix the build paths for your Eclipse projects so they refer to the correct JAR paths.
-* Disable automatic building in Eclipse as the Ant builders take quite a bit of time to execute.
+* Disable automatic building in Eclipse's `Project` menu as the Ant builders take quite a bit of time to execute.
  
 ## Debugging
 
