@@ -54,11 +54,11 @@ script: ant
 
 jdk:
   # openjdk7: Not available anymore.
-  - oraclejdk9
   - openjdk8
   # openjdk9: As of 2018-05-12 isn't available on Travis yet.
   # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
   # oraclejdk8: Not available anymore.
+  - oraclejdk9
 
 # FIXME: Adapt to Freetalk and enable
 # deploy:
