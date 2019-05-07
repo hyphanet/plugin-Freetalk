@@ -64,7 +64,7 @@ jdk:
   - oraclejdk9
   # oraclejdk10: Not supported anymore: https://changelog.travis-ci.com/stop-a-job-early-if-a-deprecated-jdk-is-configured-76612
   - oraclejdk11
-  - oraclejdk12
+  # oraclejdk12: Not available yet on Travis CI as of 2019-05-07, was released 2019-03.
 
 # FIXME: Adapt to Freetalk and enable
 # deploy:
