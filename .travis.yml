@@ -52,7 +52,6 @@ before_install:
 
 script:
   - set -o errexit
-  - false
   - ant
 
 jdk:
