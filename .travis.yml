@@ -37,6 +37,11 @@ cache:
 install:
   - cd "$TRAVIS_BUILD_DIR"/..
   - if [ ! -e fred/src ]; then git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred ; else cd fred ; git pull ; cd .. ; fi
+  - cd "$TRAVIS_BUILD_DIR"
+
+# Compile Freenet Git repository
+before_script:
+  - cd "$TRAVIS_BUILD_DIR"/..
   - cd fred
   - echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
   # The gradlew binary which fred ships doesn't work on OpenJDK 7, need to use Travis' gradle there.
