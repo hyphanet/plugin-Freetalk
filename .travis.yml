@@ -47,8 +47,7 @@ before_install:
   # needs - to build/output/
   - ./gradlew jar copyRuntimeLibs -x test
   - cd "$TRAVIS_BUILD_DIR"
-  # Print the checksums of the Freetalk dependencies - for debugging
-  - sha256sum ../fred/build/output/*
+  - echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
 
 script:
   - set -o errexit
