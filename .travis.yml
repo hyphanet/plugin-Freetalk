@@ -50,7 +50,9 @@ before_install:
   # Print the checksums of the Freetalk dependencies - for debugging
   - sha256sum ../fred/build/output/*
 
-script: ant
+script:
+  - false
+  - ant
 
 jdk:
   # openjdk7: Not available anymore.
