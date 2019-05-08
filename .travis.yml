@@ -47,10 +47,10 @@ before_install:
   # needs - to build/output/
   - ./gradlew jar copyRuntimeLibs -x test
   - cd "$TRAVIS_BUILD_DIR"
-  - echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
 
 script:
   - set -o errexit
+  - echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
   - ant
 
 jdk:
