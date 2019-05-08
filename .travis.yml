@@ -51,6 +51,7 @@ before_install:
   - sha256sum ../fred/build/output/*
 
 script:
+  - set -o errexit
   - false
   - ant
 
