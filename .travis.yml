@@ -47,16 +47,16 @@ install:
   - cd "$TRAVIS_BUILD_DIR"
 
 # Compile Freenet Git repository
-before_script:
-  - cd "$TRAVIS_BUILD_DIR"/..
-  - cd fred
+before_script: |
+  cd "$TRAVIS_BUILD_DIR"/.. &&
+  cd fred &&
   # TODO: freenet.jar won't contain class Version if we don't run the
   # clean task in a separate execution of Gradle. Why?
-  - ./gradlew clean
+  ./gradlew clean &&
   # "copyRuntimeLibs" copies the JAR *and* dependencies - which Freetalk also
   # needs - to build/output/
-  - ./gradlew jar copyRuntimeLibs -x test
-  - cd "$TRAVIS_BUILD_DIR"
+  ./gradlew jar copyRuntimeLibs -x test &&
+  cd "$TRAVIS_BUILD_DIR"
 
 script:
   - set -o errexit
