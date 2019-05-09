@@ -37,7 +37,7 @@ cache:
 install:
   - cd "$TRAVIS_BUILD_DIR"/..
   - |
-    if [ ! -e fred/src ] ; then
+    if [ ! -e fred/.git ] ; then # Must check subdir, main one will be created by Travis cache config.
       FRED_UPDATED=1
       git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred
     fi
