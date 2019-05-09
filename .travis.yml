@@ -52,7 +52,10 @@ before_script: |
     cd "$TRAVIS_BUILD_DIR"/.. &&
     cd fred &&
     # TODO: freenet.jar won't contain class Version if we don't run the
-    # clean task in a separate execution of Gradle. Why?
+    # clean task in a separate execution of Gradle. I.e. this wouldn't work:
+    #   $ gradle clean jar
+    # This is due to a bug in fred's Gradle script which could be fixed
+    # like this WoT commit did: 06c007204f40c712a398f0b58671f77fd9aeffd1
     ./gradlew clean &&
     # "copyRuntimeLibs" copies the JAR *and* dependencies - which Freetalk also
     # needs - to build/output/
