@@ -42,7 +42,7 @@ install:
       git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred
     fi
   - cd fred
-  - git reset --hard # Undo our manual changes to ./gradlew to prevent merge conflicts
+  - git reset --hard # Ensure accidental changes don't persist due to the Travis cache.
   - git fetch && if [ "$(git rev-parse @)" != "$(git rev-parse @{u})" ] ; then FRED_UPDATED=1 ; git pull ; fi
   - cd "$TRAVIS_BUILD_DIR"
 
@@ -50,8 +50,6 @@ install:
 before_script:
   - cd "$TRAVIS_BUILD_DIR"/..
   - cd fred
-  # The gradlew binary which fred ships doesn't work on OpenJDK 7, need to use Travis' gradle there.
-  - if [ "$TRAVIS_JDK_VERSION" = "openjdk7" ] ; then rm ./gradlew && ln -s "$(which gradle)" ./gradlew ; fi
   # TODO: freenet.jar won't contain class Version if we don't run the
   # clean task in a separate execution of Gradle. Why?
   - ./gradlew clean
