@@ -49,8 +49,7 @@ install:
 # Compile Freenet Git repository
 before_script: |
   if [ "$FRED_UPDATED" = 1 ] ; then
-    cd "$TRAVIS_BUILD_DIR"/.. &&
-    cd fred &&
+    cd "$TRAVIS_BUILD_DIR"/../fred &&
     # TODO: freenet.jar won't contain class Version if we don't run the
     # clean task in a separate execution of Gradle. I.e. this wouldn't work:
     #   $ gradle clean jar
