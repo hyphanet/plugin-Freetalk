@@ -64,6 +64,7 @@ before_script: |
     echo "No changes at fred, not recompiling."
   fi
 
+# Compile and test Freetalk
 script:
   - set -o errexit
   - echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
