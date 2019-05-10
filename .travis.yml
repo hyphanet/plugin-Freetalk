@@ -1,8 +1,13 @@
 language: java
 
+# Ubuntu 16.04. Lastest available Linux as of 2019-05-07.
+dist: xenial
 # Disabling sudo routes the build to a Docker container instead of a VM
 # which speeds up the build.
 sudo: false
+
+env:
+  - FREENET_MINIMUM_JAVA_VERSION=7
 
 addons:
   apt:
@@ -31,32 +36,57 @@ cache:
   - $HOME/.gradle/caches/
   - $HOME/.gradle/wrapper/
 
-before_install:
+# Get/update Freenet Git repository
+install:
   - cd "$TRAVIS_BUILD_DIR"/..
-  - if [ ! -e fred/src ]; then git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred ; else cd fred ; git pull ; cd .. ; fi
+  - |
+    if [ ! -e fred/.git ] ; then # Must check subdir, main one will be created by Travis cache config.
+      FRED_UPDATED=1
+      git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred
+    fi
   - cd fred
-  - echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
-  # The gradlew binary which fred ships doesn't work on OpenJDK 7, need to use Travis' gradle there.
-  - if [ "$TRAVIS_JDK_VERSION" = "openjdk7" ] ; then rm ./gradlew && ln -s "$(which gradle)" ./gradlew ; fi
-  # TODO: freenet.jar won't contain class Version if we don't run the
-  # clean task in a separate execution of Gradle. Why?
-  - ./gradlew clean
-  # "copyRuntimeLibs" copies the JAR *and* dependencies - which Freetalk also
-  # needs - to build/output/
-  - ./gradlew jar copyRuntimeLibs -x test
+  - git reset --hard # Ensure accidental changes don't persist due to the Travis cache.
+  - git fetch && if [ "$(git rev-parse @)" != "$(git rev-parse @{u})" ] ; then FRED_UPDATED=1 ; git pull ; fi
   - cd "$TRAVIS_BUILD_DIR"
-  # Print the checksums of the Freetalk dependencies - for debugging
-  - sha256sum ../fred/build/output/*
 
-script: ant
+# Compile Freenet Git repository
+before_script: |
+  if [ "$FRED_UPDATED" = 1 ] ; then
+    cd "$TRAVIS_BUILD_DIR"/../fred &&
+    # TODO: freenet.jar won't contain class Version if we don't run the
+    # clean task in a separate execution of Gradle. I.e. this wouldn't work:
+    #   $ gradle clean jar
+    # This is due to a bug in fred's Gradle script which could be fixed
+    # like this WoT commit did: 06c007204f40c712a398f0b58671f77fd9aeffd1
+    ./gradlew clean &&
+    # "copyRuntimeLibs" copies the JAR *and* dependencies - which Freetalk also
+    # needs - to build/output/
+    ./gradlew jar copyRuntimeLibs -x test &&
+    cd "$TRAVIS_BUILD_DIR"
+  else
+    echo "No changes at fred, not recompiling."
+  fi
+
+# Compile and test Freetalk
+script:
+  - set -o errexit
+  - echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
+  - echo 'fred version:' ; java -classpath '../fred/build/output/freenet.jar' 'freenet.node.Version'
+  - ant
 
 jdk:
-  - oraclejdk9
-  - oraclejdk8
+  # openjdk7: Not available anymore.
   - openjdk8
-  - openjdk7
-  # openjdk9: As of 2018-05-12 isn't available on Travis yet.
+  - openjdk9
+  - openjdk10
+  - openjdk11
+  - openjdk12
   # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
+  # oraclejdk8: Not available anymore.
+  # oraclejdk9: No more updates by Oracle: https://www.oracle.com/technetwork/java/java-se-support-roadmap.html
+  # oraclejdk10: Not supported anymore: https://changelog.travis-ci.com/stop-a-job-early-if-a-deprecated-jdk-is-configured-76612
+  - oraclejdk11
+  # oraclejdk12: Not available yet on Travis CI as of 2019-05-07, was released 2019-03.
 
 # FIXME: Adapt to Freetalk and enable
 # deploy:
@@ -66,3 +96,4 @@ jdk:
 #   script: ./.travis.upload-jar-to-freenet.sh
 #   on:
 #     all_branches: true
+#     condition: $TRAVIS_JDK_VERSION = "openjdk$FREENET_MINIMUM_JAVA_VERSION"
