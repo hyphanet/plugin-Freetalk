@@ -18,8 +18,8 @@
 	
 	<property name="debug-node-freetalk-plugin.location" location="../fred/plugins/Freetalk.jar"/>
 	<property name="svn.revision" value="@custom@"/>
-	<property name="source-version" value="7"/>
-	<property name="target-version" value="7"/>
+	<property name="source-version" value="8"/>
+	<property name="target-version" value="8"/>
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test/"/>
 	<property name="dist" location="dist/"/>
