@@ -7,7 +7,7 @@ dist: xenial
 sudo: false
 
 env:
-  - FREENET_MINIMUM_JAVA_VERSION=7
+  - FREENET_MINIMUM_JAVA_VERSION=8
 
 addons:
   apt:
