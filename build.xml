@@ -2,6 +2,10 @@
 <!-- ant build file for Freetalk -->
 
 <project name="Freetalk" default="dist" basedir=".">
+	<!-- ======================================================================================= -->
+	<!-- Configuration                                                                           -->
+	<!-- ======================================================================================= -->
+	
 	<!-- You can use this file to override the below properties. -->
 	<property file="override.properties"/>
 	
@@ -17,6 +21,10 @@
 	<property name="freenet.lib.old.location.5" location="../fred/dist/freenet.jar"/>
 	
 	<property name="debug-node-freetalk-plugin.location" location="../fred/plugins/Freetalk.jar"/>
+	
+	<!-- ======================================================================================= -->
+	<!-- Configuration which you should probably leave as is!                                    -->
+	<!-- ======================================================================================= -->
 	<property name="svn.revision" value="@custom@"/>
 	<property name="source-version" value="8"/>
 	<property name="target-version" value="8"/>
