@@ -162,7 +162,13 @@
 	</target>
 
 	<target name="junit" depends="unit-build" unless="${test.skip}">
-		<junit printsummary="yes" fork="yes" haltonfailure="yes">
+		<!-- The 512mb limit was arbitrarily chosen to:
+			- be the same as WoT uses.
+			- be reasonable as compared to the memory size of the latest Raspberry Pi as of 2019-05.
+			
+			TODO: Peformance: Determine a proper one by measuring execution time with various
+			limits and using the smallest limit such that any smaller limit runs slower. -->
+		<junit printsummary="yes" fork="yes" haltonfailure="yes" maxmemory="512m">
 			<classpath>
 				<pathelement path="${build}"/>
 				<pathelement path="${build-test}"/>
