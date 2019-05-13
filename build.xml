@@ -20,6 +20,8 @@
 	<property name="freenet.lib.old.location.3" location="../fred/lib/jna.jar"/>
 	<property name="freenet.lib.old.location.4" location="../fred/lib/freenet/freenet-ext.jar"/>
 	<property name="freenet.lib.old.location.5" location="../fred/dist/freenet.jar"/>
+	<!-- Unit test dependencies                                                                 -->
+	<property name="junit.location" value="/usr/share/java/junit4.jar"/>
 	<!-- To allow you to restart your debug node after recompiling without manually reloading
 	     the Freetalk plugin you can specifiy this property to point to the node's Freetalk.jar.
 	     The Ant builder will delete it automatically as part of the "clean" target. -->
@@ -35,7 +37,6 @@
 	<property name="build-test" location="build-test/"/>
 	<property name="dist" location="dist/"/>
 	<property name="src" location="src/"/>
-	<property name="junit.location" value="/usr/share/java/junit4.jar"/>
 	<property name="version.src" value="plugins/Freetalk/Version.java" />
 	<property name="version.build" value="plugins/Freetalk/Version.class" />
 
