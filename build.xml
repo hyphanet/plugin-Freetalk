@@ -8,7 +8,8 @@
 	
 	<!-- You can use this file to override the below properties. -->
 	<property file="override.properties"/>
-	
+	<!-- Dependencies. These are the most important to configure!                               -->
+	<!--                                                                                        -->
 	<!-- Freenet build01481 compiled with "./gradlew jar copyRuntimeLibs" will copy the         -->
 	<!-- freenet.jar and its dependencies to this directory:                                    -->
 	<property name="freenet.lib.new.location"   location="../fred/build/output/"/>
