@@ -22,6 +22,10 @@
 	<property name="freenet.lib.old.location.5" location="../fred/dist/freenet.jar"/>
 	<!-- Unit test dependencies                                                                 -->
 	<property name="junit.location" value="/usr/share/java/junit4.jar"/>
+	<!-- Minimum Java version which fred officially requires
+	   = Maximum version which Freetalk's code can use features of. -->
+	<property name="source-version" value="8"/>
+	<property name="target-version" value="8"/>
 	<!-- To allow you to restart your debug node after recompiling without manually reloading
 	     the Freetalk plugin you can specifiy this property to point to the node's Freetalk.jar.
 	     The Ant builder will delete it automatically as part of the "clean" target. -->
@@ -31,8 +35,6 @@
 	<!-- Configuration which you should probably leave as is!                                    -->
 	<!-- ======================================================================================= -->
 	<property name="svn.revision" value="@custom@"/>
-	<property name="source-version" value="8"/>
-	<property name="target-version" value="8"/>
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test/"/>
 	<property name="dist" location="dist/"/>
