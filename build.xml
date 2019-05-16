@@ -49,6 +49,11 @@
 
 	<available file="src/plugins/Freetalk/Version.java" property="version.present"/>
 	
+	<!-- Libraries whose classes are to be bundled in our own JAR. -->
+	<path id="submodules.path">
+		<pathelement location="${db4o.location}"/>
+	</path>
+	<!-- Libraries which we get from fred. -->
 	<path id="libraries.classpath">
 		<!-- Use filesets instead of <pathelement> to:
 		     - allow using wildcards when including freenet.lib.new.location so we don't need to
@@ -168,13 +173,19 @@
 
 		<!-- Force compile of Version.java in case compile of ${src} didn't trigger it -->
 		<javac srcdir="${build}" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}">
-			<classpath refid="libraries.classpath" />
+			<classpath>
+				<path refid="submodules.path"/>
+				<path refid="libraries.classpath"/>
+			</classpath>
 			<include name="${version.src}"/>
 		</javac>
 
 		<!-- FIXME: remove the debug and replace with optimize -->
 		<javac srcdir="src/" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}">
-			<classpath refid="libraries.classpath" />
+			<classpath>
+				<path refid="submodules.path"/>
+				<path refid="libraries.classpath"/>
+			</classpath>
 			<include name="**/*.java"/>
 			<exclude name="${version.src}"/>
 		</javac>
@@ -193,6 +204,7 @@
 			<classpath>
 				<pathelement path="${build}"/>
 			</classpath>
+			<classpath refid="submodules.path"/>
 			<classpath refid="libraries.classpath" />
 			<classpath refid="junit.classpath" />
 			
@@ -213,6 +225,7 @@
 				<pathelement path="${build}"/>
 				<pathelement path="${build-test}"/>
 			</classpath>
+			<classpath refid="submodules.path"/>
 			<classpath refid="libraries.classpath" />
 			<classpath refid="junit.classpath" />
 
@@ -240,6 +253,9 @@
 				<include name="*.txt"/>
 			</fileset>
 			<fileset dir="${build}/"/>
+			<zipfileset>
+				<path refid="submodules.path"/>
+			</zipfileset>
 		</jar>
 	</target>
 
