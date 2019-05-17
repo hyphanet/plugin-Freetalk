@@ -42,6 +42,7 @@
 	<property name="svn.revision" value="@custom@"/>
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test/"/>
+	<property name="build-test-jar" location="${build-test}/Freetalk-with-unit-tests.jar"/>
 	<property name="dist" location="dist/"/>
 	<property name="src" location="src/"/>
 	<property name="version.src" value="plugins/Freetalk/Version.java" />
@@ -155,6 +156,7 @@
 	<target name="mkdir">
 		<mkdir dir="${build}"/>
 		<mkdir dir="${build-test}"/>
+		<mkdir dir="${build-test}/classes"/>
 		<mkdir dir="${dist}"/>
 	</target>
 
@@ -199,7 +201,7 @@
 	<!-- ================================================== -->
 
 	<target name="junit-compile" depends="compile" unless="${test.skip}">
-		<javac srcdir="test/" destdir="${build-test}" debug="on" optimize="on" source="${source-version}" target="${target-version}">
+		<javac srcdir="test/" destdir="${build-test}/classes" debug="on" optimize="on" source="${source-version}" target="${target-version}">
 			<classpath>
 				<pathelement path="${build}"/>
 			</classpath>
@@ -210,9 +212,29 @@
 			<compilerarg value="-Xlint"/>
 			<include name="**/*.java"/>
 		</javac>
+		
+		<!-- Copy main non-test classes to tests so we can produce a full working Freetalk JAR -->
+		<copy todir="${build-test}/classes" overwrite="false">
+			<fileset dir="${build}/"/>
+		</copy>
 	</target>
-
-	<target name="junit" depends="junit-compile" unless="${test.skip}">
+	
+	<target name="junit-package" depends="junit-compile">
+		<jar jarfile="${build-test-jar}" duplicate="fail">
+			<manifest>
+				<attribute name="Plugin-Main-Class" value="plugins.Freetalk.Freetalk"/>
+			</manifest>
+			<fileset dir="src/" casesensitive="no">
+				<include name="*.txt"/> <!-- Include the GPL -->
+			</fileset>
+			<fileset dir="${build-test}/classes/"/> <!-- Separate directory to exclude the JAR -->
+			<zipfileset>
+				<path refid="submodules.path"/>
+			</zipfileset>
+		</jar>
+	</target>
+	
+	<target name="junit" depends="junit-package" unless="${test.skip}">
 		<!-- The 512mb limit was arbitrarily chosen to:
 			- be the same as WoT uses.
 			- be reasonable as compared to the memory size of the latest Raspberry Pi as of 2019-05.
@@ -221,8 +243,7 @@
 			limits and using the smallest limit such that any smaller limit runs slower. -->
 		<junit printsummary="yes" fork="yes" haltonfailure="yes" maxmemory="512m">
 			<classpath>
-				<pathelement path="${build}"/>
-				<pathelement path="${build-test}"/>
+				<pathelement location="${build-test-jar}"/>
 			</classpath>
 			<classpath refid="submodules.path"/>
 			<classpath refid="libraries.classpath" />
@@ -232,9 +253,10 @@
 			<formatter type="plain" usefile="false"/>
 
 			<batchtest fork="yes">
-				<fileset dir="${build-test}">
+				<zipfileset src="${build-test-jar}">
 					<include name="**/*Test.class"/>
-				</fileset>
+					<exclude name="com/db4o/**"/>
+				</zipfileset>
 			</batchtest>
 			<sysproperty key="benchmark" value="${benchmark}" />
 			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
