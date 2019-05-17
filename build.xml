@@ -245,7 +245,6 @@
 			<classpath>
 				<pathelement location="${build-test-jar}"/>
 			</classpath>
-			<classpath refid="submodules.path"/>
 			<classpath refid="libraries.classpath" />
 			<classpath refid="junit.classpath" />
 
