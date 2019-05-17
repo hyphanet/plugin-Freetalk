@@ -198,7 +198,7 @@
 
 	<!-- ================================================== -->
 
-	<target name="unit-build" depends="compile" unless="${test.skip}">
+	<target name="junit-compile" depends="compile" unless="${test.skip}">
 		<javac srcdir="test/" destdir="${build-test}" debug="on" optimize="on" source="${source-version}" target="${target-version}">
 			<classpath>
 				<pathelement path="${build}"/>
@@ -212,7 +212,7 @@
 		</javac>
 	</target>
 
-	<target name="junit" depends="unit-build" unless="${test.skip}">
+	<target name="junit" depends="junit-compile" unless="${test.skip}">
 		<!-- The 512mb limit was arbitrarily chosen to:
 			- be the same as WoT uses.
 			- be reasonable as compared to the memory size of the latest Raspberry Pi as of 2019-05.
