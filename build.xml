@@ -270,7 +270,7 @@
 				<attribute name="Plugin-Main-Class" value="plugins.Freetalk.Freetalk"/>
 			</manifest>
 			<fileset dir="src/" casesensitive="no">
-				<include name="*.txt"/>
+				<include name="*.txt"/> <!-- Include the GPL -->
 			</fileset>
 			<fileset dir="${build}/"/>
 			<zipfileset>
