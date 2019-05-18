@@ -205,11 +205,11 @@
 				source="${source-version}" target="${target-version}">
 			
 			<classpath>
+				<path refid="submodules.path"/>
+				<path refid="libraries.classpath"/>
 				<pathelement path="${build}"/>
+				<path refid="junit.classpath"/>
 			</classpath>
-			<classpath refid="submodules.path"/>
-			<classpath refid="libraries.classpath" />
-			<classpath refid="junit.classpath" />
 			
 			<compilerarg value="-Xlint"/>
 			<include name="**/*.java"/>
