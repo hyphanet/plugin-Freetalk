@@ -86,7 +86,7 @@
 
 	<presetdef name="javac">
 		<!--
-		Workaround for ant 1.8 misfeature. TODO: Remove when ant fixes this.
+		includeantruntime is a workaround for an ant 1.8 misfeature. TODO: Remove when ant fixes this.
 		
 		If we don't set this to false, we will get "warning: 'includeantruntime' was not set, defaulting to
 		build.sysclasspath=last; set to false for repeatable builds"
@@ -96,7 +96,7 @@
 		is not sensitive to the environment in which it is run."
 		Source: https://ant.apache.org/manual/Tasks/javac.html)
 		-->
-		<javac includeantruntime="false" />
+		<javac includeantruntime="false" encoding="UTF-8"/>
 	</presetdef>
 
 	<exec executable="git"
