@@ -161,7 +161,7 @@
 	</target>
 
 	<!-- ================================================== -->
-	<target name="compile" depends="print-libs, db4o, mkdir" >
+	<target name="compile" depends="print-libs, db4o, mkdir">
 		<!-- Create the time stamp -->
 		<tstamp/>
 
