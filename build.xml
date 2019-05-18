@@ -245,10 +245,10 @@
 			limits and using the smallest limit such that any smaller limit runs slower. -->
 		<junit printsummary="yes" fork="yes" haltonfailure="yes" maxmemory="512m">
 			<classpath>
+				<path refid="libraries.classpath"/>
 				<pathelement location="${build-test-jar}"/>
+				<path refid="junit.classpath"/>
 			</classpath>
-			<classpath refid="libraries.classpath" />
-			<classpath refid="junit.classpath" />
 
 			<assertions><enable/></assertions>
 			<formatter type="plain" usefile="false"/>
