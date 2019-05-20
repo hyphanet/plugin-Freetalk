@@ -231,7 +231,7 @@
 		</copy>
 	</target>
 	
-	<target name="junit-inject-cobertura" depends="clean, junit-compile" if="${test.coverage}">
+	<target name="junit-inject-cobertura" depends="clean, junit-compile" if="${test.coverage}" unless:true="${benchmark}">
 		<fail unless:true="${cobertura.present}" message="${cobertura.location} not found!"/>
 
 		<taskdef classpathref="cobertura.path" resource="tasks.properties"/>
