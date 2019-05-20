@@ -237,6 +237,9 @@
 		<taskdef classpathref="cobertura.path" resource="tasks.properties"/>
 		
 		<cobertura-instrument datafile="${build-test-coverage}/cobertura.ser">
+			<auxClasspath>
+				<path refid="libraries.classpath"/>
+			</auxClasspath>
 			
 			<fileset dir="${build-test}/classes">
 				<include name="**/*.class" />
