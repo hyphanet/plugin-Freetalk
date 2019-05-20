@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!-- ant build file for Freetalk -->
 
-<project name="Freetalk" default="dist" basedir=".">
+<project name="Freetalk" default="dist" basedir="." xmlns:if="ant:if" xmlns:unless="ant:unless">
 	<!-- ======================================================================================= -->
 	<!-- Configuration                                                                           -->
 	<!-- ======================================================================================= -->
@@ -22,6 +22,8 @@
 	<property name="freenet.lib.old.location.5" location="../fred/dist/freenet.jar"/>
 	<!-- Unit test dependencies                                                                 -->
 	<property name="junit.location" value="/usr/share/java/junit4.jar"/>
+	<!-- Optional, only needed if using "ant -Dtest.coverage=true"                              -->
+	<property name="cobertura.location" value="/usr/share/java/cobertura.jar"/>
 	<!-- Minimum Java version which fred officially requires
 	   = Maximum version which Freetalk's code can use features of. -->
 	<property name="source-version" value="8"/>
@@ -42,12 +44,16 @@
 	<property name="svn.revision" value="@custom@"/>
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test/"/>
+	<property name="build-test-jar" location="${build-test}/Freetalk-with-unit-tests.jar"/>
+	<property name="build-test-coverage" location="test-coverage/"/>
 	<property name="dist" location="dist/"/>
 	<property name="src" location="src/"/>
 	<property name="version.src" value="plugins/Freetalk/Version.java" />
 	<property name="version.build" value="plugins/Freetalk/Version.class" />
 
 	<available file="src/plugins/Freetalk/Version.java" property="version.present"/>
+	<available file="${cobertura.location}" property="cobertura.present"/>
+	<property name="test.coverage" unless:set="${test.coverage}" if:true="${cobertura.present}" value="true"/>
 	
 	<!-- Libraries whose classes are to be bundled in our own JAR. -->
 	<path id="submodules.path">
@@ -74,6 +80,9 @@
 	<path id="junit.classpath">
 		<pathelement location="${junit.location}" />
 	</path>
+	<path id="cobertura.path">
+		<pathelement location="${cobertura.location}"/>
+	</path>
 	
 	<!-- For print-libs task: All runtime dependencies of Freetalk plus the build-time dependencies.
 	     Uses <fileset> instead of <pathelement> so it only contains only those which exist as that
@@ -81,11 +90,12 @@
 	<path id="lib.external.all.path">
 		<path refid="libraries.classpath"/>
 		<path refid="junit.classpath" />
+		<fileset file="${cobertura.location}"/>
 	</path>
 
 	<presetdef name="javac">
 		<!--
-		Workaround for ant 1.8 misfeature. TODO: Remove when ant fixes this.
+		includeantruntime is a workaround for an ant 1.8 misfeature. TODO: Remove when ant fixes this.
 		
 		If we don't set this to false, we will get "warning: 'includeantruntime' was not set, defaulting to
 		build.sysclasspath=last; set to false for repeatable builds"
@@ -95,7 +105,7 @@
 		is not sensitive to the environment in which it is run."
 		Source: https://ant.apache.org/manual/Tasks/javac.html)
 		-->
-		<javac includeantruntime="false" />
+		<javac includeantruntime="false" encoding="UTF-8"/>
 	</presetdef>
 
 	<exec executable="git"
@@ -155,11 +165,13 @@
 	<target name="mkdir">
 		<mkdir dir="${build}"/>
 		<mkdir dir="${build-test}"/>
+		<mkdir dir="${build-test}/classes"/>
+		<mkdir dir="${build-test-coverage}"/>
 		<mkdir dir="${dist}"/>
 	</target>
 
 	<!-- ================================================== -->
-	<target name="compile" depends="print-libs, db4o, mkdir" >
+	<target name="compile" depends="print-libs, db4o, mkdir">
 		<!-- Create the time stamp -->
 		<tstamp/>
 
@@ -179,8 +191,7 @@
 			</classpath>
 			<include name="${version.src}"/>
 		</javac>
-
-		<!-- FIXME: remove the debug and replace with optimize -->
+		
 		<javac srcdir="src/" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}">
 			<classpath>
 				<path refid="submodules.path"/>
@@ -199,21 +210,60 @@
 
 	<!-- ================================================== -->
 
-	<target name="unit-build" depends="compile" unless="${test.skip}">
-		<javac srcdir="test/" destdir="${build-test}" debug="on" optimize="on" source="${source-version}" target="${target-version}">
+	<target name="junit-compile" depends="compile" unless="${test.skip}">
+		<javac srcdir="test/" destdir="${build-test}/classes" debug="on" optimize="on"
+				source="${source-version}" target="${target-version}">
+			
 			<classpath>
+				<path refid="submodules.path"/>
+				<path refid="libraries.classpath"/>
 				<pathelement path="${build}"/>
+				<path refid="junit.classpath"/>
 			</classpath>
-			<classpath refid="submodules.path"/>
-			<classpath refid="libraries.classpath" />
-			<classpath refid="junit.classpath" />
 			
 			<compilerarg value="-Xlint"/>
 			<include name="**/*.java"/>
 		</javac>
+		
+		<!-- Copy main non-test classes to tests so we can produce a full working Freetalk JAR -->
+		<copy todir="${build-test}/classes" overwrite="false">
+			<fileset dir="${build}/"/>
+		</copy>
 	</target>
+	
+	<target name="junit-inject-cobertura" depends="clean, junit-compile" if="${test.coverage}" unless:true="${benchmark}">
+		<fail unless:true="${cobertura.present}" message="${cobertura.location} not found!"/>
 
-	<target name="junit" depends="unit-build" unless="${test.skip}">
+		<taskdef classpathref="cobertura.path" resource="tasks.properties"/>
+		
+		<cobertura-instrument datafile="${build-test-coverage}/cobertura.ser">
+			<auxClasspath>
+				<path refid="libraries.classpath"/>
+			</auxClasspath>
+			
+			<fileset dir="${build-test}/classes">
+				<include name="**/*.class" />
+				<exclude name="**/*Test.class"/>
+			</fileset>
+		</cobertura-instrument>
+	</target>
+	
+	<target name="junit-package" depends="junit-compile, junit-inject-cobertura">
+		<jar jarfile="${build-test-jar}" duplicate="fail">
+			<manifest>
+				<attribute name="Plugin-Main-Class" value="plugins.Freetalk.Freetalk"/>
+			</manifest>
+			<fileset dir="src/" casesensitive="no">
+				<include name="*.txt"/> <!-- Include the GPL -->
+			</fileset>
+			<fileset dir="${build-test}/classes/"/> <!-- Separate directory to exclude the JAR -->
+			<zipfileset>
+				<path refid="submodules.path"/>
+			</zipfileset>
+		</jar>
+	</target>
+	
+	<target name="junit" depends="junit-package" unless="${test.skip}">
 		<!-- The 512mb limit was arbitrarily chosen to:
 			- be the same as WoT uses.
 			- be reasonable as compared to the memory size of the latest Raspberry Pi as of 2019-05.
@@ -222,24 +272,33 @@
 			limits and using the smallest limit such that any smaller limit runs slower. -->
 		<junit printsummary="yes" fork="yes" haltonfailure="yes" maxmemory="512m">
 			<classpath>
-				<pathelement path="${build}"/>
-				<pathelement path="${build-test}"/>
+				<path refid="libraries.classpath"/>
+				<pathelement location="${build-test-jar}"/>
+				<path refid="junit.classpath"/>
+				<pathelement location="${cobertura.location}" if:true="${test.coverage}"/>
 			</classpath>
-			<classpath refid="submodules.path"/>
-			<classpath refid="libraries.classpath" />
-			<classpath refid="junit.classpath" />
 
 			<assertions><enable/></assertions>
 			<formatter type="plain" usefile="false"/>
 
 			<batchtest fork="yes">
-				<fileset dir="${build-test}">
+				<zipfileset src="${build-test-jar}">
 					<include name="**/*Test.class"/>
-				</fileset>
+					<exclude name="com/db4o/**"/>
+				</zipfileset>
 			</batchtest>
+			
+			<sysproperty key="net.sourceforge.cobertura.datafile"
+				file="${build-test-coverage}/cobertura.ser" if:true="${test.coverage}"/>
 			<sysproperty key="benchmark" value="${benchmark}" />
 			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
 		</junit>
+		
+		<cobertura-report if:true="${test.coverage}" unless:true="${benchmark}"
+			srcdir="${src}"
+			datafile="${build-test-coverage}/cobertura.ser"
+			destdir="${build-test-coverage}/html"
+			format="html"/>
 	</target>
 
 	<!-- ================================================== -->
@@ -250,7 +309,7 @@
 				<attribute name="Plugin-Main-Class" value="plugins.Freetalk.Freetalk"/>
 			</manifest>
 			<fileset dir="src/" casesensitive="no">
-				<include name="*.txt"/>
+				<include name="*.txt"/> <!-- Include the GPL -->
 			</fileset>
 			<fileset dir="${build}/"/>
 			<zipfileset>
@@ -263,6 +322,7 @@
 	<target name="clean" depends="clean-db4o" description="Delete class files and docs dir and the plugin file in plugins/ of your debug node..">
 		<delete dir="${build}"/>
 		<delete dir="${build-test}"/>
+		<delete dir="${build-test-coverage}"/>
 		<delete dir="${dist}"/>
 		<delete file="${debug-node-freetalk-plugin.location}"/>
 	</target>
