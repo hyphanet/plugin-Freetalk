@@ -244,6 +244,7 @@
 			<fileset dir="${build-test}/classes">
 				<include name="**/*.class" />
 				<exclude name="**/*Test.class"/>
+				<exclude name="**/*Benchmark*.class"/>
 			</fileset>
 		</cobertura-instrument>
 	</target>
