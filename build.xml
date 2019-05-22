@@ -266,7 +266,12 @@
 		</jar>
 	</target>
 	
-	<target name="junit" depends="junit-package" unless="${test.skip}">
+	<target name="junit" depends="junit-package" unless="${test.skip}"
+			description="Runs all unit tests. Options:&#10;
+		        - Set test.coverage=true to analyze test coverage. View by e.g.: firefox test-coverage/html/index.html&#10;
+		        - Set test.skip=true to skip&#10;
+		        - Set test.benchmark=true to run benchmarks.&#10;">
+		
 		<!-- The 512mb limit was arbitrarily chosen to:
 			- be the same as WoT uses.
 			- be reasonable as compared to the memory size of the latest Raspberry Pi as of 2019-05.
