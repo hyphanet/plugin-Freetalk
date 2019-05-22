@@ -232,7 +232,7 @@
 	</target>
 	
 	<target name="junit-inject-cobertura" depends="clean, junit-compile"
-			if="${test.coverage}" unless:true="${benchmark}">
+			if="${test.coverage}" unless="${benchmark}">
 		
 		<fail unless:true="${cobertura.present}" message="${cobertura.location} not found!"/>
 
