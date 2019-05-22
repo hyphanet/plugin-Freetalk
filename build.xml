@@ -278,7 +278,7 @@
 			
 			TODO: Peformance: Determine a proper one by measuring execution time with various
 			limits and using the smallest limit such that any smaller limit runs slower. -->
-		<junit printsummary="yes" fork="yes" haltonfailure="yes" maxmemory="512m">
+		<junit printsummary="yes" fork="yes" haltonfailure="yes" maxmemory="512m" showoutput="yes">
 			<classpath>
 				<path refid="libraries.classpath"/>
 				<pathelement location="${build-test-jar}"/>
