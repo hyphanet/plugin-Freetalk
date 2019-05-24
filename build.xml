@@ -210,7 +210,7 @@
 
 	<!-- ================================================== -->
 
-	<target name="junit-compile" depends="compile" unless="${test.skip}">
+	<target name="junit-compile" depends="compile">
 		<javac srcdir="test/" destdir="${build-test}/classes" debug="on" optimize="on"
 				source="${source-version}" target="${target-version}">
 			
@@ -269,7 +269,7 @@
 	<target name="junit" depends="junit-package" unless="${test.skip}"
 			description="Runs all unit tests. Options to specify with 'ant -D':&#10;
 		        - Set test.coverage=true to analyze test coverage. View by e.g.: firefox test-coverage/html/index.html&#10;
-		        - Set test.skip=true to skip&#10;
+		        - Set test.skip=true to skip. The tests will still be compiled so you can run them from e.g. Eclipse!&#10;
 		        - Set test.class=&lt;test class&gt; (e.g. test.class=plugins.Freetalk.FreetalkTest) to run a single test&#10;
 		        - Set test.benchmark=true to run benchmarks.&#10;">
 		
@@ -312,7 +312,9 @@
 	</target>
 
 	<!-- ================================================== -->
-	<target name="dist" depends="clean,compile,junit"
+	<!-- Not only depend on junit but also junit-compile and junit-package so tests can be run from
+	     e.g. Eclipse even if their execution in junit is disabled by test.skip=true. -->
+	<target name="dist" depends="clean,compile,junit-compile,junit-package,junit"
 		description="generate the distribution" >
 		<jar jarfile="${dist}/Freetalk.jar" duplicate="fail">
 			<manifest>
