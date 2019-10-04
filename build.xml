@@ -240,6 +240,7 @@
 		
 		<cobertura-instrument datafile="${build-test-coverage}/cobertura.ser">
 			<auxClasspath>
+				<path refid="submodules.path"/>
 				<path refid="libraries.classpath"/>
 			</auxClasspath>
 			
