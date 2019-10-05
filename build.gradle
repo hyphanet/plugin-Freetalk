@@ -55,7 +55,7 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	
 	from(sourceSets.main.output.classesDir) { exclude 'plugins/Freetalk/Version.class' }
 	from(compileVersionFile.destinationDir) { include 'plugins/Freetalk/Version.class' }
-	from(sourceSets.main.java.srcDirs) { include 'plugins/WebOfTrust/l10n/*.l10n' }
+	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/l10n/*.l10n' }
 	from zipTree('db4o-7.4/db4o.jar')
 	if(jarType == 'testJar') from sourceSets.test.output.classesDir
 }}
