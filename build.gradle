@@ -51,7 +51,7 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	duplicatesStrategy = "fail"
 	baseName = (jarType == 'testJar') ? 'Freetalk-with-unit-tests' : 'Freetalk'
 	destinationDir = new File(projectDir, (jarType == 'testJar') ? "build-test" : "dist")
-	manifest { attributes("Plugin-Main-Class": "plugins.WebOfTrust.WebOfTrust") }
+	manifest { attributes("Plugin-Main-Class": "plugins.Freetalk.Freetalk") }
 	
 	from(sourceSets.main.output.classesDir) { exclude 'plugins/Freetalk/Version.class' }
 	from(compileVersionFile.destinationDir) { include 'plugins/Freetalk/Version.class' }
