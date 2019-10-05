@@ -33,7 +33,7 @@ compileJava {
 task prepareVersionFile(type: Copy) {
 	outputs.upToDateWhen { false }
 	from sourceSets.main.java.srcDirs ; into "${buildDir}/custom/versionFileJava/"
-	include 'plugins/WebOfTrust/Version.java' ; filter {
+	include 'plugins/Freetalk/Version.java' ; filter {
 		it.replaceAll("@custom@", "git describe --always --abbrev=4 --dirty".execute().text.trim())
 	}
 }
