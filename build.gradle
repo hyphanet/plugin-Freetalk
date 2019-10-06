@@ -74,9 +74,7 @@ test {
 	include '**/*Test.class'
 	exclude 'com/db4o/**'
 	
-	/* TODO: Performance: As of 2019-04-28 doesn't work on Travis CI yet because the Gradle version
-	/* on Ubuntu Trusty is too old - and we cannot use Ubuntu Xenial because Java 7 doesn't work
-	/* there but it is still the minimal Java version required by Freenet. */
+	// TODO: Enable once my distribution ships a more recent Gradle which supports this.
 	// failFast = true
 	maxHeapSize = "512m"
 	maxParallelForks = Runtime.runtime.availableProcessors()
