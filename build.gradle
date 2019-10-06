@@ -64,8 +64,8 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 test {
 	dependsOn 'testJar'
 	
-	// Reset classpath to only use the JAR, not the class files, because some WoT test need a JAR to
-	// load into a Freenet node, and given the JAR is needed we shouldn't duplicate its classes.
+	// Reset classpath to only use the JAR, not the class files, because some tests may need a JAR
+	// to load into a Freenet node, and given the JAR is needed we shouldn't duplicate its classes.
 	classpath = fileTree(dir: '../fred/build/output/', include: '*.jar')
 	classpath+= files(testJar.archivePath)
 	classpath+= configurations.junit
