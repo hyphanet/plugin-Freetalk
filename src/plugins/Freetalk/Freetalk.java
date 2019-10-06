@@ -825,6 +825,9 @@ public final class Freetalk implements FredPlugin, FredPluginFCP, FredPluginL10n
 	}	
 
 	@Override public String getVersion() {
+		// FIXME: This does not work together with our Gradle script:
+		// The compiler will inline the String into this function because it is final, but when
+		// it does so the version has not been put into Version.java by Gradle yet.
 		return Version.longVersionString;
 	}
 
