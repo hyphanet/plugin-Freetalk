@@ -71,15 +71,8 @@ test {
 	classpath+= configurations.junit
 	
 	scanForTestClasses = false
-	include '**/*Test*.class'
-	// Must exclude member classes: Java creates them for switch() upon enums, JUnit would complain
-	exclude '**/*$*.class'
-	exclude '**/*Benchmark*.class'
+	include '**/*Test.class'
 	exclude 'com/db4o/**'
-	if(!hasProperty('test.unreliable')) {
-		exclude '**/SynchronousDelayedBackgroundJobTest.class'
-		exclude '**/TickerDelayedBackgroundJobTest.class'
-	}
 	
 	/* TODO: Performance: As of 2019-04-28 doesn't work on Travis CI yet because the Gradle version
 	/* on Ubuntu Trusty is too old - and we cannot use Ubuntu Xenial because Java 7 doesn't work
