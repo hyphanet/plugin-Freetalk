@@ -49,8 +49,8 @@ public class DatabaseBasedTest extends TestCase {
 	@Override protected void setUp() throws Exception {
 		super.setUp();
 		
-		long seed;
-		mRandom = new DummyRandomSource(seed = new Random().nextLong());
+		Long seed = null; // Insert a seed here to re-run with it.
+		mRandom = new DummyRandomSource(seed != null ? seed : (seed = new Random().nextLong()));
 		System.out.println(this + " Random seed: " + seed);
 		
 		File databaseFile = new File(getDatabaseFilename());
