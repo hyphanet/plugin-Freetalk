@@ -6,8 +6,11 @@ package plugins.Freetalk;
 import java.io.File;
 
 import junit.framework.TestCase;
+import java.util.Random;
 
 import com.db4o.ext.ExtObjectContainer;
+
+import freenet.crypt.DummyRandomSource;
 
 /**
  * A JUnit <code>TestCase</code> which opens a db4o database in setUp() and closes it in tearDown().
@@ -30,6 +33,9 @@ public class DatabaseBasedTest extends TestCase {
 	 */
 	protected ExtObjectContainer db;
 
+	/** A weak PRNG the seed of which will be shown on stdout so you can reproduce failing tests. */
+	protected DummyRandomSource mRandom;
+
 	/**
 	 * @return Returns the filename of the database. This is the name of the current test function plus ".db4o".
 	 */
@@ -42,6 +48,11 @@ public class DatabaseBasedTest extends TestCase {
 	 */
 	@Override protected void setUp() throws Exception {
 		super.setUp();
+		
+		Random random = new Random();
+		long seed = random.nextLong();
+		mRandom = new DummyRandomSource(seed);
+		System.out.println(this + " Random seed: " + seed);
 		
 		File databaseFile = new File(getDatabaseFilename());
 		if(databaseFile.exists())
