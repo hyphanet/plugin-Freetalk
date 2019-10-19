@@ -70,7 +70,7 @@ public class DatabaseBasedTest extends TestCase {
 		db = mFreetalk.getDatabase();
 		
 		// Test if the developer has correctly configured his test launcher to set the
-		// is_FT_unit_test system property which is the backened of IS_UNIT_TEST.
+		// is_FT_unit_test system property which is the backened of Configuration.IS_UNIT_TEST.
 		// We do this here instead of in a class ConfigurationTest because the most likely place
 		// where one might forget to set the property is when launching tests through the IDE to
 		// be able to repeat a single failing test in a debugger - and that single test won't be
