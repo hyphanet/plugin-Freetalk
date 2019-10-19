@@ -63,8 +63,7 @@ public class DatabaseBasedTest extends TestCase {
 		
 		File databaseFile = new File(getDatabaseFilename());
 		if(databaseFile.exists())
-			databaseFile.delete();
-		assertFalse(databaseFile.exists());
+			throw new RuntimeException("Database file exists already: " + databaseFile);
 		databaseFile.deleteOnExit(); // Safeguard against tearDown() not being called.
 
 		mFreetalk = new Freetalk(getDatabaseFilename()); 
