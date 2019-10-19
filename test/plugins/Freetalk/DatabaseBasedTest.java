@@ -10,6 +10,8 @@ import java.io.File;
 import junit.framework.TestCase;
 import java.util.Random;
 
+import org.junit.Ignore;
+
 import com.db4o.ext.ExtObjectContainer;
 
 import freenet.crypt.DummyRandomSource;
@@ -29,8 +31,9 @@ import freenet.crypt.DummyRandomSource;
  * 
  * @author xor
  */
-public class DatabaseBasedTest extends TestCase {
-	
+@Ignore("Is abstract.")
+public abstract class DatabaseBasedTest extends TestCase {
+
 	protected Freetalk mFreetalk;
 
 	private String mDatabaseFilename;
@@ -93,13 +96,6 @@ public class DatabaseBasedTest extends TestCase {
 		db.close();
 		db = null;
 		new File(getDatabaseFilename()).delete(); // Also done by Java's deleteOnExit() via setUp()
-	}
-
-	/**
-	 * Does nothing. Just here because JUnit will complain if there are no tests.
-	 */
-	public void testSelf() {
-		
 	}
 
 }
