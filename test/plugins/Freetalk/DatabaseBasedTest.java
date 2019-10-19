@@ -65,6 +65,7 @@ public class DatabaseBasedTest extends TestCase {
 		if(databaseFile.exists())
 			databaseFile.delete();
 		assertFalse(databaseFile.exists());
+		databaseFile.deleteOnExit(); // Safeguard against tearDown() not being called.
 
 		mFreetalk = new Freetalk(getDatabaseFilename()); 
 		db = mFreetalk.getDatabase();
@@ -78,7 +79,7 @@ public class DatabaseBasedTest extends TestCase {
 		
 		db.close();
 		db = null;
-		new File(getDatabaseFilename()).delete();
+		new File(getDatabaseFilename()).delete(); // Also done by Java's deleteOnExit() via setUp()
 	}
 
 	/**
