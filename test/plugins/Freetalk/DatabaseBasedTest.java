@@ -68,6 +68,17 @@ public class DatabaseBasedTest extends TestCase {
 
 		mFreetalk = new Freetalk(getDatabaseFilename()); 
 		db = mFreetalk.getDatabase();
+		
+		// Test if the developer has correctly configured his test launcher to set the
+		// is_FT_unit_test system property which is the backened of IS_UNIT_TEST.
+		// We do this here instead of in a class ConfigurationTest because the most likely place
+		// where one might forget to set the property is when launching tests through the IDE to
+		// be able to repeat a single failing test in a debugger - and that single test won't be
+		// ConfigurationTest.
+		// This class here however is the base class of most Freetalk unit tests so it is likely
+		// that we will catch failure to set the property.
+		assertTrue("Please launch the JVM with -Dis_FT_unit_test=true for all unit tests!",
+			Configuration.IS_UNIT_TEST);
 	}
 
 	/**
