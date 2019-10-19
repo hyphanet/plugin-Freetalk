@@ -27,6 +27,19 @@ import freenet.support.codeshortification.IfNull;
 @IndexedClass
 public final class Configuration extends Persistent {
 
+	/**
+	 * If this is true then batch processing delays of various subsystems will be set to low values.
+	 * FIXME: The above is not actually implemented yet, do so.
+	 * ATTENTION: DO NOT use this for any significant program logic decisions! Unit tests should
+	 * not behave different to the real product if possible!
+	 * 
+	 * Please notice that this requires launching the JVM with "-Dis_FT_unit_test=true".
+	 * This is currently done by the Ant/Gradle builders, but your IDE may not do it unless told so.
+	 * (We're intentionally not determining the value by having the tests set this variable directly
+	 * because that would imply that it cannot be final, which would prevent usage of it in other
+	 * static final variables and also disallow compiler optimizations.) */
+	public static transient final boolean IS_UNIT_TEST = Boolean.getBoolean("is_FT_unit_test");
+
 	/* Names of the config parameters */
 	
 	
