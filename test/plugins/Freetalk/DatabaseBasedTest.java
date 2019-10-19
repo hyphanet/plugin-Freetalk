@@ -24,6 +24,9 @@ import freenet.crypt.DummyRandomSource;
  * 
  * You have to call super.setUp() and super.tearDown() if you override one of those methods.
  * 
+ * TODO: Code quality: Rename to AbstractJUnit3Test to reflect its purpose as base-class for most
+ * tests and partly match the naming of the similar WoT class. Also adapt the above JavaDoc to that.
+ * 
  * @author xor
  */
 public class DatabaseBasedTest extends TestCase {
