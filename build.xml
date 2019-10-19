@@ -292,7 +292,7 @@
 			<formatter type="plain" usefile="false"/>
 
 			<test if="test.class" name="${test.class}"/>
-			<batchtest unless="test.class">
+			<batchtest unless="test.class" skipNonTests="yes">
 				<zipfileset src="${build-test-jar}">
 					<include name="**/*Test.class"/>
 					<exclude name="com/db4o/**"/>
