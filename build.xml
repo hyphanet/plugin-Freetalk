@@ -292,7 +292,7 @@
 			<formatter type="plain" usefile="false"/>
 
 			<test if="test.class" name="${test.class}"/>
-			<batchtest unless="test.class">
+			<batchtest unless="test.class" skipNonTests="yes">
 				<zipfileset src="${build-test-jar}">
 					<include name="**/*Test.class"/>
 					<exclude name="com/db4o/**"/>
@@ -303,6 +303,7 @@
 				file="${build-test-coverage}/cobertura.ser" if:true="${test.coverage}"/>
 			<sysproperty key="benchmark" value="${test.benchmark}" />
 			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
+			<sysproperty key="is_FT_unit_test" value="true"/>
 		</junit>
 		
 		<cobertura-report if:true="${test.coverage}" unless:true="${test.benchmark}"
