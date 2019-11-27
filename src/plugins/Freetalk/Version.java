@@ -8,7 +8,7 @@ package plugins.Freetalk;
  * @author saces
  *
  */
-public class Version {
+public final class Version {
 
 	/** This is replaced by the Ant/Gradle build scripts during compilation.
 	 *  It thus must be private and only accessible through a getter function to ensure
@@ -19,7 +19,7 @@ public class Version {
 	 * a major change, a significant bugfix etc. These numbers are used in auto-update 
 	 * etc, at a minimum any build inserted into auto-update should have a unique 
 	 * version. */
-	private static long version = 13;
+	private static final long version = 13;
 
 	/** Published as an identity property if you own a seed identity.
 	 *  TODO: Not actually implemented yet, do so or remove it. */
