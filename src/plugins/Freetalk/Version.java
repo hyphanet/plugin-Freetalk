@@ -19,13 +19,13 @@ public class Version {
 	 * a major change, a significant bugfix etc. These numbers are used in auto-update 
 	 * etc, at a minimum any build inserted into auto-update should have a unique 
 	 * version. */
-	public static long version = 13;
-	
+	private static long version = 13;
+
 	/** Published as an identity property if you own a seed identity. */
-	public static final long mandatoryVersion = 1;
-	
+	private static final long mandatoryVersion = 1;
+
 	/** Published as an identity property if you own a seed identity. */
-	public static final long latestVersion = version;
+	private static final long latestVersion = version;
 
 	private static final String marketingVersion = "0.1";
 
