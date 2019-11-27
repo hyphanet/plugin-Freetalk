@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
+import static java.lang.System.out;
+
 public final class Version {
 
 	/** This is replaced by the Ant/Gradle build scripts during compilation.
@@ -33,6 +35,16 @@ public final class Version {
 
 	public static String getMarketingVersion() {
 		return marketingVersion + " " + gitRevision;
+	}
+
+	/** Can be used to obtain the version if Freetalk is broken and won't load via Freenet's plugins
+	 *  page.
+	 *  On Linux run it via:
+	 *      cd /path/of/Freenet && java -classpath plugins/Freetalk.jar plugins.Freetalk.Version */
+	public static void main(String[] args) {
+		out.println("Marketing version: " + getMarketingVersion());
+		out.println("Real version: " + getRealVersion());
+		out.println("Git revision: " + gitRevision);
 	}
 
 }
