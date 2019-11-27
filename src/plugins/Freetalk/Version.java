@@ -21,10 +21,12 @@ public class Version {
 	 * version. */
 	private static long version = 13;
 
-	/** Published as an identity property if you own a seed identity. */
+	/** Published as an identity property if you own a seed identity.
+	 *  TODO: Not actually implemented yet, do so or remove it. */
 	private static final long mandatoryVersion = 1;
 
-	/** Published as an identity property if you own a seed identity. */
+	/** Published as an identity property if you own a seed identity.
+	 *  TODO: Not actually implemented yet, do so or remove it. */
 	private static final long latestVersion = version;
 
 	private static final String marketingVersion = "0.1";
