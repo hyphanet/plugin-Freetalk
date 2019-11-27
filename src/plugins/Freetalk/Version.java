@@ -40,7 +40,11 @@ public final class Version {
 	/** Can be used to obtain the version if Freetalk is broken and won't load via Freenet's plugins
 	 *  page.
 	 *  On Linux run it via:
-	 *      cd /path/of/Freenet && java -classpath plugins/Freetalk.jar plugins.Freetalk.Version */
+	 *      cd /path/of/Freenet
+	 *      for JAR in plugins/Freetalk.jar* ; do
+	 *          echo "Versions of $JAR:"
+	 *          java -classpath "$JAR" plugins.Freetalk.Version
+	 *      done */
 	public static void main(String[] args) {
 		out.println("Marketing version: " + getMarketingVersion());
 		out.println("Real version: " + getRealVersion());
