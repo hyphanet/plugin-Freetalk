@@ -3,11 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package plugins.Freetalk;
 
-/**
- * @author xor (xor@freenetproject.org)
- * @author saces
- *
- */
 public final class Version {
 
 	/** This is replaced by the Ant/Gradle build scripts during compilation.
