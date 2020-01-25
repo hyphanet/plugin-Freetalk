@@ -47,7 +47,7 @@ sed --regexp-extended --expression='/^Ant(.*)$/d' \
 	--in-place "$from_ant/META-INF/MANIFEST.MF"
 
 # To test whether the diff fails if it should:
-#echo a >> "$from_gradle/plugins/WebOfTrust/WebOfTrust.class"
+#echo a >> "$from_gradle/plugins/Freetalk/Freetalk.class"
 
 echo "Diffing:"
 echo "Ant output:    $from_ant"
@@ -62,5 +62,5 @@ else
 fi
 }
 
-check_jar 'dist/WebOfTrust.jar'
-check_jar 'build-test/WebOfTrust-with-unit-tests.jar'
+check_jar 'dist/Freetalk.jar'
+check_jar 'build-test/Freetalk-with-unit-tests.jar'
