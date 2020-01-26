@@ -53,12 +53,12 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	destinationDir = new File(projectDir, (jarType == 'testJar') ? "build-test" : "dist")
 	manifest { attributes("Plugin-Main-Class": "plugins.Freetalk.Freetalk") }
 	
-	from(sourceSets.main.output.classesDir) { exclude 'plugins/Freetalk/Version.class' }
+	from(sourceSets.main.output.classesDirs) { exclude 'plugins/Freetalk/Version.class' }
 	from(compileVersionFile.destinationDir) { include 'plugins/Freetalk/Version.class' }
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/l10n/*.l10n' }
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/ui/web/css/*.css' }
 	from zipTree('db4o-7.4/db4o.jar')
-	if(jarType == 'testJar') from sourceSets.test.output.classesDir
+	if(jarType == 'testJar') from sourceSets.test.output.classesDirs
 }}
 
 test {
