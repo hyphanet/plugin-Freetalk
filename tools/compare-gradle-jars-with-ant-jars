@@ -29,7 +29,7 @@ unzip -qq "$jar" -d "$from_ant"
 echo "Building with Gradle..."
 ant clean &> /dev/null
 [ ! -e "$jar" ] # WARNING: ! must be inside for errexit to work here
-gradle clean jar testJar &> /dev/null
+gradle clean jar testJar || ( ls -lR build/ ; false )
 unzip -qq "$jar" -d "$from_gradle"
 
 echo "Deleting files which only Ant bundles: package-info.class, Version.java (not .class)..."
