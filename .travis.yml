@@ -81,6 +81,7 @@ script:
   # FIXME: Debug code, remove
   - ./gradlew --version
   - ./gradlew wrapper --gradle-version 6.5
+  - ./gradlew tasks # For some reason the wrapper will only update itself when being run again
   - ./gradlew --version
   # FIXME: ant was replaced with compare-* for testing this branch only,
   # undo for production.
