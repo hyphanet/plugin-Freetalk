@@ -45,7 +45,7 @@ task compileVersionFile(type: JavaCompile, dependsOn: ['compileJava', 'prepareVe
 }
 
 ["jar", "testJar"].each { jarType ->
-tasks.register("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractCompile)) {
+task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractCompile)) {
 	preserveFileTimestamps = false
 	reproducibleFileOrder = true
 	duplicatesStrategy = "fail"
