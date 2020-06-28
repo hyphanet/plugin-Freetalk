@@ -21,7 +21,7 @@ local from_gradle="$(mktemp --tmpdir="$tmpdir" --directory --suffix=.from-gradle
 
 echo "Testing jar: $jar"
 echo "Building with Ant..."
-gradle clean # FIXME: Disabled for debugging: &> /dev/null
+gradle clean &> /dev/null
 [ ! -e "$jar" ] # WARNING: ! must be inside for errexit to work here
 ant -Dtest.skip=true clean dist &> /dev/null
 unzip -qq "$jar" -d "$from_ant"
