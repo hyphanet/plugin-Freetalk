@@ -74,6 +74,10 @@ script:
   # Don't allow Travis to override the low memory limit which our builder sets with a higher one.
   - unset _JAVA_OPTIONS
   - echo 'fred version:' ; java -classpath '../fred/build/output/freenet.jar' 'freenet.node.Version'
+  # Use fred's Gradle version as the one on Travis CI as of 2020-06-28 did not work properly.
+  # It's a good idea to be compatible to what is standard for fred anyway.
+  # The below "tools/compare-gradle-jars-with-ant-jars" will obey this.
+  - ln -sf "$TRAVIS_BUILD_DIR/../fred/gradlew" "$TRAVIS_BUILD_DIR/gradlew"
   # FIXME: ant was replaced with compare-* for testing this branch only,
   # undo for production.
   #
