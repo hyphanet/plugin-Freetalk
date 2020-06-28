@@ -54,7 +54,7 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	manifest { attributes("Plugin-Main-Class": "plugins.Freetalk.Freetalk") }
 	
 	// FIXME: Debug code, remove
-	sourcesSets.main.output.classesDirs.each {
+	sourceSets.main.output.classesDirs.each {
 		println 'Main classesDir: ' + it }
 	
 	from(sourceSets.main.output.classesDirs) { exclude 'plugins/Freetalk/Version.class' }
