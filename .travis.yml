@@ -79,9 +79,8 @@ script:
   # The below "tools/compare-gradle-jars-with-ant-jars" will obey this.
   - ln -sf "$TRAVIS_BUILD_DIR/../fred/gradlew" "$TRAVIS_BUILD_DIR/gradlew"
   # FIXME: Debug code, remove
-  - ./gradlew --version
-  - ./gradlew wrapper --gradle-version 6.5
-  - ./gradlew tasks # For some reason the wrapper will only update itself when being run again
+  - rm ./gradlew
+  - gradle wrapper --gradle-version 6.5
   - ./gradlew --version
   # FIXME: ant was replaced with compare-* for testing this branch only,
   # undo for production.
