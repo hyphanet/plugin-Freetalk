@@ -78,6 +78,10 @@ script:
   # It's a good idea to be compatible to what is standard for fred anyway.
   # The below "tools/compare-gradle-jars-with-ant-jars" will obey this.
   - ln -sf "$TRAVIS_BUILD_DIR/../fred/gradlew" "$TRAVIS_BUILD_DIR/gradlew"
+  # FIXME: Debug code, remove
+  - ./gradlew --version
+  - ./gradlew wrapper --gradle-version 6.5
+  - ./gradlew --version
   # FIXME: ant was replaced with compare-* for testing this branch only,
   # undo for production.
   #
