@@ -53,6 +53,10 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	destinationDir = new File(projectDir, (jarType == 'testJar') ? "build-test" : "dist")
 	manifest { attributes("Plugin-Main-Class": "plugins.Freetalk.Freetalk") }
 	
+	// FIXME: Debug code, remove
+	sourcesSets.main.output.classesDirs.each {
+		println 'Main classesDir: ' + it }
+	
 	from(sourceSets.main.output.classesDirs) { exclude 'plugins/Freetalk/Version.class' }
 	from(compileVersionFile.destinationDir) { include 'plugins/Freetalk/Version.class' }
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/l10n/*.l10n' }
