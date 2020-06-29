@@ -67,9 +67,8 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	if(jarType == 'testJar') from sourceSets.test.output.classesDirs
 	
 	// FIXME: Debug code, remove
-	println "Files of task $jarType:"
 	eachFile {
-		println it
+		println "Input file of task $jarType: " + it
 	}
 }}
 
