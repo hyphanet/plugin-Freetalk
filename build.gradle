@@ -65,6 +65,12 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/ui/web/css/*.css' }
 	from zipTree('db4o-7.4/db4o.jar')
 	if(jarType == 'testJar') from sourceSets.test.output.classesDirs
+	
+	// FIXME: Debug code, remove
+	println "Files of task $jarType:"
+	eachFile {
+		println it
+	}
 }}
 
 test {
