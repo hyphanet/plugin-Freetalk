@@ -44,6 +44,7 @@ task compileVersionFile(type: JavaCompile, dependsOn: ['compileJava', 'prepareVe
 	destinationDir = file("${buildDir}/custom/versionFileClass/")
 }
 
+tasks.register("testJar", Jar)
 ["jar", "testJar"].each { jarType ->
 task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractCompile)) {
 	preserveFileTimestamps = false
