@@ -59,7 +59,8 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	sourceSets.main.output.classesDirs.each {
 		println 'Main classesDir: ' + it }
 	
-	from(sourceSets.main.output.classesDirs) { exclude 'plugins/Freetalk/Version.class' }
+	// FIXME: Disabled for debugging purposes, must enable again!
+	// from(sourceSets.main.output.classesDirs) { exclude 'plugins/Freetalk/Version.class' }
 	from(compileVersionFile.destinationDir) { include 'plugins/Freetalk/Version.class' }
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/l10n/*.l10n' }
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/ui/web/css/*.css' }
