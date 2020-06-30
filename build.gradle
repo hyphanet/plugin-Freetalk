@@ -58,12 +58,8 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	println 'Listing sourceSets.main.output.classesDirs: '
 	sourceSets.main.output.classesDirs.each {
 		println 'Main classesDir: ' + it }
-		
-	if(jarType == 'testJar')
-		from(sourceSets.main.output.classesDirs) { exclude 'plugins/Freetalk/Version.class' }
-	else
-		exclude 'plugins/Freetalk/Version.class'
 	
+	from(sourceSets.main.output.classesDirs) { exclude 'plugins/Freetalk/Version.class' }
 	from(compileVersionFile.destinationDir) { include 'plugins/Freetalk/Version.class' }
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/l10n/*.l10n' }
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/ui/web/css/*.css' }
