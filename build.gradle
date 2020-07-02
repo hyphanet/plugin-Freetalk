@@ -54,11 +54,6 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	destinationDir = new File(projectDir, (jarType == 'testJar') ? "build-test" : "dist")
 	manifest { attributes("Plugin-Main-Class": "plugins.Freetalk.Freetalk") }
 	
-	// FIXME: Debug code, remove
-	println 'Listing sourceSets.main.output.classesDirs: '
-	sourceSets.main.output.classesDirs.each {
-		println 'Main classesDir: ' + it }
-	
 	// FIXME: Gradle versions starting with 5.0 will not work with the below code:
 	// For some reason the above "task(... overwrite: true ...)" does NOT cause the input of the
 	// "jar" task to be emptied with those versions. It will instead default to include the whole of
@@ -84,11 +79,6 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/ui/web/css/*.css' }
 	from zipTree('db4o-7.4/db4o.jar')
 	if(jarType == 'testJar') from sourceSets.test.output.classesDirs
-	
-	// FIXME: Debug code, remove
-	eachFile {
-		println "Input file of task $jarType: " + it
-	}
 }}
 
 test {

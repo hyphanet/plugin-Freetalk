@@ -80,7 +80,6 @@ script:
   - rm -f ./gradlew
   - gradle wrapper --gradle-version 4.10.3
   - ./gradlew --version
-  - ./gradlew clean test jar
   # FIXME: ant was replaced with compare-* for testing this branch only,
   # undo for production.
   #
