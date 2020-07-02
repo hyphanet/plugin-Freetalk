@@ -44,7 +44,7 @@ task compileVersionFile(type: JavaCompile, dependsOn: ['compileJava', 'prepareVe
 	destinationDir = file("${buildDir}/custom/versionFileClass/")
 }
 
-tasks.register("testJar", Jar)
+tasks.create("testJar", Jar) // TODO: Performance: Use register() once my Gradle is more recent.
 ["jar", "testJar"].each { jarType ->
 task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractCompile)) {
 	preserveFileTimestamps = false
