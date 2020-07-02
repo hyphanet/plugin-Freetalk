@@ -77,7 +77,7 @@ script:
   # FIXME: We use Gradle 4.10.3 because versions above it don't work with our build script, see the
   # related FIXME in "build.gradle" for details.
   # The below "tools/compare-gradle-jars-with-ant-jars" will obey this.
-  - rm ./gradlew
+  - rm -f ./gradlew
   - gradle wrapper --gradle-version 4.10.3
   - ./gradlew --version
   - ./gradlew clean test jar
