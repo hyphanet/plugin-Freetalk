@@ -57,8 +57,8 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	// FIXME: Gradle versions starting with 5.0 will not work with the below code:
 	// For some reason the above "task(... overwrite: true ...)" does NOT cause the input of the
 	// "jar" task to be emptied with those versions. It will instead default to include the whole of
-	// sourceSets.main.output.classesDir which causes the below
-	// from(sourceSets.main.output.classesDir) to duplicate it.
+	// sourceSets.main.output.classesDirs which causes the below
+	// from(sourceSets.main.output.classesDirs) to duplicate it.
 	// That in turn will cause Gradle to complain about duplicate inputs for the task.
 	// The branch which added this FIXME contains quite a lot of investigation into the issue.
 	// From that I can say that IMHO the only clean, simple fix is to get rid of the whole mechanism
