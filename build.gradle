@@ -44,6 +44,7 @@ task compileVersionFile(type: JavaCompile, dependsOn: ['compileJava', 'prepareVe
 	destinationDir = file("${buildDir}/custom/versionFileClass/")
 }
 
+tasks.create("testJar", Jar) // TODO: Performance: Use register() once my Gradle is more recent.
 ["jar", "testJar"].each { jarType ->
 task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractCompile)) {
 	preserveFileTimestamps = false
@@ -53,12 +54,31 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	destinationDir = new File(projectDir, (jarType == 'testJar') ? "build-test" : "dist")
 	manifest { attributes("Plugin-Main-Class": "plugins.Freetalk.Freetalk") }
 	
-	from(sourceSets.main.output.classesDir) { exclude 'plugins/Freetalk/Version.class' }
+	// FIXME: Gradle versions starting with 5.0 will not work with the below code:
+	// For some reason the above "task(... overwrite: true ...)" does NOT cause the input of the
+	// "jar" task to be emptied with those versions. It will instead default to include the whole of
+	// sourceSets.main.output.classesDirs which causes the below
+	// from(sourceSets.main.output.classesDirs) to duplicate it.
+	// That in turn will cause Gradle to complain about duplicate inputs for the task.
+	// The branch which added this FIXME contains quite a lot of investigation into the issue.
+	// From that I can say that IMHO the only clean, simple fix is to get rid of the whole mechanism
+	// of recompiling Version.class to include the Git revision. This will allow us to remove the
+	// below from() (except if the "jarType" is "testJar").
+	// The Version.class mechanism should be replaced with putting the revision into a *.properties
+	// file which class Version loads and parses. That file shall then be a "generated resource" in
+	// terms of Gradle.
+	// Generating "resources" dynamically during compilation is a thing which Gradle does support
+	// officially - unlike patching of source files such as Version.java which we do currently.
+	// E.g. see "Working with generated resources" at
+	// https://docs.gradle.org/current/dsl/org.gradle.api.tasks.SourceSetOutput.html
+	// Once you've developed this don't forget to remove the hardcoding of the Gradle version to
+	// 4.10.3 in file ".travis.yml", it is marked with a FIXME.
+	from(sourceSets.main.output.classesDirs) { exclude 'plugins/Freetalk/Version.class' }
 	from(compileVersionFile.destinationDir) { include 'plugins/Freetalk/Version.class' }
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/l10n/*.l10n' }
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/ui/web/css/*.css' }
 	from zipTree('db4o-7.4/db4o.jar')
-	if(jarType == 'testJar') from sourceSets.test.output.classesDir
+	if(jarType == 'testJar') from sourceSets.test.output.classesDirs
 }}
 
 test {
