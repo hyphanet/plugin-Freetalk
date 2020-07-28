@@ -82,6 +82,8 @@ script:
   - ./gradlew --version
   # To test the Ant and Gradle builders against each other uncomment the following.
   ## - tools/compare-gradle-jars-with-ant-jars
+  # FIXME: Enabled for testing this branch only, undo for production.
+  - tools/compare-gradle-tests-with-ant-tests
   # FIXME: Replace Ant with Gradle once the Gradle script has been fully tested.
   ## - ./gradlew clean test jar
   - ant
