@@ -96,6 +96,7 @@ jdk:
   - openjdk12
   - openjdk13
   - openjdk14
+  - openjdk15
   # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
   # oraclejdk8: Not available anymore.
   # oraclejdk9: No more updates by Oracle: https://www.oracle.com/technetwork/java/java-se-support-roadmap.html
@@ -104,6 +105,7 @@ jdk:
   # oraclejdk12: Disabled to keep the build matrix small.
   - oraclejdk13
   - oraclejdk14
+  - oraclejdk15
 
 # FIXME: Adapt to Freetalk and enable
 # deploy:
