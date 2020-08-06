@@ -83,9 +83,7 @@ script:
   # To test the Ant and Gradle builders against each other uncomment the following.
   ## - tools/compare-gradle-jars-with-ant-jars
   ## - tools/compare-gradle-tests-with-ant-tests
-  # FIXME: Replace Ant with Gradle once the Gradle script has been fully tested.
-  ## - ./gradlew clean test jar
-  - ant
+  - ./gradlew clean test jar
 
 jdk:
   # openjdk7: Not available anymore.
