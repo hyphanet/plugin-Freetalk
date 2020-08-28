@@ -1,5 +1,5 @@
 bin/
-build
-build-test
-dist
-/.gradle/
+build/
+build-test/
+dist/
+.gradle/
