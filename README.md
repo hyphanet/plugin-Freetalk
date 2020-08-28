@@ -78,7 +78,7 @@ toolbar buttons does not seem to trigger Gradle with the said Eclipse version!
 It seems that this only triggers Eclipse's internal Java builder which is used to empower Eclipse's
 own features.  
 As a consequence, manually run Gradle using the aforementioned `Run` button in case you need the
-FT JAR as output, e.g. for the following `Debugging` section.  
+FT JAR as output, e.g. for the following [debugging](#debugging) section.  
 Running the unit tests is also done by that, or by Eclipse's own UI for running tests, especially to
 debug failing tests with its debugger.
 
@@ -91,6 +91,7 @@ builders on the filesystem already, so you can fix Eclipse to notice them by:
 
 ## Debugging
 
+* Set up Eclipse as explained in the [compiling](#compiling) section.
 * Run fred's class `freenet.node.NodeStarter` using the Eclipse debugger.
 * Browse to Freenet's [Plugins page](http://127.0.0.1:8888/plugins/).
 * Load the `WebOfTrust` plugin.
