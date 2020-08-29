@@ -1,4 +1,5 @@
-build
-build-test
-dist
-/.gradle/
+bin/
+build/
+build-test/
+dist/
+.gradle/
