@@ -35,7 +35,6 @@ compiling it with Eclipse use the [below instructions](#compiling-with-eclipse).
 
 ```bash
 # With the Ant build script reference implementation:
-ant clean
 ant
 # If you get errors about missing classes check build.xml for whether the JAR locations are correct.
 
