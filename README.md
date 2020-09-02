@@ -34,9 +34,17 @@ compiling it with Eclipse use the [below instructions](#compiling-with-eclipse).
 ### Compiling by command line
 
 ```bash
+# With the Ant build script reference implementation:
 ant clean
 ant
 # If you get errors about missing classes check build.xml for whether the JAR locations are correct.
+
+# With the new Gradle builder - it is fully tested against Ant (see tools/) but lacks some features.
+# Its advantages are:
+# - parallel unit test execution on all available CPU cores.
+# - incremental builds are supported (leave out "clean jar").
+gradle clean jar
+# Wrong JAR locations can be fixed in the file build.gradle
 ```
 
 The output `Freetalk.jar` will be in the `dist` directory.  
