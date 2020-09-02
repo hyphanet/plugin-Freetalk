@@ -28,7 +28,7 @@ months upon writing code for backwards compatibility. Sorry :)
 
 Clone the [fred](https://github.com/freenet/fred) and plugin-Freetalk repositories into the same
 parent directory.  
-Compile fred using its instructions.
+Compile fred by command line using `( cd fred && ./gradlew jar copyRuntimeLibs )`.
 
 ### Compiling by command line
 
