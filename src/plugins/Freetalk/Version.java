@@ -29,12 +29,16 @@ public final class Version {
 	private static final String marketingVersion = "0.1";
 
 
+	public static String getGitRevision() {
+		return gitRevision;
+	}
+
 	public static long getRealVersion() {
 		return version;
 	}
 
 	public static String getMarketingVersion() {
-		return marketingVersion + " " + gitRevision;
+		return marketingVersion + " " + getGitRevision();
 	}
 
 	/** Can be used to obtain the version if Freetalk is broken and won't load via Freenet's plugins
@@ -48,7 +52,7 @@ public final class Version {
 	public static void main(String[] args) {
 		out.println("Marketing version: " + getMarketingVersion());
 		out.println("Real version: " + getRealVersion());
-		out.println("Git revision: " + gitRevision);
+		out.println("Git revision: " + getGitRevision());
 	}
 
 }
