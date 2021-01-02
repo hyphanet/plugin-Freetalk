@@ -29,14 +29,36 @@ public final class Version {
 	private static final String marketingVersion = "0.1";
 
 
+	/** Returns the most raw way of describing the Freetalk version: The output of
+	 *      git describe --always --abbrev=4 --dirty
+	 *  as observed by the Ant or Gradle build script which was used to compile Freetalk.
+	 *  
+	 *  If no commits have been added since the last git tag, this will be equal to the name of
+	 *  the last git tag. Thus, by tagging releases with "buildXXXX" where XXXX is equal to a
+	 *  zero-padded {@link #getRealVersion()}, each testing or stable release will have this return
+	 *  a clean string "buildXXXX" instead of including raw commit info. */
 	public static String getGitRevision() {
 		return gitRevision;
 	}
 
+	/** Returns a less raw way of describing the Freetalk version:
+	 *  The sequential "build number", i.e. the number of the last Freetalk testing or stable
+	 *  release which this codebase is equal to or greater than (= includes additional commits).
+	 *  
+	 *  Freenet uses this for auto-update mechanism.
+	 *  
+	 *  Thus maintainers MUST increase this number by exactly 1 whenever they do a release, so
+	 *  it can be used to easily determine if one release is more recent than another. */
 	public static long getRealVersion() {
 		return version;
 	}
 
+	/** Returns the least raw way of describing the Freetalk version:
+	 *  A hand-picked "marketing version" String such as "1.2.3", which is freely chosen and
+	 *  increased to represent development progress, concatenated with {@link #getGitRevision()}.
+	 *  
+	 *  Because {@link #getGitRevision()} should have the clean format of "buildXXXX" for releases,
+	 *  the resulting string should be easy to read for users, such as "1.2.3 build0456". */
 	public static String getMarketingVersion() {
 		return marketingVersion + " " + getGitRevision();
 	}
