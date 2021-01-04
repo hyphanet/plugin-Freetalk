@@ -5,6 +5,8 @@ package plugins.Freetalk;
 
 import static java.lang.System.out;
 
+import freenet.pluginmanager.FredPluginRealVersioned;
+
 public final class Version {
 
 	/** This is replaced by the Ant/Gradle build scripts during compilation.
