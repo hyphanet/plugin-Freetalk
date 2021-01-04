@@ -54,8 +54,9 @@ public final class Version {
 	}
 
 	/** Returns the least raw way of describing the Freetalk version:
-	 *  A hand-picked "marketing version" String such as "1.2.3", which is freely chosen and
-	 *  increased to represent development progress, concatenated with {@link #getGitRevision()}.
+	 *  A hand-picked "marketing" version name such as "1.2.3", which is freely chosen and
+	 *  increased to represent development progress.  
+	 *  It is concatenated with {@link #getGitRevision()}.
 	 *  
 	 *  Because {@link #getGitRevision()} should have the clean format of "buildXXXX" for releases,
 	 *  the resulting string should be easy to read for users, such as "1.2.3 build0456". */
