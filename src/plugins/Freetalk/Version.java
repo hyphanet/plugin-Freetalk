@@ -48,7 +48,7 @@ public final class Version {
 	 *  Freenet uses this for the auto-update mechanism.
 	 *  
 	 *  Thus maintainers MUST increase this number by exactly 1 whenever they do a release so
-	 *  it can be used to easily determine if one release is more recent than another. */
+	 *  it can be used to determine if one release is more recent than another. */
 	public static long getRealVersion() {
 		return version;
 	}
