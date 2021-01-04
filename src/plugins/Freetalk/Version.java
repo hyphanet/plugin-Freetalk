@@ -14,10 +14,11 @@ public final class Version {
 	 *  @see #getGitRevision() */
 	private static final String gitRevision = "@custom@";
 
-	/** Version number of the plugin for getRealVersion(). Increment this on making
-	 * a major change, a significant bugfix etc. These numbers are used in auto-update 
-	 * etc, at a minimum any build inserted into auto-update should have a unique 
-	 * version. */
+	/** The {@link FredPluginRealVersioned#getRealVersion()} aka build number.
+	 *  NOTICE: This is used by fred's auto-update code to distinguish different versions, so it
+	 *  MUST be incremented on **every** release.
+	 *  
+	 *  @see #getRealVersion() */
 	private static final long version = 13;
 
 	/** Published as an identity property if you own a seed identity.
