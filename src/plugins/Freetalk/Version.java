@@ -35,8 +35,8 @@ public final class Version {
 	 *  
 	 *  If no commits have been added since the last git tag, this will be equal to the name of
 	 *  the last git tag. Thus, by tagging releases with "buildXXXX" where XXXX is equal to a
-	 *  zero-padded {@link #getRealVersion()}, each testing or stable release will have this return
-	 *  a clean string "buildXXXX" instead of including raw commit info. */
+	 *  zero-padded {@link #getRealVersion()}, each release will have this return a clean string
+	 *  "buildXXXX" instead of including raw commit info. */
 	public static String getGitRevision() {
 		return gitRevision;
 	}
