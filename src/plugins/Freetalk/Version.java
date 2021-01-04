@@ -23,14 +23,6 @@ public final class Version {
 	 *  @see #getRealVersion() */
 	private static final long version = 13;
 
-	/** Published as an identity property if you own a seed identity.
-	 *  TODO: Not actually implemented yet, do so or remove it. */
-	private static final long mandatoryVersion = 1;
-
-	/** Published as an identity property if you own a seed identity.
-	 *  TODO: Not actually implemented yet, do so or remove it. */
-	private static final long latestVersion = version;
-
 	private static final String marketingVersion = "0.1";
 
 
