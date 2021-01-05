@@ -14,7 +14,11 @@ public final class Version {
 	 *  It thus must be private and only accessible through a getter function to ensure
 	 *  its pre-replacement default value does not get inlined into the code of other classes!
 	 *  
-	 *  @see #getGitRevision() */
+	 *  @see #getGitRevision()
+	 *  @deprecated Use the file "plugins/Freetalk/Version.properties" instead. This ensures build
+	 *      scripts such as especially the Gradle one require less complexity to specify the
+	 *      revision. */
+	@Deprecated
 	private static final String gitRevision = "@custom@";
 
 	/** The {@link FredPluginRealVersioned#getRealVersion()} aka build number.
@@ -42,7 +46,39 @@ public final class Version {
 	 *  zero-padded {@link #getRealVersion()}, each release will have this return a clean string
 	 *  "buildXXXX" instead of including raw commit info. */
 	public static String getGitRevision() {
-		return gitRevision;
+		// If the legacy gitRevision field was populated by Ant then use it because there won't
+		// be a "Version.properties" file to load it from, Ant doesn't generate it.
+		if(!gitRevision.equals("@custom@"))
+			return gitRevision;
+		
+		InputStream s = null;
+		String loadedRevision = "ERROR-while-loading-git-revision";
+		// NOTICE: This try{} block must catch very thoroughly so we don't break Freenet's "Plugins"
+		// page on the web interface and thus prevent users from unloading broken Freetalk versions!
+		try {
+			// Notice that getResourceAsStream() requires the file to be in the same package!
+			s = Version.class.getResourceAsStream("Version.properties");
+			if(s == null) 
+				throw new IOException("Version.properties not found or not accessible!");
+			
+			Properties p = new Properties(1);
+			p.load(s);
+			
+			String value = p.getProperty("git.revision");
+			if(value == null)
+				throw new RuntimeException("git.revision missing in Version.properties!");
+			
+			loadedRevision = value;
+		} catch(IllegalArgumentException e) {
+			Logger.error(Version.class, "getGitRevision(): Properties.load() failed: "
+				+ "InputStream contains malformed character encoding. Should be in ISO 8859-1!", e);
+		} catch(IOException | RuntimeException | Error e) {
+			Logger.error(Version.class, "getGitRevision() failed!", e);
+		} finally {
+			Closer.close(s);
+		}
+		
+		return loadedRevision;
 	}
 
 	/** Returns a less raw way of describing the Freetalk version:
