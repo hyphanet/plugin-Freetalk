@@ -6,6 +6,7 @@ package plugins.Freetalk;
 import static java.lang.System.out;
 
 import freenet.pluginmanager.FredPluginRealVersioned;
+import freenet.pluginmanager.FredPluginVersioned;
 
 public final class Version {
 
@@ -23,6 +24,12 @@ public final class Version {
 	 *  @see #getRealVersion() */
 	private static final long version = 13;
 
+	/** The version which we tell the user for advertising purposes, e.g. by incrementing the major
+	 *  version on important new features.
+	 *  In opposite to {@link #version} this does not have to be changed on every release.
+	 *  
+	 *  @see FredPluginVersioned
+	 *  @see #getMarketingVersion() */
 	private static final String marketingVersion = "0.1";
 
 
