@@ -48,7 +48,9 @@ public final class Version {
 	public static String getGitRevision() {
 		// If the legacy gitRevision field was populated by Ant then use it because there won't
 		// be a "Version.properties" file to load it from, Ant doesn't generate it.
-		if(!gitRevision.equals("@custom@"))
+		// ("@custom@" must be written in a non-literal fashion here to prevent Ant from replacing
+		// it in the equals() parameter!)
+		if(!gitRevision.equals("@" + "custom" + "@"))
 			return gitRevision;
 		
 		InputStream s = null;
