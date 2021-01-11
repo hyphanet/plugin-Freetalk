@@ -58,8 +58,7 @@ public final class Version {
 		// NOTICE: This try{} block must catch very thoroughly so we don't break Freenet's "Plugins"
 		// page on the web interface and thus prevent users from unloading broken Freetalk versions!
 		try {
-			// Notice that getResourceAsStream() requires the file to be in the same package!
-			s = Version.class.getResourceAsStream("Version.properties");
+			s = Version.class.getResourceAsStream("/plugins/Freetalk/Version.properties");
 			if(s == null) 
 				throw new IOException("Version.properties not found or not accessible!");
 			
