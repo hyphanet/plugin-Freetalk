@@ -17,7 +17,8 @@ public final class Version {
 	 *  @see #getGitRevision()
 	 *  @deprecated Use the file "plugins/Freetalk/Version.properties" instead. This ensures build
 	 *      scripts such as especially the Gradle one require less complexity to specify the
-	 *      revision. */
+	 *      revision. See {@link #getGitRevision()} for what to put into the file.  
+	 *      TODO: Code quality: Remove once we remove the Ant builder. */
 	@Deprecated
 	private static final String gitRevision = "@custom@";
 
