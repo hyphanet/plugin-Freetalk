@@ -44,7 +44,12 @@ public final class Version {
 	 *  If no commits have been added since the last git tag, this will be equal to the name of
 	 *  the last git tag. Thus, by tagging releases with "buildXXXX" where XXXX is equal to a
 	 *  zero-padded {@link #getRealVersion()}, each release will have this return a clean string
-	 *  "buildXXXX" instead of including raw commit info. */
+	 *  "buildXXXX" instead of including raw commit info.
+	 *  
+	 *  The Gradle build script must add the file "plugins/Freetalk/Version.properties" to the JAR
+	 *  to power this function. In that file it must set the key "git.revision" to the output of the
+	 *  above git command line.  
+	 *  The file must be encoded in ISO 8859-1. */
 	public static String getGitRevision() {
 		// If the legacy gitRevision field was populated by Ant then use it because there won't
 		// be a "Version.properties" file to load it from, Ant doesn't generate it.
