@@ -112,7 +112,11 @@ public final class Version {
 	 *  It is concatenated with {@link #getGitRevision()}.
 	 *  
 	 *  Because {@link #getGitRevision()} should have the clean format of "buildXXXX" for releases,
-	 *  the resulting string should be easy to read for users, such as "1.2.3 build0456". */
+	 *  the resulting string should be easy to read for users, such as "1.2.3 build0456".  
+	 *  It notably includes **all** version info of this class:
+	 *  - the marketing version
+	 *  - the git revision
+	 *  - {@link #getRealVersion()} via the "buildXXXX" included in the git revision. */
 	public static String getMarketingVersion() {
 		return marketingVersion + " " + getGitRevision();
 	}
