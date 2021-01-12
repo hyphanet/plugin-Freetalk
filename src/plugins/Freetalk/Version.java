@@ -5,8 +5,14 @@ package plugins.Freetalk;
 
 import static java.lang.System.out;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 import freenet.pluginmanager.FredPluginRealVersioned;
 import freenet.pluginmanager.FredPluginVersioned;
+import freenet.support.Logger;
+import freenet.support.io.Closer;
 
 public final class Version {
 
