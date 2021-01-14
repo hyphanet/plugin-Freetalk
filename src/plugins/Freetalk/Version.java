@@ -140,7 +140,7 @@ public final class Version {
 	 *      cd /path/of/Freenet
 	 *      for JAR in plugins/Freetalk.jar* ; do
 	 *          echo "Versions of $JAR:"
-	 *          java -classpath "$JAR" plugins.Freetalk.Version
+	 *          java -classpath "${JAR}:freenet.jar" plugins.Freetalk.Version
 	 *      done */
 	public static void main(String[] args) {
 		out.println("Marketing version: " + getMarketingVersion());
