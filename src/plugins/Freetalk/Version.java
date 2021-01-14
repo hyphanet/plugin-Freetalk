@@ -16,7 +16,7 @@ import freenet.support.io.Closer;
 
 public final class Version {
 
-	/** This is replaced by the Ant/Gradle build scripts during compilation.
+	/** This is replaced by the Ant/Gradle build scripts during compilation.  
 	 *  It thus must be private and only accessible through a getter function to ensure
 	 *  its pre-replacement default value does not get inlined into the code of other classes!
 	 *  
@@ -28,7 +28,7 @@ public final class Version {
 	@Deprecated
 	private static final String gitRevision = "@custom@";
 
-	/** The {@link FredPluginRealVersioned#getRealVersion()} aka build number.
+	/** The {@link FredPluginRealVersioned#getRealVersion()} aka build number.  
 	 *  NOTICE: This is used by fred's auto-update code to distinguish different versions, so it
 	 *  MUST be incremented on **every** release.
 	 *  
@@ -36,7 +36,7 @@ public final class Version {
 	private static final long version = 13;
 
 	/** The version which we tell the user for advertising purposes, e.g. by incrementing the major
-	 *  version on important new features.
+	 *  version on important new features.  
 	 *  In opposite to {@link #version} this does not have to be changed on every release.
 	 *  
 	 *  @see FredPluginVersioned
@@ -94,7 +94,7 @@ public final class Version {
 		return loadedRevision;
 	}
 
-	/** Returns a less raw way of describing the Freetalk version:
+	/** Returns a less raw way of describing the Freetalk version:  
 	 *  The sequential "build number", i.e. the number of the last Freetalk testing or stable
 	 *  release which this codebase is equal to or greater than (= includes additional commits).
 	 *  
@@ -106,7 +106,7 @@ public final class Version {
 		return version;
 	}
 
-	/** Returns the least raw way of describing the Freetalk version:
+	/** Returns the least raw way of describing the Freetalk version:  
 	 *  A hand-picked "marketing" version name such as "1.2.3", which is freely chosen and
 	 *  increased (or kept as is) to represent development progress.  
 	 *  It is concatenated with {@link #getGitRevision()}.
@@ -122,7 +122,7 @@ public final class Version {
 	}
 
 	/** Can be used to obtain the version if Freetalk is broken and won't load via Freenet's plugins
-	 *  page.
+	 *  page.  
 	 *  On Linux run it via:
 	 *      cd /path/of/Freenet
 	 *      for JAR in plugins/Freetalk.jar* ; do
