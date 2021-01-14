@@ -14,6 +14,19 @@ import freenet.pluginmanager.FredPluginVersioned;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
 
+/** Provides this Freetalk binary's version numbers in three different levels of rawness:
+ *  - {@link #getGitRevision()}
+ *  - {@link #getRealVersion()}
+ *  - {@link #getMarketingVersion()}
+ *  
+ *  Is used by class {@link Freetalk} to implement fred's interfaces for plugins to specify their
+ *  version, for purposes of the auto-update mechanism and "Plugins" page on the web interface:
+ *  - {@link FredPluginRealVersioned}
+ *  - {@link FredPluginVersioned}
+ *  
+ *  NOTICE: The member variable {@link #version} must be manually incremented before every release
+ *  to the auto-update mechanism of fred!  
+ *  The member variable {@link #marketingVersion} may be, but need not be, manually incremented. */
 public final class Version {
 
 	/** This is replaced by the Ant/Gradle build scripts during compilation.  
