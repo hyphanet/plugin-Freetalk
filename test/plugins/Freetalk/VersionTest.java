@@ -8,7 +8,8 @@ import org.junit.Test;
 public final class VersionTest {
 
 	@Test public void testGetGitRevision() {
-		fail("FIXME: Implement");
+		assertNotEquals("@" + "custom" + "@", Version.getGitRevision());
+		assertNotEquals("ERROR-while-loading-git-revision", Version.getGitRevision());
 	}
 
 }
