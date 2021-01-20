@@ -14,7 +14,7 @@ public final class VersionTest {
 		
 		// The new Gradle builder instead must put the revision into the file "Version.properties".
 		// If getGitRevision() can't load the file it'll return "ERROR-while-loading-git-revision".
-		assertNotEquals("ERROR-while-loading-git-revision", Version.getGitRevision());
+		assertFalse(Version.getGitRevision().toUpperCase().contains("ERROR"));
 	}
 
 }
