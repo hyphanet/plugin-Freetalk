@@ -32,11 +32,17 @@ compileJava {
 
 def generatedResources = "$buildDir/generated-resources/main"
 sourceSets.main.output.dir(generatedResources, builtBy: 'prepareVersionFile')
-task prepareVersionFile(type: Copy) {
+task prepareVersionFile {
+	def packageOfClassVersion = "$generatedResources/plugins/Freetalk"
+	outputs.dir packageOfClassVersion
 	outputs.upToDateWhen { false }
-	from sourceSets.main.java.srcDirs ; into "${buildDir}/custom/versionFileJava/"
-	include 'plugins/Freetalk/Version.java' ; filter {
-		it.replaceAll("@custom@", "git describe --always --abbrev=4 --dirty".execute().text.trim())
+	
+	doLast {
+		// TODO: Bug: The file should be encoded in ISO 8859-1 according to Properties.load()'s
+		// requirements, see plugins.Freetalk.Version.getGitRevision() which uses it upon the file.
+		new File(packageOfClassVersion, "Version.properties").text =
+			"git.revision=" +
+			"git describe --always --abbrev=4 --dirty".execute().text.trim()
 	}
 }
 
