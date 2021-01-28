@@ -62,6 +62,7 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: classes /* <- incl. prep
 	// "jar" task to be emptied with those versions. It will instead default to include the whole of
 	// sourceSets.main.output.classesDirs which causes the below
 	// "from sourceSets.main.output.classesDirs" to duplicate it.
+	// "$generatedResources/" is also included by default.
 	// That in turn will cause Gradle to complain about duplicate inputs for the task.
 	// The branch which added this FIXME contains quite a lot of investigation into the issue.
 	// From that I can say that IMHO the only clean, simple fix is to get rid of the whole mechanism
@@ -76,10 +77,11 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: classes /* <- incl. prep
 	// https://docs.gradle.org/current/dsl/org.gradle.api.tasks.SourceSetOutput.html
 	// Once you've developed this don't forget to remove the hardcoding of the Gradle version to
 	// 4.10.3 in file ".travis.yml", it is marked with a FIXME.
-	// EDIT: Prefixed the below line with "if(jarType == 'testJar')" to see if this fixes the
+	// EDIT: Prefixed the below lines with "if(jarType == 'testJar')" to see if this fixes the
 	// issue on Travis CI.
 	if(jarType == 'testJar') from sourceSets.main.output.classesDirs
-	from "$generatedResources/"
+	if(jarType == 'testJar') from "$generatedResources/"
+	
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/l10n/*.l10n' }
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/ui/web/css/*.css' }
 	from zipTree('db4o-7.4/db4o.jar')
