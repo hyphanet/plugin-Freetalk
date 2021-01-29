@@ -48,7 +48,7 @@ task prepareVersionFile {
 
 tasks.create("testJar", Jar) // TODO: Performance: Use register() once my Gradle is more recent.
 ["jar", "testJar"].each { jarType ->
-task("$jarType", type: Jar, overwrite: true, dependsOn: classes /* <- incl. prepareVersionFile */) {
+task("$jarType", type: Jar, overwrite: false, dependsOn: classes /* <- incl. prepareVersionFile */) {
 	if(jarType == 'testJar') dependsOn testClasses
 	preserveFileTimestamps = false
 	reproducibleFileOrder = true
@@ -79,6 +79,9 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: classes /* <- incl. prep
 	// 4.10.3 in file ".travis.yml", it is marked with a FIXME.
 	// EDIT: Prefixed the below lines with "if(jarType == 'testJar')" to see if this fixes the
 	// issue on Travis CI.
+	// EDIT: The above EDIT has fixed the issue. But it does mean that we now rely upon the
+	// fact that the "jar" task by default includes the below stuff. So I've changed the
+	// "overwrite: true" to false in the the task definition.
 	if(jarType == 'testJar') from sourceSets.main.output.classesDirs
 	if(jarType == 'testJar') from "$generatedResources/"
 	
