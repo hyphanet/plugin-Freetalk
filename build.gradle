@@ -48,10 +48,11 @@ task prepareVersionFile {
 
 tasks.create("testJar", Jar) // TODO: Performance: Use register() once my Gradle is more recent.
 ["jar", "testJar"].each { jarType -> tasks.getByName("$jarType") {
-	overwrite false
+	// Set implicitly by the above usage of tasks.getByName()
+	/* overwrite false */
 	dependsOn classes /* <- incl. prepareVersionFile */
-
 	if(jarType == 'testJar') dependsOn testClasses
+	
 	preserveFileTimestamps = false
 	reproducibleFileOrder = true
 	duplicatesStrategy = "fail"
