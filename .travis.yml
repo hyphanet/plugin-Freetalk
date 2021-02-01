@@ -83,6 +83,7 @@ script:
   - rm -f ./gradlew
   - |
     if [ "$(tr -cd '[:digit:]' <<< "$TRAVIS_JDK_VERSION")" -lt 13 ] ; then # Java versions < 13
+      # Latest Gradle version as of 2021-01-22.
       gradle wrapper --gradle-version 6.8.1
     else
       # As of 2020-08-06 "gradle wrapper" fails on Java 13 and above so use the one of fred instead
