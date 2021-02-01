@@ -79,10 +79,11 @@ script:
   # The below "tools/compare-gradle-jars-with-ant-jars" will obey this.
   # EDIT: Changed the Gradle version below to 5.0 in preparation of changing this branch to fix the
   # issue and thus having Travis CI test the fix.
+  # EDIT: The issue is fixed for Gradle 5.0. Now trying the latest version, v6.8.1
   - rm -f ./gradlew
   - |
     if [ "$(tr -cd '[:digit:]' <<< "$TRAVIS_JDK_VERSION")" -lt 13 ] ; then # Java versions < 13
-      gradle wrapper --gradle-version 5.0
+      gradle wrapper --gradle-version 6.8.1
     else
       # As of 2020-08-06 "gradle wrapper" fails on Java 13 and above so use the one of fred instead
       # as a workaround.
