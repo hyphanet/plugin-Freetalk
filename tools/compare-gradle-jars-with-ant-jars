@@ -8,6 +8,7 @@ tmpdir="$(mktemp --directory)"
 trap 'rm -rf -- "$tmpdir"' EXIT
 
 if [ -e "./gradlew" ] ; then
+	# The Travis CI script expects us to use ./gradlew to test compatibility.
 	echo "Found ./gradlew, using it instead of system's Gradle."
 	shopt -s expand_aliases
 	unalias -a
