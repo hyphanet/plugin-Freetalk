@@ -16,11 +16,11 @@ public final class VersionTest {
 		// Test for accidental replacement beyond "Version.java":
 		assertEquals("@" + "custom" + "@", "@custom@");
 		// Test if the placeholder is actually replaced in the variable behind getGitRevision():
-		assertNotEquals("@custom@", Version.getGitRevision());
+		assertNotEquals("@custom@", gitRevision);
 		
 		// The new Gradle builder instead must put the revision into the file "Version.properties".
 		// If getGitRevision() can't load the file it'll return "ERROR-while-loading-git-revision".
-		assertFalse(Version.getGitRevision().toUpperCase().contains("ERROR"));
+		assertFalse(gitRevision.toUpperCase().contains("ERROR"));
 	}
 
 }
