@@ -10,7 +10,7 @@ public final class VersionTest {
 	@Test public void testGetGitRevision() {
 		String gitRevision = Version.getGitRevision();
 		
-		assertTrue(gitRevision.length() > 0);
+		assertTrue(gitRevision.trim().length() > 0);
 		
 		// The legacy Ant builder ought to replace "@custom@" in "Version.java" with the revision.
 		// Test for accidental replacement beyond "Version.java":
