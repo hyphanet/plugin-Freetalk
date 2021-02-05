@@ -23,4 +23,10 @@ public final class VersionTest {
 		assertFalse(gitRevision.toUpperCase().contains("ERROR"));
 	}
 
+	@Test public void testGetRealVersion() {
+		long realVersion = Version.getRealVersion();
+		assertTrue(realVersion >   0);
+		assertTrue(realVersion >= 13); // Latest release as of 2021-02-06.
+	}
+
 }
