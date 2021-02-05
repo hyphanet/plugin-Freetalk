@@ -29,4 +29,11 @@ public final class VersionTest {
 		assertTrue(realVersion >= 13); // Latest release as of 2021-02-06.
 	}
 
+	@Test public void testGetMarketingVersion() {
+		String marketingVersion = Version.getMarketingVersion();
+		String expectedSuffix = " " + Version.getGitRevision();
+		assertTrue(marketingVersion.endsWith(expectedSuffix));
+		assertTrue(marketingVersion.length() > expectedSuffix.length());
+	}
+
 }
