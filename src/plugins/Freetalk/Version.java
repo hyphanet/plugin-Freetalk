@@ -87,7 +87,7 @@ public final class Version {
 			if(s == null) 
 				throw new IOException("Version.properties not found or not accessible!");
 			
-			Properties p = new Properties(1);
+			Properties p = new Properties();
 			p.load(s);
 			
 			String value = p.getProperty("git.revision");
