@@ -43,9 +43,13 @@ rm --force -- "$from_ant"/**/package-info.class
 rm --force -- "$from_ant"/**/Version.java
 
 echo "Deleting file which only Gradle bundles: Version.properties ..."
+# First test if it exists though so we detect failure to include it.
+[ -f "$from_gradle"/plugins/Freetalk/Version.properties ]
 rm --force -- "$from_gradle"/plugins/Freetalk/Version.properties
 
 echo "Deleting file which will intentionally differ among Ant and Gradle: Version.class ..."
+[ -f    "$from_ant"/plugins/Freetalk/Version.class ]
+[ -f "$from_gradle"/plugins/Freetalk/Version.class ]
 rm --force -- "$from_ant"/plugins/Freetalk/Version.class \
            "$from_gradle"/plugins/Freetalk/Version.class
 
