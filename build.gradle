@@ -30,23 +30,29 @@ compileJava {
 	dependsOn 'compileDb4o'
 }
 
-task prepareVersionFile(type: Copy) {
+def generatedResources = "$buildDir/generated-resources/main"
+sourceSets.main.output.dir(generatedResources, builtBy: 'prepareVersionFile')
+task prepareVersionFile {
+	def packageOfClassVersion = "$generatedResources/plugins/Freetalk"
+	outputs.dir packageOfClassVersion
 	outputs.upToDateWhen { false }
-	from sourceSets.main.java.srcDirs ; into "${buildDir}/custom/versionFileJava/"
-	include 'plugins/Freetalk/Version.java' ; filter {
-		it.replaceAll("@custom@", "git describe --always --abbrev=4 --dirty".execute().text.trim())
+	
+	doLast {
+		// TODO: Bug: The file should be encoded in ISO 8859-1 according to Properties.load()'s
+		// requirements, see plugins.Freetalk.Version.getGitRevision() which uses it upon the file.
+		new File(packageOfClassVersion, "Version.properties").text =
+			"git.revision=" +
+			"git describe --always --abbrev=4 --dirty".execute().text.trim()
 	}
 }
 
-task compileVersionFile(type: JavaCompile, dependsOn: ['compileJava', 'prepareVersionFile']) {
-	classpath = sourceSets.main.compileClasspath
-	source = prepareVersionFile.destinationDir
-	destinationDir = file("${buildDir}/custom/versionFileClass/")
-}
-
 tasks.create("testJar", Jar) // TODO: Performance: Use register() once my Gradle is more recent.
-["jar", "testJar"].each { jarType ->
-task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractCompile)) {
+["jar", "testJar"].each { jarType -> tasks.getByName("$jarType") {
+	// Set implicitly by the above usage of tasks.getByName()
+	/* overwrite false */
+	dependsOn classes /* <- incl. prepareVersionFile */
+	if(jarType == 'testJar') dependsOn testClasses
+	
 	preserveFileTimestamps = false
 	reproducibleFileOrder = true
 	duplicatesStrategy = "fail"
@@ -58,7 +64,8 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	// For some reason the above "task(... overwrite: true ...)" does NOT cause the input of the
 	// "jar" task to be emptied with those versions. It will instead default to include the whole of
 	// sourceSets.main.output.classesDirs which causes the below
-	// from(sourceSets.main.output.classesDirs) to duplicate it.
+	// "from sourceSets.main.output.classesDirs" to duplicate it.
+	// "$generatedResources/" is also included by default.
 	// That in turn will cause Gradle to complain about duplicate inputs for the task.
 	// The branch which added this FIXME contains quite a lot of investigation into the issue.
 	// From that I can say that IMHO the only clean, simple fix is to get rid of the whole mechanism
@@ -73,8 +80,14 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	// https://docs.gradle.org/current/dsl/org.gradle.api.tasks.SourceSetOutput.html
 	// Once you've developed this don't forget to remove the hardcoding of the Gradle version to
 	// 4.10.3 in file ".travis.yml", it is marked with a FIXME.
-	from(sourceSets.main.output.classesDirs) { exclude 'plugins/Freetalk/Version.class' }
-	from(compileVersionFile.destinationDir) { include 'plugins/Freetalk/Version.class' }
+	// EDIT: Prefixed the below lines with "if(jarType == 'testJar')" to see if this fixes the
+	// issue on Travis CI.
+	// EDIT: The above EDIT has fixed the issue. But it does mean that we now rely upon the
+	// fact that the "jar" task by default includes the below stuff. So I've changed the
+	// "overwrite: true" to false in the the task definition.
+	if(jarType == 'testJar') from sourceSets.main.output.classesDirs
+	if(jarType == 'testJar') from "$generatedResources/"
+	
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/l10n/*.l10n' }
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/ui/web/css/*.css' }
 	from zipTree('db4o-7.4/db4o.jar')

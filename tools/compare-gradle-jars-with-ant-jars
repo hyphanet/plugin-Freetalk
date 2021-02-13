@@ -8,6 +8,7 @@ tmpdir="$(mktemp --directory)"
 trap 'rm -rf -- "$tmpdir"' EXIT
 
 if [ -e "./gradlew" ] ; then
+	# The Travis CI script expects us to use ./gradlew to test compatibility.
 	echo "Found ./gradlew, using it instead of system's Gradle."
 	shopt -s expand_aliases
 	unalias -a
@@ -40,6 +41,17 @@ shopt -s nullglob
 rm --force -- "$from_ant"/**/package-info.class
 # Ant for some reason not only includes Version.class but also .java, it shouldn't, so ignore it.
 rm --force -- "$from_ant"/**/Version.java
+
+echo "Deleting file which only Gradle bundles: Version.properties ..."
+# First test if it exists though so we detect failure to include it.
+[ -f "$from_gradle"/plugins/Freetalk/Version.properties ]
+rm --force -- "$from_gradle"/plugins/Freetalk/Version.properties
+
+echo "Deleting file which will intentionally differ among Ant and Gradle: Version.class ..."
+[ -f    "$from_ant"/plugins/Freetalk/Version.class ]
+[ -f "$from_gradle"/plugins/Freetalk/Version.class ]
+rm --force -- "$from_ant"/plugins/Freetalk/Version.class \
+           "$from_gradle"/plugins/Freetalk/Version.class
 
 echo "Removing Ant-only stuff from MANIFEST.MF..."
 sed --regexp-extended --expression='/^Ant(.*)$/d' \
