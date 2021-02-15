@@ -40,7 +40,7 @@ shopt -s nullglob
 # excludes them, so ignore them.
 rm --force -- "$from_ant"/**/package-info.class
 # Ant for some reason not only includes Version.class but also .java, it shouldn't, so ignore it.
-rm --force -- "$from_ant"/**/Version.java
+rm --force -- "$from_ant"/plugins/Freetalk/Version.java
 
 echo "Deleting file which only Gradle bundles: Version.properties ..."
 # First test if it exists though so we detect failure to include it.
