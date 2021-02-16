@@ -27,7 +27,7 @@ task compileDb4o(type: Exec) {
 }
 
 compileJava {
-	dependsOn 'compileDb4o'
+	dependsOn compileDb4o
 }
 
 def generatedResources = "$buildDir/generated-resources/main"
@@ -95,7 +95,7 @@ tasks.create("testJar", Jar) // TODO: Performance: Use register() once my Gradle
 }}
 
 test {
-	dependsOn 'testJar'
+	dependsOn testJar
 	
 	// Reset classpath to only use the JAR, not the class files, because some tests may need a JAR
 	// to load into a Freenet node, and given the JAR is needed we shouldn't duplicate its classes.
