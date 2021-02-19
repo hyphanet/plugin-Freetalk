@@ -49,8 +49,14 @@ task prepareVersionFile {
 tasks.create("testJar", Jar) // TODO: Performance: Use register() once my Gradle is more recent.
 ["jar", "testJar"].each { jarType -> tasks.getByName("$jarType") {
 	// Set implicitly by the above usage of tasks.getByName()
+	// Also notice that we mustn't use overwrite = true because with Gradle versions starting with
+	// 5.0 it does not work properly - the "jar" task would retain its original contents just as it
+	// does now with it being false, so we must always assume it is false to avoid duplicating the
+	// includes.
 	/* overwrite false */
-	dependsOn classes /* <- incl. prepareVersionFile */
+	
+	// Includes task prepareVersionFile. Its output is also automatically included.
+	dependsOn classes
 	if(jarType == 'testJar') dependsOn testClasses
 	
 	preserveFileTimestamps = false
@@ -60,31 +66,6 @@ tasks.create("testJar", Jar) // TODO: Performance: Use register() once my Gradle
 	destinationDir = new File(projectDir, (jarType == 'testJar') ? "build-test" : "dist")
 	manifest { attributes("Plugin-Main-Class": "plugins.Freetalk.Freetalk") }
 	
-	// FIXME: Gradle versions starting with 5.0 will not work with the below code:
-	// For some reason the above "task(... overwrite: true ...)" does NOT cause the input of the
-	// "jar" task to be emptied with those versions. It will instead default to include the whole of
-	// sourceSets.main.output.classesDirs which causes the below
-	// "from sourceSets.main.output.classesDirs" to duplicate it.
-	// "$generatedResources/" is also included by default.
-	// That in turn will cause Gradle to complain about duplicate inputs for the task.
-	// The branch which added this FIXME contains quite a lot of investigation into the issue.
-	// From that I can say that IMHO the only clean, simple fix is to get rid of the whole mechanism
-	// of recompiling Version.class to include the Git revision. This will allow us to remove the
-	// below from() (except if the "jarType" is "testJar").
-	// The Version.class mechanism should be replaced with putting the revision into a *.properties
-	// file which class Version loads and parses. That file shall then be a "generated resource" in
-	// terms of Gradle.
-	// Generating "resources" dynamically during compilation is a thing which Gradle does support
-	// officially - unlike patching of source files such as Version.java which we do currently.
-	// E.g. see "Working with generated resources" at
-	// https://docs.gradle.org/current/dsl/org.gradle.api.tasks.SourceSetOutput.html
-	// Once you've developed this don't forget to remove the hardcoding of the Gradle version to
-	// 4.10.3 in file ".travis.yml", it is marked with a FIXME.
-	// EDIT: Prefixed the below lines with "if(jarType == 'testJar')" to see if this fixes the
-	// issue on Travis CI.
-	// EDIT: The above EDIT has fixed the issue. But it does mean that we now rely upon the
-	// fact that the "jar" task by default includes the below stuff. So I've changed the
-	// "overwrite: true" to false in the the task definition.
 	if(jarType == 'testJar') from sourceSets.main.output.classesDirs
 	if(jarType == 'testJar') from "$generatedResources/"
 	
