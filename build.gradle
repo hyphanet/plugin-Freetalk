@@ -56,7 +56,6 @@ tasks.create("testJar", Jar) // TODO: Performance: Use register() once my Gradle
 	/* overwrite false */
 	
 	// The task "classes" depends on everything which we need, including prepareVersionFile.
-	// The prepareVersionFile output is also automatically included in our input.
 	dependsOn classes
 	if(jarType == 'testJar') dependsOn testClasses
 	
@@ -70,6 +69,7 @@ tasks.create("testJar", Jar) // TODO: Performance: Use register() once my Gradle
 	if(jarType == 'testJar') from sourceSets.main.output.classesDirs
 	if(jarType == 'testJar') from "$generatedResources/"
 	
+	// The prepareVersionFile output is automatically included in our input.
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/l10n/*.l10n' }
 	from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/ui/web/css/*.css' }
 	from zipTree('db4o-7.4/db4o.jar')
