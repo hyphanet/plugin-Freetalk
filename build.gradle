@@ -52,10 +52,11 @@ tasks.create("testJar", Jar) // TODO: Performance: Use register() once my Gradle
 	// Also notice that we mustn't use overwrite = true because with Gradle versions starting with
 	// 5.0 it does not work properly - the "jar" task would retain its original contents just as it
 	// does now with it being false, so we must always assume it is false to avoid duplicating the
-	// includes.
+	// from() inputs.
 	/* overwrite false */
 	
-	// Includes task prepareVersionFile. Its output is also automatically included.
+	// Classes depends on everything which we need, including prepareVersionFile.
+	// The prepareVersionFile output is also automatically included in our input.
 	dependsOn classes
 	if(jarType == 'testJar') dependsOn testClasses
 	
