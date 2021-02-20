@@ -55,7 +55,7 @@ tasks.create("testJar", Jar) // TODO: Performance: Use register() once my Gradle
 	// from() inputs.
 	/* overwrite false */
 	
-	// Classes depends on everything which we need, including prepareVersionFile.
+	// The task "classes" depends on everything which we need, including prepareVersionFile.
 	// The prepareVersionFile output is also automatically included in our input.
 	dependsOn classes
 	if(jarType == 'testJar') dependsOn testClasses
