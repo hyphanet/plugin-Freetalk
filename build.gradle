@@ -71,6 +71,8 @@ tasks.create("testJar", Jar) // TODO: Performance: Use register() once my Gradle
 		// For the "jar" task there is no need to include the actual classes via from(), it is a
 		// builtin of Gradle and thus populated by it (including the output of prepareVersionFile).
 		// We merely have to add stuff which Gradle doesn't detect:
+		// EDIT: TODO: Code quality: Use "sourceSets.main.resources {}" instead. See:
+		// https://stackoverflow.com/questions/24724383/add-resources-config-files-to-your-jar-using-gradle
 		from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/l10n/*.l10n' }
 		from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/ui/web/css/*.css' }
 		from zipTree('db4o-7.4/db4o.jar')
