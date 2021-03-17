@@ -44,7 +44,7 @@ task prepareVersionFile {
 			"git.revision=" +
 			"git describe --always --abbrev=4 --dirty".execute().text.trim()
 		
-		// FIXME: Debug code for the git command not yielding the desired output when Gradle is run
+		// FIXME: Debug code for the git command yielding empty output when Gradle is run
 		// from Eclipse. Remove once this is fixed.
 		print "Git stderr: " + "git describe --always --abbrev=4 --dirty".execute().stderr.getText()
 	}
