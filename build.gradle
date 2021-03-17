@@ -43,6 +43,10 @@ task prepareVersionFile {
 		new File(packageOfClassVersion, "Version.properties").text =
 			"git.revision=" +
 			"git describe --always --abbrev=4 --dirty".execute().text.trim()
+		
+		// FIXME: Debug code for the git command not yielding the desired output when Gradle is run
+		// from Eclipse. Remove once this is fixed.
+		print "Git stderr: " + "git describe --always --abbrev=4 --dirty".execute().stderr.getText()
 	}
 }
 
