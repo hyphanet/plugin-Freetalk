@@ -47,6 +47,10 @@ task prepareVersionFile {
 		// FIXME: Debug code for the git command yielding empty output when Gradle is run
 		// from Eclipse. Remove once this is fixed.
 		print "Git stderr: " + "git describe --always --abbrev=4 --dirty".execute().stderr.getText()
+		// The above says:
+		//     Git stderr: fatal: not a git repository (or any of the parent directories): .git
+		// Thus we're likely in the wrong working directory, so let's check that:
+		println "prepareVersionFile working dir: " + new File(".").absolutePath
 	}
 }
 
