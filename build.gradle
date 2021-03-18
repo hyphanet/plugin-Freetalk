@@ -51,6 +51,11 @@ task prepareVersionFile {
 		//     Git stderr: fatal: not a git repository (or any of the parent directories): .git
 		// Thus we're likely in the wrong working directory, so let's check that:
 		println "prepareVersionFile working dir: " + new File(".").absolutePath
+		// The above says:
+		//     prepareVersionFile working dir: MY_HOMEDIR/.gradle/daemon/4.10.3/.
+		// So Eclipse's Gradle runner indeed does set the wrong working dir with execute() - even
+		// though I have configured the "Run configuration" of Eclipse to use the proper working
+		// dir!
 	}
 }
 
