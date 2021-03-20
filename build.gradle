@@ -56,6 +56,8 @@ task prepareVersionFile {
 		// So Eclipse's Gradle runner indeed does set the wrong working dir with execute() - even
 		// though I have configured the "Run configuration" of Eclipse to use the proper working
 		// dir!
+		// FIXME: execute() is a Groovy feature, not a Gradle feature, I think.
+		// Try if Gradle's "Exec" task type fixes the issue.
 	}
 }
 
