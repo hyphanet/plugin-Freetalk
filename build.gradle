@@ -30,6 +30,12 @@ compileJava {
 	dependsOn compileDb4o
 }
 
+task getGitRevision(type: Exec) {
+	commandLine "git", "describe", "--always", "--abbrev=4", "--dirty"
+	standardOutput = new ByteArrayOutputStream()
+	ext.output = { return standardOutput.toString() }
+}
+
 def generatedResources = "$buildDir/generated-resources/main"
 sourceSets.main.output.dir(generatedResources, builtBy: 'prepareVersionFile')
 task prepareVersionFile {
