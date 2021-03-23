@@ -38,7 +38,7 @@ task getGitRevision(type: Exec) {
 
 def generatedResources = "$buildDir/generated-resources/main"
 sourceSets.main.output.dir(generatedResources, builtBy: 'prepareVersionFile')
-task prepareVersionFile {
+task prepareVersionFile(dependsOn: getGitRevision) {
 	def packageOfClassVersion = "$generatedResources/plugins/Freetalk"
 	outputs.dir packageOfClassVersion
 	outputs.upToDateWhen { false }
@@ -47,8 +47,7 @@ task prepareVersionFile {
 		// TODO: Bug: The file should be encoded in ISO 8859-1 according to Properties.load()'s
 		// requirements, see plugins.Freetalk.Version.getGitRevision() which uses it upon the file.
 		new File(packageOfClassVersion, "Version.properties").text =
-			"git.revision=" +
-			"git describe --always --abbrev=4 --dirty".execute().text.trim()
+			"git.revision=" + getGitRevision.output().trim()
 		
 		// FIXME: Debug code for the git command yielding empty output when Gradle is run
 		// from Eclipse. Remove once this is fixed.
