@@ -33,7 +33,7 @@ compileJava {
 task getGitRevision(type: Exec) {
 	commandLine "git", "describe", "--always", "--abbrev=4", "--dirty"
 	standardOutput = new ByteArrayOutputStream()
-	ext.output = { return standardOutput.toString() }
+	ext.output = { return standardOutput.toString().trim() }
 }
 
 def generatedResources = "$buildDir/generated-resources/main"
@@ -47,7 +47,7 @@ task prepareVersionFile(dependsOn: getGitRevision) {
 		// TODO: Bug: The file should be encoded in ISO 8859-1 according to Properties.load()'s
 		// requirements, see plugins.Freetalk.Version.getGitRevision() which uses it upon the file.
 		new File(packageOfClassVersion, "Version.properties").text =
-			"git.revision=" + getGitRevision.output().trim()
+			"git.revision=" + getGitRevision.output()
 		
 		// FIXME: Debug code for the git command yielding empty output when Gradle is run
 		// from Eclipse. Remove once this is fixed.
