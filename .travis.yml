@@ -77,8 +77,8 @@ script:
   - rm -f ./gradlew
   - |
     if [ "$(tr -cd '[:digit:]' <<< "$TRAVIS_JDK_VERSION")" -lt 13 ] ; then # Java versions < 13
-      # Latest Gradle version as of 2021-01-22.
-      gradle wrapper --gradle-version 6.8.1
+      # Latest Gradle version as of 2021-02-05.
+      gradle wrapper --gradle-version 6.8.2
     else
       # As of 2020-08-06 "gradle wrapper" fails on Java 13 and above so use the one of fred instead
       # as a workaround.
@@ -88,9 +88,8 @@ script:
   - ./gradlew --version
   # To test the Ant and Gradle builders against each other uncomment the following.
   # (The scripts will use the ./gradlew we've installed so we can ensure the latest Gradle works.)
-  # FIXME: Enabled to test the currently in development Gradle changes. Disable afterwards.
-  - tools/compare-gradle-jars-with-ant-jars
-  - tools/compare-gradle-tests-with-ant-tests
+  ## - tools/compare-gradle-jars-with-ant-jars
+  ## - tools/compare-gradle-tests-with-ant-tests
   # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
   # reproduce failed test runs. Also prevents the 10 minute build timeout.
   - FREETALK__SHOW_GRADLE_TEST_OUTPUT=1 ./gradlew clean test jar
