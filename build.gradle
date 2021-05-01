@@ -101,6 +101,17 @@ test {
 	
 	// TODO: Enable once my distribution ships a more recent Gradle which supports this.
 	// failFast = true
+	
+	// Workaround for db4o breaking, and thus unit tests failing, with Java >= 16:
+	// Java 16 disallows using reflection to look into JRE's core classes. But db4o needs that to
+	// fulfill its purpose of being a database which can store Java classes without adding any
+	// code to them. Thus we allow it by a command line option.
+	//
+	// We run this on Java 9 and above, not just 16 and above, to support old Gradle versions which
+	// won't be able to detect Java 16 as such. 9 is the minimum needed to support '--add-opens'.
+	if(JavaVersion.current().getMajorVersion().toInteger() >= 9)
+		jvmArgs '--add-opens', 'java.base/java.lang=ALL-UNNAMED'
+	
 	maxHeapSize = "512m"
 	maxParallelForks = Runtime.runtime.availableProcessors()
 	forkEvery = 1 // One VM per test, for safety and probably needed for maxParallelForks to work
