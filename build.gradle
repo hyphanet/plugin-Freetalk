@@ -30,9 +30,15 @@ compileJava {
 	dependsOn compileDb4o
 }
 
+task getGitRevision(type: Exec) {
+	commandLine "git", "describe", "--always", "--abbrev=4", "--dirty"
+	standardOutput = new ByteArrayOutputStream()
+	ext.output = { return standardOutput.toString().trim() }
+}
+
 def generatedResources = "$buildDir/generated-resources/main"
 sourceSets.main.output.dir(generatedResources, builtBy: 'prepareVersionFile')
-task prepareVersionFile {
+task prepareVersionFile(dependsOn: getGitRevision) {
 	def packageOfClassVersion = "$generatedResources/plugins/Freetalk"
 	outputs.dir packageOfClassVersion
 	outputs.upToDateWhen { false }
@@ -41,8 +47,7 @@ task prepareVersionFile {
 		// TODO: Bug: The file should be encoded in ISO 8859-1 according to Properties.load()'s
 		// requirements, see plugins.Freetalk.Version.getGitRevision() which uses it upon the file.
 		new File(packageOfClassVersion, "Version.properties").text =
-			"git.revision=" +
-			"git describe --always --abbrev=4 --dirty".execute().text.trim()
+			"git.revision=" + getGitRevision.output()
 	}
 }
 
@@ -71,6 +76,8 @@ tasks.create("testJar", Jar) // TODO: Performance: Use register() once my Gradle
 		// For the "jar" task there is no need to include the actual classes via from(), it is a
 		// builtin of Gradle and thus populated by it (including the output of prepareVersionFile).
 		// We merely have to add stuff which Gradle doesn't detect:
+		// EDIT: TODO: Code quality: Use "sourceSets.main.resources {}" instead. See:
+		// https://stackoverflow.com/questions/24724383/add-resources-config-files-to-your-jar-using-gradle
 		from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/l10n/*.l10n' }
 		from(sourceSets.main.java.srcDirs) { include 'plugins/Freetalk/ui/web/css/*.css' }
 		from zipTree('db4o-7.4/db4o.jar')
