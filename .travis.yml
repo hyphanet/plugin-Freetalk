@@ -83,7 +83,10 @@ script:
       # As of 2020-08-06 "gradle wrapper" fails on Java 13 and above so use the one of fred instead
       # as a workaround.
       # TODO: Code quality: Remove this workaround once the issue is fixed.
-      ln -s "$TRAVIS_BUILD_DIR"/../fred/gradlew ./gradlew
+      ## ln -s "$TRAVIS_BUILD_DIR"/../fred/gradlew ./gradlew
+      # EDIT: We can use "gradlew wrapper" instead.
+      # FIXME: See if it works and if yes trim the above comments.
+      "$TRAVIS_BUILD_DIR"/../fred/gradlew wrapper --gradle-version 6.8.2
     fi
   - ./gradlew --version
   # To test the Ant and Gradle builders against each other uncomment the following.
