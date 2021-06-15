@@ -77,13 +77,13 @@ script:
   - rm -f ./gradlew
   - |
     if [ "$(tr -cd '[:digit:]' <<< "$TRAVIS_JDK_VERSION")" -lt 13 ] ; then # Java versions < 13
-      # Latest Gradle version as of 2021-02-05.
-      gradle wrapper --gradle-version 6.8.2
+      # Latest Gradle version as of 2021-06-14.
+      gradle wrapper --gradle-version 7.1
     else
       # As of 2020-08-06, Travis' gradle binary fails to run the "wrapper" command on Java 13 and
       # above so we instead use the wrapper of fred to download a new version of itself.
       # TODO: Code quality: Remove this workaround once the issue is fixed.
-      "$TRAVIS_BUILD_DIR"/../fred/gradlew wrapper --gradle-version 6.8.2
+      "$TRAVIS_BUILD_DIR"/../fred/gradlew wrapper --gradle-version 7.1
     fi
   - ./gradlew --version
   # To test the Ant and Gradle builders against each other uncomment the following.
