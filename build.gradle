@@ -15,7 +15,7 @@ dependencies {
 	implementation fileTree(dir: '../fred/build/output/', include: '*.jar')
 	compileOnly files('db4o-7.4/db4o.jar')
 	junit files('/usr/share/java/junit4.jar', '/usr/share/java/hamcrest-core.jar')
-	testCompile configurations.junit
+	testImplementation configurations.junit
 }
 
 task compileDb4o(type: Exec) {
