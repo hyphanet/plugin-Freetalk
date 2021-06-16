@@ -88,9 +88,8 @@ script:
   - ./gradlew --version
   # To test the Ant and Gradle builders against each other uncomment the following.
   # (The scripts will use the ./gradlew we've installed so we can ensure the latest Gradle works.)
-  # FIXME: Temporarily enabled to test the Gradle changes of this branch, disable before merging.
-  - tools/compare-gradle-jars-with-ant-jars
-  - tools/compare-gradle-tests-with-ant-tests
+  ## - tools/compare-gradle-jars-with-ant-jars
+  ## - tools/compare-gradle-tests-with-ant-tests
   # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
   # reproduce failed test runs. Also prevents the 10 minute build timeout.
   - FREETALK__SHOW_GRADLE_TEST_OUTPUT=1 ./gradlew clean test jar
