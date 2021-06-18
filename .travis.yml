@@ -80,10 +80,10 @@ script:
       # Latest Gradle version as of 2021-02-05.
       gradle wrapper --gradle-version 6.8.2
     else
-      # As of 2020-08-06 "gradle wrapper" fails on Java 13 and above so use the one of fred instead
-      # as a workaround.
+      # As of 2020-08-06, Travis' gradle binary fails to run the "wrapper" command on Java 13 and
+      # above so we instead use the wrapper of fred to download a new version of itself.
       # TODO: Code quality: Remove this workaround once the issue is fixed.
-      ln -s "$TRAVIS_BUILD_DIR"/../fred/gradlew ./gradlew
+      "$TRAVIS_BUILD_DIR"/../fred/gradlew wrapper --gradle-version 6.8.2
     fi
   - ./gradlew --version
   # To test the Ant and Gradle builders against each other uncomment the following.
