@@ -12,10 +12,10 @@ dependencies {
 	// TODO: mvn.freenetproject.org is not browseable so I don't know the proper URI for fred and
 	// its dependencies and hence am including the dependencies as flat files.
 	// Use Gradle's dependency management + gradle-witness once this has been resolved.
-	compile fileTree(dir: '../fred/build/output/', include: '*.jar')
-	compile files('db4o-7.4/db4o.jar')
+	implementation fileTree(dir: '../fred/build/output/', include: '*.jar')
+	compileOnly files('db4o-7.4/db4o.jar')
 	junit files('/usr/share/java/junit4.jar', '/usr/share/java/hamcrest-core.jar')
-	testCompile configurations.junit
+	testImplementation configurations.junit
 }
 
 task compileDb4o(type: Exec) {
