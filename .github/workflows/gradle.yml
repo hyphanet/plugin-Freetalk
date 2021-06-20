@@ -5,6 +5,7 @@
 
 # TODO: Can likely be removed, doesn't seem to change anything.
 name: CI
+# FIXME: Add cronjob
 on: [push, pull_request]
 
 language: java
