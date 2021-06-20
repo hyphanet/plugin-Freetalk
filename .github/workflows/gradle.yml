@@ -8,8 +8,6 @@ name: CI
 # FIXME: Add cronjob
 on: [push, pull_request]
 
-language: java
-
 # Ubuntu 16.04. Lastest available Linux as of 2019-05-07.
 dist: xenial
 # Disabling sudo routes the build to a Docker container instead of a VM
