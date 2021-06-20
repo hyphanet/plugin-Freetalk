@@ -5,6 +5,7 @@
 
 # TODO: Can likely be removed, doesn't seem to change anything.
 name: CI
+on: [push, pull_request]
 
 language: java
 
