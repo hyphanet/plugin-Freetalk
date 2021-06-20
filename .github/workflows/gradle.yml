@@ -3,6 +3,8 @@
 # script. So convert it to the GHA syntax and then remove this FIXME.
 # See: https://docs.github.com/en/actions/guides/building-and-testing-java-with-gradle
 
+name: CI
+
 language: java
 
 # Ubuntu 16.04. Lastest available Linux as of 2019-05-07.
