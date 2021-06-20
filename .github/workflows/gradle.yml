@@ -3,6 +3,7 @@
 # script. So convert it to the GHA syntax and then remove this FIXME.
 # See: https://docs.github.com/en/actions/guides/building-and-testing-java-with-gradle
 
+# TODO: Can likely be removed, doesn't seem to change anything.
 name: CI
 
 language: java
