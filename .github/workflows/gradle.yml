@@ -13,7 +13,16 @@ jobs:
     # FIXME: Use ubuntu-latest once we've finished converting from Travis to GHA syntax
     runs-on: ubuntu-16.04
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout Freenet git repository
+      uses: actions/checkout@v2
+      with:
+        repository: freenet/fred
+        ref: next
+        path: fred
+    - name: Checkout WoT git repository
+      uses: actions/checkout@v2
+      with:
+        path: plugin-WebOfTrust
 
 env:
   - FREENET_MINIMUM_JAVA_VERSION=8
@@ -45,21 +54,9 @@ cache:
   - $HOME/.gradle/caches/
   - $HOME/.gradle/wrapper/
 
-# Get/update Freenet Git repository
-install:
-  - cd "$TRAVIS_BUILD_DIR"/..
-  - |
-    if [ ! -e fred/.git ] ; then # Must check subdir, main one will be created by Travis cache config.
-      FRED_UPDATED=1
-      git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred
-    fi
-  - cd fred
-  - git reset --hard # Ensure accidental changes don't persist due to the Travis cache.
-  - git fetch && if [ "$(git rev-parse @)" != "$(git rev-parse @{u})" ] ; then FRED_UPDATED=1 ; git pull ; fi
-  - cd "$TRAVIS_BUILD_DIR"
-
 # Compile Freenet Git repository
 before_script: |
+  # FIXME: $FRED_UPDATED is not populated by GitHub Actions yet
   if [ "$FRED_UPDATED" = 1 ] ; then
     cd "$TRAVIS_BUILD_DIR"/../fred &&
     # TODO: freenet.jar won't contain class Version if we don't run the
