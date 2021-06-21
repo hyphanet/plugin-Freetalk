@@ -12,6 +12,8 @@ jobs:
   build:
     # FIXME: Use ubuntu-latest once we've finished converting from Travis to GHA syntax
     runs-on: ubuntu-16.04
+    steps:
+    - uses: actions/checkout@v2
 
 env:
   - FREENET_MINIMUM_JAVA_VERSION=8
