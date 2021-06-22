@@ -16,26 +16,20 @@ jobs:
     # FIXME: Use ubuntu-latest once we've finished converting from Travis to GHA syntax
     runs-on: ubuntu-16.04
     steps:
+    - name: Install apt packages
+      run: apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java
+    
     - name: Checkout Freenet git repository
       uses: actions/checkout@v2
       with:
         repository: freenet/fred
         ref: next
         path: fred
+    
     - name: Checkout WoT git repository
       uses: actions/checkout@v2
       with:
         path: main
-
-addons:
-  apt:
-    packages:
-    - ant
-    - ant-optional
-    - junit4
-    - libhamcrest-java
-    # For .travis.upload-jar-to-freenet.sh
-    - python3-pip
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
@@ -119,6 +113,9 @@ jdk:
   - oraclejdk16
 
 # FIXME: Adapt to Freetalk and enable
+# Will require adding "python3-pip" to the list of apt packages to install, see above at
+# "name: Install apt packages".
+# 
 # deploy:
 #   provider: script
 #   # Prevent Travis from deleting the JAR before we can deploy it (wtf?)
