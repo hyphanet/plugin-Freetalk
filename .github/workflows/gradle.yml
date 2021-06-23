@@ -31,21 +31,6 @@ jobs:
       with:
         path: main
 
-# FIXME: Convert the below caching code from its Travis CI syntax to the GitHub Actions syntax.
-#
-## before_cache:
-##   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-##   - rm -f  $HOME/.gradle/caches/jars-2/jars-2.lock
-##   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
-## 
-## cache:
-## apt: true
-##   directories:
-##   - $TRAVIS_BUILD_DIR/../fred/
-##   - $HOME/.m2
-##   - $HOME/.gradle/caches/
-##   - $HOME/.gradle/wrapper/
-
 # Compile Freenet Git repository
 before_script: |
   # FIXME: $FRED_UPDATED is not populated by GitHub Actions yet
@@ -113,6 +98,21 @@ jdk:
   - oraclejdk14
   - oraclejdk15
   - oraclejdk16
+
+# FIXME: Convert the below caching code from its Travis CI syntax to the GitHub Actions syntax.
+#
+## before_cache:
+##   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+##   - rm -f  $HOME/.gradle/caches/jars-2/jars-2.lock
+##   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+## 
+## cache:
+## apt: true
+##   directories:
+##   - $TRAVIS_BUILD_DIR/../fred/
+##   - $HOME/.m2
+##   - $HOME/.gradle/caches/
+##   - $HOME/.gradle/wrapper/
 
 # FIXME: Adapt to Freetalk and enable
 # Will require adding "python3-pip" to the list of apt packages to install, see above at
