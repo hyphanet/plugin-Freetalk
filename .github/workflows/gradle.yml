@@ -114,7 +114,7 @@ jdk:
 ##   - $HOME/.gradle/caches/
 ##   - $HOME/.gradle/wrapper/
 
-# FIXME: Adapt to Freetalk and enable
+# FIXME: Adapt to Freetalk and GitHub Actions (is Travis CI code currently) and enable.
 # Will require adding "python3-pip" to the list of apt packages to install, see above at
 # "name: Install apt packages".
 # 
