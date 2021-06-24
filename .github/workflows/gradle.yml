@@ -30,7 +30,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: main
-
+    
     - name: Compile Freenet Git repository
       run: |
         # FIXME: $FRED_UPDATED is not populated by GitHub Actions yet
