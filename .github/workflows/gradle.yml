@@ -9,15 +9,29 @@ name: CI
 on: [push, pull_request]
 
 env:
+  # Also adapt the "matrix" section below when changing this.
   FREENET_MINIMUM_JAVA_VERSION: 8
 
 jobs:
   build:
     # FIXME: Use ubuntu-latest once we've finished converting from Travis to GHA syntax
     runs-on: ubuntu-16.04
+    strategy:
+      matrix:
+        # 8 is $FREENET_MINIMUM_JAVA_VERSION currently.
+        java-version: [8, 9, 10, 11, 12, 13, 14, 15, 16]
+    name: Java ${{ matrix.java-version }}
+    
     steps:
     - name: Install apt packages
       run: apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java
+    
+    - name: Install Java
+      uses: actions/setup-java@v2
+      with:
+        # FIXME: Choose a distribution.
+        distribution: 'adopt'
+        java-version: ${{ matrix.java-version }}
     
     - name: Checkout Freenet git repository
       uses: actions/checkout@v2
@@ -79,28 +93,6 @@ jobs:
         # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
         # reproduce failed test runs. Also prevents the 10 minute build timeout.
         FREETALK__SHOW_GRADLE_TEST_OUTPUT=1 ./gradlew clean test jar
-
-jdk:
-  # openjdk7: Not available anymore.
-  - openjdk8
-  - openjdk9
-  - openjdk10
-  - openjdk11
-  - openjdk12
-  - openjdk13
-  - openjdk14
-  - openjdk15
-  - openjdk16
-  # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
-  # oraclejdk8: Not available anymore.
-  # oraclejdk9: No more updates by Oracle: https://www.oracle.com/technetwork/java/java-se-support-roadmap.html
-  # oraclejdk10: Not supported anymore: https://changelog.travis-ci.com/stop-a-job-early-if-a-deprecated-jdk-is-configured-76612
-  # oraclejdk11: Disabled to keep the build matrix small.
-  # oraclejdk12: Disabled to keep the build matrix small.
-  - oraclejdk13
-  - oraclejdk14
-  - oraclejdk15
-  - oraclejdk16
 
 # FIXME: Convert the below caching code from its Travis CI syntax to the GitHub Actions syntax.
 #
