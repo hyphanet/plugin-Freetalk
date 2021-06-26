@@ -72,8 +72,8 @@ jobs:
     - name: Compile and test Freetalk
       run: |
         # FIXME: Debug code, remove once the path to fred is fixed
-        printf "fred path: %s" "$GITHUB_WORKSPACE/fred"
-        printf "current dir: %s" "$(pwd)"
+        printf "fred path: %s\n" "$GITHUB_WORKSPACE/fred"
+        printf "current dir: %s\n" "$(pwd)"
         
         set -o errexit
         echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
