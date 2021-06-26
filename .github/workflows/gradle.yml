@@ -30,6 +30,7 @@ jobs:
       uses: actions/setup-java@v2
       with:
         # FIXME: Choose a distribution.
+        # FIXME: Oracle's JDK doesn't seem to be part of the available distributions, how to get it?
         distribution: 'adopt'
         java-version: ${{ matrix.java-version }}
     
