@@ -74,6 +74,8 @@ jobs:
         # FIXME: Debug code, remove once the path to fred is fixed
         printf "fred path: %s\n" "$GITHUB_WORKSPACE/fred"
         printf "current dir: %s\n" "$(pwd)"
+        echo "current dir contents:"
+        ls -al
         
         set -o errexit
         echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
