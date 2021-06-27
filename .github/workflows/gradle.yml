@@ -44,7 +44,7 @@ jobs:
         ref: next
         path: fred
     
-    - name: Checkout WoT git repository
+    - name: Checkout Freetalk git repository
       uses: actions/checkout@v2
       with:
         path: main
