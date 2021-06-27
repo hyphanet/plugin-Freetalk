@@ -76,6 +76,8 @@ jobs:
         printf "current dir: %s\n" "$(pwd)"
         echo "current dir contents:"
         ls -al
+        echo "main dir contents:"
+        ls -al ./main
         
         set -o errexit
         echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
