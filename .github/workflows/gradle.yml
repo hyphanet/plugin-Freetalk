@@ -42,12 +42,12 @@ jobs:
       with:
         repository: freenet/fred
         ref: next
-        path: fred
+        path: fred # Available via: "$GITHUB_WORKSPACE/fred"
     
     - name: Checkout Freetalk git repository
       uses: actions/checkout@v2
       with:
-        path: main
+        path: plugin-Freetalk # Available via: "$GITHUB_WORKSPACE/plugin-Freetalk"
     
     - name: Compile Freenet Git repository
       run: |
@@ -71,15 +71,9 @@ jobs:
     
     - name: Compile and test Freetalk
       run: |
-        # FIXME: Debug code, remove once the path to fred is fixed
-        printf "fred path: %s\n" "$GITHUB_WORKSPACE/fred"
-        printf "current dir: %s\n" "$(pwd)"
-        echo "current dir contents:"
-        ls -al
-        echo "main dir contents:"
-        ls -al ./main
-        
         set -o errexit
+        cd "$GITHUB_WORKSPACE/plugin-Freetalk"
+        
         echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
         # Don't allow Travis to override the low memory limit which our builder sets with a higher one.
         # FIXME: Inspect printf output to see if we even need to do this on GitHub Actions.
@@ -95,7 +89,7 @@ jobs:
           # As of 2020-08-06, Travis' gradle binary fails to run the "wrapper" command on Java 13 and
           # above so we instead use the wrapper of fred to download a new version of itself.
           # TODO: Code quality: Remove this workaround once the issue is fixed.
-          "$TRAVIS_BUILD_DIR"/../fred/gradlew wrapper --gradle-version 7.1
+          ../fred/gradlew wrapper --gradle-version 7.1
         fi
         ./gradlew --version
         # To test the Ant and Gradle builders against each other uncomment the following.
