@@ -14,9 +14,8 @@ env:
 
 jobs:
   build:
-    # FIXME: Use ubuntu-latest once we've finished converting from Travis to GHA syntax
     # FIXME: Also test on Windows using strategy.matrix
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         # 8 is $FREENET_MINIMUM_JAVA_VERSION currently.
