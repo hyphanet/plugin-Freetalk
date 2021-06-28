@@ -20,8 +20,9 @@ jobs:
     strategy:
       matrix:
         # 8 is $FREENET_MINIMUM_JAVA_VERSION currently.
+        # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
         # FIXME: Trim the set of Java versions to avoid exhausting our CPU time quota too quickly.
-        java-version: [8, 9, 10, 11, 12, 13, 14, 15, 16]
+        java-version: [8, 11, 12, 13, 14, 15, 16]
       fail-fast: false # Don't cancel execution for all Java versions if one fails.
     name: Java ${{ matrix.java-version }}
     
