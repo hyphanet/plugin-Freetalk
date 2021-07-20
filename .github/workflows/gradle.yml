@@ -1,0 +1,141 @@
+# FIXME: Replace the Travis CI badges in the README.md with GitHub Actions badges.
+
+name: CI
+# FIXME: Add cronjob
+on: [push, pull_request]
+
+env:
+  # Also adapt the "matrix" section below when changing this.
+  FREENET_MINIMUM_JAVA_VERSION: 8
+
+jobs:
+  build:
+    # FIXME: Use ubuntu-latest once we've finished converting from Travis to GHA syntax
+    # FIXME: Also test on Debian stable using strategy.matrix as that's what fred targets.
+    # FIXME: Also test on Windows and MacOS using strategy.matrix
+    runs-on: ubuntu-16.04
+    strategy:
+      matrix:
+        # 8 is $FREENET_MINIMUM_JAVA_VERSION currently.
+        # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
+        # TODO: Trim the set of Java versions to respect GitHub's free service.
+        # FIXME: Add 17 & 18.
+        java-version: [8, 11, 12, 13, 14, 15, 16]
+      fail-fast: false # Don't cancel execution for all Java versions if one fails.
+    name: Java ${{ matrix.java-version }}
+    
+    steps:
+    - name: Install apt packages
+      run: sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java
+    
+    - name: Install Java
+      uses: actions/setup-java@v2
+      with:
+        # FIXME: Choose a distribution.
+        # FIXME: Oracle's JDK doesn't seem to be part of the available distributions, how to get it?
+        distribution: 'adopt'
+        java-version: ${{ matrix.java-version }}
+    
+    - name: Checkout Freenet git repository
+      uses: actions/checkout@v2
+      with:
+        repository: freenet/fred
+        ref: next
+        path: fred # Available via: "$GITHUB_WORKSPACE/fred"
+    
+    - name: Checkout Freetalk git repository
+      uses: actions/checkout@v2
+      with:
+        path: plugin-Freetalk # Available via: "$GITHUB_WORKSPACE/plugin-Freetalk"
+        # FIXME: The Gradle script should init submodules automatically like the Ant one did.
+        # Remove the command for that from the README.md once you implement it.
+        submodules: true
+    
+    - name: Compile Freenet Git repository
+      run: |
+        # FIXME: $FRED_UPDATED is not populated by GitHub Actions yet
+        FRED_UPDATED=1
+        if [ "$FRED_UPDATED" = 1 ] ; then
+          pushd "$GITHUB_WORKSPACE"/fred &&
+          # TODO: freenet.jar won't contain class Version if we don't run the
+          # clean task in a separate execution of Gradle. I.e. this wouldn't work:
+          #   $ gradle clean jar
+          # This is due to a bug in fred's Gradle script which could be fixed
+          # like this WoT commit did: 06c007204f40c712a398f0b58671f77fd9aeffd1
+          # EDIT: A better long-term fix for such issues would be to use a file "Version.properties"
+          # instead of patching the "Version.java" source code, like Freetalk now does.
+          # See Freetalk commits 195cfd70aad92c592e0a591d9804712b1cb43a1e and
+          # 0d956c4bf0afbca7a8cb9ef855d0ea415f09bb9a
+          ./gradlew clean &&
+          # "copyRuntimeLibs" copies the JAR *and* dependencies - which Freetalk also
+          # needs - to build/output/
+          ./gradlew jar copyRuntimeLibs -x test &&
+          popd
+        else
+          echo "No changes at fred, not recompiling."
+        fi
+    
+    - name: Compile and test Freetalk
+      run: |
+        set -o errexit
+        cd "$GITHUB_WORKSPACE/plugin-Freetalk"
+        
+        # TODO: Put dependency checksums and fred version info into separate "- name" steps so they
+        # can be viewed more easily on the web interface.
+        echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
+        # Don't allow Travis to override the low memory limit which our builder sets with a higher one.
+        # FIXME: Inspect printf output to see if we even need to do this on GitHub Actions.
+        printf "%s\n" "$_JAVA_OPTIONS"
+        unset _JAVA_OPTIONS
+        echo 'fred version:'
+        java -classpath '../fred/build/output/freenet.jar' 'freenet.node.Version'
+        rm -f ./gradlew
+        if [ "${{matrix.java-version}}" -lt 13 ] ; then
+          echo "Java version is < 13, using the OS' gradle command will likely work..."
+          
+          # Latest Gradle version as of 2021-06-14.
+          gradle wrapper --gradle-version 7.1
+        else
+          # As of 2020-08-06, Travis' gradle binary fails to run the "wrapper" command on Java 13 and
+          # above so we instead use the wrapper of fred to download a new version of itself.
+          # TODO: Code quality: Remove this workaround once the issue is fixed.
+          ../fred/gradlew wrapper --gradle-version 7.1
+        fi
+        ./gradlew --version
+        # To test the Ant and Gradle builders against each other uncomment the following.
+        # (The scripts will use the ./gradlew we've installed so we can ensure the latest Gradle works.)
+        # FIXME: Do this because this script has been converted from Travis CI to GitHub Actions.
+        ## - tools/compare-gradle-jars-with-ant-jars
+        ## - tools/compare-gradle-tests-with-ant-tests
+        # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
+        # reproduce failed test runs. Also prevents the 10 minute build timeout.
+        FREETALK__SHOW_GRADLE_TEST_OUTPUT=1 ./gradlew clean test jar
+
+# FIXME: Convert the below caching code from its Travis CI syntax to the GitHub Actions syntax.
+# See https://docs.github.com/en/actions/guides/building-and-testing-java-with-gradle#caching-dependencies
+#
+## before_cache:
+##   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+##   - rm -f  $HOME/.gradle/caches/jars-2/jars-2.lock
+##   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+## 
+## cache:
+## apt: true
+##   directories:
+##   - $TRAVIS_BUILD_DIR/../fred/
+##   - $HOME/.m2
+##   - $HOME/.gradle/caches/
+##   - $HOME/.gradle/wrapper/
+
+# FIXME: Adapt to Freetalk and GitHub Actions (is Travis CI code currently) and enable.
+# Will require adding "python3-pip" to the list of apt packages to install, see above at
+# "name: Install apt packages".
+# 
+# deploy:
+#   provider: script
+#   # Prevent Travis from deleting the JAR before we can deploy it (wtf?)
+#   skip_cleanup: true
+#   script: ./.travis.upload-jar-to-freenet.sh
+#   on:
+#     all_branches: true
+#     condition: $TRAVIS_JDK_VERSION = "openjdk$FREENET_MINIMUM_JAVA_VERSION"
