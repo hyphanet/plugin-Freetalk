@@ -78,10 +78,6 @@ jobs:
     - name: Compile and test Freetalk
       run: |
         set -o errexit
-        
-        # FIXME: To test if errexit works, remove if it does
-        false
-        
         cd "$GITHUB_WORKSPACE/plugin-Freetalk"
         
         # TODO: Put dependency checksums and fred version info into separate "- name" steps so they
