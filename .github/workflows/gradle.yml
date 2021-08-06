@@ -13,14 +13,15 @@ jobs:
     # TODO: Also test on Debian stable using strategy.matrix as that's what fred targets.
     # Unfortunately as of 2021-08-05 Debian is not available on GitHub Actions (yet?).
     # FIXME: Also test on Windows and MacOS using strategy.matrix
-    runs-on: ubuntu-latest
     strategy:
       matrix:
+        os: [ubuntu-latest]
         # 8 is $FREENET_MINIMUM_JAVA_VERSION currently.
         # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
         # TODO: Trim the set of Java versions to respect GitHub's free service.
         java-version: [8, 11, 12, 13, 14, 15, 16]
       fail-fast: false # Don't cancel execution for all Java versions if one fails.
+    runs-on: ${{ matrix.os }}
     name: Java ${{ matrix.java-version }}
     
     steps:
