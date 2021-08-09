@@ -26,6 +26,11 @@ jobs:
     
     steps:
     - name: Install apt packages
+      # FIXME: "sudo" command does not exist on Windows so I've just disabled the whole package
+      # installation there with the !contains().
+      # However the lack of sudo does not necessarily mean that there is no apt-get on Windows.
+      # Try if there is one.
+      if: ${{ !contains(matrix.os, 'windows') }}
       run: sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java
     
     - name: Install Java
