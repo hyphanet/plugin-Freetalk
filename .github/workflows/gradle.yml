@@ -22,7 +22,7 @@ jobs:
         java-version: [8, 11, 12, 13, 14, 15, 16]
       fail-fast: false # Don't cancel execution for all Java versions if one fails.
     runs-on: ${{ matrix.os }}
-    name: Java ${{ matrix.java-version }}
+    name: ${{ matrix.os }}, Java ${{ matrix.java-version }}
     
     steps:
     - name: Install apt packages
