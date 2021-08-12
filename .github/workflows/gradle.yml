@@ -60,6 +60,7 @@ jobs:
         submodules: true
     
     - name: Compile Freenet Git repository
+      shell: bash
       run: |
         # FIXME: $FRED_UPDATED is not populated by GitHub Actions yet
         FRED_UPDATED=1
@@ -84,6 +85,7 @@ jobs:
         fi
     
     - name: Compile and test Freetalk
+      shell: bash
       run: |
         set -o errexit
         cd "$GITHUB_WORKSPACE/plugin-Freetalk"
