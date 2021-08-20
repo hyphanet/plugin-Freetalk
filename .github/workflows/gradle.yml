@@ -98,7 +98,7 @@ jobs:
         if [ "${{runner.os}}" = 'Windows' ] ; then
             # TODO: Workaround for "gradle" command existing but failing weirdly on Windows as of
             # 2021-08-19. Remove once it is fixed.
-            cp -- "$(which gradle)" ./gradlew
+            ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradlew" ./gradlew
         else
             ln --symbolic -- "$(which gradle)" ./gradlew
         fi
