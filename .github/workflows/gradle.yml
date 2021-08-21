@@ -97,6 +97,7 @@ jobs:
         if [ "${{runner.os}}" = 'Windows' ] ; then
             # TODO: Workaround for "gradle" command existing but failing weirdly on Windows as of
             # 2021-08-19. Remove once it is fixed.
+            ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradle/" ./gradle
             ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradlew" ./gradlew
         else
             # GitHub Actions does seem to ship the most recent Gradle so we don't download our own.
