@@ -26,15 +26,11 @@ jobs:
     
     steps:
     - name: Install apt packages
-      # FIXME: "sudo" command does not exist on Windows so I've just disabled the whole package
-      # installation there with the !contains() to see if they're perhaps installed by default.
-      # However the lack of sudo does not necessarily mean that there is no apt-get on Windows.
-      # Try if there is one.
-      # EDIT: Code to try without "sudo" has been added below.
       shell: bash
       run: |
         if [ '${{runner.os}}' = 'Windows' ] ; then
-                 apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java
+            echo 'FIXME: Cannot build on Windows yet: Find a way to install JUnit + Hamcrest!'
+            exit 1
         else
             sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java
         fi
