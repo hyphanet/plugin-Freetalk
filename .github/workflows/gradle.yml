@@ -15,7 +15,7 @@ jobs:
         # TODO: Also test on Debian stable as that's what fred targets.
         # Unfortunately as of 2021-08-05 Debian is not available on GitHub Actions (yet?).
         # FIXME: Also test on Windows and MacOS.
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest]
         # 8 is $FREENET_MINIMUM_JAVA_VERSION currently.
         # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
         # TODO: Trim the set of Java versions to respect GitHub's free service.
