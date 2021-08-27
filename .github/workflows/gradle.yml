@@ -31,6 +31,8 @@ jobs:
         if [ '${{runner.os}}' = 'Windows' ] ; then
             echo 'FIXME: Cannot build on Windows yet: Find a way to install JUnit + Hamcrest!'
             exit 1
+        else if [ '${{runner.os}}' = 'macOS' ] ; then
+            echo 'FIXME: Find a way to install JUnit + Hamcrest if not installed by default!'
         else
             sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java
         fi
