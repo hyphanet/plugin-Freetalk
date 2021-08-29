@@ -106,7 +106,7 @@ jobs:
             ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradlew" ./gradlew
         else
             # GitHub Actions does seem to ship the most recent Gradle so we don't download our own.
-            ln --symbolic -- "$(which gradle)" ./gradlew
+            ln -s -- "$(which gradle)" ./gradlew
         fi
         ./gradlew --version
         # To test the Ant and Gradle builders against each other uncomment the following.
