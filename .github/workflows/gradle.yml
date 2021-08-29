@@ -25,7 +25,7 @@ jobs:
     name: ${{ matrix.os }}, Java ${{ matrix.java-version }}
     
     steps:
-    - name: Install apt packages
+    - name: Install dependencies
       shell: bash
       run: |
         if [ '${{runner.os}}' = 'Windows' ] ; then
