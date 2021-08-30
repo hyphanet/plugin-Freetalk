@@ -15,7 +15,7 @@ jobs:
         # TODO: Also test on Debian stable as that's what fred targets.
         # Unfortunately as of 2021-08-05 Debian is not available on GitHub Actions (yet?).
         # FIXME: Also test on Windows and MacOS.
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         # 8 is $FREENET_MINIMUM_JAVA_VERSION currently.
         # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
         # TODO: Trim the set of Java versions to respect GitHub's free service.
@@ -34,6 +34,7 @@ jobs:
         elif [ '${{runner.os}}' = 'macOS' ] ; then
             brew install coreutils # For step "Compile and test Freetalk"
             echo 'FIXME: Find a way to install JUnit + Hamcrest if not installed by default!' >&2
+            exit 1
         else
             sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java
         fi
