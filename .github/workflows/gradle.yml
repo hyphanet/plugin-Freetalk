@@ -25,11 +25,15 @@ jobs:
     name: ${{ matrix.os }}, Java ${{ matrix.java-version }}
     
     steps:
-    - name: Install apt packages
+    - name: Install dependencies
       shell: bash
       run: |
         if [ '${{runner.os}}' = 'Windows' ] ; then
-            echo 'FIXME: Cannot build on Windows yet: Find a way to install JUnit + Hamcrest!'
+            echo 'FIXME: Cannot build on Windows yet: Find a way to install JUnit + Hamcrest!' >&2
+            exit 1
+        elif [ '${{runner.os}}' = 'macOS' ] ; then
+            brew install coreutils # For step "Compile and test Freetalk"
+            echo 'FIXME: Find a way to install JUnit + Hamcrest if not installed by default!' >&2
             exit 1
         else
             sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java
@@ -103,7 +107,7 @@ jobs:
             ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradlew" ./gradlew
         else
             # GitHub Actions does seem to ship the most recent Gradle so we don't download our own.
-            ln --symbolic -- "$(which gradle)" ./gradlew
+            ln -s -- "$(which gradle)" ./gradlew
         fi
         ./gradlew --version
         # To test the Ant and Gradle builders against each other uncomment the following.
