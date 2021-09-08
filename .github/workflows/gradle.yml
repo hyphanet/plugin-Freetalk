@@ -32,7 +32,7 @@ jobs:
             brew install coreutils # For step "Compile and test Freetalk"
             echo 'FIXME: Find a way to install JUnit + Hamcrest if not installed by default!' >&2
             exit 1
-        elif [ '${{runner.os}}' = 'Linux' ]
+        elif [ '${{runner.os}}' = 'Linux' ] ; then
             sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java
         fi
     
