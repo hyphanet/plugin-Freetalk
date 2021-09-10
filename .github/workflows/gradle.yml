@@ -20,6 +20,12 @@ jobs:
         # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
         # TODO: Trim the set of Java versions to respect GitHub's free service.
         java-version: [8, 11, 12, 13, 14, 15, 16]
+        
+        exclude:
+          - os: windows-latest
+            # TODO: Bug: As of 2021-09-11 fred doesn't compile with Java 16 on Windows due to its
+            # Gradle version 4.10.3 not working there. Try again once fred uses a more recent one.
+            java-version: 16
       fail-fast: false # Don't cancel execution for all Java versions if one fails.
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.os }}, Java ${{ matrix.java-version }}
