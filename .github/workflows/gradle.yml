@@ -41,6 +41,7 @@ jobs:
         elif [ '${{runner.os}}' = 'Linux' ] ; then
             sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java
         fi
+        # On Windows the dependencies will be downloaded using Gradle.
     
     - name: Install Java
       uses: actions/setup-java@v2
