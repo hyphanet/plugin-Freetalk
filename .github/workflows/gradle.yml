@@ -14,12 +14,18 @@ jobs:
       matrix:
         # TODO: Also test on Debian stable as that's what fred targets.
         # Unfortunately as of 2021-08-05 Debian is not available on GitHub Actions (yet?).
-        # FIXME: Also test on Windows and MacOS.
-        os: [ubuntu-latest]
+        # FIXME: Also test on MacOS.
+        os: [ubuntu-latest, windows-latest]
         # 8 is $FREENET_MINIMUM_JAVA_VERSION currently.
         # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
         # TODO: Trim the set of Java versions to respect GitHub's free service.
         java-version: [8, 11, 12, 13, 14, 15, 16]
+        
+        exclude:
+          - os: windows-latest
+            # TODO: Bug: As of 2021-09-11 fred doesn't compile with Java 16 on Windows due to its
+            # Gradle version 4.10.3 not working there. Try again once fred uses a more recent one.
+            java-version: 16
       fail-fast: false # Don't cancel execution for all Java versions if one fails.
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.os }}, Java ${{ matrix.java-version }}
@@ -28,16 +34,14 @@ jobs:
     - name: Install dependencies
       shell: bash
       run: |
-        if [ '${{runner.os}}' = 'Windows' ] ; then
-            echo 'FIXME: Cannot build on Windows yet: Find a way to install JUnit + Hamcrest!' >&2
-            exit 1
-        elif [ '${{runner.os}}' = 'macOS' ] ; then
+        if [ '${{runner.os}}' = 'macOS' ] ; then
             brew install coreutils # For step "Compile and test Freetalk"
             echo 'FIXME: Find a way to install JUnit + Hamcrest if not installed by default!' >&2
             exit 1
-        else
+        elif [ '${{runner.os}}' = 'Linux' ] ; then
             sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java
         fi
+        # On Windows the dependencies will be downloaded using Gradle.
     
     - name: Install Java
       uses: actions/setup-java@v2
@@ -93,18 +97,23 @@ jobs:
         set -o errexit
         cd "$GITHUB_WORKSPACE/plugin-Freetalk"
         
-        # TODO: Put dependency checksums and fred version info into separate "- name" steps so they
+        # TODO: Put fred checksums and fred version info into separate "- name" steps so they
         # can be viewed more easily on the web interface.
-        echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
+        # TODO: Also print the checksums of other dependency JARs which Gradle has obtained from the
+        # Internet or the local system.
+        echo 'Checksums of fred JARs:' ; sha256sum ../fred/build/output/*
         echo 'fred version:'
         java -classpath '../fred/build/output/freenet.jar' 'freenet.node.Version'
-        rm -f ./gradlew
+        rm -f ./gradle ./gradlew
         if [ "${{runner.os}}" = 'Windows' ] ; then
             # TODO: Code quality: Workaround for "gradle" command existing on GitHub Actions on
             # Windows but failing weirdly when we actually use it, as of 2021-08-19. Remove once it
             # is fixed.
             ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradle/" ./gradle
             ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradlew" ./gradlew
+            
+            # On Windows we can't obtain the dependencies from /usr/share so download them instead.
+            export FREETALK__DOWNLOAD_DEPENDENCIES=1
         else
             # GitHub Actions does seem to ship the most recent Gradle so we don't download our own.
             ln -s -- "$(which gradle)" ./gradlew
