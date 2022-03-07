@@ -11,6 +11,7 @@ env:
 jobs:
   build:
     strategy:
+      fail-fast: false # Don't cancel execution for all Java versions if one fails.
       matrix:
         # TODO: Also test on Debian stable as that's what fred targets.
         # Unfortunately as of 2021-08-05 Debian is not available on GitHub Actions (yet?).
@@ -33,7 +34,6 @@ jobs:
             java-version: 17
           - os: windows-latest
             java-version: 18
-      fail-fast: false # Don't cancel execution for all Java versions if one fails.
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.os }}, Java ${{ matrix.java-version }}
     
