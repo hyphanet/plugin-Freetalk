@@ -52,8 +52,8 @@ jobs:
     - name: Install Java
       uses: actions/setup-java@v2
       with:
-        # Using 'zulu' distribution because as of 2022-03-07 it is the only one which has early
-        # access builds available of Java 18 which is supposed to be released in the same month.
+        # Using 'zulu' distribution because as of 2022-03-07 the other distributions either don't
+        # provide many old Java versions or lack an early access build of the upcoming version.
         # FIXME: Oracle's JDK doesn't seem to be part of the available distributions, how to get it?
         distribution: 'zulu'
         java-version: ${{ matrix.java-version }}
