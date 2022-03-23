@@ -1,0 +1,12 @@
+name: CI cronjobs
+
+on:
+  schedule:
+    # FIXME: For debugging this runs every 5 minutes. Decrease a lot once finished!
+    - cron: 0/5 * * * *
+
+jobs:
+  run-ci-workflow:
+    name: Weekly CI workflow on xor-freenet's repo only
+    if: github.repository == 'xor-freenet/plugin-Freetalk'
+    uses: ./.github/workflows/gradle.yml
