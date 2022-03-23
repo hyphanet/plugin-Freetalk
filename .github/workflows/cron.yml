@@ -25,6 +25,7 @@ jobs:
     if: |
       github.event.schedule == '0/5 * * * *'
       &&  github.repository == 'xor-freenet/plugin-Freetalk-DO-NOT-USE'
+    runs-on: ubuntu-latest
     
     steps:
     - name: Get previous and current fred branch next HEAD revision
