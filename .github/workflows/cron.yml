@@ -6,18 +6,25 @@ name: CI cronjobs
 
 on:
   schedule:
+    # ATTENTION: When changing these, you MUST also change the other occurences in the file!
+    - cron: 12 18 * * 1 # At 18:12 on Monday
     # FIXME: For debugging this runs every 5 minutes. Decrease a lot once finished!
     - cron: 0/5 * * * *
 
 jobs:
   weekly-ci-workflow:
     name: Weekly CI workflow, on xor-freenet's repo only
-    # FIXME: Remove testing code "-DO-NOT-USE" after testing
-    if: github.repository == 'xor-freenet/plugin-Freetalk-DO-NOT-USE'
+    if: |
+      github.event.schedule == '12 18 * * 1'
+      &&  github.repository == 'xor-freenet/plugin-Freetalk'
     uses: ./.github/workflows/gradle.yml
 
   run-ci-workflow-if-fred-changed:
     name: Daily CI workflow if fred changed, on xor-freenet's repo only
+    # FIXME: Remove testing code "-DO-NOT-USE" after testing
+    if: |
+      github.event.schedule == '0/5 * * * *'
+      &&  github.repository == 'xor-freenet/plugin-Freetalk-DO-NOT-USE'
     
     steps:
     - name: Get previous and current fred branch next HEAD revision
