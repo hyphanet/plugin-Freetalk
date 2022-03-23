@@ -1,5 +1,9 @@
 name: CI cronjobs
 
+# FIXME: Add these cronjobs:
+# - Weekly CI run on branches next and master
+# - Daily CI run on branch master IF branch next of fred changed.
+
 on:
   schedule:
     # FIXME: For debugging this runs every 5 minutes. Decrease a lot once finished!

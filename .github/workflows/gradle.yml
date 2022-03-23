@@ -1,7 +1,6 @@
 # FIXME: Replace the Travis CI badges in the README.md with GitHub Actions badges.
 
 name: CI
-# FIXME: Add cronjob
 on: [push, pull_request]
 
 env:
