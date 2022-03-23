@@ -10,8 +10,29 @@ on:
     - cron: 0/5 * * * *
 
 jobs:
-  run-ci-workflow:
-    name: Weekly CI workflow on xor-freenet's repo only
+  weekly-ci-workflow:
+    name: Weekly CI workflow, on xor-freenet's repo only
     # FIXME: Remove testing code "-DO-NOT-USE" after testing
     if: github.repository == 'xor-freenet/plugin-Freetalk-DO-NOT-USE'
     uses: ./.github/workflows/gradle.yml
+
+  run-ci-workflow-if-fred-changed:
+    name: Daily CI workflow if fred changed, on xor-freenet's repo only
+    
+    steps:
+    - name: Get previous and current fred branch next HEAD revision
+      shell: bash
+      run: |
+        set -o errexit
+        
+        echo 'Previous HEAD of fred:'
+        if [ -f previous_fred_next_revision ] ; then
+            cat previous_fred_next_revision
+        else
+           echo 'NONE' | tee previous_fred_next_revision
+        fi
+        
+        echo 'Current HEAD of fred:'
+        git ls-remote 'https://github.com/freenet/fred.git' \
+          | awk '/refs[/]heads[/]next/ {print $1}' \
+          | tee current_fred_next_revision
