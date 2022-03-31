@@ -16,7 +16,7 @@ jobs:
     name: Weekly CI workflow, on xor-freenet's repo only
     if: |
       github.event.schedule == '12 18 * * 1'
-      &&  github.repository == 'xor-freenet/plugin-Freetalk'
+      && github.repository == 'xor-freenet/plugin-Freetalk'
     uses: ./.github/workflows/gradle.yml
 
   run-ci-workflow-if-fred-changed:
@@ -24,7 +24,7 @@ jobs:
     # FIXME: Remove testing code "-DO-NOT-USE" after testing
     if: |
       github.event.schedule == '0/5 * * * *'
-      &&  github.repository == 'xor-freenet/plugin-Freetalk-DO-NOT-USE'
+      && github.repository == 'xor-freenet/plugin-Freetalk-DO-NOT-USE'
     runs-on: ubuntu-latest
     
     steps:
