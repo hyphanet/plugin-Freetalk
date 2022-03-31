@@ -34,6 +34,9 @@ jobs:
       run: |
         set -o errexit
         
+        # FIXME: Debug code
+        echo "Working dir: $(pwd)"
+        
         echo 'Previous HEAD of fred branch next:'
         # FIXME: Cache the file!
         if [ -f previous_fred_next_revision ] ; then
@@ -58,6 +61,7 @@ jobs:
     - name: FIXME - Debug code for the previous step not running even though it should
       shell: bash
       run: |
+        echo "Working dir: $(pwd)"
         echo "current_fred_next_revision:"
         cat current_fred_next_revision
         echo "previous_fred_next_revision:"
