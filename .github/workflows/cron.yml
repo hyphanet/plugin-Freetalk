@@ -55,7 +55,7 @@ jobs:
       if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
       uses: ./.github/workflows/gradle.yml
       
-    - name: FIXME: Debug code for the previous step not running even though it should
+    - name: FIXME - Debug code for the previous step not running even though it should
       shell: bash
       run: |
         echo "current_fred_next_revision:"
