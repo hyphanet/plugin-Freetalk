@@ -28,9 +28,6 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    # It errors if we don't check out the git repo here, we don't actually need it.
-    - name: Checkout Freetalk git repository
-      uses: actions/checkout@v2
     
     - name: Get previous and current fred branch next HEAD revision
       shell: bash
@@ -50,6 +47,10 @@ jobs:
           | awk '/refs[/]heads[/]next/ {print $1}' \
           | tee current_fred_next_revision
     
+    - name: Checkout Freetalk git repository
+      if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
+      uses: actions/checkout@v2 # The below step errors if we don't check out the git repo here.
+      
     - name: Run CI workflow if fred changed
       if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
       uses: ./.github/workflows/gradle.yml
