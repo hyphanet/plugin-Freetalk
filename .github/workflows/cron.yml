@@ -36,6 +36,7 @@ jobs:
         
         # FIXME: Debug code
         echo "Working dir: $(pwd)"
+        echo "\$GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
         
         echo 'Previous HEAD of fred branch next:'
         # FIXME: Cache the file!
@@ -50,6 +51,9 @@ jobs:
           | awk '/refs[/]heads[/]next/ {print $1}' \
           | tee current_fred_next_revision
     
+    # FIXME: This deletes the contents of $(pwd), see its output, and hence also deletes the output
+    # of the above step - but we still need the output in the next step!
+    # Use a different dir for the output.
     - name: Checkout Freetalk git repository
       if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
       uses: actions/checkout@v2 # The below step errors if we don't check out the git repo here.
