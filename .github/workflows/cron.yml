@@ -34,7 +34,7 @@ jobs:
       run: |
         set -o errexit
         
-        echo 'Previous HEAD of fred:'
+        echo 'Previous HEAD of fred branch next:'
         # FIXME: Cache the file!
         if [ -f previous_fred_next_revision ] ; then
             cat previous_fred_next_revision
@@ -42,7 +42,7 @@ jobs:
            echo 'NONE' | tee previous_fred_next_revision
         fi
         
-        echo 'Current HEAD of fred:'
+        echo 'Current HEAD of fred branch next:'
         git ls-remote 'https://github.com/freenet/fred.git' \
           | awk '/refs[/]heads[/]next/ {print $1}' \
           | tee current_fred_next_revision
