@@ -56,7 +56,7 @@ jobs:
     
     - name: FIXME - Debug code for the next step
       shell: bash
-      run:
+      run: |
        stat '/home/runner/work/plugin-Freetalk-DO-NOT-USE/plugin-Freetalk-DO-NOT-USE/plugin-Freetalk/.github/workflows/gradle.yml'
     
     - name: Run CI workflow if fred changed
