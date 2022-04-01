@@ -57,6 +57,8 @@ jobs:
     - name: Checkout Freetalk git repository
       if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
       uses: actions/checkout@v2 # The below step errors if we don't check out the git repo here.
+      with:
+        path: plugin-Freetalk # Available via: "$GITHUB_WORKSPACE/plugin-Freetalk"
       
     - name: Run CI workflow if fred changed
       if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
