@@ -53,7 +53,12 @@ jobs:
       with:
         # We must use a subdir so the *_fred_next_revision files aren't deleted by the checkout.
         path: plugin-Freetalk
-      
+    
+    - name: FIXME - Debug code for the next step
+      shell: bash
+      run:
+       stat '/home/runner/work/plugin-Freetalk-DO-NOT-USE/plugin-Freetalk-DO-NOT-USE/plugin-Freetalk/.github/workflows/gradle.yml'
+    
     - name: Run CI workflow if fred changed
       if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
       uses: ./plugin-Freetalk/.github/workflows/gradle.yml
