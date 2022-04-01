@@ -34,10 +34,6 @@ jobs:
       run: |
         set -o errexit
         
-        # FIXME: Debug code
-        echo "Working dir: $(pwd)"
-        echo "\$GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
-        
         echo 'Previous HEAD of fred branch next:'
         # FIXME: Cache the file!
         if [ -f previous_fred_next_revision ] ; then
@@ -51,24 +47,13 @@ jobs:
           | awk '/refs[/]heads[/]next/ {print $1}' \
           | tee current_fred_next_revision
     
-    # FIXME: This deletes the contents of $(pwd), see its output, and hence also deletes the output
-    # of the above step - but we still need the output in the next step!
-    # Use a different dir for the output.
     - name: Checkout Freetalk git repository
       if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
       uses: actions/checkout@v2 # The below step errors if we don't check out the git repo here.
       with:
+        # We must use a subdir so the *_fred_next_revision files aren't deleted by the checkout.
         path: plugin-Freetalk
       
     - name: Run CI workflow if fred changed
       if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
       uses: ./plugin-Freetalk/.github/workflows/gradle.yml
-      
-    - name: FIXME - Debug code for the previous step not running even though it should
-      shell: bash
-      run: |
-        echo "Working dir: $(pwd)"
-        echo "current_fred_next_revision:"
-        cat current_fred_next_revision
-        echo "previous_fred_next_revision:"
-        cat previous_fred_next_revision
