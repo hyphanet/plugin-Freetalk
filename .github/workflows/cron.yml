@@ -28,6 +28,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    # Do this early so the *_fred_next_revision files aren't deleted by the checkout.
+    # (We cannot checkout into a subdir, it has been tried and doesn't work, see git history.)
+    - name: Checkout Freetalk git repository so we can call its CI workflow
+      uses: actions/checkout@v2
     
     - name: Get previous and current fred branch next HEAD revision
       shell: bash
@@ -47,18 +51,11 @@ jobs:
           | awk '/refs[/]heads[/]next/ {print $1}' \
           | tee current_fred_next_revision
     
-    - name: Checkout Freetalk git repository
-      if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
-      uses: actions/checkout@v2 # The below step errors if we don't check out the git repo here.
-      with:
-        # We must use a subdir so the *_fred_next_revision files aren't deleted by the checkout.
-        path: plugin-Freetalk
-    
     - name: FIXME - Debug code for the next step
       shell: bash
       run: |
-       stat '/home/runner/work/plugin-Freetalk-DO-NOT-USE/plugin-Freetalk-DO-NOT-USE/plugin-Freetalk/.github/workflows/gradle.yml'
+       stat '/home/runner/work/plugin-Freetalk-DO-NOT-USE/plugin-Freetalk-DO-NOT-USE/.github/workflows/gradle.yml'
     
     - name: Run CI workflow if fred changed
       if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
-      uses: ./plugin-Freetalk/.github/workflows/gradle.yml
+      uses: ./.github/workflows/gradle.yml
