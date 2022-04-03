@@ -15,14 +15,14 @@ on:
 
 jobs:
   weekly-ci-workflow:
-    name: Weekly CI workflow, on xor-freenet's repo only
+    name: Weekly CI test, on xor-freenet's repo only
     if: |
       github.event.schedule == '12 18 * * 1'
       && github.repository == 'xor-freenet/plugin-Freetalk'
     uses: ./.github/workflows/gradle.yml
 
   run-ci-workflow-if-fred-changed:
-    name: Daily CI workflow if fred changed, on xor-freenet's repo only
+    name: Daily CI test if fred changed, on xor-freenet's repo only
     # FIXME: Remove testing code "-DO-NOT-USE" after testing
     if: |
       github.event.schedule == '0/5 * * * *'
@@ -69,6 +69,6 @@ jobs:
     # Thus this step must be converted to a job.
     # To pass the *_fred_next_revision information, use job outputs instead of files:
     # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idoutputs
-    - name: Run CI workflow if fred changed
+    - name: Run CI test if fred changed
       if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
       uses: ./.github/workflows/gradle.yml
