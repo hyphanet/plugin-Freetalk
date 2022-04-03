@@ -3,6 +3,8 @@ name: CI cronjobs
 # FIXME: Add these cronjobs:
 # - Weekly CI run on branches next and master
 # - Daily CI run on branch master IF branch next of fred changed.
+# FIXME: GHA runs cronjobs on the default branch only. But we should run these both on branches next
+# and master.
 
 on:
   schedule:
