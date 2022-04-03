@@ -35,7 +35,7 @@ jobs:
     - name: Checkout Freetalk git repository so we can call its CI workflow
       uses: actions/checkout@v2
     
-    - name: Get previous and current fred branch next HEAD revision
+    - name: Load and print previous and current fred branch next HEAD revision
       shell: bash
       run: |
         set -o errexit
