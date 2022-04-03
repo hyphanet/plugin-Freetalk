@@ -60,6 +60,7 @@ jobs:
     #   Error: Can't find 'action.yml', 'action.yaml' or 'Dockerfile' under
     #   '[...]/.github/workflows/gradle.yml'. Did you forget to run actions/checkout before running
     #   your local action?
+    # The file gradle.yml DOES exist at the printed path.
     # That happens because GHA currently does NOT support calling reusable workflows as part of
     # the "steps:" section which we're in here:
     # https://docs.github.com/en/actions/using-workflows/reusing-workflows#calling-a-reusable-workflow
