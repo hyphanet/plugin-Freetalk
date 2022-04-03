@@ -8,7 +8,7 @@ name: CI cronjobs
 
 on:
   schedule:
-    # ATTENTION: When changing these, you MUST also change the other occurences in the file!
+    # ATTENTION: When changing these, you MUST also change the other occurrences in the file!
     - cron: 12 18 * * 1 # At 18:12 on Monday
     # FIXME: For debugging this runs every 5 minutes. Decrease a lot once finished!
     - cron: 0/5 * * * *
