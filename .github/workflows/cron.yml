@@ -37,7 +37,6 @@ jobs:
     
     steps:
     # Do this early so the *_fred_next_revision files aren't deleted by the checkout.
-    # (We cannot checkout into a subdir, it has been tried and doesn't work, see git history.)
     - name: Checkout Freetalk git repository so we can call its CI workflow
       uses: actions/checkout@v2
     
