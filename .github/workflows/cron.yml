@@ -56,6 +56,16 @@ jobs:
       run: |
        stat '/home/runner/work/plugin-Freetalk-DO-NOT-USE/plugin-Freetalk-DO-NOT-USE/.github/workflows/gradle.yml'
     
+    # FIXME: This will always fail with:
+    #   Error: Can't find 'action.yml', 'action.yaml' or 'Dockerfile' under
+    #   '[...]/.github/workflows/gradle.yml'. Did you forget to run actions/checkout before running
+    #   your local action?
+    # That happens because GHA currently does NOT support calling reusable workflows as part of
+    # the "steps:" section which we're in here:
+    # https://docs.github.com/en/actions/using-workflows/reusing-workflows#calling-a-reusable-workflow
+    # Thus this step must be converted to a job.
+    # To pass the *_fred_next_revision information, use job outputs instead of files:
+    # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idoutputs
     - name: Run CI workflow if fred changed
       if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
       uses: ./.github/workflows/gradle.yml
