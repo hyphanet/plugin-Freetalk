@@ -22,7 +22,7 @@ jobs:
     uses: ./.github/workflows/gradle.yml
 
   determine-if-fred-changed:
-    name: Daily CI test if fred changed, on xor-freenet's repo only
+    name: Determine if fred branch next has changed
     # FIXME: Remove testing code "-DO-NOT-USE" after testing
     if: |
       github.event.schedule == '0/5 * * * *'
@@ -59,10 +59,11 @@ jobs:
       shell: bash
       run: |
        stat '/home/runner/work/plugin-Freetalk-DO-NOT-USE/plugin-Freetalk-DO-NOT-USE/.github/workflows/gradle.yml'
-
+  
   # FIXME: To pass the *_fred_next_revision information, use job outputs instead of files:
   # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idoutputs
+  # FIXME Set dependency on "determine-if-fred-changed" job
   run-ci-test-if-fred-changed:
-    name: Run CI test if fred changed
+    name: Daily CI test if fred changed, on xor-freenet's repo only
     if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
     uses: ./.github/workflows/gradle.yml
