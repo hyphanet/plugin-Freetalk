@@ -24,14 +24,14 @@ jobs:
   determine-if-fred-changed:
     name: Determine if fred branch next has changed
     # FIXME: Remove testing code "-DO-NOT-USE" after testing
+    # TODO: Once the tests are reasonably stable remove the "github.repository == ..." line so the
+    # cronjob also runs on Freenet's GitHub repo and fred developers thus get an email if their
+    # changes break Freetalk.
+    # NOTICE: I think GHA currently disables cronjobs if a repo did not have changes for 60 days,
+    # check if that is true. Then it may be necessary to move the cronjob to the fred repo because
+    # the Freetalk repo on Freenet's GitHub is not that frequently updated.
     if: |
       github.event.schedule == '0/5 * * * *'
-      # TODO: Once the tests are reasonably stable remove the following line so the cronjob also
-      # runs on Freenet's GitHub repo and fred developers thus get an email if their changes break
-      # Freetalk.
-      # NOTICE: I think GHA currently disables cronjobs if a repo did not have changes for 60 days,
-      # check if that is true. Then it may be necessary to move the cronjob to the fred repo because
-      # the Freetalk repo on Freenet's GitHub is not that frequently updated.
       && github.repository == 'xor-freenet/plugin-Freetalk-DO-NOT-USE'
     runs-on: ubuntu-latest
     
