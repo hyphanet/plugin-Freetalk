@@ -21,7 +21,7 @@ jobs:
       && github.repository == 'xor-freenet/plugin-Freetalk'
     uses: ./.github/workflows/gradle.yml
 
-  run-ci-workflow-if-fred-changed:
+  determine-if-fred-changed:
     name: Daily CI test if fred changed, on xor-freenet's repo only
     # FIXME: Remove testing code "-DO-NOT-USE" after testing
     if: |
@@ -36,9 +36,6 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    # Do this early so the *_fred_next_revision files aren't deleted by the checkout.
-    - name: Checkout Freetalk git repository so we can call its CI workflow
-      uses: actions/checkout@v2
     
     - name: Load and print previous and current fred branch next HEAD revision
       shell: bash
@@ -62,18 +59,10 @@ jobs:
       shell: bash
       run: |
        stat '/home/runner/work/plugin-Freetalk-DO-NOT-USE/plugin-Freetalk-DO-NOT-USE/.github/workflows/gradle.yml'
-    
-    # FIXME: This will always fail with:
-    #   Error: Can't find 'action.yml', 'action.yaml' or 'Dockerfile' under
-    #   '[...]/.github/workflows/gradle.yml'. Did you forget to run actions/checkout before running
-    #   your local action?
-    # The file gradle.yml DOES exist at the printed path.
-    # That happens because GHA currently does NOT support calling reusable workflows as part of
-    # the "steps:" section which we're in here:
-    # https://docs.github.com/en/actions/using-workflows/reusing-workflows#calling-a-reusable-workflow
-    # Thus this step must be converted to a job.
-    # To pass the *_fred_next_revision information, use job outputs instead of files:
-    # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idoutputs
-    - name: Run CI test if fred changed
-      if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
-      uses: ./.github/workflows/gradle.yml
+
+  # FIXME: To pass the *_fred_next_revision information, use job outputs instead of files:
+  # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idoutputs
+  run-ci-test-if-fred-changed:
+    name: Run CI test if fred changed
+    if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
+    uses: ./.github/workflows/gradle.yml
