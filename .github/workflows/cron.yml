@@ -54,11 +54,6 @@ jobs:
         git ls-remote 'https://github.com/freenet/fred.git' \
           | awk '/refs[/]heads[/]next/ {print $1}' \
           | tee current_fred_next_revision
-    
-    - name: FIXME - Debug code for the next step
-      shell: bash
-      run: |
-       stat '/home/runner/work/plugin-Freetalk-DO-NOT-USE/plugin-Freetalk-DO-NOT-USE/.github/workflows/gradle.yml'
   
   # FIXME: To pass the *_fred_next_revision information, use job outputs instead of files:
   # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idoutputs
