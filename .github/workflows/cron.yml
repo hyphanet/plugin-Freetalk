@@ -38,6 +38,7 @@ jobs:
     steps:
     
     - name: Load and print previous and current fred branch next HEAD revision
+      id: get-revs
       shell: bash
       run: |
         set -o errexit
@@ -54,11 +55,17 @@ jobs:
         git ls-remote 'https://github.com/freenet/fred.git' \
           | awk '/refs[/]heads[/]next/ {print $1}' \
           | tee current_fred_next_revision
+        
+        echo "::set-output name=previous_fred_next_revision::$(<previous_fred_next_revision)"
+        echo "::set-output name=current_fred_next_revision::$(<current_fred_next_revision)"
+    outputs:
+      previous_fred_next_revision: ${{steps.get-revs.outputs.previous_fred_next_revision}}
+      current_fred_next_revision: ${{steps.get-revs.outputs.current_fred_next_revision}}
   
-  # FIXME: To pass the *_fred_next_revision information, use job outputs instead of files:
-  # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idoutputs
-  # FIXME Set dependency on "determine-if-fred-changed" job
   run-ci-test-if-fred-changed:
     name: Daily CI test if fred changed, on xor-freenet's repo only
-    if: hashFiles('current_fred_next_revision') != hashFiles('previous_fred_next_revision')
+    needs: determine-if-fred-changed
+    if: |
+      ${{needs.determine-if-fred-changed.outputs.current_fred_next_revision}}
+      != ${{needs.determine-if-fred-changed.outputs.previous_fred_next_revision}}
     uses: ./.github/workflows/gradle.yml
