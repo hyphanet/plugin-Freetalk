@@ -64,7 +64,7 @@ jobs:
       current_fred_next_revision: ${{steps.get-revs.outputs.current_fred_next_revision}}
   
   run-ci-test-if-fred-changed:
-    name: Daily CI test if fred changed, on xor-freenet's repo only
+    name: Daily CI test if fred changed, on xor-freenet's Freetalk repo only
     needs: determine-if-fred-changed
     if: |
       ${{needs.determine-if-fred-changed.outputs.current_fred_next_revision}}
