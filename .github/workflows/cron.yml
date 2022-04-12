@@ -37,6 +37,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Download fred branch next HEAD revision of previous run
+      uses: actions/download-artifact@v3
+      with:
+        name: previous_fred_next_revision
     
     - name: Load and print previous and current fred branch next HEAD revision
       id: get-revs
@@ -45,7 +49,6 @@ jobs:
         set -o errexit
         
         echo 'Previous HEAD of fred branch next:'
-        # FIXME: Cache the file!
         if [ -f previous_fred_next_revision ] ; then
             cat previous_fred_next_revision
         else
@@ -59,6 +62,18 @@ jobs:
         
         echo "::set-output name=previous_fred_next_revision::$(<previous_fred_next_revision)"
         echo "::set-output name=current_fred_next_revision::$(<current_fred_next_revision)"
+        
+        mv --force current_fred_next_revision previous_fred_next_revision
+    
+    # Store fred revision before running CI test so if it fails due to changes at fred we don't
+    # re-run it every day and thus send emails about the failure every day.
+    - name: Upload fred branch next HEAD revision for next cronjob execution
+      uses: actions/upload-artifact@v3
+      with:
+        name: previous_fred_next_revision
+        path: previous_fred_next_revision
+        if-no-files-found: error
+    
     outputs:
       previous_fred_next_revision: ${{steps.get-revs.outputs.previous_fred_next_revision}}
       current_fred_next_revision: ${{steps.get-revs.outputs.current_fred_next_revision}}
