@@ -41,6 +41,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: previous_fred_next_revision
+      continue-on-error: true
     
     - name: Load and print previous and current fred branch next HEAD revision
       id: get-revs
