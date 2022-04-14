@@ -68,7 +68,7 @@ jobs:
     
     # Store fred revision before running CI test so if it fails due to changes at fred we don't
     # re-run it every day and thus send emails about the failure every day.
-    - name: Upload fred branch next HEAD revision for next cronjob execution
+    - name: Upload fred branch next HEAD revision for subsequent cronjob execution
       uses: actions/upload-artifact@v3
       with:
         name: previous_fred_next_revision
