@@ -20,8 +20,7 @@ jobs:
       github.event.schedule == '12 18 * * 1'
       && github.repository == 'xor-freenet/plugin-Freetalk'
     uses: ./.github/workflows/gradle.yml
-
-  # FIXME: From here on replace "fred_next" with fred "fred" to shorten noisy syntax.
+  
   determine-if-fred-changed:
     name: Determine if fred branch next has changed
     # FIXME: Remove testing code "-DO-NOT-USE" after testing
@@ -37,45 +36,45 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Retrieve/cache fred branch next HEAD revision of previous run
+    - name: Retrieve/cache fred branch next HEAD commit of previous run
       uses: actions/cache@v3
       with:
-        path: previous_fred_next_revision
-        key: previous_fred_next_revision
+        path: previous_fred_commit
+        key: previous_fred_commit
     
-    - name: Load and print previous and current fred branch next HEAD revision
-      id: get-revs
+    - name: Load and print previous and current fred branch next HEAD commit
+      id: get-HEAD
       shell: bash
       run: |
         set -o errexit
         
-        echo 'Previous HEAD of fred branch next:'
-        if [ -f previous_fred_next_revision ] ; then
-            cat previous_fred_next_revision
+        echo 'Previous HEAD commit of fred branch next:'
+        if [ -f previous_fred_commit ] ; then
+            cat previous_fred_commit
         else
-           echo 'NONE' | tee previous_fred_next_revision
+           echo 'NONE' | tee previous_fred_commit
         fi
         
-        echo 'Current HEAD of fred branch next:'
+        echo 'Current HEAD commit of fred branch next:'
         git ls-remote 'https://github.com/freenet/fred.git' \
           | awk '/refs[/]heads[/]next/ {print $1}' \
-          | tee current_fred_next_revision
+          | tee current_fred_commit
         
-        echo "::set-output name=previous_fred_next_revision::$(<previous_fred_next_revision)"
-        echo "::set-output name=current_fred_next_revision::$(<current_fred_next_revision)"
+        echo "::set-output name=previous_fred_commit::$(<previous_fred_commit)"
+        echo "::set-output name=current_fred_commit::$(<current_fred_commit)"
         
-        mv --force current_fred_next_revision previous_fred_next_revision
+        mv --force current_fred_commit previous_fred_commit
     
     outputs:
-      previous_fred_next_revision: ${{steps.get-revs.outputs.previous_fred_next_revision}}
-      current_fred_next_revision: ${{steps.get-revs.outputs.current_fred_next_revision}}
+      previous_fred_commit: ${{steps.get-HEAD.outputs.previous_fred_commit}}
+      current_fred_commit: ${{steps.get-HEAD.outputs.current_fred_commit}}
   
   run-ci-test-if-fred-changed:
     name: Daily CI test if fred changed, on xor-freenet's Freetalk repo only
     needs: determine-if-fred-changed
     if: |
-      ${{needs.determine-if-fred-changed.outputs.current_fred_next_revision}}
-      != ${{needs.determine-if-fred-changed.outputs.previous_fred_next_revision}}
+      ${{needs.determine-if-fred-changed.outputs.current_fred_commit}}
+      != ${{needs.determine-if-fred-changed.outputs.previous_fred_commit}}
     # "./" is the syntax for reusing workflows in the same repository.
     # For reusing a workflow from a different repository see:
     # https://docs.github.com/en/actions/using-workflows/reusing-workflows#calling-a-reusable-workflow
