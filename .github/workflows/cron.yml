@@ -69,6 +69,13 @@ jobs:
       previous_fred_commit: ${{steps.get-HEAD.outputs.previous_fred_commit}}
       current_fred_commit: ${{steps.get-HEAD.outputs.current_fred_commit}}
   
+  debug-code-FIXME-remove:
+    name: Debug code FIXME remove
+    needs: determine-if-fred-changed
+    run: |
+      echo "${{needs.determine-if-fred-changed.outputs.current_fred_commit}}
+        != ${{needs.determine-if-fred-changed.outputs.previous_fred_commit}}"
+  
   run-ci-test-if-fred-changed:
     name: Daily CI test if fred changed, on xor-freenet's Freetalk repo only
     needs: determine-if-fred-changed
