@@ -21,8 +21,7 @@ jobs:
       && github.repository == 'xor-freenet/plugin-Freetalk'
     uses: ./.github/workflows/gradle.yml
   
-  # FIXME: Shorten name
-  determine-if-fred-changed:
+  get-fred-commits:
     name: Determine if fred branch next has changed
     # FIXME: Remove testing code "-DO-NOT-USE" after testing
     # TODO: Once the tests are reasonably stable remove the "github.repository == ..." line so the
@@ -75,10 +74,10 @@ jobs:
   
   run-ci-test-if-fred-changed:
     name: Daily CI test if fred changed, on xor-freenet's Freetalk repo only
-    needs: determine-if-fred-changed
+    needs: get-fred-commits
     if: |
-      needs.determine-if-fred-changed.outputs.current_fred_commit !=
-      needs.determine-if-fred-changed.outputs.previous_fred_commit
+      needs.get-fred-commits.outputs.current_fred_commit !=
+      needs.get-fred-commits.outputs.previous_fred_commit
     # "./" is the syntax for reusing workflows in the same repository.
     # For reusing a workflow from a different repository see:
     # https://docs.github.com/en/actions/using-workflows/reusing-workflows#calling-a-reusable-workflow
