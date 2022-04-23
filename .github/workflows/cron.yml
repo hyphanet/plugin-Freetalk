@@ -21,6 +21,7 @@ jobs:
       && github.repository == 'xor-freenet/plugin-Freetalk'
     uses: ./.github/workflows/gradle.yml
   
+  # FIXME: Shorten name
   determine-if-fred-changed:
     name: Determine if fred branch next has changed
     # FIXME: Remove testing code "-DO-NOT-USE" after testing
