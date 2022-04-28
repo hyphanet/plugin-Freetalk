@@ -68,7 +68,7 @@ jobs:
            echo 'NONE' | tee previous_fred_commit
         fi
         echo "::set-output name=previous_fred_commit::$(<previous_fred_commit)"
-        mv --force current_fred_commit previous_fred_commit
+        cp --force current_fred_commit previous_fred_commit
     
     outputs:
       previous_fred_commit: ${{steps.get-old-HEAD.outputs.previous_fred_commit}}
