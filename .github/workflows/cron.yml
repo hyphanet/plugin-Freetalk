@@ -36,42 +36,43 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Load and print current fred branch next HEAD commit
+      id: get-new-HEAD
+      shell: bash
+      run: |
+        set -o errexit
+        echo 'Current HEAD commit of fred branch next:'
+        # FIXME: Change repo from "/xor-freenet/" to "/freenet/" once debugging is finished.
+        git ls-remote 'https://github.com/xor-freenet/fred.git' \
+          | awk '/refs[/]heads[/]next/ {print $1}' \
+          | tee current_fred_commit
+        echo "::set-output name=current_fred_commit::$(<current_fred_commit)"
+    
     - name: Retrieve/cache fred branch next HEAD commit of previous run
       uses: actions/cache@v3
       with:
         path: previous_fred_commit
-        # FIXME:
         # The key must include the hash of the file to ensure the cache is invalidated whenever the
         # file contents change.
-        key: previous_fred_commit
+        key: previous_fred_commit_${{hashFiles('current_fred_commit')}}
     
-    - name: Load and print previous and current fred branch next HEAD commit
-      id: get-HEAD
+    - name: Load and print previous fred branch next HEAD commit
+      id: get-old-HEAD
       shell: bash
       run: |
         set -o errexit
-        
         echo 'Previous HEAD commit of fred branch next:'
         if [ -f previous_fred_commit ] ; then
             cat previous_fred_commit
         else
            echo 'NONE' | tee previous_fred_commit
         fi
-        
-        echo 'Current HEAD commit of fred branch next:'
-        # FIXME: Change repo from "/xor-freenet/" to "/freenet/" once debugging is finished.
-        git ls-remote 'https://github.com/xor-freenet/fred.git' \
-          | awk '/refs[/]heads[/]next/ {print $1}' \
-          | tee current_fred_commit
-        
         echo "::set-output name=previous_fred_commit::$(<previous_fred_commit)"
-        echo "::set-output name=current_fred_commit::$(<current_fred_commit)"
-        
         mv --force current_fred_commit previous_fred_commit
     
     outputs:
-      previous_fred_commit: ${{steps.get-HEAD.outputs.previous_fred_commit}}
-      current_fred_commit: ${{steps.get-HEAD.outputs.current_fred_commit}}
+      previous_fred_commit: ${{steps.get-old-HEAD.outputs.previous_fred_commit}}
+      current_fred_commit: ${{steps.get-new-HEAD.outputs.current_fred_commit}}
   
   run-ci-test-if-fred-changed:
     name: Daily CI test if fred changed, on xor-freenet's Freetalk repo only
