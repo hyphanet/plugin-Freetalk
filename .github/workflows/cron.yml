@@ -1,10 +1,7 @@
 name: CI cronjobs
 
-# FIXME: Add these cronjobs:
-# - Weekly CI run on branches next and master
-# - Daily CI run on branch master IF branch next of fred changed.
-# FIXME: GHA runs cronjobs on the default branch only. But we should run these both on branches next
-# and master.
+# TODO: Code quality: Currently Freetalk only has branch "master" so the cronjobs only run there.
+# Once there's also a development branch run the cronjobs on both branches.
 
 on:
   schedule:
