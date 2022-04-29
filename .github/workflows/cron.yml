@@ -1,0 +1,83 @@
+name: CI cronjobs
+
+# FIXME: Code quality: Split into two files, "cron-daily.yml" and "cron-weekly.yml".
+
+# TODO: Code quality: Currently Freetalk only has branch "master" so the cronjobs only run there.
+# Once there's also a development branch run the cronjobs on both branches.
+
+on:
+  schedule:
+    # ATTENTION: When changing these, you MUST also change the other occurrences in the file!
+    - cron: 12 18 * * 1 # At 18:12 on Monday, for weekly CI test
+    - cron: 07 19 * * * # At 19:07 every day, for daily CI test if fred changed
+
+jobs:
+  weekly-ci-workflow:
+    name: Weekly CI test, on xor-freenet's repo only
+    if: |
+      github.event.schedule == '12 18 * * 1'
+      && github.repository == 'xor-freenet/plugin-Freetalk'
+    uses: ./.github/workflows/gradle.yml
+  
+  get-fred-commits:
+    name: Determine if fred branch next has changed
+    # TODO: Once the tests are reasonably stable remove the "github.repository == ..." line so the
+    # cronjob also runs on Freenet's GitHub repo and fred developers thus get an email if their
+    # changes break Freetalk.
+    # NOTICE: I think GHA currently disables cronjobs if a repo did not have changes for 60 days,
+    # check if that is true. Then it may be necessary to move the cronjob to the fred repo because
+    # the Freetalk repo on Freenet's GitHub is not that frequently updated.
+    if: |
+      github.event.schedule == '07 19 * * *'
+      && github.repository == 'xor-freenet/plugin-Freetalk'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Load and print current fred branch next HEAD commit
+      id: get-new-HEAD
+      shell: bash
+      run: |
+        set -o errexit
+        echo 'Current HEAD commit of fred branch next:'
+        git ls-remote 'https://github.com/freenet/fred.git' \
+          | awk '/refs[/]heads[/]next/ {print $1}' \
+          | tee current_fred_commit
+        echo "::set-output name=current_fred_commit::$(<current_fred_commit)"
+    
+    - name: Retrieve/cache fred branch next HEAD commit of previous run
+      uses: actions/cache@v3
+      with:
+        path: previous_fred_commit
+        # The key must include the hash of the file to ensure the cache is invalidated whenever the
+        # file contents change.
+        key: previous_fred_commit_${{hashFiles('current_fred_commit')}}
+    
+    - name: Load and print previous fred branch next HEAD commit
+      id: get-old-HEAD
+      shell: bash
+      run: |
+        set -o errexit
+        echo 'Previous HEAD commit of fred branch next:'
+        if [ -f previous_fred_commit ] ; then
+            cat previous_fred_commit
+        else
+           # The cache did not serve us the file so the cache key and thus hash was different.
+           echo 'Different_from_current_HEAD' | tee previous_fred_commit
+        fi
+        echo "::set-output name=previous_fred_commit::$(<previous_fred_commit)"
+        cp --force current_fred_commit previous_fred_commit
+    
+    outputs:
+      previous_fred_commit: ${{steps.get-old-HEAD.outputs.previous_fred_commit}}
+      current_fred_commit: ${{steps.get-new-HEAD.outputs.current_fred_commit}}
+  
+  run-ci-test-if-fred-changed:
+    name: Daily CI test if fred changed, on xor-freenet's Freetalk repo only
+    needs: get-fred-commits
+    if: |
+      needs.get-fred-commits.outputs.current_fred_commit !=
+      needs.get-fred-commits.outputs.previous_fred_commit
+    # "./" is the syntax for reusing workflows in the same repository.
+    # For reusing a workflow from a different repository see:
+    # https://docs.github.com/en/actions/using-workflows/reusing-workflows#calling-a-reusable-workflow
+    uses: ./.github/workflows/gradle.yml
