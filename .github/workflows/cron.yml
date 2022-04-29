@@ -37,8 +37,7 @@ jobs:
       run: |
         set -o errexit
         echo 'Current HEAD commit of fred branch next:'
-        # FIXME: Change repo from "/xor-freenet/" to "/freenet/" once debugging is finished.
-        git ls-remote 'https://github.com/xor-freenet/fred.git' \
+        git ls-remote 'https://github.com/freenet/fred.git' \
           | awk '/refs[/]heads[/]next/ {print $1}' \
           | tee current_fred_commit
         echo "::set-output name=current_fred_commit::$(<current_fred_commit)"
