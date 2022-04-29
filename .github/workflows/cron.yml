@@ -19,7 +19,6 @@ jobs:
   
   get-fred-commits:
     name: Determine if fred branch next has changed
-    # FIXME: Remove testing code "-DO-NOT-USE" after testing
     # TODO: Once the tests are reasonably stable remove the "github.repository == ..." line so the
     # cronjob also runs on Freenet's GitHub repo and fred developers thus get an email if their
     # changes break Freetalk.
@@ -28,7 +27,7 @@ jobs:
     # the Freetalk repo on Freenet's GitHub is not that frequently updated.
     if: |
       github.event.schedule == '07 19 * * *'
-      && github.repository == 'xor-freenet/plugin-Freetalk-DO-NOT-USE'
+      && github.repository == 'xor-freenet/plugin-Freetalk'
     runs-on: ubuntu-latest
     
     steps:
