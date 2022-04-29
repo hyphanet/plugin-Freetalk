@@ -6,9 +6,8 @@ name: CI cronjobs
 on:
   schedule:
     # ATTENTION: When changing these, you MUST also change the other occurrences in the file!
-    - cron: 12 18 * * 1 # At 18:12 on Monday
-    # FIXME: For debugging this runs every 5 minutes. Decrease a lot once finished!
-    - cron: 0/5 * * * *
+    - cron: 12 18 * * 1 # At 18:12 on Monday, for weekly CI test
+    - cron: 07 19 * * * # At 19:07 every day, for daily CI test if fred changed
 
 jobs:
   weekly-ci-workflow:
@@ -28,7 +27,7 @@ jobs:
     # check if that is true. Then it may be necessary to move the cronjob to the fred repo because
     # the Freetalk repo on Freenet's GitHub is not that frequently updated.
     if: |
-      github.event.schedule == '0/5 * * * *'
+      github.event.schedule == '07 19 * * *'
       && github.repository == 'xor-freenet/plugin-Freetalk-DO-NOT-USE'
     runs-on: ubuntu-latest
     
