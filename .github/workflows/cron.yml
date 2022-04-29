@@ -65,7 +65,8 @@ jobs:
         if [ -f previous_fred_commit ] ; then
             cat previous_fred_commit
         else
-           echo 'NONE' | tee previous_fred_commit
+           # The cache did not serve us the file so the cache key and thus hash was different.
+           echo 'Different_from_current_HEAD' | tee previous_fred_commit
         fi
         echo "::set-output name=previous_fred_commit::$(<previous_fred_commit)"
         cp --force current_fred_commit previous_fred_commit
