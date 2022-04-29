@@ -1,5 +1,7 @@
 name: CI cronjobs
 
+# FIXME: Code quality: Split into two files, "cron-daily.yml" and "cron-weekly.yml".
+
 # TODO: Code quality: Currently Freetalk only has branch "master" so the cronjobs only run there.
 # Once there's also a development branch run the cronjobs on both branches.
 
