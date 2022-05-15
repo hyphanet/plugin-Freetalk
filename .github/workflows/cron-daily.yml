@@ -7,7 +7,7 @@ name: CI cronjobs, daily
 
 on:
   schedule:
-    - cron: 07 19 * * * # At 19:07 every day, for daily CI test if fred changed
+    - cron: 07 19 * * * # At 19:07 every day
 
 jobs:
   get-fred-commits:
