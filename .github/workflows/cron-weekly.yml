@@ -1,0 +1,13 @@
+name: CI cronjobs, weekly
+
+on:
+  schedule:
+    - cron: 12 18 * * 1 # At 18:12 on Monday, for weekly CI test
+
+jobs:
+  weekly-ci-workflow:
+    name: Weekly CI test, on xor-freenet's repo only
+    if: |
+      github.event.schedule == '12 18 * * 1'
+      && github.repository == 'xor-freenet/plugin-Freetalk'
+    uses: ./.github/workflows/gradle.yml

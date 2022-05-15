@@ -1,4 +1,4 @@
-name: CI cronjobs
+name: CI cronjobs, daily
 
 # FIXME: Code quality: Split into two files, "cron-daily.yml" and "cron-weekly.yml".
 
@@ -8,17 +8,9 @@ name: CI cronjobs
 on:
   schedule:
     # ATTENTION: When changing these, you MUST also change the other occurrences in the file!
-    - cron: 12 18 * * 1 # At 18:12 on Monday, for weekly CI test
     - cron: 07 19 * * * # At 19:07 every day, for daily CI test if fred changed
 
 jobs:
-  weekly-ci-workflow:
-    name: Weekly CI test, on xor-freenet's repo only
-    if: |
-      github.event.schedule == '12 18 * * 1'
-      && github.repository == 'xor-freenet/plugin-Freetalk'
-    uses: ./.github/workflows/gradle.yml
-  
   get-fred-commits:
     name: Determine if fred branch next has changed
     # TODO: Once the tests are reasonably stable remove the "github.repository == ..." line so the
