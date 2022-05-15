@@ -7,7 +7,6 @@ name: CI cronjobs, daily
 
 on:
   schedule:
-    # ATTENTION: When changing these, you MUST also change the other occurrences in the file!
     - cron: 07 19 * * * # At 19:07 every day, for daily CI test if fred changed
 
 jobs:
@@ -19,9 +18,7 @@ jobs:
     # NOTICE: I think GHA currently disables cronjobs if a repo did not have changes for 60 days,
     # check if that is true. Then it may be necessary to move the cronjob to the fred repo because
     # the Freetalk repo on Freenet's GitHub is not that frequently updated.
-    if: |
-      github.event.schedule == '07 19 * * *'
-      && github.repository == 'xor-freenet/plugin-Freetalk'
+    if: github.repository == 'xor-freenet/plugin-Freetalk'
     runs-on: ubuntu-latest
     
     steps:

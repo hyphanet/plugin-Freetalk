@@ -7,7 +7,5 @@ on:
 jobs:
   weekly-ci-workflow:
     name: Weekly CI test, on xor-freenet's repo only
-    if: |
-      github.event.schedule == '12 18 * * 1'
-      && github.repository == 'xor-freenet/plugin-Freetalk'
+    if: github.repository == 'xor-freenet/plugin-Freetalk'
     uses: ./.github/workflows/gradle.yml
