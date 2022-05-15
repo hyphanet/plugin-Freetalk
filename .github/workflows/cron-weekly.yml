@@ -5,6 +5,9 @@
 # NOTICE: This only runs on xor-freenet's repository currently, see the comment below.
 name: CI cronjobs, weekly
 
+# TODO: Code quality: Currently Freetalk only has branch "master" so the cronjobs only run there.
+# Once there's also a development branch run the cronjobs on both branches.
+
 on:
   schedule:
     - cron: 12 18 * * 1 # At 18:12 on Monday
