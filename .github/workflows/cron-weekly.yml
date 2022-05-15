@@ -1,3 +1,8 @@
+# Runs Freetalk's CI tests once every week to see if changes in the surrounding software
+# environment, e.g. Ubuntu/Windows/MacOS, broke anything.
+# Running every once in a while also ensures we catch breakage which happens infrequently due to
+# the randomization we use in some unit tests.
+# NOTICE: This only happens on xor-freenet's repository currently, see the comment below.
 name: CI cronjobs, weekly
 
 on:
