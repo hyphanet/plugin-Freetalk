@@ -13,8 +13,8 @@ on:
     - cron: 12 18 * * 1 # At 18:12 on Monday
 
 jobs:
-  weekly-ci-workflow:
+  weekly-ci-tests:
     # See cron-daily.yml for comments on why this only runs on xor-freenet's repo.
-    name: Weekly CI test, on xor-freenet's repo only
+    name: Weekly CI tests, on xor-freenet's repo only
     if: github.repository == 'xor-freenet/plugin-Freetalk'
     uses: ./.github/workflows/gradle.yml

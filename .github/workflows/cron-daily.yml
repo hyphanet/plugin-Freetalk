@@ -62,8 +62,8 @@ jobs:
       previous_fred_commit: ${{steps.get-old-HEAD.outputs.previous_fred_commit}}
       current_fred_commit: ${{steps.get-new-HEAD.outputs.current_fred_commit}}
   
-  run-ci-test-if-fred-changed:
-    name: Daily CI test if fred changed, on xor-freenet's Freetalk repo only
+  run-ci-tests-if-fred-changed:
+    name: Daily CI tests if fred changed, on xor-freenet's Freetalk repo only
     needs: get-fred-commits
     if: |
       needs.get-fred-commits.outputs.current_fred_commit !=
