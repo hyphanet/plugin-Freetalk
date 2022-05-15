@@ -1,24 +1,17 @@
-name: CI cronjobs
-
-# FIXME: Code quality: Split into two files, "cron-daily.yml" and "cron-weekly.yml".
+# Runs every day to check if Freenet's fred repository has changed.
+# If yes it runs the CI tests to see if the changes at fred broke anything at Freetalk.
+# If no it does nothing.
+# NOTICE: This only runs on xor-freenet's repository currently, see the comments below.
+name: CI cronjobs, daily
 
 # TODO: Code quality: Currently Freetalk only has branch "master" so the cronjobs only run there.
 # Once there's also a development branch run the cronjobs on both branches.
 
 on:
   schedule:
-    # ATTENTION: When changing these, you MUST also change the other occurrences in the file!
-    - cron: 12 18 * * 1 # At 18:12 on Monday, for weekly CI test
-    - cron: 07 19 * * * # At 19:07 every day, for daily CI test if fred changed
+    - cron: 07 19 * * * # At 19:07 every day
 
 jobs:
-  weekly-ci-workflow:
-    name: Weekly CI test, on xor-freenet's repo only
-    if: |
-      github.event.schedule == '12 18 * * 1'
-      && github.repository == 'xor-freenet/plugin-Freetalk'
-    uses: ./.github/workflows/gradle.yml
-  
   get-fred-commits:
     name: Determine if fred branch next has changed
     # TODO: Once the tests are reasonably stable remove the "github.repository == ..." line so the
@@ -27,9 +20,7 @@ jobs:
     # NOTICE: I think GHA currently disables cronjobs if a repo did not have changes for 60 days,
     # check if that is true. Then it may be necessary to move the cronjob to the fred repo because
     # the Freetalk repo on Freenet's GitHub is not that frequently updated.
-    if: |
-      github.event.schedule == '07 19 * * *'
-      && github.repository == 'xor-freenet/plugin-Freetalk'
+    if: github.repository == 'xor-freenet/plugin-Freetalk'
     runs-on: ubuntu-latest
     
     steps:
@@ -71,8 +62,8 @@ jobs:
       previous_fred_commit: ${{steps.get-old-HEAD.outputs.previous_fred_commit}}
       current_fred_commit: ${{steps.get-new-HEAD.outputs.current_fred_commit}}
   
-  run-ci-test-if-fred-changed:
-    name: Daily CI test if fred changed, on xor-freenet's Freetalk repo only
+  run-ci-tests-if-fred-changed:
+    name: Daily CI tests if fred changed, on xor-freenet's Freetalk repo only
     needs: get-fred-commits
     if: |
       needs.get-fred-commits.outputs.current_fred_commit !=
