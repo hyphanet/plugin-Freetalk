@@ -1,7 +1,7 @@
 # Runs every day to check if Freenet's fred repository has changed.
 # If yes it runs the CI tests to see if the changes at fred broke anything at Freetalk.
 # If no it does nothing.
-# NOTICE: This only happens on xor-freenet's repository currently, see the comments below.
+# NOTICE: This only runs on xor-freenet's repository currently, see the comments below.
 name: CI cronjobs, daily
 
 # TODO: Code quality: Currently Freetalk only has branch "master" so the cronjobs only run there.
