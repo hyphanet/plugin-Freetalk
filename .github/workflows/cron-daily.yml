@@ -71,4 +71,4 @@ jobs:
     # "./" is the syntax for reusing workflows in the same repository.
     # For reusing a workflow from a different repository see:
     # https://docs.github.com/en/actions/using-workflows/reusing-workflows#calling-a-reusable-workflow
-    uses: ./.github/workflows/gradle.yml
+    uses: ./.github/workflows/ci-tests.yml
