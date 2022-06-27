@@ -1,4 +1,4 @@
-# Freetalk - a forum system for Freenet [![Result of CI tests of branch master on xor-freenet's repository](https://github.com/xor-freenet/plugin-Freetalk/actions/workflows/ci-tests.yml/badge.svg?branch=master "Result of CI tests of branch master on xor-freenet's repository")](https://github.com/xor-freenet/plugin-Freetalk/actions/workflows/ci-tests.yml)
+# Freetalk - a forum system for Freenet [![Result of weekly CI tests of branch master on xor-freenet's repository](https://github.com/xor-freenet/plugin-Freetalk/actions/workflows/cron-weekly.yml/badge.svg "Result of weekly CI tests of branch master on xor-freenet's repository")](https://github.com/xor-freenet/plugin-Freetalk/actions/workflows/cron-weekly.yml)
 
 Freetalk (FT) aims to provide a user-friendly and secure alternative to the "Freenet Message System"
 (FMS) C++ daemon.
