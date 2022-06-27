@@ -1,3 +1,11 @@
+<!-- ATTENTION: We intentionally show the below badge for the WEEKLY cronjobs,
+     NOT FOR THE DAILY ONES! KEEP THIS AS IS!
+     This is important because the daily cronjobs will **NOT** run the actual unit tests if fred did
+     not change!
+     But the badge would still render as "passing" then even though nothing was tested!
+     The daily cronjobs only run the tests one time if a commit is pushed to fred on the day
+     before (to alert xor-freenet if changes at fred broke Freetalk).
+     The weekly cronjobs on the other hand always run the tests. -->
 # Freetalk - a forum system for Freenet [![Result of weekly CI tests of branch master on xor-freenet's repository](https://github.com/xor-freenet/plugin-Freetalk/actions/workflows/cron-weekly.yml/badge.svg "Result of weekly CI tests of branch master on xor-freenet's repository")](https://github.com/xor-freenet/plugin-Freetalk/actions/workflows/cron-weekly.yml)
 
 Freetalk (FT) aims to provide a user-friendly and secure alternative to the "Freenet Message System"
