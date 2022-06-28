@@ -1,3 +1,6 @@
+# This is the main workflow, it runs the unit tests with various operating systems and Java
+# versions.
+# Beyond being run on commits & PRs it's also run under certain conditions by cron-*.yml
 name: CI
 on: [push, pull_request, workflow_call] # workflow_call is for the workflow files cron-*.yml
 
