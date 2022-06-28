@@ -1,5 +1,3 @@
-# FIXME: Replace the Travis CI badges in the README.md with GitHub Actions badges.
-
 name: CI
 on: [push, pull_request, workflow_call] # workflow_call is for the workflow files cron-*.yml
 
