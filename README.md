@@ -45,6 +45,16 @@ If you use it nevertheless be aware that all messages will be deleted at some po
 That will be necessary to conduct major performance improvement changes without having to spent
 months upon writing code for backwards compatibility. Sorry :)
 
+## Support / Contact
+
+You can:
+- mail `xor@freenetproject.org`
+- file a bug in the Freetalk project on the [Freenet bugtracker](https://freenet.mantishub.io)
+- or, to remain anonymous by using Freenet, post on the
+  [FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet`.
+
+`xor-freenet` will reply by these means within about a week.
+
 ## Compiling
 
 ### Dependencies
