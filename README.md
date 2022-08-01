@@ -20,6 +20,19 @@ It intends to do so by:
   used across different Freenet plugins such as FlogHelper (bundled) and
   [Sone](https://github.com/Bombe/Sone).
 
+
+## Contributing
+
+As of 2022 Freetalk is currently in development by [xor-freenet](https://github.com/xor-freenet).
+
+While the repository for the official code is hosted on
+[Freenet's GitHub](https://github.com/freenet), you may consider to instead create your pull
+requests at [xor-freenet's Freetalk repository](https://github.com/xor-freenet/plugin-Freetalk)
+to receive extended and accelerated review:  
+He wrote most of Freetalk's code and is actively working on it.  
+After his review xor will submit your code to the official Freenet developers for inclusion in the
+main repository.
+
 ## Usage
 
 As of 2018 Freetalk is currently in development by [xor-freenet](https://github.com/xor-freenet) and
