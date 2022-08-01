@@ -21,12 +21,14 @@ It intends to do so by:
   [Sone](https://github.com/Bombe/Sone).
 
 
-## Contributing
+## Status
 
 As of 2022 Freetalk is currently in active development by
 [xor-freenet](https://github.com/xor-freenet).  
 Development news are posted about every 1-3 weeks on the [FMS](https://github.com/freenet/wiki/wiki/FMS)
 board `freenet` in threads called `Freetalk development news YYYY-MM`.
+
+## Contributing
 
 While the repository for the official code is hosted on
 [Freenet's GitHub](https://github.com/freenet), you may consider to instead create your pull
@@ -38,7 +40,7 @@ main repository.
 
 ## Usage
 
-As of 2022 Freetalk is currently in active development (see [above](#contributing)) and **NOT**
+As of 2022 Freetalk is currently in active development (see [above](#status)) and **NOT**
 intended to be used.  
 It has severe performance issues which need to be fixed first.
 
