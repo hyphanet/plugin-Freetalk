@@ -35,8 +35,8 @@ main repository.
 
 ## Usage
 
-As of 2018 Freetalk is currently in development by [xor-freenet](https://github.com/xor-freenet) and
-**NOT** intended to be used.  
+As of 2022 Freetalk is currently in development (see [above](#contributing)) and **NOT** intended to
+be used.  
 It has severe performance issues which need to be fixed first.
 
 If you use it nevertheless be aware that all messages will be deleted at some point in the future.  
