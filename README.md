@@ -25,8 +25,9 @@ It intends to do so by:
 
 As of 2022 Freetalk is currently in active development by
 [xor-freenet](https://github.com/xor-freenet).  
-Development news are posted about every 1-3 weeks on the [FMS](https://github.com/freenet/wiki/wiki/FMS)
-board `freenet` in threads called `Freetalk development news YYYY-MM`.
+Development news are posted about every 1-3 weeks on the
+[FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet` in threads called
+`Freetalk development news YYYY-MM`.
 
 ## Contributing
 
