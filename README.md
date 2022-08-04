@@ -37,8 +37,8 @@ requests at [xor-freenet's Freetalk repository](https://github.com/xor-freenet/p
 because:
 - You'll receive extended and accelerated review:  
   xor wrote most of Freetalk's code and is actively working on it.  
-  After his review xor will submit your code to the official Freenet developers for inclusion in the
-  main repository.
+- After his review xor will submit your code to the official Freenet developers for inclusion in the
+  main repository on Freenet's GitHub.
 - Freenet's repository may lag some months behind the one of xor-freenet and merge conflicts can
   thus be avoided by using xor's repo.
 
