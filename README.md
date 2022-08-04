@@ -50,8 +50,8 @@ It will first have to be changed to use WoT's new `event-notifications` API, oth
 very slow.
 
 If you use it nevertheless be aware that all messages will be deleted at some point in the future.  
-That will be necessary to conduct major performance improvement changes without having to spent
-months upon writing code for backwards compatibility. Sorry :)
+That will be necessary to conduct major changes without having to spend months upon writing code for
+backwards compatibility. Sorry :)
 
 ## Support / Contact
 
