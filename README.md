@@ -33,11 +33,13 @@ Development news are posted about every 1-3 weeks on the
 
 While the repository for the official code is hosted on
 [Freenet's GitHub](https://github.com/freenet), you may consider to instead create your pull
-requests at [xor-freenet's Freetalk repository](https://github.com/xor-freenet/plugin-Freetalk)
-to receive extended and accelerated review:  
-He wrote most of Freetalk's code and is actively working on it.  
-After his review xor will submit your code to the official Freenet developers for inclusion in the
-main repository.
+requests at [xor-freenet's Freetalk repository](https://github.com/xor-freenet/plugin-Freetalk):
+- You'll receive extended and accelerated review:  
+  xor wrote most of Freetalk's code and is actively working on it.  
+  After his review xor will submit your code to the official Freenet developers for inclusion in the
+  main repository.
+- Further please be aware that Freenet's copy of the codebase may lag some months behind the one on
+  xor-freenet's repository.
 
 ## Usage
 
