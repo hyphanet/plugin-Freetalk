@@ -35,12 +35,12 @@ While the repository for the official code is hosted on
 [Freenet's GitHub](https://github.com/freenet), you may consider to instead create your pull
 requests at [xor-freenet's Freetalk repository](https://github.com/xor-freenet/plugin-Freetalk)
 because:
+- Freenet's repository may lag some months behind the one of xor-freenet and merge conflicts can
+  thus be avoided by using xor's repo.
 - You'll receive extended and accelerated review:  
   xor wrote most of Freetalk's code and is actively working on it.  
 - After his review xor will submit your code to the official Freenet developers for inclusion in the
   main repository on Freenet's GitHub.
-- Freenet's repository may lag some months behind the one of xor-freenet and merge conflicts can
-  thus be avoided by using xor's repo.
 
 ## Usage
 
