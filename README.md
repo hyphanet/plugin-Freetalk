@@ -15,9 +15,9 @@ It intends to do so by:
 * integrating into the Freenet web interface by being a plugin instead of being a standalone
   application with its own web interface.
 * being written in Java instead of C++ to avoid remote code execution exploits.
-* using the [WebOfTrust](https://github.com/freenet/plugin-WebOfTrust) plugin (bundled with Freenet)
-  for spam filtering instead of a single-use trust system to ensure user identities can be
-  used across different Freenet plugins such as FlogHelper (bundled) and
+* using the [Web of Trust](https://github.com/freenet/plugin-WebOfTrust) (WoT) plugin, which is
+  bundled with Freenet, for spam filtering instead of a single-use trust system to ensure user
+  identities can be used across different Freenet plugins such as FlogHelper (bundled) and
   [Sone](https://github.com/Bombe/Sone).
 
 
