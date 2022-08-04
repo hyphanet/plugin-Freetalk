@@ -17,9 +17,7 @@ It intends to do so by:
 * being written in Java instead of C++ to avoid remote code execution exploits.
 * using the [Web of Trust](https://github.com/freenet/plugin-WebOfTrust) (WoT) plugin for spam
   filtering instead of a single-use trust system like FMS does to ensure user identities can be used
-  across different Freenet plugins such as FlogHelper (bundled) and
-  [Sone](https://github.com/Bombe/Sone).
-
+  across different Freenet plugins such as Freemail, FlogHelper, Sone and Freetalk itself.
 
 ## Status
 
