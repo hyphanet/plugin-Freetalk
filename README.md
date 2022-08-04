@@ -46,8 +46,8 @@ because:
 
 As of 2022 Freetalk is currently in active development (see [above](#status)) and **NOT**
 intended to be used.  
-It has severe performance issues which need to be fixed first (by making use of WoT's new
-`event-notifications` API).
+It will first have to be changed to use WoT's new `event-notifications` API, otherwise it will be
+very slow.
 
 If you use it nevertheless be aware that all messages will be deleted at some point in the future.  
 That will be necessary to conduct major performance improvement changes without having to spent
