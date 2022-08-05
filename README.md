@@ -60,7 +60,7 @@ You can:
 - or, to remain anonymous by using Freenet, post on the
   [FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet`.
 
-`xor-freenet` will reply by these means within about a week.
+[xor-freenet](https://github.com/xor-freenet) will reply by these means within about a week.
 
 ## Compiling
 
