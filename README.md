@@ -15,20 +15,52 @@ It intends to do so by:
 * integrating into the Freenet web interface by being a plugin instead of being a standalone
   application with its own web interface.
 * being written in Java instead of C++ to avoid remote code execution exploits.
-* using the [WebOfTrust](https://github.com/freenet/plugin-WebOfTrust) plugin (bundled with Freenet)
-  for spam filtering instead of a single-use trust system to ensure user identities can be
-  used across different Freenet plugins such as FlogHelper (bundled) and
-  [Sone](https://github.com/Bombe/Sone).
+* using the [Web of Trust](https://github.com/freenet/plugin-WebOfTrust) (WoT) plugin for spam
+  filtering instead of a single-use trust system like FMS does to ensure user "identities"
+  (comparable to "accounts" on the regular internet) can be used across different Freenet plugins
+  such as Freemail, FlogHelper, Sone and Freetalk itself.
+
+## Status
+
+As of 2022 Freetalk is currently in active development by
+[xor-freenet](https://github.com/xor-freenet).  
+Development news are posted about every 1-3 weeks on the
+[FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet` in threads called
+`Freetalk development news YYYY-MM`.
+
+## Contributing
+
+While the repository for the official code is hosted on
+[Freenet's GitHub](https://github.com/freenet), you may consider to instead create your pull
+requests at [xor-freenet's Freetalk repository](https://github.com/xor-freenet/plugin-Freetalk)
+because:
+- Freenet's repository may lag some months behind the one of xor-freenet and merge conflicts can
+  thus be avoided by using xor's repo.
+- You'll receive extended and accelerated review:  
+  xor wrote most of Freetalk's code and is actively working on it.  
+- After his review xor will submit your code to the official Freenet developers for inclusion in the
+  main repository on Freenet's GitHub.
 
 ## Usage
 
-As of 2018 Freetalk is currently in development by [xor-freenet](https://github.com/xor-freenet) and
-**NOT** intended to be used.  
-It has severe performance issues which need to be fixed first.
+As of 2022 Freetalk is currently in active development (see [above](#status)) and **NOT**
+intended to be used.  
+It will first have to be changed to use WoT's new `event-notifications` API, otherwise it will be
+very slow.
 
 If you use it nevertheless be aware that all messages will be deleted at some point in the future.  
-That will be necessary to conduct major performance improvement changes without having to spent
-months upon writing code for backwards compatibility. Sorry :)
+That will be necessary to conduct major changes without having to spend months upon writing code for
+backwards compatibility. Sorry :)
+
+## Support / Contact
+
+You can:
+- mail `xor@freenetproject.org`
+- file a bug in the Freetalk project on the [Freenet bugtracker](https://freenet.mantishub.io)
+- or, to remain anonymous by using Freenet, post on the
+  [FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet`.
+
+[xor-freenet](https://github.com/xor-freenet) will reply by these means within about a week.
 
 ## Compiling
 
