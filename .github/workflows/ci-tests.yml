@@ -61,7 +61,6 @@ jobs:
         java-version: ${{ matrix.java-version }}
     
     - name: Load and print current fred branch next HEAD commit
-      id: get-fred-HEAD
       shell: bash
       run: |
         set -o errexit
@@ -69,9 +68,8 @@ jobs:
         git ls-remote 'https://github.com/freenet/fred.git' \
           | awk '/refs[/]heads[/]next/ {print $1}' \
           | tee current_fred_commit
-        echo "::set-output name=current_fred_commit::$(<current_fred_commit)"
     
-    - name: Checkout Freenet git repository
+    - name: Checkout fred git repository
       uses: actions/checkout@v2
       with:
         repository: freenet/fred
