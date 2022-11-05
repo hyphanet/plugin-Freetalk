@@ -70,6 +70,7 @@ jobs:
           | tee current_fred_commit
     
     - name: Retrieve/cache fred git repository
+      id: cache
       uses: actions/cache@v3
       with:
         path: fred
@@ -77,7 +78,8 @@ jobs:
         # file contents change.
         key: fred_repo__branch_next__os_${{runner.os}}__${{hashFiles('current_fred_commit')}}
     
-    - name: Checkout fred git repository
+    - name: Checkout fred git repository if no cache hit
+      if: steps.cache.outputs.cache-hit != 'true'
       uses: actions/checkout@v2
       with:
         repository: freenet/fred
