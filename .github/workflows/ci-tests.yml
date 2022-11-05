@@ -65,8 +65,8 @@ jobs:
       run: |
         set -o errexit
         echo 'Current HEAD commit of fred branch next:'
-        git ls-remote 'https://github.com/freenet/fred.git' \
-          | awk '/refs[/]heads[/]next/ {print $1}' \
+        git ls-remote 'https://github.com/freenet/fred.git' 'refs/heads/next' \
+          | cut -f 1
           | tee current_fred_commit
     
     - name: Retrieve/cache fred git repository
