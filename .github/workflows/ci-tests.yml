@@ -94,12 +94,10 @@ jobs:
         # Remove the command for that from the README.md once you implement it.
         submodules: true
     
-    - name: Compile Freenet Git repository
+    - name: Compile Freenet Git repository if no cache hit
+      if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        # FIXME: $FRED_UPDATED is not populated by GitHub Actions yet
-        FRED_UPDATED=1
-        if [ "$FRED_UPDATED" = 1 ] ; then
           pushd "$GITHUB_WORKSPACE"/fred &&
           # TODO: freenet.jar won't contain class Version if we don't run the
           # clean task in a separate execution of Gradle. I.e. this wouldn't work:
@@ -115,9 +113,6 @@ jobs:
           # needs - to build/output/
           ./gradlew jar copyRuntimeLibs -x test &&
           popd
-        else
-          echo "No changes at fred, not recompiling."
-        fi
     
     - name: Compile and test Freetalk
       shell: bash
