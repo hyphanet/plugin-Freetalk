@@ -69,14 +69,14 @@ jobs:
           | cut -f 1 \
           | tee current_fred_commit
     
-    - name: Retrieve/cache fred git repository
+    - name: Retrieve/cache fred JARs
       id: cache
       uses: actions/cache@v3
       with:
         path: fred/build/output
         # The key must include the hash of the file to ensure the cache is invalidated whenever the
         # file contents change.
-        key: fred_repo_branch_next_os_${{runner.os}}_java${{matrix.java-version}}_${{hashFiles('current_fred_commit')}}
+        key: fred-jars_branch-next_${{runner.os}}_java${{matrix.java-version}}_${{hashFiles('current_fred_commit')}}
     
     - name: Checkout fred git repository if no cache hit
       if: steps.cache.outputs.cache-hit != 'true'
