@@ -76,7 +76,7 @@ jobs:
         path: fred/build/output
         # The key must include the hash of the file to ensure the cache is invalidated whenever the
         # file contents change.
-        key: fred_repo__branch_next__os_${{runner.os}}_java${{matrix.java-version}}_${{hashFiles('current_fred_commit')}}
+        key: fred_repo_branch_next_os_${{runner.os}}_java${{matrix.java-version}}_${{hashFiles('current_fred_commit')}}
     
     - name: Checkout fred git repository if no cache hit
       if: steps.cache.outputs.cache-hit != 'true'
