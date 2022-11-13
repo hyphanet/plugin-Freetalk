@@ -68,7 +68,7 @@ jobs:
         git ls-remote 'https://github.com/freenet/fred.git' 'refs/heads/next' | cut -f 1 \
           | tee current_fred_commit
     
-    - name: Retrieve/cache fred JARs
+    - name: Use/populate cache of fred JARs
       id: cache
       uses: actions/cache@v3
       with:
