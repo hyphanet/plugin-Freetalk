@@ -75,6 +75,15 @@ jobs:
         path: fred/build/output
         # The key must include the hash of the file to ensure the cache is invalidated whenever the
         # file contents change.
+        #
+        # We use ${{runner.os}} instead of ${{matrix.os}} to ensure the "latest" part in e.g.
+        # the OS value "ubuntu-latest" is replaced with the actual OS version, which guarantees that
+        # the cache is invalidated if the OS version changes.
+        # TODO: Code quality: GHA does not actually implement this, ${{runner.os}} also holds a
+        # generic value. As of 2022-11-18 there is no other variable in the runner context which
+        # would hold a specific one. File a bug.
+        # fred JARs which were built on an old version should work though, so let's keep this as-is
+        # for now.
         key: fred-jars_branch-next_${{runner.os}}_java${{matrix.java-version}}_${{hashFiles('current_fred_commit')}}
     
     - name: Checkout fred git repository if no cache hit
