@@ -124,12 +124,12 @@ jobs:
           ./gradlew jar copyRuntimeLibs -x test &&
           popd
     
-    # TODO: Performance: To speed up the build we could use the Gradle organization's GitHub Action
+    # TODO: Performance: To speed up the build we could use the Gradle organization's GitHub action
     # which caches part of the build (albeit as of 2022-11-22 the following link sounds like the
     # cache isn't actually used?):
     # https://docs.github.com/en/actions/guides/building-and-testing-java-with-gradle#caching-dependencies
-    # However this has the security implementation of running a non-GitHub action and therefore
-    # increasing the attack surface. Further, it would cache part of the compiled code and thus
+    # However this has the security implication of running a non-official GitHub action and thus
+    # increasing the attack surface. Further, it might cache part of the compiled code and thus
     # could cause incorrect Gradle state (due to bugs at their side) to persist.
     - name: Compile and test Freetalk
       shell: bash
