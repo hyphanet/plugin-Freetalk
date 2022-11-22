@@ -45,6 +45,8 @@ jobs:
             brew install coreutils # For step "Compile and test Freetalk"
             # The remaining dependencies will be downloaded using Gradle.
         elif [ '${{runner.os}}' = 'Linux' ] ; then
+            # TODO: Performance: Check if this is still needed or if they're installed by default
+            # on GHA. Also check if we can cache these.
             sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java
         fi
         # On Windows the dependencies will be downloaded using Gradle.
@@ -122,6 +124,13 @@ jobs:
           ./gradlew jar copyRuntimeLibs -x test &&
           popd
     
+    # TODO: Performance: To speed up the build we could use the Gradle organization's GitHub Action
+    # which caches part of the build (albeit as of 2022-11-22 the following link sounds like the
+    # cache isn't actually used?):
+    # https://docs.github.com/en/actions/guides/building-and-testing-java-with-gradle#caching-dependencies
+    # However this has the security implementation of running a non-GitHub action and therefore
+    # increasing the attack surface. Further, it would cache part of the compiled code and thus
+    # could cause incorrect Gradle state (due to bugs at their side) to persist.
     - name: Compile and test Freetalk
       shell: bash
       run: |
@@ -159,22 +168,6 @@ jobs:
         # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
         # reproduce failed test runs. Also prevents the 10 minute build timeout.
         FREETALK__SHOW_GRADLE_TEST_OUTPUT=1 ./gradlew clean test jar
-
-# FIXME: Convert the below caching code from its Travis CI syntax to the GitHub Actions syntax.
-# See https://docs.github.com/en/actions/guides/building-and-testing-java-with-gradle#caching-dependencies
-#
-## before_cache:
-##   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-##   - rm -f  $HOME/.gradle/caches/jars-2/jars-2.lock
-##   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
-## 
-## cache:
-## apt: true
-##   directories:
-##   - $TRAVIS_BUILD_DIR/../fred/
-##   - $HOME/.m2
-##   - $HOME/.gradle/caches/
-##   - $HOME/.gradle/wrapper/
 
 # FIXME: Adapt to Freetalk and GitHub Actions (is Travis CI code currently) and enable.
 # Will require adding "python3-pip" to the list of apt packages to install, see above at
