@@ -109,21 +109,21 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
-          pushd "$GITHUB_WORKSPACE"/fred &&
-          # TODO: freenet.jar won't contain class Version if we don't run the
-          # clean task in a separate execution of Gradle. I.e. this wouldn't work:
-          #   $ gradle clean jar
-          # This is due to a bug in fred's Gradle script which could be fixed
-          # like this WoT commit did: 06c007204f40c712a398f0b58671f77fd9aeffd1
-          # EDIT: A better long-term fix for such issues would be to use a file "Version.properties"
-          # instead of patching the "Version.java" source code, like Freetalk now does.
-          # See Freetalk commits 195cfd70aad92c592e0a591d9804712b1cb43a1e and
-          # 0d956c4bf0afbca7a8cb9ef855d0ea415f09bb9a
-          ./gradlew clean &&
-          # "copyRuntimeLibs" copies the JAR *and* dependencies - which Freetalk also
-          # needs - to build/output/
-          ./gradlew jar copyRuntimeLibs -x test &&
-          popd
+        pushd "$GITHUB_WORKSPACE"/fred &&
+        # TODO: freenet.jar won't contain class Version if we don't run the
+        # clean task in a separate execution of Gradle. I.e. this wouldn't work:
+        #   $ gradle clean jar
+        # This is due to a bug in fred's Gradle script which could be fixed
+        # like this WoT commit did: 06c007204f40c712a398f0b58671f77fd9aeffd1
+        # EDIT: A better long-term fix for such issues would be to use a file "Version.properties"
+        # instead of patching the "Version.java" source code, like Freetalk now does.
+        # See Freetalk commits 195cfd70aad92c592e0a591d9804712b1cb43a1e and
+        # 0d956c4bf0afbca7a8cb9ef855d0ea415f09bb9a
+        ./gradlew clean &&
+        # "copyRuntimeLibs" copies the JAR *and* dependencies - which Freetalk also
+        # needs - to build/output/
+        ./gradlew jar copyRuntimeLibs -x test &&
+        popd
     
     # TODO: Performance: To speed up the build we could use the Gradle organization's GitHub action
     # which caches part of the build (albeit as of 2022-11-22 the following link sounds like the
