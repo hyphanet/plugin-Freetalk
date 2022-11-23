@@ -29,6 +29,7 @@ jobs:
       shell: bash
       run: |
         set -o errexit
+        set -o pipefail
         echo 'Current HEAD commit of fred branch next:'
         git ls-remote 'https://github.com/freenet/fred.git' 'refs/heads/next' | cut -f 1 \
           | tee current_fred_commit
@@ -47,6 +48,7 @@ jobs:
       shell: bash
       run: |
         set -o errexit
+        set -o pipefail
         echo 'Previous HEAD commit of fred branch next:'
         if [ -f previous_fred_commit ] ; then
             cat previous_fred_commit
