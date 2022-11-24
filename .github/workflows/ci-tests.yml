@@ -135,6 +135,8 @@ jobs:
     # However this has the security implication of running a non-official GitHub action and thus
     # increasing the attack surface. Further, it might cache part of the compiled code and thus
     # could cause incorrect Gradle state (due to bugs at their side) to persist.
+    # EDIT: There's an alternative solution:
+    # https://github.com/actions/cache/blob/6babf202a422aac73d74f0f40020ca0673b0a4ba/examples.md#java---gradle
     - name: Compile and test Freetalk
       shell: bash
       run: |
