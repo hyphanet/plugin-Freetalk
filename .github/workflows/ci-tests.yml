@@ -45,6 +45,8 @@ jobs:
             brew install coreutils # For step "Compile and test Freetalk"
             # The remaining dependencies will be downloaded using Gradle.
         elif [ '${{runner.os}}' = 'Linux' ] ; then
+            # TODO: Performance: Check if this is still needed or if they're installed by default
+            # on GHA. Also check if we can cache these.
             sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java
         fi
         # On Windows the dependencies will be downloaded using Gradle.
@@ -60,7 +62,38 @@ jobs:
         distribution: 'zulu'
         java-version: ${{ matrix.java-version }}
     
-    - name: Checkout Freenet git repository
+    - name: Load and print current fred branch next HEAD commit
+      shell: bash
+      run: |
+        set -o errexit
+        set -o pipefail
+        echo 'Current HEAD commit of fred branch next:'
+        git ls-remote 'https://github.com/freenet/fred.git' 'refs/heads/next' | cut -f 1 \
+          | tee current_fred_commit
+    
+    - name: Use/populate cache of fred JARs
+      id: cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          fred/build/output/
+          fred/gradle/  # fred's Gradle binaries are also used for Freetalk's compilation
+          fred/gradlew
+        # The key must include the hash of the file to ensure the cache is invalidated whenever the
+        # file contents change.
+        #
+        # We use ${{runner.os}} instead of ${{matrix.os}} to ensure the "latest" part in e.g.
+        # the OS value "ubuntu-latest" is replaced with the actual OS version, which guarantees that
+        # the cache is invalidated if the OS version changes.
+        # TODO: Code quality: GHA does not actually implement this, ${{runner.os}} also holds a
+        # generic value. As of 2022-11-18 there is no other variable in the runner context which
+        # would hold a specific one. File a bug.
+        # fred JARs which were built on an old version should work though, so let's keep this as-is
+        # for now.
+        key: fred-jars_branch-next_${{runner.os}}_java${{matrix.java-version}}_${{hashFiles('current_fred_commit')}}
+    
+    - name: Checkout fred git repository if no cache hit
+      if: steps.cache.outputs.cache-hit != 'true'
       uses: actions/checkout@v2
       with:
         repository: freenet/fred
@@ -75,31 +108,35 @@ jobs:
         # Remove the command for that from the README.md once you implement it.
         submodules: true
     
-    - name: Compile Freenet Git repository
+    - name: Compile Freenet Git repository if no cache hit
+      if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        # FIXME: $FRED_UPDATED is not populated by GitHub Actions yet
-        FRED_UPDATED=1
-        if [ "$FRED_UPDATED" = 1 ] ; then
-          pushd "$GITHUB_WORKSPACE"/fred &&
-          # TODO: freenet.jar won't contain class Version if we don't run the
-          # clean task in a separate execution of Gradle. I.e. this wouldn't work:
-          #   $ gradle clean jar
-          # This is due to a bug in fred's Gradle script which could be fixed
-          # like this WoT commit did: 06c007204f40c712a398f0b58671f77fd9aeffd1
-          # EDIT: A better long-term fix for such issues would be to use a file "Version.properties"
-          # instead of patching the "Version.java" source code, like Freetalk now does.
-          # See Freetalk commits 195cfd70aad92c592e0a591d9804712b1cb43a1e and
-          # 0d956c4bf0afbca7a8cb9ef855d0ea415f09bb9a
-          ./gradlew clean &&
-          # "copyRuntimeLibs" copies the JAR *and* dependencies - which Freetalk also
-          # needs - to build/output/
-          ./gradlew jar copyRuntimeLibs -x test &&
-          popd
-        else
-          echo "No changes at fred, not recompiling."
-        fi
+        pushd "$GITHUB_WORKSPACE"/fred &&
+        # TODO: freenet.jar won't contain class Version if we don't run the
+        # clean task in a separate execution of Gradle. I.e. this wouldn't work:
+        #   $ gradle clean jar
+        # This is due to a bug in fred's Gradle script which could be fixed
+        # like this WoT commit did: 06c007204f40c712a398f0b58671f77fd9aeffd1
+        # EDIT: A better long-term fix for such issues would be to use a file "Version.properties"
+        # instead of patching the "Version.java" source code, like Freetalk now does.
+        # See Freetalk commits 195cfd70aad92c592e0a591d9804712b1cb43a1e and
+        # 0d956c4bf0afbca7a8cb9ef855d0ea415f09bb9a
+        ./gradlew clean &&
+        # "copyRuntimeLibs" copies the JAR *and* dependencies - which Freetalk also
+        # needs - to build/output/
+        ./gradlew jar copyRuntimeLibs -x test &&
+        popd
     
+    # TODO: Performance: To speed up the build we could use the Gradle organization's GitHub action
+    # which caches part of the build (albeit as of 2022-11-22 the following link sounds like the
+    # cache isn't actually used?):
+    # https://docs.github.com/en/actions/guides/building-and-testing-java-with-gradle#caching-dependencies
+    # However this has the security implication of running a non-official GitHub action and thus
+    # increasing the attack surface. Further, it might cache part of the compiled code and thus
+    # could cause incorrect Gradle state (due to bugs at their side) to persist.
+    # EDIT: There's an alternative solution:
+    # https://github.com/actions/cache/blob/6babf202a422aac73d74f0f40020ca0673b0a4ba/examples.md#java---gradle
     - name: Compile and test Freetalk
       shell: bash
       run: |
@@ -118,6 +155,8 @@ jobs:
             # TODO: Code quality: Workaround for "gradle" command existing on GitHub Actions on
             # Windows but failing weirdly when we actually use it, as of 2021-08-19. Remove once it
             # is fixed.
+            # When removing it, also remove the caching of the Gradle binaries which
+            # was added by commit 849d2ee94474bf2ec33a29041289b8f4642fe45d
             ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradle/" ./gradle
             ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradlew" ./gradlew
         else
@@ -137,22 +176,6 @@ jobs:
         # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
         # reproduce failed test runs. Also prevents the 10 minute build timeout.
         FREETALK__SHOW_GRADLE_TEST_OUTPUT=1 ./gradlew clean test jar
-
-# FIXME: Convert the below caching code from its Travis CI syntax to the GitHub Actions syntax.
-# See https://docs.github.com/en/actions/guides/building-and-testing-java-with-gradle#caching-dependencies
-#
-## before_cache:
-##   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-##   - rm -f  $HOME/.gradle/caches/jars-2/jars-2.lock
-##   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
-## 
-## cache:
-## apt: true
-##   directories:
-##   - $TRAVIS_BUILD_DIR/../fred/
-##   - $HOME/.m2
-##   - $HOME/.gradle/caches/
-##   - $HOME/.gradle/wrapper/
 
 # FIXME: Adapt to Freetalk and GitHub Actions (is Travis CI code currently) and enable.
 # Will require adding "python3-pip" to the list of apt packages to install, see above at
