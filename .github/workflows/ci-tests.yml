@@ -75,7 +75,10 @@ jobs:
       id: cache
       uses: actions/cache@v3
       with:
-        path: fred/build/output
+        path: |
+          fred/build/output/
+          fred/gradle/  # fred's Gradle binaries are also used for Freetalk's compilation
+          fred/gradlew
         # The key must include the hash of the file to ensure the cache is invalidated whenever the
         # file contents change.
         #
