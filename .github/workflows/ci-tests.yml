@@ -153,6 +153,8 @@ jobs:
             # TODO: Code quality: Workaround for "gradle" command existing on GitHub Actions on
             # Windows but failing weirdly when we actually use it, as of 2021-08-19. Remove once it
             # is fixed.
+            # When removing it, also remove the caching of the Gradle binaries which
+            # was added by commit 849d2ee94474bf2ec33a29041289b8f4642fe45d
             ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradle/" ./gradle
             ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradlew" ./gradlew
         else
