@@ -25,7 +25,15 @@ dependencies {
 		junit('junit:junit:4.11') // Hamcrest is automatically included as transitive dependency.
 	else
 		junit files('/usr/share/java/junit4.jar', '/usr/share/java/hamcrest-core.jar')
-	testImplementation configurations.junit
+}
+configurations {
+	// This adds the dependencies of the configuration "junit" to the classpath of the
+	// configuration "testImplementation", which is used when compiling the unit tests.
+	// Effectively this means the JUnit JARs are added to the classpath when compiling the tests,
+	// which is necessary because they use the JUnit classes.
+	// (In previous Gradle versions it could be specified at dependencies {}, this unfortunately
+	// isn't possible anymore, hence this poorly readable code which needs this large comment ...)
+	testImplementation.extendsFrom junit
 }
 
 task compileDb4o(type: Exec) {
