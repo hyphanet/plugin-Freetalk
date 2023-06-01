@@ -76,7 +76,7 @@ tasks.create("testJar", Jar) // TODO: Performance: Use register() once my Gradle
 	preserveFileTimestamps = false
 	reproducibleFileOrder = true
 	duplicatesStrategy = "fail"
-	baseName = (jarType == 'testJar') ? 'Freetalk-with-unit-tests' : 'Freetalk'
+	archiveBaseName = (jarType == 'testJar') ? 'Freetalk-with-unit-tests' : 'Freetalk'
 	destinationDir = new File(projectDir, (jarType == 'testJar') ? "build-test" : "dist")
 	manifest { attributes("Plugin-Main-Class": "plugins.Freetalk.Freetalk") }
 	
