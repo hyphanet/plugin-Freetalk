@@ -25,7 +25,6 @@ dependencies {
 		junit('junit:junit:4.11') // Hamcrest is automatically included as transitive dependency.
 	else
 		junit files('/usr/share/java/junit4.jar', '/usr/share/java/hamcrest-core.jar')
-	testImplementation configurations.junit
 }
 
 task compileDb4o(type: Exec) {
