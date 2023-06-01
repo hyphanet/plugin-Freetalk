@@ -159,8 +159,8 @@ jobs:
         # works if that becomes necessary someday.)
         # FIXME: Do this because this script has been converted from Travis CI to GitHub Actions.
         # EDIT: Comment it out again once they've been run and succeeded.
-        - tools/compare-gradle-jars-with-ant-jars
-        - tools/compare-gradle-tests-with-ant-tests
+        tools/compare-gradle-jars-with-ant-jars
+        tools/compare-gradle-tests-with-ant-tests
         # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
         # reproduce failed test runs. Also prevents the 10 minute build timeout.
         FREETALK__SHOW_GRADLE_TEST_OUTPUT=1 gradle clean test jar
