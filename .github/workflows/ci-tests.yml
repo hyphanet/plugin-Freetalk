@@ -151,18 +151,18 @@ jobs:
         echo 'fred version:'
         java -classpath '../fred/build/output/freenet.jar' 'freenet.node.Version'
         rm -f ./gradle ./gradlew
-#        if [ "${{runner.os}}" = 'Windows' ] ; then
+        #if [ "${{runner.os}}" = 'Windows' ] ; then
             # TODO: Code quality: Workaround for "gradle" command existing on GitHub Actions on
             # Windows but failing weirdly when we actually use it, as of 2021-08-19. Remove once it
             # is fixed.
             # When removing it, also remove the caching of the Gradle binaries which
             # was added by commit 849d2ee94474bf2ec33a29041289b8f4642fe45d
-#            ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradle/" ./gradle
-#            ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradlew" ./gradlew
-#        else
+        #    ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradle/" ./gradle
+        #    ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradlew" ./gradlew
+        #else
             # GitHub Actions does seem to ship the most recent Gradle so we don't download our own.
             ln -s -- "$(which gradle)" ./gradlew
-#        fi
+        #fi
         ./gradlew --version
         if [ "${{runner.os}}" != 'Linux' ] ; then
             # We can't obtain the dependencies from /usr/share so download them instead.
