@@ -75,10 +75,7 @@ jobs:
       id: cache
       uses: actions/cache@v3
       with:
-        path: |
-          fred/build/output/
-          fred/gradle/  # fred's Gradle binaries are also used for Freetalk's compilation
-          fred/gradlew
+        path: fred/build/output/
         # The key must include the hash of the file to ensure the cache is invalidated whenever the
         # file contents change.
         #
@@ -150,26 +147,16 @@ jobs:
         echo 'Checksums of fred JARs:' ; sha256sum ../fred/build/output/*
         echo 'fred version:'
         java -classpath '../fred/build/output/freenet.jar' 'freenet.node.Version'
-        rm -f ./gradle ./gradlew
-        #if [ "${{runner.os}}" = 'Windows' ] ; then
-            # TODO: Code quality: Workaround for "gradle" command existing on GitHub Actions on
-            # Windows but failing weirdly when we actually use it, as of 2021-08-19. Remove once it
-            # is fixed.
-            # When removing it, also remove the caching of the Gradle binaries which
-            # was added by commit 849d2ee94474bf2ec33a29041289b8f4642fe45d
-        #    ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradle/" ./gradle
-        #    ln --symbolic -- "$GITHUB_WORKSPACE/fred/gradlew" ./gradlew
-        #else
-            # GitHub Actions does seem to ship the most recent Gradle so we don't download our own.
-        #    ln -s -- "$(which gradle)" ./gradlew
-        #fi
+        echo 'gradle version:'
         gradle --version
+        
         if [ "${{runner.os}}" != 'Linux' ] ; then
             # We can't obtain the dependencies from /usr/share so download them instead.
             export FREETALK__DOWNLOAD_DEPENDENCIES=1
         fi
         # To test the Ant and Gradle builders against each other uncomment the following.
-        # (The scripts will use the ./gradlew we've installed so we can ensure the latest Gradle works.)
+        # (The scripts will use ./gradlew if there is one so we can ensure a specific Gradle version
+        # works if that becomes necessary someday.)
         # FIXME: Do this because this script has been converted from Travis CI to GitHub Actions.
         ## - tools/compare-gradle-jars-with-ant-jars
         ## - tools/compare-gradle-tests-with-ant-tests
