@@ -24,7 +24,7 @@ echo "Testing jar: $jar"
 echo "Building with Ant..."
 gradle clean &> /dev/null
 [ ! -e "$jar" ] # WARNING: ! must be inside for errexit to work here
-ant -Dtest.skip=true clean dist &> /dev/null
+ant -Dtest.skip=true clean dist # FIXME: Re-add after debugging: &> /dev/null
 unzip -qq "$jar" -d "$from_ant"
 
 echo "Building with Gradle..."
