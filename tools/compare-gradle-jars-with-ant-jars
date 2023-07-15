@@ -10,9 +10,10 @@ case "$OSTYPE" in
 		echo "(macOS' mktemp does not support the arguments we use.)" >&2
 		exit 1
 		;;
-	*)
-		# FIXME: Disable on Windows as well using the correct OSTYPE printed hereby:
-		echo "OS: $OSTYPE" >&2
+	msys)
+		echo "This script does not work on MinGW, run it on Linux instead!" >&2
+		echo "(The Ant builder fails on MinGW due to /usr/share/java/junit4.jar not existing.)" >&2
+		exit 1
 		;;
 esac
 
