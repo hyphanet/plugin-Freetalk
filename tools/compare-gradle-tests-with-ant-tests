@@ -5,6 +5,19 @@ set -o errexit
 set -o errtrace
 trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
 
+case "$OSTYPE" in
+	darwin*)
+		echo "This script does not work on macOS, run it on Linux instead!" >&2
+		echo "(macOS' mktemp does not support the arguments we use.)" >&2
+		exit 1
+		;;
+	msys)
+		echo "This script does not work on MinGW, run it on Linux instead!" >&2
+		echo "(The Ant builder fails on MinGW due to /usr/share/java/junit4.jar not existing.)" >&2
+		exit 1
+		;;
+esac
+
 tmpdir="$(mktemp --directory)"
 trap 'rm -rf -- "$tmpdir"' EXIT
 
