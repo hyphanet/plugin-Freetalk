@@ -21,6 +21,7 @@ jobs:
         # TODO: Trim the set of Java versions to respect GitHub's free service.
         java-version: [8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21-ea, 22-ea]
         
+        # FIXME: Remove the below workaround, we use the JAR of FREENET_MINIMUM_JAVA_VERSION now.
         # TODO: Bug: As of 2021-09-11 fred doesn't compile with Java > 15 on Windows due to its
         # Gradle version 4.10.3 not working there. Try again once fred uses a more recent one.
         # TODO: Code quality: GHA currently wrongly parses arrays such as "java-version: [16, 17]"
@@ -95,7 +96,13 @@ jobs:
         # would hold a specific one. File a bug.
         # fred JARs which were built on an old version should work though, so let's keep this as-is
         # for now.
-        key: fred-jars_branch-next_${{runner.os}}_java${{matrix.java-version}}_${{hashFiles('current_fred_commit')}}
+        #
+        # We use the JAR built on FREENET_MINIMUM_JAVA_VERSION, not matrix.java-version, because as
+        # of 2023-08-08 fred compilation does not work on many new Java versions due to its gradlew
+        # being outdated.
+        # This isn't a bad thing to do though: Actual fred releases are typically built on the
+        # minimum version to ensure they work for users of old Java versions.
+        key: fred-jars_branch-next_${{runner.os}}_java${{env.FREENET_MINIMUM_JAVA_VERSION}}_${{hashFiles('current_fred_commit')}}
     
     - name: Checkout fred git repository if no cache hit
       if: steps.cache.outputs.cache-hit != 'true'
