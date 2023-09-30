@@ -97,11 +97,18 @@ jobs:
         # fred JARs which were built on an old version should work though, so let's keep this as-is
         # for now.
         #
-        # We use the JAR built on FREENET_MINIMUM_JAVA_VERSION, not matrix.java-version, because as
-        # of 2023-08-08 fred compilation does not work on many new Java versions due to its gradlew
-        # being outdated.
+        # We use the JARs built on FREENET_MINIMUM_JAVA_VERSION, not matrix.java-version, because as
+        # of 2023-08-08 fred compilation does not work on many new Java versions due to both its
+        # gradlew being outdated and other issues.
         # This isn't a bad thing to do though: Actual fred releases are typically built on the
-        # minimum version to ensure they work for users of old Java versions.
+        # minimum version to ensure they work for users of old Java versions. And we run less builds
+        # and save GitHub's resources.
+        # EDIT: FIXME: This will not work properly: Whenever fred is updated, the cache won't
+        # contain a JAR for FREENET_MINIMUM_JAVA_VERSION. Because the build job on that version
+        # runs concurrently to all other build jobs, it likely won't complete and update the cache
+        # before other jobs will have failed already.
+        # So we either need to find a way to wait for the job on FREENET_MINIMUM_JAVA_VERSION to
+        # finish before other jobs are started, or get fred fixed.
         key: fred-jars_branch-next_${{runner.os}}_java${{env.FREENET_MINIMUM_JAVA_VERSION}}_${{hashFiles('current_fred_commit')}}
     
     - name: Checkout fred git repository if no cache hit
