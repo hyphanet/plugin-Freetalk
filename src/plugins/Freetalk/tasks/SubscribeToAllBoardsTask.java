@@ -7,7 +7,7 @@ import plugins.Freetalk.MessageManager;
 import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;
-import freenet.support.CurrentTimeUTC;
+import plugins.Freetalk.util.CurrentTimeUTC;
 import freenet.support.codeshortification.IfNull;
 
 /**

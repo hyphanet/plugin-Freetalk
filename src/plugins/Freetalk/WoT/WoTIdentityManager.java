@@ -36,7 +36,7 @@ import freenet.node.FSParseException;
 import freenet.node.PrioRunnable;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.support.Base64;
-import freenet.support.CurrentTimeUTC;
+import plugins.Freetalk.util.CurrentTimeUTC;
 import freenet.support.Executor;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LRUCache;

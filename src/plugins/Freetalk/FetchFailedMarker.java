@@ -5,7 +5,7 @@ package plugins.Freetalk;
 
 import java.util.Date;
 
-import freenet.support.CurrentTimeUTC;
+import plugins.Freetalk.util.CurrentTimeUTC;
 
 /**
  * When a message (list) fetch fails we need to mark the message (list) as fetched to prevent the failed message (list) from getting into the
