@@ -24,7 +24,7 @@ import plugins.Freetalk.Persistent;
 import plugins.Freetalk.Version;
 import plugins.Freetalk.util.MimeType;
 import freenet.keys.FreenetURI;
-import freenet.support.CurrentTimeUTC;
+import plugins.Freetalk.util.CurrentTimeUTC;
 
 
 public class WoTMessageXMLTest extends DatabaseBasedTest {

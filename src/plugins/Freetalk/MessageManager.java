@@ -42,7 +42,7 @@ import com.db4o.query.Query;
 import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
 import freenet.pluginmanager.PluginRespirator;
-import freenet.support.CurrentTimeUTC;
+import plugins.Freetalk.util.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.TrivialTicker;
 import freenet.support.io.NativeThread;

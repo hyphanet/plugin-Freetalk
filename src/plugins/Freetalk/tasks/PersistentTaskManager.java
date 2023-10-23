@@ -20,7 +20,7 @@ import com.db4o.ext.ExtObjectContainer;
 import com.db4o.query.Query;
 
 import freenet.node.PrioRunnable;
-import freenet.support.CurrentTimeUTC;
+import plugins.Freetalk.util.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.TrivialTicker;
 import freenet.support.codeshortification.IfNull;

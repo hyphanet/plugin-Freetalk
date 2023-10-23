@@ -40,7 +40,7 @@ import com.db4o.query.Query;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.pluginmanager.PluginRespirator;
-import freenet.support.CurrentTimeUTC;
+import plugins.Freetalk.util.CurrentTimeUTC;
 import freenet.support.Logger;
 
 public final class WoTMessageManager extends MessageManager {

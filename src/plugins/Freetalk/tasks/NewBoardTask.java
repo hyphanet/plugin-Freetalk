@@ -9,7 +9,7 @@ import plugins.Freetalk.OwnIdentity;
 import plugins.Freetalk.exceptions.NoSuchBoardException;
 import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;
-import freenet.support.CurrentTimeUTC;
+import plugins.Freetalk.util.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.codeshortification.IfNull;
 

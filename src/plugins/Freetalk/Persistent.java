@@ -19,7 +19,7 @@ import com.db4o.ext.ExtObjectSet;
 import com.db4o.ext.ObjectInfo;
 import com.db4o.query.Query;
 
-import freenet.support.CurrentTimeUTC;
+import plugins.Freetalk.util.CurrentTimeUTC;
 import freenet.support.Logger;
 /**
  * ATTENTION: This class is duplicated in the Web Of Trust plugin. Backport any changes!

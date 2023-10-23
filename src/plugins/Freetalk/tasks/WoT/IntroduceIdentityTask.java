@@ -14,7 +14,7 @@ import plugins.Freetalk.tasks.OwnMessageTask;
 import plugins.Freetalk.ui.web.IntroduceIdentityPage;
 import plugins.Freetalk.ui.web.WebInterface;
 import plugins.Freetalk.ui.web.WebPage;
-import freenet.support.CurrentTimeUTC;
+import plugins.Freetalk.util.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.codeshortification.IfNotEquals;
 
