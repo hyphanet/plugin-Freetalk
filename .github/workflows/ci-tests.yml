@@ -20,28 +20,6 @@ jobs:
         # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
         # TODO: Trim the set of Java versions to respect GitHub's free service.
         java-version: [8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
-        
-        # TODO: Bug: As of 2021-09-11 fred doesn't compile with Java > 15 on Windows due to its
-        # Gradle version 4.10.3 not working there. Try again once fred uses a more recent one.
-        # TODO: Code quality: GHA currently wrongly parses arrays such as "java-version: [16, 17]"
-        # into their literal string value instead of expanding them. They'll likely add a different
-        # syntax for arrays here, use it then, see
-        # https://github.com/github/feedback/discussions/7835
-        exclude:
-          - os: windows-latest
-            java-version: 16
-          - os: windows-latest
-            java-version: 17
-          - os: windows-latest
-            java-version: 18
-          - os: windows-latest
-            java-version: 19
-          - os: windows-latest
-            java-version: 20
-          - os: windows-latest
-            java-version: 21-ea
-          - os: windows-latest
-            java-version: 22-ea
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.os }}, Java ${{ matrix.java-version }}
     
