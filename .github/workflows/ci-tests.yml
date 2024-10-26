@@ -17,9 +17,8 @@ jobs:
         # Unfortunately as of 2021-08-05 Debian is not available on GitHub Actions (yet?).
         os: [ubuntu-latest, windows-latest, macos-latest]
         # 8 is $FREENET_MINIMUM_JAVA_VERSION currently.
-        # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
-        # TODO: Trim the set of Java versions to respect GitHub's free service.
-        java-version: [8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+        # Unmaintained versions between 8 and 23 have been excluded.
+        java-version: [8, 11, 17, 21, 23]
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.os }}, Java ${{ matrix.java-version }}
     
