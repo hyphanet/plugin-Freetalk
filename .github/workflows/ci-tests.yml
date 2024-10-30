@@ -18,7 +18,9 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         # 8 is $FREENET_MINIMUM_JAVA_VERSION currently.
         # Unmaintained versions between 8 and 23 have been excluded.
-        java-version: [8, 11, 17, 21, 23]
+        # TODO: Code quality: 2024-10-30: Java 23 has been removed because fred doesn't compile
+        # there yet. Try again around March 2025 once Java 24 has been released.
+        java-version: [8, 11, 17, 21]
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.os }}, Java ${{ matrix.java-version }}
     
