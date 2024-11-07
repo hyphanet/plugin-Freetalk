@@ -22,7 +22,7 @@ It intends to do so by:
 
 ## Status
 
-As of 2022 Freetalk is currently in active development by
+As of 2024 Freetalk is currently in active development by
 [xor-freenet](https://github.com/xor-freenet).  
 Development news are posted about every 1-3 weeks on the
 [FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet` in threads called
@@ -43,7 +43,7 @@ because:
 
 ## Usage
 
-As of 2022 Freetalk is currently in active development (see [above](#status)) and **NOT**
+As of 2024 Freetalk is currently in active development (see [above](#status)) and **NOT**
 intended to be used.  
 It will first have to be changed to use WoT's new `event-notifications` API, otherwise it will be
 very slow.

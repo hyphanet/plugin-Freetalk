@@ -17,23 +17,10 @@ jobs:
         # Unfortunately as of 2021-08-05 Debian is not available on GitHub Actions (yet?).
         os: [ubuntu-latest, windows-latest, macos-latest]
         # 8 is $FREENET_MINIMUM_JAVA_VERSION currently.
-        # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
-        # TODO: Trim the set of Java versions to respect GitHub's free service.
-        java-version: [8, 11, 12, 13, 14, 15, 16, 17, 18-ea]
-        
-        # TODO: Bug: As of 2021-09-11 fred doesn't compile with Java > 15 on Windows due to its
-        # Gradle version 4.10.3 not working there. Try again once fred uses a more recent one.
-        # TODO: Code quality: GHA currently wrongly parses arrays such as "java-version: [16, 17]"
-        # into their literal string value instead of expanding them. They'll likely add a different
-        # syntax for arrays here, use it then, see
-        # https://github.com/github/feedback/discussions/7835
-        exclude:
-          - os: windows-latest
-            java-version: 16
-          - os: windows-latest
-            java-version: 17
-          - os: windows-latest
-            java-version: 18-ea
+        # Unmaintained versions between 8 and 23 have been excluded.
+        # TODO: Code quality: 2024-10-30: Java 23 has been removed because fred doesn't compile
+        # there yet. Try again around March 2025 once Java 24 has been released.
+        java-version: [8, 11, 17, 21]
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.os }}, Java ${{ matrix.java-version }}
     
